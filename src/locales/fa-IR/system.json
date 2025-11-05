@@ -1,0 +1,42 @@
+{
+	"role": {
+		"name": "نام نقش",
+		"id": "شناسه نقش",
+		"addRole": "افزودن نقش",
+		"editRole": "ویرایش نقش",
+		"assignMenu": "اختصاص منو"
+	},
+	"user": {
+		"name": "نام کاربر",
+		"id": "شناسه کاربر",
+		"addUser": "افزودن کاربر",
+		"editUser": "ویرایش کاربر"
+	},
+	"menu": {
+		"name": "نام منو",
+		"routePath": " مسیر (Route Path)",
+		"addMenu": "افزودن منو",
+		"editMenu": "ویرایش منو",
+		"menuType": "نوع منو",
+		"menuTypeDesc": "توضیح نوع منو: ۰ = منو، ۱ = Iframe، ۲ = لینک خارجی، ۳ = دکمه",
+		"menu": "منو",
+		"iframe": "آی‌فریم (Iframe)",
+		"externalLink": "لینک خارجی",
+		"button": "دکمه",
+		"menuOrder": "ترتیب منو",
+		"menuIcon": "آیکن منو",
+		"componentUrl": "آدرس کامپوننت",
+		"keepAlive": "ذخیره‌سازی صفحه (Cache)",
+		"hideInMenu": "مخفی کردن در منو",
+		"currentActiveMenu": "مسیر فعال",
+		"iframeLink": "لینک Iframe",
+		"externalLinkUrl": "آدرس لینک خارجی",
+		"parentMenu": "منوی والد"
+	},
+	"dept": {
+		"name": "نام دپارتمان",
+		"id": "شناسه دپارتمان",
+		"addDept": "افزودن دپارتمان",
+		"editDept": "ویرایش دپارتمان"
+	}
+}

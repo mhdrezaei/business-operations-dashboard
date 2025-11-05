@@ -1,4 +1,4 @@
-import { useDeviceType, useLayoutFooterStyle, useLayoutHeaderStyle } from "#src/hooks";
+import { useDeviceType, useLanguage, useLayoutFooterStyle, useLayoutHeaderStyle } from "#src/hooks";
 import { usePreferencesStore, useTabsStore } from "#src/store";
 import { cn } from "#src/utils";
 
@@ -37,6 +37,7 @@ export default function ContainerLayout() {
 	const isMaximize = useTabsStore(state => state.isMaximize);
 	const { watermark, watermarkContent, enableFooter, fixedFooter, enableBackTopButton, tabbarEnable, sidebarEnable, sidebarCollapsed, setPreferences } = usePreferencesStore();
 	const { isMobile } = useDeviceType();
+	const { isRTL } = useLanguage();
 	const { sideNavItems, topNavItems, handleMenuSelect, sideNavMenuKeyInSplitMode } = useMenu();
 
 	const { setLayoutHeaderHeight } = useLayoutHeaderStyle();
@@ -107,7 +108,7 @@ export default function ContainerLayout() {
 		<Watermark content={watermark ? watermarkContent : ""}>
 			<section
 				style={{
-					paddingLeft: computedSidebarWidth,
+					...(isRTL ? { paddingRight: computedSidebarWidth } : { paddingLeft: computedSidebarWidth }),
 				}}
 				className={cn(
 					"transition-all flex flex-col h-screen",

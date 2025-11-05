@@ -1,19 +1,21 @@
 import type { InitOptions } from "i18next";
 
 import enUS from "antd/locale/en_US";
+import faIR from "antd/locale/fa_IR";
 import zhCN from "antd/locale/zh_CN";
 import i18next from "i18next";
 import { initReactI18next } from "react-i18next";
 
-import { getEnUsLang, getZhCnLang } from "./helper";
+import { getEnUsLang, getFaIrLang, getZhCnLang } from "./helper";
 
 export * from "./t";
 
-export type LanguageType = "zh-CN" | "en-US";
+export type LanguageType = "zh-CN" | "en-US" | "fa-IR";
 
 export const ANT_DESIGN_LOCALE = {
 	"zh-CN": zhCN,
 	"en-US": enUS,
+	"fa-IR": faIR,
 };
 
 export const i18nResources = {
@@ -22,6 +24,9 @@ export const i18nResources = {
 	},
 	"en-US": {
 		translation: getEnUsLang(),
+	},
+	"fa-IR": {
+		translation: getFaIrLang(),
 	},
 };
 
@@ -53,5 +58,12 @@ export function setupI18n() {
 	 */
 	i18next.on("languageChanged", (lng) => {
 		document.documentElement.lang = lng;
+		// Set RTL direction for Persian language
+		if (lng === "fa-IR") {
+			document.documentElement.dir = "rtl";
+		}
+		else {
+			document.documentElement.dir = "ltr";
+		}
 	});
 }

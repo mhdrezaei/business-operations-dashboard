@@ -1,0 +1,13 @@
+{
+	"aboutProject": "درباره پروژه",
+	"descriptions": "react-ant-admin یک راه‌حل میانی تا پشتیبانی بر اساس React Hooks، Vite و TypeScript است. این برای کمک به شما در ساخت سریع پروژه‌های سطح سازمانی طراحی شده است. می‌تواند در پذیرش فناوری‌های جدید و سایر جنبه‌ها به شما کمک کند.",
+	"projectMessage": "پیام پروژه",
+	"version": "نسخه",
+	"lastBuildTime": "آخرین زمان ساخت",
+	"license": "مجوز",
+	"previewAddress": "آدرس پیش‌نمایش",
+	"documentAddress": "آدرس مستندات",
+	"author": "نویسنده",
+	"dependencies": "وابستگی‌های تولید",
+	"devDependencies": "وابستگی‌های توسعه"
+}

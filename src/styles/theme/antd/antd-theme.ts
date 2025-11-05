@@ -1,6 +1,15 @@
 import type { ThemeConfig } from "antd";
 
 /**
+ * Get font family based on language/RTL direction
+ */
+function getFontFamily(isRTL?: boolean) {
+	return isRTL
+		? "'IranYekan', 'Tahoma', 'Arial', sans-serif"
+		: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif";
+}
+
+/**
  * 自定义的Ant Design浅色主题配置
  *
  * English: Custom Ant Design light theme configuration
@@ -11,7 +20,9 @@ import type { ThemeConfig } from "antd";
  * @see https://ant.design/docs/react/customize-theme (English version configuration guide)
  */
 export const customAntdLightTheme: ThemeConfig = {
-
+	token: {
+		fontFamily: getFontFamily(false),
+	},
 };
 
 /**
@@ -25,5 +36,22 @@ export const customAntdLightTheme: ThemeConfig = {
  * @see https://ant.design/docs/react/customize-theme (English version configuration guide)
  */
 export const customAntdDarkTheme: ThemeConfig = {
-
+	token: {
+		fontFamily: getFontFamily(false),
+	},
 };
+
+/**
+ * Get theme configuration with dynamic font family based on RTL
+ */
+export function getCustomAntdTheme(isDark: boolean, isRTL: boolean): ThemeConfig {
+	const baseTheme = isDark ? customAntdDarkTheme : customAntdLightTheme;
+
+	return {
+		...baseTheme,
+		token: {
+			...baseTheme.token,
+			fontFamily: getFontFamily(isRTL),
+		},
+	};
+}

@@ -1,0 +1,24 @@
+{
+	"document": "مستندات",
+	"qa": "سؤالات متداول",
+	"setting": "تنظیمات",
+	"logoutTip": "آیا می‌خواهید از حساب خارج شوید؟",
+	"viewAll": "مشاهده همه پیام‌ها",
+	"notifications": "اعلان‌ها",
+	"markAllAsRead": "علامت‌گذاری همه به عنوان خوانده‌شده",
+	"clearNotifications": "پاک کردن",
+	"versionMonitorTitle": "اطلاعیه به‌روزرسانی نسخه سیستم",
+	"versionMonitorContent": "نسخه جدیدی از سیستم شناسایی شد. آیا می‌خواهید صفحه را هم‌اکنون تازه‌سازی کنید؟",
+	"versionMonitorConfirm": "تازه‌سازی اکنون",
+	"versionMonitorCancel": "بعداً",
+	"search": {
+		"placeholder": "کلمه کلیدی برای جستجو در منو وارد کنید",
+		"title": "جستجو",
+		"select": "انتخاب",
+		"navigate": "رفتن",
+		"close": "بستن",
+		"noResults": "نتیجه‌ای برای جستجو یافت نشد",
+		"noRecent": "هیچ سابقه جستجویی وجود ندارد",
+		"total": "مجموع {{total}} مورد"
+	}
+}

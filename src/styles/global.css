@@ -12,6 +12,33 @@
 /* 导入 Tailwind CSS 的实用类，这些类通常用于添加与布局、间距、响应式设计等相关的样式，使得可以快速构建出复杂的页面 */
 @import 'tailwindcss/utilities';
 
+/* Font Family Configuration */
+:root {
+	--font-family-persian: 'IranYekan', 'Tahoma', 'Arial', sans-serif;
+	--font-family-english: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+}
+
+/* Apply Persian font for RTL content */
+[dir="rtl"] {
+	font-family: var(--font-family-persian);
+}
+
+/* Apply system fonts for LTR content */
+[dir="ltr"] {
+	font-family: var(--font-family-english);
+}
+
+/* Default font family for body */
+body {
+	font-family: var(--font-family-english);
+}
+
+/* Persian language specific styling */
+html[lang="fa-IR"] *,
+html[lang="fa"] * {
+	font-family: var(--font-family-persian) !important;
+}
+
 /* simplebar */
 @layer simplebar {
 	.simplebar-scrollbar::before {

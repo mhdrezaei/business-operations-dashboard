@@ -18,5 +18,12 @@ export const getLanguageItems: () => any = (
 			// Select
 			value: "en-US",
 		},
+		{
+			label: "فارسی",
+			// Menu
+			key: "fa-IR",
+			// Select
+			value: "fa-IR",
+		},
 	];
 };

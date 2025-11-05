@@ -1,11 +1,11 @@
 import type { ButtonProps } from "antd";
 
 import { BasicButton } from "#src/components";
-import { useDeviceType, usePreferences } from "#src/hooks";
+import { useDeviceType, useLanguage, usePreferences } from "#src/hooks";
 import { loginPath } from "#src/router/extra-info";
 import { useAuthStore, usePreferencesStore } from "#src/store";
 
-import { CopyOutlined, RedoOutlined, SettingOutlined, RocketOutlined } from "@ant-design/icons";
+import { CopyOutlined, RedoOutlined, RocketOutlined, SettingOutlined } from "@ant-design/icons";
 import { theme as antdTheme, Badge, ConfigProvider, Divider, Drawer, FloatButton } from "antd";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -22,12 +22,13 @@ import {
 	Tabbar,
 } from "./blocks";
 
-const preferencesContentId = "__react-antd-admin__preferences_drawer__"
+const preferencesContentId = "__react-antd-admin__preferences_drawer__";
 export function Preferences({ ...restProps }: ButtonProps) {
 	const { t } = useTranslation();
 	const navigate = useNavigate();
 	const [isOpen, setIsOpen] = useState(false);
 	const { isMobile } = useDeviceType();
+	const { isRTL } = useLanguage();
 	const { reset, isDefault, isDark } = usePreferences();
 	const preferences = usePreferencesStore();
 	const logout = useAuthStore(state => state.logout);
@@ -72,7 +73,7 @@ export function Preferences({ ...restProps }: ButtonProps) {
 
 				<Drawer
 					title={t("preferences.title")}
-					placement="right"
+					placement={isRTL ? "left" : "right"}
 					onClose={() => {
 						setIsOpen(false);
 					}}
@@ -119,6 +120,8 @@ export function Preferences({ ...restProps }: ButtonProps) {
 							display: "flex",
 							flexDirection: "column",
 							alignItems: "center",
+							direction: "ltr", // Force LTR for preferences content
+							width: "100%",
 						}}
 					>
 						<Divider>{t("preferences.general.title")}</Divider>

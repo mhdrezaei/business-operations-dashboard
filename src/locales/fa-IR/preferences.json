@@ -1,0 +1,114 @@
+{
+	"title": "تنظیمات شخصی",
+	"copyPreferences": "کپی تنظیمات",
+	"copyPreferencesSuccessTitle": "کپی با موفقیت انجام شد",
+	"copyPreferencesSuccess": "کپی با موفقیت انجام شد، لطفاً در مسیر `src/store/preferences/index.ts` جایگزین کنید",
+	"clearAndLogout": "پاک کردن کش و خروج از حساب",
+	"theme": {
+		"title": "تم",
+		"followSystem": "مطابقت با سیستم",
+		"light": "روشن",
+		"dark": "تیره",
+		"colorBlindMode": "حالت کوررنگی",
+		"grayMode": "حالت خاکستری",
+		"radius": "انحنای گوشه‌ها",
+		"builtin": {
+			"title": "رنگ‌های پیش‌فرض",
+			"red": "قرمز غباری",
+			"volcano": "قرمز آتشفشانی",
+			"orange": "نارنجی غروب",
+			"gold": "طلایی گل همیشه‌بهار",
+			"yellow": "زرد سپیده‌دم",
+			"lime": "سبز لیمویی",
+			"green": "سبز قطبی",
+			"cyan": "فیروزه‌ای",
+			"blue": "آبی روشن روز",
+			"geekblue": "آبی فناورانه",
+			"purple": "بنفش طلایی",
+			"magenta": "ارغوانی",
+			"gray": "خاکستری",
+			"custom": "سفارشی"
+		}
+	},
+	"layout": {
+		"title": "چیدمان",
+		"topNavigation": "ناوبری بالا",
+		"topNavigationTip": "منو در بالای صفحه قرار می‌گیرد",
+		"sideNavigation": "ناوبری کناری",
+		"sideNavigationTip": "منو در سمت کناری صفحه قرار می‌گیرد",
+		"twoColumnNavigation": "ناوبری دو ستونه",
+		"twoColumnNavigationTip": "منوی عمودی دو ستونه در سمت صفحه",
+		"mixedNavigation": "ناوبری ترکیبی",
+		"mixedNavigationTip": "ناوبری اصلی در بالا و ناوبری فرعی در کنار"
+	},
+	"sidebar": {
+		"title": "نوار کناری",
+		"width": "عرض نوار کناری",
+		"enable": "نمایش نوار کناری",
+		"collapsedWidth": "عرض منوی جمع‌شده",
+		"collapsed": "جمع کردن منو",
+		"collapsedShowTitle": "نمایش عنوان منو هنگام جمع شدن",
+		"firstColumnWidthInTwoColumnNavigation": "عرض ستون اول در ناوبری دو ستونه",
+		"sidebarTheme": "تم نوار کناری",
+		"accordion": "منوی آکاردئونی",
+		"autoActivateChild": "فعال‌سازی خودکار زیرمنو",
+		"autoActivateChildTip": "در صورت فعال بودن، با کلیک روی منو زیرمنو به‌صورت خودکار باز می‌شود.",
+		"expandOnHover": "باز شدن با قرار دادن نشانگر",
+		"expandOnHoverTip": "وقتی نشانگر روی منو قرار گیرد، \n در حالت `فعال` فقط زیرمنو باز می‌شود، \n در حالت `غیرفعال` کل نوار کناری باز می‌شود."
+	},
+	"tabbar": {
+		"title": "نوار تب‌ها",
+		"enable": "فعال‌سازی نوار تب",
+		"icon": "نمایش آیکن تب‌ها",
+		"showMore": "نمایش دکمه «بیشتر»",
+		"showMaximize": "نمایش دکمه «بزرگ‌نمایی»",
+		"persist": "حفظ تب‌ها بعد از بارگذاری مجدد",
+		"draggable": "فعال‌سازی جابه‌جایی با کشیدن",
+		"styleType": {
+			"title": "استایل تب‌ها",
+			"chrome": "کروم",
+			"card": "کارت",
+			"plain": "ساده",
+			"brisk": "مدرن"
+		},
+		"contextMenu": {
+			"refresh": "تازه‌سازی",
+			"close": "بستن",
+			"pin": "سنجاق کردن",
+			"unpin": "برداشتن سنجاق",
+			"closeLeft": "بستن تب‌های سمت چپ",
+			"closeRight": "بستن تب‌های سمت راست",
+			"closeOthers": "بستن سایر تب‌ها",
+			"closeAll": "بستن همه تب‌ها",
+			"openInNewWindow": "باز کردن در پنجره جدید",
+			"maximize": "تمام‌صفحه",
+			"restoreMaximize": "بازگرداندن اندازه"
+		}
+	},
+	"animation": {
+		"title": "انیمیشن‌ها",
+		"loading": "بارگذاری صفحه",
+		"transition": "انیمیشن انتقال بین صفحات",
+		"progress": "نوار پیشرفت صفحه"
+	},
+	"general": {
+		"title": "عمومی",
+		"language": "زبان",
+		"dynamicTitle": "عنوان پویا",
+		"watermark": "واترمارک",
+		"watermarkTip": "در واترمارک از نام مستعار یا آدرس سایت استفاده می‌شود؛ توصیه نمی‌شود.",
+		"watermarkContent": "متن واترمارک",
+		"enableCheckUpdate": "بررسی به‌روزرسانی",
+		"enableBackTopButton": "دکمه بازگشت به بالا"
+	},
+	"footer": {
+		"title": "پاورقی",
+		"showFooter": "نمایش پاورقی",
+		"fixedFooter": "پاورقی ثابت",
+		"companyName": "نام شرکت",
+		"companyWebsite": "وب‌سایت شرکت",
+		"copyrightDate": "تاریخ کپی‌رایت",
+		"ICPNumber": "شماره مجوز ICP",
+		"ICPLink": "لینک مجوز ICP"
+	}
+}

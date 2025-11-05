@@ -1,0 +1,39 @@
+{
+	"accessMode": {
+		"title": "قابلیت مشاهده دسترسی از سمت سرور",
+		"description": "این صفحه فقط از طریق رابط‌های سمت سرور می‌تواند سطح دسترسی مسیرها را دریافت کند"
+	},
+	"adminVisible": {
+		"title": "قابل مشاهده برای مدیر (Admin)",
+		"description": "این صفحه فقط برای حساب‌های کاربری مدیر نمایش داده می‌شود"
+	},
+	"commonVisible": {
+		"title": "قابل مشاهده برای کاربران عادی",
+		"description": "این صفحه فقط برای حساب‌های کاربری معمولی نمایش داده می‌شود"
+	},
+	"pageControl": {
+		"alertMessage": "دموی کنترل دسترسی صفحات در سمت کاربر (Frontend)",
+		"alertDescription": "می‌توانید بین حساب‌های مختلف جابه‌جا شوید و تغییرات منوی «نمایش سطح دسترسی» در سمت چپ را مشاهده کنید.",
+		"cardTitle": "حالت دسترسی",
+		"frontendControl": "کنترل دسترسی در سمت فرانت‌اند",
+		"backendControl": "کنترل دسترسی در سمت بک‌اند",
+		"switchToFrontend": "تغییر به حالت کنترل دسترسی فرانت‌اند",
+		"switchToBackend": "تغییر به حالت کنترل دسترسی بک‌اند",
+		"switchAdmin": "تغییر به کاربر مدیر",
+		"switchCommon": "تغییر به کاربر عادی",
+		"currentPermissionMode": "حالت فعلی دسترسی:",
+		"accountSwitching": "تغییر حساب کاربری",
+		"warningMessage": "اگر مقدار enableFrontendAccess و enableBackendAccess برابر باشند، تغییر حالت مسیریابی مجاز نیست."
+	},
+	"buttonControl": {
+		"alertMessage": "دموی کنترل دسترسی دکمه‌ها در سمت کاربر",
+		"alertDescription": "بین حساب‌های مختلف جابه‌جا شوید تا تفاوت دکمه‌ها را ببینید.",
+		"currentRole": "نقش فعلی",
+		"switchAdmin": "تغییر به کاربر مدیر",
+		"switchCommon": "تغییر به کاربر عادی",
+		"componentControlPermissionCodes": "کنترل سطح دسترسی در کامپوننت‌ها - بر اساس کد دسترسی",
+		"componentControlRoles": "کنترل سطح دسترسی در کامپوننت‌ها - بر اساس نقش",
+		"functionControlPermissionCodes": "کنترل سطح دسترسی در توابع - بر اساس کد دسترسی",
+		"functionControlRoles": "کنترل سطح دسترسی در توابع - بر اساس نقش"
+	}
+}

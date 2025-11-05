@@ -23,6 +23,7 @@ export function useLanguage() {
 		() => ({
 			language: i18n.language as LanguageType,
 			setLanguage: handleChangeLanguage,
+			isRTL: i18n.language === "fa-IR",
 		}),
 		[handleChangeLanguage, i18n.language],
 	);

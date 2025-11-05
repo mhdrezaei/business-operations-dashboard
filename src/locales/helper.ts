@@ -1,12 +1,12 @@
 /**
- * 通用的语言模块映射类型，表示可以嵌套的对象结构
+ * Generic language module mapping type, representing nestable object structure
  */
 interface LanguageModule<T> {
 	[key: string]: T | any
 }
 
 /**
- * 语言文件的参数类型，用于描述导入的语言文件集合
+ * Parameter type for language files, used to describe the collection of imported language files
  */
 type LanguageFileMap = Record<string, LanguageModule<LanguageFileMap>>;
 
@@ -21,6 +21,15 @@ export function getZhCnLang() {
 
 export function getEnUsLang() {
 	const langFiles = import.meta.glob<LanguageFileMap>("./en-US/**/*.json", {
+		import: "default",
+		eager: true,
+	});
+	const result = organizeLanguageFiles(langFiles);
+	return result;
+}
+
+export function getFaIrLang() {
+	const langFiles = import.meta.glob<LanguageFileMap>("./fa-IR/**/*.json", {
 		import: "default",
 		eager: true,
 	});

@@ -1,5 +1,5 @@
 import { AntdApp, JSSThemeProvider } from "#src/components";
-import { usePreferences, useScrollToHash } from "#src/hooks";
+import { useLanguage, usePreferences, useScrollToHash } from "#src/hooks";
 import { AppVersionMonitor } from "#src/layout/widgets/version-monitor";
 import { ANT_DESIGN_LOCALE } from "#src/locales";
 
@@ -10,11 +10,13 @@ import { useTranslation } from "react-i18next";
 import { RouterProvider } from "react-router/dom";
 
 import { router } from "./router";
-import { customAntdDarkTheme, customAntdLightTheme } from "./styles/theme/antd/antd-theme";
+import { getCustomAntdTheme } from "./styles/theme/antd/antd-theme";
 import "dayjs/locale/zh-cn";
+import "dayjs/locale/fa";
 
 export default function App() {
 	const { i18n } = useTranslation();
+	const { isRTL } = useLanguage();
 	const {
 		language,
 		isDark,
@@ -50,6 +52,9 @@ export default function App() {
 		}
 		else if (language === "zh-CN") {
 			dayjs.locale("zh-cn");
+		}
+		else if (language === "fa-IR") {
+			dayjs.locale("fa");
 		}
 	}, [language]);
 
@@ -113,10 +118,14 @@ export default function App() {
 		updateColorMode();
 	}, [colorBlindMode, colorGrayMode]);
 
+	// Get dynamic theme based on dark mode and RTL
+	const dynamicTheme = getCustomAntdTheme(isDark, isRTL);
+
 	return (
 		<ConfigProvider
 			input={{ autoComplete: "off" }}
 			locale={getAntdLocale()}
+			direction={isRTL ? "rtl" : "ltr"}
 			theme={{
 				cssVar: true,
 				hashed: false,
@@ -124,20 +133,18 @@ export default function App() {
 					isDark
 						? antdTheme.darkAlgorithm
 						: antdTheme.defaultAlgorithm,
-				...(isDark ? customAntdDarkTheme : customAntdLightTheme),
+				...dynamicTheme,
 				token: {
-					...(isDark ? customAntdDarkTheme.token : customAntdLightTheme.token),
+					...dynamicTheme.token,
 					borderRadius: themeRadius,
 					colorPrimary: themeColorPrimary,
 				},
 				components: {
-					...(isDark ? customAntdDarkTheme.components : customAntdLightTheme.components),
+					...dynamicTheme.components,
 					Menu: {
 						darkItemBg: "#141414",
 						itemBg: "#fff",
-						...(isDark
-							? customAntdDarkTheme.components?.Menu
-							: customAntdLightTheme.components?.Menu),
+						...dynamicTheme.components?.Menu,
 						collapsedWidth: sideCollapsedWidth,
 					},
 				},
