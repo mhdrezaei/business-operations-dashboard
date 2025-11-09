@@ -4,6 +4,7 @@ export * from "./basic-button";
 export * from "./basic-content";
 export * from "./basic-form";
 export * from "./basic-table";
+export * from "./date-time-display";
 export * from "./fullscreen-button";
 export * from "./global-spin";
 export * from "./iframe";

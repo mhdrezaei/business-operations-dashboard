@@ -159,6 +159,21 @@ export function BasicTable<
 		};
 	};
 
+	const getSearchProps = () => {
+		if (props.search === false) {
+			return false;
+		}
+
+		return {
+			filterType: "query" as const,
+			searchGutter: [16, 16] as [number, number],
+			labelWidth: "auto" as const,
+			span: 8,
+			layout: "vertical" as const,
+			...props.search,
+		};
+	};
+
 	return (
 		<div className="h-full" ref={tableWrapperRef}>
 			<ProTable
@@ -175,6 +190,7 @@ export function BasicTable<
 				scroll={{ y: scrollY, x: "max-content", ...props.scroll }}
 				loading={getLoadingProps()}
 				pagination={getPaginationProps()}
+				search={getSearchProps()}
 				expandable={{
 					// expandIcon: ({ expanded, onExpand, record }) => {
 					// 	return expanded

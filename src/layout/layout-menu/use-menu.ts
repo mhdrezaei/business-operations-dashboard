@@ -4,7 +4,7 @@ import { useCurrentRoute } from "#src/hooks";
 import { removeTrailingSlash } from "#src/router/utils";
 import { useAccessStore } from "#src/store";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useMatches, useNavigate } from "react-router";
 

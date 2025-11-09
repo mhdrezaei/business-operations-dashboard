@@ -96,7 +96,7 @@ export default defineConfig({
 							return color;
 						},
 					});
-					return svgObject.toString({ height: "1em", width: "1em" });;
+					return svgObject.toString({ height: "1em", width: "1em" });
 				}
 				return svg;
 			},

@@ -1,6 +1,6 @@
 import type { PasswordLoginFormType } from "#src/pages/login/components/password-login";
 import { BasicContent } from "#src/components";
-import { usePreferences, AccessControlRoles } from "#src/hooks";
+import { AccessControlRoles, usePreferences } from "#src/hooks";
 import { useAuthStore, useUserStore } from "#src/store";
 import { Alert, Button, Card, Typography } from "antd";
 import { clsx } from "clsx";

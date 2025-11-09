@@ -1,4 +1,4 @@
-import { Scrollbar } from "#src/components";
+import { DateTimeDisplay, Scrollbar } from "#src/components";
 import { useLanguage, usePreferences } from "#src/hooks";
 
 import { theme as antdTheme, ConfigProvider } from "antd";
@@ -12,13 +12,17 @@ export interface LayoutSidebarProps {
 }
 
 export default function LayoutSidebar({ children, computedSidebarWidth }: LayoutSidebarProps) {
-	const { sidebarCollapsed, sidebarTheme, isDark } = usePreferences();
+	const { sidebarCollapsed, sidebarTheme, isDark, setPreferences } = usePreferences();
 	const { isRTL } = useLanguage();
 	const {
 		token: { Menu },
 	} = antdTheme.useToken();
 
 	const isFixedDarkTheme = isDark || sidebarTheme === "dark";
+
+	const handleToggleCollapse = () => {
+		setPreferences("sidebarCollapsed", !sidebarCollapsed);
+	};
 
 	return (
 		<ConfigProvider
@@ -42,6 +46,11 @@ export default function LayoutSidebar({ children, computedSidebarWidth }: Layout
 				<Logo sidebarCollapsed={sidebarCollapsed} />
 				<div className="overflow-hidden" style={{ height: `calc(100% - ${headerHeight}px - ${siderTriggerHeight}px)` }}>
 					<Scrollbar>
+						<DateTimeDisplay
+							sidebarCollapsed={sidebarCollapsed}
+							onToggleCollapse={handleToggleCollapse}
+						/>
+
 						{children}
 					</Scrollbar>
 				</div>

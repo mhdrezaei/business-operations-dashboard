@@ -1,5 +1,5 @@
-import { Scrollbar } from "#src/components";
-import { useDeviceType, usePreferences } from "#src/hooks";
+import { DateTimeDisplay, Scrollbar } from "#src/components";
+import { useDeviceType, useLanguage, usePreferences } from "#src/hooks";
 import { cn } from "#src/utils";
 
 import { theme as antdTheme, Drawer } from "antd";
@@ -27,6 +27,7 @@ export default function LayoutMobileMenu() {
 	const { token: { Menu } } = antdTheme.useToken();
 	const { sidebarCollapsed, setPreferences, isDark, sidebarTheme } = usePreferences();
 	const { isMobile } = useDeviceType();
+	const { isRTL } = useLanguage();
 	const { sideNavItems, handleMenuSelect } = useMenu();
 	const isFixedDarkTheme = isDark || sidebarTheme === "dark";
 
@@ -40,12 +41,13 @@ export default function LayoutMobileMenu() {
 						},
 					}}
 					open={sidebarCollapsed}
-					placement="left"
+					placement={isRTL ? "right" : "left"}
 					width="clamp(200px, 50vw, 210px)"
 					className={cn(classes.drawerStyles)}
 					onClose={() => setPreferences("sidebarCollapsed", false)}
 				>
 					<Scrollbar>
+						<DateTimeDisplay sidebarCollapsed={false} />
 						<LayoutMenu
 							autoExpandCurrentMenu
 							menus={sideNavItems}
