@@ -39,7 +39,28 @@
 		"twoColumnNavigation": "双列导航",
 		"twoColumnNavigationTip": "垂直双列菜单在侧边位置",
 		"mixedNavigation": "混合导航",
-		"mixedNavigationTip": "一级导航在顶部，二级导航在侧边"
+		"mixedNavigationTip": "一级导航在顶部，二级导航在侧边",
+		"headerBackground": {
+			"title": "顶栏背景",
+			"default": "默认",
+			"red": "薄暮",
+			"volcano": "火山",
+			"orange": "日暮",
+			"gold": "金盏花",
+			"yellow": "日出",
+			"lime": "青柠",
+			"green": "极光绿",
+			"cyan": "明青",
+			"blue": "拂晓蓝",
+			"geekblue": "极客蓝",
+			"purple": "酱紫",
+			"magenta": "法式洋红",
+			"gray": "中性灰",
+			"custom": "自定义"
+		},
+		"headerHeight": {
+			"title": "顶栏高度"
+		}
 	},
 	"sidebar": {
 		"title": "侧边栏",

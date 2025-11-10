@@ -87,3 +87,6 @@ export function PreferencesLayout() {
 		</>
 	);
 }
+
+export * from "./header-background";
+export * from "./header-height";

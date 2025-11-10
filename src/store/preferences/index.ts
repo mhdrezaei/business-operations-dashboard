@@ -39,6 +39,9 @@ export const DEFAULT_PREFERENCES = {
 
 	/* ================== Layout ================== */
 	navigationStyle: SIDE_NAVIGATION,
+	headerBackgroundType: "default",
+	headerBackgroundColor: "#1677ff",
+	headerHeight: 56,
 
 	/* ================== Tabbar ================== */
 	tabbarEnable: true,

@@ -2,6 +2,7 @@ import type { ButtonProps } from "antd";
 
 import { BasicButton } from "#src/components";
 import { useDeviceType, useLanguage, usePreferences } from "#src/hooks";
+import { useLayout } from "#src/layout/hooks/use-layout";
 import { loginPath } from "#src/router/extra-info";
 import { useAuthStore, usePreferencesStore } from "#src/store";
 
@@ -15,6 +16,8 @@ import {
 	Animation,
 	BuiltinTheme,
 	General,
+	HeaderBackground,
+	HeaderHeight,
 	PreferencesFooter,
 	PreferencesLayout,
 	Sidebar,
@@ -32,6 +35,7 @@ export function Preferences({ ...restProps }: ButtonProps) {
 	const { reset, isDefault, isDark } = usePreferences();
 	const preferences = usePreferencesStore();
 	const logout = useAuthStore(state => state.logout);
+	const { isTopNav, isMixedNav } = useLayout();
 
 	const clearAndLogout = async () => {
 		await logout();
@@ -132,6 +136,14 @@ export function Preferences({ ...restProps }: ButtonProps) {
 						<BuiltinTheme />
 						<Divider>{t("preferences.layout.title")}</Divider>
 						<PreferencesLayout />
+						{(isTopNav || isMixedNav) && (
+							<>
+								<Divider>{t("preferences.layout.headerBackground.title")}</Divider>
+								<HeaderBackground />
+							</>
+						)}
+						<Divider>{t("preferences.layout.headerHeight.title")}</Divider>
+						<HeaderHeight />
 						<Divider>{t("preferences.sidebar.title")}</Divider>
 						<Sidebar />
 						<Divider>{t("preferences.tabbar.title")}</Divider>

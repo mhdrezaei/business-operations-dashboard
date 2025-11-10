@@ -35,10 +35,18 @@ export default function ContainerLayout() {
 	const screens = useBreakpoint();
 	const { isTopNav, isTwoColumnNav, isMixedNav, sidebarWidth, sideCollapsedWidth, firstColumnWidthInTwoColumnNavigation } = useLayout();
 	const isMaximize = useTabsStore(state => state.isMaximize);
-	const { watermark, watermarkContent, enableFooter, fixedFooter, enableBackTopButton, tabbarEnable, sidebarEnable, sidebarCollapsed, setPreferences } = usePreferencesStore();
+	const { watermark, watermarkContent, enableFooter, fixedFooter, enableBackTopButton, tabbarEnable, sidebarEnable, sidebarCollapsed, setPreferences, headerBackgroundType, headerBackgroundColor } = usePreferencesStore();
 	const { isMobile } = useDeviceType();
 	const { isRTL } = useLanguage();
 	const { sideNavItems, topNavItems, handleMenuSelect, sideNavMenuKeyInSplitMode } = useMenu();
+
+	// Get header background color for horizontal menu
+	const getMenuBackgroundColor = () => {
+		if ((isTopNav || isMixedNav) && headerBackgroundType !== "default") {
+			return headerBackgroundColor;
+		}
+		return undefined;
+	};
 
 	const { setLayoutHeaderHeight } = useLayoutHeaderStyle();
 	const { setLayoutFooterHeight } = useLayoutFooterStyle();
@@ -119,7 +127,12 @@ export default function ContainerLayout() {
 						? (
 							<>
 								{isTopNav ? <Logo sidebarCollapsed={false} className="mr-8" /> : null}
-								<LayoutMenu mode="horizontal" menus={topNavItems} handleMenuSelect={handleMenuSelect} />
+								<LayoutMenu
+									mode="horizontal"
+									menus={topNavItems}
+									handleMenuSelect={handleMenuSelect}
+									headerBackgroundColor={getMenuBackgroundColor()}
+								/>
 							</>
 						)
 						: <BreadcrumbViews />}

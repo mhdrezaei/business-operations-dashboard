@@ -77,8 +77,43 @@ export type BuiltinThemeType =
   | "gray"
   | "custom";
 
+export type HeaderBackgroundType =
+  | "red"
+  | "volcano"
+  | "orange"
+  | "gold"
+  | "yellow"
+  | "lime"
+  | "green"
+  | "cyan"
+  | "blue"
+  | "geekblue"
+  | "purple"
+  | "magenta"
+  | "gray"
+  | "custom"
+  | "default";
+
 interface LayoutState {
 	navigationStyle: NavigationType
+	/**
+	 * @zh 顶部导航栏背景色类型
+	 * @en Header background color type for top navigation
+	 * @default "default"
+	 */
+	headerBackgroundType: HeaderBackgroundType
+	/**
+	 * @zh 顶部导航栏自定义背景色
+	 * @en Custom header background color for top navigation
+	 * @default "#1677ff"
+	 */
+	headerBackgroundColor: string
+	/**
+	 * @zh 顶部导航栏高度
+	 * @en Header height in pixels
+	 * @default 56
+	 */
+	headerHeight: number
 }
 
 export interface GeneralState {

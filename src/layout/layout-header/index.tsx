@@ -3,13 +3,12 @@ import { useDeviceType, usePreferences } from "#src/hooks";
 import { useLayout } from "#src/layout/hooks/use-layout";
 import { GlobalSearch, Preferences } from "#src/layout/widgets";
 import { NotificationContainer } from "#src/layout/widgets/notification/notification-container";
-import { useTabsStore } from "#src/store";
+import { usePreferencesStore, useTabsStore } from "#src/store";
 import { cn } from "#src/utils";
 
 import { MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
 import { theme as antdTheme, Button, ConfigProvider, theme } from "antd";
 
-import { headerHeight } from "../constants";
 import { FullscreenButton } from "./components/fullscreen-button";
 import { LanguageButton } from "./components/language-button";
 import { ThemeButton } from "./components/theme-button";
@@ -25,6 +24,31 @@ const buttonProps: ButtonProps = {
 	className: "px-[11px]",
 };
 
+/**
+ * Check if a color is dark by calculating its luminance
+ * @param color - Hex color string (e.g., "#1677ff")
+ * @returns true if the color is dark, false if light
+ */
+function isColorDark(color: string): boolean {
+	if (!color || color === "transparent")
+		return false;
+
+	// Remove # if present
+	const hex = color.replace("#", "");
+
+	// Convert to RGB
+	const r = Number.parseInt(hex.substring(0, 2), 16);
+	const g = Number.parseInt(hex.substring(2, 4), 16);
+	const b = Number.parseInt(hex.substring(4, 6), 16);
+
+	// Calculate luminance using the formula
+	// https://www.w3.org/TR/WCAG20/#relativeluminancedef
+	const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+	// If luminance is less than 0.5, it's a dark color
+	return luminance < 0.5;
+}
+
 export default function LayoutHeader({ className, children }: LayoutHeaderProps) {
 	const {
 		token: { Menu },
@@ -35,10 +59,28 @@ export default function LayoutHeader({ className, children }: LayoutHeaderProps)
 		isDark,
 		sidebarTheme,
 	} = usePreferences();
+	const headerBackgroundType = usePreferencesStore(state => state.headerBackgroundType);
+	const headerBackgroundColor = usePreferencesStore(state => state.headerBackgroundColor);
+	const headerHeight = usePreferencesStore(state => state.headerHeight);
 	const { isMobile } = useDeviceType();
 	const isMaximize = useTabsStore(state => state.isMaximize);
 	const { isTopNav, isMixedNav } = useLayout();
-	const isFixedDarkTheme = isDark || (sidebarTheme === "dark" && (isMixedNav || isTopNav));
+
+	// Check if custom header background is dark
+	const isCustomHeaderDark = (isTopNav || isMixedNav) && headerBackgroundType !== "default" && isColorDark(headerBackgroundColor);
+
+	const isFixedDarkTheme = isDark || (sidebarTheme === "dark" && (isMixedNav || isTopNav)) || isCustomHeaderDark;
+
+	// Calculate header background color
+	const getHeaderBackground = () => {
+		if (isTopNav || isMixedNav) {
+			if (headerBackgroundType === "default") {
+				return (isDark || (sidebarTheme === "dark" && (isMixedNav || isTopNav))) ? Menu?.darkItemBg : Menu?.itemBg;
+			}
+			return headerBackgroundColor;
+		}
+		return (isDark || (sidebarTheme === "dark" && (isMixedNav || isTopNav))) ? Menu?.darkItemBg : Menu?.itemBg;
+	};
 
 	return (
 		<ConfigProvider
@@ -55,8 +97,9 @@ export default function LayoutHeader({ className, children }: LayoutHeaderProps)
 					className,
 				)}
 				style={{
-					background: isFixedDarkTheme ? Menu?.darkItemBg : Menu?.itemBg,
+					background: getHeaderBackground(),
 					height: isMaximize ? 0 : headerHeight,
+					minHeight: isMaximize ? 0 : headerHeight,
 				}}
 			>
 

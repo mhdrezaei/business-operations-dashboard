@@ -39,7 +39,28 @@
 		"twoColumnNavigation": "ناوبری دو ستونه",
 		"twoColumnNavigationTip": "منوی عمودی دو ستونه در سمت صفحه",
 		"mixedNavigation": "ناوبری ترکیبی",
-		"mixedNavigationTip": "ناوبری اصلی در بالا و ناوبری فرعی در کنار"
+		"mixedNavigationTip": "ناوبری اصلی در بالا و ناوبری فرعی در کنار",
+		"headerBackground": {
+			"title": "پس‌زمینه هدر",
+			"default": "پیش‌فرض",
+			"red": "قرمز غباری",
+			"volcano": "قرمز آتشفشانی",
+			"orange": "نارنجی غروب",
+			"gold": "طلایی گل همیشه‌بهار",
+			"yellow": "زرد سپیده‌دم",
+			"lime": "سبز لیمویی",
+			"green": "سبز قطبی",
+			"cyan": "فیروزه‌ای",
+			"blue": "آبی روشن روز",
+			"geekblue": "آبی فناورانه",
+			"purple": "بنفش طلایی",
+			"magenta": "ارغوانی",
+			"gray": "خاکستری",
+			"custom": "سفارشی"
+		},
+		"headerHeight": {
+			"title": "ارتفاع هدر"
+		}
 	},
 	"sidebar": {
 		"title": "نوار کناری",

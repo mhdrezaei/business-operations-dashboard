@@ -7,8 +7,8 @@ import { removeTrailingSlash } from "#src/router/utils";
 import { useAccessStore } from "#src/store";
 import { cn } from "#src/utils";
 
-import { Menu } from "antd";
-import { useEffect, useMemo, useState } from "react";
+import { ConfigProvider, Menu } from "antd";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMatches } from "react-router";
 
 import { useStyles } from "./style";
@@ -26,6 +26,31 @@ interface LayoutMenuProps {
 	autoExpandCurrentMenu?: boolean
 	menus?: MenuItemType[]
 	handleMenuSelect?: (key: string, mode: MenuProps["mode"]) => void
+	headerBackgroundColor?: string
+}
+
+/**
+ * Check if a color is dark by calculating its luminance
+ * @param color - Hex color string (e.g., "#1677ff")
+ * @returns true if the color is dark, false if light
+ */
+function isColorDark(color: string): boolean {
+	if (!color || color === "transparent")
+		return false;
+
+	// Remove # if present
+	const hex = color.replace("#", "");
+
+	// Convert to RGB
+	const r = Number.parseInt(hex.substring(0, 2), 16);
+	const g = Number.parseInt(hex.substring(2, 4), 16);
+	const b = Number.parseInt(hex.substring(4, 6), 16);
+
+	// Calculate luminance
+	const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+	// If luminance is less than 0.5, it's a dark color
+	return luminance < 0.5;
 }
 
 const emptyArray: MenuItemType[] = [];
@@ -34,6 +59,7 @@ export default function LayoutMenu({
 	autoExpandCurrentMenu,
 	handleMenuSelect,
 	menus = emptyArray,
+	headerBackgroundColor,
 }: LayoutMenuProps) {
 	const classes = useStyles();
 	const matches = useMatches();
@@ -41,6 +67,12 @@ export default function LayoutMenu({
 	const { sidebarCollapsed, sidebarTheme, isDark, accordion } = usePreferences();
 	const [openKeys, setOpenKeys] = useState<string[]>([]);
 	const { isMobile } = useDeviceType();
+
+	// Check if the header background is dark (for horizontal menu)
+	const isHeaderBackgroundDark = mode === "horizontal" && headerBackgroundColor && isColorDark(headerBackgroundColor);
+
+	// Determine menu theme: use dark theme if background is dark or user selected dark theme
+	const menuTheme = isHeaderBackgroundDark || isDark ? "dark" : sidebarTheme;
 
 	const menuParentKeys = useMemo(() => {
 		return getParentKeys(wholeMenus);
@@ -133,7 +165,7 @@ export default function LayoutMenu({
 	 * 侧边菜单收起时，自动关闭所有激活的菜单
 	 * @see https://github.com/user-attachments/assets/df2d7b63-acf4-4faa-bea6-7616b7e69621
 	 */
-	useEffect(() => {
+	const updateOpenKeys = useCallback(() => {
 		// 折叠
 		if (sidebarCollapsed) {
 			setOpenKeys([]);
@@ -154,37 +186,69 @@ export default function LayoutMenu({
 				});
 			}
 		}
-	}, [matches, sidebarCollapsed, getSelectedKeys]);
+	}, [sidebarCollapsed, accordion, getSelectedKeys]);
+
+	useEffect(() => {
+		updateOpenKeys();
+	}, [updateOpenKeys]);
 
 	return (
-		<Menu
-			/**
-			 * min-w-0 flex-auto 解决在 Flex 布局中，Menu 没有按照预期响应式省略菜单
-			 * @see https://ant-design.antgroup.com/components/menu#why-menu-do-not-responsive-collapse-in-flex-layout
-			 */
-			className={cn(
-				"!border-none min-w-0 flex-auto",
-				{
-					/**
-					 * @zh 当侧边菜单折叠时，添加背景色
-					 * @en When the side menu is collapsed, add background color
-					 */
-					[classes.menuBackgroundColor]: sidebarCollapsed,
+		<ConfigProvider
+			theme={{
+				components: {
+					Menu: mode === "horizontal" && headerBackgroundColor
+						? {
+							// Submenu popup background
+							subMenuItemBg: headerBackgroundColor,
+							// Horizontal menu item border radius
+							horizontalItemBorderRadius: 8,
+							// Horizontal item margin
+							itemMarginInline: 4,
+							// Item padding
+							itemPaddingInline: 12,
+						}
+						: {},
 				},
-			)}
-			inlineIndent={16}
-			{...menuInlineCollapsedProp}
-			style={{ height: isMobile ? "100%" : "initial" }}
-			mode={mode}
-			theme={isDark ? "dark" : sidebarTheme}
-			items={menus as MenuProps["items"]}
-			{...menuOpenProps}
-			selectedKeys={getSelectedKeys}
-			/**
-			 * 使用 onClick 替代 onSelect 事件，原因是当子路由激活父菜单时，点击父菜单依然可以正常导航。
-			 * @see https://github.com/user-attachments/assets/cf67a973-f210-45e4-8278-08727ab1b8ce
-			 */
-			onClick={({ key }) => handleMenuSelect?.(key, mode)}
-		/>
+			}}
+		>
+			<Menu
+				/**
+				 * min-w-0 flex-auto 解决在 Flex 布局中，Menu 没有按照预期响应式省略菜单
+				 * @see https://ant-design.antgroup.com/components/menu#why-menu-do-not-responsive-collapse-in-flex-layout
+				 */
+				className={cn(
+					"!border-none min-w-0 flex-auto",
+					{
+						/**
+						 * @zh 当侧边菜单折叠时，添加背景色
+						 * @en When the side menu is collapsed, add background color
+						 */
+						[classes.menuBackgroundColor]: sidebarCollapsed,
+					},
+				)}
+				inlineIndent={16}
+				{...menuInlineCollapsedProp}
+				style={{
+					height: isMobile ? "100%" : "initial",
+					...(mode === "horizontal" && headerBackgroundColor
+						? {
+							background: headerBackgroundColor,
+							// Set CSS variable for submenu background
+							["--header-bg-color" as any]: headerBackgroundColor,
+						}
+						: {}),
+				}}
+				mode={mode}
+				theme={menuTheme}
+				items={menus as MenuProps["items"]}
+				{...menuOpenProps}
+				selectedKeys={getSelectedKeys}
+				/**
+				 * 使用 onClick 替代 onSelect 事件，原因是当子路由激活父菜单时，点击父菜单依然可以正常导航。
+				 * @see https://github.com/user-attachments/assets/cf67a973-f210-45e4-8278-08727ab1b8ce
+				 */
+				onClick={({ key }) => handleMenuSelect?.(key, mode)}
+			/>
+		</ConfigProvider>
 	);
 }
