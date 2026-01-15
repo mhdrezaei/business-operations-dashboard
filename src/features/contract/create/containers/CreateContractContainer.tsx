@@ -1,29 +1,32 @@
-import { ProCard } from "#node_modules/@ant-design/pro-components/es";
 import { BasicContent } from "#src/components/index.js";
+import { ProCard } from "@ant-design/pro-components";
 import { Col, Row } from "antd";
-import React from "react";
+import CreateContractMasterForm from "../components/forms/CreateContractMasterForm";
 
 function CreateContractContainer() {
 	return (
 		<>
 			<BasicContent>
-				<Col span={18}>
-					<ProCard>
-						c
-					</ProCard>
-				</Col>
-				<Col span={6}>
-					<Row>
+				<Row gutter={10} justify="space-between">
+
+					<Col span={18}>
 						<ProCard>
-							خلاصه قرارداد
+							<CreateContractMasterForm />
 						</ProCard>
-					</Row>
-					<Row>
-						<ProCard>
-							قرارداد های موجود
-						</ProCard>
-					</Row>
-				</Col>
+					</Col>
+					<Col span={6} className="space-y-4">
+						<Row>
+							<ProCard>
+								خلاصه قرارداد
+							</ProCard>
+						</Row>
+						<Row>
+							<ProCard>
+								قرارداد های موجود
+							</ProCard>
+						</Row>
+					</Col>
+				</Row>
 			</BasicContent>
 		</>
 	);

@@ -2,7 +2,6 @@ import { getContractTypeOptions, getMonthTypeOptions, getYearTypeOptions } from 
 import {
 	ProCard,
 	ProForm,
-	ProFormDatePicker,
 	ProFormDependency,
 	ProFormSelect,
 	ProFormText,
@@ -10,10 +9,10 @@ import {
 	ProFormUploadButton,
 
 } from "@ant-design/pro-components";
-import { DatePicker, Form } from "antd";
+import { Form } from "antd";
 import { useTranslation } from "react-i18next";
 
-function Contract() {
+function CreateContractMasterForm() {
 	const { t } = useTranslation();
 	const [form] = Form.useForm<any>();
 	const handleFinish = async (e: any) => {
@@ -32,8 +31,6 @@ function Contract() {
 				grid
 				form={form}
 			>
-				<ProFormDatePicker />
-				<DatePicker format="faIRIntl" />
 				<ProFormSelect
 					colSize={12}
 					name="contractType"
@@ -173,4 +170,4 @@ function Contract() {
 	);
 }
 
-export default Contract;
+export default CreateContractMasterForm;
