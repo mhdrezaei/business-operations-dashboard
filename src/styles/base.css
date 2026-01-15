@@ -1,4 +1,4 @@
-/* 不使用 tailwind.css 的 preflight，使用 antd 的 reset 样式，防止和 antd 的样式冲突 */
+/* از preflight در tailwind.css استفاده نمي کنيم؛ از reset انتي دي براي جلوگيري از تداخل */
 @import "antd/dist/reset.css";
 
 #root {
@@ -13,7 +13,7 @@ img {
 /*
 ! tailwindcss v3.4.10 | MIT License | https://tailwindcss.com
 @see https://tailwindcss.com/docs/divide-width
-如果不设置 border， tailwind 普通元素设置 divide 不生效
+اگر border تنظيم نشود، divide در المان هاي معمولي tailwind اثر نمي کند
 */
 *,
 :after,
@@ -22,7 +22,7 @@ img {
 }
 
 /*
-解决 antd 表格高度未超出，不显示滚动条
+رفع مشکل: وقتي ارتفاع جدول antd بيش از حد نيست، اسکرول نمايش داده نمي شود
 */
 .ant-table-body {
 	overflow: auto !important;

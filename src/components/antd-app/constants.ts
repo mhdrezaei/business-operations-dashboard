@@ -1,6 +1,6 @@
-// CSS 变量前缀
+// پيشوند متغيرهاي CSS
 export const prefix = "oo";
-// 基础色
+// رنگ هاي پايه
 export const colors = [
 	"blue",
 	"purple",
@@ -16,7 +16,7 @@ export const colors = [
 	"gold",
 	"lime",
 ];
-// 品牌色
+// رنگ هاي برند
 export const brandColors = [
 	"colorPrimary",
 	"colorPrimaryBg",
@@ -29,7 +29,7 @@ export const brandColors = [
 	"colorPrimaryText",
 	"colorPrimaryTextActive",
 ];
-// 成功色
+// رنگ هاي موفقيت
 export const successColors = [
 	"colorSuccess",
 	"colorSuccessBg",
@@ -42,7 +42,7 @@ export const successColors = [
 	"colorSuccessText",
 	"colorSuccessTextActive",
 ];
-// 警告色
+// رنگ هاي هشدار
 export const warningColors = [
 	"colorWarning",
 	"colorWarningBg",
@@ -55,7 +55,7 @@ export const warningColors = [
 	"colorWarningText",
 	"colorWarningTextActive",
 ];
-// 错误色
+// رنگ هاي خطا
 export const errorColors = [
 	"colorError",
 	"colorErrorBg",
@@ -68,7 +68,7 @@ export const errorColors = [
 	"colorErrorText",
 	"colorErrorTextActive",
 ];
-// 信息色
+// رنگ هاي اطلاعات
 export const infoColors = [
 	"colorInfo",
 	"colorInfoBg",
@@ -81,31 +81,31 @@ export const infoColors = [
 	"colorInfoText",
 	"colorInfoTextActive",
 ];
-// 功能性色
+// رنگ هاي عملکردي
 export const functionalColors = [
 	...successColors,
 	...warningColors,
 	...errorColors,
 	...infoColors,
 ];
-// 中性色
+// رنگ هاي خنثي
 export const neutralColors = [
 	"colorText",
 	"colorTextSecondary",
 	"colorTextTertiary",
 	"colorTextQuaternary",
-	// 组件容器背景色
+	// رنگ پس زمينه کانتينر کامپوننت
 	"colorBgContainer",
 	"colorBgElevated",
-	// 布局背景色
+	// رنگ پس زمينه چيدمان
 	"colorBgLayout",
 
 	"colorBgSpotlight",
 	"colorBgMask",
-	// 边框色
+	// رنگ حاشيه
 	"colorBorder",
 	"colorBorderSecondary",
-	// 填充色
+	// رنگ پرشدگي
 	"colorFill",
 	"colorFillSecondary",
 	"colorFillTertiary",
@@ -124,15 +124,15 @@ export const baseColorPalettes = colors.flatMap(color =>
 );
 
 /**
- * antd 的 token 中未提供关于 gray 系列的颜色
+ * در token هاي antd رنگ هاي سري خاکستري ارائه نشده است
  *
- * 相关问题：
+ * مسائل مرتبط:
  * @see https://github.com/ant-design/ant-design/pull/31129
  * @see https://github.com/ant-design/ant-design/discussions/45411
  * @see https://github.com/ant-design/ant-design/issues/44247
  *
  *
- * 颜色来源：
+ * منبع رنگ:
  * @see https://ant.design/docs/spec/colors#neutral-color-palette
  */
 export const neutralColorPalettes = ["#fafafa", "#f5f5f5", "#f0f0f0", "#d9d9d9", "#bfbfbf", "#8c8c8c", "#595959", "#434343", "#262626", "#1f1f1f", "#141414"];

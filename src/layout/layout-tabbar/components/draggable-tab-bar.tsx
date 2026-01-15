@@ -50,7 +50,7 @@ interface DraggableTabBarProps {
 }
 
 export function DraggableTabBar({ tabBarProps, DefaultTabBar, tabItems, items, onClickMenu }: DraggableTabBarProps) {
-	// activationConstraint 设置拖拽传感器，激活条件为指针移动至少 5 像素
+	// activationConstraint براي حسگر درگ؛ شرط فعال سازي جابجايي حداقل 5 پيکسل است
 	const sensor = useSensor(PointerSensor, { activationConstraint: { distance: 5 } });
 	const changeTabOrder = useTabsStore(state => state.changeTabOrder);
 

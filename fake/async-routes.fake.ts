@@ -1,12 +1,12 @@
-import { about, access, home, outside, personalCenter, routeNest, system } from "#/src/router/extra-info";
+import { about, access, outside, personalCenter, routeNest, system } from "#/src/router/extra-info";
 import { defineFakeRoute } from "vite-plugin-fake-server/client";
 import { ADMIN_TOKEN } from "./constants";
 import { resultSuccess } from "./utils";
 
 /**
- * roles：页面级别权限，这里模拟二种 "admin"、"common"
- * admin：管理员角色
- * common：普通角色
+ * roles: دسترسي سطح صفحه، اينجا دو نوع "admin" و "common" شبيه سازي شده است
+ * admin: نقش مدير
+ * common: نقش عادي
  */
 
 const systemManagementRouter = {
@@ -78,15 +78,15 @@ const systemManagementRouter = {
 	],
 };
 
-const homeRouter = {
-	path: "/home",
-	component: "/home/index.tsx",
-	handle: {
-		icon: "HomeOutlined",
-		title: "common.menu.home",
-		order: home,
-	},
-};
+// const homeRouter = {
+// 	path: "/home",
+// 	component: "/home/index.tsx",
+// 	handle: {
+// 		icon: "HomeOutlined",
+// 		title: "common.menu.home",
+// 		order: home,
+// 	},
+// };
 
 const aboutRouter = {
 	path: "/about",
@@ -234,7 +234,7 @@ export default defineFakeRoute([
 				},
 				children: [
 					/**
-					 * @zh 通过接口获取路由时可见
+					 * @fa فقط هنگام دريافت مسيرها از طريق API قابل مشاهده است
 					 * @en Visible only when getting routes through the interface
 					 */
 					{
@@ -285,15 +285,66 @@ export default defineFakeRoute([
 						},
 				],
 			};
+			// const contractsManangement = {
+			// 	path: "/contractsManangement",
+			// 	handle: {
+			// 		icon: "SafetyOutlined",
+			// 		title: "common.menu.contractsManangement",
+			// 		order: access,
+			// 	},
+			// 	children: [
+			// 		/**
+			// 		 * @fa فقط هنگام دريافت مسيرها از طريق API قابل مشاهده است
+			// 		 * @en Visible only when getting routes through the interface
+			// 		 */
+			// 		isAdmin
+			// 		&& {
+			// 			path: "/contractsManangement/new",
+			// 			handle: {
+			// 				icon: "CloudOutlined",
+			// 				title: "common.menu.newContract",
+			// 				permissions: isAdmin
+			// 					? [
+			// 						"permission:button:get",
+			// 						"permission:button:update",
+			// 						"permission:button:delete",
+			// 						"permission:button:add",
+			// 					]
+			// 					: [
+			// 						"permission:button:get",
+			// 					],
+			// 			},
+			// 		},
+			// 		isAdmin
+			// 		&& {
+			// 			path: "/contractsManangement/edit",
+			// 			handle: {
+			// 				icon: "FileTextOutlined",
+			// 				title: "common.menu.editContract",
+			// 				permissions: isAdmin
+			// 					? [
+			// 						"permission:button:get",
+			// 						"permission:button:update",
+			// 						"permission:button:delete",
+			// 						"permission:button:add",
+			// 					]
+			// 					: [
+			// 						"permission:button:get",
+			// 					],
+			// 			},
+			// 		},
+			// 	],
+			// };
 			return resultSuccess(
 				[
-					homeRouter,
+					// homeRouter,
 					accessRouter,
 					aboutRouter,
 					systemManagementRouter,
 					outsideRouter,
 					personalCenterRouter,
 					routeNestRouter,
+					// contractsManangement,
 				],
 			);
 		},

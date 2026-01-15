@@ -17,10 +17,11 @@ import { getParentKeys } from "./utils";
 interface LayoutMenuProps {
 	mode?: MenuProps["mode"]
 	/**
-	 * 控制是否自动展开当前路由对应的菜单项
+	 * کنترل مي کند آيا منوي مسير فعلي به صورت خودکار باز شود
 	 *
 	 * Why?
-	 * 注意：当菜单模式为顶部导航模式，菜单 mode 为 horizontal，初次进入页面时，菜单不应自动展开，可以指定 autoExpandCurrentMenu 为 false 关闭自动展开功能
+	 * توجه: وقتي منو در حالت ناوبري بالا و mode افقي است، در ورود اوليه نبايد خودکار باز شود؛
+	 * مي توان با autoExpandCurrentMenu = false اين رفتار را خاموش کرد
 	 * @see https://github.com/user-attachments/assets/705ae01d-db7f-4f42-b4dd-66adba0dd68f
 	 */
 	autoExpandCurrentMenu?: boolean
@@ -111,7 +112,7 @@ export default function LayoutMenu({
 	);
 
 	const menuInlineCollapsedProp = useMemo(() => {
-		/* inlineCollapsed 只在 inline 模式可用 */
+		/* inlineCollapsed فقط در حالت inline قابل استفاده است */
 		if (mode === "inline") {
 			return { inlineCollapsed: isMobile ? false : sidebarCollapsed };
 		}
@@ -120,12 +121,12 @@ export default function LayoutMenu({
 
 	const handleOpenChange: MenuProps["onOpenChange"] = (keys) => {
 		/**
-		 * 1. 手风琴模式，点击菜单项，自动关闭其他菜单
-		 * 2. 非手风琴模式且菜单是收起的，鼠标悬浮菜单自动关闭其他菜单
+		 * 1. حالت آکاردئون: با کليک، ساير منوها بسته مي شوند
+		 * 2. در حالت غيرآکاردئون و جمع شده، با هاور منوهاي ديگر بسته مي شوند
 		 *
-		 * 为什么不使用 antd menu 案例中的代码：
-		 * @see https://ant.design/components/menu-cn#menu-demo-sider-current
-		 * 原因：非手风琴模式下打开多个菜单，切换到手风琴模式下，点击菜单项，不会自动关闭其他菜单
+		 * چرا از نمونه کد antd menu استفاده نشد:
+		 * چون در حالت غيرآکاردئون با باز بودن چند منو، پس از سوئيچ به آکاردئون،
+		 * کليک روي يک منو بقيه را نمي بندد
 		 */
 		if (accordion || sidebarCollapsed) {
 			// eslint-disable-next-line unicorn/prefer-includes
@@ -150,7 +151,7 @@ export default function LayoutMenu({
 	};
 
 	const menuOpenProps = useMemo(() => {
-		// 如果开启了手风琴模式，则需要自动展开菜单
+		// اگر آکاردئون فعال باشد، بايد منو خودکار باز شود
 		if (autoExpandCurrentMenu) {
 			return {
 				openKeys,
@@ -161,22 +162,22 @@ export default function LayoutMenu({
 	}, [autoExpandCurrentMenu, openKeys, handleOpenChange]);
 
 	/**
-	 * 侧边菜单展开时，自动展开激活的菜单
-	 * 侧边菜单收起时，自动关闭所有激活的菜单
+	 * وقتي منوي کناري باز است، منوي فعال را خودکار باز کن
+	 * وقتي منوي کناري جمع است، همه منوهاي فعال را ببند
 	 * @see https://github.com/user-attachments/assets/df2d7b63-acf4-4faa-bea6-7616b7e69621
 	 */
 	const updateOpenKeys = useCallback(() => {
-		// 折叠
+		// جمع شدن
 		if (sidebarCollapsed) {
 			setOpenKeys([]);
 		}
-		// 展开
+		// باز شدن
 		else {
-			// 手风琴模式，只展开当前激活的菜单
+			// حالت آکاردئون: فقط منوي فعال را باز کن
 			if (accordion) {
 				setOpenKeys(getSelectedKeys);
 			}
-			// 非手风琴模式，展开所有激活的菜单
+			// حالت غيرآکاردئون: همه منوهاي فعال را باز کن
 			else {
 				setOpenKeys((prevOpenKeys) => {
 					if (prevOpenKeys.length === 0) {
@@ -213,14 +214,14 @@ export default function LayoutMenu({
 		>
 			<Menu
 				/**
-				 * min-w-0 flex-auto 解决在 Flex 布局中，Menu 没有按照预期响应式省略菜单
+				 * min-w-0 flex-auto مشکل منو در Flex را براي جمع شدن واکنش گرا حل مي کند
 				 * @see https://ant-design.antgroup.com/components/menu#why-menu-do-not-responsive-collapse-in-flex-layout
 				 */
 				className={cn(
 					"!border-none min-w-0 flex-auto",
 					{
 						/**
-						 * @zh 当侧边菜单折叠时，添加背景色
+						 * @fa وقتي منوي کناري جمع است، رنگ پس زمينه اضافه کن
 						 * @en When the side menu is collapsed, add background color
 						 */
 						[classes.menuBackgroundColor]: sidebarCollapsed,
@@ -244,7 +245,8 @@ export default function LayoutMenu({
 				{...menuOpenProps}
 				selectedKeys={getSelectedKeys}
 				/**
-				 * 使用 onClick 替代 onSelect 事件，原因是当子路由激活父菜单时，点击父菜单依然可以正常导航。
+				 * از onClick به جاي onSelect استفاده مي شود چون وقتي مسير فرزند والد را فعال مي کند،
+				 * کليک روي والد بايد همچنان ناوبري کند.
 				 * @see https://github.com/user-attachments/assets/cf67a973-f210-45e4-8278-08727ab1b8ce
 				 */
 				onClick={({ key }) => handleMenuSelect?.(key, mode)}

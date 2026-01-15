@@ -1,0 +1,13 @@
+{
+	"aboutProject": "Über das Projekt",
+	"descriptions": "react-ant-admin ist eine Mid- bis Backend-Lösung auf Basis von React Hooks, Vite und TypeScript. Sie wurde entwickelt, um den schnellen Aufbau von Backend-Systemen auf Unternehmensebene zu ermöglichen und die Einführung neuer Technologien zu erleichtern.",
+	"projectMessage": "Projektinformationen",
+	"version": "Version",
+	"lastBuildTime": "Letzte Build-Zeit",
+	"license": "Lizenz",
+	"previewAddress": "Vorschau-URL",
+	"documentAddress": "Dokumentations-URL",
+	"author": "Autor",
+	"dependencies": "Produktionsabhängigkeiten",
+	"devDependencies": "Entwicklungsabhängigkeiten"
+}

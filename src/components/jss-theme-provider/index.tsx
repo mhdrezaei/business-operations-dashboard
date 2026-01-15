@@ -7,16 +7,16 @@ import { useContext } from "react";
 import { ThemeProvider } from "react-jss";
 
 /**
- * 自定义的JSS主题提供者组件
+ * کامپوننت ارائه دهنده تم JSS سفارشي
  *
- * @zh 自定义的 JSS 主题提供者组件，用于在 React 应用中提供 JSS 主题
+ * @fa کامپوننت ارائه دهنده تم JSS سفارشي براي فراهم کردن تم در برنامه React
  * @en Custom JSS theme provider component, used to provide JSS themes in React applications
  */
 export interface JSSThemeProviderProps {
 	/**
-	 * 子组件
+	 * زيرکامپوننت ها
 	 *
-	 * @zh 子组件，该组件将接收JSS主题
+	 * @fa زيرکامپوننت هايي که تم JSS را دريافت مي کنند
 	 * @en Children components, which will receive the JSS theme
 	 */
 	children: ReactNode
@@ -25,13 +25,13 @@ export interface JSSThemeProviderProps {
 const { useToken } = theme;
 
 /**
- * JSSThemeProvider 组件
+ * کامپوننت JSSThemeProvider
  *
- * @zh JSSThemeProvider 组件，用于将 Ant Design 的 token 和全局主题状态传递给子组件
+ * @fa کامپوننت JSSThemeProvider براي ارسال token هاي Ant Design و وضعيت تم سراسري به زيرکامپوننت ها
  * @en JSSThemeProvider component, used to pass Ant Design tokens and global theme state to child components
  *
- * @param {JSSThemeProviderProps} props 组件属性
- * @returns {JSX.Element} 返回的JSX元素
+ * @param {JSSThemeProviderProps} props ويژگي هاي کامپوننت
+ * @returns {JSX.Element} عنصر JSX بازگشتي
  */
 export function JSSThemeProvider({ children }: JSSThemeProviderProps) {
 	const antdContext = useContext(ConfigProvider.ConfigContext);

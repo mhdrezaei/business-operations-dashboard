@@ -34,15 +34,15 @@ type NotificationEventType = "viewAll" | "makeAll" | "clear" | "read";
 
 interface Props extends ButtonProps {
 	/**
-	 * 显示圆点
+	 * نمايش نقطه
 	 */
 	onEventChange?: (event: NotificationEventType, item?: NotificationItem) => void
 	/**
-	 * 显示圆点
+	 * نمايش نقطه
 	 */
 	dot?: boolean
 	/**
-	 * 消息列表
+	 * فهرست پيام ها
 	 */
 	notifications?: NotificationItem[]
 }
@@ -81,7 +81,7 @@ export const NotificationPopup: React.FC<Props> = ({ dot, notifications, onEvent
 		<Popover
 			// getPopupContainer={triggerNode => triggerNode}
 			placement="bottomLeft"
-			overlayClassName={clsx(classes.notification, "w-72 md:w-96 !right-3")}
+			overlayClassName={clsx(classes.notification, "w-72 md:w-96 ltr:!right-3 rtl:!left-3")}
 			open={open}
 			arrow={false}
 			trigger="click"

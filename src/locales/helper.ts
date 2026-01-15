@@ -10,8 +10,8 @@ interface LanguageModule<T> {
  */
 type LanguageFileMap = Record<string, LanguageModule<LanguageFileMap>>;
 
-export function getZhCnLang() {
-	const langFiles = import.meta.glob<LanguageFileMap>("./zh-CN/**/*.json", {
+export function getDeDeLang() {
+	const langFiles = import.meta.glob<LanguageFileMap>("./de-DE/**/*.json", {
 		import: "default",
 		eager: true,
 	});

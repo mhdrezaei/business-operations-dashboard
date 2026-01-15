@@ -9,6 +9,7 @@ import {
 	ProFormDigit,
 	ProFormRadio,
 	ProFormText,
+
 } from "@ant-design/pro-components";
 import { Form } from "antd";
 import { useEffect } from "react";
@@ -38,7 +39,7 @@ export function Detail({
 
 	const onFinish = async (values: MenuItemType) => {
 		// console.info(values);
-		/* 有 id 则为修改，否则为新增 */
+		/* اگر id دارد، ويرايش است؛ در غير اين صورت افزودن */
 		if (detailData.id) {
 			await fetchUpdateMenuItem(values);
 			window.$message?.success(t("common.updateSuccess"));
@@ -47,9 +48,9 @@ export function Detail({
 			await fetchAddMenuItem(values);
 			window.$message?.success(t("common.addSuccess"));
 		}
-		/* 刷新表格 */
+		/* به روزرساني جدول */
 		refreshTable?.();
-		// 不返回不会关闭弹框
+		// اگر true برنگردد، پنجره بسته نمي شود
 		return true;
 	};
 

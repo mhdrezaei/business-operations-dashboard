@@ -17,11 +17,11 @@ import { useStyles } from "./styles";
 
 export interface BasicTableProps<D, U, V> extends ProTableProps<D, U, V> {
 	/**
-	 * @description 自适应内容区高度，如果设置了 scroll.y，则不进行自适应
+	 * @description ارتفاع ناحيه محتوا به صورت تطبيقي؛ اگر scroll.y تنظيم شود، تطبيقي انجام نمي شود
 	 * @default false
 	 */
 	adaptive?: boolean | {
-		/** 表格距离页面底部的偏移量，默认值为 `16` */
+		/** فاصله جدول تا پايين صفحه، پيش فرض `16` */
 		offsetBottom?: number
 	}
 }
@@ -43,14 +43,14 @@ export function BasicTable<
 		fixedFooter,
 	} = usePreferencesStore();
 	/**
-	 * @description 动态表格中为什么设置 scrollY 为 initial
+	 * @description چرا در جدول پويا scrollY را initial تنظيم مي کنيم
 	 * @see https://gist.github.com/condorheroblog/557c18c61084a1296b716bcb1203315e
 	 */
 	const [scrollY, setScrollY] = useState<number | string | undefined>(adaptive ? "initial" : undefined);
 
 	/**
-	 * @description 固定页脚的高度
-	 * 如果启用了页脚并且页脚是固定的，则返回页脚的高度，否则返回 0
+	 * @description ارتفاع پابرگ ثابت
+	 * اگر پابرگ فعال و ثابت باشد ارتفاع را برگردان، وگرنه 0
 	 */
 	const footerHeight = useMemo(() => {
 		if (enableFooter && fixedFooter) {
@@ -75,11 +75,11 @@ export function BasicTable<
 	};
 
 	/**
-	 * @description 计算分页器的高度
-	 * 如果分页器被禁用，则返回 0，否则根据分页器的大小返回相应的高度
+	 * @description محاسبه ارتفاع صفحه بندي
+	 * اگر pagination غيرفعال باشد 0 برمي گردد، وگرنه بر اساس اندازه ارتفاع را برمي گرداند
 	 *
 	 *
-	 * 无法通过获取 DOM 的方式来计算分页器的高度，因为 pagination 是子组件，父组件无法加载子组件还未加载
+	 * نمي توان ارتفاع صفحه بندي را با DOM محاسبه کرد چون pagination يک زيرکامپوننت است
 	 */
 	const paginationHeight = useMemo(() => {
 		const paginationProps = getPaginationProps();
@@ -89,24 +89,24 @@ export function BasicTable<
 		}
 		else {
 			if (paginationProps.size === "default") {
-				// 默认分页器高度为 32px
+				// ارتفاع پيش فرض صفحه بندي 32px است
 				return 32 + 16 + 16;
 			}
 			else {
-				// 小分页器高度为 24px
+				// ارتفاع صفحه بندي کوچک 24px است
 				return 24 + 16 + 16;
 			}
 		}
 	}, [getPaginationProps]);
 
 	/**
-	 * @description 表格高度自适应
-	 * 这是一个 hook 方法，等待 antd 修复
+	 * @description ارتفاع جدول به صورت تطبيقي
+	 * اين يک hook است و منتظر اصلاح در antd
 	 * @see https://github.com/ant-design/ant-design/issues/23974
 	 */
 	useEffect(() => {
 		if (!isUndefined(props.scroll?.y)) {
-			// 如果 scroll.y 已经被设置，则不进行高度自适应
+			// اگر scroll.y تنظيم شده باشد، تطبيقي انجام نمي شود
 			return;
 		}
 
@@ -118,7 +118,7 @@ export function BasicTable<
 
 			const tableWrapperRect = tableWrapperRef.current.getBoundingClientRect();
 
-			// 如果表格在屏幕外，不进行高度自适应
+			// اگر جدول خارج از صفحه باشد، تطبيقي انجام نمي شود
 			if (tableWrapperRect.top > window.innerHeight) {
 				return;
 			}
@@ -128,17 +128,17 @@ export function BasicTable<
 			if (!tableBody)
 				return;
 
-			// 获取元素的边界框
+			// گرفتن مرزهاي عنصر
 			const tableBodyRect = tableBody.getBoundingClientRect();
 
-			// 16 是 BasicContent 的 padding 值
+			// 16 مقدار padding در BasicContent است
 			const offsetBottom = isObject(adaptive) ? (adaptive.offsetBottom ?? 16) : 16;
 
 			const realOffsetBottom = offsetBottom + paginationHeight + footerHeight;
 
 			const bodyHeight = window.innerHeight - tableBodyRect.top - realOffsetBottom;
 			/**
-			 * @zh scroll.y 设置的是 max-height，所以需要手动设置高度
+			 * @fa scroll.y مقدار max-height را تنظيم مي کند، پس بايد height را دستي تنظيم کرد
 			 * @en scroll.y sets the max-height, so we need to set the height manually
 			 */
 			tableBody.setAttribute("style", `overflow-y: auto;min-height: ${bodyHeight}px;max-height: ${bodyHeight}px;`);

@@ -1,4 +1,4 @@
-/* 代码导出 */
+/* خروجی کد */
 export * from "./add-route-id-by-path";
 export * from "./ascending";
 export * from "./flatten-routes";

@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next";
 import { Outlet, useLocation, useMatches } from "react-router";
 
 /**
- * @zh 根布局组件
+ * @fa کامپوننت چيدمان ريشه
  * @en Root layout component
  */
 export default function LayoutRoot() {
@@ -28,7 +28,7 @@ export default function LayoutRoot() {
 			return;
 		}
 		/**
-		 * @zh authGuardDependencies 为将要请求用户信息的 useEffect 的依赖项，如果为 true 当前路由为 404 路由，则不替换 document.title
+		 * @fa authGuardDependencies وابستگي useEffect براي دريافت اطلاعات کاربر است؛ اگر true باشد و مسير 404 باشد، document.title تغيير نمي کند
 		 * @en authGuardDependencies is the dependency of useEffect that will request user information. If it's true,
 		 */
 		const authGuardDependencies = !whiteRouteNames.includes(location.pathname) && isLogin && !isAuthorized;
@@ -51,7 +51,7 @@ export default function LayoutRoot() {
 	}, [isDark]);
 
 	/**
-	 * @zh 关闭页面加载进度条，配合 ROOT_ROUTE_ID 路由的 loader 和 shouldRevalidate 使用
+	 * @fa بستن نوار پيشرفت بارگذاري صفحه، همراه با loader و shouldRevalidate مسير ROOT_ROUTE_ID
 	 * @en Close the page loading progress bar, used with the loader and shouldRevalidate of the ROOT_ROUTE_ID route
 	 */
 	useEffect(() => {

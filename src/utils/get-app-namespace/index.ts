@@ -1,8 +1,8 @@
 /**
  * Get application namespace with suffix
- * 获取带后缀的应用命名空间
- * @param {string} name - The suffix name to append / 要追加的后缀名称
- * @returns {string} Format: `{namespace}-{version}-{env}-{name}` / 格式: `{命名空间}-{版本}-{环境}-{名称}`
+ * دريافت نام فضاي برنامه با پسوند
+ * @param {string} name - The suffix name to append / نام پسوندي که افزوده مي شود
+ * @returns {string} Format: `{namespace}-{version}-{env}-{name}` / قالب: `{نام فضا}-{نسخه}-{محیط}-{نام}`
  * @example
  * // For Zustand store
  * const storeKey = getAppNamespace('userStore');
@@ -14,7 +14,7 @@ export function getAppNamespace(name: string): string {
 	const appNamespace = import.meta.env.VITE_APP_NAMESPACE;
 
 	if (!appNamespace) {
-		throw new Error("VITE_APP_NAMESPACE is not defined in environment variables / 环境变量中未定义 VITE_APP_NAMESPACE");
+		throw new Error("VITE_APP_NAMESPACE is not defined in environment variables / VITE_APP_NAMESPACE در متغيرهاي محيطي تعريف نشده است");
 	}
 
 	const namespace = `${appNamespace}-${appVersion || "unknown"}-${env}`;

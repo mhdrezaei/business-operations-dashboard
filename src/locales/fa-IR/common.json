@@ -2,6 +2,9 @@
 	"menu": {
 		"home": "خانه",
 		"access": "دسترسی دمو",
+		"contractsManangement": "مدیریت قراردادها",
+		"newContract": "ایجاد قرارداد",
+		"editContract": "ویرایش قرارداد",
 		"accessMode": "حالت دسترسی",
 		"pageControl": "کنترل صفحه",
 		"buttonControl": "کنترل دکمه",

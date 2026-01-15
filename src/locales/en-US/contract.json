@@ -1,0 +1,18 @@
+{
+	"service": {
+		"openapi": "openapi",
+		"psp": "psp",
+		"commercial": "Commercial Service",
+		"sms": "sms",
+		"traffic": "traffic"
+
+	},
+	"formLabel": {
+		"contractType": "Contract Type",
+		"companyName": "Company Name",
+		"startYear": "Start Year",
+		"startMonth": "Start Month",
+		"endYear": "End Year ",
+		"ndMonth": "End Month"
+	}
+}

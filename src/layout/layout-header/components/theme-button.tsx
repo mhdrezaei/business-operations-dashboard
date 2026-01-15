@@ -38,8 +38,8 @@ function injectViewTransitionStyles() {
 }
 
 /**
- * @zh 主题切换组件
- * 允许用户通过按钮切换网站的亮色和暗色主题
+ * @fa کامپوننت تغيير تم
+ * به کاربر اجازه مي دهد با دکمه بين تم روشن و تيره جابجا شود
  *
  * @en Theme Button Component
  * Allows users to toggle between light and dark themes of the website via a button

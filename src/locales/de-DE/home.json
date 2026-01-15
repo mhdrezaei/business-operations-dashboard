@@ -1,0 +1,36 @@
+{
+	"newVisits": "Neue Besuche",
+	"messages": "Nachrichten",
+	"purchases": "Käufe",
+	"shoppings": "Einkäufe",
+
+	"sales": "Umsatz",
+	"thisWeek": "Diese Woche",
+	"thisMonth": "Dieser Monat",
+	"thisYear": "Dieses Jahr",
+
+	"monday": "Montag",
+	"tuesday": "Dienstag",
+	"wednesday": "Mittwoch",
+	"thursday": "Donnerstag",
+	"friday": "Freitag",
+	"saturday": "Samstag",
+	"sunday": "Sonntag",
+
+	"views": "Aufrufe",
+	"directAccess": "Direkter Zugriff",
+	"emailMarketing": "E-Mail-Marketing",
+	"affiliateAdvertise": "Affiliate-Marketing",
+	"videoAdvertise": "Video-Werbung",
+
+	"salesCategoryProportion": "Anteil der Umsatzkategorien",
+	"electronics": "Elektronik",
+	"homeGoods": "Haushaltswaren",
+	"apparelAccessories": "Bekleidung & Accessoires",
+	"foodBeverages": "Lebensmittel & Getränke",
+	"beautySkincare": "Beauty & Hautpflege",
+
+	"allChannels": "Alle Kanäle",
+	"online": "Online",
+	"site": "Website"
+}

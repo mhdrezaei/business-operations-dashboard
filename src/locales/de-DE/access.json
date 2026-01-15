@@ -1,0 +1,39 @@
+{
+	"accessMode": {
+		"title": "Sichtbarkeit der Backend-Zugriffsberechtigungen",
+		"description": "Diese Seite unterstützt derzeit ausschließlich die Steuerung der Routen-Sichtbarkeit über Backend-Schnittstellen."
+	},
+	"adminVisible": {
+		"title": "Nur für Administratoren sichtbar",
+		"description": "Diese Seite ist ausschließlich für Administrator-Konten sichtbar."
+	},
+	"commonVisible": {
+		"title": "Für Standardbenutzer sichtbar",
+		"description": "Diese Seite ist ausschließlich für Standardbenutzer sichtbar."
+	},
+	"pageControl": {
+		"alertMessage": "Demonstration der Frontend-Seitenzugriffsrechte",
+		"alertDescription": "Wechseln Sie zwischen verschiedenen Benutzerkonten und beobachten Sie die Änderungen im Untermenü „Berechtigungsdemonstration“ auf der linken Seite.",
+		"cardTitle": "Berechtigungsmodus",
+		"frontendControl": "Frontend-Berechtigungssteuerung",
+		"backendControl": "Backend-Berechtigungssteuerung",
+		"switchToFrontend": "Zum Frontend-Berechtigungsmodus wechseln",
+		"switchToBackend": "Zum Backend-Berechtigungsmodus wechseln",
+		"switchAdmin": "Zu Administrator-Benutzer wechseln",
+		"switchCommon": "Zu Standardbenutzer wechseln",
+		"currentPermissionMode": "Aktueller Berechtigungsmodus:",
+		"accountSwitching": "Kontowechsel",
+		"warningMessage": "Wenn enableFrontendAccess und enableBackendAccess identisch sind, ist ein Wechsel des Routing-Modus nicht möglich."
+	},
+	"buttonControl": {
+		"alertMessage": "Demonstration der Frontend-Button-Berechtigungen",
+		"alertDescription": "Wechseln Sie zwischen verschiedenen Benutzerkonten, um die Änderungen der Buttons zu beobachten.",
+		"currentRole": "Aktuelle Rolle",
+		"switchAdmin": "Zu Administrator-Benutzer wechseln",
+		"switchCommon": "Zu Standardbenutzer wechseln",
+		"componentControlPermissionCodes": "Komponentenbasierte Steuerung – Berechtigungscodes",
+		"componentControlRoles": "Komponentenbasierte Steuerung – Rollen",
+		"functionControlPermissionCodes": "Funktionsbasierte Steuerung – Berechtigungscodes",
+		"functionControlRoles": "Funktionsbasierte Steuerung – Rollen"
+	}
+}

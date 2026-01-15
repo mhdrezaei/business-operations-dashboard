@@ -1,25 +1,25 @@
 /**
- * 菜单项目类型
+ * نوع آيتم منو
  */
 export interface MenuItemType {
 	/**
-	 * 菜单路径,item 的唯一标志
+	 * مسير منو، شناسه يکتاي item
 	 */
 	key: string
 	/**
-	 * 菜单项标题
+	 * عنوان آيتم منو
 	 */
 	label: React.ReactNode
 	/**
-	 * 子菜单的菜单项
+	 * آيتم هاي زيرمنو
 	 */
 	children?: MenuItemType[]
 	/**
-	 * 菜单图标
+	 * آيکن منو
 	 */
 	icon?: React.ReactNode
 	/**
-	 * 是否禁用菜单
+	 * آيا منو غيرفعال است
 	 * @default false
 	 */
 	disabled?: boolean

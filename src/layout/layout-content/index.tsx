@@ -38,7 +38,7 @@ export default function LayoutContent() {
 	}, [pathname, search]);
 
 	/**
-	 * 当使用关闭当前标签页、关闭右侧标签页、关闭左侧标签页、关闭其他标签页、关闭所有标签页功能时，需要清除这个标签页的缓存
+	 * هنگام استفاده از بستن تب فعلي/راست/چپ/ساير/همه، بايد کش اين تب پاک شود
 	 */
 	useEffect(() => {
 		const cacheNodes = aliveRef.current?.getCacheNodes?.();
@@ -50,13 +50,13 @@ export default function LayoutContent() {
 	}, [openTabs]);
 
 	/**
-	 * 关闭多 tab 功能，清空所有的缓存页面
+	 * اگر چند تب غيرفعال شد، همه صفحه هاي کش شده پاک شود
 	 */
 	useEffect(() => {
 		if (!tabbarEnable) {
 			const cacheNodes = aliveRef.current?.getCacheNodes?.();
 			cacheNodes?.forEach((node) => {
-				/* 不包含当前页面 */
+				/* شامل صفحه فعلي نمي شود */
 				if (node.cacheKey !== cacheKey) {
 					aliveRef.current?.destroy(node.cacheKey);
 				}
@@ -64,19 +64,19 @@ export default function LayoutContent() {
 		}
 	}, [tabbarEnable]);
 
-	/* KeepAlive 的刷新 */
+	/* بازنشاني KeepAlive */
 	useEffect(() => {
-		/* 仅在启用标签栏时生效 */
+		/* فقط هنگام فعال بودن نوار تب اثر دارد */
 		if (tabbarEnable && isRefresh) {
 			aliveRef.current?.refresh();
 		}
 	}, [isRefresh]);
 
-	/* 路由设置 keepAlive = false 则不缓存页面 */
+	/* اگر keepAlive = false باشد، صفحه کش نمي شود */
 	const keepAliveExclude = useMemo(() => {
 		/**
-		 * 如果不开启多 tab 功能，则不需要 KeepAlive 功能
-		 * 为了保留页面的切换动画，只需要把所有的路由放到 exclude 数组中
+		 * اگر چند تب فعال نباشد، KeepAlive لازم نيست
+		 * براي حفظ انيميشن تغيير صفحه، همه مسيرها را در exclude قرار بده
 		 */
 		if (!tabbarEnable) {
 			return Object.keys(flatRouteList);
@@ -93,7 +93,7 @@ export default function LayoutContent() {
 		<main
 			id={ELEMENT_ID_MAIN_CONTENT}
 			ref={contentElement}
-			className="relative overflow-y-auto overflow-x-hidden flex-grow"
+			className="relative overflow-y-auto overflow-x-hidden flex-grow mx-4 p-4"
 			style={
 				{
 					backgroundColor: colorBgLayout,

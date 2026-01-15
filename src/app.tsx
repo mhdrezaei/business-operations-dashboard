@@ -11,7 +11,8 @@ import { RouterProvider } from "react-router/dom";
 
 import { router } from "./router";
 import { getCustomAntdTheme } from "./styles/theme/antd/antd-theme";
-import "dayjs/locale/zh-cn";
+import { BodyThemeSync } from "./utils/body-theme-sync";
+import "dayjs/locale/de";
 import "dayjs/locale/fa";
 
 export default function App() {
@@ -50,8 +51,8 @@ export default function App() {
 		if (language === "en-US") {
 			dayjs.locale("en");
 		}
-		else if (language === "zh-CN") {
-			dayjs.locale("zh-cn");
+		else if (language === "de-DE") {
+			dayjs.locale("de-DE");
 		}
 		else if (language === "fa-IR") {
 			dayjs.locale("fa");
@@ -100,7 +101,7 @@ export default function App() {
 	}, [theme, setEmulateTheme]);
 
 	/**
-	 * 更新页面颜色模式（灰色、色弱）
+	 * به روزرساني حالت رنگ صفحه (خاکستري، کوررنگي)
 	 */
 	const updateColorMode = () => {
 		const dom = document.documentElement;
@@ -150,6 +151,8 @@ export default function App() {
 				},
 			}}
 		>
+			<BodyThemeSync />
+
 			<AntdApp>
 				<JSSThemeProvider>
 					<Suspense fallback={null}>

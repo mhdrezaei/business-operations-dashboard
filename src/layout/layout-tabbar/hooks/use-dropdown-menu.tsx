@@ -15,15 +15,15 @@ import { useTranslation } from "react-i18next";
 
 const homePath = import.meta.env.VITE_BASE_HOME_PATH;
 /**
- * 标签页操作的键值对象
+ * شيء کليدهاي عمليات تب
  * @readonly
  * @enum {string}
- * @property {string} REFRESH - 重新加载当前标签页
- * @property {string} CLOSE - 关闭当前标签页
- * @property {string} CLOSE_RIGHT - 关闭右侧标签页
- * @property {string} CLOSE_LEFT - 关闭左侧标签页
- * @property {string} CLOSE_OTHERS - 关闭其他标签页
- * @property {string} CLOSE_ALL - 关闭所有标签页
+ * @property {string} REFRESH - بازخواني تب فعلي
+ * @property {string} CLOSE - بستن تب فعلي
+ * @property {string} CLOSE_RIGHT - بستن تب هاي سمت راست
+ * @property {string} CLOSE_LEFT - بستن تب هاي سمت چپ
+ * @property {string} CLOSE_OTHERS - بستن ساير تب ها
+ * @property {string} CLOSE_ALL - بستن همه تب ها
  */
 export const TabActionKeys = {
 	REFRESH: "refresh",
@@ -37,8 +37,8 @@ export const TabActionKeys = {
 export type TabActionKey = typeof TabActionKeys[keyof typeof TabActionKeys];
 
 /**
- * 自定义钩子，用于处理标签页的下拉菜单
- * @returns {[Function, Function]} 返回一个元组，包含菜单项生成函数和菜单点击处理函数
+ * هوک سفارشي براي منوي کشويي تب ها
+ * @returns {[Function, Function]} يک تاپل شامل سازنده آيتم هاي منو و هندلر کليک
  */
 export function useDropdownMenu() {
 	const { t } = useTranslation();
@@ -54,9 +54,9 @@ export function useDropdownMenu() {
 	} = useTabsStore();
 	const { refresh } = useKeepAliveContext();
 	/**
-	 * 生成菜单项
-	 * @param {string} tabKey - 当前标签页的键
-	 * @returns {MenuProps["items"]} 菜单项配置
+	 * توليد آيتم هاي منو
+	 * @param {string} tabKey - کليد تب فعلي
+	 * @returns {MenuProps["items"]} پیکربندي آيتم هاي منو
 	 */
 	const items = useCallback((tabKey: string): MenuProps["items"] => {
 		const isOnlyTab = openTabs.size === 2 && openTabs.has(homePath);
@@ -104,13 +104,13 @@ export function useDropdownMenu() {
 	}, [t, activeKey, homePath, openTabs]);
 
 	/**
-	 * 定义菜单操作与对应的处理函数
+	 * تعريف عمليات منو و توابع متناظر
 	 */
 	const actions = useMemo(() => ({
 		[TabActionKeys.REFRESH]: (currentPath: string) => {
-			// 刷新 KeepAlive 缓存的页面
+			// بازخواني صفحه کش شده KeepAlive
 			refresh(currentPath);
-			// 重新渲染页面
+			// رندر مجدد صفحه
 			setIsRefresh(true);
 		},
 		[TabActionKeys.CLOSE]: removeTab,
@@ -121,9 +121,9 @@ export function useDropdownMenu() {
 	}), [removeTab, closeRightTabs, closeLeftTabs, closeOtherTabs, closeAllTabs]);
 
 	/**
-	 * 处理菜单点击事件
-	 * @param {string} menuKey - 被点击的菜单项键
-	 * @param {string} nodeKey - 当前标签页的键
+	 * پردازش کليک منو
+	 * @param {string} menuKey - کليد آيتم منوي کليک شده
+	 * @param {string} nodeKey - کليد تب فعلي
 	 */
 	const onClickMenu = useCallback((menuKey: string, nodeKey: string) => {
 		const action = actions[menuKey as keyof typeof actions];

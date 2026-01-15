@@ -11,19 +11,20 @@ const { Title } = Typography;
 export interface LogoProps {
 	sidebarCollapsed: boolean
 	className?: string
+	width?: number
 }
 
 /**
- * @zh 高度 48px
+ * @fa ارتفاع 48px
  * @en The height is 48px
  */
-export function Logo({ sidebarCollapsed, className }: LogoProps) {
+export function Logo({ sidebarCollapsed, className, width }: LogoProps) {
 	const navigate = useNavigate();
 
 	return (
 		<div
-			style={{ height: headerHeight }}
-			className={clsx("flex items-center justify-center gap-2 cursor-pointer", className)}
+			style={{ height: headerHeight, width: width ? `${width}px` : "100%" }}
+			className={clsx("flex items-center justify-start gap-2 cursor-pointer", className)}
 			onClick={() => navigate(import.meta.env.VITE_BASE_HOME_PATH)}
 		>
 			<img

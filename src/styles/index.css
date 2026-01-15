@@ -1,14 +1,14 @@
 /* Persian Font */
 @import './fonts.css';
 
-/* 自定义重置样式 */
+/* ريست سفارشي استايل */
 @import './base.css';
 
-/* 第三方库样式 */
+/* استايل کتابخانه هاي ثالث */
 @import './global.css';
 
-/* 动画 */
+/* انيميشن */
 @import './animation.css';
 
-/* keepalive 组件样式 */
+/* استايل کامپوننت keepalive */
 @import './keep-alive.css';

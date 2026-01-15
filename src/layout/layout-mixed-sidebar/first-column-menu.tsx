@@ -72,7 +72,8 @@ export default function FirstColumnMenu({
 						items={menus as MenuProps["items"]}
 						theme={isDark ? "dark" : sidebarTheme}
 						/**
-						 * 使用 onClick 替代 onSelect 事件，原因是当子路由激活父菜单时，点击父菜单依然可以正常导航。
+						 * از onClick به جاي onSelect استفاده مي شود چون وقتي مسير فرزند والد را فعال مي کند،
+						 * کليک روي والد بايد همچنان ناوبري کند.
 						 * @see https://github.com/user-attachments/assets/cf67a973-f210-45e4-8278-08727ab1b8ce
 						 */
 						onClick={({ key }) => handleMenuSelect?.(key, "horizontal")}

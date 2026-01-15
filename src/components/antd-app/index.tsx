@@ -15,7 +15,7 @@ export function AntdApp({ children }: AntdAppProps) {
 	const { token: antdTokens } = antdTheme.useToken();
 
 	useEffect(() => {
-		/* 打印查看支持的 token */
+		/* چاپ براي مشاهده token هاي پشتيباني شده */
 		// console.log("antdTokens", antdTokens);
 		setupAntdThemeTokensToHtml(antdTokens);
 	}, [antdTokens]);

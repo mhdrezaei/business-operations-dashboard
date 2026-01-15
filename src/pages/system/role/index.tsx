@@ -61,7 +61,7 @@ export default function Role() {
 						size="small"
 						disabled={!hasAccessByCodes(accessControlCodes.update)}
 						onClick={async () => {
-							/* 请求角色菜单权限 */
+							/* درخواست مجوزهاي منوي نقش */
 							const responseData = await fetchMenuByRoleId({ id: record.id });
 							setIsOpen(true);
 							setTitle(t("system.role.editRole"));

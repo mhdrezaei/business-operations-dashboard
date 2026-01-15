@@ -3,13 +3,13 @@ import type { AppRouteRecordRaw } from "#src/router/types";
 import { filterTree } from "#src/utils";
 
 /**
- * 动态生成路由 - 前端方式
+ * توليد پوياي مسيرها - روش فرانت اند
  */
 export function generateRoutesByFrontend(
 	routes: AppRouteRecordRaw[],
 	roles: string[],
 ) {
-	// 根据角色标识过滤路由表，判断当前用户是否拥有指定权限
+	// فيلتر مسيرها بر اساس نقش و بررسي مجوز کاربر
 	const finalRoutes = filterTree(routes, (route) => {
 		return hasAuthority(route, roles);
 	});
@@ -18,7 +18,7 @@ export function generateRoutesByFrontend(
 }
 
 /**
- * 判断路由是否有权限访问
+ * بررسي دسترسي براي مسير
  * @param route
  * @param accesses
  */

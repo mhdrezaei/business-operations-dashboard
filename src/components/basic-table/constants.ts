@@ -1,2 +1,2 @@
-// 添加到 table 的 classname
+// نام کلاس اضافه شده به table
 export const BASIC_TABLE_ROOT_CLASS_NAME = "basic-table";

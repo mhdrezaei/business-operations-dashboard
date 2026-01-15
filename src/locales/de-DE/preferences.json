@@ -1,0 +1,142 @@
+{
+	"title": "Einstellungen",
+	"copyPreferences": "Einstellungen kopieren",
+	"copyPreferencesSuccessTitle": "Kopieren erfolgreich",
+	"copyPreferencesSuccess": "Einstellungen wurden erfolgreich kopiert. Bitte überschreiben Sie diese in `src/store/preferences/index.ts`.",
+	"clearAndLogout": "Cache leeren & abmelden",
+
+	"theme": {
+		"title": "Design",
+		"followSystem": "Systemeinstellung übernehmen",
+		"light": "Hell",
+		"dark": "Dunkel",
+		"colorBlindMode": "Farbenblind-Modus",
+		"grayMode": "Graustufenmodus",
+		"radius": "Eckenradius",
+		"builtin": {
+			"title": "Vordefiniert",
+			"red": "Staubrot",
+			"volcano": "Vulkan",
+			"orange": "Sonnenuntergangsorange",
+			"gold": "Ringelblumengold",
+			"yellow": "Sonnenaufgangsgelb",
+			"lime": "Limette",
+			"green": "Polargrün",
+			"cyan": "Cyan",
+			"blue": "Tageslichtblau",
+			"geekblue": "Geek-Blau",
+			"purple": "Goldenes Violett",
+			"magenta": "Magenta",
+			"gray": "Grau",
+			"custom": "Benutzerdefiniert"
+		}
+	},
+
+	"layout": {
+		"title": "Layout",
+		"topNavigation": "Obere Navigation",
+		"topNavigationTip": "Menü in oberer Position",
+		"sideNavigation": "Seitennavigation",
+		"sideNavigationTip": "Menü an der Seite",
+		"twoColumnNavigation": "Zweispaltige Navigation",
+		"twoColumnNavigationTip": "Vertikales zweispaltiges Menü an der Seite",
+		"mixedNavigation": "Gemischte Navigation",
+		"mixedNavigationTip": "Primäre Navigation oben, sekundäre Navigation an der Seite",
+		"headerBackground": {
+			"title": "Header-Hintergrund",
+			"default": "Standard",
+			"red": "Staubrot",
+			"volcano": "Vulkan",
+			"orange": "Sonnenuntergangsorange",
+			"gold": "Ringelblumengold",
+			"yellow": "Sonnenaufgangsgelb",
+			"lime": "Limette",
+			"green": "Polargrün",
+			"cyan": "Cyan",
+			"blue": "Tageslichtblau",
+			"geekblue": "Geek-Blau",
+			"purple": "Goldenes Violett",
+			"magenta": "Magenta",
+			"gray": "Grau",
+			"custom": "Benutzerdefiniert"
+		},
+		"headerHeight": {
+			"title": "Header-Höhe"
+		}
+	},
+
+	"sidebar": {
+		"title": "Seitenleiste",
+		"width": "Breite",
+		"enable": "Seitenleiste anzeigen",
+		"collapsedWidth": "Breite des eingeklappten Menüs",
+		"collapsed": "Menü einklappen",
+		"collapsedShowTitle": "Menütitel anzeigen",
+		"firstColumnWidthInTwoColumnNavigation": "Breite der ersten Spalte bei zweispaltiger Navigation",
+		"sidebarTheme": "Design der Seitenleiste",
+		"accordion": "Akkordeon-Menü",
+		"autoActivateChild": "Untermenü automatisch aktivieren",
+		"autoActivateChildTip": "`Aktiviert`, um beim Klicken auf ein Menü automatisch das Untermenü zu aktivieren.",
+		"expandOnHover": "Beim Hover erweitern",
+		"expandOnHoverTip": "Beim Überfahren mit der Maus:\n `Aktiviert` – Untermenüs erweitern\n `Deaktiviert` – gesamte Seitenleiste erweitern"
+	},
+
+	"tabbar": {
+		"title": "Tab-Leiste",
+		"enable": "Tab-Leiste aktivieren",
+		"icon": "Tab-Symbol anzeigen",
+		"showMore": "Mehr-Schaltfläche anzeigen",
+		"showMaximize": "Maximieren-Schaltfläche anzeigen",
+		"persist": "Tabs beibehalten",
+		"draggable": "Verschieben per Drag & Drop aktivieren",
+		"styleType": {
+			"title": "Tab-Stil",
+			"chrome": "Chrome",
+			"card": "Karte",
+			"plain": "Einfach",
+			"brisk": "Kompakt"
+		},
+		"contextMenu": {
+			"refresh": "Aktualisieren",
+			"close": "Schließen",
+			"pin": "Anheften",
+			"unpin": "Lösen",
+			"closeLeft": "Tabs links schließen",
+			"closeRight": "Tabs rechts schließen",
+			"closeOthers": "Andere Tabs schließen",
+			"closeAll": "Alle Tabs schließen",
+			"openInNewWindow": "In neuem Fenster öffnen",
+			"maximize": "Maximieren",
+			"restoreMaximize": "Wiederherstellen"
+		}
+	},
+
+	"animation": {
+		"title": "Animation",
+		"loading": "Seitenladen",
+		"transition": "Seitenübergang",
+		"progress": "Ladefortschritt"
+	},
+
+	"general": {
+		"title": "Allgemein",
+		"language": "Sprache",
+		"dynamicTitle": "Dynamischer Titel",
+		"watermark": "Wasserzeichen",
+		"watermarkTip": "Wasserzeichen mit Benutzername oder Website – nicht empfohlen",
+		"watermarkContent": "Wasserzeichen-Inhalt",
+		"enableCheckUpdate": "Nach Updates suchen",
+		"enableBackTopButton": "Zurück-nach-oben-Schaltfläche"
+	},
+
+	"footer": {
+		"title": "Footer",
+		"showFooter": "Footer anzeigen",
+		"fixedFooter": "Fixierter Footer",
+		"companyName": "Firmenname",
+		"companyWebsite": "Firmenwebsite",
+		"copyrightDate": "Copyright-Jahr",
+		"ICPNumber": "ICP-Nummer",
+		"ICPLink": "ICP-Link"
+	}
+}

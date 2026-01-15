@@ -8,7 +8,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 /**
- * 默认偏好设置
+ * تنظيمات پيش فرض
  */
 export const DEFAULT_PREFERENCES = {
 	/* ================== General ================== */
@@ -18,7 +18,7 @@ export const DEFAULT_PREFERENCES = {
 	pageLayout: "layout-right",
 	enableBackendAccess: true,
 	enableFrontendAceess: false,
-	language: "zh-CN",
+	language: "fa-IR",
 	enableDynamicTitle: true,
 	enableCheckUpdates: true,
 	checkUpdatesInterval: 1,
@@ -54,7 +54,7 @@ export const DEFAULT_PREFERENCES = {
 
 	/* ================== Sidebar ================== */
 	sidebarEnable: true,
-	sidebarWidth: 210,
+	sidebarWidth: 240,
 	sideCollapsedWidth: 56,
 	sidebarCollapsed: false,
 	sidebarCollapseShowTitle: true,
@@ -66,30 +66,30 @@ export const DEFAULT_PREFERENCES = {
 	/* ================== Footer ================== */
 	enableFooter: true,
 	fixedFooter: true,
-	companyName: "Condor Hero",
-	companyWebsite: "http://github.com/condorheroblog/",
-	copyrightDate: "2023",
+	companyName: "Data Processor Panel",
+	companyWebsite: "https:/karashab-co.ir",
+	copyrightDate: "2026",
 	ICPNumber: "",
 	ICPLink: "",
 } satisfies PreferencesState;
 
 /**
- * 偏好设置操作接口
+ * رابط عمليات تنظيمات
  */
 interface PreferencesAction {
 	reset: () => void
 	changeSiteTheme: (theme: ThemeType) => void
 	changeLanguage: (language: LanguageType) => void
 	setPreferences: {
-		// 单个 key-value 更新
+		// به روزرساني تک key-value
 		<T>(key: string, value: T): void
-		// 对象形式批量更新
+		// به روزرساني دسته اي با شيء
 		<T extends Partial<PreferencesState>>(preferences: T): void
 	}
 }
 
 /**
- * 偏好设置状态管理
+ * مديريت وضعيت تنظيمات
  */
 export const usePreferencesStore = create<
 	PreferencesState & PreferencesAction
@@ -99,7 +99,7 @@ export const usePreferencesStore = create<
 			...DEFAULT_PREFERENCES,
 
 			/**
-			 * 更新偏好设置
+			 * به روزرساني تنظيمات
 			 */
 			setPreferences: (...args: any[]) => {
 				if (args.length === 1) {
@@ -117,7 +117,7 @@ export const usePreferencesStore = create<
 			},
 
 			/**
-			 * 更新主题
+			 * به روزرساني تم
 			 */
 			changeSiteTheme: (theme) => {
 				set(() => {
@@ -126,7 +126,7 @@ export const usePreferencesStore = create<
 			},
 
 			/**
-			 * 更新语言
+			 * به روزرساني زبان
 			 */
 			changeLanguage: (language) => {
 				set(() => {
@@ -135,7 +135,7 @@ export const usePreferencesStore = create<
 			},
 
 			/**
-			 * 重置状态
+			 * بازنشاني وضعيت
 			 */
 			reset: () => {
 				set(() => {

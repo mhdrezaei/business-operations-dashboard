@@ -2,15 +2,15 @@ import NProgress from "nprogress";
 import "nprogress/nprogress.css";
 
 NProgress.configure({
-	// 动画方式
+	// نوع انيميشن
 	easing: "ease",
-	// 递增进度条的速度
+	// سرعت انيميشن، واحد: ميلي ثانيه
 	speed: 500,
-	// 是否显示加载ico
+	// آيا آيکن نمايش داده شود
 	showSpinner: false,
-	// 自动递增间隔
+	// سرعت افزايش خودکار
 	trickleSpeed: 200,
-	// 初始化时的最小百分比
+	// حداقل درصد پيشرفت
 	minimum: 0.3,
 });
 

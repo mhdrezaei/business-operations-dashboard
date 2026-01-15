@@ -10,7 +10,7 @@ import "./styles/index.css";
 
 async function setupApp() {
 	/**
-	 * @zh 初始化国际化，必须放在第一位，loading 中引用了国际化
+	 * @fa راه اندازي بين المللي سازي بايد در ابتدا باشد، چون loading از آن استفاده مي کند
 	 * @en Initialize internationalization, must be placed first. Loading refer to internationalization
 	 */
 	setupI18n();
@@ -24,7 +24,6 @@ async function setupApp() {
 	const root = createRoot(
 		rootElement,
 	);
-
 	root.render(
 		// <StrictMode>
 		<TanstackQuery>

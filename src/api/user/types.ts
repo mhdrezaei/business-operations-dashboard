@@ -13,7 +13,7 @@ export interface UserInfoType {
 	phoneNumber: string
 	description: string
 	roles: Array<string>
-	// 路由可以在此处动态添加
+	// مسيرها مي توانند اينجا به صورت پويا اضافه شوند
 	menus?: AppRouteRecordRaw[]
 }
 

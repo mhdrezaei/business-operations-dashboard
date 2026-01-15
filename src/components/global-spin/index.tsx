@@ -28,7 +28,7 @@ export function GlobalSpin({ children, className }: GlobalSpinProps) {
 	const classes = useStyles();
 	const spinning = useGlobalStore(state => state.globalSpin);
 	/**
-	 * 接口返回结果时间过短，页面可能会出现闪烁，使用 useSpinDelay 优化 Spin
+	 * اگر زمان پاسخ خيلي کوتاه باشد، صفحه ممکن است چشمک بزند؛ از useSpinDelay براي بهبود Spin استفاده مي شود
 	 *
 	 * @see https://github.com/ant-design/ant-design/issues/51828
 	 */

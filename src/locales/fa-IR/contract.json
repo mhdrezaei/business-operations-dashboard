@@ -1,0 +1,32 @@
+{
+	"service": {
+		"openapi": "openapi",
+		"psp": "psp",
+		"commercial": "سرویس های تجاری",
+		"sms": "sms",
+		"traffic": "traffic"
+
+	},
+	"formLabel": {
+		"contractType": "نوع قرارداد ",
+		"companyName": "نام شرکت",
+		"startYear": "سال شروع",
+		"startMonth": "ماه شروع",
+		"endYear": "سال پایان ",
+		"endMonth": "ماه پایان"
+	},
+	"shamsiMonth": {
+		"farvardin": "فروردین",
+		"ordibehesht": "اردیبهشت",
+		"khordad": "خرداد",
+		"tir": "تیر",
+		"mordad": "مرداد",
+		"shahrivar": "شهریور",
+		"mehr": "مهر",
+		"aban": "آبان",
+		"azar": "آذر",
+		"day": "دی",
+		"bahman": "بهمن",
+		"esfand": "اسفند"
+	}
+}

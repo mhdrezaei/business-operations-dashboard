@@ -21,7 +21,7 @@ export function useMenu() {
 	const { pathname } = useCurrentRoute();
 	const matches = useMatches();
 	/**
-	 * 混合菜单模式下需要拆分 menu 的 items
+	 * در حالت منوي ترکيبي بايد menu items جدا شوند
 	 */
 	const shouldSplitMenuItems = useMemo(
 		() => isMixedNav || isTwoColumnNav,
@@ -29,7 +29,7 @@ export function useMenu() {
 	);
 
 	/**
-	 * 混合导航模式下，侧边导航的顶级菜单 key
+	 * کليد منوي سطح اول ناوبري کناري در حالت ترکيبي
 	 */
 	const sideNavMenuKeyInSplitMode = useMemo(() => {
 		if (!shouldSplitMenuItems)
@@ -47,7 +47,7 @@ export function useMenu() {
 		return rootMenuPath ?? "";
 	}, [shouldSplitMenuItems, pathname, matches]);
 
-	/* 混合菜单模式下需要拆分 menu 的 items */
+	/* در حالت منوي ترکيبي بايد menu items جدا شوند */
 	const splitSideNavItems = useMemo(
 		() => {
 			const foundMenu = translatedMenus.find(item => item?.key === sideNavMenuKeyInSplitMode);
@@ -60,7 +60,7 @@ export function useMenu() {
 	);
 
 	/**
-	 * 头部菜单
+	 * منوي بالايي
 	 */
 	const topNavItems = useMemo(() => {
 		if (!shouldSplitMenuItems) {
@@ -69,27 +69,27 @@ export function useMenu() {
 		return translatedMenus.map((item) => {
 			return {
 				...item,
-				/* children 为空数组，无法触发 menu 的 onSelect 事件 */
+				/* اگر children خالي باشد، onSelect اجرا نمي شود */
 				children: undefined,
 			};
 		});
 	}, [shouldSplitMenuItems, translatedMenus]);
 
 	/**
-	 * 侧边菜单
+	 * منوي کناري
 	 */
 	const sideNavItems = useMemo(() => {
 		return shouldSplitMenuItems ? splitSideNavItems : translatedMenus;
 	}, [shouldSplitMenuItems, splitSideNavItems, translatedMenus]);
 
 	/**
-	 * 菜单点击事件处理
+	 * پردازش رويداد کليک منو
 	 */
 	const handleMenuSelect = (key: string, mode: MenuProps["mode"]) => {
 		if (key === removeTrailingSlash(pathname)) {
 			return;
 		}
-		/* 1. 非混合导航模式 2. 混合导航模式下的侧边导航 */
+		/* 1. حالت غيرترکيبي 2. منوي کناري در حالت ترکيبي */
 		if (!shouldSplitMenuItems || mode !== "horizontal") {
 			// eslint-disable-next-line regexp/no-unused-capturing-group
 			if (/http(s)?:/.test(key)) {
@@ -100,10 +100,10 @@ export function useMenu() {
 			}
 		}
 		else {
-			/* 混合导航模式下的顶部导航 */
+			/* ناوبري بالايي در حالت ترکيبي */
 			const rootMenu = translatedMenus.find(item => item?.key === key);
 			const targetMenu = findDeepestFirstItem(rootMenu?.children ?? []);
-			/* 点击顶部的导航默认跳转到菜单下的第一个子项 */
+			/* کليک روي ناوبري بالا به اولين آيتم فرزند مي رود */
 			if (!targetMenu) {
 				navigate(key);
 			}

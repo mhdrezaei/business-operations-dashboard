@@ -1,12 +1,13 @@
 /**
- * 完整版菜单比较多，将 sort 抽离出来，在此方便维护
+ * نسخه کامل منو زياد است؛ sort را جدا کرده ايم تا نگهداري آسان شود
  *
- * 菜单排序，越小越靠前，最好以 10 为基数递增
+ * ترتيب منو: هرچه عدد کوچکتر باشد جلوتر است، بهتر است با گام 10 افزايش يابد
  */
 
 export const home = 1;
 export const access = 10;
 export const routeNest = 20;
+export const contract = 30;
 
 export const outside = 40;
 

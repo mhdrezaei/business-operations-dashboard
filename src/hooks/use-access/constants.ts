@@ -1,18 +1,18 @@
 /**
- * 统一管理权限常量，避免在项目中到处写死字符串，便于维护。
+ * مديريت متمرکز ثابت هاي مجوز براي جلوگيري از رشته هاي ثابت و نگهداري آسان تر
  */
 
 /**
- * 按钮权限前缀
+ * پيشوند مجوز دکمه
  */
 export const permissionPrefix = "permission:button";
 
 /**
- * 常见按钮权限：
- * - get: 获取
- * - update: 更新
- * - delete: 删除
- * - add: 新增
+ * مجوزهاي رايج دکمه:
+ * - get: دريافت
+ * - update: به روزرساني
+ * - delete: حذف
+ * - add: افزودن
  */
 export const accessControlCodes = {
 	get: `${permissionPrefix}:get`,

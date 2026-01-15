@@ -3,20 +3,20 @@ import type { ReactNode } from "react";
 import { useAccess } from "#src/hooks";
 
 interface AccessControlProps {
-	// 权限类型，默认为 code
+	// نوع مجوز، پيش فرض code
 	type?: "code" | "role"
-	// 权限值，可以是字符串或字符串数组
+	// مقدار مجوز، مي تواند رشته يا آرايه باشد
 	codes?: string | string[]
 	children?: ReactNode
-	// 无权限时显示，默认无权限不显示任何内容。
+	// نمايش در صورت نبود مجوز؛ پيش فرض هيچ چيز نمايش داده نمي شود
 	fallback?: ReactNode
 }
 
 /**
- * 权限验证组件
+ * کامپوننت اعتبارسنجي مجوز
  *
- * @param AccessControlProps 权限验证组件的属性
- * @returns 若子组件存在，并且传入的权限值有效，则返回子组件；否则返回 null
+ * @param AccessControlProps ويژگي هاي کامپوننت اعتبارسنجي مجوز
+ * @returns اگر فرزند وجود داشته باشد و مجوز معتبر باشد همان را برمي گرداند؛ در غير اين صورت null
  */
 export function AccessControl({ type = "code", codes, children, fallback }: AccessControlProps) {
 	const { hasAccessByCodes, hasAccessByRoles } = useAccess();

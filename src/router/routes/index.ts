@@ -5,45 +5,45 @@ import { ascending, mergeRouteModules } from "#src/router/utils";
 import { traverseTreeValues } from "#src/utils";
 import { coreRoutes } from "./core";
 
-// 外部路由文件
+// فايل هاي مسير خارجي
 export const externalRouteFiles: RouteFileModule = import.meta.glob("./external/**/*.ts", { eager: true });
-// 前端静态路由文件
+// فايل هاي مسير ثابت فرانت اند
 export const staticRouteFiles: RouteFileModule = import.meta.glob("./static/**/*.ts", { eager: true });
 
 /**
- * 后端动态路由文件
+ * فايل هاي مسير پويا از بک اند
  */
 export const dynamicRouteFiles: RouteFileModule = import.meta.glob("./modules/**/*.ts", { eager: true });
 
 /**
- * 外部路由 1. 不进行权限校验， 2. 不会触发请求，例如用户信息接口
- * @example "privacy-policy", "terms-of-service" 等
+ * مسيرهاي خارجي: 1. بدون بررسي مجوز 2. بدون درخواست، مثل API اطلاعات کاربر
+ * @example "privacy-policy", "terms-of-service" و غيره
  */
 export const externalRoutes: AppRouteRecordRaw[] = mergeRouteModules(externalRouteFiles);
 
-/** 动态路由 */
+/** مسيرهاي پويا */
 export const dynamicRoutes: AppRouteRecordRaw[] = mergeRouteModules(dynamicRouteFiles);
 
-/** 静态路由 */
+/** مسيرهاي ثابت */
 export const staticRoutes: AppRouteRecordRaw[] = mergeRouteModules(staticRouteFiles);
 
 /**
- * 基本路由列表，由核心路由、外部路由组成，会一直存在系统中
+ * فهرست مسيرهاي پايه شامل مسيرهاي هسته و خارجي است و هميشه در سيستم وجود دارد
  */
 const baseRoutes = ascending([
 	...coreRoutes,
 	...externalRoutes,
+	...dynamicRoutes,
 ]);
 
-/** 权限路由列表，包含动态路由和静态路由 */
+/** فهرست مسيرهاي مجوزدار شامل مسيرهاي پويا و ثابت */
 const accessRoutes = [
-	...dynamicRoutes,
 	...staticRoutes,
 ];
 
 /**
- * 路由白名单 1. 不进行权限校验， 2. 不会触发请求，例如用户信息接口
- * @example "privacy-policy", "terms-of-service" 等
+ * فهرست سفيد مسيرها: 1. بدون بررسي مجوز 2. بدون درخواست، مثل API اطلاعات کاربر
+ * @example "privacy-policy", "terms-of-service" و غيره
  */
 const whiteRouteNames = [
 	loginPath,

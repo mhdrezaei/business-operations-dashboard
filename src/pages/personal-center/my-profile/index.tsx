@@ -23,12 +23,12 @@ export default function Profile() {
 	};
 
 	const handleFinish = async () => {
-		window.$message?.success("更新基本信息成功");
+		window.$message?.success("به‌روزرسانی اطلاعات پایه با موفقیت انجام شد");
 	};
 
 	return (
 		<BasicContent className="max-w-md ml-10">
-			<h3>我的资料</h3>
+			<h3>اطلاعات من</h3>
 			<ProForm
 				layout="vertical"
 				onFinish={handleFinish}
@@ -40,11 +40,11 @@ export default function Profile() {
 			>
 				<Form.Item
 					name="avatar"
-					label="头像"
+					label="آواتار"
 					rules={[
 						{
 							required: true,
-							message: "请输入您的昵称!",
+							message: "لطفاً نام نمایشی خود را وارد کنید!",
 						},
 					]}
 				>
@@ -52,31 +52,31 @@ export default function Profile() {
 				</Form.Item>
 				<ProFormText
 					name="username"
-					label="用户名"
+					label="نام کاربری"
 					rules={[
 						{
 							required: true,
-							message: "请输入您的用户名!",
+							message: "لطفاً نام کاربری خود را وارد کنید!",
 						},
 					]}
 				/>
 				<ProFormText
 					name="email"
-					label="邮箱"
+					label="ایمیل"
 					rules={[
 						{
 							required: true,
-							message: "请输入您的邮箱!",
+							message: "لطفاً ایمیل خود را وارد کنید!",
 						},
 					]}
 				/>
 				<ProFormDigit
 					name="phoneNumber"
-					label="联系电话"
+					label="شماره تماس"
 					rules={[
 						{
 							required: true,
-							message: "请输入您的联系电话!",
+							message: "لطفاً شماره تماس خود را وارد کنید!",
 						},
 					]}
 				>
@@ -85,8 +85,8 @@ export default function Profile() {
 				<ProFormTextArea
 					allowClear
 					name="description"
-					label="个人简介"
-					placeholder="个人简介"
+					label="معرفی شخصی"
+					placeholder="معرفی شخصی"
 				/>
 			</ProForm>
 		</BasicContent>

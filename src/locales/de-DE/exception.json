@@ -1,0 +1,7 @@
+{
+	"404SubTitle": "Die von Ihnen aufgerufene Seite existiert leider nicht.",
+	"403SubTitle": "Sie sind nicht berechtigt, auf diese Seite zuzugreifen.",
+	"500SubTitle": "Der Server meldet derzeit einen Fehler.",
+	"unknownComponentSubTitle": "Für die aktuelle Route ist keine entsprechende Komponente vorhanden. Bitte wenden Sie sich an den Entwickler.",
+	"pageErrorTitle": "Ups! Etwas ist schiefgelaufen!"
+}

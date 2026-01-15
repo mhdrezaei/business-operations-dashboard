@@ -8,7 +8,7 @@ export interface VisibleDomRect {
 }
 
 /**
- * @zh 获取元素在可视区域的矩形
+ * @fa دريافت مستطيل عنصر در ناحيه قابل مشاهده
  * @en Get the visible rectangle of an element in the viewport
  * @param element
  */

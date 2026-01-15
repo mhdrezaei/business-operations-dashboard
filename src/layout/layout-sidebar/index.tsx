@@ -3,8 +3,9 @@ import { useLanguage, usePreferences } from "#src/hooks";
 
 import { theme as antdTheme, ConfigProvider } from "antd";
 
+import { useEffect, useState } from "react";
 import { headerHeight, siderTriggerHeight } from "../constants";
-import { Logo, SiderTrigger } from "../widgets";
+import { SiderTrigger } from "../widgets";
 
 export interface LayoutSidebarProps {
 	children?: React.ReactNode
@@ -19,7 +20,19 @@ export default function LayoutSidebar({ children, computedSidebarWidth }: Layout
 	} = antdTheme.useToken();
 
 	const isFixedDarkTheme = isDark || sidebarTheme === "dark";
+	const [isStickTop, setIsStickTop] = useState(false);
 
+	useEffect(() => {
+		const onScroll = () => {
+			// وقتی اسکرول از ارتفاع هدر رد شد
+			setIsStickTop(window.scrollY >= headerHeight);
+		};
+
+		window.addEventListener("scroll", onScroll, { passive: true });
+		onScroll();
+
+		return () => window.removeEventListener("scroll", onScroll);
+	}, []);
 	const handleToggleCollapse = () => {
 		setPreferences("sidebarCollapsed", !sidebarCollapsed);
 	};
@@ -41,9 +54,9 @@ export default function LayoutSidebar({ children, computedSidebarWidth }: Layout
 						boxShadow: isRTL ? "-3px 0 5px 0 rgb(29, 35, 41, 0.05)" : "3px 0 5px 0 rgb(29, 35, 41, 0.05)",
 					}
 				}
-				className={`fixed top-0 bottom-0 ${isRTL ? "right-0 border-l border-l-colorBorderSecondary" : "left-0 border-r border-r-colorBorderSecondary"} overflow-x-hidden overflow-y-auto transition-all`}
+				className={`fixed  ${isStickTop ? "top-0" : "top-20"} flex flex-col justify-between bottom-0  rounded-md ${isRTL ? "right-3 border-l border-l-colorBorderSecondary" : "left-3 border-r border-r-colorBorderSecondary"} overflow-x-hidden overflow-y-auto transition-all`}
 			>
-				<Logo sidebarCollapsed={sidebarCollapsed} />
+				{/* <Logo sidebarCollapsed={sidebarCollapsed} /> */}
 				<div className="overflow-hidden" style={{ height: `calc(100% - ${headerHeight}px - ${siderTriggerHeight}px)` }}>
 					<Scrollbar>
 						<DateTimeDisplay

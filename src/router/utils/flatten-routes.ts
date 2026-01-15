@@ -1,7 +1,7 @@
 import type { AppRouteRecordRaw } from "#src/router/types";
 
 /**
- * 将路由扁平化为一个对象，键为路由的 path，值为路由对象
+ * تبديل مسيرها به يک شيء تخت؛ کليد آن path و مقدار آن شيء مسير است
  */
 
 export function flattenRoutes(routes: AppRouteRecordRaw[]) {

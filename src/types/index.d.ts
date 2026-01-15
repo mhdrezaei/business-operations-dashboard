@@ -1,6 +1,6 @@
 /**
- * 接口返回数据格式
- * data: 接口返回数据
+ * قالب داده بازگشتي API
+ * data: داده بازگشتي API
  */
 interface ApiResponse<T> {
 	code: number
@@ -10,8 +10,8 @@ interface ApiResponse<T> {
 }
 
 /**
- * 数组形式的接口返回数据格式
- * list: 接口返回数据
+ * قالب داده بازگشتي API به صورت آرايه
+ * list: داده بازگشتي API
  */
 interface ApiListResponse<T> extends ApiResponse<T> {
 	result: {
@@ -22,7 +22,7 @@ interface ApiListResponse<T> extends ApiResponse<T> {
 }
 
 /**
- * 拉取表格请求参数
+ * پارامترهاي درخواست دريافت جدول
  */
 interface ApiTableRequest extends Record<string, any> {
 	cqs?: string

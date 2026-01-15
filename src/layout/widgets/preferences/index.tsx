@@ -67,7 +67,7 @@ export function Preferences({ ...restProps }: ButtonProps) {
 			<ConfigProvider
 				theme={{
 					/**
-					 * 当侧边栏深色模式，且是顶部导航或者混合导航时，会影响下面组件的样式，所以这里要重置算法
+					 * اگر سایدبار تيره باشد و ناوبري بالا يا ترکيبي باشد، روي استايل زير تاثير مي گذارد، پس اينجا الگوريتم را ريست کن
 					 */
 					algorithm: isDark
 						? antdTheme.darkAlgorithm

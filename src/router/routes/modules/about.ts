@@ -16,6 +16,7 @@ const routes: AppRouteRecordRaw[] = [
 			order: about,
 			title: $t("common.menu.about"),
 			icon: createElement(CopyrightOutlined),
+			roles: ["common"],
 		},
 		children: [
 			{

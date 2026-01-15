@@ -9,106 +9,106 @@ import { goLogin } from "./go-login";
 let isRefreshing = false;
 
 /**
- * 刷新token并重新发起请求
+ * تازه سازي توکن و ارسال مجدد درخواست
  *
- * @param request 请求对象
- * @param options 请求选项
- * @param refreshToken 刷新token
- * @returns 响应对象
- * @throws 刷新 token 失败时抛出异常
+ * @param request شيء درخواست
+ * @param options گزينه هاي درخواست
+ * @param refreshToken توکن نوسازي
+ * @returns شيء پاسخ
+ * @throws در صورت شکست نوسازي توکن خطا پرتاب مي شود
  */
 export async function refreshTokenAndRetry(request: Request, options: Options, refreshToken: string) {
 	if (!isRefreshing) {
 		isRefreshing = true;
 		try {
-			// 调用 fetchRefreshToken 函数，使用传入的 refreshToken 获取新的 token 和 refreshToken
+			// فراخواني fetchRefreshToken با refreshToken براي دريافت token و refreshToken جديد
 			const freshResponse = await fetchRefreshToken({ refreshToken });
-			// 从响应中提取新的 token
+			// استخراج token جديد از پاسخ
 			const newToken = freshResponse.result.token;
-			// 从响应中提取新的 refreshToken
+			// استخراج refreshToken جديد از پاسخ
 			const newRefreshToken = freshResponse.result.refreshToken;
-			// 将新的 token 和 refreshToken 保存到 userStore 中
+			// ذخيره token و refreshToken جديد در userStore
 			useAuthStore.setState({ token: newToken, refreshToken: newRefreshToken });
-			// 调用 onRefreshed 函数，传入新的 token
+			// فراخواني onRefreshed با token جديد
 			onRefreshed(newToken);
 
-			// 设置请求的 Authorization 头部为新的 token
-			// 重试当前请求
+			// تنظيم هدر Authorization درخواست با token جديد
+			// تلاش مجدد درخواست فعلي
 			request.headers.set(AUTH_HEADER, `Bearer ${newToken}`);
-			// 使用新的 token 重新发起请求
+			// ارسال دوباره درخواست با token جديد
 			return ky(request, options);
 		}
 		catch (error) {
-			// 调用 onRefreshFailed 函数，传入错误对象
-			// refreshToken 认证未通过，拒绝所有等待的请求
+			// فراخواني onRefreshFailed با خطا
+			// عدم تاييد refreshToken، رد کردن تمام درخواست هاي در انتظار
 			onRefreshFailed(error);
-			// 跳转到登录页
+			// رفتن به صفحه ورود
 			goLogin();
-			// 抛出错误
+			// پرتاب خطا
 			throw error;
 		}
 		finally {
-			// 无论是否发生错误，都将 isRefreshing 设置为 false
+			// در هر صورت isRefreshing را false کن
 			isRefreshing = false;
 		}
 	}
 	else {
-		// 等待 token 刷新完成
+		// منتظر اتمام تازه سازي token
 		return new Promise<KyResponse>((resolve, reject) => {
-			// 添加刷新订阅者
+			// افزودن مشترک تازه سازي
 			addRefreshSubscriber({
-				// 当 token 刷新成功后，将新的 token 设置到请求的 Authorization 头部，并重新发起请求
+				// پس از موفقيت تازه سازي token، هدر Authorization را به روز کن و درخواست را دوباره بفرست
 				resolve: async (newToken) => {
 					request.headers.set(AUTH_HEADER, `Bearer ${newToken}`);
 					resolve(ky(request, options));
 				},
-				// 当 token 刷新失败时，拒绝当前 Promise
+				// اگر تازه سازي token ناموفق شد، Promise فعلي را رد کن
 				reject,
 			});
 		});
 	}
 }
 
-// 定义一个数组，用于存储所有等待 token 刷新的订阅者
-// 每个订阅者对象包含 resolve 和 reject 方法，分别用于在 token 刷新成功或失败时调用
+// آرايه اي براي نگهداري تمام مشترک هاي منتظر تازه سازي token
+// هر مشترک شامل resolve و reject است که به ترتيب در موفقيت/شکست فراخواني مي شوند
 let refreshSubscribers: Array<{
-	resolve: (token: string) => void // 当 token 刷新成功时调用的函数，传入新的 token
-	reject: (error: any) => void // 当 token 刷新失败时调用的函数，传入错误信息
+	resolve: (token: string) => void // تابع فراخواني در موفقيت تازه سازي token با token جديد
+	reject: (error: any) => void // تابع فراخواني در شکست تازه سازي token با خطا
 }> = [];
 
 /**
- * 当 token 刷新成功时，通知所有等待的订阅者。
- * 遍历所有订阅者，调用其 resolve 方法，并传入新的 token。
- * 然后清空订阅者列表，准备下一次 token 刷新。
+ * هنگام موفقيت تازه سازي token، به همه مشترک هاي منتظر خبر بده.
+ * همه مشترک ها را مرور کن و resolve را با token جديد صدا بزن.
+ * سپس ليست مشترک ها را خالي کن تا براي بار بعد آماده شود.
  *
- * @param token 刷新后的令牌字符串
+ * @param token رشته توکن تازه سازي شده
  */
 function onRefreshed(token: string) {
 	refreshSubscribers.forEach(subscriber => subscriber.resolve(token));
-	refreshSubscribers = []; // 清空订阅者列表
+	refreshSubscribers = []; // خالي کردن ليست مشترک ها
 }
 
 /**
- * 当 token 刷新失败时，通知所有等待的订阅者。
- * 遍历所有订阅者，调用其 reject 方法，并传入错误信息。
- * 然后清空订阅者列表。
+ * هنگام شکست تازه سازي token، به همه مشترک هاي منتظر خبر بده.
+ * همه مشترک ها را مرور کن و reject را با خطا صدا بزن.
+ * سپس ليست مشترک ها را خالي کن.
  *
- * @param error 刷新失败时产生的错误信息
+ * @param error خطاي ايجاد شده هنگام شکست تازه سازي
  */
 function onRefreshFailed(error: any) {
 	refreshSubscribers.forEach(subscriber => subscriber.reject(error));
-	refreshSubscribers = []; // 清空订阅者列表
+	refreshSubscribers = []; // خالي کردن ليست مشترک ها
 }
 
 /**
- * 添加一个新的订阅者到列表中。
- * 订阅者对象应包含 resolve 和 reject 方法。
+ * افزودن يک مشترک جديد به ليست.
+ * مشترک بايد شامل resolve و reject باشد.
  *
- * @param subscriber 订阅者对象，包含 resolve 和 reject 方法
+ * @param subscriber شيء مشترک شامل resolve و reject
  */
 function addRefreshSubscriber(subscriber: {
-	resolve: (token: string) => void // 当 token 刷新成功时调用的函数
-	reject: (error: any) => void // 当 token 刷新失败时调用的函数
+	resolve: (token: string) => void // تابع فراخواني هنگام موفقيت تازه سازي token
+	reject: (error: any) => void // تابع فراخواني هنگام شکست تازه سازي token
 }) {
-	refreshSubscribers.push(subscriber); // 将新的订阅者添加到列表中
+	refreshSubscribers.push(subscriber); // افزودن مشترک جديد به ليست
 }

@@ -24,34 +24,34 @@ export const siderTriggerHeight = 40;
 export const tabbarHeight = 35;
 
 /**
- * @zh 默认命名空间
+ * @fa نام فضاي پيش فرض
  * @en Default namespace
  */
 export const DEFAULT_NAMESPACE = "react-antd-admin";
 
 /**
- * @zh 主内容区域的元素 ID
+ * @fa شناسه عنصر ناحيه محتواي اصلي
  * @en Main content element ID
  */
 export const ELEMENT_ID_MAIN_CONTENT = `__${DEFAULT_NAMESPACE}_main_content`;
 
 /**
- * @zh layout content 组件的高度
+ * @fa ارتفاع کامپوننت layout content
  * @en Height of the layout content component
  */
 export const CSS_VARIABLE_LAYOUT_CONTENT_HEIGHT = `--${DEFAULT_NAMESPACE}-content-height`;
 /**
- * @zh layout content 组件的宽度
+ * @fa عرض کامپوننت layout content
  * @en Width of the layout content component
  */
 export const CSS_VARIABLE_LAYOUT_CONTENT_WIDTH = `--${DEFAULT_NAMESPACE}-content-width`;
 /**
- * @zh layout header 组件的高度
+ * @fa ارتفاع کامپوننت layout header
  * @en Height of the layout header component
  */
 export const CSS_VARIABLE_LAYOUT_HEADER_HEIGHT = `--${DEFAULT_NAMESPACE}-header-height`;
 /**
- * @zh layout footer 组件的高度
+ * @fa ارتفاع کامپوننت layout footer
  * @en Height of the layout footer component
  */
 export const CSS_VARIABLE_LAYOUT_FOOTER_HEIGHT = `--${DEFAULT_NAMESPACE}-footer-height`;

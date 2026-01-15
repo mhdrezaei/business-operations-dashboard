@@ -6,6 +6,10 @@ export const useStyles = createUseStyles(({ token }) => {
 			backgroundColor: token.colorBgContainer,
 			borderTop: `1px solid ${token.colorBorderSecondary}`,
 			borderBottom: `1px solid ${token.colorBorderSecondary}`,
+			marginLeft: "15px",
+			marginRight: "24px",
+			paddingRight: "5px",
+			borderRadius: "8px",
 		},
 		resetTabs: {
 			"& .ant-tabs-nav::before": {
@@ -14,7 +18,7 @@ export const useStyles = createUseStyles(({ token }) => {
 			"& .ant-tabs-nav": {
 				"margin": 0,
 				"& .ant-tabs-tab": {
-					// antd 自带的动画和 DND 动画冲突
+					// انيميشن داخلي antd با انيميشن DND تداخل دارد
 					transition: "inherit",
 					marginLeft: "0px !important",
 					border: "none !important",

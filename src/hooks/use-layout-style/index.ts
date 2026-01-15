@@ -14,7 +14,7 @@ import { useDebounceFn } from "ahooks";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 /**
- * @zh 获取布局内容区域的样式
+ * @fa دريافت استايل ناحيه محتواي چيدمان
  * @en Get the style of the layout content area
  */
 export function useLayoutContentStyle() {

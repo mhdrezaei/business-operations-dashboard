@@ -10,14 +10,14 @@ import { usePreferencesStore } from "#src/store";
 import { useMemo } from "react";
 
 /**
- * 获取当前页面的布局类型信息
+ * دريافت نوع چيدمان صفحه فعلي
  *
- * @returns 返回包含当前布局类型信息的对象，包含：
- * - currentLayout: 当前导航类型
- * - isSideNav: 是否为侧边导航
- * - isTopNav: 是否为顶部导航
- * - isMixedNav: 是否为混合导航
- * - isTwoColumnNav: 是否为双列导航
+ * @returns آبجکتي شامل اطلاعات چيدمان فعلي:
+ * - currentLayout: نوع ناوبري فعلي
+ * - isSideNav: آيا ناوبري کناري است
+ * - isTopNav: آيا ناوبري بالا است
+ * - isMixedNav: آيا ناوبري ترکيبي است
+ * - isTwoColumnNav: آيا ناوبري دو ستونه است
  */
 export function useLayout() {
 	const { isMobile } = useDeviceType();
@@ -28,7 +28,7 @@ export function useLayout() {
 	const firstColumnWidthInTwoColumnNavigation = usePreferencesStore(state => state.firstColumnWidthInTwoColumnNavigation);
 
 	/**
-	 * 当前导航类型
+	 * نوع ناوبري فعلي
 	 */
 	const currentLayout = useMemo(
 		() => isMobile ? SIDE_NAVIGATION : navigationStyle,
@@ -36,7 +36,7 @@ export function useLayout() {
 	);
 
 	/**
-	 * 是否为侧边导航
+	 * آيا ناوبري کناري است
 	 */
 	const isSideNav = useMemo(
 		() => currentLayout === SIDE_NAVIGATION,
@@ -44,7 +44,7 @@ export function useLayout() {
 	);
 
 	/**
-	 * 是否为顶部导航
+	 * آيا ناوبري بالا است
 	 */
 	const isTopNav = useMemo(
 		() => currentLayout === TOP_NAVIGATION,
@@ -52,7 +52,7 @@ export function useLayout() {
 	);
 
 	/**
-	 * 是否为双列导航
+	 * آيا ناوبري دو ستونه است
 	 */
 	const isTwoColumnNav = useMemo(
 		() => currentLayout === TWO_COLUMN_NAVIGATION,
@@ -60,7 +60,7 @@ export function useLayout() {
 	);
 
 	/**
-	 * 是否为混合导航
+	 * آيا ناوبري ترکيبي است
 	 */
 	const isMixedNav = useMemo(
 		() => currentLayout === MIXED_NAVIGATION,

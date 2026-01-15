@@ -18,7 +18,7 @@ import { SearchFooter } from "./components/search-footer";
 import { SearchPanel } from "./components/search-panel";
 
 /**
- * @zh 偏平化可跳转的菜单项
+ * @fa تخت سازي آيتم هاي منوي قابل ناوبري
  * @en Flat menu item that can be jumped
  */
 function transformMenuToFlatMenu(menus: MenuItemType[], flatMap: MenuItemType[] = []) {
@@ -66,7 +66,7 @@ export function GlobalSearch() {
 	}
 
 	/**
-	 * @zh 将指定索引的元素滚动到视图中
+	 * @fa اسکرول آيتم با انديکس مشخص به داخل ديد
 	 * @en Scroll the specified index element into view
 	 */
 	function scrollSelectedIntoView(index: number) {
@@ -80,7 +80,7 @@ export function GlobalSearch() {
 	}
 
 	/**
-	 * @zh 从搜索历史中移除指定的记录
+	 * @fa حذف رکورد مشخص از تاريخچه جستجو
 	 * @en Remove the specified record from search history
 	 */
 	function removeHistoryItem(key: string) {
@@ -100,7 +100,7 @@ export function GlobalSearch() {
 		if (index === -1)
 			return;
 
-		const activeIndex = (index + direction + length) % length; // 确保 index 在范围内循环
+		const activeIndex = (index + direction + length) % length; // اطمينان از چرخش index در بازه
 		const activeNameKey = resultOptions[activeIndex].key;
 
 		setActiveKey(activeNameKey);
@@ -139,16 +139,16 @@ export function GlobalSearch() {
 
 	/** key up */
 	function handleUp() {
-		handleKeyPress(-1); // 方向 -1 表示向上
+		handleKeyPress(-1); // جهت -1 يعني بالا
 	}
 
 	/** key down */
 	function handleDown() {
-		handleKeyPress(1); // 方向 1 表示向下
+		handleKeyPress(1); // جهت 1 يعني پايين
 	}
 
 	/**
-	 * @zh 快捷键打开搜索面板
+	 * @fa ميانبر براي بازکردن پنل جستجو
 	 * @en Shortcut key to open the search panel
 	 */
 	useKeyPress(["meta.K"], () => {

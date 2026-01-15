@@ -23,7 +23,7 @@ const { useBreakpoint } = Grid;
 
 /**
  * Please do not use this component through lazy, otherwise the switching routing page will flash.
- * 请不要通过 lazy 使用这个组件，否则切换路由页面会发生闪动。
+ * لطفا اين کامپوننت را با lazy استفاده نکنيد، وگرنه هنگام جابجايي مسير صفحه چشمک مي زند.
  *
  * NO:
  * const ContainerLayout = lazy(() => import("#src/layout/container-layout"));
@@ -73,7 +73,7 @@ export default function ContainerLayout() {
 		}
 		const currentSidebarWidth = sidebarCollapsed ? sideCollapsedWidth : sidebarWidth;
 		if (isTwoColumnNav) {
-			/* 双列导航，第一列默认宽度 */
+			/* ناوبري دو ستونه، عرض پيش فرض ستون اول */
 			return currentSidebarWidth + (firstColumnWidthInTwoColumnNavigation ?? 0);
 		}
 		if (sidebarEnableState) {
@@ -93,7 +93,7 @@ export default function ContainerLayout() {
 	]);
 
 	/**
-	 * @zh 计算 header 和 tabbar 的高度
+	 * @fa محاسبه ارتفاع header و tabbar
 	 * @en Calculate the height of header and tabbar
 	 */
 	const headerWrapperHeight = useMemo(() => {
@@ -114,6 +114,23 @@ export default function ContainerLayout() {
 
 	return (
 		<Watermark content={watermark ? watermarkContent : ""}>
+			<LayoutHeader>
+				<Logo sidebarCollapsed={sidebarCollapsed} width={computedSidebarWidth} />
+
+				{isTopNav || isMixedNav
+					? (
+						<>
+							{/* {isTopNav ? <Logo sidebarCollapsed={false} className="mr-8" /> : null} */}
+							<LayoutMenu
+								mode="horizontal"
+								menus={topNavItems}
+								handleMenuSelect={handleMenuSelect}
+								headerBackgroundColor={getMenuBackgroundColor()}
+							/>
+						</>
+					)
+					: <BreadcrumbViews />}
+			</LayoutHeader>
 			<section
 				style={{
 					...(isRTL ? { paddingRight: computedSidebarWidth } : { paddingLeft: computedSidebarWidth }),
@@ -122,21 +139,7 @@ export default function ContainerLayout() {
 					"transition-all flex flex-col h-screen",
 				)}
 			>
-				<LayoutHeader>
-					{isTopNav || isMixedNav
-						? (
-							<>
-								{isTopNav ? <Logo sidebarCollapsed={false} className="mr-8" /> : null}
-								<LayoutMenu
-									mode="horizontal"
-									menus={topNavItems}
-									handleMenuSelect={handleMenuSelect}
-									headerBackgroundColor={getMenuBackgroundColor()}
-								/>
-							</>
-						)
-						: <BreadcrumbViews />}
-				</LayoutHeader>
+
 				{tabbarEnable ? <LayoutTabbar /> : null}
 
 				{/* Mobile Menu */}

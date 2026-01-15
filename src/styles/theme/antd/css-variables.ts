@@ -2,7 +2,7 @@ import { colorPaletteNumbers, colors, neutralColorPalettes, neutralColors, produ
 import { hexToRGB } from "#src/components/antd-app/utils";
 
 /**
- * @zh 使用 antd 的颜色变量覆盖 tailwind.css 中的颜色变量。
+ * @fa متغيرهاي رنگ antd را جايگزين متغيرهاي رنگ tailwind.css مي کند
  * @en Override the color variables in tailwind.css with antd's color variables.
  */
 function createColorPalettes() {
@@ -15,7 +15,7 @@ function createColorPalettes() {
 	};
 
 	/**
-	 * @zh 基础色板
+	 * @fa پالت رنگ هاي پايه
 	 * @en Base color palette
 	 * @see https://ant.design/docs/spec/colors#base-color-palettes
 	 */
@@ -27,7 +27,7 @@ function createColorPalettes() {
 	});
 
 	/**
-	 * @zh 中性色板
+	 * @fa پالت رنگ هاي خنثي
 	 * @en Neutral color palette
 	 * @see https://ant.design/docs/spec/colors#neutral-color-palette
 	 */
@@ -37,7 +37,7 @@ function createColorPalettes() {
 	});
 
 	/**
-	 * @zh 产品级颜色系统
+	 * @fa سيستم رنگ هاي سطح محصول
 	 * @en Product level color system
 	 */
 	productLevelColorSystem.forEach((key) => {
@@ -47,11 +47,11 @@ function createColorPalettes() {
 	});
 
 	/**
-	 * @zh 中性色
+	 * @fa رنگ هاي خنثي
 	 * @en Neutrals
 	 */
 	neutralColors.forEach((key) => {
-		// 让这个 key 直接是带 rgb 函数的颜色值
+		// اين key مستقيما مقدار رنگ با تابع rgb باشد
 		colorPaletteVar[key] = `var(--oo-${key})`;
 	});
 

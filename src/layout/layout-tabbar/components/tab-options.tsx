@@ -10,9 +10,9 @@ import { useState } from "react";
 import { useDropdownMenu } from "../hooks/use-dropdown-menu";
 
 /**
- * TabOptions组件的属性接口
+ * رابط ويژگي هاي TabOptions
  * @interface TabOptionsProps
- * @property {string} activeKey - 当前激活的标签页的key
+ * @property {string} activeKey - کليد تب فعال
  */
 interface TabOptionsProps {
 	activeKey: string
@@ -20,27 +20,27 @@ interface TabOptionsProps {
 }
 
 /**
- * TabOptions组件
- * 用于显示标签页的操作选项下拉菜单
- * @param {TabOptionsProps} props - 组件属性
- * @returns {JSX.Element} TabOptions组件
+ * کامپوننت TabOptions
+ * براي نمايش منوي عمليات تب ها
+ * @param {TabOptionsProps} props - ويژگي هاي کامپوننت
+ * @returns {JSX.Element} کامپوننت TabOptions
  */
 export function TabOptions({ activeKey, className }: TabOptionsProps) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [items, onClickMenu] = useDropdownMenu();
 
 	/**
-	 * 处理下拉菜单的显示状态变化
-	 * @param {boolean} open - 菜单是否打开
+	 * رسيدگي به تغيير وضعيت باز بودن منو
+	 * @param {boolean} open - آيا منو باز است
 	 */
 	const onOpenChange = (open: boolean) => {
 		setIsOpen(open);
 	};
 
 	/**
-	 * 处理菜单项点击事件
-	 * @param {object} param - 点击事件参数
-	 * @param {string} param.key - 被点击的菜单项的key
+	 * رسيدگي به کليک آيتم منو
+	 * @param {object} param - پارامتر کليک
+	 * @param {string} param.key - کليد آيتم کليک شده
 	 */
 	const onClick: MenuProps["onClick"] = ({ key }) => {
 		onClickMenu(key, activeKey);

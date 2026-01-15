@@ -1,5 +1,5 @@
 /**
- * @zh 移除路径末尾的斜杠
+ * @fa حذف اسلش انتهاي مسير
  * @en Remove trailing slashes from a path
  * @param {string} pathname - The path to remove trailing slashes from
  * @returns {string} The path with trailing slashes removed

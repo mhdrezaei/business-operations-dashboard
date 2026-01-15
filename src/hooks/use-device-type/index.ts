@@ -1,13 +1,13 @@
 import { useResponsive } from "ahooks";
 
 /**
- * 判断当前设备类型（移动设备、iPad、PC 等）
+ * تشخيص نوع دستگاه فعلي (موبايل، iPad، PC و ...)
  *
  */
 export function useDeviceType() {
-	// 如果使用 useBreakpoint，注意 useResponsive 和 antd 的 useBreakpoint xs 的表现行为不一致
+	// اگر از useBreakpoint استفاده مي کنيد، رفتار xs در useResponsive و useBreakpoint انtd يکسان نيست
 	/**
-	 * useResponsive 默认的断点为：
+	 * نقطه هاي شکست پيش فرض useResponsive:
 	 * @see https://ahooks.js.org/hooks/use-responsive
 	 * {
 	 *   xs: 0,

@@ -1,8 +1,8 @@
 /**
- * 判断当前主题是否为深色主题
+ * بررسي مي کند آيا تم فعلي تيره است
  *
- * @param theme 主题名称，可选值为 'dark'、'light' 或 'auto'
- * @returns 如果当前主题为深色主题，则返回 true；否则返回 false
+ * @param theme نوع تم، مي تواند "dark"(تيره)، "light"(روشن) يا "auto"(خودکار) باشد
+ * @returns اگر تم تيره است true، در غير اين صورت false
  */
 export function isDarkTheme(theme: string) {
 	let dark = theme === "dark";

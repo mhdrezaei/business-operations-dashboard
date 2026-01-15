@@ -9,47 +9,47 @@ import type { LanguageType } from "#src/locales";
 import type { MenuProps } from "antd";
 
 /**
- * @zh 登录页面布局
+ * @fa چيدمان صفحه ورود
  * @en Login page layout
  */
 export type PageLayoutType = "layout-left" | "layout-center" | "layout-right";
 /**
- * @zh 标签栏风格
+ * @fa سبک نوار تب
  * @en Tabbar style
  */
 export type TabsStyleType = "brisk" | "card" | "chrome" | "plain";
 
 /**
- * @zh 主题类型
+ * @fa نوع تم
  * @en Theme type
  */
 export type ThemeType = "dark" | "light" | "auto";
 
 /**
- * @zh 动画类型
+ * @fa نوع انيميشن
  * @en Animation type
  */
 interface AnimationState {
 	/**
-	 * @zh 是否启用过渡动画
+	 * @fa آيا انيميشن گذار فعال است
 	 * @en Whether to enable transition animation
 	 * @default true
 	 */
 	transitionProgress: boolean
 	/**
-	 * @zh 是否启用加载动画
+	 * @fa آيا انيميشن بارگذاري فعال است
 	 * @en Whether to enable loading animation
 	 * @default true
 	 */
 	transitionLoading: boolean
 	/**
-	 * @zh 是否启用动画
+	 * @fa آيا انيميشن فعال است
 	 * @en Whether to enable animation
 	 * @default true
 	 */
 	transitionEnable: boolean
 	/**
-	 * @zh 过渡动画名称
+	 * @fa نام انيميشن گذار
 	 * @en Transition animation name
 	 * @default "fade-slide"
 	 */
@@ -97,19 +97,19 @@ export type HeaderBackgroundType =
 interface LayoutState {
 	navigationStyle: NavigationType
 	/**
-	 * @zh 顶部导航栏背景色类型
+	 * @fa نوع رنگ پس زمينه نوار بالا
 	 * @en Header background color type for top navigation
 	 * @default "default"
 	 */
 	headerBackgroundType: HeaderBackgroundType
 	/**
-	 * @zh 顶部导航栏自定义背景色
+	 * @fa رنگ پس زمينه سفارشي نوار بالا
 	 * @en Custom header background color for top navigation
 	 * @default "#1677ff"
 	 */
 	headerBackgroundColor: string
 	/**
-	 * @zh 顶部导航栏高度
+	 * @fa ارتفاع نوار بالا
 	 * @en Header height in pixels
 	 * @default 56
 	 */
@@ -118,62 +118,62 @@ interface LayoutState {
 
 export interface GeneralState {
 	/**
-	 * @zh 是否开启水印
+	 * @fa آيا واترمارک فعال است
 	 * @en Whether to enable watermark
 	 * @default false
 	 */
 	watermark: boolean
 	/**
-	 * @zh 水印内容
+	 * @fa محتواي واترمارک
 	 * @en Watermark content
 	 * @default ""
 	 */
 	watermarkContent: string
 	/**
-	 * @zh 返回页面顶部的操作按钮
+	 * @fa دکمه بازگشت به بالاي صفحه
 	 * @en BackTop makes it easy to go back to the top of the page.
 	 * @default true
 	 */
 	enableBackTopButton: boolean
 	/**
-	 * @zh 登录页面的布局配置
+	 * @fa پیکربندي چيدمان صفحه ورود
 	 * @en Login page layout configuration
 	 * @default "layout-right"
 	 */
 	pageLayout: PageLayoutType
 	/**
-	 * @zh 开启前端路由权限
+	 * @fa فعال سازي مجوز مسير فرانت اند
 	 * @en Enable frontend route permissions
 	 * @default false
 	 */
 	enableFrontendAceess: boolean
 	/**
-	 * @zh 开启后端路由权限
+	 * @fa فعال سازي مجوز مسير بک اند
 	 * @en Enable backend route permissions
 	 * @default true
 	 */
 	enableBackendAccess: boolean
 
 	/**
-	 * @zh 当前语言
+	 * @fa زبان فعلي
 	 * @en Current language
-	 * @default "zh-CN"
+	 * @default "fa-IR"
 	 */
 	language: LanguageType
 	/**
-	 * @zh 是否开启动态标题
+	 * @fa فعال سازي عنوان پويا
 	 * @en Whether to enable dynamic title
 	 * @default true
 	 */
 	enableDynamicTitle: boolean
 	/**
-	 * @zh 是否开启更新检查
+	 * @fa فعال سازي بررسي به روزرساني
 	 * @en Whether to enable update check
 	 * @default true
 	 */
 	enableCheckUpdates: boolean
 	/**
-	 * @zh 轮训时间，单位：分钟，默认 1 分钟
+	 * @fa زمان پويش، واحد: دقيقه، پيش فرض 1 دقيقه
 	 * @en Polling time, unit: minute, default 1 minute
 	 * @default 1
 	 */
@@ -182,47 +182,47 @@ export interface GeneralState {
 
 export interface SidebarState {
 	/**
-	 * 侧边栏是否可见
+	 * نمايش سایدبار
 	 * @default true
 	 */
 	sidebarEnable?: boolean
 	/**
-	 * 侧边菜单宽度
+	 * عرض منوي کناري
 	 * @default 210
 	 */
 	sidebarWidth: number
 	/**
-	 * 侧边菜单折叠宽度
+	 * عرض منوي جمع شده
 	 * @default 56
 	 */
 	sideCollapsedWidth: number
 	/**
-	 * 侧边菜单折叠状态
+	 * وضعيت جمع شدگي منوي کناري
 	 * @default false
 	 */
 	sidebarCollapsed: boolean
 	/**
-	 * 侧边菜单是否折叠时，是否显示 title
+	 * نمايش عنوان هنگام جمع شدن منو
 	 * @default true
 	 */
 	sidebarCollapseShowTitle: boolean
 	/**
-	 * 侧边菜单折叠额外宽度
+	 * عرض اضافي در حالت جمع شده
 	 * @default 48
 	 */
 	sidebarExtraCollapsedWidth: number
 	/**
-	 * 两栏布局时，左侧菜单宽度
+	 * عرض ستون اول در چيدمان دو ستونه
 	 * @default 80
 	 */
 	firstColumnWidthInTwoColumnNavigation: number
 	/**
-	 * 侧边栏主题
+	 * تم سایدبار
 	 * @default dark
 	 */
 	sidebarTheme: MenuProps["theme"]
 	/**
-	 * @zh 导航菜单手风琴模式
+	 * @fa حالت آکاردئون براي منوي ناوبري
 	 * @en Accordion mode of navigation menu
 	 */
 	accordion: boolean
@@ -246,37 +246,37 @@ export interface PreferencesState
 	FooterState {
 	/* ================== Theme ================== */
 	/**
-	 * @zh 当前主题
+	 * @fa تم فعلي
 	 * @en Current theme
 	 * @default "auto"
 	 */
 	theme: ThemeType
 	/**
-	 * @zh 是否开启色弱模式
+	 * @fa فعال سازي حالت کوررنگي
 	 * @en Whether to enable color-blind mode
 	 * @default false
 	 */
 	colorBlindMode: boolean
 	/**
-	 * @zh 是否开启灰色模式
+	 * @fa فعال سازي حالت خاکستري
 	 * @en Whether to enable gray mode
 	 * @default false
 	 */
 	colorGrayMode: boolean
 	/**
-	 * @zh 主题圆角值
+	 * @fa مقدار گردي گوشه هاي تم
 	 * @en Theme radius value
 	 * @default 6
 	 */
 	themeRadius: number
 	/**
-	 * @zh 主题色
+	 * @fa رنگ تم
 	 * @en Theme color
 	 * @default "#1677ff" - blue
 	 */
 	themeColorPrimary: string
 	/**
-	 * @zh 内置主题
+	 * @fa تم داخلي
 	 * @en Builtin theme
 	 * @default "blue"
 	 */
@@ -285,45 +285,45 @@ export interface PreferencesState
 
 	/* ================== Tabbar ================== */
 	/**
-	 * @zh 标签栏风格
+	 * @fa سبک تب بار
 	 * @en Tabbar style
 	 * @default "chrome"
 	 */
 	tabbarStyleType: TabsStyleType
 	/**
-	 * @zh 是否启用标签栏
+	 * @fa فعال سازي تب بار
 	 * @en Whether to enable tabbar
 	 * @default true
 	 */
 	tabbarEnable: boolean
 	/**
-	 * @zh 是否显示标签栏图标
+	 * @fa نمايش آيکن تب بار
 	 * @en Whether to show tabbar icon
 	 * @default true
-	 * @todo 待实现
+	 * @todo در انتظار پياده سازي
 	 */
 	tabbarShowIcon: boolean
 	/**
-	 * @zh 是否持久化标签栏
+	 * @fa پايداري تب بار
 	 * @en Whether to persist tabbar
 	 * @default true
 	 */
 	tabbarPersist: boolean
 	/**
-	 * @zh 是否可拖拽标签栏
+	 * @fa قابليت درگ تب بار
 	 * @en Whether to drag tabbar
 	 * @default true
-	 * @todo 待实现
+	 * @todo در انتظار پياده سازي
 	 */
 	tabbarDraggable: boolean
 	/**
-	 * @zh 是否显示更多
+	 * @fa نمايش بيشتر
 	 * @en Whether to show more
 	 * @default true
 	 */
 	tabbarShowMore: boolean
 	/**
-	 * @zh 是否显示最大化
+	 * @fa نمايش بيشينه
 	 * @en Whether to show maximize
 	 * @default true
 	 */

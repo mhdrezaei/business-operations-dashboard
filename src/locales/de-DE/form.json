@@ -1,0 +1,42 @@
+{
+	"required": "Bitte eingeben",
+	"length": "Es sind nur {{length}} Zeichen erlaubt",
+	"username": {
+		"required": "Bitte geben Sie Ihren Benutzernamen ein",
+		"invalid": "Bitte geben Sie einen Benutzernamen mit 4 bis 16 Zeichen ein (Buchstaben, Zahlen, Unterstriche und Bindestriche sind erlaubt)"
+	},
+	"password": {
+		"required": "Bitte geben Sie Ihr Passwort ein",
+		"invalid": "Das Passwort muss 8–16 Zeichen lang sein und sowohl Buchstaben als auch Zahlen enthalten"
+	},
+	"code": {
+		"required": "Bitte geben Sie den Sicherheitscode ein"
+	},
+	"mobile": {
+		"required": "Bitte geben Sie Ihre Mobilnummer ein",
+		"invalid": "Das Format der Mobilnummer ist ungültig"
+	},
+	"telephone": {
+		"required": "Bitte geben Sie Ihre Telefonnummer ein",
+		"invalid": "Das Format der Telefonnummer ist ungültig"
+	},
+	"email": {
+		"required": "Bitte geben Sie Ihre E-Mail-Adresse ein",
+		"invalid": "Das Format der E-Mail-Adresse ist ungültig"
+	},
+	"confirmPassword": {
+		"required": "Bitte geben Sie das Passwort erneut ein",
+		"invalid": "Die Passwörter stimmen nicht überein"
+	},
+	"agree": {
+		"required": "Bitte stimmen Sie der Datenschutzerklärung und den Nutzungsbedingungen zu"
+	},
+	"alphanumeric": {
+		"required": "Bitte geben Sie Buchstaben oder Zahlen ein",
+		"invalid": "Bitte geben Sie ausschließlich Buchstaben oder Zahlen ein"
+	},
+	"unifiedSocialCreditCode": {
+		"required": "Bitte geben Sie den Einheitlichen Sozialkreditcode ein",
+		"invalid": "Bitte geben Sie einen gültigen Einheitlichen Sozialkreditcode ein"
+	}
+}

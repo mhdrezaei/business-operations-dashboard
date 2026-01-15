@@ -36,7 +36,7 @@ export function Detail({ title, open, onCloseChange, detailData, treeData, refre
 
 	const onFinish = async (values: RoleItemType) => {
 		// console.info(values);
-		/* 有 id 则为修改，否则为新增 */
+		/* اگر id دارد، ويرايش است؛ در غير اين صورت افزودن */
 		if (detailData.id) {
 			await updateRoleItemMutation.mutateAsync(values);
 			window.$message?.success(t("common.updateSuccess"));
@@ -45,9 +45,9 @@ export function Detail({ title, open, onCloseChange, detailData, treeData, refre
 			await addRoleItemMutation.mutateAsync(values);
 			window.$message?.success(t("common.addSuccess"));
 		}
-		/* 刷新表格 */
+		/* به روزرساني جدول */
 		refreshTable?.();
-		// 不返回不会关闭弹框
+		// اگر true برنگردد، پنجره بسته نمي شود
 		return true;
 	};
 

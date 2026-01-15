@@ -4,10 +4,10 @@ import { defineFakeRoute } from "vite-plugin-fake-server/client";
 import { resultSuccess } from "./utils";
 
 const systemMenu = [
-	// 系统管理
+	// مدیریت سیستم
 	{
 		id: system,
-		menuType: 0, // 菜单类型（0 代表菜单、1 代表 iframe、2 代表外链、3 代表按钮）
+		menuType: 0, // نوع منو (۰ منو، ۱ iframe، ۲ لینک خارجی، ۳ دکمه)
 		name: "common.menu.system",
 	},
 	{
@@ -55,29 +55,29 @@ const systemMenu = [
 ];
 
 export default defineFakeRoute([
-	// 角色管理
+	// مدیریت نقش
 	{
 		url: "/role-list",
 		method: "get",
 		response: ({ body }) => {
 			let list = [
 				{
-					createTime: 1729752330782, // 时间戳（毫秒ms）
+					createTime: 1729752330782, // مهر زمان (میلی‌ثانیه ms)
 					updateTime: 1729752330782,
 					id: 1,
-					name: "超级管理员",
+					name: "مدیر ارشد",
 					code: "admin",
-					status: 1, // 状态 1 启用 0 停用
-					remark: "超级管理员拥有最高权限",
+					status: 1, // وضعیت: ۱ فعال، ۰ غیرفعال
+					remark: "مدیر ارشد دارای بالاترین سطح دسترسی است",
 				},
 				{
 					createTime: 1729752330782,
 					updateTime: 1729752330782,
 					id: 2,
-					name: "普通角色",
+					name: "نقش عادی",
 					code: "common",
 					status: 1,
-					remark: "普通角色拥有部分权限",
+					remark: "نقش عادی دارای بخشی از دسترسی‌ها است",
 				},
 			];
 			// list = Array.from({ length: 10000 }).flatMap(() => list);
@@ -88,13 +88,13 @@ export default defineFakeRoute([
 			);
 			return resultSuccess({
 				list,
-				total: list.length, // 总条目数
-				pageSize: 10, // 每页显示条目个数
-				current: 1, // 当前页数
+				total: list.length, // تعداد کل
+				pageSize: 10, // تعداد آیتم در هر صفحه
+				current: 1, // شماره صفحه فعلی
 			});
 		},
 	},
-	// 角色管理-新增角色
+	// مدیریت نقش - افزودن نقش
 	{
 		url: "/role-item",
 		method: "post",
@@ -102,7 +102,7 @@ export default defineFakeRoute([
 			return resultSuccess(body);
 		},
 	},
-	// 角色管理-修改角色
+	// مدیریت نقش - ویرایش نقش
 	{
 		url: "/role-item",
 		method: "put",
@@ -110,7 +110,7 @@ export default defineFakeRoute([
 			return resultSuccess(body);
 		},
 	},
-	// 角色管理-删除角色
+	// مدیریت نقش - حذف نقش
 	{
 		url: "/role-item",
 		method: "delete",
@@ -118,7 +118,7 @@ export default defineFakeRoute([
 			return resultSuccess(body);
 		},
 	},
-	// 角色管理-权限-菜单权限
+	// مدیریت نقش - مجوزها - مجوز منو
 	{
 		url: "/role-menu",
 		method: "get",
@@ -126,7 +126,7 @@ export default defineFakeRoute([
 			return resultSuccess(systemMenu);
 		},
 	},
-	// 角色管理-权限-菜单权限，根据角色 id 查对应菜单
+	// مدیریت نقش - مجوزها - مجوز منو، یافتن منوی متناظر با شناسه نقش
 	{
 		url: "/menu-by-role-id",
 		method: "get",
@@ -140,29 +140,29 @@ export default defineFakeRoute([
 			return resultSuccess([]);
 		},
 	},
-	// 菜单管理
+	// مدیریت منو
 	{
 		url: "/menu-list",
 		method: "get",
 		response: () => {
 			const menuList = [
-				// 系统管理
+				// مدیریت سیستم
 				{
-					parentId: "", // 上级菜单 id
-					id: system, // 菜单 id
-					menuType: 0, // 菜单类型（0 代表菜单、1 代表 iframe、2 代表外链、3 代表按钮）
-					name: "common.menu.system", // 菜单名称
-					path: "/system", // 路由路径
-					component: "/system", // 组件路径
-					order: system, // 菜单顺序
-					icon: "SettingOutlined", // 菜单图标
-					currentActiveMenu: "", // 激活路径
-					iframeLink: "", // iframe 链接
-					keepAlive: true, // 是否缓存页面
-					externalLink: "", // 外链地址
-					hideInMenu: false, // 是否在菜单中隐藏
-					ignoreAccess: false, // 是否忽略权限
-					status: 1, // 状态（0 停用、1 启用）
+					parentId: "", // شناسه منوی والد
+					id: system, // شناسه منو
+					menuType: 0, // نوع منو (۰ منو، ۱ iframe، ۲ لینک خارجی، ۳ دکمه)
+					name: "common.menu.system", // نام منو
+					path: "/system", // مسیر روت
+					component: "/system", // مسیر کامپوننت
+					order: system, // ترتیب منو
+					icon: "SettingOutlined", // آیکن منو
+					currentActiveMenu: "", // مسیر فعال
+					iframeLink: "", // لینک iframe
+					keepAlive: true, // آیا صفحه کش شود
+					externalLink: "", // آدرس لینک خارجی
+					hideInMenu: false, // آیا در منو مخفی شود
+					ignoreAccess: false, // آیا مجوز نادیده گرفته شود
+					status: 1, // وضعیت (۰ غیرفعال، ۱ فعال)
 					createTime: 1737023155965,
 					updateTime: 1737023164653,
 				},
@@ -171,17 +171,17 @@ export default defineFakeRoute([
 					id: system + 1,
 					menuType: 0,
 					name: "common.menu.user",
-					path: "/system/user", // 路由路径
-					component: "/system/user", // 组件路径
-					order: undefined, // 菜单顺序
-					icon: "UserOutlined", // 菜单图标
-					currentActiveMenu: "", // 激活路径
-					iframeLink: "", // iframe 链接
-					keepAlive: true, // 是否缓存页面
-					externalLink: "", // 外链地址
-					hideInMenu: false, // 是否在菜单中隐藏
-					ignoreAccess: false, // 是否忽略权限
-					status: 1, // 状态（0 停用、1 启用）
+					path: "/system/user", // مسیر روت
+					component: "/system/user", // مسیر کامپوننت
+					order: undefined, // ترتیب منو
+					icon: "UserOutlined", // آیکن منو
+					currentActiveMenu: "", // مسیر فعال
+					iframeLink: "", // لینک iframe
+					keepAlive: true, // آیا صفحه کش شود
+					externalLink: "", // آدرس لینک خارجی
+					hideInMenu: false, // آیا در منو مخفی شود
+					ignoreAccess: false, // آیا مجوز نادیده گرفته شود
+					status: 1, // وضعیت (۰ غیرفعال، ۱ فعال)
 					createTime: 1737023155965,
 					updateTime: 1737023164653,
 				},
@@ -190,17 +190,17 @@ export default defineFakeRoute([
 					id: system + 2,
 					menuType: 0,
 					name: "common.menu.role",
-					path: "/system/role", // 路由路径
-					component: "/system/role", // 组件路径
-					order: undefined, // 菜单顺序
-					icon: "TeamOutlined", // 菜单图标
-					currentActiveMenu: "", // 激活路径
-					iframeLink: "", // iframe 链接
-					keepAlive: true, // 是否缓存页面
-					externalLink: "", // 外链地址
-					hideInMenu: false, // 是否在菜单中隐藏
-					ignoreAccess: false, // 是否忽略权限
-					status: 1, // 状态（0 停用、1 启用）
+					path: "/system/role", // مسیر روت
+					component: "/system/role", // مسیر کامپوننت
+					order: undefined, // ترتیب منو
+					icon: "TeamOutlined", // آیکن منو
+					currentActiveMenu: "", // مسیر فعال
+					iframeLink: "", // لینک iframe
+					keepAlive: true, // آیا صفحه کش شود
+					externalLink: "", // آدرس لینک خارجی
+					hideInMenu: false, // آیا در منو مخفی شود
+					ignoreAccess: false, // آیا مجوز نادیده گرفته شود
+					status: 1, // وضعیت (۰ غیرفعال، ۱ فعال)
 					createTime: 1737023155965,
 					updateTime: 1737023164653,
 				},
@@ -209,17 +209,17 @@ export default defineFakeRoute([
 					id: system + 3,
 					menuType: 0,
 					name: "common.menu.menu",
-					path: "/system/menu", // 路由路径
-					component: "/system/menu", // 组件路径
-					order: undefined, // 菜单顺序
-					icon: "MenuOutlined", // 菜单图标
-					currentActiveMenu: "", // 激活路径
-					iframeLink: "", // iframe 链接
-					keepAlive: true, // 是否缓存页面
-					externalLink: "", // 外链地址
-					hideInMenu: false, // 是否在菜单中隐藏
-					ignoreAccess: false, // 是否忽略权限
-					status: 1, // 状态（0 停用、1 启用）
+					path: "/system/menu", // مسیر روت
+					component: "/system/menu", // مسیر کامپوننت
+					order: undefined, // ترتیب منو
+					icon: "MenuOutlined", // آیکن منو
+					currentActiveMenu: "", // مسیر فعال
+					iframeLink: "", // لینک iframe
+					keepAlive: true, // آیا صفحه کش شود
+					externalLink: "", // آدرس لینک خارجی
+					hideInMenu: false, // آیا در منو مخفی شود
+					ignoreAccess: false, // آیا مجوز نادیده گرفته شود
+					status: 1, // وضعیت (۰ غیرفعال، ۱ فعال)
 					createTime: 1737023155965,
 					updateTime: 1737023164653,
 				},
@@ -228,17 +228,17 @@ export default defineFakeRoute([
 					id: system + 4,
 					menuType: 0,
 					name: "common.menu.dept",
-					path: "/system/dept", // 路由路径
-					component: "/system/dept", // 组件路径
-					order: undefined, // 菜单顺序
-					icon: "ApartmentOutlined", // 菜单图标
-					currentActiveMenu: "", // 激活路径
-					iframeLink: "", // iframe 链接
-					keepAlive: true, // 是否缓存页面
-					externalLink: "", // 外链地址
-					hideInMenu: false, // 是否在菜单中隐藏
-					ignoreAccess: false, // 是否忽略权限
-					status: 1, // 状态（0 停用、1 启用）
+					path: "/system/dept", // مسیر روت
+					component: "/system/dept", // مسیر کامپوننت
+					order: undefined, // ترتیب منو
+					icon: "ApartmentOutlined", // آیکن منو
+					currentActiveMenu: "", // مسیر فعال
+					iframeLink: "", // لینک iframe
+					keepAlive: true, // آیا صفحه کش شود
+					externalLink: "", // آدرس لینک خارجی
+					hideInMenu: false, // آیا در منو مخفی شود
+					ignoreAccess: false, // آیا مجوز نادیده گرفته شود
+					status: 1, // وضعیت (۰ غیرفعال، ۱ فعال)
 					createTime: 1737023155965,
 					updateTime: 1737023164653,
 				},
@@ -247,7 +247,7 @@ export default defineFakeRoute([
 					id: system + 4 + 1,
 					menuType: 3,
 					name: "common.add",
-					status: 1, // 状态（0 停用、1 启用）
+					status: 1, // وضعیت (۰ غیرفعال، ۱ فعال)
 					createTime: 1737023155965,
 					updateTime: 1737023164653,
 				},
@@ -256,7 +256,7 @@ export default defineFakeRoute([
 					id: system + 4 + 2,
 					menuType: 3,
 					name: "common.edit",
-					status: 1, // 状态（0 停用、1 启用）
+					status: 1, // وضعیت (۰ غیرفعال، ۱ فعال)
 					createTime: 1737023155965,
 					updateTime: 1737023164653,
 				},
@@ -265,16 +265,16 @@ export default defineFakeRoute([
 					id: system + 4 + 3,
 					menuType: 3,
 					name: "common.delete",
-					status: 1, // 状态（0 停用、1 启用）
+					status: 1, // وضعیت (۰ غیرفعال، ۱ فعال)
 					createTime: 1737023155965,
 					updateTime: 1737023164653,
 				},
 			];
 			return resultSuccess({
 				list: menuList,
-				total: menuList.length, // 总条目数
-				pageSize: 10, // 每页显示条目个数
-				current: 1, // 当前页数
+				total: menuList.length, // تعداد کل
+				pageSize: 10, // تعداد آیتم در هر صفحه
+				current: 1, // شماره صفحه فعلی
 			});
 		},
 	},

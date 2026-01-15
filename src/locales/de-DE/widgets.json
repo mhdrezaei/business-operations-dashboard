@@ -1,0 +1,26 @@
+{
+	"document": "Dokument",
+	"qa": "Fragen & Antworten",
+	"setting": "Einstellungen",
+	"logoutTip": "Möchten Sie sich abmelden?",
+	"viewAll": "Alle Nachrichten anzeigen",
+	"notifications": "Benachrichtigungen",
+	"markAllAsRead": "Alle als gelesen markieren",
+	"clearNotifications": "Leeren",
+
+	"versionMonitorTitle": "Systemaktualisierung verfügbar",
+	"versionMonitorContent": "Eine neue Version des Systems wurde erkannt. Möchten Sie die Seite jetzt aktualisieren?",
+	"versionMonitorConfirm": "Jetzt aktualisieren",
+	"versionMonitorCancel": "Später",
+
+	"search": {
+		"placeholder": "Suchbegriff zur Menüsuche eingeben",
+		"title": "Suche",
+		"select": "Auswählen",
+		"navigate": "Navigieren",
+		"close": "Schließen",
+		"noResults": "Keine Suchergebnisse gefunden",
+		"noRecent": "Kein Suchverlauf vorhanden",
+		"total": "Insgesamt {{total}} Einträge"
+	}
+}

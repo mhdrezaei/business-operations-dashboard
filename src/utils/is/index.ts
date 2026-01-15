@@ -1,75 +1,75 @@
 /**
- * 判断给定的值是否为函数类型
+ * بررسي مي کند آيا مقدار از نوع تابع است
  * Determines whether the given value is of the function type
  *
- * @param value 给定的值 / The value to be checked
- * @returns 如果给定的值是函数类型，则返回true；否则返回false / Returns true if the given value is a function type, otherwise returns false
+ * @param value مقدار مورد بررسي / The value to be checked
+ * @returns اگر مقدار تابع باشد true؛ در غير اين صورت false / Returns true if the given value is a function type, otherwise returns false
  */
 export function isFunction(value: unknown) {
 	return typeof value === "function";
 }
 
 /**
- * 判断给定的值是否为有限数字
+ * بررسي مي کند آيا مقدار يک عدد متناهي است
  * Determines whether the given value is a finite number
  *
- * @param value 待判断的值 / The value to be checked
- * @returns 如果给定的值是有限数字，则返回true；否则返回false / Returns true if the given value is a finite number, otherwise returns false
+ * @param value مقدار مورد بررسي / The value to be checked
+ * @returns اگر مقدار عدد متناهي باشد true؛ در غير اين صورت false / Returns true if the given value is a finite number, otherwise returns false
  */
 export function isNumber(value: unknown) {
 	return typeof value === "number" && Number.isFinite(value);
 }
 
 /**
- * 判断一个值是否为字符串类型
+ * بررسي مي کند آيا مقدار از نوع رشته است
  * Determines whether a value is of the string type
  *
- * @param value 待判断的值 / The value to be checked
- * @returns 返回布尔值，表示该值是否为字符串类型 / Returns a boolean value indicating whether the value is of the string type
+ * @param value مقدار مورد بررسي / The value to be checked
+ * @returns مقدار بولي براي نوع رشته / Returns a boolean value indicating whether the value is of the string type
  */
 export function isString(value: unknown) {
 	return typeof value === "string";
 }
 
 /**
- * 判断给定的值是否为布尔值
+ * بررسي مي کند آيا مقدار بولي است
  * Determines whether the given value is a boolean value
  *
- * @param value 待判断的值 / The value to be checked
- * @returns 如果给定的值是布尔值，则返回true；否则返回false / Returns true if the given value is a boolean value, otherwise returns false
+ * @param value مقدار مورد بررسي / The value to be checked
+ * @returns اگر مقدار بولي باشد true؛ در غير اين صورت false / Returns true if the given value is a boolean value, otherwise returns false
  */
 export function isBoolean(value: unknown) {
 	return typeof value === "boolean";
 }
 
 /**
- * 判断一个值是否为对象类型（排除null）
+ * بررسي مي کند آيا مقدار از نوع شيء است (به جز null)
  * Determines whether a value is of the object type (excluding null)
  *
- * @param value 待判断的值 / The value to be checked
- * @returns 返回布尔值，表示是否为对象类型 / Returns a boolean value indicating whether the value is of the object type
+ * @param value مقدار مورد بررسي / The value to be checked
+ * @returns مقدار بولي براي نوع شيء / Returns a boolean value indicating whether the value is of the object type
  */
 export function isObject(value: unknown) {
 	return typeof value === "object" && value !== null;
 }
 
 /**
- * 判断一个值是否为 null
+ * بررسي مي کند آيا مقدار null است
  * Determines whether a value is null
  *
- * @param value 待判断的值 / The value to be checked
- * @returns 如果值为 null，则返回 true；否则返回 false / Returns true if the value is null, otherwise returns false
+ * @param value مقدار مورد بررسي / The value to be checked
+ * @returns اگر مقدار null باشد true؛ در غير اين صورت false / Returns true if the value is null, otherwise returns false
  */
 export function isNull(value: unknown) {
 	return value === null;
 }
 
 /**
- * 判断一个值是否为 undefined
+ * بررسي مي کند آيا مقدار undefined است
  * Determines whether a value is undefined
  *
- * @param value 待判断的值 / The value to be checked
- * @returns 如果值为 undefined，则返回 true；否则返回 false / Returns true if the value is undefined, otherwise returns false
+ * @param value مقدار مورد بررسي / The value to be checked
+ * @returns اگر مقدار undefined باشد true؛ در غير اين صورت false / Returns true if the value is undefined, otherwise returns false
  */
 export function isUndefined(value: unknown) {
 	return value === undefined;

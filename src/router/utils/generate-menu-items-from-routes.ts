@@ -8,10 +8,10 @@ import { createElement } from "react";
 import { Link } from "react-router";
 
 /**
- * 根据路由列表生成菜单项数组
+ * توليد آرايه آيتم هاي منو بر اساس فهرست مسيرها
  *
- * @param routeList 路由列表，类型为 AppRouteRecordRaw 数组
- * @returns 返回菜单项数组，数组元素类型为 MenuItemType
+ * @param routeList فهرست مسيرها از نوع AppRouteRecordRaw
+ * @returns آرايه آيتم هاي منو از نوع MenuItemType
  */
 export function generateMenuItemsFromRoutes(routeList: AppRouteRecordRaw[]) {
 	return routeList.reduce<MenuItemType[]>((acc, item) => {
@@ -25,7 +25,7 @@ export function generateMenuItemsFromRoutes(routeList: AppRouteRecordRaw[]) {
 				? createElement(
 					Link,
 					{
-						// 阻止事件冒泡，防止触发菜单的点击事件
+						// جلوگيري از انتشار رويداد براي پرهيز از کليک منو
 						onClick: (e) => {
 							e.stopPropagation();
 						},
@@ -53,7 +53,7 @@ export function generateMenuItemsFromRoutes(routeList: AppRouteRecordRaw[]) {
 			}
 		}
 		if (Array.isArray(item.children) && item.children.length > 0) {
-			// 过滤掉非首页，且不显示在菜单中的路由
+			// فيلتر مسيرهاي غير از صفحه اصلي و مخفي در منو
 			const noIndexRoute = item.children.filter(route => !route.index && !route?.handle?.hideInMenu);
 			if (noIndexRoute.length > 0) {
 				menuItem.children = generateMenuItemsFromRoutes(noIndexRoute);

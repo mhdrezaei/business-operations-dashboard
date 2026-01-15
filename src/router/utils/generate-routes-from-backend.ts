@@ -8,7 +8,7 @@ import { addRouteIdByPath } from "./add-route-id-by-path";
 const ExceptionUnknownComponent = lazy(() => import("#src/pages/exception/unknown-component"));
 
 /**
- * @zh 异步获取页面组件
+ * @fa دريافت غيرهمزمان کامپوننت هاي صفحه
  * @en Async load page components
  */
 const pageModules = import.meta.glob([
@@ -18,7 +18,7 @@ const pageModules = import.meta.glob([
 ]);
 
 /**
- * @zh 根据路由获取组件路径
+ * @fa دريافت مسير کامپوننت بر اساس مسير
  * @en Get component path based on route
  */
 export function getComponentPathByRoute(route: AppRouteRecordRaw & { component?: string }) {
@@ -31,7 +31,7 @@ export function getComponentPathByRoute(route: AppRouteRecordRaw & { component?:
 }
 
 /**
- * @zh 根据后端路由配置生成前端路由
+ * @fa توليد مسيرهاي فرانت اند بر اساس تنظيمات مسير بک اند
  * @en Generate frontend routes based on backend route configurations
  */
 export async function generateRoutesFromBackend(backendRoutes: Array<AppRouteRecordRaw>) {
@@ -40,10 +40,10 @@ export async function generateRoutesFromBackend(backendRoutes: Array<AppRouteRec
 		return [];
 
 	/**
-	 * @zh 动态加载并设置路由组件
+	 * @fa بارگذاري پويا و تنظيم کامپوننت مسير
 	 * @en Dynamically load and set route components
-	 * @param route 路由配置对象
-	 * @param componentPath 组件文件路径
+	 * @param route شيء پیکربندي مسير
+	 * @param componentPath مسير فايل کامپوننت
 	 */
 	const loadRouteComponent = async (route: AppRouteRecordRaw, componentPath: string) => {
 		const modulePath = componentPath;
@@ -60,10 +60,10 @@ export async function generateRoutesFromBackend(backendRoutes: Array<AppRouteRec
 	};
 
 	/**
-	 * 转换路由配置
-	 * @param route 原始路由配置
-	 * @param parentPath 父级路径（用于嵌套路由）
-	 * @returns 转换后的路由配置
+	 * تبديل پیکربندي مسير
+	 * @param route پیکربندي اصلي مسير
+	 * @param parentPath مسير والد (براي مسيرهاي تودرتو)
+	 * @returns پیکربندي تبديل شده مسير
 	 */
 	const transformRoute = async (route: AppRouteRecordRaw, parentComponentPath?: string): Promise<AppRouteRecordRaw> => {
 		const transformedRoute: AppRouteRecordRaw = {
@@ -74,28 +74,28 @@ export async function generateRoutesFromBackend(backendRoutes: Array<AppRouteRec
 			},
 		};
 
-		// 处理 index 路由（继承父级路径）
+		// رسيدگي به مسير index (ارث از والد)
 		if (transformedRoute.index === true && parentComponentPath) {
 			await loadRouteComponent(transformedRoute, parentComponentPath);
 		}
-		// 处理 iframe 路由
+		// رسيدگي به مسير iframe
 		else if (transformedRoute.handle?.iframeLink) {
 			transformedRoute.Component = Iframe;
 		}
-		// 处理外部链接路由
+		// رسيدگي به مسير لينک خارجي
 		else if (transformedRoute.handle?.externalLink) {
-			// 外部链接不需要组件
+			// لينک خارجي نيازي به کامپوننت ندارد
 		}
-		// 处理有子路由的情况
+		// رسيدگي به مسيرهاي داراي فرزند
 		else if (transformedRoute.children?.length) {
 			transformedRoute.Component = parentComponentPath ? Outlet : ContainerLayout;
 		}
-		// 处理普通路由
+		// رسيدگي به مسير معمولي
 		else {
 			await loadRouteComponent(transformedRoute, getComponentPathByRoute(transformedRoute));
 		}
 
-		// 递归处理子路由
+		// رسيدگي بازگشتي به زيرمسيرها
 		if (transformedRoute.children?.length) {
 			transformedRoute.children = await Promise.all(
 				transformedRoute.children.map(child =>
@@ -108,7 +108,7 @@ export async function generateRoutesFromBackend(backendRoutes: Array<AppRouteRec
 	};
 
 	/**
-	 * 标准化路由配置，确保每个路由都有子路由
+	 * استانداردسازي پیکربندي مسير براي اطمينان از داشتن فرزند
 	 */
 	const normalizeRouteStructure = (route: AppRouteRecordRaw): AppRouteRecordRaw => {
 		if (!route.children?.length) {
@@ -123,7 +123,7 @@ export async function generateRoutesFromBackend(backendRoutes: Array<AppRouteRec
 		return route;
 	};
 
-	// 处理路由配置
+	// پردازش پیکربندي مسير
 	const normalizedRoutes = backendRoutes.map(normalizeRouteStructure);
 	const transformedRoutes = await Promise.all(
 		normalizedRoutes.map(route => transformRoute(route)),

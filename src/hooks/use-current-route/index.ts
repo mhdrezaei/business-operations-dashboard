@@ -2,9 +2,9 @@ import { useMemo } from "react";
 import { useMatches } from "react-router";
 
 /**
- * 获取当前路由信息
+ * دريافت اطلاعات مسير فعلي
  *
- * @returns 当前路由的匹配结果
+ * @returns نتيجه تطابق مسير فعلي
  */
 export function useCurrentRoute() {
 	const matches = useMatches();

@@ -1,0 +1,42 @@
+{
+	"role": {
+		"name": "Rollenname",
+		"id": "Rollen-ID",
+		"addRole": "Rolle hinzufügen",
+		"editRole": "Rolle bearbeiten",
+		"assignMenu": "Menü zuweisen"
+	},
+	"user": {
+		"name": "Benutzername",
+		"id": "Benutzer-ID",
+		"addUser": "Benutzer hinzufügen",
+		"editUser": "Benutzer bearbeiten"
+	},
+	"menu": {
+		"name": "Menüname",
+		"routePath": "Routenpfad",
+		"addMenu": "Menü hinzufügen",
+		"editMenu": "Menü bearbeiten",
+		"menuType": "Menütyp",
+		"menuTypeDesc": "Beschreibung des Menütyps: 0 = Menü, 1 = Iframe, 2 = Externer Link, 3 = Button",
+		"menu": "Menü",
+		"iframe": "Iframe",
+		"externalLink": "Externer Link",
+		"button": "Button",
+		"menuOrder": "Menüreihenfolge",
+		"menuIcon": "Menüsymbol",
+		"componentUrl": "Komponenten-URL",
+		"keepAlive": "Seite zwischenspeichern",
+		"hideInMenu": "Im Menü ausblenden",
+		"currentActiveMenu": "Aktiver Pfad",
+		"iframeLink": "Iframe-Link",
+		"externalLinkUrl": "URL des externen Links",
+		"parentMenu": "Übergeordnetes Menü"
+	},
+	"dept": {
+		"name": "Abteilungsname",
+		"id": "Abteilungs-ID",
+		"addDept": "Abteilung hinzufügen",
+		"editDept": "Abteilung bearbeiten"
+	}
+}

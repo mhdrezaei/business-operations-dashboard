@@ -4,12 +4,12 @@ import { useTranslation } from "react-i18next";
 
 interface AppVersionMonitorProps {
 	/**
-	 * @zh 轮训时间，单位：分钟，默认 1 分钟
+	 * @fa زمان پويش، واحد: دقيقه، پيش فرض 1 دقيقه
 	 * @en Polling time, unit: minute, default 1 minute
 	 * @default 1
 	 */
 	checkUpdatesInterval?: number
-	// 检查更新的地址
+	// آدرس بررسي به روزرساني
 	checkUpdateUrl?: string
 }
 
@@ -116,7 +116,7 @@ export function AppVersionMonitor({
 			return;
 		}
 
-		// 首次运行时，获取当前版本号（防止 Nginx 缓存了 index.html）
+		// در اجراي نخست، نسخه فعلي را بگير (براي جلوگيري از کش شدن index.html توسط Nginx)
 		if (!lastVersionTag.current) {
 			const currentVersionTag = await getVersionTag(true);
 			if (!currentVersionTag) {

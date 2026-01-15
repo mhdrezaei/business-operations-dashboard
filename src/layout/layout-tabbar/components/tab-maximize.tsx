@@ -9,9 +9,9 @@ interface TabMaximizeProps {
 	className?: string
 }
 /**
- * 切换标签页最大化 / 最小化
+ * تغيير تب به حالت بيشينه / کمينه
  *
- * @returns 返回标签页最大化 / 最小化的按钮组件
+ * @returns کامپوننت دکمه بيشينه / کمينه تب
  */
 export function TabMaximize({ className }: TabMaximizeProps) {
 	/**
@@ -21,7 +21,7 @@ export function TabMaximize({ className }: TabMaximizeProps) {
 	const { isMaximize } = useTabsStore(useShallow(state => ({ isMaximize: state.isMaximize })));
 	const { toggleMaximize } = useTabsStore(useShallow(state => ({ toggleMaximize: state.toggleMaximize })));
 
-	/** 切换最大化 / 最小化 */
+	/** تغيير بيشينه / کمينه */
 	const onClick = () => {
 		toggleMaximize(!isMaximize);
 	};

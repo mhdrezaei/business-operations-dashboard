@@ -12,13 +12,13 @@ export interface FullscreenButtonProps extends Omit<ButtonProps, "target"> {
 }
 
 /**
- * 全屏按钮组件
+ * کامپوننت دکمه تمام صفحه
  *
- * @param target 全屏目标元素
- * @param fullscreenIcon 全屏时图标
- * @param fullscreenExitIcon 退出全屏时图标
- * @param restProps 其他属性
- * @returns 返回全屏按钮组件
+ * @param target عنصر هدف تمام صفحه
+ * @param fullscreenIcon آيکن حالت تمام صفحه
+ * @param fullscreenExitIcon آيکن خروج از تمام صفحه
+ * @param restProps ساير ويژگي ها
+ * @returns کامپوننت دکمه تمام صفحه را برمي گرداند
  */
 export const FullscreenButton: React.FC<FullscreenButtonProps> = ({
 	target,

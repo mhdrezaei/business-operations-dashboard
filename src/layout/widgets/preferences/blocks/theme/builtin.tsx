@@ -62,7 +62,7 @@ export function BuiltinTheme() {
 			label: (
 				<>
 					<span>{t("preferences.theme.builtin.blue")}</span>
-					<br className="zh-CN:hidden" />
+					<br className="de-DE:hidden" />
 					<span>
 						(
 						{t("preferences.theme.builtin.title")}

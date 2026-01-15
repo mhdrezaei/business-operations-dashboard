@@ -13,7 +13,7 @@ import { matchRoutes, Navigate, useLocation, useNavigate, useSearchParams } from
 import { removeDuplicateRoutes } from "./utils";
 
 /**
- * @zh 路由白名单 1. 不进行权限校验， 2. 不会触发请求，例如用户信息接口
+ * @fa فهرست سفيد مسيرها: 1. بدون بررسي مجوز 2. بدون درخواست، مثل API اطلاعات کاربر
  * @en Routes whitelist 1. No permission verification, 2. Will not trigger requests, such as user information interface
  * @example "privacy-policy", "terms-of-service" and so on.
  */
@@ -24,7 +24,7 @@ interface AuthGuardProps {
 }
 
 /**
- * @zh AuthGuard 组件，用于权限验证，代码的顺序很重要，不要随意调整
+ * @fa کامپوننت AuthGuard براي اعتبارسنجي مجوز؛ ترتيب کد مهم است و نبايد تغيير کند
  * @en AuthGuard component, used for permission verification. The order of the code is important and should not be arbitrarily adjusted
  */
 export function AuthGuard({ children }: AuthGuardProps) {
@@ -42,31 +42,31 @@ export function AuthGuard({ children }: AuthGuardProps) {
 	const isPathInNoLoginWhiteList = noLoginWhiteList.includes(pathname);
 
 	/**
-	 * @zh 异步获取用户信息和路由配置
+	 * @fa دريافت غيرهمزمان اطلاعات کاربر و تنظيمات مسير
 	 * @en Fetch user information and route configuration asynchronously
 	 */
 	useEffect(() => {
 		async function fetchUserInfoAndRoutes() {
 			/**
-			 * @zh 登录跳转，防止闪烁
+			 * @fa انتقال ورود براي جلوگيري از چشمک
 			 * @en Login redirect, prevent flicker
 			 */
 			setupLoading();
 
 			/**
-			 * @zh 初始化一个空数组来存放 Promise 对象
+			 * @fa ايجاد آرايه خالي براي Promise ها
 			 * @en Initialize an empty array to hold Promise objects
 			 */
 			const promises = [];
 
 			/**
-			 * @zh 获取用户信息
+			 * @fa دريافت اطلاعات کاربر
 			 * @en Fetch user information
 			 */
 			promises.push(getUserInfo());
 
 			/**
-			 * @zh 启用了后端路由，且路由从单独接口中获取，则发起请求
+			 * @fa اگر مسيرهاي بک اند فعال و از API جدا دريافت مي شوند، درخواست ارسال کن
 			 * @en If backend routing is enabled and the route is obtained from a separate interface, then initiate a request
 			 */
 			if (enableBackendAccess && isSendRoutingRequest) {
@@ -78,21 +78,21 @@ export function AuthGuard({ children }: AuthGuardProps) {
 			const routes = [];
 			const latestRoles = [];
 			/**
-			 * @zh 从用户接口中获取角色信息
+			 * @fa دريافت اطلاعات نقش از API کاربر
 			 * @en Fetch role information from the user interface
 			 */
 			if (userInfoResult.status === "fulfilled" && "roles" in userInfoResult.value) {
 				latestRoles.push(...userInfoResult.value?.roles ?? []);
 			}
 			/**
-			 * @zh 启用了后端路由且路由从用户接口中获取
+			 * @fa بک اند فعال است و مسيرها از API کاربر دريافت مي شود
 			 * @en If backend routing is enabled and the route is obtained from the user interface
 			 */
 			if (enableBackendAccess && !isSendRoutingRequest && userInfoResult.status === "fulfilled" && "menus" in userInfoResult.value) {
 				routes.push(...await generateRoutesFromBackend(userInfoResult.value?.menus ?? []));
 			}
 			/**
-			 * @zh 启用了后端路由且路由从单独接口中获取
+			 * @fa بک اند فعال است و مسيرها از API جدا دريافت مي شود
 			 * @en If backend routing is enabled and the route is obtained from a separate interface
 			 */
 			if (enableBackendAccess && isSendRoutingRequest && routeResult.status === "fulfilled" && "result" in routeResult.value) {
@@ -100,7 +100,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
 			}
 
 			/**
-			 * @zh 启用了前端路由
+			 * @fa مسيرهاي فرانت اند فعال است
 			 * @en If frontend routing is enabled
 			 */
 			if (enableFrontendAceess) {
@@ -112,7 +112,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
 			const hasError = results.some(result => result.status === "rejected");
 			/**
-			 * @zh 网络请求失败，跳转到 500 页面
+			 * @fa درخواست شبکه شکست خورد، به صفحه 500 برو
 			 * @en Network request failed, redirect to 500 page
 			 */
 			if (hasError) {
@@ -124,12 +124,12 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
 			/**
 			 *
-			 * @zh 开启动态路由条件下需要替换当前路由？
-			 * 1. 浏览器导航进入动态路由地址，例如 /system/user
-			 * 2. 动态路由未添加到路由，所以地址栏中依然是 /system/user 但匹配到的路由是 fallback (path = "*") 路由
-			 * 3. 添加完动态路由后，使用 replace 替换当前路由，触发程序重新匹配到 /system/user 路由
+			 * @fa در حالت مسير پويا آيا بايد مسير فعلي را جايگزين کرد؟
+			 * 1. ورود مرورگر به مسير پويا مثل /system/user
+			 * 2. مسير پويا هنوز اضافه نشده، آدرس /system/user است اما مسير fallback (path = "*") تطبيق مي شود
+			 * 3. پس از افزودن مسير پويا، با replace مسير فعلي را جايگزين کن تا دوباره تطبيق شود
 			 *
-			 * Refer：https://router.vuejs.org/guide/advanced/dynamic-routing#Adding-routes
+			 * Refer:https://router.vuejs.org/guide/advanced/dynamic-routing#Adding-routes
 			 *
 			 * @en Under the condition of dynamic routing, do you need to replace the current route?
 			 * 1. Browser navigation into a dynamic routing address, such as /system/user
@@ -139,17 +139,17 @@ export function AuthGuard({ children }: AuthGuardProps) {
 			navigate(`${pathname}${search}`, {
 				replace: true,
 				/**
-				 * @zh 保证替换路由前不会显示 404 页面（登录页面，网速切换为 3G 会闪烁显示 404 页面）
+				 * @fa مطمئن شو قبل از جايگزيني مسير، صفحه 404 نمايش داده نشود (در 3G ممکن است چشمک بزند)
 				 * @en Ensure that the 404 page will not be displayed before replacing the route
 				 */
 				flushSync: true,
 			});
 		}
 		/**
-		 * @zh 只有在以下条件下才执行获取用户信息和路由的逻辑
-		 * 1. 非路由白名单
-		 * 2. 已登录
-		 * 3. 未获取到用户信息和路由信息
+		 * @fa فقط در شرايط زير منطق دريافت اطلاعات کاربر و مسير اجرا مي شود
+		 * 1. خارج از فهرست سفيد مسير
+		 * 2. وارد شده
+		 * 3. اطلاعات کاربر و مسير دريافت نشده
 		 *
 		 * @en The logic of obtaining user information and routes is only executed under the following conditions
 		 * 1. Not in the route whitelist
@@ -163,7 +163,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
 	}, [pathname, isLogin, isAuthorized]);
 
 	/**
-	 * @zh 路由白名单
+	 * @fa فهرست سفيد مسيرها
 	 * @en Route whitelist
 	 * @see {noLoginWhiteList}
 	 */
@@ -173,15 +173,15 @@ export function AuthGuard({ children }: AuthGuardProps) {
 	}
 
 	/**
-	 * @zh 未登录条件下的处理逻辑
+	 * @fa منطق پردازش در حالت وارد نشده
 	 * @en Processing logic under unlogged conditions
 	 */
 	/* --------------- Start ------------------ */
 	if (!isLogin) {
 		hideLoading();
-		// 未登录且目标页不是登录页，则跳转到登录页
+		// اگر وارد نشده و صفحه مقصد ورود نيست، به ورود برو
 		if (pathname !== loginPath) {
-			// pathname 长度大于 1，则携带当前路径跳转登录页，否则直接跳转登录页
+			// اگر طول pathname بيشتر از 1 است، مسير فعلي را به redirect اضافه کن
 			const redirectPath = pathname.length > 1 ? `${loginPath}?redirect=${pathname}${search}` : loginPath;
 			return (
 				<Navigate
@@ -190,7 +190,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
 				/>
 			);
 		}
-		// 未登录且目标页是登录页，保留登录页
+		// اگر وارد نشده و مقصد ورود است، همان صفحه بماند
 		else {
 			return children;
 		}
@@ -198,14 +198,14 @@ export function AuthGuard({ children }: AuthGuardProps) {
 	/* --------------- End ------------------ */
 
 	/**
-	 * @zh 登录条件下的处理逻辑
+	 * @fa منطق پردازش در حالت وارد شده
 	 * @en Processing logic under logged conditions
 	 */
 	/* --------------- Start ------------------ */
 
 	/**
-	 * @zh 已登录条件下，匹配 login 路由，跳转到首页
-	 * 放到用户信息前，因为 login 路由不会请求用户信息，所以放在前面判断
+	 * @fa در حالت وارد شده اگر مسير login بود، به خانه برو
+	 * اين بخش قبل از اطلاعات کاربر است چون login اطلاعات کاربر را درخواست نمي کند
 	 *
 	 * @en Under logged conditions, match the login route and jump to the home page
 	 * Put it before user information, because the login route will not request user information, so put it in front to judge
@@ -232,14 +232,14 @@ export function AuthGuard({ children }: AuthGuardProps) {
 	}
 
 	/**
-	 * @zh 等待获取用户信息
+	 * @fa منتظر دريافت اطلاعات کاربر
 	 * @en  Waiting for user information to be obtained
 	 */
 	if (!isAuthorized) {
 		return null;
 	}
 	/**
-	 * @zh 等待获取路由信息
+	 * @fa منتظر دريافت اطلاعات مسير
 	 * @en Waiting for route information to be obtained
 	 */
 	if (!isAccessChecked) {
@@ -247,15 +247,15 @@ export function AuthGuard({ children }: AuthGuardProps) {
 	}
 
 	/**
-	 * @zh 隐藏加载动画
+	 * @fa پنهان کردن انيميشن بارگذاري
 	 * @en Hide loading animation
 	 */
 	hideLoading();
 
 	/**
-	 * @zh 如果是根路由则跳转到首页（获取完用户信息之后跳转到默认首页，防止请求两次用户信息接口）
+	 * @fa اگر مسير ريشه است به صفحه اصلي برو (پس از دريافت اطلاعات کاربر، براي جلوگيري از درخواست دوباره)
 	 * @en If it is the root route, jump to the home page (jump to the default home page after obtaining user information to prevent requesting twice for user information interface)
-	 * @zh pathname 返回的是相对 import.meta.env.BASE_URL 的路径，所以这里是相对于 BASE_URL 的根路由 "/"
+	 * @fa pathname نسبت به import.meta.env.BASE_URL است، پس مسير ريشه "/" نسبت به BASE_URL است
 	 * @en pathname returns the path relative to import.meta.env.BASE_URL, so here is the root route "/" relative to BASE_URL
 	 */
 	if (pathname === "/") {
@@ -270,14 +270,14 @@ export function AuthGuard({ children }: AuthGuardProps) {
 	/* --------------- End ------------------ */
 
 	/**
-	 * @zh 路由权限校验逻辑
+	 * @fa منطق بررسي مجوز مسير
 	 * @en Route permission verification logic
 	 */
 	const routeRoles = currentRoute?.handle?.roles;
 	const ignoreAccess = currentRoute?.handle?.ignoreAccess;
 
 	/**
-	 * @zh 忽略权限校验
+	 * @fa ناديده گرفتن بررسي مجوز
 	 * @en Ignore permission verification
 	 */
 	if (ignoreAccess === true) {
@@ -288,14 +288,14 @@ export function AuthGuard({ children }: AuthGuardProps) {
 		routeList,
 		pathname,
 		/**
-		 * @zh pathname 返回的是相对 import.meta.env.BASE_URL 的路径，所以不需要指定第三个参数 basename 了
+		 * @fa pathname نسبت به import.meta.env.BASE_URL است، پس نيازي به basename نيست
 		 * @en pathname returns the path relative to import.meta.env.BASE_URL, so there is no need to specify the third parameter basename
 		 */
 	) ?? [];
 
 	const hasChildren = matches[matches.length - 1]?.route?.children?.filter(item => !item.index)?.length;
 	/**
-	 * @zh 如果当前路由有子路由，则跳转到 404 页面
+	 * @fa اگر مسير فعلي زيرمسير دارد، به صفحه 404 برو
 	 * @en If the current route has sub-routes, jump to the 404 page
 	 */
 	if (hasChildren && hasChildren > 0) {
@@ -308,14 +308,14 @@ export function AuthGuard({ children }: AuthGuardProps) {
 	}
 
 	/**
-	 * @zh 角色权限校验
+	 * @fa بررسي مجوز نقش
 	 * @en Role permission verification
 	 */
 	const hasRoutePermission = userRoles.some(role => routeRoles?.includes(role));
 	/**
-	 * @zh 权限校验逻辑：
-	 * 1. 如果路由上没有携带 roles，视为无权限路由，等同于 ignoreAccess 为 true
-	 * 2. 未通过权限校验的路由，取消当前路由导航，并转到 403 页面
+	 * @fa منطق بررسي مجوز:
+	 * 1. اگر مسير roles نداشت، بدون مجوز محسوب مي شود (مثل ignoreAccess = true)
+	 * 2. اگر مجوز تاييد نشود، ناوبري لغو و به صفحه 403 برو
 	 *
 	 * @en Role permission verification logic:
 	 * 1. If there is no role on the route, it is considered as a permissionless route, equivalent to ignoreAccess being true
@@ -333,14 +333,14 @@ export function AuthGuard({ children }: AuthGuardProps) {
 	return children;
 }
 /**
- * 验证路由跳转是否正确的步骤：
- * 1. 未登录情况下，输入 login 路由
- * 2. 未登录情况下，输入非 login 路由
- * 3. 已登录情况下，使用系统的退出登录，然后再次登录
- * 4. 任选一个非 home 页面，使用开发者工具清除 localStorage，刷新页面之后进行登录
- * 5. 已登录情况下，输入 login 路由
- * 6. 已登录情况下，输入非 login 路由
- * 7. 已登录情况下，输入 http://localhost:3333 跳转到 /home 路由，用户接口发送一次
- * 8. 已登录情况下，输入 http://localhost:3333/ 跳转到 /home 路由，用户接口发送一次
- * 9. 已登录情况下，输入 http://localhost:3333/home 跳转到 /home 路由，用户接口发送一次
+ * مراحل بررسي صحت مسيريابي:
+ * 1. در حالت عدم ورود، مسير login را وارد کنيد
+ * 2. در حالت عدم ورود، مسير غير از login را وارد کنيد
+ * 3. در حالت ورود، خروج از سيستم و دوباره ورود
+ * 4. يک صفحه غير از home را انتخاب کنيد، localStorage را پاک کنيد، صفحه را رفرش و سپس وارد شويد
+ * 5. در حالت ورود، مسير login را وارد کنيد
+ * 6. در حالت ورود، مسير غير از login را وارد کنيد
+ * 7. در حالت ورود، http://localhost:3333 را وارد کنيد، به /home برويد و API کاربر يک بار فراخواني شود
+ * 8. در حالت ورود، http://localhost:3333/ را وارد کنيد، به /home برويد و API کاربر يک بار فراخواني شود
+ * 9. در حالت ورود، http://localhost:3333/home را وارد کنيد، به /home برويد و API کاربر يک بار فراخواني شود
  */

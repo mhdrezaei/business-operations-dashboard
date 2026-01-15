@@ -13,13 +13,13 @@ export function BasicContent(props: Props) {
 		<div
 			id="basic-content"
 			/**
-			 * 1. 当 children 的高度过高，设置了 p-4 样式，就不能设置了 h-full，防止底部的 padding-bottom 不出现。
-			 * 请参考 src/pages/about/index.tsx
+			 * 1. اگر ارتفاع children زياد است و p-4 تنظيم شده، ديگر h-full نگذاريد تا padding-bottom پايين حذف نشود.
+			 * لطفا src/pages/about/index.tsx را ببينيد
 			 *
-			 * 2. 如果需要 children 的高度小于等于 basic-content 请使用 h-full
-			 * 请参考 src/pages/system/role/index.tsx
+			 * 2. اگر مي خواهيد ارتفاع children کمتر يا برابر basic-content باشد از h-full استفاده کنيد
+			 * لطفا src/pages/system/role/index.tsx را ببينيد
 			 */
-			className={clsx("p-4 box-border", className)}
+			className={clsx("p-4 px-2 overflow-y-hidden box-border", className)}
 			style={{ ...style }}
 		>
 			{

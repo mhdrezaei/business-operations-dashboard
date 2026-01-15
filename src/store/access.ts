@@ -9,13 +9,13 @@ import { ascending, flattenRoutes, generateMenuItemsFromRoutes } from "#src/rout
 import { create } from "zustand";
 
 interface AccessState {
-	// 路由菜单
+	// منوي مسيرها
 	wholeMenus: MenuItemType[]
-	// 有权限的 React Router 路由
+	// مسيرهاي مجاز React Router
 	routeList: AppRouteRecordRaw[]
-	// 扁平化后的路由，路由 id 作为索引 key
+	// مسيرهاي تخت شده با id به عنوان کليد
 	flatRouteList: Record<string, AppRouteRecordRaw>
-	// 是否获取到权限
+	// آيا مجوزها دريافت شده اند
 	isAccessChecked: boolean
 }
 
@@ -36,7 +36,7 @@ export const useAccessStore = create<AccessState & AccessAction>(set => ({
 
 	setAccessStore: (routes) => {
 		const newRoutes = ascending([...baseRoutes, ...routes]);
-		/* 添加新的路由到根路由 */
+		/* افزودن مسيرهاي جديد به ريشه */
 		router.patchRoutes(ROOT_ROUTE_ID, routes);
 		const flatRouteList = flattenRoutes(newRoutes);
 		const wholeMenus = generateMenuItemsFromRoutes(newRoutes);
@@ -51,7 +51,7 @@ export const useAccessStore = create<AccessState & AccessAction>(set => ({
 	},
 
 	reset: () => {
-		/* 移除动态路由 */
+		/* حذف مسيرهاي پويا */
 		router._internalSetRoutes(rootRoute);
 		set(initialState);
 	},

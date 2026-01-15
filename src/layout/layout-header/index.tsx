@@ -1,7 +1,7 @@
 import type { ButtonProps } from "antd";
 import { useDeviceType, usePreferences } from "#src/hooks";
 import { useLayout } from "#src/layout/hooks/use-layout";
-import { GlobalSearch, Preferences } from "#src/layout/widgets";
+import { GlobalSearch } from "#src/layout/widgets";
 import { NotificationContainer } from "#src/layout/widgets/notification/notification-container";
 import { usePreferencesStore, useTabsStore } from "#src/store";
 import { cn } from "#src/utils";
@@ -92,7 +92,7 @@ export default function LayoutHeader({ className, children }: LayoutHeaderProps)
 		>
 			<header
 				className={cn(
-					"flex-shrink-0 flex gap-5 justify-between items-center transition-all md:px-4",
+					"flex-shrink-0 flex gap-5 justify-between items-center transition-all md:px-4 rounded-md m-3",
 					{ "overflow-hidden": isMaximize },
 					className,
 				)}
@@ -122,7 +122,7 @@ export default function LayoutHeader({ className, children }: LayoutHeaderProps)
 
 				<div className="flex items-center">
 					<GlobalSearch />
-					<Preferences {...buttonProps} />
+					{/* <Preferences {...buttonProps} /> */}
 					<ThemeButton {...buttonProps} />
 					<LanguageButton {...buttonProps} />
 					<FullscreenButton {...buttonProps} target={document.documentElement} />
