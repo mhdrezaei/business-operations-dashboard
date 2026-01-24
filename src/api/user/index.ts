@@ -7,7 +7,7 @@ export * from "./types";
 
 export function fetchLogin(data: PasswordLoginFormType) {
 	return request
-		.post("login", { json: data })
+		.post("auth/login/", { json: data })
 		.json<ApiResponse<AuthType>>();
 }
 

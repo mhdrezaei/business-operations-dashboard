@@ -15,7 +15,7 @@ const initialState = {
 type AuthState = AuthType;
 
 interface AuthAction {
-	login: (loginPayload: PasswordLoginFormType) => Promise<void>
+	login: (loginPayload: PasswordLoginFormType) => Promise<unknown>
 	logout: () => Promise<void>
 	reset: () => void
 };

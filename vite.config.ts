@@ -47,23 +47,12 @@ export default defineConfig({
 			terminal: false,
 			enableBuild: false,
 		}),
-		/**
-		 * 点击页面 DOM 打开 IDE 并将光标自动定位到源代码位置
-		 *
-		 * macOS 默认组合键 Option + Shift
-		 * Windows 默认组合键 Alt + Shift
-		 * 在 Web 页面上按住组合键时，移动鼠标即会在 DOM 上出现遮罩层并显示相关信息，鼠标点击一下，将自动打开 IDE 并将光标定位到元素对应的代码位置
-		 * 更多用法看 https://inspector.fe-dev.cn/guide/start.html
-		 */
+
 		codeInspectorPlugin({
 			bundler: "vite",
 			// hideConsole: true,
 		}),
 
-		/**
-		 * 按需加载图标
-		 * https://github.com/antfu/unplugin-icons
-		 */
 		Icons({
 			customCollections: {
 				svg: FileSystemIconLoader("./src/icons/svg"),

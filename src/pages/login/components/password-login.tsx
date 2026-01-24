@@ -59,11 +59,11 @@ export function PasswordLogin() {
 		<>
 			{contextLoadingHolder}
 			<Space direction="vertical">
-				<h2 className="text-colorText mb-3 text-3xl font-bold leading-9 tracking-tight lg:text-4xl">
+				{/* <h2 className="text-colorText mb-3 text-3xl font-bold leading-9 tracking-tight lg:text-4xl">
 					{t("authority.welcomeBack")}
 					&nbsp;
 					👏
-				</h2>
+				</h2> */}
 				<p className="lg:text-base text-sm text-colorTextSecondary">
 					{t("authority.loginDescription")}
 				</p>
@@ -101,7 +101,7 @@ export function PasswordLogin() {
 								setFormMode("codeLogin");
 							}}
 						>
-							{t("authority.codeLogin")}
+							{/* {t("authority.codeLogin")} */}
 						</BasicButton>
 						<BasicButton
 							type="link"
