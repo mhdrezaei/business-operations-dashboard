@@ -26,6 +26,9 @@ importers:
       '@dnd-kit/utilities':
         specifier: ^3.2.2
         version: 3.2.2(react@18.3.1)
+      '@hookform/resolvers':
+        specifier: ^5.2.2
+        version: 5.2.2(react-hook-form@7.71.1(react@18.3.1))
       '@tanstack/react-query':
         specifier: ^5.69.0
         version: 5.90.19(react@18.3.1)
@@ -38,6 +41,9 @@ importers:
       antd-img-crop:
         specifier: ^4.24.0
         version: 4.27.0(antd@5.29.3(moment@2.30.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      antd-jalali:
+        specifier: '2'
+        version: 2.0.1(antd@5.29.3(moment@2.30.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(moment@2.30.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       dayjs:
         specifier: ^1.11.13
         version: 1.11.19
@@ -53,6 +59,9 @@ importers:
       i18next:
         specifier: ^24.2.3
         version: 24.2.3(typescript@5.9.3)
+      jalaliday:
+        specifier: ^3.1.1
+        version: 3.1.1(dayjs@1.11.19)
       keepalive-for-react:
         specifier: ^4.0.2
         version: 4.0.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1231,6 +1240,11 @@ packages:
     resolution: {integrity: sha512-OEl393iCOoo/z8bMezRlJu+GlRGlsKbUAN7jKB6LhnKoqKve5DXRpalbItIIcwnCjs1k/FOPjFzcA6Qn+H+YbA==}
     engines: {node: '>=18.0.0', npm: '>=9.0.0'}
 
+  '@hookform/resolvers@5.2.2':
+    resolution: {integrity: sha512-A/IxlMLShx3KjV/HeTcTfaMxdwy690+L/ZADoeaTltLx+CVuzkeVIPuybK3jrRfw7YZnmdKsVVHAlEPIAEUNlA==}
+    peerDependencies:
+      react-hook-form: ^7.55.0
+
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
     engines: {node: '>=18.18.0'}
@@ -1498,6 +1512,9 @@ packages:
     resolution: {integrity: sha512-aPFONczE4fUFKNXszdvnd2GqKEYQdV5oEsIbKPujJmWlCI9zEsv1Otig8RKK+X9bed9gFUN6LAeN4ZcNuu4zjg==}
     cpu: [x64]
     os: [win32]
+
+  '@standard-schema/utils@0.3.0':
+    resolution: {integrity: sha512-e7Mew686owMaPJVNNLs55PUvgz371nKgwsc4vxE49zsODpJEnxgxRo2y/OKrqueavXgZNMDVj3DdHFlaSAeU8g==}
 
   '@stylistic/eslint-plugin@5.7.0':
     resolution: {integrity: sha512-PsSugIf9ip1H/mWKj4bi/BlEoerxXAda9ByRFsYuwsmr6af9NxJL0AaiNXs8Le7R21QR5KMiD/KdxZZ71LjAxQ==}
@@ -1890,6 +1907,13 @@ packages:
       antd: '>=4.0.0'
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
+
+  antd-jalali@2.0.1:
+    resolution: {integrity: sha512-M8uo0qHPQhC6UeezVmKq0COIonW4gOL6POrEgoLbz0KtLfyF2zMq7wLuNcF3feEjj75JoVkxy9jxID+/yyCEjQ==}
+    peerDependencies:
+      antd: ^5.18.3
+      react: ^18.3.1
+      react-dom: ^18.3.1
 
   antd@5.29.3:
     resolution: {integrity: sha512-3DdbGCa9tWAJGcCJ6rzR8EJFsv2CtyEbkVabZE14pfgUHfCicWCj0/QzQVLDYg8CPfQk9BH7fHCoTXHTy7MP/A==}
@@ -3037,6 +3061,14 @@ packages:
 
   jalaali-js@1.2.8:
     resolution: {integrity: sha512-Jl/EwY84JwjW2wsWqeU4pNd22VNQ7EkjI36bDuLw31wH98WQW4fPjD0+mG7cdCK+Y8D6s9R3zLiQ3LaKu6bD8A==}
+
+  jalaliday@2.3.0:
+    resolution: {integrity: sha512-B/m3TqsRrTFED/HBDqON6rPKe0MpoLxNICZ5uZeZ/scHJUHKQNr1n+wdZSj8MxrY1Bmo05gllZeNEw4beXd2oQ==}
+
+  jalaliday@3.1.1:
+    resolution: {integrity: sha512-exZzDOfp/32Gj2YkEHNhBBMcltBCTrIe8RXLTfpCvdjYHNfbYSQiNeFVf4RR59FV+2fixUOCEFfzOzyXfgenlg==}
+    peerDependencies:
+      dayjs: ^1.11.13
 
   jiti@1.21.7:
     resolution: {integrity: sha512-/imKNG4EbWNrVjoNC/1H5/9GFy+tqjGBHCaSsN+P2RnPqjsLmv6UD3Ej+Kj8nBWaRAwyk7kK5ZUc+OEatnTR3A==}
@@ -5923,6 +5955,11 @@ snapshots:
 
   '@faker-js/faker@9.9.0': {}
 
+  '@hookform/resolvers@5.2.2(react-hook-form@7.71.1(react@18.3.1))':
+    dependencies:
+      '@standard-schema/utils': 0.3.0
+      react-hook-form: 7.71.1(react@18.3.1)
+
   '@humanfs/core@0.19.1': {}
 
   '@humanfs/node@0.16.7':
@@ -6172,6 +6209,8 @@ snapshots:
 
   '@rollup/rollup-win32-x64-msvc@4.55.3':
     optional: true
+
+  '@standard-schema/utils@0.3.0': {}
 
   '@stylistic/eslint-plugin@5.7.0(eslint@9.39.2(jiti@1.21.7))':
     dependencies:
@@ -6654,6 +6693,19 @@ snapshots:
       react-dom: 18.3.1(react@18.3.1)
       react-easy-crop: 5.5.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       tslib: 2.8.1
+
+  antd-jalali@2.0.1(antd@5.29.3(moment@2.30.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(moment@2.30.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+    dependencies:
+      antd: 5.29.3(moment@2.30.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      dayjs: 1.11.19
+      jalaliday: 2.3.0
+      rc-picker: 4.11.3(dayjs@1.11.19)(moment@2.30.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+    transitivePeerDependencies:
+      - date-fns
+      - luxon
+      - moment
 
   antd@5.29.3(moment@2.30.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
@@ -7999,6 +8051,12 @@ snapshots:
   isexe@2.0.0: {}
 
   jalaali-js@1.2.8: {}
+
+  jalaliday@2.3.0: {}
+
+  jalaliday@3.1.1(dayjs@1.11.19):
+    dependencies:
+      dayjs: 1.11.19
 
   jiti@1.21.7: {}
 
