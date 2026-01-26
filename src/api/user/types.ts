@@ -1,13 +1,15 @@
 import type { AppRouteRecordRaw } from "#src/router/types";
 
 export interface AuthType {
-	token: string
-	refreshToken: string
+	access: string
+	refresh: string
 }
 
 export interface UserInfoType {
 	id: string
 	avatar: string
+	is_staff: boolean
+	is_superuser: boolean
 	username: string
 	email: string
 	phoneNumber: string

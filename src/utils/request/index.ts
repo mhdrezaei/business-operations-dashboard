@@ -2,10 +2,10 @@ import type { Options } from "ky";
 import { refreshTokenPath } from "#src/api/user";
 
 import { loginPath } from "#src/router/extra-info";
-import { useAuthStore, usePreferencesStore } from "#src/store";
+import { useAuthStore } from "#src/store";
 import ky from "ky";
 
-import { AUTH_HEADER, LANG_HEADER } from "./constants";
+import { AUTH_HEADER } from "./constants";
 import { handleErrorResponse } from "./error-response";
 import { globalProgress } from "./global-progress";
 import { goLogin } from "./go-login";
@@ -35,11 +35,11 @@ const defaultConfig: Options = {
 				// درخواستي که نيازي به token ندارد
 				const isWhiteRequest = requestWhiteList.some(url => request.url.endsWith(url));
 				if (!isWhiteRequest) {
-					const { token } = useAuthStore.getState();
-					request.headers.set(AUTH_HEADER, `Bearer ${token}`);
+					const { access } = useAuthStore.getState();
+					request.headers.set(AUTH_HEADER, `Bearer ${access}`);
 				}
 				// هدر زبان براي همه درخواست ها ارسال مي شود
-				request.headers.set(LANG_HEADER, usePreferencesStore.getState().language);
+				// request.headers.set(LANG_HEADER, usePreferencesStore.getState().language);
 			},
 		],
 		afterResponse: [
@@ -57,9 +57,9 @@ const defaultConfig: Options = {
 							return response;
 						}
 						// If the token is expired, refresh it and try again.
-						const { refreshToken } = useAuthStore.getState();
+						const { refresh } = useAuthStore.getState();
 						// If there is no refresh token, it means that the user has not logged in.
-						if (!refreshToken) {
+						if (!refresh) {
 							// اگر مسير صفحه به ورود ريدايرکت شده، ديگر تغيير مسير نده و نتيجه را برگردان
 							if (location.pathname === loginPath) {
 								return response;
@@ -70,7 +70,7 @@ const defaultConfig: Options = {
 							}
 						}
 
-						return refreshTokenAndRetry(request, options, refreshToken);
+						return refreshTokenAndRetry(request, options, refresh);
 					}
 					else {
 						return handleErrorResponse(response);

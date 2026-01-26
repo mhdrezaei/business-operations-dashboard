@@ -1,6 +1,6 @@
 import type { KyResponse, Options } from "ky";
-import { fetchRefreshToken } from "#src/api/user";
 
+import { fetchRefreshToken } from "#src/api/user";
 import { useAuthStore } from "#src/store";
 import ky from "ky";
 import { AUTH_HEADER } from "./constants";
@@ -28,7 +28,7 @@ export async function refreshTokenAndRetry(request: Request, options: Options, r
 			// استخراج refreshToken جديد از پاسخ
 			const newRefreshToken = freshResponse.result.refreshToken;
 			// ذخيره token و refreshToken جديد در userStore
-			useAuthStore.setState({ token: newToken, refreshToken: newRefreshToken });
+			useAuthStore.setState({ access: newToken, refresh: newRefreshToken });
 			// فراخواني onRefreshed با token جديد
 			onRefreshed(newToken);
 

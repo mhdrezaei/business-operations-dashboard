@@ -5,7 +5,11 @@ import { create } from "zustand";
 
 const initialState = {
 	id: "",
+	is_staff: false,
+	is_superuser: false,
 	avatar: "",
+	first_name: "",
+	last_name: "",
 	username: "",
 	email: "",
 	phoneNumber: "",
@@ -29,9 +33,9 @@ export const useUserStore = create<UserState & UserAction>()(
 		getUserInfo: async () => {
 			const response = await fetchUserInfo();
 			set({
-				...response.result,
+				...response,
 			});
-			return response.result;
+			return response;
 		},
 
 		reset: () => {

@@ -8,7 +8,7 @@ export * from "./types";
 export function fetchLogin(data: PasswordLoginFormType) {
 	return request
 		.post("auth/login/", { json: data })
-		.json<ApiResponse<AuthType>>();
+		.json<AuthType>();
 }
 
 export function fetchLogout() {
@@ -20,7 +20,7 @@ export function fetchAsyncRoutes() {
 }
 
 export function fetchUserInfo() {
-	return request.get("user-info").json<ApiResponse<UserInfoType>>();
+	return request.get("auth/me").json<UserInfoType>();
 }
 
 export interface RefreshTokenResult {

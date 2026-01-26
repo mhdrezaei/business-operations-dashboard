@@ -32,7 +32,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
 	const [searchParams] = useSearchParams();
 	const currentRoute = useCurrentRoute();
 	const { pathname, search } = useLocation();
-	const isLogin = useAuthStore(state => Boolean(state.token));
+	const isLogin = useAuthStore(state => Boolean(state.access));
 	const isAuthorized = useUserStore(state => Boolean(state.id));
 	const getUserInfo = useUserStore(state => state.getUserInfo);
 	const userRoles = useUserStore(state => state.roles);
@@ -81,9 +81,12 @@ export function AuthGuard({ children }: AuthGuardProps) {
 			 * @fa دريافت اطلاعات نقش از API کاربر
 			 * @en Fetch role information from the user interface
 			 */
-			if (userInfoResult.status === "fulfilled" && "roles" in userInfoResult.value) {
-				latestRoles.push(...userInfoResult.value?.roles ?? []);
+			// if (userInfoResult.status === "fulfilled" && "roles" in userInfoResult.value) {
+			if (userInfoResult.status === "fulfilled" && userInfoResult?.value) {
+				// latestRoles.push(...userInfoResult.value?.roles ?? []);
+				latestRoles.push("admin");
 			}
+			console.warn(userInfoResult && userInfoResult, "xxxxxxxx");
 			/**
 			 * @fa بک اند فعال است و مسيرها از API کاربر دريافت مي شود
 			 * @en If backend routing is enabled and the route is obtained from the user interface
