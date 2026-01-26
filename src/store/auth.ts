@@ -8,14 +8,14 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 const initialState = {
-	token: "",
-	refreshToken: "",
+	access: "",
+	refresh: "",
 };
 
-type AuthState = AuthType;
+type AuthState = Pick<AuthType, "access" | "refresh">;
 
 interface AuthAction {
-	login: (loginPayload: PasswordLoginFormType) => Promise<void>
+	login: (loginPayload: PasswordLoginFormType) => Promise<unknown>
 	logout: () => Promise<void>
 	reset: () => void
 };
@@ -27,8 +27,10 @@ export const useAuthStore = create<AuthState & AuthAction>()(
 
 		login: async (loginPayload) => {
 			const response = await fetchLogin(loginPayload);
+			console.warn(response, "Res");
 			return set({
-				...response.result,
+				access: response.access,
+				refresh: response.refresh,
 			});
 		},
 

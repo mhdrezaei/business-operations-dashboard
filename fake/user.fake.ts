@@ -6,7 +6,7 @@ import { resultSuccess } from "./utils";
 
 export default defineFakeRoute([
 	{
-		url: "/user-info",
+		url: "/me",
 		timeout: 1000,
 		method: "get",
 		response: ({ headers }) => {

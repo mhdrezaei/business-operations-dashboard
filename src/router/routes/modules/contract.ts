@@ -1,6 +1,5 @@
 import type { AppRouteRecordRaw } from "#src/router/types";
 
-import { accessControlCodes } from "#src/hooks/use-access/constants";
 import { ContainerLayout } from "#src/layout";
 import { $t } from "#src/locales";
 import { contract } from "#src/router/extra-info";
@@ -25,13 +24,13 @@ const routes: AppRouteRecordRaw[] = [
 				handle: {
 					icon: "FileTextOutlined",
 					title: $t("common.menu.newContract"),
-					roles: ["admin"],
-					permissions: [
-						accessControlCodes.get,
-						accessControlCodes.add,
-						accessControlCodes.update,
-						accessControlCodes.update,
-					],
+					// roles: ["admin"],
+					// permissions: [
+					// 	accessControlCodes.get,
+					// 	accessControlCodes.add,
+					// 	accessControlCodes.update,
+					// 	accessControlCodes.update,
+					// ],
 				},
 			},
 		],
