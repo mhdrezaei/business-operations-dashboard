@@ -1,6 +1,7 @@
 import type { ContractFormValues } from "../../model/contract.form.types";
 import { BasicContent } from "#src/components/";
 import { RHFSelect } from "#src/shared/ui/rhf-pro";
+import { ProCard } from "@ant-design/pro-components";
 import { useQuery } from "@tanstack/react-query";
 import { Col, Row } from "antd";
 
@@ -48,84 +49,86 @@ export function FixedStartSection() {
 
 	return (
 		<>
-			<BasicContent className="w-full">
-				<Row gutter={16}>
-					<Col span={12}>
-						<RHFSelect<ContractFormValues, "serviceId", number | null>
-							name="serviceId"
-							label="نوع سرویس"
-							loading={services.isLoading}
-							options={(services.data?.results ?? []).map(s => ({ label: s.name, value: s.id }))}
-							selectProps={{ allowClear: true, placeholder: "سرویس را انتخاب کنید" }}
-						/>
-					</Col>
-					<Col span={12}>
-						{/* ✅ Select شرکت (companyId در root) */}
-						<RHFSelect<ContractFormValues, "companyId", number | null>
-							name="companyId"
-							label="شرکت"
-							loading={companies.isLoading}
-							options={companyOptions}
+			<ProCard>
+				<BasicContent className="w-full">
+					<Row gutter={16}>
+						<Col span={12}>
+							<RHFSelect<ContractFormValues, "serviceId", number | null>
+								name="serviceId"
+								label="نوع سرویس"
+								loading={services.isLoading}
+								options={(services.data?.results ?? []).map(s => ({ label: s.name, value: s.id }))}
+								selectProps={{ allowClear: true, placeholder: "سرویس را انتخاب کنید" }}
+							/>
+						</Col>
+						<Col span={12}>
+							{/* ✅ Select شرکت (companyId در root) */}
+							<RHFSelect<ContractFormValues, "companyId", number | null>
+								name="companyId"
+								label="شرکت"
+								loading={companies.isLoading}
+								options={companyOptions}
+								selectProps={{
+									allowClear: true,
+									disabled: isCompanyDisabled,
+									placeholder: companyPlaceholder,
+									style: isCompanyDisabled ? { cursor: "not-allowed" } : undefined,
+									open: isCompanyDisabled ? false : undefined,
+								}}
+							/>
+						</Col>
+					</Row>
+					{/* ✅ چهار Select کنار هم مثل تصویر */}
+					<div
+						style={{
+							display: "grid",
+							gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+							gap: 12,
+							marginTop: 8,
+						}}
+					>
+						<RHFSelect<ContractFormValues, "startYear", number | null>
+							name="startYear"
+							label="سال شروع"
+							options={YEAR_OPTIONS}
 							selectProps={{
 								allowClear: true,
-								disabled: isCompanyDisabled,
-								placeholder: companyPlaceholder,
-								style: isCompanyDisabled ? { cursor: "not-allowed" } : undefined,
-								open: isCompanyDisabled ? false : undefined,
+								placeholder: "سال",
 							}}
 						/>
-					</Col>
-				</Row>
-				{/* ✅ چهار Select کنار هم مثل تصویر */}
-				<div
-					style={{
-						display: "grid",
-						gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-						gap: 12,
-						marginTop: 8,
-					}}
-				>
-					<RHFSelect<ContractFormValues, "startYear", number | null>
-						name="startYear"
-						label="سال شروع"
-						options={YEAR_OPTIONS}
-						selectProps={{
-							allowClear: true,
-							placeholder: "سال",
-						}}
-					/>
 
-					<RHFSelect<ContractFormValues, "startMonth", number | null>
-						name="startMonth"
-						label="ماه شروع"
-						options={MONTH_OPTIONS as any}
-						selectProps={{
-							allowClear: true,
-							placeholder: "ماه",
-						}}
-					/>
+						<RHFSelect<ContractFormValues, "startMonth", number | null>
+							name="startMonth"
+							label="ماه شروع"
+							options={MONTH_OPTIONS as any}
+							selectProps={{
+								allowClear: true,
+								placeholder: "ماه",
+							}}
+						/>
 
-					<RHFSelect<ContractFormValues, "endYear", number | null>
-						name="endYear"
-						label="سال پایان"
-						options={YEAR_OPTIONS}
-						selectProps={{
-							allowClear: true,
-							placeholder: "سال",
-						}}
-					/>
+						<RHFSelect<ContractFormValues, "endYear", number | null>
+							name="endYear"
+							label="سال پایان"
+							options={YEAR_OPTIONS}
+							selectProps={{
+								allowClear: true,
+								placeholder: "سال",
+							}}
+						/>
 
-					<RHFSelect<ContractFormValues, "endMonth", number | null>
-						name="endMonth"
-						label="ماه پایان"
-						options={MONTH_OPTIONS as any}
-						selectProps={{
-							allowClear: true,
-							placeholder: "ماه",
-						}}
-					/>
-				</div>
-			</BasicContent>
+						<RHFSelect<ContractFormValues, "endMonth", number | null>
+							name="endMonth"
+							label="ماه پایان"
+							options={MONTH_OPTIONS as any}
+							selectProps={{
+								allowClear: true,
+								placeholder: "ماه",
+							}}
+						/>
+					</div>
+				</BasicContent>
+			</ProCard>
 		</>
 	);
 }

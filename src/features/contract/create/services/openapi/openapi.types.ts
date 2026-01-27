@@ -1,4 +1,4 @@
-export type OpenApiContractModel = "package";
+export type OpenApiContractModel = "package" | "legacy";
 export type OpenApiPackageMode = "OR" | "AND";
 
 export interface OpenApiPlan {

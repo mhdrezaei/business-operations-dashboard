@@ -20,11 +20,13 @@ const fixedEndSchema = z.object({
 export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 	const module = serviceCode ? serviceRegistry[serviceCode] : undefined;
 
-	// ✅ schema داینامیک سرویس‌ها
-	const moduleSchema = module?.schema ?? z.object({}).passthrough();
+	// ✅ Zod v4: record باید valueType (و اینجا keyType هم) داشته باشد
+	const fallbackSchema = z.record(z.string(), z.unknown());
 
-	// ✅ این بخش کلیدی است:
-	// اگر serviceFields در RHF undefined شد، آن را به {} تبدیل می‌کنیم
+	// ✅ schema داینامیک سرویس‌ها (اگر نبود، record)
+	const moduleSchema = module?.schema ?? fallbackSchema;
+
+	// ✅ اگر serviceFields در RHF undefined/null شد، آن را به {} تبدیل می‌کنیم
 	const serviceFieldsSchema = z.preprocess(
 		v => (v == null ? {} : v),
 		moduleSchema,
@@ -38,7 +40,6 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 			}),
 		)
 		.superRefine((val, ctx) => {
-			// ✅ required ها (با string literal code، نه ZodIssueCode)
 			if (val.serviceId == null) {
 				ctx.addIssue({
 					code: "custom",
@@ -47,8 +48,6 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 				});
 			}
 
-			// serviceCode را بهتر است nullable باشد و وقتی سرویس انتخاب شد پر شود
-			// پس اگر می‌خواهی همینجا required باشد:
 			if (!val.serviceCode) {
 				ctx.addIssue({
 					code: "custom",

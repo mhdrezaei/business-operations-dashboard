@@ -17,5 +17,15 @@ export interface FixedEndFields {
 	// ... فیلدهای ثابت انتها
 }
 
-export type ContractFormValues = FixedStartFields
-  & FixedEndFields & { serviceFields: Record<string, unknown>, serviceCode: ContractServiceCode | null };
+export interface ContractFormValues {
+	serviceId: number | null
+	serviceCode: ContractServiceCode | null
+	companyId: number | null
+	startYear: number | null
+	startMonth: number | null
+	endYear: number | null
+	endMonth: number | null
+	description?: string
+	documents: any[]
+	serviceFields: Record<string, unknown>
+}

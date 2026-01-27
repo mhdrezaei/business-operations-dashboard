@@ -10,33 +10,42 @@ import {
 } from "#src/utils";
 
 import { Form, Input, Tooltip } from "antd";
-import React from "react";
+import React, { useState } from "react";
 import { Controller } from "react-hook-form";
 import { useSmartControl } from "../utils";
 
-export type RHFProTextProps<
+export type RHFProNumberProps<
 	TFV extends FieldValues,
 	TName extends Path<TFV>,
 > = CommonFieldProps<TFV, TName> & {
-	inputProps?: Omit<InputProps, "value" | "onChange">
+	inputProps?: Omit<InputProps, "value" | "onChange" | "inputMode">
 	formItemProps?: Omit<
 		React.ComponentProps<typeof Form.Item>,
 		"children" | "help" | "validateStatus"
 	>
 
-	/** پیش‌فرض true وقتی inputMode="numeric" */
-	enableNumericGuard?: boolean
-
-	/** جداکننده هزارگان (کاما) - فقط وقتی numericGuard فعال باشد معنی دارد */
 	enableGrouping?: boolean
+	enableWordsTooltip?: boolean
 };
 
-export function RHFProText<
+function toNumberOrNull(raw: string): number | null {
+	const plain = stripGroupingSeparators(raw).trim();
+	if (!plain)
+		return null;
+	if (!/^-?\d+$/.test(plain))
+		return null;
+	const n = Number(plain);
+	return Number.isFinite(n) ? n : null;
+}
+
+export function RHFProNumber<
 	TFV extends FieldValues,
 	TName extends Path<TFV>,
->(props: RHFProTextProps<TFV, TName>) {
+>(props: RHFProNumberProps<TFV, TName>) {
 	const control = useSmartControl<TFV>(props.control);
 	const { language } = usePreferences();
+
+	const [focused, setFocused] = useState(false);
 
 	return (
 		<Controller
@@ -45,22 +54,18 @@ export function RHFProText<
 			render={({ field, fieldState }) => {
 				const err = props.hideError ? undefined : fieldState.error?.message;
 
-				const rawValue = (field.value ?? "") as string;
-				const inputMode = props.inputProps?.inputMode;
-
-				const numericGuardEnabled
-					= (props.enableNumericGuard ?? true) && inputMode === "numeric";
-				const groupingEnabled = numericGuardEnabled && !!props.enableGrouping;
+				const raw = field.value == null ? "" : String(field.value);
+				const groupingEnabled = !!props.enableGrouping;
 
 				const displayValue = groupingEnabled
-					? formatWithGrouping(rawValue, language)
-					: rawValue;
+					? formatWithGrouping(raw, language)
+					: raw;
 
-				const words = numericGuardEnabled
-					? numberToWordsByLanguage(stripGroupingSeparators(rawValue), language)
+				const words = props.enableWordsTooltip
+					? numberToWordsByLanguage(stripGroupingSeparators(raw), language)
 					: "";
 
-				const tooltipTitle = words || undefined;
+				const showTooltip = focused && !!words;
 
 				return (
 					<Form.Item
@@ -70,66 +75,45 @@ export function RHFProText<
 						{...props.formItemProps}
 					>
 						<Tooltip
-							title={tooltipTitle}
-							open={tooltipTitle ? undefined : false}
+							title={words}
+							open={showTooltip}
 							placement="top"
 						>
 							<Input
 								{...(props.inputProps as any)}
+								inputMode="numeric"
 								value={displayValue}
+								onFocus={() => setFocused(true)}
+								onBlur={() => {
+									setFocused(false);
+									field.onBlur();
+								}}
 								onChange={(e) => {
-									const next = e.target.value;
-
-									if (!numericGuardEnabled) {
-										field.onChange(next);
-										return;
-									}
-
-									const cleaned = sanitizeNumericInput(next);
-
-									field.onChange(
-										groupingEnabled
-											? stripGroupingSeparators(cleaned)
-											: cleaned,
-									);
-								}}
-								onBeforeInput={(e) => {
-									if (!numericGuardEnabled)
-										return;
-
-									const data = (e as any).data as string | undefined;
-									if (!data)
-										return;
-
-									const cleaned = sanitizeNumericInput(data);
-									if (cleaned !== data)
-										e.preventDefault();
-								}}
-								onPaste={(e) => {
-									if (!numericGuardEnabled)
-										return;
-
-									e.preventDefault();
-									const text = e.clipboardData.getData("text") ?? "";
-									const cleaned = sanitizeNumericInput(text);
-
-									const nextChunk = groupingEnabled
+									const cleaned = sanitizeNumericInput(e.target.value);
+									const plain = groupingEnabled
 										? stripGroupingSeparators(cleaned)
 										: cleaned;
 
-									const target = e.currentTarget;
-									const start = target.selectionStart ?? target.value.length;
-									const end = target.selectionEnd ?? target.value.length;
-
-									const merged = target.value.slice(0, start) + nextChunk + target.value.slice(end);
-
-									field.onChange(
-										groupingEnabled
-											? stripGroupingSeparators(merged)
-											: merged,
-									);
+									field.onChange(toNumberOrNull(plain));
 								}}
-								onBlur={field.onBlur}
+								onBeforeInput={(e) => {
+									const data = (e as any).data as string | undefined;
+									if (!data)
+										return;
+									if (sanitizeNumericInput(data) !== data) {
+										e.preventDefault();
+									}
+								}}
+								onPaste={(e) => {
+									e.preventDefault();
+									const text = e.clipboardData.getData("text") ?? "";
+									const cleaned = sanitizeNumericInput(text);
+									const plain = groupingEnabled
+										? stripGroupingSeparators(cleaned)
+										: cleaned;
+
+									field.onChange(toNumberOrNull(plain));
+								}}
 								ref={field.ref}
 								status={err ? "error" : undefined}
 								autoComplete="off"

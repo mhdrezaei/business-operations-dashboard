@@ -1,9 +1,10 @@
 import type { ContractFormValues } from "../../model/contract.form.types";
 import { RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
+import { RHFProNumber } from "#src/shared/ui/rhf-pro/fields/RHFProNumber.js";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import { ProCard, ProFormGroup } from "@ant-design/pro-components";
-import { Button, Collapse } from "antd";
 
+import { ProCard, ProFormGroup } from "@ant-design/pro-components";
+import { Button, Col, Collapse, Row } from "antd";
 import React, { useMemo, useState } from "react";
 import { useFieldArray, useFormContext } from "react-hook-form";
 import { defaultOpenApiPlan } from "./openapi.types";
@@ -11,7 +12,7 @@ import { defaultOpenApiPlan } from "./openapi.types";
 // helper برای مسیرهای serviceFields.* (تمیز و متمرکز)
 const sf = (path: string) => `serviceFields.${path}` as any;
 
-const CONTRACT_MODEL_OPTIONS = [{ label: "Package (بسته‌ای)", value: "package" }];
+const CONTRACT_MODEL_OPTIONS = [{ label: "Package (بسته‌ای)", value: "package" }, { label: "Legacy (قدیمی)", value: "legacy" }];
 const PACKAGE_MODE_OPTIONS = [
 	{ label: "OR", value: "OR" },
 	{ label: "AND", value: "AND" },
@@ -43,11 +44,37 @@ export function OpenApiFields() {
 	const collapseItems = useMemo(() => {
 		return fields.map((f, idx) => ({
 			key: String(idx),
-			label: `پلن بسته ${idx + 1}`,
+			label: (
+				<div
+					style={{
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "space-between",
+						width: "100%",
+						gap: 12,
+					}}
+				>
+					<span>{`پلن بسته ${idx + 1}`}</span>
+
+					<Button
+						danger
+						size="small"
+						icon={<DeleteOutlined />}
+						disabled={idx === 0}
+						onClick={(e) => {
+							e.stopPropagation();
+							removePlan(idx);
+						}}
+					>
+						حذف پلن
+					</Button>
+				</div>
+			),
 			children: (
 				<ProCard
-					bordered
 					ghost
+					gutter={8}
+
 					style={{ borderRadius: 12 }}
 					bodyStyle={{ padding: 12 }}
 				>
@@ -61,26 +88,28 @@ export function OpenApiFields() {
 					>
 						<ProFormGroup grid>
 							<ProFormGroup colProps={{ span: 12 }}>
-								<RHFProText
+								<RHFProNumber
 									name={sf(`plans.${idx}.smsMax`)}
 									label="حداکثر پیامک"
-									inputProps={{ placeholder: "مثلاً 200000000", inputMode: "numeric" }}
+									enableGrouping
+									enableWordsTooltip
+									inputProps={{ placeholder: "مثلاً 200000000" }}
 								/>
 							</ProFormGroup>
 
 							<ProFormGroup colProps={{ span: 12 }}>
-								<RHFProText
+								<RHFProNumber
 									name={sf(`plans.${idx}.smsMin`)}
 									label="حداقل پیامک"
-									inputProps={{ placeholder: "مثلاً 0", inputMode: "numeric" }}
+									inputProps={{ placeholder: "مثلاً 0" }}
 								/>
 							</ProFormGroup>
 
 							<ProFormGroup colProps={{ span: 12 }}>
-								<RHFProText
+								<RHFProNumber
 									name={sf(`plans.${idx}.smsFixedPrice`)}
 									label="نرخ فروش پیامک - مبلغ ثابت (تومان)"
-									inputProps={{ placeholder: "مثلاً 120", inputMode: "numeric" }}
+									inputProps={{ placeholder: "مثلاً 120" }}
 								/>
 							</ProFormGroup>
 						</ProFormGroup>
@@ -96,10 +125,10 @@ export function OpenApiFields() {
 					>
 						<ProFormGroup grid>
 							<ProFormGroup colProps={{ span: 12 }}>
-								<RHFProText
+								<RHFProNumber
 									name={sf(`plans.${idx}.billPartnerShare`)}
 									label="سهم شریک (%)"
-									inputProps={{ placeholder: "مثلاً 40", inputMode: "numeric" }}
+									inputProps={{ placeholder: "مثلاً 40" }}
 								/>
 							</ProFormGroup>
 
@@ -112,26 +141,32 @@ export function OpenApiFields() {
 							</ProFormGroup>
 
 							<ProFormGroup colProps={{ span: 12 }}>
-								<RHFProText
+								<RHFProNumber
 									name={sf(`plans.${idx}.billMax`)}
 									label="حداکثر استعلام قبض"
-									inputProps={{ placeholder: "مثلاً 2000000", inputMode: "numeric" }}
+									enableGrouping
+									enableWordsTooltip
+									inputProps={{ placeholder: "مثلاً 2000000" }}
 								/>
 							</ProFormGroup>
 
 							<ProFormGroup colProps={{ span: 12 }}>
-								<RHFProText
+								<RHFProNumber
 									name={sf(`plans.${idx}.billMin`)}
 									label="حداقل استعلام قبض"
-									inputProps={{ placeholder: "مثلاً 0", inputMode: "numeric" }}
+									enableGrouping
+									enableWordsTooltip
+									inputProps={{ placeholder: "مثلاً 0" }}
 								/>
 							</ProFormGroup>
 
 							<ProFormGroup colProps={{ span: 12 }}>
-								<RHFProText
+								<RHFProNumber
 									name={sf(`plans.${idx}.billFixedPrice`)}
 									label="نرخ استعلام قبض - مبلغ ثابت (تومان)"
-									inputProps={{ placeholder: "مثلاً 120", inputMode: "numeric" }}
+									enableGrouping
+									enableWordsTooltip
+									inputProps={{ placeholder: "مثلاً 120" }}
 								/>
 							</ProFormGroup>
 						</ProFormGroup>
@@ -145,14 +180,14 @@ export function OpenApiFields() {
 						style={{ borderRadius: 12 }}
 						bodyStyle={{ padding: 12 }}
 					>
-						<RHFProText
+						<RHFProNumber
 							name={sf(`plans.${idx}.trafficCommissionPercent`)}
 							label="درصد کارمزد (0 تا 100)"
-							inputProps={{ placeholder: "مثلاً 4", inputMode: "numeric" }}
+							inputProps={{ placeholder: "مثلاً 4" }}
 						/>
 					</ProCard>
 
-					<div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
+					{/* <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
 						<Button
 							danger
 							icon={<DeleteOutlined />}
@@ -161,7 +196,7 @@ export function OpenApiFields() {
 						>
 							حذف پلن
 						</Button>
-					</div>
+					</div> */}
 				</ProCard>
 			),
 		}));
@@ -171,50 +206,51 @@ export function OpenApiFields() {
 		<ProCard
 			bordered
 			headerBordered
-			style={{ marginTop: 16, borderRadius: 16 }}
 			title="مدل قرارداد OpenAPI"
 			bodyStyle={{ padding: 16 }}
 		>
-			<ProFormGroup grid>
-				<ProFormGroup colProps={{ span: 12 }}>
+			<Row gutter={24} justify="space-between">
+				<Col span={12}>
 					<RHFSelect
 						name={sf("contractModel")}
 						label="مدل قرارداد OpenAPI"
 						options={CONTRACT_MODEL_OPTIONS}
 						selectProps={{ placeholder: "انتخاب کنید" }}
 					/>
-				</ProFormGroup>
+				</Col>
 
-				<ProFormGroup colProps={{ span: 12 }}>
+				<Col span={12}>
 					<RHFSelect
 						name={sf("packageMode")}
 						label="حالت بسته"
 						options={PACKAGE_MODE_OPTIONS}
 						selectProps={{ placeholder: "انتخاب کنید" }}
 					/>
-				</ProFormGroup>
-			</ProFormGroup>
+				</Col>
+			</Row>
+			<Row>
 
-			<ProCard
-				bordered
-				headerBordered
-				style={{ marginTop: 12, borderRadius: 16 }}
-				title="پلن‌ها"
-				extra={(
-					<Button icon={<PlusOutlined />} onClick={addPlan}>
-						افزودن پلن جدید
-					</Button>
-				)}
-				bodyStyle={{ padding: 12 }}
-			>
-				<Collapse
-					accordion
-					activeKey={activeKey}
-					onChange={k =>
-						setActiveKey(Array.isArray(k) ? String(k[0] ?? "0") : String(k ?? "0"))}
-					items={collapseItems as any}
-				/>
-			</ProCard>
+				<ProCard
+					bordered
+					headerBordered
+					style={{ marginTop: 12, borderRadius: 16 }}
+					title="پلن‌ها"
+					extra={(
+						<Button icon={<PlusOutlined />} onClick={addPlan}>
+							افزودن پلن جدید
+						</Button>
+					)}
+					bodyStyle={{ padding: 12 }}
+				>
+					<Collapse
+						accordion
+						activeKey={activeKey}
+						onChange={k =>
+							setActiveKey(Array.isArray(k) ? String(k[0] ?? "0") : String(k ?? "0"))}
+						items={collapseItems as any}
+					/>
+				</ProCard>
+			</Row>
 		</ProCard>
 	);
 }

@@ -1,8 +1,7 @@
 import type { UploadProps } from "antd";
 import type { ContractFormValues } from "../../model/contract.form.types";
 import { RHFProTextArea, RHFProUploadButton } from "#src/shared/ui/rhf-pro";
-
-import React from "react";
+import { ProCard } from "@ant-design/pro-components";
 
 export function FixedEndSection() {
 	// تنظیمات پیشنهادی آپلود (قابل تغییر بر اساس API شما)
@@ -18,26 +17,26 @@ export function FixedEndSection() {
 
 	return (
 		<>
-			<RHFProTextArea<ContractFormValues, "description">
-				name="description"
-				label="توضیحات"
-				textAreaProps={{
-					rows: 4,
-					placeholder: "توضیحات قرارداد را وارد کنید...",
-					showCount: true,
-					maxLength: 2000,
-				}}
-			/>
+			<ProCard>
+				<RHFProTextArea<ContractFormValues, "description">
+					name="description"
+					label="توضیحات"
+					textAreaProps={{
+						rows: 4,
+						placeholder: "توضیحات قرارداد را وارد کنید...",
+						showCount: true,
+						maxLength: 2000,
+					}}
+				/>
 
-			<RHFProUploadButton<ContractFormValues, "documents">
-				name="documents"
-				label="مدارک"
-				buttonText="آپلود مدارک"
-				uploadProps={uploadProps}
-				itemProps={{
-					extra: "فرمت‌های مجاز: PDF / JPG / PNG — حداکثر ۱۰ فایل",
-				}}
-			/>
+				<RHFProUploadButton<ContractFormValues, "documents">
+					name="documents"
+					label="مدارک"
+					buttonText="آپلود مدارک (PDF) "
+					uploadProps={uploadProps}
+
+				/>
+			</ProCard>
 		</>
 	);
 }

@@ -1,5 +1,6 @@
 export * from "./cn";
 export * from "./dom";
+export * from "./formated";
 export * from "./get-all-expanded-keys";
 export * from "./get-app-namespace";
 export * from "./is";

@@ -1,7 +1,6 @@
-import type { z } from "zod";
+import type { Resolver } from "react-hook-form";
 import type { ContractFormValues, ContractServiceCode } from "../model/contract.form.types";
 import { accessControlCodes, useAccess } from "#src/hooks/index.js";
-import { ProCard } from "@ant-design/pro-components";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "antd";
 import { AnimatePresence, motion } from "framer-motion";
@@ -32,22 +31,26 @@ export function ContractForm() {
 	// ✅ ما schema base را یکبار می‌سازیم
 	// eslint-disable-next-line unused-imports/no-unused-vars
 	const baseSchema = useMemo(() => buildContractSchema(null), []);
-	type Schema = typeof baseSchema;
+	const dynamicResolver: Resolver<ContractFormValues> = useCallback(
+		async (values, context, options) => {
+			const sc = values.serviceCode ?? null;
+			const schema = buildContractSchema(sc as ContractServiceCode | null);
 
+			// ✅ bridge cast (فقط همینجا)
+			const r = zodResolver(schema) as unknown as Resolver<ContractFormValues>;
+			return r(values, context, options);
+		},
+		[],
+	);
 	// ✅ useForm را با schema base می‌سازیم
-	const form = useForm<z.input<Schema>, any, z.output<Schema>>({
+	const form = useForm<ContractFormValues>({
 		defaultValues: defaultValues as any,
 		mode: "all",
 		shouldUnregister: true,
 
 		// ✅ resolver داینامیک واقعی: داخلش از values.serviceCode استفاده می‌کنیم
 		// و schema مناسب را همان لحظه می‌سازیم
-		resolver: useCallback(async (values, context, options) => {
-			// serviceCode از خود values خوانده می‌شود (نه از state)
-			const sc = (values as ContractFormValues)?.serviceCode ?? null;
-			const schema = buildContractSchema(sc as ContractServiceCode | null);
-			return zodResolver(schema)(values, context, options);
-		}, []),
+		resolver: dynamicResolver,
 	});
 
 	// ✅ برای render کردن فیلدهای داینامیک
@@ -70,40 +73,40 @@ export function ContractForm() {
 
 	return (
 		<FormProvider {...form}>
-			<ProCard>
-				<div>
-					<FixedStartSection />
 
-					<AnimatePresence mode="wait">
-						{module?.Fields
-							? (
-								<motion.div
-									key={module.code}
-									initial={{ opacity: 0, y: 8 }}
-									animate={{ opacity: 1, y: 0 }}
-									exit={{ opacity: 0, y: -8 }}
-									transition={{ duration: 0.2 }}
-									style={{ marginTop: 16 }}
-								>
-									<module.Fields />
-								</motion.div>
-							)
-							: null}
-					</AnimatePresence>
+			<div className="w-full flex flex-col justify-center items-center gap-2">
+				<FixedStartSection />
 
-					<FixedEndSection />
+				<AnimatePresence mode="wait">
+					{module?.Fields
+						? (
+							<motion.div
+								key={module.code}
+								initial={{ opacity: 0, y: 8 }}
+								animate={{ opacity: 1, y: 0 }}
+								exit={{ opacity: 0, y: -8 }}
+								transition={{ duration: 0.2 }}
+								className="w-full"
+							>
+								<module.Fields />
+							</motion.div>
+						)
+						: null}
+				</AnimatePresence>
 
-					<div style={{ marginTop: 16 }}>
-						<Button
-							type="primary"
-							onClick={onSubmit}
-							disabled={!hasAccessByCodes(accessControlCodes.add)}
-						>
-							ثبت قرارداد
-						</Button>
-					</div>
+				<FixedEndSection />
+
+				<div style={{ marginTop: 16 }}>
+					<Button
+						type="primary"
+						onClick={onSubmit}
+						disabled={!hasAccessByCodes(accessControlCodes.add)}
+					>
+						ثبت قرارداد
+					</Button>
 				</div>
-			</ProCard>
+			</div>
+
 		</FormProvider>
 	);
 }

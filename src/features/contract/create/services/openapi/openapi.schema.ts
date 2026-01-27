@@ -59,8 +59,40 @@ const openApiPlanSchema = z
 /**
  * serviceFields مخصوص openapi
  */
-export const openApiServiceFieldsSchema = z.object({
-	contractModel: z.enum(["package"]).nullable(),
-	packageMode: z.enum(["OR", "AND"]).nullable(),
-	plans: z.array(openApiPlanSchema).min(1, "حداقل یک پلن باید اضافه شود"),
-});
+const contractModelSchema = z.preprocess(
+	v => (v === "" || v == null ? null : v),
+	z.enum(["package", "legacy"])
+		.nullable()
+		.catch(null),
+);
+
+const packageModeSchema = z.preprocess(
+	v => (v === "" || v == null ? null : v),
+	z.enum(["OR", "AND"])
+		.nullable()
+		.catch(null),
+);
+
+export const openApiServiceFieldsSchema = z
+	.object({
+		contractModel: contractModelSchema,
+		packageMode: packageModeSchema,
+		plans: z.array(openApiPlanSchema).min(1, "حداقل یک پلن باید اضافه شود"),
+	})
+	.superRefine((val, ctx) => {
+		if (val.contractModel == null) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["contractModel"],
+				message: "مدل قرارداد الزامی است",
+			});
+		}
+
+		if (val.packageMode == null) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["packageMode"],
+				message: "نحوه محاسبه بسته الزامی است",
+			});
+		}
+	});
