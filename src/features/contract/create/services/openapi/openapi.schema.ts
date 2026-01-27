@@ -1,3 +1,4 @@
+import { contractTypeSchema } from "#src/features/contract/create/components/contract-type/contract-type.schema";
 import { z } from "zod";
 import {
 	zNullableNonNegative,
@@ -78,6 +79,12 @@ export const openApiServiceFieldsSchema = z
 		contractModel: contractModelSchema,
 		packageMode: packageModeSchema,
 		plans: z.array(openApiPlanSchema).min(1, "حداقل یک پلن باید اضافه شود"),
+		legacyPricing: z
+			.object({
+				paymentRegistration: contractTypeSchema,
+				billInquiry: contractTypeSchema,
+			})
+			.optional(),
 	})
 	.superRefine((val, ctx) => {
 		if (val.contractModel == null) {
@@ -94,5 +101,23 @@ export const openApiServiceFieldsSchema = z
 				path: ["packageMode"],
 				message: "نحوه محاسبه بسته الزامی است",
 			});
+		}
+		if (val.contractModel == null) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["contractModel"],
+				message: "مدل قرارداد الزامی است",
+			});
+			return;
+		}
+
+		if (val.contractModel === "package") {
+			if (val.packageMode == null) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["packageMode"],
+					message: "حالت بسته الزامی است",
+				});
+			}
 		}
 	});

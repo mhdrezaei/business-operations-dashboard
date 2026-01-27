@@ -1,13 +1,15 @@
 import type { ContractFormValues } from "../../model/contract.form.types";
+import { BasicContent } from "#src/components/index.js";
 import { RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro/fields/RHFProNumber.js";
-import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 
+import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { ProCard, ProFormGroup } from "@ant-design/pro-components";
 import { Button, Col, Collapse, Row } from "antd";
 import React, { useMemo, useState } from "react";
-import { useFieldArray, useFormContext } from "react-hook-form";
-import { defaultOpenApiPlan } from "./openapi.types";
+import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
+import { ContractTypeSection } from "../../components/contract-type/ContractTypeSection";
+import { defaultLegacyPricing, defaultOpenApiPlan } from "./openapi.types";
 
 // helper برای مسیرهای serviceFields.* (تمیز و متمرکز)
 const sf = (path: string) => `serviceFields.${path}` as any;
@@ -19,15 +21,34 @@ const PACKAGE_MODE_OPTIONS = [
 ];
 
 export function OpenApiFields() {
-	const { control } = useFormContext<ContractFormValues>();
+	const { control, setValue } = useFormContext<ContractFormValues>();
 
 	const { fields, append, remove } = useFieldArray({
 		control,
 		name: sf("plans"),
 	});
-
 	// ✅ با افزودن پلن جدید، همون پلن باز بشه و بقیه بسته
 	const [activeKey, setActiveKey] = useState<string>("0");
+
+	const contractModel = useWatch({ control, name: sf("contractModel") }) as "package" | "legacy" | null;
+
+	// وقتی legacy انتخاب شد، اگر legacyPricing نبود بساز
+	React.useEffect(() => {
+		if (contractModel === "legacy") {
+			setValue(sf("legacyPricing"), structuredClone(defaultLegacyPricing) as any, {
+				shouldDirty: true,
+				shouldValidate: true,
+			});
+			setValue(sf("packageMode"), null as any, { shouldDirty: true, shouldValidate: true });
+		}
+		else {
+			// وقتی package شد، legacyPricing رو پاک کن (با shouldUnregister true هم تمیزه)
+			setValue(sf("legacyPricing"), undefined as any, {
+				shouldDirty: true,
+				shouldValidate: true,
+			});
+		}
+	}, [contractModel, setValue]);
 
 	const addPlan = () => {
 		const nextIndex = fields.length;
@@ -220,36 +241,65 @@ export function OpenApiFields() {
 				</Col>
 
 				<Col span={12}>
-					<RHFSelect
-						name={sf("packageMode")}
-						label="حالت بسته"
-						options={PACKAGE_MODE_OPTIONS}
-						selectProps={{ placeholder: "انتخاب کنید" }}
-					/>
+					{contractModel === "package"
+						? (
+							<RHFSelect
+								name={sf("packageMode")}
+								label="حالت بسته"
+								options={PACKAGE_MODE_OPTIONS}
+								selectProps={{ placeholder: "انتخاب کنید" }}
+							/>
+						)
+						: null}
 				</Col>
 			</Row>
 			<Row>
+				{/* ✅ فقط وقتی legacy */}
+				{contractModel === "legacy"
+					? (
+						<BasicContent className="w-full overflow-hidden ">
 
-				<ProCard
-					bordered
-					headerBordered
-					style={{ marginTop: 12, borderRadius: 16 }}
-					title="پلن‌ها"
-					extra={(
-						<Button icon={<PlusOutlined />} onClick={addPlan}>
-							افزودن پلن جدید
-						</Button>
-					)}
-					bodyStyle={{ padding: 12 }}
-				>
-					<Collapse
-						accordion
-						activeKey={activeKey}
-						onChange={k =>
-							setActiveKey(Array.isArray(k) ? String(k[0] ?? "0") : String(k ?? "0"))}
-						items={collapseItems as any}
-					/>
-				</ProCard>
+							<Row gutter={12} justify="space-between" className="gap-3">
+								<Col span={24}>
+									<ContractTypeSection
+										title="بهای ثبت وصولی"
+										name={sf("legacyPricing.paymentRegistration")}
+									/>
+								</Col>
+								<Col span={24}>
+									<ContractTypeSection
+										title="بهای استعلام قبض"
+										name={sf("legacyPricing.billInquiry")}
+									/>
+								</Col>
+							</Row>
+						</BasicContent>
+					)
+					: null}
+				{contractModel === "package"
+					? (
+						<ProCard
+							bordered
+							headerBordered
+							style={{ marginTop: 12, borderRadius: 16 }}
+							title="پلن‌ها"
+							extra={(
+								<Button icon={<PlusOutlined />} onClick={addPlan}>
+									افزودن پلن جدید
+								</Button>
+							)}
+							bodyStyle={{ padding: 12 }}
+						>
+							<Collapse
+								accordion
+								activeKey={activeKey}
+								onChange={k =>
+									setActiveKey(Array.isArray(k) ? String(k[0] ?? "0") : String(k ?? "0"))}
+								items={collapseItems as any}
+							/>
+						</ProCard>
+					)
+					: null}
 			</Row>
 		</ProCard>
 	);

@@ -1,3 +1,5 @@
+import type { ContractTypeValue } from "#src/features/contract/create/components/contract-type/contract-type.types";
+
 export type OpenApiContractModel = "package" | "legacy";
 export type OpenApiPackageMode = "OR" | "AND";
 
@@ -23,6 +25,10 @@ export interface OpenApiServiceFields {
 	packageMode: OpenApiPackageMode | null // OR/AND
 
 	plans: OpenApiPlan[]
+	legacyPricing?: {
+		paymentRegistration: ContractTypeValue // بهای ثبت وصولی
+		billInquiry: ContractTypeValue // بهای استعلام قبض
+	}
 }
 
 export const defaultOpenApiPlan: OpenApiPlan = {
@@ -43,4 +49,16 @@ export const defaultOpenApiServiceFields: OpenApiServiceFields = {
 	contractModel: "package",
 	packageMode: "OR",
 	plans: [defaultOpenApiPlan],
+};
+
+export const defaultContractTypeValue: ContractTypeValue = {
+	type: null,
+	fixedAmount: null,
+	rows: [{ from: null, to: null, fee: null }],
+	sections: [{ mode: null, rows: [{ from: null, to: null, fee: null }] }],
+};
+
+export const defaultLegacyPricing = {
+	paymentRegistration: structuredClone(defaultContractTypeValue),
+	billInquiry: structuredClone(defaultContractTypeValue),
 };
