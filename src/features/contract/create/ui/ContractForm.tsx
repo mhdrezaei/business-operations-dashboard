@@ -1,6 +1,5 @@
 import type { Resolver } from "react-hook-form";
 import type { ContractFormValues, ContractServiceCode } from "../model/contract.form.types";
-import { accessControlCodes, useAccess } from "#src/hooks/index.js";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "antd";
 import { AnimatePresence, motion } from "framer-motion";
@@ -26,7 +25,7 @@ const defaultValues: ContractFormValues = {
 };
 
 export function ContractForm() {
-	const { hasAccessByCodes } = useAccess();
+	// const { hasAccessByCodes } = useAccess();
 
 	// ✅ ما schema base را یکبار می‌سازیم
 	// eslint-disable-next-line unused-imports/no-unused-vars
@@ -52,6 +51,8 @@ export function ContractForm() {
 		// و schema مناسب را همان لحظه می‌سازیم
 		resolver: dynamicResolver,
 	});
+	const hasError = form.formState.isValid;
+	console.warn(hasError);
 
 	// ✅ برای render کردن فیلدهای داینامیک
 	const serviceCode = useWatch({
@@ -100,7 +101,8 @@ export function ContractForm() {
 					<Button
 						type="primary"
 						onClick={onSubmit}
-						disabled={!hasAccessByCodes(accessControlCodes.add)}
+						// disabled={!hasAccessByCodes(accessControlCodes.add)}
+						disabled={!hasError}
 					>
 						ثبت قرارداد
 					</Button>

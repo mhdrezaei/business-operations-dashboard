@@ -27,10 +27,11 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 	const moduleSchema = module?.schema ?? fallbackSchema;
 
 	// ✅ اگر serviceFields در RHF undefined/null شد، آن را به {} تبدیل می‌کنیم
-	const serviceFieldsSchema = z.preprocess(
-		v => (v == null ? {} : v),
-		moduleSchema,
-	);
+	const serviceFieldsSchema = serviceCode === "psp"
+		? z
+			.preprocess(v => (v == null ? null : v), moduleSchema.nullable())
+			.optional()
+		: z.preprocess(v => (v == null ? {} : v), moduleSchema);
 
 	return fixedStartSchema
 		.and(fixedEndSchema)
