@@ -1,8 +1,10 @@
+import type { ArrayPath, Path } from "react-hook-form";
 import type { ContractFormValues } from "../../model/contract.form.types";
 import { BasicContent } from "#src/components/index.js";
+import { ContractAddendaSection } from "#src/features/contract/components/addenda/ContractAddendaSection.js";
+
 import { RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro/fields/RHFProNumber.js";
-
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { ProCard, ProFormGroup } from "@ant-design/pro-components";
 import { Button, Col, Collapse, Row } from "antd";
@@ -22,6 +24,14 @@ const PACKAGE_MODE_OPTIONS = [
 
 export function OpenApiFields() {
 	const { control, setValue } = useFormContext<ContractFormValues>();
+	const startYear = useWatch({ control, name: "startYear" });
+	const startMonth = useWatch({ control, name: "startMonth" });
+	const endYear = useWatch({ control, name: "endYear" });
+	const endMonth = useWatch({ control, name: "endMonth" });
+	const showAddenda = useMemo(
+		() => startYear != null && startMonth != null && endYear != null && endMonth != null,
+		[startYear, startMonth, endYear, endMonth],
+	);
 
 	const { fields, append, remove } = useFieldArray({
 		control,
@@ -300,7 +310,26 @@ export function OpenApiFields() {
 						</ProCard>
 					)
 					: null}
+
 			</Row>
+			{showAddenda
+				// eslint-disable-next-line style/multiline-ternary
+				? (
+					<div style={{ marginTop: 12 }}>
+						<ContractAddendaSection<ContractFormValues>
+							title="الحاقیه‌های قرارداد (اختیاری)"
+							name={sf("addenda") as ArrayPath<ContractFormValues>}
+							contractTypeTitle=""
+							contractTypeFieldKey="contractPricing"
+
+							// ✅ مسیر تاریخ‌های قرارداد اصلی (root) - اجباری در Props شما
+							contractStartYearPath={"startYear" as Path<ContractFormValues>}
+							contractStartMonthPath={"startMonth" as Path<ContractFormValues>}
+							contractEndYearPath={"endYear" as Path<ContractFormValues>}
+							contractEndMonthPath={"endMonth" as Path<ContractFormValues>}
+						/>
+					</div>
+				) : null}
 		</ProCard>
 	);
 }

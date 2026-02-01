@@ -1,4 +1,4 @@
-import type { ArrayPath, FieldValues, Path } from "react-hook-form";
+import type { ArrayPath, FieldValues, Path, PathValue } from "react-hook-form";
 import { RHFProTextArea, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { ProCard } from "@ant-design/pro-components";
@@ -12,18 +12,30 @@ import { defaultAddendumValue } from "./addenda.types";
 
 const p = (base: string, path: string) => `${base}.${path}` as any;
 
-// YYYY/MM -> عدد قابل مقایسه
-function ymToKey(y: number | null | undefined, m: number | null | undefined) {
-	if (!y || !m)
+function toNum(v: any): number | null {
+	if (v === "" || v == null)
 		return null;
-	return y * 100 + m;
+	const n = typeof v === "number" ? v : Number(v);
+	return Number.isFinite(n) ? n : null;
+}
+
+// YYYY/MM -> عدد قابل مقایسه
+function ymToKey(y: number | string | null | undefined, m: number | string | null | undefined) {
+	const yn = toNum(y);
+	const mn = toNum(m);
+	if (yn == null || mn == null)
+		return null;
+	return yn * 100 + mn;
 }
 function overlap(aStart: number, aEnd: number, bStart: number, bEnd: number) {
 	return aStart <= bEnd && aEnd >= bStart;
 }
 
-function monthsInYearOptions(year: number, startKey: number, endKey: number) {
-	// بازه مجاز ماه‌ها برای سال انتخابی در محدوده قرارداد
+function monthsInYearOptions(year: number | string, startKey: number, endKey: number) {
+	const yn = toNum(year);
+	if (yn == null)
+		return MONTH_OPTIONS as any[];
+
 	const startY = Math.floor(startKey / 100);
 	const startM = startKey % 100;
 	const endY = Math.floor(endKey / 100);
@@ -31,12 +43,16 @@ function monthsInYearOptions(year: number, startKey: number, endKey: number) {
 
 	let minM = 1;
 	let maxM = 12;
-	if (year === startY)
+
+	if (yn === startY)
 		minM = startM;
-	if (year === endY)
+	if (yn === endY)
 		maxM = endM;
 
-	return (MONTH_OPTIONS as any[]).filter(o => o.value >= minM && o.value <= maxM);
+	return (MONTH_OPTIONS as any[]).filter((o) => {
+		const mv = toNum(o.value);
+		return mv != null && mv >= minM && mv <= maxM;
+	});
 }
 
 interface Props<TFV extends FieldValues> {
@@ -62,7 +78,10 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 	contractEndMonthPath,
 }: Props<TFV>) {
 	const { control, getValues, setError, clearErrors, trigger } = useFormContext<TFV>();
-
+	const addendaValues = useWatch({
+		control,
+		name: name as unknown as Path<TFV>,
+	}) as PathValue<TFV, typeof name> | undefined;
 	// تاریخ قرارداد اصلی
 	const contractStartYear = useWatch({ control, name: contractStartYearPath }) as any;
 	const contractStartMonth = useWatch({ control, name: contractStartMonthPath }) as any;
@@ -324,6 +343,7 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 		fields,
 		name,
 		getValues,
+		addendaValues,
 		allowedYears,
 		contractRangeReady,
 		contractStartKey,

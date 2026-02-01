@@ -1,3 +1,4 @@
+import { addendumSchema } from "#src/features/contract/components/addenda/addenda.schema.js";
 import { contractTypeSchema } from "#src/features/contract/components/contract-type/contract-type.schema";
 import { z } from "zod";
 import {
@@ -24,6 +25,7 @@ const openApiPlanSchema = z
 
 		// --- Traffic commission ---
 		trafficCommissionPercent: zNullablePercent("کارمزد باید بین 0 تا 100 باشد"),
+
 	})
 	.superRefine((val, ctx) => {
 		// ✅ min/max پیامک
@@ -77,6 +79,7 @@ export const openApiServiceFieldsSchema = z
 
 		// ✅ تغییر کلیدی: plans دیگر اینجا min(1) ندارد
 		plans: z.array(openApiPlanSchema).optional(),
+		addenda: z.array(addendumSchema).default([]).optional(),
 
 		legacyPricing: z
 			.object({
