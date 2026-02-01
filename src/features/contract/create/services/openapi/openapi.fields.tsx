@@ -8,7 +8,7 @@ import { ProCard, ProFormGroup } from "@ant-design/pro-components";
 import { Button, Col, Collapse, Row } from "antd";
 import React, { useMemo, useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
-import { ContractTypeSection } from "../../components/contract-type/ContractTypeSection";
+import { ContractTypeSection } from "../../../components/contract-type/ContractTypeSection";
 import { defaultLegacyPricing, defaultOpenApiPlan } from "./openapi.types";
 
 // helper برای مسیرهای serviceFields.* (تمیز و متمرکز)

@@ -1,4 +1,4 @@
-import { contractTypeSchema } from "#src/features/contract/create/components/contract-type/contract-type.schema";
+import { contractTypeSchema } from "#src/features/contract/components/contract-type/contract-type.schema";
 import { z } from "zod";
 import {
 	zNullableNonNegative,
@@ -29,7 +29,7 @@ const openApiPlanSchema = z
 		// ✅ min/max پیامک
 		if (val.smsMin != null && val.smsMax != null && val.smsMin > val.smsMax) {
 			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
+				code: "custom",
 				path: ["smsMax"],
 				message: "حداکثر پیامک باید بزرگ‌تر یا مساوی حداقل باشد",
 			});
@@ -38,7 +38,7 @@ const openApiPlanSchema = z
 		// ✅ min/max قبض
 		if (val.billMin != null && val.billMax != null && val.billMin > val.billMax) {
 			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
+				code: "custom",
 				path: ["billMax"],
 				message: "حداکثر استعلام قبض باید بزرگ‌تر یا مساوی حداقل باشد",
 			});
@@ -49,7 +49,7 @@ const openApiPlanSchema = z
 			const sum = val.billPartnerShare + val.billKarashabShare;
 			if (sum !== 100) {
 				ctx.addIssue({
-					code: z.ZodIssueCode.custom,
+					code: "custom",
 					path: ["billKarashabShare"],
 					message: "جمع سهم شریک و کاراشاب باید 100٪ باشد",
 				});
@@ -62,23 +62,22 @@ const openApiPlanSchema = z
  */
 const contractModelSchema = z.preprocess(
 	v => (v === "" || v == null ? null : v),
-	z.enum(["package", "legacy"])
-		.nullable()
-		.catch(null),
+	z.enum(["package", "legacy"]).nullable().catch(null),
 );
 
 const packageModeSchema = z.preprocess(
 	v => (v === "" || v == null ? null : v),
-	z.enum(["OR", "AND"])
-		.nullable()
-		.catch(null),
+	z.enum(["OR", "AND"]).nullable().catch(null),
 );
 
 export const openApiServiceFieldsSchema = z
 	.object({
 		contractModel: contractModelSchema,
 		packageMode: packageModeSchema,
-		plans: z.array(openApiPlanSchema).min(1, "حداقل یک پلن باید اضافه شود"),
+
+		// ✅ تغییر کلیدی: plans دیگر اینجا min(1) ندارد
+		plans: z.array(openApiPlanSchema).optional(),
+
 		legacyPricing: z
 			.object({
 				paymentRegistration: contractTypeSchema,
@@ -87,21 +86,6 @@ export const openApiServiceFieldsSchema = z
 			.optional(),
 	})
 	.superRefine((val, ctx) => {
-		if (val.contractModel == null) {
-			ctx.addIssue({
-				code: "custom",
-				path: ["contractModel"],
-				message: "مدل قرارداد الزامی است",
-			});
-		}
-
-		if (val.packageMode == null) {
-			ctx.addIssue({
-				code: "custom",
-				path: ["packageMode"],
-				message: "نحوه محاسبه بسته الزامی است",
-			});
-		}
 		if (val.contractModel == null) {
 			ctx.addIssue({
 				code: "custom",
@@ -117,6 +101,15 @@ export const openApiServiceFieldsSchema = z
 					code: "custom",
 					path: ["packageMode"],
 					message: "حالت بسته الزامی است",
+				});
+			}
+
+			// ✅ فقط در حالت package پلن لازم است
+			if (!val.plans || val.plans.length < 1) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["plans"],
+					message: "حداقل یک پلن باید اضافه شود",
 				});
 			}
 		}

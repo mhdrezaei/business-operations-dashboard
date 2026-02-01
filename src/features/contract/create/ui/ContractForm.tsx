@@ -1,11 +1,12 @@
 import type { Resolver } from "react-hook-form";
 import type { ContractFormValues, ContractServiceCode } from "../model/contract.form.types";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "antd";
+import { Button, notification } from "antd";
 import { AnimatePresence, motion } from "framer-motion";
 import React, { useCallback, useMemo } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 
+import { findFirstError } from "../../utils";
 import { buildContractSchema } from "../model/contract.schema";
 import { serviceRegistry } from "../services/registry";
 import { FixedEndSection } from "./sections/FixedEndSection";
@@ -52,7 +53,9 @@ export function ContractForm() {
 		resolver: dynamicResolver,
 	});
 	const hasError = form.formState.isValid;
+	const err = form.formState.errors;
 	console.warn(hasError);
+	console.warn("errors:", err);
 
 	// ✅ برای render کردن فیلدهای داینامیک
 	const serviceCode = useWatch({
@@ -68,7 +71,14 @@ export function ContractForm() {
 			console.warn("submit", values);
 		},
 		(errors) => {
-			console.error("submit errors", errors);
+			const first = findFirstError(errors);
+			if (first?.message) {
+				notification.error({
+					message: "لطفاً خطاهای فرم را اصلاح کنید",
+					description: first.message,
+					placement: "top",
+				});
+			}
 		},
 	);
 
@@ -102,7 +112,7 @@ export function ContractForm() {
 						type="primary"
 						onClick={onSubmit}
 						// disabled={!hasAccessByCodes(accessControlCodes.add)}
-						disabled={!hasError}
+						// disabled={!hasError}
 					>
 						ثبت قرارداد
 					</Button>

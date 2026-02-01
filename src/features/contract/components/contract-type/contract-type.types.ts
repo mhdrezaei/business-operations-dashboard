@@ -26,3 +26,9 @@ export interface ContractTypeValue {
 	// تلفیقی
 	sections: BlendedSection[]
 }
+export const defaultContractTypeValue: ContractTypeValue = {
+	type: null,
+	fixedAmount: null,
+	rows: [{ from: null, to: null, fee: null }],
+	sections: [{ mode: null, rows: [{ from: null, to: null, fee: null }] }],
+};

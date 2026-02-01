@@ -1,5 +1,6 @@
 import type { ContractServiceCode } from "./contract.form.types";
 import { z } from "zod";
+import { addendaRefineNoOverlapAndInsideContract } from "../../components/addenda/addenda.schema";
 import { serviceRegistry } from "../services/registry";
 
 const fixedStartSchema = z.object({
@@ -40,6 +41,11 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 				serviceFields: serviceFieldsSchema,
 			}),
 		)
+		.superRefine(addendaRefineNoOverlapAndInsideContract({
+			contractStartPath: ["startYear", "startMonth"],
+			contractEndPath: ["endYear", "endMonth"],
+			addendaPath: ["serviceFields", "addenda"],
+		}))
 		.superRefine((val, ctx) => {
 			if (val.serviceId == null) {
 				ctx.addIssue({

@@ -3,7 +3,6 @@ import type { FieldValues, Path, PathValue } from "react-hook-form";
 import type { CommonFieldProps } from "../types";
 import { Form, Select } from "antd";
 import React from "react";
-
 import { Controller } from "react-hook-form";
 import { useSmartControl } from "../utils";
 
@@ -19,16 +18,25 @@ export type RHFSelectProps<
 > = CommonFieldProps<TFV, TName> & {
 	options?: Option[]
 	loading?: boolean
+
 	/**
 	 * props مستقیم Select (value/onChange/options/loading داخل wrapper کنترل می‌شود)
 	 */
 	selectProps?: Omit<SelectProps<TValue>, "value" | "onChange" | "options" | "loading">
 
 	/**
-	 * props مستقیم Form.Item (اختیاری)
-	 * اگر خواستی colon, tooltip, extra, required, labelCol, wrapperCol...
+	 * ✅ هوکِ تغییر مقدار (بعد از set شدن مقدار در RHF)
+	 * اگر خواستی trigger/validate یا هر کاری بکنی، اینجا انجام بده
 	 */
-	formItemProps?: Omit<React.ComponentProps<typeof Form.Item>, "children" | "help" | "validateStatus">
+	onValueChange?: (value: TValue, option: unknown) => void | Promise<void>
+
+	/**
+	 * props مستقیم Form.Item
+	 */
+	formItemProps?: Omit<
+		React.ComponentProps<typeof Form.Item>,
+		"children" | "help" | "validateStatus"
+	>
 };
 
 export function RHFSelect<
@@ -48,11 +56,8 @@ export function RHFSelect<
 				return (
 					<Form.Item
 						label={props.label}
-						// ✅ پیام خطا دقیقاً زیر فیلد
 						help={err}
-						// ✅ حالت قرمز (Form.Item)
 						validateStatus={err ? "error" : undefined}
-						// ✅ اگر required می‌خواهی، از formItemProps بده
 						{...props.formItemProps}
 					>
 						<Select<TValue>
@@ -60,10 +65,12 @@ export function RHFSelect<
 							options={(props.options ?? (props.selectProps as any)?.options) as any}
 							loading={props.loading ?? (props.selectProps as any)?.loading}
 							value={field.value as TValue}
-							onChange={v => field.onChange(v)}
+							onChange={async (v, option) => {
+								field.onChange(v);
+								await props.onValueChange?.(v as TValue, option);
+							}}
 							onBlur={field.onBlur}
 							ref={field.ref as any}
-							// ✅ حالت قرمز روی کنترل (antd v5)
 							status={err ? "error" : undefined}
 						/>
 					</Form.Item>

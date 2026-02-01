@@ -1,4 +1,5 @@
-import type { ContractTypeValue } from "#src/features/contract/create/components/contract-type/contract-type.types";
+import type { ContractTypeValue } from "#src/features/contract/components/contract-type/contract-type.types";
+import { defaultContractTypeValue } from "#src/features/contract/components/contract-type/contract-type.types";
 
 export type OpenApiContractModel = "package" | "legacy";
 export type OpenApiPackageMode = "OR" | "AND";
@@ -49,13 +50,6 @@ export const defaultOpenApiServiceFields: OpenApiServiceFields = {
 	contractModel: "package",
 	packageMode: "OR",
 	plans: [defaultOpenApiPlan],
-};
-
-export const defaultContractTypeValue: ContractTypeValue = {
-	type: null,
-	fixedAmount: null,
-	rows: [{ from: null, to: null, fee: null }],
-	sections: [{ mode: null, rows: [{ from: null, to: null, fee: null }] }],
 };
 
 export const defaultLegacyPricing = {
