@@ -13,6 +13,7 @@ export interface ServiceModule {
 
 export const serviceRegistry: Partial<Record<ContractServiceCode, ServiceModule>> = {
 	openapi: openapiService,
+	commercial: openapiService,
 	shahkar: shahkarService,
 	// psp: pspService,
 	// ...
