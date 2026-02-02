@@ -18,6 +18,7 @@ const defaultValues: ContractFormValues = {
 	companyId: null,
 	startYear: null,
 	startMonth: null,
+	counterpartyType: null,
 	endYear: null,
 	endMonth: null,
 	description: "",

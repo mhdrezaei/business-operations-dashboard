@@ -52,7 +52,7 @@ export function ContractTypeSection({ title, name }: Props) {
 	};
 
 	return (
-		<ProCard bordered style={{ borderRadius: 16 }} bodyStyle={{ padding: 16 }}>
+		<ProCard bordered style={{ borderRadius: 6 }} bodyStyle={{ padding: 16 }}>
 			<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
 				<div style={{ fontWeight: 700 }}>{title}</div>
 			</div>

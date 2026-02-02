@@ -10,6 +10,10 @@ import { useFormContext, useWatch } from "react-hook-form";
 import { companiesByServiceQuery, servicesQuery } from "../../queries/contract.queries";
 import { MONTH_OPTIONS, YEAR_OPTIONS } from "../constants/jalali-date-options";
 
+const COUNTERPARTY_OPTIONS = [
+	{ label: "شرکای تجاری", value: "partners" },
+	{ label: "دولت و اپراتورها", value: "gov_ops" },
+];
 export function FixedStartSection() {
 	const { setValue, control } = useFormContext<ContractFormValues>();
 
@@ -17,8 +21,10 @@ export function FixedStartSection() {
 
 	// ✅ بهتر از watch: useWatch مخصوص RHF و رندرها بهینه‌تر
 	const serviceId = useWatch({ control, name: "serviceId" });
-
+	const serviceCode = useWatch({ control, name: "serviceCode" });
+	const counterpartyType = useWatch({ control, name: "counterpartyType" });
 	const companies = useQuery(companiesByServiceQuery(serviceId));
+	const isSms = serviceCode === "sms";
 
 	// ✅ وقتی سرویس عوض میشه، شرکت ریست بشه (companyId در root است)
 	useEffect(() => {
@@ -30,6 +36,20 @@ export function FixedStartSection() {
 		const selected = services.data?.results.find(s => s.id === serviceId);
 		setValue("serviceCode", selected?.code ?? "");
 	}, [serviceId, services.data, setValue]);
+	// وقتی سرویس عوض میشه، اینا را تمیز ریست کن
+	useEffect(() => {
+		if (!isSms) {
+			// سرویس‌های دیگر: counterpartyType بی‌معنی است
+			setValue("counterpartyType", null, { shouldDirty: true, shouldValidate: true });
+		}
+		else {
+			// sms: شرکت ممکن است بی‌نیاز شود
+			if (counterpartyType === "gov_ops") {
+				setValue("companyId", null, { shouldDirty: true, shouldValidate: true });
+			}
+		}
+	}, [isSms, counterpartyType, setValue]);
+	const shouldShowCompany = !isSms || counterpartyType === "partners";
 
 	const companyOptions = useMemo(
 		() =>
@@ -62,21 +82,51 @@ export function FixedStartSection() {
 							/>
 						</Col>
 						<Col span={12}>
-							{/* ✅ Select شرکت (companyId در root) */}
-							<RHFSelect<ContractFormValues, "companyId", number | null>
-								name="companyId"
-								label="شرکت"
-								loading={companies.isLoading}
-								options={companyOptions}
-								selectProps={{
-									allowClear: true,
-									disabled: isCompanyDisabled,
-									placeholder: companyPlaceholder,
-									style: isCompanyDisabled ? { cursor: "not-allowed" } : undefined,
-									open: isCompanyDisabled ? false : undefined,
-								}}
-							/>
+							{isSms
+								? (
+									<RHFSelect<ContractFormValues, "counterpartyType", "partners" | "gov_ops" | null>
+										name="counterpartyType"
+										label="طرف قرارداد"
+										options={COUNTERPARTY_OPTIONS}
+										selectProps={{ allowClear: true, placeholder: "انتخاب کنید" }}
+									/>
+								)
+								: (
+									<RHFSelect<ContractFormValues, "companyId", number | null>
+										name="companyId"
+										label="شرکت"
+										loading={companies.isLoading}
+										options={companyOptions}
+										selectProps={{
+											allowClear: true,
+											disabled: isCompanyDisabled,
+											placeholder: companyPlaceholder,
+											style: isCompanyDisabled ? { cursor: "not-allowed" } : undefined,
+											open: isCompanyDisabled ? false : undefined,
+										}}
+									/>
+								)}
 						</Col>
+						{isSms && shouldShowCompany
+							// eslint-disable-next-line style/multiline-ternary
+							? (
+								<Col span={12}>
+									{/* ✅ Select شرکت (companyId در root) */}
+									<RHFSelect<ContractFormValues, "companyId", number | null>
+										name="companyId"
+										label="شرکت"
+										loading={companies.isLoading}
+										options={companyOptions}
+										selectProps={{
+											allowClear: true,
+											disabled: isCompanyDisabled,
+											placeholder: companyPlaceholder,
+											style: isCompanyDisabled ? { cursor: "not-allowed" } : undefined,
+											open: isCompanyDisabled ? false : undefined,
+										}}
+									/>
+								</Col>
+							) : null}
 					</Row>
 					{/* ✅ چهار Select کنار هم مثل تصویر */}
 					<div

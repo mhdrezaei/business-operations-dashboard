@@ -1,14 +1,16 @@
 import type { ServiceDto } from "#src/api/common/common.types.js";
 
+export type SmsCounterpartyType = "partners" | "gov_ops";
+
 export type ContractServiceCode = ServiceDto["code"];
 
 export interface FixedStartFields {
-	serviceId: number | null // select سرویس
+	serviceId: number | null
 	companyId: number | null
 	startYear: number | null
-	startMonth: number | null // 1..12
+	startMonth: number | null
 	endYear: number | null
-	endMonth: number | null // 1..12
+	endMonth: number | null
 }
 
 export interface FixedEndFields {
@@ -21,6 +23,7 @@ export interface ContractFormValues {
 	serviceId: number | null
 	serviceCode: ContractServiceCode | null
 	companyId: number | null
+	counterpartyType: SmsCounterpartyType | null
 	startYear: number | null
 	startMonth: number | null
 	endYear: number | null

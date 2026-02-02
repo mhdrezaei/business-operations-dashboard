@@ -7,6 +7,10 @@ const fixedStartSchema = z.object({
 	serviceId: z.number().int().positive().nullable(),
 	serviceCode: z.string().nullable(),
 	companyId: z.number().int().positive().nullable(),
+	counterpartyType: z.preprocess(
+		v => (v === "" || v == null ? null : v),
+		z.enum(["partners", "gov_ops"]).nullable().catch(null),
+	),
 	startYear: z.number().int().min(1401).max(1410).nullable(),
 	startMonth: z.number().int().min(1).max(12).nullable(),
 	endYear: z.number().int().min(1401).max(1410).nullable(),
@@ -98,6 +102,30 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 					path: ["endMonth"],
 					message: "ماه پایان الزامی است",
 				});
+			}
+			if (val.serviceCode === "sms") {
+				if (val.counterpartyType == null) {
+					ctx.addIssue({ code: "custom", path: ["counterpartyType"], message: "طرف قرارداد الزامی است" });
+				}
+
+				// اگر شرکای تجاری => شرکت required
+				if (val.counterpartyType === "partners") {
+					if (val.companyId == null) {
+						ctx.addIssue({ code: "custom", path: ["companyId"], message: "شرکت الزامی است" });
+					}
+				}
+
+				// اگر دولت/اپراتورها => شرکت لازم نیست (و بهتره null باشد)
+				if (val.counterpartyType === "gov_ops") {
+					// اگر خواستی سخت‌گیر باشی:
+					// if (val.companyId != null) ctx.addIssue({ code:"custom", path:["companyId"], message:"در این حالت نیازی به انتخاب شرکت نیست" });
+				}
+			}
+			else {
+				// سرویس‌های غیر sms => همان رفتار قبلی
+				if (val.companyId == null) {
+					ctx.addIssue({ code: "custom", path: ["companyId"], message: "شرکت الزامی است" });
+				}
 			}
 		});
 }

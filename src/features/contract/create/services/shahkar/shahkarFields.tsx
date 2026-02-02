@@ -28,7 +28,7 @@ export function ShahkarFields() {
 			<ProCard
 				bordered
 				headerBordered
-				style={{ borderRadius: 16 }}
+				style={{ borderRadius: 6 }}
 				bodyStyle={{ padding: 16 }}
 			>
 				<ContractTypeSection
