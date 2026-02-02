@@ -3,6 +3,7 @@ import type { ContractServiceCode } from "../model/contract.form.types";
 import { openapiService } from "./openapi/openapi.registry";
 import { shahkarService } from "./shahkar/shahkar.registry";
 import { smsService } from "./sms/sms.registry";
+import { trafficService } from "./traffic/traffic.registry";
 // import { pspService } from "./psp/psp.registry" ...
 
 export interface ServiceModule {
@@ -17,5 +18,6 @@ export const serviceRegistry: Partial<Record<ContractServiceCode, ServiceModule>
 	commercial: openapiService,
 	shahkar: shahkarService,
 	sms: smsService,
+	traffic: trafficService,
 	// ...
 };

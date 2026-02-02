@@ -11,6 +11,7 @@ const fixedStartSchema = z.object({
 		v => (v === "" || v == null ? null : v),
 		z.enum(["partners", "gov_ops"]).nullable().catch(null),
 	),
+	trafficCompanyType: z.enum(["CP", "IXP", "TCI", "PREMIUM"]).nullable().optional(),
 	startYear: z.number().int().min(1401).max(1410).nullable(),
 	startMonth: z.number().int().min(1).max(12).nullable(),
 	endYear: z.number().int().min(1401).max(1410).nullable(),
@@ -119,6 +120,15 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 				if (val.counterpartyType === "gov_ops") {
 					// اگر خواستی سخت‌گیر باشی:
 					// if (val.companyId != null) ctx.addIssue({ code:"custom", path:["companyId"], message:"در این حالت نیازی به انتخاب شرکت نیست" });
+				}
+			}
+			else if (val.serviceCode === "traffic") {
+				if (val.trafficCompanyType == null) {
+					ctx.addIssue({ code: "custom", path: ["trafficCompanyType"], message: "نوع شرکت (ترافیک) الزامی است" });
+				}
+				// وقتی نوع شرکت انتخاب شد → companyId required
+				if (val.trafficCompanyType != null && val.companyId == null) {
+					ctx.addIssue({ code: "custom", path: ["companyId"], message: "شرکت الزامی است" });
 				}
 			}
 			else {
