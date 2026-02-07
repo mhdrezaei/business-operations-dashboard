@@ -7,14 +7,6 @@
 	"description": "React Hooks + TypeScript + Ant Design = react-antd-admin",
 	"author": "Data Processor Panel",
 	"license": "MIT",
-	"homepage": "https://github.com/condorheroblog/react-antd-admin/blob/main/README.md",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/condorheroblog/react-antd-admin.git"
-	},
-	"bugs": {
-		"url": "https://github.com/condorheroblog/react-antd-admin/issues"
-	},
 	"imports": {
 		"#*": "./*"
 	},
@@ -39,14 +31,18 @@
 		"@dnd-kit/core": "^6.3.1",
 		"@dnd-kit/sortable": "^10.0.0",
 		"@dnd-kit/utilities": "^3.2.2",
+		"@hookform/resolvers": "^5.2.2",
 		"@tanstack/react-query": "^5.69.0",
 		"ahooks": "^3.8.4",
 		"antd": "^ 5.26.6",
 		"antd-img-crop": "^4.24.0",
+		"antd-jalali": "2",
 		"dayjs": "^1.11.13",
 		"echarts": "^5.6.0",
 		"echarts-for-react": "^3.0.3",
+		"framer-motion": "^12.28.1",
 		"i18next": "^24.2.3",
+		"jalaliday": "^3.1.1",
 		"keepalive-for-react": "^4.0.2",
 		"ky": "^1.7.5",
 		"moment-jalaali": "^0.10.4",
@@ -57,12 +53,14 @@
 		"react-countup": "^6.5.3",
 		"react-dom": "18",
 		"react-error-boundary": "^5.0.0",
+		"react-hook-form": "^7.71.1",
 		"react-i18next": "^15.4.1",
 		"react-jss": "^10.10.0",
 		"react-router": "^7.4.0",
 		"simplebar-react": "^3.3.0",
 		"spin-delay": "^2.0.1",
 		"tailwind-merge": "^2.6.0",
+		"zod": "^4.3.5",
 		"zustand": "^5.0.3"
 	},
 	"devDependencies": {

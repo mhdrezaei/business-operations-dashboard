@@ -136,7 +136,7 @@ export default function ContainerLayout() {
 					...(isRTL ? { paddingRight: computedSidebarWidth } : { paddingLeft: computedSidebarWidth }),
 				}}
 				className={cn(
-					"transition-all flex flex-col h-screen",
+					"transition-all flex flex-col gap-3 h-screen",
 				)}
 			>
 
