@@ -26,13 +26,10 @@ const fixedEndSchema = z.object({
 export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 	const module = serviceCode ? serviceRegistry[serviceCode] : undefined;
 
-	// ✅ Zod v4: record باید valueType (و اینجا keyType هم) داشته باشد
 	const fallbackSchema = z.record(z.string(), z.unknown());
 
-	// ✅ schema داینامیک سرویس‌ها (اگر نبود، record)
 	const moduleSchema = module?.schema ?? fallbackSchema;
 
-	// ✅ اگر serviceFields در RHF undefined/null شد، آن را به {} تبدیل می‌کنیم
 	const serviceFieldsSchema = serviceCode === "psp"
 		? z
 			.preprocess(v => (v == null ? null : v), moduleSchema.nullable())
@@ -109,30 +106,80 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 					ctx.addIssue({ code: "custom", path: ["counterpartyType"], message: "طرف قرارداد الزامی است" });
 				}
 
-				// اگر شرکای تجاری => شرکت required
+				// if business partners => company required
 				if (val.counterpartyType === "partners") {
 					if (val.companyId == null) {
 						ctx.addIssue({ code: "custom", path: ["companyId"], message: "شرکت الزامی است" });
 					}
 				}
 
-				// اگر دولت/اپراتورها => شرکت لازم نیست (و بهتره null باشد)
+				// If state/operators => company not required (and better null)
 				if (val.counterpartyType === "gov_ops") {
-					// اگر خواستی سخت‌گیر باشی:
-					// if (val.companyId != null) ctx.addIssue({ code:"custom", path:["companyId"], message:"در این حالت نیازی به انتخاب شرکت نیست" });
+					if (val.companyId != null)
+						ctx.addIssue({ code: "custom", path: ["companyId"], message: "در این حالت نیازی به انتخاب شرکت نیست" });
 				}
 			}
 			else if (val.serviceCode === "traffic") {
 				if (val.trafficCompanyType == null) {
 					ctx.addIssue({ code: "custom", path: ["trafficCompanyType"], message: "نوع شرکت (ترافیک) الزامی است" });
 				}
-				// وقتی نوع شرکت انتخاب شد → companyId required
+
+				// When company type is selected → companyId required
 				if (val.trafficCompanyType != null && val.companyId == null) {
 					ctx.addIssue({ code: "custom", path: ["companyId"], message: "شرکت الزامی است" });
 				}
+
+				// ✅ New: Validate only if the contract is official
+				const isOfficial = (val.serviceFields as any)?.isOfficial === true;
+
+				if (isOfficial && val.trafficCompanyType === "PREMIUM") {
+					const tehranPricing = (val.serviceFields as any)?.tehranPricing;
+					const provincePricing = (val.serviceFields as any)?.provincePricing;
+
+					if (tehranPricing != null) {
+						const p = (val.serviceFields as any)?.tehranRevenuePercent;
+						if (p == null) {
+							ctx.addIssue({
+								code: "custom",
+								path: ["serviceFields", "tehranRevenuePercent"],
+								message: "درصد سهم درآمد (تهران) الزامی است",
+							});
+						}
+					}
+					if (provincePricing != null) {
+						const p = (val.serviceFields as any)?.provinceRevenuePercent;
+						if (p == null) {
+							ctx.addIssue({
+								code: "custom",
+								path: ["serviceFields", "provinceRevenuePercent"],
+								message: "درصد سهم درآمد (مراکز استانی) الزامی است",
+							});
+						}
+					}
+				}
+
+				// ✅ PREMIUM: Revenue share percentage only when official + PREMIUM
+				if (isOfficial && val.trafficCompanyType === "PREMIUM") {
+					const p = (val.serviceFields as any)?.premiumRevenuePercent;
+
+					if (p == null) {
+						ctx.addIssue({
+							code: "custom",
+							path: ["serviceFields", "premiumRevenuePercent"],
+							message: "درصد سهم درآمد الزامی است",
+						});
+					}
+					else if (typeof p !== "number" || !Number.isFinite(p) || p < 0 || p > 100) {
+						ctx.addIssue({
+							code: "custom",
+							path: ["serviceFields", "premiumRevenuePercent"],
+							message: "درصد باید بین 0 تا 100 باشد",
+						});
+					}
+				}
 			}
+
 			else {
-				// سرویس‌های غیر sms => همان رفتار قبلی
 				if (val.companyId == null) {
 					ctx.addIssue({ code: "custom", path: ["companyId"], message: "شرکت الزامی است" });
 				}

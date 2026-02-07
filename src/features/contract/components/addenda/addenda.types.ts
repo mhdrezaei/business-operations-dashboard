@@ -4,7 +4,7 @@ export interface AddendumValue {
 	endYear: number | null
 	endMonth: number | null
 	description?: string
-	pricing: any // اگر ContractTypeValue داری همونو بگذار
+	pricing: any
 }
 
 export const defaultAddendumValue: AddendumValue = {

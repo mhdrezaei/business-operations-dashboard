@@ -13,7 +13,7 @@ import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { ContractTypeSection } from "../../../components/contract-type/ContractTypeSection";
 import { defaultLegacyPricing, defaultOpenApiPlan } from "./openapi.types";
 
-// helper برای مسیرهای serviceFields.* (تمیز و متمرکز)
+// helper for serviceFields routes.
 const sf = (path: string) => `serviceFields.${path}` as any;
 
 const CONTRACT_MODEL_OPTIONS = [{ label: "Package (بسته‌ای)", value: "package" }, { label: "Legacy (قدیمی)", value: "legacy" }];
@@ -37,12 +37,12 @@ export function OpenApiFields() {
 		control,
 		name: sf("plans"),
 	});
-	// ✅ با افزودن پلن جدید، همون پلن باز بشه و بقیه بسته
+	// ✅ By adding a new plan, the same plan will be opened and the others will be closed.
 	const [activeKey, setActiveKey] = useState<string>("0");
 
 	const contractModel = useWatch({ control, name: sf("contractModel") }) as "package" | "legacy" | null;
 
-	// وقتی legacy انتخاب شد، اگر legacyPricing نبود بساز
+	// When legacy is selected, create legacyPricing if it doesn't exist
 	React.useEffect(() => {
 		if (contractModel === "legacy") {
 			setValue(sf("legacyPricing"), structuredClone(defaultLegacyPricing) as any, {
@@ -52,7 +52,7 @@ export function OpenApiFields() {
 			setValue(sf("packageMode"), null as any, { shouldDirty: true, shouldValidate: true });
 		}
 		else {
-			// وقتی package شد، legacyPricing رو پاک کن (با shouldUnregister true هم تمیزه)
+			// When packaged, clear legacyPricing (with shouldUnregister true it's also clean)
 			setValue(sf("legacyPricing"), undefined as any, {
 				shouldDirty: true,
 				shouldValidate: true,
@@ -322,7 +322,7 @@ export function OpenApiFields() {
 							contractTypeTitle=""
 							contractTypeFieldKey="contractPricing"
 
-							// ✅ مسیر تاریخ‌های قرارداد اصلی (root) - اجباری در Props شما
+							// ✅ Root contract dates path - mandatory in your Props
 							contractStartYearPath={"startYear" as Path<ContractFormValues>}
 							contractStartMonthPath={"startMonth" as Path<ContractFormValues>}
 							contractEndYearPath={"endYear" as Path<ContractFormValues>}

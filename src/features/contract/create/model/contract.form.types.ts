@@ -4,7 +4,17 @@ export type SmsCounterpartyType = "partners" | "gov_ops";
 export type TrafficCompanyType = "CP" | "IXP" | "TCI" | "PREMIUM";
 
 export type ContractServiceCode = ServiceDto["code"];
-
+export interface FormTierRow {
+	from: number | null
+	to: number | null
+	fee: number | null
+}
+export interface ContractTypeValue {
+	type: "fixed" | "tier_fixed" | "tier_variable" | "tier_blended" | null
+	fixedAmount: number | null
+	rows: FormTierRow[]
+	sections: Array<{ mode: "fixed" | "variable" | null, rows: FormTierRow[] }>
+}
 export interface FixedStartFields {
 	serviceId: number | null
 	companyId: number | null

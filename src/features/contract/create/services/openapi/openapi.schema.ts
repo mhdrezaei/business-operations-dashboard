@@ -6,9 +6,6 @@ import {
 	zNullablePercent,
 } from "../../model/zod-helpers";
 
-/**
- * اسکیما هر پلن
- */
 const openApiPlanSchema = z
 	.object({
 		// --- SMS ---
@@ -28,7 +25,7 @@ const openApiPlanSchema = z
 
 	})
 	.superRefine((val, ctx) => {
-		// ✅ min/max پیامک
+		// ✅ min/max SMS
 		if (val.smsMin != null && val.smsMax != null && val.smsMin > val.smsMax) {
 			ctx.addIssue({
 				code: "custom",
@@ -37,7 +34,7 @@ const openApiPlanSchema = z
 			});
 		}
 
-		// ✅ min/max قبض
+		// ✅ min/max bill
 		if (val.billMin != null && val.billMax != null && val.billMin > val.billMax) {
 			ctx.addIssue({
 				code: "custom",
@@ -46,7 +43,7 @@ const openApiPlanSchema = z
 			});
 		}
 
-		// ✅ جمع سهم‌ها باید 100 باشد (وقتی هر دو وارد شده‌اند)
+		// ✅ The sum of the shares must be 100 (when both are entered)
 		if (val.billPartnerShare != null && val.billKarashabShare != null) {
 			const sum = val.billPartnerShare + val.billKarashabShare;
 			if (sum !== 100) {
@@ -59,9 +56,6 @@ const openApiPlanSchema = z
 		}
 	});
 
-/**
- * serviceFields مخصوص openapi
- */
 const contractModelSchema = z.preprocess(
 	v => (v === "" || v == null ? null : v),
 	z.enum(["package", "legacy"]).nullable().catch(null),
@@ -77,7 +71,6 @@ export const openApiServiceFieldsSchema = z
 		contractModel: contractModelSchema,
 		packageMode: packageModeSchema,
 
-		// ✅ تغییر کلیدی: plans دیگر اینجا min(1) ندارد
 		plans: z.array(openApiPlanSchema).optional(),
 		addenda: z.array(addendumSchema).default([]).optional(),
 
@@ -107,7 +100,7 @@ export const openApiServiceFieldsSchema = z
 				});
 			}
 
-			// ✅ فقط در حالت package پلن لازم است
+			// ✅ Only required in package plan mode
 			if (!val.plans || val.plans.length < 1) {
 				ctx.addIssue({
 					code: "custom",

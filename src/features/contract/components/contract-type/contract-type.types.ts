@@ -2,9 +2,9 @@ export type ContractType
 	= | "fixed" | "tier_fixed" | "tier_variable" | "tier_blended";
 
 export interface TierRow {
-	from: number | null // از
-	to: number | null // تا
-	fee: number | null // مقدار فی
+	from: number | null
+	to: number | null
+	fee: number | null
 }
 
 export type BlendedSectionMode = "fixed" | "variable";

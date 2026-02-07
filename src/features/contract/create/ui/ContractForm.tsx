@@ -23,13 +23,11 @@ const defaultValues: ContractFormValues = {
 	endMonth: null,
 	description: "",
 	documents: [],
-	serviceFields: {}, // ✅ حتماً آبجکت
+	serviceFields: {},
 };
 
 export function ContractForm() {
-	// const { hasAccessByCodes } = useAccess();
-
-	// ✅ ما schema base را یکبار می‌سازیم
+	// const { hasAccessByCodes } = useAccess()
 	// eslint-disable-next-line unused-imports/no-unused-vars
 	const baseSchema = useMemo(() => buildContractSchema(null), []);
 	const dynamicResolver: Resolver<ContractFormValues> = useCallback(
@@ -37,28 +35,18 @@ export function ContractForm() {
 			const sc = values.serviceCode ?? null;
 			const schema = buildContractSchema(sc as ContractServiceCode | null);
 
-			// ✅ bridge cast (فقط همینجا)
 			const r = zodResolver(schema) as unknown as Resolver<ContractFormValues>;
 			return r(values, context, options);
 		},
 		[],
 	);
-	// ✅ useForm را با schema base می‌سازیم
 	const form = useForm<ContractFormValues>({
 		defaultValues: defaultValues as any,
 		mode: "all",
 		shouldUnregister: true,
-
-		// ✅ resolver داینامیک واقعی: داخلش از values.serviceCode استفاده می‌کنیم
-		// و schema مناسب را همان لحظه می‌سازیم
 		resolver: dynamicResolver,
 	});
-	const hasError = form.formState.isValid;
-	const err = form.formState.errors;
-	console.warn(hasError);
-	console.warn("errors:", err);
 
-	// ✅ برای render کردن فیلدهای داینامیک
 	const serviceCode = useWatch({
 		control: form.control,
 		name: "serviceCode",
@@ -66,7 +54,6 @@ export function ContractForm() {
 
 	const module = serviceCode ? serviceRegistry[serviceCode] : undefined;
 
-	// ✅ قبل از submit: trigger کنیم تا errorها در UI نمایش داده شوند
 	const onSubmit = form.handleSubmit(
 		(values) => {
 			console.warn("submit", values);
@@ -85,10 +72,8 @@ export function ContractForm() {
 
 	return (
 		<FormProvider {...form}>
-
 			<div className="w-full flex flex-col justify-center items-center gap-2">
 				<FixedStartSection />
-
 				<AnimatePresence mode="wait">
 					{module?.Fields
 						? (

@@ -4,7 +4,6 @@ import { RHFProTextArea, RHFProUploadButton } from "#src/shared/ui/rhf-pro";
 import { ProCard } from "@ant-design/pro-components";
 
 export function FixedEndSection() {
-	// تنظیمات پیشنهادی آپلود (قابل تغییر بر اساس API شما)
 	const uploadProps: UploadProps = {
 		multiple: true,
 		maxCount: 10,

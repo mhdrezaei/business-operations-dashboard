@@ -47,7 +47,7 @@ export function SmsFields() {
 						<ProCard bordered headerBordered style={{ borderRadius: 6 }} title="درآمد دولت" bodyStyle={{ padding: 16 }}>
 							<ContractTypeSection title="درآمد دولت" name={sf("governmentRevenue")} />
 						</ProCard>
-						<ProCard bordered headerBordered style={{ borderRadius: 16, marginTop: 12 }} title="سود" bodyStyle={{ padding: 16 }}>
+						<ProCard bordered headerBordered style={{ borderRadius: 6, marginTop: 12 }} title="سود" bodyStyle={{ padding: 16 }}>
 							<ContractTypeSection title="سود" name={sf("profit.pricing")} />
 							<div style={{ marginTop: 12 }}>
 								<ProFormGroup>

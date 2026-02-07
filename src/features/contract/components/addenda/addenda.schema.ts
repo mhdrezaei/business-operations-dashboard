@@ -37,7 +37,7 @@ export const addendumSchema = z
 	});
 
 export function addendaRefineNoOverlapAndInsideContract(opts: {
-	// ✅ هر کدام باید دقیقاً [yearPath, monthPath] باشند
+// ✅ Each must be exactly [yearPath, monthPath]
 	contractStartPath: (string | number)[]
 	contractEndPath: (string | number)[]
 	addendaPath: (string | number)[]
@@ -51,7 +51,7 @@ export function addendaRefineNoOverlapAndInsideContract(opts: {
 		const cStart = ymKey(cStartYear, cStartMonth);
 		const cEnd = ymKey(cEndYear, cEndMonth);
 
-		// اگر تاریخ قرارداد کامل نیست، چیزی نگیم (خود fixedStart پیام می‌دهد)
+		// If the contract date is not complete, say nothing (fixedStart itself will send a message)
 		if (cStart == null || cEnd == null)
 			return;
 
@@ -64,7 +64,7 @@ export function addendaRefineNoOverlapAndInsideContract(opts: {
 			const e = ymKey(a?.endYear, a?.endMonth);
 
 			if (s == null || e == null)
-				continue; // requiredها را addendumSchema می‌دهد
+				continue;
 
 			if (s > e) {
 				ctx.addIssue({
@@ -75,7 +75,6 @@ export function addendaRefineNoOverlapAndInsideContract(opts: {
 				continue;
 			}
 
-			// داخل بازه قرارداد
 			if (s < cStart || e > cEnd) {
 				ctx.addIssue({
 					code: "custom",

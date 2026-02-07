@@ -24,15 +24,12 @@ export function ContractTypeSection({ title, name }: Props) {
 
 	const sectionsFa = useFieldArray({ control, name: `${name}.sections` as any });
 	const prevTypeRef = useRef<any>(null);
-	// ✅ init فقط زمانی که tier_blended شد + فقط اگر واقعاً خالی بود
-	// ✅ با replace (نه append) تا دوباره‌کاری و 2تا شدن پیش نیاد
+
 	useEffect(() => {
-	// فقط وقتی "وارد" tier_blended می‌شیم
+		// only when we "enter" tier_blended
 		if (prevTypeRef.current !== "tier_blended" && type === "tier_blended") {
 			const current = (getValues(`${name}.sections` as any) ?? []) as any[];
 
-			// ✅ اگر از قبل مقدار دارد (مثل defaultLegacyPricing)، همونو نمایش بده
-			// ✅ اگر ندارد، یک بخش پیشفرض بساز
 			sectionsFa.replace(
 				(current.length > 0 ? current : [{ mode: null, rows: [{ from: null, to: null, fee: null }] }]) as any,
 			);
@@ -41,7 +38,7 @@ export function ContractTypeSection({ title, name }: Props) {
 		prevTypeRef.current = type;
 	}, [type, name, getValues, sectionsFa]);
 
-	// ✅ افزودن بخش جدید (اگر خالی بود: replace با یک بخش، اگر نه: append)
+	// ✅ Add a new section (if empty: replace with a section, if not: append)
 	const addSection = () => {
 		const current = (getValues(`${name}.sections` as any) ?? []) as any[];
 		if (current.length === 0) {

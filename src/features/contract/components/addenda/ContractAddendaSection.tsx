@@ -19,7 +19,7 @@ function toNum(v: any): number | null {
 	return Number.isFinite(n) ? n : null;
 }
 
-// YYYY/MM -> عدد قابل مقایسه
+// YYYY/MM -> Comparable number
 function ymToKey(y: number | string | null | undefined, m: number | string | null | undefined) {
 	const yn = toNum(y);
 	const mn = toNum(m);
@@ -82,7 +82,7 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 		control,
 		name: name as unknown as Path<TFV>,
 	}) as PathValue<TFV, typeof name> | undefined;
-	// تاریخ قرارداد اصلی
+	// Date of original contract
 	const contractStartYear = useWatch({ control, name: contractStartYearPath }) as any;
 	const contractStartMonth = useWatch({ control, name: contractStartMonthPath }) as any;
 	const contractEndYear = useWatch({ control, name: contractEndYearPath }) as any;
@@ -95,7 +95,7 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 	const { fields, append, remove } = useFieldArray({ control, name });
 	const [activeKey, setActiveKey] = useState<string | undefined>(undefined);
 
-	// ✅ سال‌های مجاز بر اساس بازه قرارداد
+	// ✅ Allowed years based on contract period
 	const allowedYears = useMemo(() => {
 		if (!contractRangeReady)
 			return YEAR_OPTIONS;
@@ -104,7 +104,7 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 		return (YEAR_OPTIONS as any[]).filter(o => o.value >= sy && o.value <= ey);
 	}, [contractRangeReady, contractStartKey, contractEndKey]);
 
-	// ✅ چک لحظه‌ای overlap و داخل بازه (روی همان فیلد startYear خطا می‌گذاریم)
+	// ✅ Instant check for overlap and within range (we throw an error on the same startYear field)
 	const validateAddendumRangeNow = (idx: number) => {
 		if (!contractRangeReady)
 			return;
@@ -119,25 +119,25 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 		const sKey = ymToKey(sy, sm);
 		const eKey = ymToKey(ey, em);
 
-		// تا کامل نشده، چیزی نشان نده
+		// Don't show anything until it's complete.
 		if (sKey == null || eKey == null) {
 			clearErrors(p(base, "startYear"));
 			return;
 		}
 
-		// نامعتبر
+		// invalid
 		if (sKey > eKey) {
 			setError(p(base, "startYear"), { type: "custom", message: "بازه تاریخ الحاقیه نامعتبر است" } as any);
 			return;
 		}
 
-		// خارج از قرارداد
+		// Out of contract
 		if (sKey < contractStartKey! || eKey > contractEndKey!) {
 			setError(p(base, "startYear"), { type: "custom", message: "بازه تاریخ الحاقیه باید داخل بازه قرارداد باشد" } as any);
 			return;
 		}
 
-		// overlap با بقیه
+		// overlap with others
 		for (let i = 0; i < fields.length; i++) {
 			if (i === idx)
 				continue;
@@ -160,7 +160,7 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 			}
 		}
 
-		// اگر همه چیز OK بود
+		// If everything was OK
 		clearErrors(p(base, "startYear"));
 	};
 
@@ -170,7 +170,7 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 			return;
 		}
 
-		// ✅ اگر آخری ناقص است اجازه اضافه نده
+		// ✅ If the last one is incomplete, do not allow adding
 		if (fields.length > 0) {
 			const lastIdx = fields.length - 1;
 			const base = `${name}.${lastIdx}`;
@@ -186,7 +186,7 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 				return;
 			}
 
-			// ✅ همینجا هم validate کنیم که overlap نداشته باشد
+			// ✅ Let's validate here that there is no overlap
 			validateAddendumRangeNow(lastIdx);
 			const ok = await trigger([p(base, "startYear") as any]);
 			if (!ok) {
@@ -357,7 +357,7 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 		<ProCard
 			bordered
 			headerBordered
-			style={{ borderRadius: 16, marginTop: 12 }}
+			style={{ borderRadius: 6, marginTop: 12 }}
 			title={title}
 			extra={(
 				<Button icon={<PlusOutlined />} onClick={addAddendum} disabled={!contractRangeReady}>

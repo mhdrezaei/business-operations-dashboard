@@ -1,23 +1,47 @@
-import { RHFProNumber } from "#src/shared/ui/rhf-pro"; // مسیر خودت
+import { RHFProNumber } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { ProCard } from "@ant-design/pro-components";
 import { Button } from "antd";
-import React, { useMemo } from "react";
-import { useFieldArray, useFormContext } from "react-hook-form";
+import React, { useEffect, useMemo } from "react";
+import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 
 interface Props {
-	name: string // مثل "serviceFields.contractPricing.rows"
+	name: string
 }
 
 export function ContractTierTable({ name }: Props) {
-	const { control } = useFormContext();
+	const { control, setValue } = useFormContext();
 	const { fields, append, remove } = useFieldArray({ control, name });
 
-	const header = useMemo(() => ([
-		{ key: "from", title: "بازه اول", sub: "از" },
-		{ key: "to", title: "بازه دوم", sub: "تا" },
-		{ key: "fee", title: "مقدار فی", sub: "فی" },
-	]), []);
+	// ✅ watch all rows for automatic sync
+	const rows = useWatch({ control, name }) as Array<{ from: any, to: any, fee: any }> | undefined;
+
+	const header = useMemo(
+		() => [
+			{ key: "from", title: "بازه اول", sub: "از" },
+			{ key: "to", title: "بازه دوم", sub: "تا" },
+			{ key: "fee", title: "مقدار فی", sub: "فی" },
+		],
+		[],
+	);
+
+	// ✅ Every time rows are changed: from row i must be = to row i-1
+	useEffect(() => {
+		if (!rows || rows.length < 2)
+			return;
+
+		for (let i = 1; i < rows.length; i++) {
+			const prevTo = rows[i - 1]?.to ?? null;
+			const currFrom = rows[i]?.from ?? null;
+
+			if (currFrom !== prevTo) {
+				setValue(`${name}.${i}.from` as any, prevTo, {
+					shouldDirty: true,
+					shouldValidate: true,
+				});
+			}
+		}
+	}, [rows, name, setValue]);
 
 	return (
 		<ProCard bordered style={{ borderRadius: 12 }} bodyStyle={{ padding: 12 }}>
@@ -59,7 +83,11 @@ export function ContractTierTable({ name }: Props) {
 								label=""
 								enableGrouping
 								enableWordsTooltip
-								inputProps={{ placeholder: "از", inputMode: "numeric" } as any}
+								inputProps={{
+									placeholder: "از",
+									inputMode: "numeric",
+									disabled: idx > 0, // ✅ Disabled from the second row onwards
+								} as any}
 								formItemProps={{ style: { marginBottom: 0 } }}
 							/>
 						</div>
@@ -91,7 +119,17 @@ export function ContractTierTable({ name }: Props) {
 				<div style={{ padding: 12 }}>
 					<Button
 						icon={<PlusOutlined />}
-						onClick={() => append({ from: null, to: null, fee: null } as any)}
+						onClick={() => {
+							// ✅ If it is the first row: as before
+							if (!rows || rows.length === 0) {
+								append({ from: null, to: null, fee: null } as any);
+								return;
+							}
+
+							// ✅ New row: from = to previous
+							const prevTo = rows[rows.length - 1]?.to ?? null;
+							append({ from: prevTo, to: null, fee: null } as any);
+						}}
 					>
 						افزودن ردیف
 					</Button>

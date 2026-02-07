@@ -7,14 +7,6 @@
 	"description": "React Hooks + TypeScript + Ant Design = react-antd-admin",
 	"author": "Data Processor Panel",
 	"license": "MIT",
-	"homepage": "https://github.com/condorheroblog/react-antd-admin/blob/main/README.md",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/condorheroblog/react-antd-admin.git"
-	},
-	"bugs": {
-		"url": "https://github.com/condorheroblog/react-antd-admin/issues"
-	},
 	"imports": {
 		"#*": "./*"
 	},

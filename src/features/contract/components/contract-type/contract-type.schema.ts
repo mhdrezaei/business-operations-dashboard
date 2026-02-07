@@ -1,9 +1,9 @@
 import type { ContractTypeValue } from "./contract-type.types";
 import { z } from "zod";
-import { zNullableArrayFa, zNullableNumberFa } from "./zod-fa-helpers"; // مسیر خودت
+import { zNullableArrayFa, zNullableNumberFa } from "./zod-fa-helpers";
 
 const tierRowSchema = z.object({
-	from: zNullableNumberFa(), // یا requiredMsg نده چون وابسته به نوع است
+	from: zNullableNumberFa(),
 	to: zNullableNumberFa(),
 	fee: zNullableNumberFa(),
 });
@@ -67,6 +67,17 @@ export const contractTypeSchema: z.ZodType<ContractTypeValue> = z
 				if (r.from != null && r.to != null && r.from > r.to) {
 					ctx.addIssue({ code: "custom", path: ["rows", i, "to"], message: "مقدار «تا» باید بزرگتر از «از» باشد" });
 				}
+				// ✅ from ردیف جدید نباید کمتر از to ردیف قبلی باشد
+				if (i > 0) {
+					const prevTo = val.rows[i - 1]?.to;
+					if (prevTo != null && r.from != null && r.from < prevTo) {
+						ctx.addIssue({
+							code: "custom",
+							path: ["rows", i, "from"],
+							message: "مقدار «از» باید از «تا» ردیف قبلی شروع شود",
+						});
+					}
+				}
 			});
 			return;
 		}
@@ -92,6 +103,16 @@ export const contractTypeSchema: z.ZodType<ContractTypeValue> = z
 						ctx.addIssue({ code: "custom", path: ["sections", si, "rows", ri, "fee"], message: "مقدار فی الزامی است" });
 					if (r.from != null && r.to != null && r.from > r.to) {
 						ctx.addIssue({ code: "custom", path: ["sections", si, "rows", ri, "to"], message: "مقدار «تا» باید بزرگتر از «از» باشد" });
+					}
+					if (ri > 0) {
+						const prevTo = s.rows[ri - 1]?.to;
+						if (prevTo != null && r.from != null && r.from < prevTo) {
+							ctx.addIssue({
+								code: "custom",
+								path: ["sections", si, "rows", ri, "from"],
+								message: "مقدار «از» باید از «تا» ردیف قبلی شروع شود",
+							});
+						}
 					}
 				});
 			});

@@ -47,7 +47,7 @@ export function ShahkarFields() {
 							contractTypeTitle=""
 							contractTypeFieldKey="contractPricing"
 
-							// ✅ مسیر تاریخ‌های قرارداد اصلی (root) - اجباری در Props شما
+							// ✅ Root contract dates path - mandatory in your Props
 							contractStartYearPath={"startYear" as Path<ContractFormValues>}
 							contractStartMonthPath={"startMonth" as Path<ContractFormValues>}
 							contractEndYearPath={"endYear" as Path<ContractFormValues>}
