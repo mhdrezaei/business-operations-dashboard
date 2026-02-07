@@ -93,7 +93,7 @@ export default function LayoutContent() {
 		<main
 			id={ELEMENT_ID_MAIN_CONTENT}
 			ref={contentElement}
-			className="relative overflow-y-auto overflow-x-hidden flex-grow mx-4 p-4"
+			className="relative overflow-y-auto overflow-x-hidden flex-grow ml-4 mr-6 rounded-md"
 			style={
 				{
 					backgroundColor: colorBgLayout,

@@ -2,8 +2,9 @@ import { AntdApp, JSSThemeProvider } from "#src/components";
 import { useLanguage, usePreferences, useScrollToHash } from "#src/hooks";
 import { AppVersionMonitor } from "#src/layout/widgets/version-monitor";
 import { ANT_DESIGN_LOCALE } from "#src/locales";
-
 import { theme as antdTheme, ConfigProvider } from "antd";
+
+import { JalaliLocaleListener } from "antd-jalali";
 import dayjs from "dayjs";
 import { Suspense, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -14,6 +15,7 @@ import { getCustomAntdTheme } from "./styles/theme/antd/antd-theme";
 import { BodyThemeSync } from "./utils/body-theme-sync";
 import "dayjs/locale/de";
 import "dayjs/locale/fa";
+import "#src/shared/lib/dayjs-jalali";
 
 export default function App() {
 	const { i18n } = useTranslation();
@@ -151,6 +153,7 @@ export default function App() {
 				},
 			}}
 		>
+			<JalaliLocaleListener />
 			<BodyThemeSync />
 
 			<AntdApp>

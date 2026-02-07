@@ -285,56 +285,56 @@ export default defineFakeRoute([
 						},
 				],
 			};
-			// const contractsManangement = {
-			// 	path: "/contractsManangement",
-			// 	handle: {
-			// 		icon: "SafetyOutlined",
-			// 		title: "common.menu.contractsManangement",
-			// 		order: access,
-			// 	},
-			// 	children: [
-			// 		/**
-			// 		 * @fa فقط هنگام دريافت مسيرها از طريق API قابل مشاهده است
-			// 		 * @en Visible only when getting routes through the interface
-			// 		 */
-			// 		isAdmin
-			// 		&& {
-			// 			path: "/contractsManangement/new",
-			// 			handle: {
-			// 				icon: "CloudOutlined",
-			// 				title: "common.menu.newContract",
-			// 				permissions: isAdmin
-			// 					? [
-			// 						"permission:button:get",
-			// 						"permission:button:update",
-			// 						"permission:button:delete",
-			// 						"permission:button:add",
-			// 					]
-			// 					: [
-			// 						"permission:button:get",
-			// 					],
-			// 			},
-			// 		},
-			// 		isAdmin
-			// 		&& {
-			// 			path: "/contractsManangement/edit",
-			// 			handle: {
-			// 				icon: "FileTextOutlined",
-			// 				title: "common.menu.editContract",
-			// 				permissions: isAdmin
-			// 					? [
-			// 						"permission:button:get",
-			// 						"permission:button:update",
-			// 						"permission:button:delete",
-			// 						"permission:button:add",
-			// 					]
-			// 					: [
-			// 						"permission:button:get",
-			// 					],
-			// 			},
-			// 		},
-			// 	],
-			// };
+			const contract = {
+				path: "/contract",
+				handle: {
+					icon: "SafetyOutlined",
+					title: "common.menu.contract",
+					order: access,
+				},
+				children: [
+					/**
+					 * @fa فقط هنگام دريافت مسيرها از طريق API قابل مشاهده است
+					 * @en Visible only when getting routes through the interface
+					 */
+					isAdmin
+					&& {
+						path: "/contract/new",
+						handle: {
+							icon: "CloudOutlined",
+							title: "common.menu.newContract",
+							permissions: isAdmin
+								? [
+									"permission:button:get",
+									"permission:button:update",
+									"permission:button:delete",
+									"permission:button:add",
+								]
+								: [
+									"permission:button:get",
+								],
+						},
+					},
+					isAdmin
+					&& {
+						path: "/contract/edit",
+						handle: {
+							icon: "FileTextOutlined",
+							title: "common.menu.editContract",
+							permissions: isAdmin
+								? [
+									"permission:button:get",
+									"permission:button:update",
+									"permission:button:delete",
+									"permission:button:add",
+								]
+								: [
+									"permission:button:get",
+								],
+						},
+					},
+				],
+			};
 			return resultSuccess(
 				[
 					// homeRouter,
@@ -344,7 +344,7 @@ export default defineFakeRoute([
 					outsideRouter,
 					personalCenterRouter,
 					routeNestRouter,
-					// contractsManangement,
+					contract,
 				],
 			);
 		},

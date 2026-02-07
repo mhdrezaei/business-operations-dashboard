@@ -2,11 +2,11 @@ import type { AppRouteRecordRaw } from "#src/router/types";
 
 import { ContainerLayout } from "#src/layout";
 import { $t } from "#src/locales";
-import { contract } from "#src/router/extra-info";
 
+import { contract } from "#src/router/extra-info";
 import { lazy } from "react";
 
-const ContractsPage = lazy(() => import("#src/pages/contracts/"));
+const CreateContractPage = lazy(() => import("#src/pages/contracts/"));
 
 const routes: AppRouteRecordRaw[] = [
 	{
@@ -20,7 +20,7 @@ const routes: AppRouteRecordRaw[] = [
 		children: [
 			{
 				path: "/contracts/new",
-				Component: ContractsPage,
+				Component: CreateContractPage,
 				handle: {
 					icon: "FileTextOutlined",
 					title: $t("common.menu.newContract"),
