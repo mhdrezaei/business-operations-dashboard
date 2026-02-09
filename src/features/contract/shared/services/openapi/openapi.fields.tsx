@@ -1,5 +1,5 @@
 import type { ArrayPath, Path } from "react-hook-form";
-import type { ContractFormValues } from "../../model/contract.form.types";
+import type { ContractFormValues } from "../../../shared/model/contract.form.types";
 import { BasicContent } from "#src/components/index.js";
 import { ContractAddendaSection } from "#src/features/contract/components/addenda/ContractAddendaSection.js";
 

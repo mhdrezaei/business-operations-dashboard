@@ -1,4 +1,4 @@
-import type { FormTierRow } from "#src/features/contract/create/model/contract.form.types";
+import type { FormTierRow } from "#src/features/contract/shared/model/contract.form.types.js";
 import type { ApiTier } from "./contract.dto";
 
 function s2n(v: string | number | null | undefined): number | null {

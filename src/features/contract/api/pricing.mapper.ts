@@ -1,4 +1,4 @@
-import type { ContractTypeValue } from "#src/features/contract/create/model/contract.form.types";
+import type { ContractTypeValue } from "#src/features/contract/shared/model/contract.form.types.js";
 import type { ApiPricing } from "./contract.dto";
 import { apiTiersToRows, rowsToApiTiers } from "./tiers.mapper";
 

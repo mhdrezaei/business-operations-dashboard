@@ -1,10 +1,11 @@
 // import CreateContractContainer from "#src/features/contract/create/containers/CreateContractContainer.js";
-import { ContractForm } from "#src/features/contract/create/ui/ContractForm";
+
+import CreateContract from "#src/features/contract/create/ui/CreateContract";
 
 function CreateContractPage() {
 	return (
 		<>
-			<ContractForm />
+			<CreateContract />
 		</>
 	);
 }

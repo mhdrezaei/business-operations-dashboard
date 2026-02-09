@@ -1,4 +1,4 @@
-import type { ContractFormValues } from "../../model/contract.form.types";
+import type { ContractFormValues } from "../../../model/contract.form.types";
 import { BasicContent } from "#src/components/";
 import { RHFSelect } from "#src/shared/ui/rhf-pro";
 import { ProCard } from "@ant-design/pro-components";
@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Col, Row } from "antd";
 import React, { useEffect, useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
-import { companiesByServiceQuery, servicesQuery } from "../../queries/contract.queries";
+import { companiesByServiceQuery, servicesQuery } from "../../../queries/contract.queries";
 import { MONTH_OPTIONS, YEAR_OPTIONS } from "../constants/jalali-date-options";
 
 const COUNTERPARTY_OPTIONS = [

@@ -1,14 +1,14 @@
 import type { Resolver } from "react-hook-form";
-import type { ContractFormValues, ContractServiceCode } from "../model/contract.form.types";
+import type { ContractFormValues, ContractServiceCode } from "../../model/contract.form.types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, notification } from "antd";
 import { AnimatePresence, motion } from "framer-motion";
 import React, { useCallback, useMemo } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 
+import { buildContractSchema } from "../../model/contract.schema";
+import { serviceRegistry } from "../../services/registry";
 import { findFirstError } from "../../utils";
-import { buildContractSchema } from "../model/contract.schema";
-import { serviceRegistry } from "../services/registry";
 import { FixedEndSection } from "./sections/FixedEndSection";
 import { FixedStartSection } from "./sections/FixedStartSection";
 

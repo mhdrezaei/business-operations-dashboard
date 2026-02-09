@@ -7,6 +7,7 @@ import { contract } from "#src/router/extra-info";
 import { lazy } from "react";
 
 const CreateContractPage = lazy(() => import("#src/pages/contracts/"));
+const EditContractPage = lazy(() => import("#src/pages/contracts/edit"));
 
 const routes: AppRouteRecordRaw[] = [
 	{
@@ -24,6 +25,21 @@ const routes: AppRouteRecordRaw[] = [
 				handle: {
 					icon: "FileTextOutlined",
 					title: $t("common.menu.newContract"),
+					// roles: ["admin"],
+					// permissions: [
+					// 	accessControlCodes.get,
+					// 	accessControlCodes.add,
+					// 	accessControlCodes.update,
+					// 	accessControlCodes.update,
+					// ],
+				},
+			},
+			{
+				path: "/contracts/edit",
+				Component: EditContractPage,
+				handle: {
+					icon: "FileTextOutlined",
+					title: $t("common.menu.editContract"),
 					// roles: ["admin"],
 					// permissions: [
 					// 	accessControlCodes.get,

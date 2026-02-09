@@ -54,12 +54,12 @@ const routes: AppRouteRecordRaw[] = [
 				handle: {
 					icon: "MenuOutlined",
 					title: "common.menu.menu",
-					roles: ["admin"],
-					permissions: [
-						"permission:button:add",
-						"permission:button:update",
-						"permission:button:delete",
-					],
+					// roles: ["admin"],
+					// permissions: [
+					// 	"permission:button:add",
+					// 	"permission:button:update",
+					// 	"permission:button:delete",
+					// ],
 				},
 			},
 			{
