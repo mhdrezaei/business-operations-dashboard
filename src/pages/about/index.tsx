@@ -40,7 +40,7 @@ export default function About() {
 					rel="noreferrer noopener"
 					copyable
 					target="_blank"
-					href="https://condorheroblog.github.io/react-antd-admin/"
+					href="https://github.io/react-antd-admin/"
 				>
 					{t("common.view")}
 				</Link>
@@ -54,7 +54,7 @@ export default function About() {
 					rel="noreferrer noopener"
 					copyable
 					target="_blank"
-					href="https://condorheroblog.github.io/react-antd-admin/docs/"
+					href="https://github.io/react-antd-admin/docs/"
 				>
 					{t("common.view")}
 				</Link>
@@ -68,7 +68,7 @@ export default function About() {
 					rel="noreferrer noopener"
 					copyable
 					target="_blank"
-					href="https://github.com/condorheroblog/react-antd-admin"
+					href="https://github.com/"
 				>
 					{import.meta.env.VITE_GLOB_APP_TITLE}
 				</Link>

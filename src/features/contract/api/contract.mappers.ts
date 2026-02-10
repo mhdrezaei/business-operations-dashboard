@@ -1,5 +1,5 @@
 import type { ContractTypeValue } from "#src/features/contract/components/contract-type/contract-type.types";
-import type { ContractFormValues } from "#src/features/contract/create/model/contract.form.types";
+import type { ContractFormValues } from "#src/features/contract/shared/model/contract.form.types.js";
 import type { ApiContractDto } from "./contract.dto";
 import { apiPricingToContractType } from "./pricing.mapper";
 

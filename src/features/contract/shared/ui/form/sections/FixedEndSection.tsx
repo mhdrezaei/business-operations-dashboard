@@ -1,5 +1,5 @@
 import type { UploadProps } from "antd";
-import type { ContractFormValues } from "../../model/contract.form.types";
+import type { ContractFormValues } from "../../../model/contract.form.types";
 import { RHFProTextArea, RHFProUploadButton } from "#src/shared/ui/rhf-pro";
 import { ProCard } from "@ant-design/pro-components";
 

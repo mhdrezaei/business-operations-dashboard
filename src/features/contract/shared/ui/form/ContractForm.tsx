@@ -1,14 +1,14 @@
 import type { Resolver } from "react-hook-form";
-import type { ContractFormValues, ContractServiceCode } from "../model/contract.form.types";
+import type { ContractFormValues, ContractServiceCode } from "../../model/contract.form.types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, notification } from "antd";
 import { AnimatePresence, motion } from "framer-motion";
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useEffect } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 
+import { buildContractSchema } from "../../model/contract.schema";
+import { serviceRegistry } from "../../services/registry";
 import { findFirstError } from "../../utils";
-import { buildContractSchema } from "../model/contract.schema";
-import { serviceRegistry } from "../services/registry";
 import { FixedEndSection } from "./sections/FixedEndSection";
 import { FixedStartSection } from "./sections/FixedStartSection";
 
@@ -26,10 +26,19 @@ const defaultValues: ContractFormValues = {
 	serviceFields: {},
 };
 
-export function ContractForm() {
-	// const { hasAccessByCodes } = useAccess()
-	// eslint-disable-next-line unused-imports/no-unused-vars
-	const baseSchema = useMemo(() => buildContractSchema(null), []);
+interface Props {
+	initialValues?: Partial<ContractFormValues> | null
+	onSubmit?: (values: ContractFormValues) => void | Promise<void>
+	submitText?: string
+	submitting?: boolean
+}
+
+export function ContractForm({
+	initialValues,
+	onSubmit: onSubmitProp,
+	submitText = "ثبت قرارداد",
+	submitting,
+}: Props) {
 	const dynamicResolver: Resolver<ContractFormValues> = useCallback(
 		async (values, context, options) => {
 			const sc = values.serviceCode ?? null;
@@ -40,6 +49,7 @@ export function ContractForm() {
 		},
 		[],
 	);
+
 	const form = useForm<ContractFormValues>({
 		defaultValues: defaultValues as any,
 		mode: "all",
@@ -47,16 +57,51 @@ export function ContractForm() {
 		resolver: dynamicResolver,
 	});
 
+	// ✅ وقتی initialValues آمد، فرم را reset کن تا تمام فیلدها (و nested ها) درست بنشینند
+	useEffect(() => {
+		if (!initialValues)
+			return;
+
+		// اطمینان از اینکه serviceFields به درستی تنظیم شود
+		form.reset(
+			{
+				...defaultValues,
+				...initialValues,
+				serviceFields: {
+					...(defaultValues.serviceFields ?? {}),
+					...(initialValues.serviceFields ?? {}),
+				},
+			} as any,
+			{
+				keepDirty: false,
+				keepTouched: false,
+			},
+		);
+	}, [initialValues]);
+
 	const serviceCode = useWatch({
 		control: form.control,
 		name: "serviceCode",
 	}) as ContractServiceCode | null;
-
+	console.warn("serviceCode", serviceCode);
 	const module = serviceCode ? serviceRegistry[serviceCode] : undefined;
-
+	console.warn(module, "mooooo");
 	const onSubmit = form.handleSubmit(
-		(values) => {
-			console.warn("submit", values);
+		async (values) => {
+			try {
+				if (onSubmitProp) {
+					await onSubmitProp(values);
+					return;
+				}
+				console.warn("submit", values);
+			}
+			catch (e: any) {
+				notification.error({
+					message: "خطا در ثبت/ویرایش",
+					description: e?.message ?? "خطای نامشخص",
+					placement: "top",
+				});
+			}
 		},
 		(errors) => {
 			const first = findFirstError(errors);
@@ -74,6 +119,7 @@ export function ContractForm() {
 		<FormProvider {...form}>
 			<div className="w-full flex flex-col justify-center items-center gap-2">
 				<FixedStartSection />
+
 				<AnimatePresence mode="wait">
 					{module?.Fields
 						? (
@@ -94,17 +140,11 @@ export function ContractForm() {
 				<FixedEndSection />
 
 				<div style={{ marginTop: 16 }}>
-					<Button
-						type="primary"
-						onClick={onSubmit}
-						// disabled={!hasAccessByCodes(accessControlCodes.add)}
-						// disabled={!hasError}
-					>
-						ثبت قرارداد
+					<Button type="primary" onClick={onSubmit} loading={!!submitting}>
+						{submitText}
 					</Button>
 				</div>
 			</div>
-
 		</FormProvider>
 	);
 }
