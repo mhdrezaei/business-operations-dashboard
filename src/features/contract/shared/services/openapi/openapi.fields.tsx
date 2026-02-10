@@ -23,7 +23,7 @@ const PACKAGE_MODE_OPTIONS = [
 ];
 
 export function OpenApiFields() {
-	const { control, setValue } = useFormContext<ContractFormValues>();
+	const { control, setValue, getValues } = useFormContext<ContractFormValues>();
 	const startYear = useWatch({ control, name: "startYear" });
 	const startMonth = useWatch({ control, name: "startMonth" });
 	const endYear = useWatch({ control, name: "endYear" });
@@ -41,24 +41,26 @@ export function OpenApiFields() {
 	const [activeKey, setActiveKey] = useState<string>("0");
 
 	const contractModel = useWatch({ control, name: sf("contractModel") }) as "package" | "legacy" | null;
-
+	console.warn(contractModel, "qqqqqqqq");
 	// When legacy is selected, create legacyPricing if it doesn't exist
 	React.useEffect(() => {
 		if (contractModel === "legacy") {
-			setValue(sf("legacyPricing"), structuredClone(defaultLegacyPricing) as any, {
-				shouldDirty: true,
-				shouldValidate: true,
-			});
+			const current = getValues(sf("legacyPricing"));
+			if (!current) {
+				setValue(sf("legacyPricing"), structuredClone(defaultLegacyPricing) as any, {
+					shouldDirty: true,
+					shouldValidate: true,
+				});
+			}
 			setValue(sf("packageMode"), null as any, { shouldDirty: true, shouldValidate: true });
 		}
 		else {
-			// When packaged, clear legacyPricing (with shouldUnregister true it's also clean)
 			setValue(sf("legacyPricing"), undefined as any, {
 				shouldDirty: true,
 				shouldValidate: true,
 			});
 		}
-	}, [contractModel, setValue]);
+	}, [contractModel, setValue, getValues]);
 
 	const addPlan = () => {
 		const nextIndex = fields.length;

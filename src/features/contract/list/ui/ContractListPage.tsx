@@ -1,9 +1,11 @@
 import type { ActionType, ProColumns, ProCoreActionType, ProFormInstance } from "@ant-design/pro-components";
+
+import type { ContractServicePath } from "../api/contracts.api";
 import type { ContractListItemType } from "../model/contracts.list.types";
+// import { useAccess } from "#src/hooks";
 
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import { companiesByServiceQuery, servicesQuery } from "#src/features/contract/create/queries/contract.queries";
-import { useAccess } from "#src/hooks";
 import { PlusCircleOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 
@@ -11,7 +13,6 @@ import { Button, Popconfirm } from "antd";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { fetchContractsList, fetchDeleteContract } from "../api/contracts.api";
-
 import { ContractDetailModal } from "./components/ContractDetailModal";
 import { getContractColumns } from "./constants";
 
@@ -19,26 +20,61 @@ type TrafficCompanyType = "CP" | "IXP" | "TCI" | "PREMIUM";
 
 export default function ContractListPage() {
 	const { t } = useTranslation();
-	const { hasAccessByCodes } = useAccess();
+	// const { hasAccessByCodes } = useAccess();
+
 	useEffect(() => {
 		fetchContractsList({ page: 1, page_size: 20 })
 			.then(console.warn)
 			.catch(console.error);
 	}, []);
 
-	// ✅ دقیقا مثل الگوی پروژه (Menu)
 	const actionRef = useRef<ActionType>(null);
 	const formRef = useRef<ProFormInstance | undefined>(undefined);
 
 	const [openDetail, setOpenDetail] = useState(false);
 	const [selectedId, setSelectedId] = useState<number | null>(null);
-
-	// ✅ فیلترهای وابسته
+	const [selectedServicePath, setSelectedServicePath] = useState<ContractServicePath | null>(null);
 	const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
 	const [selectedTrafficCompanyType, setSelectedTrafficCompanyType] = useState<TrafficCompanyType | null>(null);
 
 	// ✅ سرویس‌ها مثل create
 	const services = useQuery(servicesQuery());
+
+	// ✅ map: service_id -> service_code (برای resolveServicePath)
+	const serviceCodeById = useMemo(() => {
+		const m = new Map<number, string>();
+		(services.data?.results ?? []).forEach((s: any) => {
+			const id = Number(s?.id);
+			const code = typeof s?.code === "string" ? s.code : null;
+			if (Number.isFinite(id) && code)
+				m.set(id, code);
+		});
+		return m;
+	}, [services.data]);
+
+	// ✅ این نسخه دیگر به عددهای هاردکد وابسته نیست
+	const resolveServicePath = (row: ContractListItemType): ContractServicePath => {
+		const code = serviceCodeById.get(Number(row.service_id)) ?? null;
+		if (code === "psp")
+			return "psp";
+
+		if (code === "traffic")
+			return "traffic";
+
+		if (code === "shahkar")
+			return "shahkar";
+
+		if (code === "commercial")
+			return "commercial";
+
+		if (code === "sms") {
+			return row.sms_party === "client"
+				? "sms/client"
+				: "sms/vendor";
+		}
+
+		return "openapi";
+	};
 
 	const selectedService = useMemo(() => {
 		if (!selectedServiceId)
@@ -83,7 +119,6 @@ export default function ContractListPage() {
 					? "ابتدا نوع شرکت (ترافیک) را انتخاب کنید"
 					: "شرکت را انتخاب کنید";
 
-	// ✅ با تغییر سرویس فقط فیلدهای وابسته پاک شوند
 	const clearDependentFilters = () => {
 		formRef.current?.setFieldsValue({
 			company_id: undefined,
@@ -95,8 +130,8 @@ export default function ContractListPage() {
 
 	const refreshTable = () => actionRef.current?.reload?.();
 
-	const handleDeleteRow = async (id: number, action?: ProCoreActionType<object>) => {
-		await fetchDeleteContract(id);
+	const handleDeleteRow = async (row: ContractListItemType, action?: ProCoreActionType<object>) => {
+		await fetchDeleteContract(resolveServicePath(row), row.id);
 		await action?.reload?.();
 		window.$message?.success(t("common.deleteSuccess"));
 	};
@@ -108,14 +143,8 @@ export default function ContractListPage() {
 				selectedServiceId,
 				setSelectedServiceId: (v) => {
 					setSelectedServiceId(v);
-
-					// ✅ مثل create
 					setSelectedTrafficCompanyType(null);
-
-					// ✅ پاک کردن وابسته‌ها
 					clearDependentFilters();
-
-					// ✅ reload
 					actionRef.current?.reload?.();
 				},
 				isTrafficService: !!isTrafficService,
@@ -123,11 +152,7 @@ export default function ContractListPage() {
 				selectedTrafficCompanyType,
 				setSelectedTrafficCompanyType: (v) => {
 					setSelectedTrafficCompanyType(v);
-
-					// ✅ مثل create: وقتی نوع شرکت traffic عوض شد، company_id پاک شود
 					formRef.current?.setFieldsValue({ company_id: undefined });
-
-					// ✅ reload
 					actionRef.current?.reload?.();
 				},
 				serviceOptions,
@@ -163,9 +188,9 @@ export default function ContractListPage() {
 						key="edit"
 						type="link"
 						size="small"
-						// disabled={!hasAccessByCodes(accessControlCodes.update)}
 						onClick={() => {
 							setSelectedId(record.id);
+							setSelectedServicePath(resolveServicePath(record));
 							setOpenDetail(true);
 						}}
 					>
@@ -176,20 +201,16 @@ export default function ContractListPage() {
 						title={t("common.confirmDelete")}
 						okText={t("common.confirm")}
 						cancelText={t("common.cancel")}
-						onConfirm={() => handleDeleteRow(record.id, action)}
+						onConfirm={() => handleDeleteRow(record, action)}
 					>
-						<BasicButton
-							type="link"
-							size="small"
-							// disabled={!hasAccessByCodes(accessControlCodes.delete)}
-						>
+						<BasicButton type="link" size="small">
 							{t("common.delete")}
 						</BasicButton>
 					</Popconfirm>,
 				],
 			},
 		];
-	}, [baseColumns, hasAccessByCodes, t]);
+	}, [baseColumns, t, serviceCodeById]); // ✅ چون resolveServicePath به map وابسته است
 
 	return (
 		<BasicContent className="h-full">
@@ -200,11 +221,9 @@ export default function ContractListPage() {
 				actionRef={actionRef}
 				formRef={formRef}
 				request={async (params) => {
-					// ✅ کلیدها مطابق swagger
 					const query = {
 						page: params.current ?? 1,
 						page_size: params.pageSize ?? 20,
-
 						search: (params as any).search,
 						service_id: (params as any).service_id,
 						company_id: (params as any).company_id,
@@ -214,7 +233,6 @@ export default function ContractListPage() {
 						ordering: (params as any).ordering,
 					};
 
-					// ✅ مهم: BasicTable در پروژه شما مثل Menu انتظار پاسخ استاندارد دارد
 					const responseData = await fetchContractsList(query as any);
 
 					return {
@@ -229,10 +247,6 @@ export default function ContractListPage() {
 						key="add"
 						icon={<PlusCircleOutlined />}
 						type="primary"
-						// disabled={!hasAccessByCodes(accessControlCodes.add)}
-						onClick={() => {
-							// navigate("/contracts/create")
-						}}
 					>
 						{t("common.add")}
 					</Button>,
@@ -242,9 +256,11 @@ export default function ContractListPage() {
 			<ContractDetailModal
 				open={openDetail}
 				contractId={selectedId}
+				service={selectedServicePath}
 				onClose={() => {
 					setOpenDetail(false);
 					setSelectedId(null);
+					setSelectedServicePath(null);
 				}}
 				onUpdated={refreshTable}
 			/>

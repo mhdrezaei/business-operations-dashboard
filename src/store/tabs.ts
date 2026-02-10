@@ -377,7 +377,6 @@ export const useTabsStore = create<TabsState & TabsAction>()(
 			 * فرض کنيد مسير صفحه /home است
 			 * به صورت دستي /about را در نوار آدرس وارد مي کنيد
 			 * activeKey همچنان /home مي ماند و ناوبري خودکار از کار مي افتد
-			 * @see https://github.com/condorheroblog/react-antd-admin/issues/1
 			 */
 			partialize: (state) => {
 				return Object.fromEntries(

@@ -24,7 +24,7 @@ const isDev = process.env.NODE_ENV === "development";
 // https://vitejs.dev/config/
 export default defineConfig({
 
-	base: isDev ? "/" : "/react-antd-admin/",
+	base: isDev ? "/" : "/",
 	plugins: [
 		react(),
 		vitePluginFakeServer({
@@ -98,6 +98,9 @@ export default defineConfig({
 		globals: true,
 		environment: "happy-dom",
 		setupFiles: ["./src/setupTests.ts"],
+	},
+	preview: {
+		port: 5173,
 	},
 	server: {
 		port: 5173,

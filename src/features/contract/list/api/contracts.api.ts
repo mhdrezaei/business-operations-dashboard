@@ -3,13 +3,25 @@ import type {
 	ContractsListQuery,
 	PaginatedResult,
 } from "../model/contracts.list.types";
+// import type { ContractServicePath } from "./contract-service.types";
 import { request } from "#src/utils/request";
+
+export type ContractServicePath = | "openapi" | "traffic" | "psp" | "commercial"
+  | "shahkar"
+  | "sms/client"
+  | "sms/vendor";
+
+function buildContractPath(service: ContractServicePath, id?: number) {
+	return id
+		? `contracts/${service}/${id}/`
+		: `contracts/${service}/`;
+}
 
 function toSearchParams(params: ContractsListQuery) {
 	const out: Record<string, string> = {};
 
 	Object.entries(params).forEach(([k, v]) => {
-		if (v === undefined || v === null)
+		if (v == null)
 			return;
 		out[k] = String(v);
 	});
@@ -17,21 +29,44 @@ function toSearchParams(params: ContractsListQuery) {
 	return out;
 }
 
+/* ===================== LIST ===================== */
+
 export function fetchContractsList(params: ContractsListQuery) {
-	// ✅ فقط این مهم است
 	return request
 		.get("contracts/list", { searchParams: toSearchParams(params) })
 		.json<PaginatedResult<ContractListItemType>>();
 }
 
-export function fetchContractDetail(id: number) {
-	return request.get(`/contracts/${id}`).json<any>();
+/* ===================== DETAIL ===================== */
+
+export function fetchContractDetail(
+	service: ContractServicePath,
+	id: number,
+) {
+	return request
+		.get(buildContractPath(service, id))
+		.json<any>();
 }
 
-export function fetchUpdateContract(id: number, payload: any) {
-	return request.patch(`/contracts/${id}`, { json: payload }).json<any>();
+/* ===================== UPDATE ===================== */
+
+export function fetchUpdateContract(
+	service: ContractServicePath,
+	id: number,
+	payload: any,
+) {
+	return request
+		.patch(buildContractPath(service, id), { json: payload })
+		.json<any>();
 }
 
-export function fetchDeleteContract(id: number) {
-	return request.delete(`/contracts/${id}`).json<any>();
+/* ===================== DELETE ===================== */
+
+export function fetchDeleteContract(
+	service: ContractServicePath,
+	id: number,
+) {
+	return request
+		.delete(buildContractPath(service, id))
+		.json<any>();
 }

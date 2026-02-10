@@ -1,88 +1,136 @@
-// import type { ContractFormValues } from "#src/features/contract/shared//model/contract.form.types";
-// ✅ این import را مطابق ساختار واقعی خودت تنظیم کن
-// اگر هنوز جدا نکردی:
+import type { ContractFormValues } from "#src/features/contract/shared/model/contract.form.types";
+import type { ContractServicePath } from "../../api/contracts.api";
 import { ContractForm } from "#src/features/contract/shared/ui/form/ContractForm";
+
 import { Modal } from "antd";
-
-// import React, { useEffect, useMemo, useState } from "react";
-
-// import { fetchContractDetail, fetchUpdateContract } from "../../api/contracts.api";
-// پیشنهاد بهتر: import { ContractFormRoot } from "#src/features/contract/shared/ui/form/ContractFormRoot";
+import React, { useEffect, useMemo, useState } from "react";
+import { fetchContractDetail, fetchUpdateContract } from "../../api/contracts.api";
 
 interface Props {
 	open: boolean
 	contractId: number | null
+	service: ContractServicePath | null
 	onClose: () => void
-	onUpdated?: () => void // برای reload جدول
+	onUpdated?: () => void
+}
+function dtoToFormValues(dto: any): ContractFormValues {
+	const serviceId = dto?.service ?? dto?.service_id ?? null;
+	const companyId = dto?.company ?? dto?.company_id ?? null;
+
+	const description = dto?.note ?? dto?.description ?? "";
+
+	const trafficCompanyType = dto?.company_type ?? dto?.traffic_company_type ?? null;
+	const counterpartyType = dto?.sms_party ?? null;
+
+	// ساختار داده‌ها برای serviceFields
+	const packageModel = dto?.package_model ?? null;
+
+	const plans = Array.isArray(packageModel?.tiers)
+		? packageModel.tiers.map((tier: any) => {
+			const billRate = tier?.bill_inquiry_rate?.tiers?.[0]?.rate_per_unit ?? null;
+			const smsRate = tier?.sms_sale_rate?.tiers?.[0]?.rate_per_unit ?? null;
+
+			return {
+				smsMin: tier?.sms_min_inclusive ?? null,
+				smsMax: tier?.sms_max_exclusive ?? null,
+				smsFixedPrice: smsRate != null ? Number(smsRate) : null,
+
+				billMin: tier?.bill_min_inclusive ?? null,
+				billMax: tier?.bill_max_exclusive ?? null,
+				billFixedPrice: billRate != null ? Number(billRate) : null,
+
+				billPartnerShare: tier?.partner_share_percent != null ? Number(tier.partner_share_percent) : null,
+				billKarashabShare: tier?.karashab_share_percent ?? null,
+
+				trafficCommissionPercent: tier?.traffic_partner_share_percent != null ? Number(tier.traffic_partner_share_percent) : null,
+			};
+		})
+		: [];
+
+	const serviceFields = {
+		contractModel: "package", // فرض بر این است که مدل قرارداد "package" باشد
+		packageMode: packageModel?.mode ?? null,
+		plans: plans ?? [], // array of plans که در tiers داده است
+	};
+
+	return {
+		serviceId,
+		serviceCode: dto?.service_code ?? dto?.serviceCode ?? null, // serviceCode موجود است؟
+		companyId,
+		trafficCompanyType,
+		counterpartyType,
+
+		startYear: dto?.start_jy ?? null,
+		startMonth: dto?.start_jm ?? null,
+		endYear: dto?.end_jy ?? null,
+		endMonth: dto?.end_jm ?? null,
+
+		description,
+		documents: dto?.documents ?? [],
+		serviceFields,
+	};
 }
 
-/**
- * تبدیل DTO به ContractFormValues
- * اینجا چون DTO دقیق جزئیات را ندادی، فقط اسکلت گذاشتم.
- * وقتی DTO واقعی را فرستادی، دقیقش می‌کنم.
- */
-// function dtoToFormValues(dto: any): ContractFormValues {
-// 	return {
-// 		serviceId: dto.service_id ?? null,
-// 		serviceCode: dto.service_code ?? null,
-// 		companyId: dto.company_id ?? null,
-// 		trafficCompanyType: dto.traffic_company_type ?? null,
-// 		counterpartyType: dto.sms_party ?? null,
+export function ContractDetailModal({ open, contractId, service, onClose, onUpdated }: Props) {
+	const [loading, setLoading] = useState(false);
+	const [saving, setSaving] = useState(false);
+	const [initialValues, setInitialValues] = useState<ContractFormValues | null>(null);
+	const modalTitle = useMemo(() => (contractId ? "ویرایش قرارداد" : "جزئیات قرارداد"), [contractId]);
 
-// 		startYear: dto.start_jy ?? null,
-// 		startMonth: dto.start_jm ?? null,
-// 		endYear: dto.end_jy ?? null,
-// 		endMonth: dto.end_jm ?? null,
+	useEffect(() => {
+		if (!open || !contractId || !service)
+			return;
 
-// 		description: dto.description ?? "",
-// 		documents: dto.documents ?? [],
-// 		serviceFields: dto.service_fields ?? {},
-// 	};
-// }
+		let cancelled = false;
 
-export function ContractDetailModal({ open, contractId, onClose }: Props) {
-	// const [loading, setLoading] = useState(false);
-	// const [initialValues, setInitialValues] = useState<ContractFormValues | null>(null);
+		(async () => {
+			setLoading(true);
+			try {
+				const dto = await fetchContractDetail(service, contractId);
+				console.warn(dto, "DTOXXX");
+				if (!cancelled)
+					setInitialValues(dtoToFormValues(dto));
+			}
+			finally {
+				if (!cancelled)
+					setLoading(false);
+			}
+		})();
 
-	// const modalTitle = useMemo(() => (contractId ? "ویرایش قرارداد" : "جزئیات قرارداد"), [contractId]);
-
-	// useEffect(() => {
-	// 	if (!open || !contractId)
-	// 		return;
-
-	// 	(async () => {
-	// 		setLoading(true);
-	// 		try {
-	// 			const dto = await fetchContractDetail(contractId);
-	// 			setInitialValues(dtoToFormValues(dto));
-	// 		}
-	// 		finally {
-	// 			setLoading(false);
-	// 		}
-	// 	})();
-	// }, [open, contractId]);
+		return () => {
+			cancelled = true;
+		};
+	}, [open, contractId, service]);
 
 	return (
 		<Modal
 			open={open}
 			onCancel={onClose}
-			// title={modalTitle}
+			title={modalTitle}
 			footer={null}
 			width={1000}
 			destroyOnClose
 		>
-			{!contractId
+			{!contractId || !service || loading || !initialValues
 				? null
 				: (
-					<>
-						{/* ✅ مهم: key برای جلوگیری از تداخل فرم‌ها */}
-						<ContractForm
-							key={contractId}
-						/* اگر ContractForm شما هنوز props ندارد،
-						   همینجا بعداً تبدیلش می‌کنیم به ContractFormRoot که initialValues و onSubmit بگیرد.
-						*/
-						/>
-					</>
+					<ContractForm
+						key={`${service}-${contractId}`}
+						initialValues={initialValues}
+						submitText="ذخیره تغییرات"
+						submitting={saving}
+						onSubmit={async (values) => {
+							setSaving(true);
+							try {
+								await fetchUpdateContract(service, contractId, values);
+								onUpdated?.();
+								onClose();
+							}
+							finally {
+								setSaving(false);
+							}
+						}}
+					/>
 				)}
 		</Modal>
 	);
