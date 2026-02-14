@@ -4,7 +4,7 @@ import { z } from "zod";
 import {
 	zNullableNonNegative,
 	zNullablePercent,
-} from "../../model/zod-helpers";
+} from "../../../shared/model/zod-helpers";
 
 const openApiPlanSchema = z
 	.object({

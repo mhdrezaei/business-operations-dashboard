@@ -1,5 +1,5 @@
 import type { ArrayPath, Path } from "react-hook-form";
-import type { ContractFormValues } from "../../model/contract.form.types";
+import type { ContractFormValues } from "../../../shared/model/contract.form.types";
 import { ContractAddendaSection } from "#src/features/contract/components/addenda/ContractAddendaSection";
 import { ContractTypeSection } from "#src/features/contract/components/contract-type/ContractTypeSection";
 import { ProCard } from "@ant-design/pro-components";

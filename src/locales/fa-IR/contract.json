@@ -7,6 +7,21 @@
 		"traffic": "traffic"
 
 	},
+	"tableTitle": {
+		"listTitle": "لیست قرارداد ها",
+		"servicetype": "سرویس ",
+		"serviceId": "شناسه سرویس",
+		"companyId": "شناسه شرکت",
+		"addendaCount": "الحاقیه ها",
+		"trafficCompanyType": "نوع شرکت ترافیک",
+		"isOfficial": "رسمی؟",
+		"startDate": "تاریخ شروع",
+		"endDate": "تاریخ پایان",
+		"sort": "مرتب سازی",
+		"searchTerm": "کلمه جستجو",
+		"orderBy": "مرتب سازی بر اساس"
+
+	},
 	"formLabel": {
 		"contractType": "نوع قرارداد ",
 		"companyName": "نام شرکت",

@@ -1,12 +1,12 @@
-import type { ContractFormValues } from "../../model/contract.form.types";
+import type { ContractFormValues } from "../../../model/contract.form.types";
 import { BasicContent } from "#src/components/";
 import { RHFSelect } from "#src/shared/ui/rhf-pro";
 import { ProCard } from "@ant-design/pro-components";
 import { useQuery } from "@tanstack/react-query";
 import { Col, Row } from "antd";
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
-import { companiesByServiceQuery, servicesQuery } from "../../queries/contract.queries";
+import { companiesByServiceQuery, servicesQuery } from "../../../queries/contract.queries";
 import { MONTH_OPTIONS, YEAR_OPTIONS } from "../constants/jalali-date-options";
 
 const COUNTERPARTY_OPTIONS = [
@@ -36,29 +36,65 @@ export function FixedStartSection() {
 	const isSms = serviceCode === "sms";
 	const isTraffic = serviceCode === "traffic";
 
-	// ✅ وقتی سرویس عوض میشه: همه وابسته‌ها ریست
+	// ✅ جلوگیری از پاک شدن مقادیر در edit (فقط بعد از mount)
+	const prevServiceIdRef = useRef<typeof serviceId>(undefined);
+	const prevTrafficCompanyTypeRef = useRef<typeof trafficCompanyType>(undefined);
+	const prevCounterpartyTypeRef = useRef<typeof counterpartyType>(undefined);
+
+	// ✅ فقط وقتی serviceId واقعاً تغییر کرد وابسته‌ها ریست شوند
 	useEffect(() => {
-		setValue("companyId", null, { shouldDirty: true, shouldValidate: true });
-		setValue("counterpartyType", null, { shouldDirty: true, shouldValidate: true });
-		setValue("trafficCompanyType", null, { shouldDirty: true, shouldValidate: true });
+		const prev = prevServiceIdRef.current;
+		prevServiceIdRef.current = serviceId;
+
+		if (prev === undefined)
+			return;
+
+		if (prev !== serviceId) {
+			setValue("companyId", null, { shouldDirty: true, shouldValidate: true });
+			setValue("counterpartyType", null, { shouldDirty: true, shouldValidate: true });
+			setValue("trafficCompanyType" as any, null, { shouldDirty: true, shouldValidate: true });
+		}
 	}, [serviceId, setValue]);
 
 	// ✅ serviceCode از سرویس انتخابی
 	useEffect(() => {
-		const selected = services.data?.results.find(s => s.id === serviceId);
-		setValue("serviceCode", selected?.code ?? "", { shouldDirty: true, shouldValidate: true });
+		if (serviceId == null) {
+			setValue("serviceCode", null, { shouldDirty: true, shouldValidate: true });
+			return;
+		}
+		if (!services.data?.results?.length)
+			return;
+
+		const selected = services.data.results.find(s => s.id === serviceId);
+		const normalizedCode = typeof selected?.code === "string" ? selected.code.trim().toLowerCase() : "";
+		if (!normalizedCode)
+			return;
+
+		setValue("serviceCode", normalizedCode as any, { shouldDirty: true, shouldValidate: true });
 	}, [serviceId, services.data, setValue]);
 
-	// ✅ sms: اگر gov_ops شد شرکت لازم نیست
+	// ✅ sms: فقط وقتی counterpartyType بعد از mount تغییر کرد و gov_ops شد، companyId پاک شود
 	useEffect(() => {
-		if (isSms && counterpartyType === "gov_ops") {
+		const prev = prevCounterpartyTypeRef.current;
+		prevCounterpartyTypeRef.current = counterpartyType;
+
+		if (prev === undefined)
+			return;
+
+		if (isSms && counterpartyType === "gov_ops" && prev !== counterpartyType) {
 			setValue("companyId", null, { shouldDirty: true, shouldValidate: true });
 		}
 	}, [isSms, counterpartyType, setValue]);
 
-	// ✅ traffic: با تغییر نوع شرکت، شرکت ریست شود
+	// ✅ traffic: فقط وقتی trafficCompanyType بعد از mount تغییر کرد، companyId پاک شود
 	useEffect(() => {
-		if (isTraffic) {
+		const prev = prevTrafficCompanyTypeRef.current;
+		prevTrafficCompanyTypeRef.current = trafficCompanyType;
+
+		if (prev === undefined)
+			return;
+
+		if (isTraffic && prev !== trafficCompanyType) {
 			setValue("companyId", null, { shouldDirty: true, shouldValidate: true });
 		}
 	}, [isTraffic, trafficCompanyType, setValue]);
@@ -84,15 +120,11 @@ export function FixedStartSection() {
 	}, [companies.data, trafficCompanyType]);
 
 	// ✅ نمایش شرکت:
-	// - sms فقط اگر partners
-	// - traffic فقط اگر trafficCompanyType انتخاب شده
-	// - سایر سرویس‌ها همیشه
 	const showCompanySelect
 		= (!isSms && !isTraffic) || (isSms && counterpartyType === "partners") || (isTraffic && !!trafficCompanyType);
 
 	const companyOptions = isTraffic ? companyOptionsTraffic : companyOptionsDefault;
 
-	// ✅ disabled logic
 	const isCompanyDisabled = !serviceId || companies.isLoading || (isTraffic && !trafficCompanyType);
 
 	const companyPlaceholder
@@ -118,7 +150,6 @@ export function FixedStartSection() {
 						/>
 					</Col>
 
-					{/* ✅ sms: طرف قرارداد */}
 					{isSms
 						? (
 							<Col span={12}>
@@ -132,7 +163,6 @@ export function FixedStartSection() {
 						)
 						: null}
 
-					{/* ✅ traffic: نوع شرکت */}
 					{isTraffic
 						? (
 							<Col span={12}>
@@ -146,7 +176,6 @@ export function FixedStartSection() {
 						)
 						: null}
 
-					{/* ✅ company */}
 					{showCompanySelect
 						? (
 							<Col span={12}>
@@ -168,7 +197,6 @@ export function FixedStartSection() {
 						: null}
 				</Row>
 
-				{/* ✅ تاریخ‌ها */}
 				<div
 					style={{
 						display: "grid",

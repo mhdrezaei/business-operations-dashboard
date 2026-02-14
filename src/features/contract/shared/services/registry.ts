@@ -1,5 +1,5 @@
 import type { ZodTypeAny } from "zod";
-import type { ContractServiceCode } from "../model/contract.form.types";
+import type { ContractServiceCode } from "../../shared/model/contract.form.types";
 import { openapiService } from "./openapi/openapi.registry";
 import { shahkarService } from "./shahkar/shahkar.registry";
 import { smsService } from "./sms/sms.registry";
