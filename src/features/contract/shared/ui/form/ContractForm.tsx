@@ -3,7 +3,7 @@ import type { ContractFormValues, ContractServiceCode } from "../../model/contra
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, notification } from "antd";
 import { AnimatePresence, motion } from "framer-motion";
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 
 import { buildContractSchema } from "../../model/contract.schema";
@@ -50,8 +50,22 @@ export function ContractForm({
 		[],
 	);
 
+	const mergedInitialValues = useMemo<ContractFormValues>(() => {
+		if (!initialValues)
+			return defaultValues;
+
+		return {
+			...defaultValues,
+			...initialValues,
+			serviceFields: {
+				...(defaultValues.serviceFields ?? {}),
+				...(initialValues.serviceFields ?? {}),
+			},
+		} as ContractFormValues;
+	}, [initialValues]);
+
 	const form = useForm<ContractFormValues>({
-		defaultValues: defaultValues as any,
+		defaultValues: mergedInitialValues as any,
 		mode: "all",
 		shouldUnregister: true,
 		resolver: dynamicResolver,
@@ -63,21 +77,11 @@ export function ContractForm({
 			return;
 
 		// اطمینان از اینکه serviceFields به درستی تنظیم شود
-		form.reset(
-			{
-				...defaultValues,
-				...initialValues,
-				serviceFields: {
-					...(defaultValues.serviceFields ?? {}),
-					...(initialValues.serviceFields ?? {}),
-				},
-			} as any,
-			{
-				keepDirty: false,
-				keepTouched: false,
-			},
-		);
-	}, [initialValues]);
+		form.reset(mergedInitialValues as any, {
+			keepDirty: false,
+			keepTouched: false,
+		});
+	}, [initialValues, mergedInitialValues]);
 
 	const serviceCode = useWatch({
 		control: form.control,
