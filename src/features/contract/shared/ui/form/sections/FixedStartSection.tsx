@@ -58,8 +58,19 @@ export function FixedStartSection() {
 
 	// ✅ serviceCode از سرویس انتخابی
 	useEffect(() => {
-		const selected = services.data?.results.find(s => s.id === serviceId);
-		setValue("serviceCode", selected?.code ?? "", { shouldDirty: true, shouldValidate: true });
+		if (serviceId == null) {
+			setValue("serviceCode", null, { shouldDirty: true, shouldValidate: true });
+			return;
+		}
+		if (!services.data?.results?.length)
+			return;
+
+		const selected = services.data.results.find(s => s.id === serviceId);
+		const normalizedCode = typeof selected?.code === "string" ? selected.code.trim().toLowerCase() : "";
+		if (!normalizedCode)
+			return;
+
+		setValue("serviceCode", normalizedCode as any, { shouldDirty: true, shouldValidate: true });
 	}, [serviceId, services.data, setValue]);
 
 	// ✅ sms: فقط وقتی counterpartyType بعد از mount تغییر کرد و gov_ops شد، companyId پاک شود
