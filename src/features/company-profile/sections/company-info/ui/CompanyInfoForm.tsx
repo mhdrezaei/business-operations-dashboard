@@ -46,7 +46,7 @@ export default function CompanyInfoForm({ disabled, defaultValues, onSubmit }: P
 		<Form layout="vertical" className="space-y-3">
 			<FormProvider {...methods}>
 				<ProCard bordered title="اطلاعات پایه">
-					<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+					<div className="grid grid-cols-2 gap-x-4">
 						<RHFProText name="legal_name" label="نام حقوقی" inputProps={{ placeholder: "نام حقوقی", disabled }} />
 						<RHFProText name="brand_name" label="نام برند" inputProps={{ placeholder: "نام برند", disabled }} />
 
@@ -61,8 +61,9 @@ export default function CompanyInfoForm({ disabled, defaultValues, onSubmit }: P
 						<RHFProText name="tax_national_id" label="شناسه مالیاتی" inputProps={{ placeholder: "شناسه مالیاتی", disabled }} />
 					</div>
 				</ProCard>
+
 				<ProCard bordered title="ثبت شرکت">
-					<div style={{ marginTop: 24, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+					<div className="mt-6 grid grid-cols-2 gap-x-4">
 						<RHFProText name="registration_number" label="شماره ثبت" inputProps={{ placeholder: "شماره ثبت", disabled }} />
 						<RHFProText name="tax_registration_number" label="شماره ثبت مالیاتی" inputProps={{ placeholder: "شماره ثبت مالیاتی", disabled }} />
 
@@ -72,22 +73,24 @@ export default function CompanyInfoForm({ disabled, defaultValues, onSubmit }: P
 						<RHFProText name="branch_code" label="کد شعبه" inputProps={{ placeholder: "کد شعبه", disabled }} />
 					</div>
 				</ProCard>
+
 				<ProCard bordered title="آدرس و نقشه">
-					<div style={{ marginTop: 24, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+					<div className="mt-6 grid grid-cols-2 gap-x-4">
 						<RHFProText name="postal_code" label="کد پستی" inputProps={{ placeholder: "کد پستی", disabled }} />
 						<RHFProText name="map_address" label="آدرس روی نقشه" inputProps={{ placeholder: "آدرس روی نقشه", disabled }} />
 
-						<div style={{ gridColumn: "1 / -1" }}>
+						<div className="col-span-2">
 							<RHFProTextArea name="legal_address" label="آدرس حقوقی" textAreaProps={{ disabled }} />
 						</div>
 
-						<div style={{ gridColumn: "1 / -1" }}>
+						<div className="col-span-2">
 							<CompanyInfoMapField disabled={disabled} />
 						</div>
 					</div>
 				</ProCard>
+
 				<ProCard bordered title="راهای ارتباطی">
-					<div style={{ marginTop: 24, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+					<div className="mt-6 grid grid-cols-2 gap-x-4">
 						<RHFFieldArrayText name="phone" label="تلفن" disabled={disabled} />
 						<RHFFieldArrayText name="mobile" label="موبایل" disabled={disabled} />
 						<RHFFieldArrayText name="email" label="ایمیل" disabled={disabled} />
@@ -95,8 +98,9 @@ export default function CompanyInfoForm({ disabled, defaultValues, onSubmit }: P
 						<RHFProText name="website" label="وبسایت" inputProps={{ placeholder: "وبسایت", disabled }} />
 					</div>
 				</ProCard>
+
 				<ProCard bordered title="مالی و مالیات">
-					<div style={{ marginTop: 24, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+					<div className="mt-6 grid grid-cols-2 gap-x-4">
 						<RHFProText name="economic_code" label="کد اقتصادی" inputProps={{ placeholder: "کد اقتصادی", disabled }} />
 						<RHFProText name="tax_file_number" label="شماره پرونده مالیاتی" inputProps={{ placeholder: "شماره پرونده مالیاتی", disabled }} />
 						<RHFProText name="tax_office" label="اداره مالیاتی" inputProps={{ placeholder: "اداره مالیاتی", disabled }} />
@@ -109,7 +113,8 @@ export default function CompanyInfoForm({ disabled, defaultValues, onSubmit }: P
 						/>
 					</div>
 				</ProCard>
-				<div style={{ marginTop: 24, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+
+				<div className="mt-6 grid grid-cols-2 gap-x-4">
 					<RHFSelect
 						name="cooperation_status"
 						label="وضعیت همکاری"
@@ -129,7 +134,7 @@ export default function CompanyInfoForm({ disabled, defaultValues, onSubmit }: P
 					<RHFProText name="working_hours" label="ساعات کاری" inputProps={{ placeholder: "ساعات کاری", disabled }} />
 				</div>
 
-				<div style={{ marginTop: 24, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+				<div className="mt-6 grid grid-cols-2 gap-x-4">
 					<RHFProText name="internal_code" label="کد داخلی" inputProps={{ placeholder: "کد داخلی", disabled }} />
 
 					<RHFSelect
@@ -139,12 +144,12 @@ export default function CompanyInfoForm({ disabled, defaultValues, onSubmit }: P
 						options={INFO_VERIFICATION_STATUS_OPTIONS}
 					/>
 
-					<div style={{ gridColumn: "1 / -1" }}>
+					<div className="col-span-2">
 						<RHFProTextArea name="internal_note" label="یادداشت داخلی" textAreaProps={{ disabled, rows: 4 }} />
 					</div>
 				</div>
 
-				<div style={{ marginTop: 24 }}>
+				<div className="mt-6">
 					<CompanyInfoSocialLinksField disabled={disabled} />
 				</div>
 
