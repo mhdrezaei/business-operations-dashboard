@@ -3,6 +3,7 @@ import { Collapse } from "antd";
 import React from "react";
 import { useWatch } from "react-hook-form";
 import CompanyInfoPanel from "../../sections/company-info/ui/CompanyInfoPanel";
+import CompanyPeoplePanel from "../../sections/key-people/ui/CompanyPeoplePanel";
 
 export default function CompanyProfileAccordion() {
 	const companyId = useWatch<CompanyProfileFormValues, "companyId">({ name: "companyId" });
@@ -16,7 +17,7 @@ export default function CompanyProfileAccordion() {
 					label: "پروفایل شرکت",
 					children: companyId ? <CompanyInfoPanel companyId={companyId} /> : null,
 				},
-				{ key: "key-people", label: "اشخاص کلیدی", children: <div /> },
+				{ key: "key-people", label: "اشخاص کلیدی", children: <CompanyPeoplePanel /> },
 				{ key: "shareholders", label: "سهام‌داران کلیدی", children: <div /> },
 				{ key: "bank-accounts", label: "حساب‌های بانکی", children: <div /> },
 				{ key: "documents", label: "مدارک شرکت", children: <div /> },
