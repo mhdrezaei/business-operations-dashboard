@@ -70,10 +70,13 @@ export default function CompanyPeopleModal({ open, companyId, personId, onClose,
 							setSaving(true);
 							try {
 								const payload = companyPersonFormToPayload(companyId, values);
-								if (personId)
+								if (personId) {
 									await updateCompanyPerson(personId, payload);
-								else
+								}
+
+								else {
 									await createCompanyPerson(payload);
+								}
 
 								onUpdated?.();
 								onClose();

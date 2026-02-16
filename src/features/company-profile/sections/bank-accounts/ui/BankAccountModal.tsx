@@ -52,6 +52,10 @@ export default function BankAccountModal({ open, serviceId, companyId, editing, 
 						onSaved();
 						onClose();
 					}
+					catch (error) {
+						window.$message?.error("در حال حاضر مشکلی وجود دارد");
+						console.error(error);
+					}
 					finally {
 						setSaving(false);
 					}

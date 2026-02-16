@@ -35,6 +35,6 @@ export async function createCompanyProfile(payload: Partial<CompanyProfileDto>) 
 
 export async function updateCompanyProfile(id: number, payload: Partial<CompanyProfileDto>) {
 	return request
-		.patch(`contracts/company/profiles/${id}/`, { json: payload })
+		.put(`contracts/company/profiles/${id}/`, { json: payload })
 		.json<CompanyProfileDto>();
 }

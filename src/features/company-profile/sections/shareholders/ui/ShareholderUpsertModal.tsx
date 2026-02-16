@@ -57,6 +57,10 @@ export default function ShareholderUpsertModal({ open, mode, serviceId, companyI
 						onSaved?.();
 						onClose();
 					}
+					catch (error) {
+						window.$message?.error("در حال حاضر مشکلی وجود دارد");
+						console.error(error);
+					}
 					finally {
 						setSaving(false);
 					}

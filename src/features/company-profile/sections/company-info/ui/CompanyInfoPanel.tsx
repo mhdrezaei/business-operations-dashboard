@@ -38,12 +38,18 @@ export default function CompanyInfoPanel({ companyId }: { companyId: number }) {
 				const created = await createCompanyProfile({ ...payload, company: companyId, service: serviceId });
 				setProfile(created);
 				setEditMode(false);
+				window.$message?.success("پروفایل شرکت با موفقیت ایجاد شد");
 				return;
 			}
 
-			const updated = await updateCompanyProfile(profile.id, payload);
+			const updated = await updateCompanyProfile(profile.id, { ...payload, company: companyId, service: serviceId });
 			setProfile(updated);
 			setEditMode(false);
+			window.$message?.success("تغییرات با موفقیت ذخیره شد");
+		}
+		catch (error) {
+			console.error(error);
+			window.$message?.error("در حال حاضر مشکلی وجود دارد");
 		}
 		finally {
 			setSaving(false);
@@ -71,13 +77,6 @@ export default function CompanyInfoPanel({ companyId }: { companyId: number }) {
 								انصراف
 							</Button>
 
-							<Button
-								type="primary"
-								loading={saving}
-								onClick={() => document.getElementById("company-info-submit")?.click()}
-							>
-								ذخیره
-							</Button>
 						</>
 					)}
 			</div>

@@ -14,6 +14,7 @@ export default function CompanyProfileAccordion() {
 	return (
 		<Collapse
 			defaultActiveKey={["company-info"]}
+			accordion
 			items={[
 				{
 					key: "company-info",

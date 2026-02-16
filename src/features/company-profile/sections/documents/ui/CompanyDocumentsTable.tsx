@@ -281,6 +281,10 @@ export default function CompanyDocumentsTable({ serviceId, companyId }: Props) {
 						refreshTable();
 						closeModal();
 					}
+					catch (error) {
+						window.$message?.error("در حال حاضر مشکلی وجود دارد");
+						console.error(error);
+					}
 					finally {
 						setSaving(false);
 					}
