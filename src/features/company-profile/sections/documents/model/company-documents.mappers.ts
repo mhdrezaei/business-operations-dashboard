@@ -17,7 +17,7 @@ export function dtoToCompanyDocumentForm(dto: CompanyDocumentDto): CompanyDocume
 		verification_status: dto.verification_status ?? null,
 		valid_from: dto.valid_from ?? null,
 		valid_until: dto.valid_until ?? null,
-		file: null, // فایل جدید فقط اگر کاربر انتخاب کند
+		file: null,
 	};
 }
 
@@ -45,12 +45,11 @@ export function companyDocumentFormToFormData(args: {
 	if (values.valid_until)
 		fd.append("valid_until", values.valid_until);
 
-	// file: اگر null بود برای create نباید ارسال شود، برای update هم معمولاً اختیاری است
 	if (values.file instanceof File) {
 		fd.append("file", values.file);
 	}
 	else if (keepFileIfNull) {
-		// هیچ کاری نکن (برای update اگر فایل جدید انتخاب نشده)
+		console.warn("");
 	}
 
 	return fd;

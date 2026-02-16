@@ -19,16 +19,13 @@ export function ServiceCompanyLoaderSection() {
 	const serviceId = useWatch({ control, name: "serviceId" }) || 0;
 	const companyId = useWatch({ control, name: "companyId" });
 
-	// ✅ درست: useQuery باید queryOptions بگیرد
 	const services = useQuery(servicesQuery());
 	const companies = useQuery(companiesByServiceQuery(serviceId));
 	const profiles = useQuery(companyProfilesByCompanyQuery(companyId));
 	console.warn(serviceId, "serrrrrrrrrr");
-	// ✅ جلوگیری از پاک شدن مقادیر در edit (فقط بعد از mount)
 	const prevServiceIdRef = useRef<typeof serviceId>(undefined);
 	const prevCompanyIdRef = useRef<typeof companyId>(undefined);
 
-	// ✅ فقط وقتی serviceId واقعاً تغییر کرد، companyId و companyProfile ریست شوند
 	useEffect(() => {
 		const prev = prevServiceIdRef.current;
 		prevServiceIdRef.current = serviceId;
@@ -42,7 +39,6 @@ export function ServiceCompanyLoaderSection() {
 		}
 	}, [serviceId, setValue]);
 
-	// ✅ وقتی companyId واقعاً تغییر کرد، companyProfile ریست شود
 	useEffect(() => {
 		const prev = prevCompanyIdRef.current;
 		prevCompanyIdRef.current = companyId;
@@ -55,7 +51,6 @@ export function ServiceCompanyLoaderSection() {
 		}
 	}, [companyId, setValue]);
 
-	// ✅ بعد از لود پروفایل، فرم بخش ۱ را با mapper ست کن
 	useEffect(() => {
 		if (!companyId)
 			return;
@@ -70,7 +65,6 @@ export function ServiceCompanyLoaderSection() {
 		});
 	}, [companyId, profiles.data, setValue]);
 
-	// ✅ تایپ‌ها درست می‌شوند چون servicesQuery/companiesByServiceQuery تایپ صحیح برمی‌گردانند
 	const serviceOptions = useMemo(
 		() => (services.data?.results ?? []).map(s => ({ label: s.name, value: s.id })),
 		[services.data],

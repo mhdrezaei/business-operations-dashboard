@@ -82,7 +82,7 @@ export default function CompanyInfoPanel({ companyId }: { companyId: number }) {
 			</div>
 
 			<CompanyInfoForm
-				key={profile?.id ?? "new"} // برای reset درست هنگام تغییر company
+				key={profile?.id ?? "new"}
 				disabled={!editMode}
 				defaultValues={defaultValues}
 				onSubmit={onSubmit}

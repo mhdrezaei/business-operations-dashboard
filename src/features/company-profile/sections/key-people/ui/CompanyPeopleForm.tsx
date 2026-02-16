@@ -23,7 +23,6 @@ interface Props {
 export default function CompanyPeopleForm({ disabled, defaultValues, onSubmit, submitText, submitting }: Props) {
 	const methods = useForm<CompanyPersonFormValues>({
 		defaultValues,
-		// ✅ مثل قبل: برای سازگاری تایپی با نسخه zod/resolver شما
 		resolver: (zodResolver(companyPersonSchema as any) as unknown) as Resolver<CompanyPersonFormValues>,
 		mode: "onBlur",
 	});

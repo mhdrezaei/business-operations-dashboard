@@ -4,7 +4,6 @@ import type { CompanyPersonDto, ListCompanyPeopleParams } from "../sections/key-
 import { request } from "#src/utils/request/";
 
 function toSearchParams(params: ListCompanyPeopleParams) {
-	// ky SearchParamsOption نیاز به index signature داره
 	return params as unknown as Record<string, string | number | boolean | undefined>;
 }
 

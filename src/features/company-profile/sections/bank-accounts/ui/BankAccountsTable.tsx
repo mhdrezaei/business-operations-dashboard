@@ -76,7 +76,6 @@ export default function BankAccountsTable({ serviceId, companyId }: Props) {
 				search: false,
 			},
 
-			// ---- Filters (مثل swagger) ----
 			{
 				title: "جستجو",
 				dataIndex: "search",

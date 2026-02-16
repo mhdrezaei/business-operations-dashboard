@@ -2,7 +2,6 @@ import type { CompanyInfoFormValues } from "./company-info.types";
 // src/features/company-profile/sections/company-info/model/company-info.schema.ts
 import { z } from "zod";
 
-// ✅ دقیقاً مطابق union-type های شما
 const LegalPersonTypeEnum = z.enum(["PRIVATE_JOINT_STOCK", "PUBLIC_JOINT_STOCK", "LIMITED_LIABILITY"]);
 const VatStatusEnum = z.enum(["SUBJECT", "EXEMPT", "UNKNOWN"]);
 const CooperationStatusEnum = z.enum(["ACTIVE", "INACTIVE", "SUSPENDED"]);
