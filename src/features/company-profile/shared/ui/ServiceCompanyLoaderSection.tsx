@@ -16,14 +16,14 @@ import { dtoToCompanyInfoForm } from "../../sections/company-info/model/company-
 export function ServiceCompanyLoaderSection() {
 	const { setValue, control } = useFormContext<CompanyProfileFormValues>();
 
-	const serviceId = useWatch({ control, name: "serviceId" });
+	const serviceId = useWatch({ control, name: "serviceId" }) || 0;
 	const companyId = useWatch({ control, name: "companyId" });
 
 	// ✅ درست: useQuery باید queryOptions بگیرد
 	const services = useQuery(servicesQuery());
 	const companies = useQuery(companiesByServiceQuery(serviceId));
 	const profiles = useQuery(companyProfilesByCompanyQuery(companyId));
-
+	console.warn(serviceId, "serrrrrrrrrr");
 	// ✅ جلوگیری از پاک شدن مقادیر در edit (فقط بعد از mount)
 	const prevServiceIdRef = useRef<typeof serviceId>(undefined);
 	const prevCompanyIdRef = useRef<typeof companyId>(undefined);
@@ -64,7 +64,7 @@ export function ServiceCompanyLoaderSection() {
 		if (!dto)
 			return;
 
-		setValue("companyProfile", dtoToCompanyInfoForm(dto), {
+		setValue("companyProfile", dtoToCompanyInfoForm(dto, { serviceId, companyId }), {
 			shouldDirty: false,
 			shouldValidate: false,
 		});

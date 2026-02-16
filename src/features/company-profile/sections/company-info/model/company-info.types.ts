@@ -14,7 +14,7 @@ export type InfoVerificationStatus = "PENDING" | "VERIFIED" | "REJECTED";
 export interface CompanyProfileDto {
 	id: number
 	company: number
-
+	service: number
 	legal_name: string | null
 	brand_name: string | null
 	national_id: string | null
@@ -66,6 +66,8 @@ export interface CompanyProfileDto {
 export interface SocialLinkItem { label: string, url: string }
 
 export interface CompanyInfoFormValues {
+	service: number
+	company: number
 	legal_name: string
 	brand_name: string
 	national_id: string

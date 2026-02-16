@@ -1,6 +1,8 @@
+import type { CompanyProfileFormValues } from "#src/features/company-profile/model/company-profile.form.types.js";
 import type { CompanyProfileDto } from "../model/company-info.types";
 import { Button, Spin } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
+import { useWatch } from "react-hook-form";
 import { createCompanyProfile, listCompanyProfiles, updateCompanyProfile } from "../../../api/company-profile.api";
 import { companyInfoFormToPayload, dtoToCompanyInfoForm, emptyCompanyInfoValues } from "../model/company-info.mappers";
 import CompanyInfoForm from "./CompanyInfoForm";
@@ -9,13 +11,13 @@ export default function CompanyInfoPanel({ companyId }: { companyId: number }) {
 	const [loading, setLoading] = useState(false);
 	const [saving, setSaving] = useState(false);
 	const [editMode, setEditMode] = useState(false);
-
+	const serviceId = useWatch<CompanyProfileFormValues, "serviceId">({ name: "serviceId" }) || 0;
 	const [profile, setProfile] = useState<CompanyProfileDto | null>(null);
 
 	const defaultValues = useMemo(() => {
 		if (!profile)
 			return emptyCompanyInfoValues;
-		return dtoToCompanyInfoForm(profile);
+		return dtoToCompanyInfoForm(profile, { serviceId, companyId });
 	}, [profile]);
 
 	useEffect(() => {
@@ -33,7 +35,7 @@ export default function CompanyInfoPanel({ companyId }: { companyId: number }) {
 			const payload = companyInfoFormToPayload(values);
 
 			if (!profile) {
-				const created = await createCompanyProfile({ ...payload, company: companyId });
+				const created = await createCompanyProfile({ ...payload, company: companyId, service: serviceId });
 				setProfile(created);
 				setEditMode(false);
 				return;

@@ -45,6 +45,8 @@ function serializeSocialLinks(items: SocialLinkItem[]): string | null {
 }
 
 export const emptyCompanyInfoValues: CompanyInfoFormValues = {
+	service: 0,
+	company: 0,
 	legal_name: "",
 	brand_name: "",
 	national_id: "",
@@ -90,8 +92,10 @@ export const emptyCompanyInfoValues: CompanyInfoFormValues = {
 	info_verification_status: null,
 };
 
-export function dtoToCompanyInfoForm(dto: CompanyProfileDto): CompanyInfoFormValues {
+export function dtoToCompanyInfoForm(dto: CompanyProfileDto, meta: { serviceId?: number, companyId: number }): CompanyInfoFormValues {
 	return {
+		service: meta.serviceId || 0,
+		company: meta.companyId,
 		legal_name: dto.legal_name ?? "",
 		brand_name: dto.brand_name ?? "",
 		national_id: dto.national_id ?? "",

@@ -4,6 +4,7 @@ import React from "react";
 import { useWatch } from "react-hook-form";
 import BankAccountsPanel from "../../sections/bank-accounts/ui/BankAccountsPanel";
 import CompanyInfoPanel from "../../sections/company-info/ui/CompanyInfoPanel";
+import CompanyDocumentsPanel from "../../sections/documents/ui/CompanyDocumentsPanel";
 import CompanyPeoplePanel from "../../sections/key-people/ui/CompanyPeoplePanel";
 import ShareholdersPanel from "../../sections/shareholders/ui/ShareholdersPanel";
 
@@ -30,7 +31,7 @@ export default function CompanyProfileAccordion() {
 					children: <ShareholdersPanel />,
 				},
 				{ key: "bank-accounts", label: "حساب‌های بانکی", children: <BankAccountsPanel /> },
-				{ key: "documents", label: "مدارک شرکت", children: <div /> },
+				{ key: "documents", label: "مدارک شرکت", children: <CompanyDocumentsPanel /> },
 			]}
 		/>
 	);

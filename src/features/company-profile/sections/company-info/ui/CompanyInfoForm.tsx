@@ -43,7 +43,7 @@ export default function CompanyInfoForm({ disabled, defaultValues, onSubmit }: P
 	const { handleSubmit } = methods;
 
 	return (
-		<Form layout="vertical" className="space-y-3">
+		<Form layout="vertical" className="space-y-4">
 			<FormProvider {...methods}>
 				<ProCard bordered title="اطلاعات پایه">
 					<div className="grid grid-cols-2 gap-x-4">
