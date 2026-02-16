@@ -73,6 +73,7 @@ export function RHFProDate<TFV extends FieldValues, TName extends Path<TFV>>(
 				return (
 					<ProForm.Item label={props.label} {...props.itemProps} {...status}>
 						<DatePicker
+							className="w-full"
 							{...props.pickerProps}
 							value={pickerValue as any}
 							onChange={(v: Dayjs | null) => handleChange(v)}
