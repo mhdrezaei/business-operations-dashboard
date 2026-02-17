@@ -12,12 +12,13 @@ import CompanyPeopleForm from "./CompanyPeopleForm";
 interface Props {
 	open: boolean
 	companyId: number
+	serviceId: number
 	personId: number | null // null => create
 	onClose: () => void
 	onUpdated?: () => void
 }
 
-export default function CompanyPeopleModal({ open, companyId, personId, onClose, onUpdated }: Props) {
+export default function CompanyPeopleModal({ open, companyId, serviceId, personId, onClose, onUpdated }: Props) {
 	const [saving, setSaving] = useState(false);
 
 	const detail = useQuery(companyPersonDetailQuery(open && personId ? personId : null));
@@ -69,7 +70,7 @@ export default function CompanyPeopleModal({ open, companyId, personId, onClose,
 						onSubmit={async (values) => {
 							setSaving(true);
 							try {
-								const payload = companyPersonFormToPayload(companyId, values);
+								const payload = companyPersonFormToPayload(companyId, serviceId, values);
 								if (personId) {
 									await updateCompanyPerson(personId, payload);
 								}

@@ -11,6 +11,7 @@ export type CompanyPersonRole	= | "BOARD"
 export interface CompanyPersonDto {
 	id: number
 	company: number
+	service: number
 	role: CompanyPersonRole
 	full_name: string
 	national_id: string | null
