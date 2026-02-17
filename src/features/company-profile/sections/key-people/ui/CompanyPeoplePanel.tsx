@@ -15,6 +15,7 @@ import CompanyPeopleModal from "./CompanyPeopleModal";
 
 export default function CompanyPeoplePanel() {
 	const companyId = useWatch<CompanyProfileFormValues, "companyId">({ name: "companyId" });
+	const serviceId = useWatch<CompanyProfileFormValues, "serviceId">({ name: "serviceId" });
 
 	const actionRef = useRef<ActionType>(null);
 	const formRef = useRef<ProFormInstance | undefined>(undefined);
@@ -112,16 +113,19 @@ export default function CompanyPeoplePanel() {
 				]}
 			/>
 
-			<CompanyPeopleModal
-				open={openModal}
-				companyId={companyId}
-				personId={selectedId}
-				onClose={() => {
-					setOpenModal(false);
-					setSelectedId(null);
-				}}
-				onUpdated={refreshTable}
-			/>
+			{serviceId && (
+				<CompanyPeopleModal
+					open={openModal}
+					companyId={companyId}
+					serviceId={serviceId}
+					personId={selectedId}
+					onClose={() => {
+						setOpenModal(false);
+						setSelectedId(null);
+					}}
+					onUpdated={refreshTable}
+				/>
+			)}
 		</BasicContent>
 	);
 }

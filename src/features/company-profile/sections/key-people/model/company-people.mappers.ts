@@ -30,10 +30,12 @@ export function dtoToCompanyPersonForm(dto: CompanyPersonDto): CompanyPersonForm
 
 export function companyPersonFormToPayload(
 	companyId: number,
+	serviceId: number,
 	values: CompanyPersonFormValues,
 ): Partial<CompanyPersonDto> {
 	return {
 		company: companyId,
+		service: serviceId,
 		role: values.role ?? "OTHER",
 		full_name: values.full_name.trim(),
 		is_signatory: !!values.is_signatory,
