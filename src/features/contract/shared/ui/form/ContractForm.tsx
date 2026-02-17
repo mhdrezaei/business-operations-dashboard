@@ -71,12 +71,15 @@ export function ContractForm({
 		resolver: dynamicResolver,
 	});
 
-	// ✅ وقتی initialValues آمد، فرم را reset کن تا تمام فیلدها (و nested ها) درست بنشینند
+	useEffect(() => {
+		// serviceCode has no direct input; keep it registered so submit/validate cycles do not drop it.
+		form.register("serviceCode");
+	}, [form]);
+
 	useEffect(() => {
 		if (!initialValues)
 			return;
 
-		// اطمینان از اینکه serviceFields به درستی تنظیم شود
 		form.reset(mergedInitialValues as any, {
 			keepDirty: false,
 			keepTouched: false,
@@ -87,9 +90,7 @@ export function ContractForm({
 		control: form.control,
 		name: "serviceCode",
 	}) as ContractServiceCode | null;
-	console.warn("serviceCode", serviceCode);
 	const module = serviceCode ? serviceRegistry[serviceCode] : undefined;
-	console.warn(module, "mooooo");
 	const onSubmit = form.handleSubmit(
 		async (values) => {
 			try {
@@ -122,6 +123,7 @@ export function ContractForm({
 	return (
 		<FormProvider {...form}>
 			<div className="w-full flex flex-col justify-center items-center gap-2">
+				<input type="hidden" {...form.register("serviceCode")} />
 				<FixedStartSection />
 
 				<AnimatePresence mode="wait">

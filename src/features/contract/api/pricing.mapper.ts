@@ -9,23 +9,40 @@ export function apiPricingToContractType(p: ApiPricing | null | undefined): Cont
 
 	if (p.calculation_type === "TIER_SINGLE") {
 		return {
-			type: "tier_fixed", // اگر لازم است دقیق‌تر کنی (fixed/variable) همینجا تصمیم می‌گیری
+			type: "tier_fixed",
 			fixedAmount: null,
 			rows: apiTiersToRows(p.tiers),
 			sections: [],
 		};
 	}
 
-	if (p.calculation_type === "FIXED") {
+	if (p.calculation_type === "TIER_PROGRESSIVE") {
+		return {
+			type: "tier_variable",
+			fixedAmount: null,
+			rows: apiTiersToRows(p.tiers),
+			sections: [],
+		};
+	}
+
+	if (p.calculation_type === "FLAT") {
 		return {
 			type: "fixed",
-			fixedAmount: null, // اگر p.amount دارید اینجا بگذار
+			fixedAmount: null,
 			rows: [{ from: null, to: null, fee: null }],
 			sections: [],
 		};
 	}
 
-	// TIER_BLENDED -> sections (اگر دارید)
+	if (p.calculation_type === "TIER_MIXED") {
+		return {
+			type: "tier_blended",
+			fixedAmount: null,
+			rows: [{ from: null, to: null, fee: null }],
+			sections: [],
+		};
+	}
+
 	return { type: null, fixedAmount: null, rows: [{ from: null, to: null, fee: null }], sections: [] };
 }
 
@@ -35,22 +52,29 @@ export function contractTypeToApiPricing(v: ContractTypeValue): ApiPricing | nul
 
 	if (v.type === "fixed") {
 		return {
-			calculation_type: "FIXED",
-			// amount: n2s(v.fixedAmount) ?? "0",
+			calculation_type: "FLAT",
+			tiers: rowsToApiTiers(v.rows),
 		};
 	}
 
-	if (v.type === "tier_fixed" || v.type === "tier_variable") {
+	if (v.type === "tier_fixed") {
 		return {
 			calculation_type: "TIER_SINGLE",
 			tiers: rowsToApiTiers(v.rows),
 		};
 	}
 
+	if (v.type === "tier_variable") {
+		return {
+			calculation_type: "TIER_PROGRESSIVE",
+			tiers: rowsToApiTiers(v.rows),
+		};
+	}
+
 	if (v.type === "tier_blended") {
 		return {
-			calculation_type: "TIER_BLENDED",
-			// tiers یا ساختار بخش‌بندی اگر بک‌اند این را پشتیبانی می‌کند
+			calculation_type: "TIER_MIXED",
+			tiers: rowsToApiTiers(v.rows),
 		};
 	}
 

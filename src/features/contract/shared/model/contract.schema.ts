@@ -5,7 +5,7 @@ import { serviceRegistry } from "../services/registry";
 
 const fixedStartSchema = z.object({
 	serviceId: z.number().int().positive().nullable(),
-	serviceCode: z.string().nullable(),
+	serviceCode: z.preprocess(v => (v === undefined ? null : v), z.string().nullable()),
 	companyId: z.number().int().positive().nullable(),
 	counterpartyType: z.preprocess(
 		v => (v === "" || v == null ? null : v),

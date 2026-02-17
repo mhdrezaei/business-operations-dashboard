@@ -2,7 +2,7 @@ import type {
 	ContractListItemType,
 	ContractsListQuery,
 	PaginatedResult,
-} from "../model/contracts.list.types";
+} from "../list/model/contracts.list.types";
 // import type { ContractServicePath } from "./contract-service.types";
 import { request } from "#src/utils/request";
 
@@ -47,7 +47,13 @@ export function fetchContractDetail(
 		.get(buildContractPath(service, id))
 		.json<any>();
 }
+/* ===================== CREATE ===================== */
 
+export function fetchCreateContract(service: ContractServicePath, payload: any) {
+	return request
+		.post(buildContractPath(service), { json: payload })
+		.json<any>();
+}
 /* ===================== UPDATE ===================== */
 
 export function fetchUpdateContract(
@@ -56,7 +62,7 @@ export function fetchUpdateContract(
 	payload: any,
 ) {
 	return request
-		.patch(buildContractPath(service, id), { json: payload })
+		.put(buildContractPath(service, id), { json: payload })
 		.json<any>();
 }
 
