@@ -41,7 +41,6 @@ export function OpenApiFields() {
 	const [activeKey, setActiveKey] = useState<string>("0");
 
 	const contractModel = useWatch({ control, name: sf("contractModel") }) as "package" | "legacy" | null;
-	console.warn(contractModel, "qqqqqqqq");
 	// When legacy is selected, create legacyPricing if it doesn't exist
 	React.useEffect(() => {
 		if (contractModel === "legacy") {
@@ -54,7 +53,7 @@ export function OpenApiFields() {
 			}
 			setValue(sf("packageMode"), null as any, { shouldDirty: true, shouldValidate: true });
 		}
-		else {
+		else if (contractModel === "package") {
 			setValue(sf("legacyPricing"), undefined as any, {
 				shouldDirty: true,
 				shouldValidate: true,

@@ -45,7 +45,7 @@ export function RHFProText<
 			render={({ field, fieldState }) => {
 				const err = props.hideError ? undefined : fieldState.error?.message;
 
-				const rawValue = (field.value ?? "") as string;
+				const rawValue = String(field.value ?? "");
 				const inputMode = props.inputProps?.inputMode;
 
 				const numericGuardEnabled

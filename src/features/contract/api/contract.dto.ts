@@ -6,7 +6,7 @@ export interface ApiTier {
 }
 
 export interface ApiPricing {
-	calculation_type: "FIXED" | "TIER_SINGLE" | "TIER_BLENDED"
+	calculation_type: "FLAT" | "TIER_SINGLE" | "TIER_PROGRESSIVE" | "TIER_MIXED"
 	tiers?: ApiTier[]
 }
 

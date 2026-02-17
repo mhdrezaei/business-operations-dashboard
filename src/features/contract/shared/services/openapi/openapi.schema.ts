@@ -57,7 +57,13 @@ const openApiPlanSchema = z
 	});
 
 const contractModelSchema = z.preprocess(
-	v => (v === "" || v == null ? null : v),
+	(v) => {
+		if (v === "" || v == null)
+			return null;
+		if (typeof v === "string")
+			return v.trim().toLowerCase();
+		return v;
+	},
 	z.enum(["package", "legacy"]).nullable().catch(null),
 );
 
