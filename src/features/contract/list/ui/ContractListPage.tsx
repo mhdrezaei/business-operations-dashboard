@@ -1,6 +1,6 @@
 import type { ActionType, ProColumns, ProCoreActionType, ProFormInstance } from "@ant-design/pro-components";
 
-import type { ContractServicePath } from "../api/contracts.api";
+import type { ContractServicePath } from "../../api/contracts.api";
 import type { ContractListItemType } from "../model/contracts.list.types";
 // import { useAccess } from "#src/hooks";
 
@@ -12,7 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button, Popconfirm } from "antd";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { fetchContractsList, fetchDeleteContract } from "../api/contracts.api";
+import { fetchContractsList, fetchDeleteContract } from "../../api/contracts.api";
 import { ContractDetailModal } from "./components/ContractDetailModal";
 import { getContractColumns } from "./constants";
 

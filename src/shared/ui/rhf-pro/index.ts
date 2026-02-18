@@ -1,4 +1,6 @@
+export * from "./fields/RHFFieldArrayText";
 export * from "./fields/RHFProCheckbox";
+export * from "./fields/RHFProDate";
 export * from "./fields/RHFProNumber";
 export * from "./fields/RHFProRadioGroup";
 export * from "./fields/RHFProSlider";

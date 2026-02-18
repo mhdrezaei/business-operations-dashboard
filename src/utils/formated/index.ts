@@ -179,9 +179,11 @@ export function sanitizeNumericInput(raw: string) {
 	return minusFixed;
 }
 
-export function stripGroupingSeparators(raw: string) {
+export function stripGroupingSeparators(raw: unknown) {
+	// Defensive coercion: some form fields may pass numbers/null during hydration.
+	const value = raw == null ? "" : String(raw);
 	// حذف کاما/٬ و فاصله
-	return raw.replace(/[,\u066C\u066B\u060C\s]/g, "");
+	return value.replace(/[,\u066C\u066B\u060C\s]/g, "");
 }
 export function formatWithGrouping(raw: string, language: SupportedLang) {
 	// raw ممکنه شامل منفی و عدد باشد

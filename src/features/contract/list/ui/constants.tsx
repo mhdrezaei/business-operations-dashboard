@@ -71,6 +71,11 @@ export function getContractColumns({
 	companyPlaceholder,
 	onServiceFilterChange,
 }: GetContractColumnsArgs): ProColumns<ContractListItemType>[] {
+	const serviceNameById = serviceOptions.reduce((acc, it) => {
+		acc[String(it.value)] = String(it.label);
+		return acc;
+	}, {} as Record<string, string>);
+
 	return [
 		{
 			dataIndex: "index",
@@ -85,6 +90,7 @@ export function getContractColumns({
 			ellipsis: true,
 			width: 160,
 			search: false,
+			render: (_, r) => (r as any).service_name ?? serviceNameById[String((r as any).service_id)] ?? "-",
 		},
 
 		{
@@ -114,7 +120,7 @@ export function getContractColumns({
 
 		{
 			title: t("contract.tableTitle.trafficCompanyType"),
-			dataIndex: "company_type",
+			dataIndex: "traffic_company_type",
 			valueType: "select",
 			width: 150,
 			hideInSearch: !isTrafficService,
@@ -122,6 +128,7 @@ export function getContractColumns({
 				acc[it.value] = it.label;
 				return acc;
 			}, {} as Record<string, string>),
+			render: (_, r) => (r as any).traffic_company_type ?? (r as any).company_type ?? "-",
 			fieldProps: {
 				allowClear: true,
 				placeholder: "نوع شرکت ترافیک را انتخاب کنید",

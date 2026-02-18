@@ -27,10 +27,9 @@ export function fromApiContract(dto: ApiContractDto): ContractFormValues {
 
 	return {
 		serviceId: dto.service ?? null,
-		serviceCode: "", // ✅ اگر تو DTO داری از dto.service_code پرش کن، اگر نداری خالی
+		serviceCode: "",
 		companyId: dto.company ?? null,
 
-		// ✅ sms-only (پیش‌فرض)
 		counterpartyType: null,
 
 		startYear: dto.start_jy ?? null,
@@ -40,11 +39,8 @@ export function fromApiContract(dto: ApiContractDto): ContractFormValues {
 
 		description: dto.note ?? "",
 
-		// ✅ طبق تایپ فرم اجباریه
 		documents: [],
 
-		// ✅ مهم: اگر ContractFormValues.serviceFields = Record<string, unknown>
-		// اینجا همون رو پاس می‌دیم ولی با تایپ درست ساختیمش
 		serviceFields: serviceFields as any,
 	};
 }

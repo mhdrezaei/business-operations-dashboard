@@ -20,8 +20,6 @@ export function apiTiersToRows(tiers?: ApiTier[]): FormTierRow[] {
 }
 
 export function rowsToApiTiers(rows: FormTierRow[]): ApiTier[] {
-	// نکته: بک‌اند شما max_exclusive را می‌تواند null بگیرد (آخرین tier)
-	// اینجا بهتره rows خالی را [] بدی و اعتبارسنجی با Zod انجام شود.
 	return (rows ?? []).map(r => ({
 		min_inclusive: String(r.from ?? 0),
 		max_exclusive: r.to == null ? null : String(r.to),
