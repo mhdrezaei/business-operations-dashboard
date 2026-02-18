@@ -53,7 +53,7 @@ export default function ShareholderForm({ disabled, defaultValues, onSubmit, sub
 					/>
 				</div>
 
-				<div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+				<div className="flex justify-end gap-2 mt-4">
 					<Button
 						type="primary"
 						className="ant-btn ant-btn-primary"
