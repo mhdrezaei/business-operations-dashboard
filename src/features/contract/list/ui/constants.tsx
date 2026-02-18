@@ -109,10 +109,8 @@ export function getContractColumns({
 					const nv = v == null ? null : Number(v);
 					setSelectedServiceId(nv);
 
-					// مثل فرم create
 					setSelectedTrafficCompanyType(null);
 
-					// ✅ فقط وابسته‌ها را پاک کن (نه کل فرم)
 					onServiceFilterChange?.();
 				},
 			},
