@@ -1,7 +1,7 @@
 import type { ActionType, ProColumns, ProCoreActionType, ProFormInstance } from "@ant-design/pro-components";
 import type { ShareholderDto } from "../model/shareholders.types";
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
-import { PlusCircleOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, PlusCircleOutlined } from "@ant-design/icons";
 
 import { Button, Popconfirm } from "antd";
 import React, { useMemo, useRef, useState } from "react";
@@ -41,18 +41,20 @@ export default function ShareholdersTable({ serviceId, companyId }: Props) {
 				key: "option",
 				width: 120,
 				fixed: "right",
+				align: "center",
 				render: (_, record, __, action) => [
 					<BasicButton
 						key="edit"
 						type="link"
-						size="small"
+						size="large"
+						title="ویرایش سهامدار"
+						icon={<EditOutlined />}
 						onClick={() => {
 							setEditing(record);
 							setModalMode("edit");
 							setModalOpen(true);
 						}}
 					>
-						ویرایش
 					</BasicButton>,
 					<Popconfirm
 						key="delete"
@@ -61,8 +63,7 @@ export default function ShareholdersTable({ serviceId, companyId }: Props) {
 						cancelText="انصراف"
 						onConfirm={() => handleDeleteRow(record, action)}
 					>
-						<BasicButton type="link" size="small">
-							حذف
+						<BasicButton type="link" size="large" icon={<DeleteOutlined />} title="حذف سهامدار">
 						</BasicButton>
 					</Popconfirm>,
 				],

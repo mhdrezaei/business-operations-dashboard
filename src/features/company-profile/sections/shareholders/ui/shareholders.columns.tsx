@@ -44,7 +44,6 @@ export function getShareholderColumns(): ProColumns<ShareholderDto>[] {
 			search: false,
 		},
 
-		// فیلترها (مطابق swagger: company/page/search/ordering) — company از context میاد، پس فقط search/ordering
 		{
 			title: "جستجو",
 			dataIndex: "search",
