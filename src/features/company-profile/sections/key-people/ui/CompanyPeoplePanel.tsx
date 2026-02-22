@@ -1,4 +1,3 @@
-// src/features/company-profile/sections/key-people/ui/CompanyPeoplePanel.tsx
 import type { ActionType, ProColumns, ProCoreActionType, ProFormInstance } from "@ant-design/pro-components";
 import type { CompanyProfileFormValues } from "../../../model/company-profile.form.types";
 import type { CompanyPersonDto } from "../model/company-people.types";

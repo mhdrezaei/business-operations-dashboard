@@ -5,11 +5,11 @@ export interface Paginated<T> {
 	results: T[]
 }
 
-export type OwnershipPercentValue = string; // بک‌اند string می‌فرسته و برای خالی "-" می‌پذیره
+export type OwnershipPercentValue = string;
 
 export interface ShareholderDto {
 	id: number
-	service?: number // ممکنه در response نباشه
+	service?: number
 	company: number
 	full_name: string
 	national_id: string

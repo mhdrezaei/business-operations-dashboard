@@ -2,9 +2,6 @@ import { RHFProText } from "#src/shared/ui/rhf-pro/index.js";
 import React from "react";
 
 export default function CompanyInfoMapField({ disabled }: { disabled: boolean }) {
-	// TODO: اتصال به map picker واقعی پروژه:
-	// onPick(lat,lng,address) => setValue("map_latitude", lat) ...
-
 	return (
 		<div>
 			<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
@@ -24,7 +21,7 @@ export default function CompanyInfoMapField({ disabled }: { disabled: boolean })
 					opacity: 0.75,
 				}}
 				onClick={() => {
-					// نمونه
+
 					// setValue("map_latitude", "35.7"); setValue("map_longitude","51.4");
 				}}
 			>

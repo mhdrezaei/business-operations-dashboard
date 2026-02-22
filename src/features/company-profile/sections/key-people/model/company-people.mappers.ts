@@ -1,4 +1,3 @@
-// src/features/company-profile/sections/key-people/model/company-people.mappers.ts
 import type { CompanyPersonDto, CompanyPersonFormValues } from "./company-people.types";
 
 export function dtoToCompanyPersonForm(dto: CompanyPersonDto): CompanyPersonFormValues {
