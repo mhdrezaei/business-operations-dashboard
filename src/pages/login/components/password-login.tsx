@@ -101,7 +101,7 @@ export function PasswordLogin() {
 								setFormMode("codeLogin");
 							}}
 						>
-							{/* {t("authority.codeLogin")} */}
+							{t("authority.codeLogin")}
 						</BasicButton>
 						<BasicButton
 							type="link"

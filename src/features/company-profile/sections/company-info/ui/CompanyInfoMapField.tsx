@@ -21,7 +21,6 @@ export default function CompanyInfoMapField({ disabled }: { disabled: boolean })
 					opacity: 0.75,
 				}}
 				onClick={() => {
-
 					// setValue("map_latitude", "35.7"); setValue("map_longitude","51.4");
 				}}
 			>
