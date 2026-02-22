@@ -4,8 +4,6 @@ import { RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button, Form } from "antd";
-// src/features/company-profile/sections/key-people/ui/CompanyPeopleForm.tsx
-import React from "react";
 
 import { FormProvider, useForm } from "react-hook-form";
 import { COMPANY_PERSON_ROLE_OPTIONS } from "../model/company-people.constants";

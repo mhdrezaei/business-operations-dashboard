@@ -1,4 +1,3 @@
-// src/features/company-profile/sections/key-people/model/company-people.schema.ts
 import { z } from "zod";
 
 export const companyPersonSchema = z.object({

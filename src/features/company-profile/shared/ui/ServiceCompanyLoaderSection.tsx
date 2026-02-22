@@ -4,14 +4,16 @@ import { BasicContent } from "#src/components/";
 import { RHFSelect } from "#src/shared/ui/rhf-pro";
 import { ProCard } from "@ant-design/pro-components";
 import { useQuery } from "@tanstack/react-query";
-import { Col, Row } from "antd";
+import { Button, Col, Row } from "antd";
 
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
 import { companiesByServiceQuery, companyProfilesByCompanyQuery, servicesQuery } from "../../queries/company-profile.queries";
-
 import { dtoToCompanyInfoForm } from "../../sections/company-info/model/company-info.mappers";
+
+import CompanyCreateModal from "./CompanyCreateModal";
+import CompanyRenameModal from "./CompanyRenameModal";
 
 export function ServiceCompanyLoaderSection() {
 	const { setValue, control } = useFormContext<CompanyProfileFormValues>();
@@ -19,22 +21,22 @@ export function ServiceCompanyLoaderSection() {
 	const serviceId = useWatch({ control, name: "serviceId" }) || 0;
 	const companyId = useWatch({ control, name: "companyId" });
 
-	// ✅ درست: useQuery باید queryOptions بگیرد
 	const services = useQuery(servicesQuery());
 	const companies = useQuery(companiesByServiceQuery(serviceId));
 	const profiles = useQuery(companyProfilesByCompanyQuery(companyId));
-	console.warn(serviceId, "serrrrrrrrrr");
-	// ✅ جلوگیری از پاک شدن مقادیر در edit (فقط بعد از mount)
+
+	const [createOpen, setCreateOpen] = useState(false);
+	const [renameOpen, setRenameOpen] = useState(false);
+
 	const prevServiceIdRef = useRef<typeof serviceId>(undefined);
 	const prevCompanyIdRef = useRef<typeof companyId>(undefined);
 
-	// ✅ فقط وقتی serviceId واقعاً تغییر کرد، companyId و companyProfile ریست شوند
 	useEffect(() => {
 		const prev = prevServiceIdRef.current;
 		prevServiceIdRef.current = serviceId;
 
 		if (prev === undefined)
-			return; // mount
+			return;
 
 		if (prev !== serviceId) {
 			setValue("companyId", null, { shouldDirty: true, shouldValidate: true });
@@ -42,20 +44,18 @@ export function ServiceCompanyLoaderSection() {
 		}
 	}, [serviceId, setValue]);
 
-	// ✅ وقتی companyId واقعاً تغییر کرد، companyProfile ریست شود
 	useEffect(() => {
 		const prev = prevCompanyIdRef.current;
 		prevCompanyIdRef.current = companyId;
 
 		if (prev === undefined)
-			return; // mount
+			return;
 
 		if (prev !== companyId) {
 			setValue("companyProfile", null as any, { shouldDirty: true, shouldValidate: true });
 		}
 	}, [companyId, setValue]);
 
-	// ✅ بعد از لود پروفایل، فرم بخش ۱ را با mapper ست کن
 	useEffect(() => {
 		if (!companyId)
 			return;
@@ -68,9 +68,8 @@ export function ServiceCompanyLoaderSection() {
 			shouldDirty: false,
 			shouldValidate: false,
 		});
-	}, [companyId, profiles.data, setValue]);
+	}, [companyId, profiles.data, setValue, serviceId]);
 
-	// ✅ تایپ‌ها درست می‌شوند چون servicesQuery/companiesByServiceQuery تایپ صحیح برمی‌گردانند
 	const serviceOptions = useMemo(
 		() => (services.data?.results ?? []).map(s => ({ label: s.name, value: s.id })),
 		[services.data],
@@ -80,6 +79,12 @@ export function ServiceCompanyLoaderSection() {
 		() => (companies.data?.results ?? []).map(c => ({ label: c.name, value: c.id })),
 		[companies.data],
 	);
+
+	const selectedCompanyName = useMemo(() => {
+		if (!companyId)
+			return null;
+		return (companies.data?.results ?? []).find(c => c.id === companyId)?.name ?? null;
+	}, [companies.data, companyId]);
 
 	const isCompanyDisabled = !serviceId || companies.isLoading;
 
@@ -121,6 +126,25 @@ export function ServiceCompanyLoaderSection() {
 					</Col>
 				</Row>
 
+				{/* ✅ دکمه‌های مدیریت شرکت */}
+				<div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 12 }}>
+					<Button
+						type="default"
+						disabled={!serviceId}
+						onClick={() => setCreateOpen(true)}
+					>
+						ایجاد شرکت جدید
+					</Button>
+
+					<Button
+						type="primary"
+						disabled={!companyId}
+						onClick={() => setRenameOpen(true)}
+					>
+						ویرایش نام شرکت
+					</Button>
+				</div>
+
 				{companyId
 					? (
 						<div style={{ marginTop: 8, opacity: 0.8 }}>
@@ -128,6 +152,37 @@ export function ServiceCompanyLoaderSection() {
 						</div>
 					)
 					: null}
+
+				{/* ✅ Modals */}
+				<CompanyCreateModal
+					open={createOpen}
+					serviceId={serviceId}
+					serviceOptions={serviceOptions}
+					disabled={!serviceId}
+					onClose={() => setCreateOpen(false)}
+					onCreated={(createdCompanyId) => {
+						setValue("companyId", createdCompanyId, { shouldDirty: true, shouldValidate: true });
+						setCreateOpen(false);
+					}}
+				/>
+
+				<CompanyRenameModal
+					open={renameOpen}
+					serviceId={serviceId}
+					companyId={companyId ?? null}
+					companyName={selectedCompanyName}
+					disabled={!companyId}
+					onClose={() => setRenameOpen(false)}
+					onRenamed={(newName) => {
+						void newName;
+						setRenameOpen(false);
+					}}
+					onDeleted={() => {
+						setValue("companyId", null, { shouldDirty: true, shouldValidate: true });
+						setValue("companyProfile", null as any, { shouldDirty: true, shouldValidate: true });
+						setRenameOpen(false);
+					}}
+				/>
 			</BasicContent>
 		</ProCard>
 	);

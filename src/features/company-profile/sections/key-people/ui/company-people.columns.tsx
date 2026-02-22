@@ -1,4 +1,3 @@
-// src/features/company-profile/sections/key-people/ui/company-people.columns.tsx
 import type { ProColumns } from "@ant-design/pro-components";
 import type { CompanyPersonDto } from "../model/company-people.types";
 import { Tag } from "antd";

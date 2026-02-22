@@ -2,7 +2,6 @@ import type { CompanyPersonFormValues } from "../model/company-people.types";
 import { useQuery } from "@tanstack/react-query";
 
 import { Modal } from "antd";
-// src/features/company-profile/sections/key-people/ui/CompanyPeopleModal.tsx
 import React, { useMemo, useState } from "react";
 import { createCompanyPerson, updateCompanyPerson } from "../../../api/key-people.api";
 import { companyPersonDetailQuery } from "../../../queries/company-people.queries";
@@ -13,7 +12,7 @@ interface Props {
 	open: boolean
 	companyId: number
 	serviceId: number
-	personId: number | null // null => create
+	personId: number | null
 	onClose: () => void
 	onUpdated?: () => void
 }

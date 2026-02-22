@@ -1,5 +1,3 @@
-// src/features/company-profile/sections/key-people/model/company-people.types.ts
-
 export type CompanyPersonRole	= | "BOARD"
   | "CEO"
   | "COMMERCIAL"
