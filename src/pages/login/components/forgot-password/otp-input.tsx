@@ -3,14 +3,18 @@ import type { OtpInputProps } from "./otp-input.types";
 import { Input, Space } from "antd";
 
 import React, { useEffect, useMemo, useRef } from "react";
-import { normalizeDigits } from "./code-login.utils";
+import { normalizeDigits } from "./forgot-password.utils";
 
-// کلیدهای ثابت برای جلوگیری از key تکراری
-const OTP_KEYS_6 = ["d1", "d2", "d3", "d4", "d5", "d6"] as const;
-
+/** OTP input با 6 باکس + paste + autofocus + backspace (پاک کردن کل OTP) */
 export function OtpInput(props: OtpInputProps) {
 	const { length = 6, value = "", onChange, disabled, autoFocus } = props;
 	const inputsRef = useRef<Array<InputRef | null>>([]);
+
+	// کلیدهای ثابت برای جلوگیری از key تکراری
+	const keys = useMemo(
+		() => (length === 6 ? ["d1", "d2", "d3", "d4", "d5", "d6"] : Array.from({ length }, (_, i) => `d${i + 1}`)),
+		[length],
+	);
 
 	const digits = useMemo(() => {
 		const v = normalizeDigits(value).replace(/\D/g, "").slice(0, length);
@@ -46,10 +50,6 @@ export function OtpInput(props: OtpInputProps) {
 		focus(0);
 	};
 
-	const keys = length === 6
-		? OTP_KEYS_6
-		: Array.from({ length }, (_, i) => `d${i + 1}`);
-
 	return (
 		<Space
 			className="flex-row-reverse"
@@ -83,7 +83,7 @@ export function OtpInput(props: OtpInputProps) {
 							return;
 						}
 
-						// اگر کاربر چند رقم وارد کرد (paste/autofill)
+						// paste/autofill
 						const chars = v.slice(0, length - idx).split("");
 						const arr = [...digits];
 						for (let i = 0; i < chars.length; i++) {
@@ -98,14 +98,13 @@ export function OtpInput(props: OtpInputProps) {
 						if (e.key !== "Backspace")
 							return;
 
-						// ✅ بهبود UX: اگر روی اولین باکس هست و خالیه، Backspace کل OTP رو پاک کن
+						// ✅ پاک کردن کل OTP با Backspace روی اولین باکسِ خالی
 						if (idx === 0 && !digits[idx]) {
 							clearAll();
 							e.preventDefault();
 							return;
 						}
 
-						// رفتار قبلی: پاک کردن رقم جاری یا برگشت به قبلی
 						if (digits[idx]) {
 							setAt(idx, "");
 						}

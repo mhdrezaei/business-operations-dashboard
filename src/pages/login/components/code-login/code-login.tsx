@@ -9,7 +9,7 @@ import { Button, Form, Input, Space, Typography } from "antd";
 import React, { useContext, useEffect, useMemo, useState } from "react";
 
 import { useTranslation } from "react-i18next";
-import { FormModeContext } from "../form-mode-context";
+import { FormModeContext } from "../../form-mode-context";
 import { FORM_INITIAL_VALUES } from "./code-login.constants";
 import { normalizeDigits, toApiMobile } from "./code-login.utils";
 import { OtpInput } from "./otp-input";
@@ -57,7 +57,6 @@ export function CodeLogin() {
 			setStep("otp");
 			setCooldown(60);
 
-			// پاک کردن OTP قبلی
 			form.setFieldsValue({ otp: "" });
 		}
 		catch (e: any) {
@@ -103,7 +102,7 @@ export function CodeLogin() {
 		}
 	};
 
-	// auto-submit وقتی 6 رقم کامل شد
+	// auto-submit after entering 6-digit code
 	useEffect(() => {
 		if (step !== "otp")
 			return;
