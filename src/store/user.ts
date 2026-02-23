@@ -1,9 +1,9 @@
 import type { UserInfoType } from "#src/api/user/types";
-import { fetchUserInfo } from "#src/api/user";
+import { fetchAuditAccess, fetchUserInfo } from "#src/api/user";
 
 import { create } from "zustand";
 
-const initialState = {
+const initialState: UserInfoType = {
 	id: "",
 	is_staff: false,
 	is_superuser: false,
@@ -15,6 +15,10 @@ const initialState = {
 	phoneNumber: "",
 	description: "",
 	roles: [],
+	domains: [],
+	company_visible_cards: [],
+	services: [],
+	portal_viewer: null,
 	// menus: [],
 };
 
@@ -31,7 +35,20 @@ export const useUserStore = create<UserState & UserAction>()(
 		...initialState,
 
 		getUserInfo: async () => {
-			const response = await fetchUserInfo();
+			const [profile, accessSnapshot] = await Promise.all([
+				fetchUserInfo(),
+				fetchAuditAccess(),
+			]);
+
+			const response: UserInfoType = {
+				...profile,
+				roles: accessSnapshot.roles ?? profile.roles ?? [],
+				domains: accessSnapshot.domains ?? [],
+				company_visible_cards: accessSnapshot.company_visible_cards ?? [],
+				services: accessSnapshot.services ?? [],
+				portal_viewer: accessSnapshot.portal_viewer ?? null,
+			};
+
 			set({
 				...response,
 			});

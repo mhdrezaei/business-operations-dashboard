@@ -1,3 +1,4 @@
+import type { DomainCrudPermission, DomainPermissionAction } from "#src/api/user/types";
 import { useUserStore } from "#src/store";
 import { isString } from "#src/utils";
 
@@ -6,25 +7,47 @@ import { accessControlCodes, AccessControlRoles } from "./constants";
 
 export * from "./constants";
 
+function normalizeAccessKey(value?: string | null) {
+	return (value ?? "").trim().toLowerCase();
+}
+
+function getDomainPermission(
+	permissions: Record<string, DomainCrudPermission> | undefined,
+	domain: string,
+) {
+	const normalizedDomain = normalizeAccessKey(domain);
+	if (!normalizedDomain || !permissions) {
+		return undefined;
+	}
+	for (const [domainKey, permission] of Object.entries(permissions)) {
+		if (normalizeAccessKey(domainKey) === normalizedDomain) {
+			return permission;
+		}
+	}
+	return undefined;
+}
+
 /**
- * @fa تشخيص مجوز
+ * @fa تشخیص مجوز
  * @en Access judgment
  */
 export function useAccess() {
 	const matches = useMatches();
-	const { roles: userRoles } = useUserStore();
+	const {
+		roles: userRoles,
+		services: userServices = [],
+		company_visible_cards: companyVisibleCards = [],
+		portal_viewer: portalViewer,
+	} = useUserStore();
 	const currentRoute = matches[matches.length - 1];
 
 	/**
-	 * @fa بررسي دسترسي مسير فعلي بر اساس کد مجوز
+	 * @fa بررسی دسترسی مسیر فعلی بر اساس کد مجوز
 	 * @en Determine whether the current route has a specified permission based on permission codes
-	 * @param permission نام مجوز به حروف کوچک يا آرايه اي از نام ها، مثل `["add", "delete"]`
-	 * @returns boolean آيا مجوز مورد نظر وجود دارد
 	 */
 	const hasAccessByCodes = (permission?: string | Array<string>) => {
 		if (!permission)
 			return false;
-		/** گرفتن تمام `code` هاي سطح دکمه از فيلد `handle` مسير فعلي */
 		const metaAuth = currentRoute?.handle?.permissions;
 		if (!metaAuth) {
 			return false;
@@ -32,7 +55,6 @@ export function useAccess() {
 		permission = isString(permission) ? [permission] : permission;
 		permission = permission.map(item => item.toLowerCase());
 		if (import.meta.env.DEV) {
-			// اعتبارسنجي کدهاي مجوز؛ کد نامعتبر هشدار مي دهد
 			for (const code of permission) {
 				if (!Object.values(accessControlCodes).includes(code)) {
 					console.warn(`[hasAccessByCodes]: '${code}' is not a valid permission code`);
@@ -44,10 +66,8 @@ export function useAccess() {
 	};
 
 	/**
-	 * @fa تشخيص دسترسي کاربر بر اساس نقش؛ در اين سيستم با شناسه نقش بررسي مي شود
+	 * @fa تشخیص دسترسی کاربر بر اساس نقش
 	 * @en Determine whether the current user has a specified permission based on roles
-	 * @param roles نام نقش به حروف کوچک يا آرايه اي از نام ها، مثل `["admin", "super", "user"]`
-	 * @returns boolean آيا مجوز مورد نظر وجود دارد
 	 */
 	const hasAccessByRoles = (roles?: string | Array<string>) => {
 		if (!roles || !userRoles) {
@@ -56,7 +76,6 @@ export function useAccess() {
 		roles = isString(roles) ? [roles] : roles;
 		roles = roles.map(item => item.toLowerCase());
 		if (import.meta.env.DEV) {
-			// اعتبارسنجي نقش ها؛ نقش نامعتبر هشدار مي دهد
 			for (const roleItem of roles) {
 				if (!Object.values(AccessControlRoles).includes(roleItem)) {
 					console.warn(`[hasAccessByRoles]: '${roleItem}' is not a valid role`);
@@ -67,5 +86,102 @@ export function useAccess() {
 		return isAuth;
 	};
 
-	return { hasAccessByCodes, hasAccessByRoles };
+	const hasDomainPermission = (
+		domain?: string,
+		action: DomainPermissionAction = "view",
+		serviceCode?: string,
+	) => {
+		const normalizedDomain = normalizeAccessKey(domain);
+		if (!normalizedDomain) {
+			return false;
+		}
+		const normalizedServiceCode = normalizeAccessKey(serviceCode);
+		return userServices.some((service) => {
+			if (normalizedServiceCode && normalizeAccessKey(service.code) !== normalizedServiceCode) {
+				return false;
+			}
+			const permission = getDomainPermission(service.permissions, normalizedDomain);
+			return Boolean(permission?.[action]);
+		});
+	};
+
+	const hasDomainPermissionByServiceId = (
+		domain?: string,
+		action: DomainPermissionAction = "view",
+		serviceId?: number | null,
+	) => {
+		const normalizedDomain = normalizeAccessKey(domain);
+		if (!normalizedDomain) {
+			return false;
+		}
+		if (serviceId == null) {
+			return hasDomainPermission(normalizedDomain, action);
+		}
+		return userServices.some((service) => {
+			if (service.id !== serviceId) {
+				return false;
+			}
+			const permission = getDomainPermission(service.permissions, normalizedDomain);
+			return Boolean(permission?.[action]);
+		});
+	};
+
+	const getPermittedServiceIds = (
+		domain?: string,
+		action: DomainPermissionAction = "view",
+	) => {
+		const normalizedDomain = normalizeAccessKey(domain);
+		if (!normalizedDomain) {
+			return [];
+		}
+		return userServices
+			.filter((service) => {
+				const permission = getDomainPermission(service.permissions, normalizedDomain);
+				return Boolean(permission?.[action]);
+			})
+			.map(service => service.id);
+	};
+
+	const getPermittedServiceCodes = (
+		domain?: string,
+		action: DomainPermissionAction = "view",
+	) => {
+		const normalizedDomain = normalizeAccessKey(domain);
+		if (!normalizedDomain) {
+			return [];
+		}
+		const codes = userServices
+			.filter((service) => {
+				const permission = getDomainPermission(service.permissions, normalizedDomain);
+				return Boolean(permission?.[action]);
+			})
+			.map(service => normalizeAccessKey(service.code))
+			.filter(Boolean);
+		return Array.from(new Set(codes));
+	};
+
+	const hasCompanyCardAccess = (cardCode?: string) => {
+		const normalizedCardCode = normalizeAccessKey(cardCode);
+		if (!normalizedCardCode) {
+			return false;
+		}
+		const normalizedCards = companyVisibleCards.map(item => normalizeAccessKey(item));
+		if (normalizedCards.includes("all")) {
+			return true;
+		}
+		return normalizedCards.includes(normalizedCardCode);
+	};
+
+	const isPortalViewer = Boolean(portalViewer?.assigned);
+
+	return {
+		hasAccessByCodes,
+		hasAccessByRoles,
+		hasDomainPermission,
+		hasDomainPermissionByServiceId,
+		getPermittedServiceIds,
+		getPermittedServiceCodes,
+		hasCompanyCardAccess,
+		isPortalViewer,
+	};
 }

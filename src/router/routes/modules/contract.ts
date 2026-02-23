@@ -17,6 +17,8 @@ const routes: AppRouteRecordRaw[] = [
 			icon: "SafetyOutlined",
 			title: $t("common.menu.contractsManangement"),
 			order: contract,
+			accessDomain: "contracts",
+			accessAction: "view",
 		},
 		children: [
 			{
@@ -25,6 +27,8 @@ const routes: AppRouteRecordRaw[] = [
 				handle: {
 					icon: "FileTextOutlined",
 					title: $t("common.menu.newContract"),
+					accessDomain: "contracts",
+					accessAction: "create",
 					// roles: ["admin"],
 					// permissions: [
 					// 	accessControlCodes.get,
@@ -40,6 +44,8 @@ const routes: AppRouteRecordRaw[] = [
 				handle: {
 					icon: "FileTextOutlined",
 					title: $t("common.menu.editContract"),
+					accessDomain: "contracts",
+					accessAction: "view",
 					// roles: ["admin"],
 					// permissions: [
 					// 	accessControlCodes.get,
