@@ -47,3 +47,26 @@ export function fetchOtpLogin(data: { mobile: string, otp_code: string }) {
 		.post(otpLoginPath, { json: data })
 		.json<AuthType>();
 }
+
+// --- Forgot Password (additions) ---
+
+export const forgotPasswordRequestPath = "auth/forgot-password/request/";
+export function fetchForgotPasswordRequest(data: { mobile: string }) {
+	// ممکنه response body نداشته باشه؛ برای همین catch گذاشتیم
+	return request
+		.post(forgotPasswordRequestPath, { json: data })
+		.json()
+		.catch(() => undefined);
+}
+
+export const forgotPasswordConfirmPath = "auth/forgot-password/confirm/";
+export function fetchForgotPasswordConfirm(data: {
+	mobile: string
+	otp_code: string
+	new_password: string
+}) {
+	return request
+		.post(forgotPasswordConfirmPath, { json: data })
+		.json()
+		.catch(() => undefined);
+}
