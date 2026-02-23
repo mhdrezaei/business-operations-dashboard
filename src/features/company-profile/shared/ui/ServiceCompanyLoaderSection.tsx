@@ -1,6 +1,7 @@
 import type { CompanyProfileFormValues } from "../../model/company-profile.form.types";
 
 import { BasicContent } from "#src/components/";
+import { useAccess } from "#src/hooks";
 import { RHFSelect } from "#src/shared/ui/rhf-pro";
 import { ProCard } from "@ant-design/pro-components";
 import { useQuery } from "@tanstack/react-query";
@@ -17,6 +18,7 @@ import CompanyRenameModal from "./CompanyRenameModal";
 
 export function ServiceCompanyLoaderSection() {
 	const { setValue, control } = useFormContext<CompanyProfileFormValues>();
+	const { getPermittedServiceIds, hasDomainPermissionByServiceId } = useAccess();
 
 	const serviceId = useWatch({ control, name: "serviceId" }) || 0;
 	const companyId = useWatch({ control, name: "companyId" });
@@ -24,6 +26,15 @@ export function ServiceCompanyLoaderSection() {
 	const services = useQuery(servicesQuery());
 	const companies = useQuery(companiesByServiceQuery(serviceId));
 	const profiles = useQuery(companyProfilesByCompanyQuery(companyId));
+
+	const permittedServiceIdList = getPermittedServiceIds("company_profile", "view");
+	const permittedServiceIds = useMemo(
+		() => new Set(permittedServiceIdList),
+		[permittedServiceIdList.join(",")],
+	);
+
+	const canCreateCompany = hasDomainPermissionByServiceId("company_profile", "create", serviceId || null);
+	const canUpdateCompany = hasDomainPermissionByServiceId("company_profile", "update", serviceId || null);
 
 	const [createOpen, setCreateOpen] = useState(false);
 	const [renameOpen, setRenameOpen] = useState(false);
@@ -43,6 +54,17 @@ export function ServiceCompanyLoaderSection() {
 			setValue("companyProfile", null as any, { shouldDirty: true, shouldValidate: true });
 		}
 	}, [serviceId, setValue]);
+
+	useEffect(() => {
+		if (!serviceId) {
+			return;
+		}
+		if (!permittedServiceIds.has(serviceId)) {
+			setValue("serviceId", null, { shouldDirty: true, shouldValidate: true });
+			setValue("companyId", null, { shouldDirty: true, shouldValidate: true });
+			setValue("companyProfile", null as any, { shouldDirty: true, shouldValidate: true });
+		}
+	}, [serviceId, setValue, permittedServiceIdList.join(",")]);
 
 	useEffect(() => {
 		const prev = prevCompanyIdRef.current;
@@ -71,8 +93,11 @@ export function ServiceCompanyLoaderSection() {
 	}, [companyId, profiles.data, setValue, serviceId]);
 
 	const serviceOptions = useMemo(
-		() => (services.data?.results ?? []).map(s => ({ label: s.name, value: s.id })),
-		[services.data],
+		() =>
+			(services.data?.results ?? [])
+				.filter(service => permittedServiceIds.has(service.id))
+				.map(service => ({ label: service.name, value: service.id })),
+		[services.data, permittedServiceIdList.join(",")],
 	);
 
 	const companyOptions = useMemo(
@@ -126,11 +151,10 @@ export function ServiceCompanyLoaderSection() {
 					</Col>
 				</Row>
 
-				{/* ✅ دکمه‌های مدیریت شرکت */}
 				<div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 12 }}>
 					<Button
 						type="default"
-						disabled={!serviceId}
+						disabled={!serviceId || !canCreateCompany}
 						onClick={() => setCreateOpen(true)}
 					>
 						ایجاد شرکت جدید
@@ -138,7 +162,7 @@ export function ServiceCompanyLoaderSection() {
 
 					<Button
 						type="primary"
-						disabled={!companyId}
+						disabled={!companyId || !canUpdateCompany}
 						onClick={() => setRenameOpen(true)}
 					>
 						ویرایش نام شرکت
@@ -153,12 +177,11 @@ export function ServiceCompanyLoaderSection() {
 					)
 					: null}
 
-				{/* ✅ Modals */}
 				<CompanyCreateModal
 					open={createOpen}
 					serviceId={serviceId}
 					serviceOptions={serviceOptions}
-					disabled={!serviceId}
+					disabled={!serviceId || !canCreateCompany}
 					onClose={() => setCreateOpen(false)}
 					onCreated={(createdCompanyId) => {
 						setValue("companyId", createdCompanyId, { shouldDirty: true, shouldValidate: true });
@@ -171,7 +194,7 @@ export function ServiceCompanyLoaderSection() {
 					serviceId={serviceId}
 					companyId={companyId ?? null}
 					companyName={selectedCompanyName}
-					disabled={!companyId}
+					disabled={!companyId || !canUpdateCompany}
 					onClose={() => setRenameOpen(false)}
 					onRenamed={(newName) => {
 						void newName;

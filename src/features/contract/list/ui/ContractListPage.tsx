@@ -2,10 +2,10 @@ import type { ActionType, ProColumns, ProCoreActionType, ProFormInstance } from 
 
 import type { ContractServicePath } from "../../api/contracts.api";
 import type { ContractListItemType } from "../model/contracts.list.types";
-// import { useAccess } from "#src/hooks";
 
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import { companiesByServiceQuery, servicesQuery } from "#src/features/contract/create/queries/contract.queries";
+import { useAccess } from "#src/hooks";
 import { DeleteOutlined, EditOutlined, FilePdfOutlined, PlusCircleOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 
@@ -21,13 +21,7 @@ type TrafficCompanyType = "CP" | "IXP" | "TCI" | "PREMIUM";
 
 export default function ContractListPage() {
 	const { t } = useTranslation();
-	// const { hasAccessByCodes } = useAccess();
-
-	useEffect(() => {
-		fetchContractsList({ page: 1, page_size: 20 })
-			.then(console.warn)
-			.catch(console.error);
-	}, []);
+	const { hasDomainPermission, hasDomainPermissionByServiceId, getPermittedServiceIds } = useAccess();
 
 	const actionRef = useRef<ActionType>(null);
 	const formRef = useRef<ProFormInstance | undefined>(undefined);
@@ -39,10 +33,32 @@ export default function ContractListPage() {
 	const [selectedTrafficCompanyType, setSelectedTrafficCompanyType] = useState<TrafficCompanyType | null>(null);
 	const [downloadingPdfId, setDownloadingPdfId] = useState<number | null>(null);
 
-	// services similar to create page
+	const canCreateContracts = hasDomainPermission("contracts", "create");
+	const permittedViewServiceIdList = getPermittedServiceIds("contracts", "view");
+	const permittedViewServiceIds = useMemo(
+		() => new Set(permittedViewServiceIdList),
+		[permittedViewServiceIdList.join(",")],
+	);
+
 	const services = useQuery(servicesQuery());
 
-	// map: service_id -> service_code (for resolveServicePath)
+	useEffect(() => {
+		if (!selectedServiceId) {
+			return;
+		}
+		if (!permittedViewServiceIds.has(selectedServiceId)) {
+			setSelectedServiceId(null);
+			setSelectedTrafficCompanyType(null);
+			formRef.current?.setFieldsValue({
+				service_id: undefined,
+				company_id: undefined,
+				company_type: undefined,
+				is_official: undefined,
+				sms_party: undefined,
+			});
+		}
+	}, [selectedServiceId, permittedViewServiceIdList.join(",")]);
+
 	const serviceCodeById = useMemo(() => {
 		const m = new Map<number, string>();
 		(services.data?.results ?? []).forEach((s: any) => {
@@ -86,12 +102,14 @@ export default function ContractListPage() {
 	const isTrafficService = selectedService?.code === "traffic";
 	const isSmsService = selectedService?.code === "sms";
 
-	// companies based on selected service_id
 	const companies = useQuery(companiesByServiceQuery(selectedServiceId));
 
 	const serviceOptions = useMemo(
-		() => (services.data?.results ?? []).map((s: any) => ({ label: s.name, value: s.id })),
-		[services.data],
+		() =>
+			(services.data?.results ?? [])
+				.filter((service: any) => permittedViewServiceIds.has(Number(service.id)))
+				.map((service: any) => ({ label: service.name, value: service.id })),
+		[services.data, permittedViewServiceIdList.join(",")],
 	);
 
 	const companyOptions = useMemo(() => {
@@ -131,7 +149,14 @@ export default function ContractListPage() {
 
 	const refreshTable = () => actionRef.current?.reload?.();
 
+	const canUpdateRow = (row: ContractListItemType) => hasDomainPermissionByServiceId("contracts", "update", Number(row.service_id));
+	const canDeleteRow = (row: ContractListItemType) => hasDomainPermissionByServiceId("contracts", "delete", Number(row.service_id));
+
 	const handleDeleteRow = async (row: ContractListItemType, action?: ProCoreActionType<object>) => {
+		if (!canDeleteRow(row)) {
+			window.$message?.warning("دسترسی حذف قرارداد ندارید.");
+			return;
+		}
 		await fetchDeleteContract(resolveServicePath(row), row.id);
 		await action?.reload?.();
 		window.$message?.success(t("common.deleteSuccess"));
@@ -204,45 +229,60 @@ export default function ContractListPage() {
 				fixed: "right",
 				align: "center",
 
-				render: (_, record, __, action) => [
-					<BasicButton
-						key="edit"
-						type="link"
-						size="large"
-						title="ویرایش قرارداد"
-						icon={<EditOutlined />}
-						onClick={() => {
-							setSelectedId(record.id);
-							setSelectedServicePath(resolveServicePath(record));
-							setOpenDetail(true);
-						}}
-					>
+				render: (_, record, __, action) => {
+					const actions = [] as React.ReactNode[];
 
-					</BasicButton>,
-					<Popconfirm
-						key="delete"
-						title={t("common.confirmDelete")}
-						okText={t("common.confirm")}
-						cancelText={t("common.cancel")}
-						onConfirm={() => handleDeleteRow(record, action)}
-					>
-						<BasicButton type="link" size="large" title="حذف قرارداد" icon={<DeleteOutlined />}>
-						</BasicButton>
-					</Popconfirm>,
-					<BasicButton
-						key="pdf"
-						type="link"
-						size="large"
-						title="دانلود PDF قرارداد"
-						icon={<FilePdfOutlined />}
-						loading={downloadingPdfId === record.id}
-						onClick={() => handleDownloadPdf(record)}
-					>
-					</BasicButton>,
-				],
+					if (canUpdateRow(record)) {
+						actions.push(
+							<BasicButton
+								key="edit"
+								type="link"
+								size="large"
+								title="ویرایش قرارداد"
+								icon={<EditOutlined />}
+								onClick={() => {
+									setSelectedId(record.id);
+									setSelectedServicePath(resolveServicePath(record));
+									setOpenDetail(true);
+								}}
+							/>,
+						);
+					}
+
+					if (canDeleteRow(record)) {
+						actions.push(
+							<Popconfirm
+								key="delete"
+								title={t("common.confirmDelete")}
+								okText={t("common.confirm")}
+								cancelText={t("common.cancel")}
+								onConfirm={() => handleDeleteRow(record, action)}
+							>
+								<BasicButton type="link" size="large" title="حذف قرارداد" icon={<DeleteOutlined />}>
+								</BasicButton>
+							</Popconfirm>,
+						);
+					}
+
+					actions.push(
+						<BasicButton
+							key="pdf"
+							type="link"
+							size="large"
+							title="دانلود PDF قرارداد"
+							icon={<FilePdfOutlined />}
+							loading={downloadingPdfId === record.id}
+							onClick={() => handleDownloadPdf(record)}
+						>
+
+						</BasicButton>,
+					);
+
+					return actions;
+				},
 			},
 		];
-	}, [baseColumns, t, serviceCodeById, downloadingPdfId]);
+	}, [baseColumns, downloadingPdfId, t]);
 
 	return (
 		<BasicContent className="h-full">
@@ -274,15 +314,20 @@ export default function ContractListPage() {
 					};
 				}}
 				headerTitle={t("contract.tableTitle.listTitle")}
-				toolBarRender={() => [
-					<Button
-						key="add"
-						icon={<PlusCircleOutlined />}
-						type="primary"
-					>
-						{t("common.add")}
-					</Button>,
-				]}
+				toolBarRender={() => {
+					if (!canCreateContracts) {
+						return [];
+					}
+					return [
+						<Button
+							key="add"
+							icon={<PlusCircleOutlined />}
+							type="primary"
+						>
+							{t("common.add")}
+						</Button>,
+					];
+				}}
 			/>
 
 			<ContractDetailModal

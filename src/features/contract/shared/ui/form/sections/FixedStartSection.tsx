@@ -1,5 +1,6 @@
 import type { ContractFormValues } from "../../../model/contract.form.types";
 import { BasicContent } from "#src/components/";
+import { useAccess } from "#src/hooks";
 import { RHFSelect } from "#src/shared/ui/rhf-pro";
 import { ProCard } from "@ant-design/pro-components";
 import { useQuery } from "@tanstack/react-query";
@@ -23,6 +24,7 @@ const TRAFFIC_COMPANY_TYPE_OPTIONS = [
 
 export function FixedStartSection() {
 	const { setValue, control } = useFormContext<ContractFormValues>();
+	const { getPermittedServiceIds } = useAccess();
 
 	const services = useQuery(servicesQuery());
 
@@ -31,17 +33,21 @@ export function FixedStartSection() {
 	const counterpartyType = useWatch({ control, name: "counterpartyType" });
 	const trafficCompanyType = useWatch({ control, name: "trafficCompanyType" });
 
+	const permittedCreateServiceIdList = getPermittedServiceIds("contracts", "create");
+	const permittedCreateServiceIds = useMemo(
+		() => new Set(permittedCreateServiceIdList),
+		[permittedCreateServiceIdList.join(",")],
+	);
+
 	const companies = useQuery(companiesByServiceQuery(serviceId));
 
 	const isSms = serviceCode === "sms";
 	const isTraffic = serviceCode === "traffic";
 
-	// ✅ جلوگیری از پاک شدن مقادیر در edit (فقط بعد از mount)
 	const prevServiceIdRef = useRef<typeof serviceId>(undefined);
 	const prevTrafficCompanyTypeRef = useRef<typeof trafficCompanyType>(undefined);
 	const prevCounterpartyTypeRef = useRef<typeof counterpartyType>(undefined);
 
-	// ✅ فقط وقتی serviceId واقعاً تغییر کرد وابسته‌ها ریست شوند
 	useEffect(() => {
 		const prev = prevServiceIdRef.current;
 		prevServiceIdRef.current = serviceId;
@@ -56,24 +62,30 @@ export function FixedStartSection() {
 		}
 	}, [serviceId, setValue]);
 
-	// ✅ serviceCode از سرویس انتخابی
 	useEffect(() => {
-		if (serviceId == null) {
+		if (!serviceId) {
 			setValue("serviceCode", null, { shouldDirty: true, shouldValidate: true });
 			return;
 		}
+
+		if (!permittedCreateServiceIds.has(serviceId)) {
+			setValue("serviceId", null, { shouldDirty: true, shouldValidate: true });
+			setValue("serviceCode", null, { shouldDirty: true, shouldValidate: true });
+			setValue("companyId", null, { shouldDirty: true, shouldValidate: true });
+			return;
+		}
+
 		if (!services.data?.results?.length)
 			return;
 
-		const selected = services.data.results.find(s => s.id === serviceId);
+		const selected = services.data.results.find(s => s.id === serviceId && permittedCreateServiceIds.has(s.id));
 		const normalizedCode = typeof selected?.code === "string" ? selected.code.trim().toLowerCase() : "";
 		if (!normalizedCode)
 			return;
 
 		setValue("serviceCode", normalizedCode as any, { shouldDirty: true, shouldValidate: true });
-	}, [serviceId, services.data, setValue]);
+	}, [serviceId, services.data, setValue, permittedCreateServiceIdList.join(",")]);
 
-	// ✅ sms: فقط وقتی counterpartyType بعد از mount تغییر کرد و gov_ops شد، companyId پاک شود
 	useEffect(() => {
 		const prev = prevCounterpartyTypeRef.current;
 		prevCounterpartyTypeRef.current = counterpartyType;
@@ -86,7 +98,6 @@ export function FixedStartSection() {
 		}
 	}, [isSms, counterpartyType, setValue]);
 
-	// ✅ traffic: فقط وقتی trafficCompanyType بعد از mount تغییر کرد، companyId پاک شود
 	useEffect(() => {
 		const prev = prevTrafficCompanyTypeRef.current;
 		prevTrafficCompanyTypeRef.current = trafficCompanyType;
@@ -99,7 +110,14 @@ export function FixedStartSection() {
 		}
 	}, [isTraffic, trafficCompanyType, setValue]);
 
-	// ✅ options شرکت‌ها (پیش‌فرض)
+	const serviceOptions = useMemo(
+		() =>
+			(services.data?.results ?? [])
+				.filter(service => permittedCreateServiceIds.has(service.id))
+				.map(service => ({ label: service.name, value: service.id })),
+		[services.data, permittedCreateServiceIdList.join(",")],
+	);
+
 	const companyOptionsDefault = useMemo(
 		() =>
 			(companies.data?.results ?? []).map((c: any) => ({
@@ -109,7 +127,6 @@ export function FixedStartSection() {
 		[companies.data],
 	);
 
-	// ✅ options شرکت‌ها برای traffic: فقط فیلتر بر اساس company_type انتخاب شده
 	const companyOptionsTraffic = useMemo(() => {
 		const list = companies.data?.results ?? [];
 		if (!trafficCompanyType)
@@ -119,7 +136,6 @@ export function FixedStartSection() {
 			.map((c: any) => ({ label: c.name, value: c.id }));
 	}, [companies.data, trafficCompanyType]);
 
-	// ✅ نمایش شرکت:
 	const showCompanySelect
 		= (!isSms && !isTraffic) || (isSms && counterpartyType === "partners") || (isTraffic && !!trafficCompanyType);
 
@@ -145,7 +161,7 @@ export function FixedStartSection() {
 							name="serviceId"
 							label="نوع سرویس"
 							loading={services.isLoading}
-							options={(services.data?.results ?? []).map(s => ({ label: s.name, value: s.id }))}
+							options={serviceOptions}
 							selectProps={{ allowClear: true, placeholder: "سرویس را انتخاب کنید" }}
 						/>
 					</Col>

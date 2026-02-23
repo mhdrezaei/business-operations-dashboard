@@ -1,3 +1,4 @@
+import type { DomainPermissionAction, UserInfoType } from "#src/api/user/types";
 import { fetchAsyncRoutes } from "#src/api/user";
 import { useCurrentRoute } from "#src/hooks";
 import { hideLoading, setupLoading } from "#src/plugins";
@@ -19,6 +20,29 @@ import { removeDuplicateRoutes } from "./utils";
  */
 const noLoginWhiteList = Array.from(whiteRouteNames).filter(item => item !== loginPath);
 
+function normalizeAccessKey(value?: string | null) {
+	return (value ?? "").trim().toLowerCase();
+}
+
+function hasRouteDomainPermission(
+	services: UserInfoType["services"],
+	domain: string,
+	action: DomainPermissionAction,
+) {
+	const normalizedDomain = normalizeAccessKey(domain);
+	if (!normalizedDomain || !services?.length) {
+		return false;
+	}
+	return services.some((service) => {
+		for (const [domainKey, permission] of Object.entries(service.permissions ?? {})) {
+			if (normalizeAccessKey(domainKey) === normalizedDomain) {
+				return Boolean(permission?.[action]);
+			}
+		}
+		return false;
+	});
+}
+
 interface AuthGuardProps {
 	children?: React.ReactNode
 }
@@ -36,6 +60,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
 	const isAuthorized = useUserStore(state => Boolean(state.id));
 	const getUserInfo = useUserStore(state => state.getUserInfo);
 	const userRoles = useUserStore(state => state.roles);
+	const userServices = useUserStore(state => state.services);
 	const { setAccessStore, isAccessChecked, routeList } = useAccessStore();
 	const { enableBackendAccess, enableFrontendAceess } = usePreferencesStore(state => state);
 
@@ -81,12 +106,9 @@ export function AuthGuard({ children }: AuthGuardProps) {
 			 * @fa دريافت اطلاعات نقش از API کاربر
 			 * @en Fetch role information from the user interface
 			 */
-			// if (userInfoResult.status === "fulfilled" && "roles" in userInfoResult.value) {
-			if (userInfoResult.status === "fulfilled" && userInfoResult?.value) {
-				// latestRoles.push(...userInfoResult.value?.roles ?? []);
-				latestRoles.push("admin");
+			if (userInfoResult.status === "fulfilled" && userInfoResult?.value && "roles" in userInfoResult.value) {
+				latestRoles.push(...userInfoResult.value?.roles ?? []);
 			}
-			console.warn(userInfoResult && userInfoResult, "xxxxxxxx");
 			/**
 			 * @fa بک اند فعال است و مسيرها از API کاربر دريافت مي شود
 			 * @en If backend routing is enabled and the route is obtained from the user interface
@@ -278,6 +300,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
 	 */
 	const routeRoles = currentRoute?.handle?.roles;
 	const ignoreAccess = currentRoute?.handle?.ignoreAccess;
+	const accessDomain = currentRoute?.handle?.accessDomain;
+	const accessAction = currentRoute?.handle?.accessAction ?? "view";
 
 	/**
 	 * @fa ناديده گرفتن بررسي مجوز
@@ -285,6 +309,15 @@ export function AuthGuard({ children }: AuthGuardProps) {
 	 */
 	if (ignoreAccess === true) {
 		return children;
+	}
+
+	if (accessDomain && !hasRouteDomainPermission(userServices, accessDomain, accessAction)) {
+		return (
+			<Navigate
+				to={exception403Path}
+				replace
+			/>
+		);
 	}
 
 	const matches = matchRoutes(

@@ -6,16 +6,44 @@ import InternalProfilePanel from "./internal/InternalProfilePanel";
 import LegalProfilePanel from "./legal/LegalProfilePanel";
 import PublicProfilePanel from "./public/PublicProfilePanel";
 
-export default function CompanyProfileAccordionPanel({ companyId }: { companyId: number }) {
+interface CompanyProfileAccordionPanelProps {
+	companyId: number
+	canSeePublic: boolean
+	canSeeLegal: boolean
+	canSeeFinance: boolean
+	canSeeInternal: boolean
+}
+
+export default function CompanyProfileAccordionPanel({
+	companyId,
+	canSeePublic,
+	canSeeLegal,
+	canSeeFinance,
+	canSeeInternal,
+}: CompanyProfileAccordionPanelProps) {
+	const items = [] as NonNullable<React.ComponentProps<typeof Collapse>["items"]>;
+
+	if (canSeePublic) {
+		items.push({ key: "public", label: "اطلاعات عمومی شرکت", children: <PublicProfilePanel companyId={companyId} /> });
+	}
+	if (canSeeLegal) {
+		items.push({ key: "legal", label: "اطلاعات ثبتی و حقوقی", children: <LegalProfilePanel companyId={companyId} /> });
+	}
+	if (canSeeFinance) {
+		items.push({ key: "finance", label: "اطلاعات مالی", children: <FinanceProfilePanel companyId={companyId} /> });
+	}
+	if (canSeeInternal) {
+		items.push({ key: "internal", label: "اطلاعات داخلی", children: <InternalProfilePanel companyId={companyId} /> });
+	}
+
+	if (!items.length) {
+		return <div style={{ opacity: 0.8 }}>هیچ کارت اطلاعات شرکتی مجازی فعال نیست.</div>;
+	}
+
 	return (
 		<Collapse
-			defaultActiveKey={["public"]}
-			items={[
-				{ key: "public", label: "اطلاعات عمومی شرکت", children: <PublicProfilePanel companyId={companyId} /> },
-				{ key: "legal", label: "اطلاعات ثبتی و حقوقی", children: <LegalProfilePanel companyId={companyId} /> },
-				{ key: "finance", label: "اطلاعات مالی", children: <FinanceProfilePanel companyId={companyId} /> },
-				{ key: "internal", label: "اطلاعات داخلی", children: <InternalProfilePanel companyId={companyId} /> },
-			]}
+			defaultActiveKey={[String(items[0]?.key ?? "public")]}
+			items={items}
 		/>
 	);
 }

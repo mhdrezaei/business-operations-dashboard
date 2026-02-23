@@ -2,6 +2,7 @@ import type { ActionType, ProColumns, ProCoreActionType, ProFormInstance } from 
 import type { CompanyDocumentDto } from "../model/company-documents.types";
 
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
+import { useAccess } from "#src/hooks";
 import { PlusCircleOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Popconfirm, Tag } from "antd";
@@ -35,12 +36,18 @@ interface Props {
 }
 
 export default function CompanyDocumentsTable({ serviceId, companyId }: Props) {
+	const { hasCompanyCardAccess, hasDomainPermissionByServiceId } = useAccess();
 	const actionRef = useRef<ActionType>(null);
 	const formRef = useRef<ProFormInstance | undefined>(undefined);
 
 	const [openModal, setOpenModal] = useState(false);
 	const [selectedId, setSelectedId] = useState<number | null>(null);
 	const [saving, setSaving] = useState(false);
+
+	const canAccessDocumentsCard = hasCompanyCardAccess("company_documents");
+	const canCreateDocument = hasDomainPermissionByServiceId("company_profile", "create", serviceId);
+	const canUpdateDocument = hasDomainPermissionByServiceId("company_profile", "update", serviceId);
+	const canDeleteDocument = hasDomainPermissionByServiceId("company_profile", "delete", serviceId);
 
 	const detail = useQuery(companyDocumentDetailQuery(selectedId));
 
@@ -62,6 +69,10 @@ export default function CompanyDocumentsTable({ serviceId, companyId }: Props) {
 	}, [detail.data, selectedId]);
 
 	const handleDeleteRow = async (row: CompanyDocumentDto, action?: ProCoreActionType<object>) => {
+		if (!canDeleteDocument) {
+			window.$message?.warning("دسترسی حذف برای این بخش ندارید.");
+			return;
+		}
 		await deleteCompanyDocument(row.id);
 		await action?.reload?.();
 		window.$message?.success("حذف شد");
@@ -179,33 +190,47 @@ export default function CompanyDocumentsTable({ serviceId, companyId }: Props) {
 				key: "option",
 				width: 140,
 				fixed: "right",
-				render: (_, record, __, action) => [
-					<BasicButton
-						key="edit"
-						type="link"
-						size="small"
-						onClick={() => {
-							setSelectedId(record.id);
-							setOpenModal(true);
-						}}
-					>
-						ویرایش
-					</BasicButton>,
-					<Popconfirm
-						key="delete"
-						title="حذف شود؟"
-						okText="بله"
-						cancelText="خیر"
-						onConfirm={() => handleDeleteRow(record, action)}
-					>
-						<BasicButton type="link" size="small">
-							حذف
-						</BasicButton>
-					</Popconfirm>,
-				],
+				render: (_, record, __, action) => {
+					const actions = [] as React.ReactNode[];
+					if (canUpdateDocument) {
+						actions.push(
+							<BasicButton
+								key="edit"
+								type="link"
+								size="small"
+								onClick={() => {
+									setSelectedId(record.id);
+									setOpenModal(true);
+								}}
+							>
+								ویرایش
+							</BasicButton>,
+						);
+					}
+					if (canDeleteDocument) {
+						actions.push(
+							<Popconfirm
+								key="delete"
+								title="حذف شود؟"
+								okText="بله"
+								cancelText="خیر"
+								onConfirm={() => handleDeleteRow(record, action)}
+							>
+								<BasicButton type="link" size="small">
+									حذف
+								</BasicButton>
+							</Popconfirm>,
+						);
+					}
+					return actions;
+				},
 			},
 		];
-	}, [docTypeValueEnum, orderingValueEnum, verificationValueEnum]);
+	}, [canDeleteDocument, canUpdateDocument, docTypeValueEnum, orderingValueEnum, verificationValueEnum]);
+
+	if (!canAccessDocumentsCard) {
+		return <div style={{ opacity: 0.8 }}>کارت مدارک برای این کاربر فعال نیست.</div>;
+	}
 
 	return (
 		<BasicContent className="h-full">
@@ -236,19 +261,24 @@ export default function CompanyDocumentsTable({ serviceId, companyId }: Props) {
 					};
 				}}
 				headerTitle="مدارک شرکت"
-				toolBarRender={() => [
-					<Button
-						key="add"
-						icon={<PlusCircleOutlined />}
-						type="primary"
-						onClick={() => {
-							setSelectedId(null);
-							setOpenModal(true);
-						}}
-					>
-						ثبت مدرک
-					</Button>,
-				]}
+				toolBarRender={() => {
+					if (!canCreateDocument) {
+						return [];
+					}
+					return [
+						<Button
+							key="add"
+							icon={<PlusCircleOutlined />}
+							type="primary"
+							onClick={() => {
+								setSelectedId(null);
+								setOpenModal(true);
+							}}
+						>
+							ثبت مدرک
+						</Button>,
+					];
+				}}
 			/>
 
 			<CompanyDocumentsModal
@@ -259,6 +289,14 @@ export default function CompanyDocumentsTable({ serviceId, companyId }: Props) {
 				disabled={saving}
 				onClose={closeModal}
 				onSubmit={async (values) => {
+					if (selectedId && !canUpdateDocument) {
+						window.$message?.warning("دسترسی ویرایش برای این بخش ندارید.");
+						return;
+					}
+					if (!selectedId && !canCreateDocument) {
+						window.$message?.warning("دسترسی ایجاد برای این بخش ندارید.");
+						return;
+					}
 					setSaving(true);
 					try {
 						const fd = companyDocumentFormToFormData({

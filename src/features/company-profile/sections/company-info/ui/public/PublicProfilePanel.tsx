@@ -6,6 +6,7 @@ import {
 	getPublicProfile,
 	updatePublicProfile,
 } from "#src/features/company-profile/api/company-profile.api";
+import { useAccess } from "#src/hooks";
 
 import { Button, Spin } from "antd";
 
@@ -26,6 +27,8 @@ export default function PublicProfilePanel({ companyId }: { companyId: number })
 	const [editMode, setEditMode] = useState(false);
 
 	const serviceId = useWatch<CompanyProfileFormValues, "serviceId">({ name: "serviceId" }) || 0;
+	const { hasDomainPermissionByServiceId } = useAccess();
+	const canUpdateProfile = hasDomainPermissionByServiceId("company_profile", "update", serviceId);
 	const [profile, setProfile] = useState<PublicProfileDto | null>(null);
 
 	const defaultValues = useMemo<PublicProfileFormValues>(() => {
@@ -45,6 +48,10 @@ export default function PublicProfilePanel({ companyId }: { companyId: number })
 	}, [companyId, serviceId]);
 
 	async function onSubmit(values: PublicProfileFormValues) {
+		if (!canUpdateProfile) {
+			window.$message?.warning("دسترسی ویرایش پروفایل شرکت ندارید.");
+			return;
+		}
 		setSaving(true);
 		try {
 			const payload = publicFormToPayload(values);
@@ -79,7 +86,7 @@ export default function PublicProfilePanel({ companyId }: { companyId: number })
 			<div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginBottom: 12 }}>
 				{!editMode
 					? (
-						<Button type="primary" onClick={() => setEditMode(true)}>
+						<Button type="primary" onClick={() => setEditMode(true)} disabled={!canUpdateProfile}>
 							ویرایش
 						</Button>
 					)
