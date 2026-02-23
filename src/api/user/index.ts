@@ -32,3 +32,18 @@ export const refreshTokenPath = "refresh-token";
 export function fetchRefreshToken(data: { readonly refreshToken: string }) {
 	return request.post(refreshTokenPath, { json: data }).json<ApiResponse<RefreshTokenResult>>();
 }
+export const requestOtpPath = "auth/request-otp/";
+export function fetchRequestOtp(data: { mobile: string }) {
+	// اگر API بدنه برنمی‌گرداند، json را هم می‌توان حذف کرد؛
+	// اما این شکل با بقیه فایل شما یکدست است.
+	return request
+		.post(requestOtpPath, { json: data })
+		.json();
+}
+
+export const otpLoginPath = "auth/otp-login/";
+export function fetchOtpLogin(data: { mobile: string, otp_code: string }) {
+	return request
+		.post(otpLoginPath, { json: data })
+		.json<AuthType>();
+}
