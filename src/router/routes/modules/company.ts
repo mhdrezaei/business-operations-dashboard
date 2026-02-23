@@ -16,6 +16,8 @@ const routes: AppRouteRecordRaw[] = [
 			icon: "SafetyOutlined",
 			title: $t("common.menu.companies"),
 			order: company,
+			accessDomain: "company_profile",
+			accessAction: "view",
 		},
 		children: [
 			{
@@ -24,6 +26,8 @@ const routes: AppRouteRecordRaw[] = [
 				handle: {
 					icon: "FileTextOutlined",
 					title: $t("common.menu.companiesManagement"),
+					accessDomain: "company_profile",
+					accessAction: "view",
 					// roles: ["admin"],
 					// permissions: [
 					// 	accessControlCodes.get,

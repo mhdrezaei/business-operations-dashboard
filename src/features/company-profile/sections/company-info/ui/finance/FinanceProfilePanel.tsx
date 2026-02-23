@@ -7,6 +7,7 @@ import {
 	getFinanceProfile,
 	updateFinanceProfile,
 } from "#src/features/company-profile/api/company-profile.api";
+import { useAccess } from "#src/hooks";
 import { Button, Spin } from "antd";
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -27,6 +28,8 @@ export default function FinanceProfilePanel({ companyId }: { companyId: number }
 	const [editMode, setEditMode] = useState(false);
 
 	const serviceId = useWatch<CompanyProfileFormValues, "serviceId">({ name: "serviceId" }) || 0;
+	const { hasDomainPermissionByServiceId } = useAccess();
+	const canUpdateProfile = hasDomainPermissionByServiceId("company_profile", "update", serviceId);
 	const [profile, setProfile] = useState<FinanceProfileDto | null>(null);
 
 	const defaultValues = useMemo<FinanceProfileFormValues>(() => {
@@ -46,6 +49,10 @@ export default function FinanceProfilePanel({ companyId }: { companyId: number }
 	}, [companyId, serviceId]);
 
 	async function onSubmit(values: FinanceProfileFormValues) {
+		if (!canUpdateProfile) {
+			window.$message?.warning("دسترسی ویرایش پروفایل شرکت ندارید.");
+			return;
+		}
 		setSaving(true);
 		try {
 			const payload = financeFormToPayload(values);
@@ -79,7 +86,7 @@ export default function FinanceProfilePanel({ companyId }: { companyId: number }
 		<div>
 			<div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginBottom: 12 }}>
 				{!editMode
-					? <Button type="primary" onClick={() => setEditMode(true)}>ویرایش</Button>
+					? <Button type="primary" onClick={() => setEditMode(true)} disabled={!canUpdateProfile}>ویرایش</Button>
 					: <Button onClick={() => setEditMode(false)} disabled={saving}>انصراف</Button>}
 			</div>
 

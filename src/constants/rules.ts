@@ -37,7 +37,7 @@ export function PASSWORD_RULES(t: TFunction<"translation", undefined>) {
 			message: t("form.password.required"),
 		},
 		{
-			pattern: /^(?=.*\d)(?=.*[a-z])[\w~!@#$%^&*+.\-]{8,16}$/i,
+			pattern: /^(?=.*\d)(?=.*[a-z])[\w~!@#$%^&*+.\-]{8,50}$/i,
 			message: t("form.password.invalid"),
 		},
 	];
