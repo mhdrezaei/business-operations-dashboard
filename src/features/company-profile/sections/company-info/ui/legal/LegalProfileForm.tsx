@@ -1,0 +1,68 @@
+import type { Resolver } from "react-hook-form";
+import type { LegalProfileFormValues } from "../../model/legal/company-legal.mappers";
+
+import {
+	RHFProDate,
+	RHFProText,
+	RHFSelect,
+} from "#src/shared/ui/rhf-pro";
+
+import { ProCard } from "@ant-design/pro-components";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Button, Form, theme } from "antd";
+import React from "react";
+import { FormProvider, useForm } from "react-hook-form";
+
+import { LEGAL_PERSON_TYPE_OPTIONS } from "../../../company-info/model/company-info.constants";
+import { legalProfileSchema } from "../../model/legal/company-legal.schema";
+
+interface Props {
+	disabled: boolean
+	defaultValues: LegalProfileFormValues
+	onSubmit: (values: LegalProfileFormValues) => void | Promise<void>
+}
+
+export default function LegalProfileForm({ disabled, defaultValues, onSubmit }: Props) {
+	const { useToken } = theme;
+	const { token } = useToken();
+
+	const methods = useForm<LegalProfileFormValues>({
+		defaultValues,
+		resolver: zodResolver(legalProfileSchema as any) as unknown as Resolver<LegalProfileFormValues>,
+		mode: "onBlur",
+	});
+
+	const { handleSubmit } = methods;
+
+	return (
+		<Form layout="vertical" className="space-y-4">
+			<FormProvider {...methods}>
+				<ProCard bordered title="اطلاعات ثبتی و حقوقی" style={{ backgroundColor: token.colorBgMask }}>
+					<div className="grid grid-cols-2 gap-x-4">
+						<RHFProText name="national_id" label="شناسه ملی" inputProps={{ placeholder: "شناسه ملی", disabled }} />
+						<RHFProText name="tax_national_id" label="شناسه مالیاتی" inputProps={{ placeholder: "شناسه مالیاتی", disabled }} />
+
+						<RHFSelect
+							name="legal_person_type"
+							label="نوع شخصیت حقوقی"
+							selectProps={{ placeholder: "انتخاب کنید", allowClear: true, disabled }}
+							options={LEGAL_PERSON_TYPE_OPTIONS}
+						/>
+
+						<RHFProText name="registration_number" label="شماره ثبت" inputProps={{ placeholder: "شماره ثبت", disabled }} />
+						<RHFProText name="tax_registration_number" label="شماره ثبت مالیاتی" inputProps={{ placeholder: "شماره ثبت مالیاتی", disabled }} />
+
+						<RHFProText name="registration_place" label="محل ثبت" inputProps={{ placeholder: "محل ثبت", disabled }} />
+						<RHFProDate name="registration_date" label="تاریخ ثبت" itemProps={{ placeholder: "تاریخ ثبت", disabled }} />
+
+						<RHFProText name="branch_code" label="کد شعبه" inputProps={{ placeholder: "کد شعبه", disabled }} />
+					</div>
+				</ProCard>
+
+				<Button type="primary" onClick={handleSubmit(values => onSubmit(values))}>
+					ذخیره تغییرات
+				</Button>
+			</FormProvider>
+		</Form>
+	);
+}

@@ -6,15 +6,16 @@ import type { ContractListItemType } from "../model/contracts.list.types";
 
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import { companiesByServiceQuery, servicesQuery } from "#src/features/contract/create/queries/contract.queries";
-import { PlusCircleOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, FilePdfOutlined, PlusCircleOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 
 import { Button, Popconfirm } from "antd";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { fetchContractsList, fetchDeleteContract } from "../../api/contracts.api";
+import { fetchContractDetail, fetchContractsList, fetchDeleteContract } from "../../api/contracts.api";
 import { ContractDetailModal } from "./components/ContractDetailModal";
 import { getContractColumns } from "./constants";
+import { openContractPdfPrint } from "./utils/contract-pdf";
 
 type TrafficCompanyType = "CP" | "IXP" | "TCI" | "PREMIUM";
 
@@ -36,11 +37,12 @@ export default function ContractListPage() {
 	const [selectedServicePath, setSelectedServicePath] = useState<ContractServicePath | null>(null);
 	const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
 	const [selectedTrafficCompanyType, setSelectedTrafficCompanyType] = useState<TrafficCompanyType | null>(null);
+	const [downloadingPdfId, setDownloadingPdfId] = useState<number | null>(null);
 
-	// ✅ سرویس‌ها مثل create
+	// services similar to create page
 	const services = useQuery(servicesQuery());
 
-	// ✅ map: service_id -> service_code (برای resolveServicePath)
+	// map: service_id -> service_code (for resolveServicePath)
 	const serviceCodeById = useMemo(() => {
 		const m = new Map<number, string>();
 		(services.data?.results ?? []).forEach((s: any) => {
@@ -52,7 +54,6 @@ export default function ContractListPage() {
 		return m;
 	}, [services.data]);
 
-	// ✅ این نسخه دیگر به عددهای هاردکد وابسته نیست
 	const resolveServicePath = (row: ContractListItemType): ContractServicePath => {
 		const code = serviceCodeById.get(Number(row.service_id)) ?? null;
 		if (code === "psp")
@@ -85,7 +86,7 @@ export default function ContractListPage() {
 	const isTrafficService = selectedService?.code === "traffic";
 	const isSmsService = selectedService?.code === "sms";
 
-	// ✅ شرکت‌ها بر اساس service_id مثل create
+	// companies based on selected service_id
 	const companies = useQuery(companiesByServiceQuery(selectedServiceId));
 
 	const serviceOptions = useMemo(
@@ -136,6 +137,24 @@ export default function ContractListPage() {
 		window.$message?.success(t("common.deleteSuccess"));
 	};
 
+	const handleDownloadPdf = async (row: ContractListItemType) => {
+		setDownloadingPdfId(row.id);
+		try {
+			const detail = await fetchContractDetail(resolveServicePath(row), row.id);
+			openContractPdfPrint({ record: row, detail });
+		}
+		catch (error: any) {
+			if (error?.message === "POPUP_BLOCKED") {
+				window.$message?.error("پاپ‌آپ مرورگر مسدود است. لطفا آن را فعال کنید.");
+				return;
+			}
+			window.$message?.error("دریافت فایل قرارداد ناموفق بود.");
+		}
+		finally {
+			setDownloadingPdfId(null);
+		}
+	};
+
 	const baseColumns = useMemo(
 		() =>
 			getContractColumns({
@@ -183,18 +202,22 @@ export default function ContractListPage() {
 				key: "option",
 				width: 120,
 				fixed: "right",
+				align: "center",
+
 				render: (_, record, __, action) => [
 					<BasicButton
 						key="edit"
 						type="link"
-						size="small"
+						size="large"
+						title="ویرایش قرارداد"
+						icon={<EditOutlined />}
 						onClick={() => {
 							setSelectedId(record.id);
 							setSelectedServicePath(resolveServicePath(record));
 							setOpenDetail(true);
 						}}
 					>
-						{t("common.edit")}
+
 					</BasicButton>,
 					<Popconfirm
 						key="delete"
@@ -203,14 +226,23 @@ export default function ContractListPage() {
 						cancelText={t("common.cancel")}
 						onConfirm={() => handleDeleteRow(record, action)}
 					>
-						<BasicButton type="link" size="small">
-							{t("common.delete")}
+						<BasicButton type="link" size="large" title="حذف قرارداد" icon={<DeleteOutlined />}>
 						</BasicButton>
 					</Popconfirm>,
+					<BasicButton
+						key="pdf"
+						type="link"
+						size="large"
+						title="دانلود PDF قرارداد"
+						icon={<FilePdfOutlined />}
+						loading={downloadingPdfId === record.id}
+						onClick={() => handleDownloadPdf(record)}
+					>
+					</BasicButton>,
 				],
 			},
 		];
-	}, [baseColumns, t, serviceCodeById]); // ✅ چون resolveServicePath به map وابسته است
+	}, [baseColumns, t, serviceCodeById, downloadingPdfId]);
 
 	return (
 		<BasicContent className="h-full">

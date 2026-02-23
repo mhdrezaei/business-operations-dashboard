@@ -2,7 +2,6 @@ import type { CompanyPersonFormValues } from "../model/company-people.types";
 import { useQuery } from "@tanstack/react-query";
 
 import { Modal } from "antd";
-// src/features/company-profile/sections/key-people/ui/CompanyPeopleModal.tsx
 import React, { useMemo, useState } from "react";
 import { createCompanyPerson, updateCompanyPerson } from "../../../api/key-people.api";
 import { companyPersonDetailQuery } from "../../../queries/company-people.queries";
@@ -13,7 +12,7 @@ interface Props {
 	open: boolean
 	companyId: number
 	serviceId: number
-	personId: number | null // null => create
+	personId: number | null
 	onClose: () => void
 	onUpdated?: () => void
 }
@@ -33,8 +32,8 @@ export default function CompanyPeopleModal({ open, companyId, serviceId, personI
 				is_signatory: false,
 				national_id: "",
 				title: "",
-				phone: [""],
-				email: [""],
+				phone: "",
+				email: "",
 			};
 		}
 		if (!detail.data)
@@ -43,8 +42,8 @@ export default function CompanyPeopleModal({ open, companyId, serviceId, personI
 		const base = dtoToCompanyPersonForm(detail.data);
 		return {
 			...base,
-			phone: base.phone.length ? base.phone : [""],
-			email: base.email.length ? base.email : [""],
+			phone: base.phone.length ? base.phone : "",
+			email: base.email.length ? base.email : "",
 		};
 	}, [personId, detail.data]);
 
@@ -67,6 +66,7 @@ export default function CompanyPeopleModal({ open, companyId, serviceId, personI
 						defaultValues={initialValues}
 						submitText={personId ? "اعمال تغییرات" : "ثبت شخص"}
 						submitting={saving}
+						onClose={onClose}
 						onSubmit={async (values) => {
 							setSaving(true);
 							try {

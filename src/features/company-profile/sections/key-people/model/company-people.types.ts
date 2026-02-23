@@ -1,5 +1,3 @@
-// src/features/company-profile/sections/key-people/model/company-people.types.ts
-
 export type CompanyPersonRole	= | "BOARD"
   | "CEO"
   | "COMMERCIAL"
@@ -38,11 +36,10 @@ export interface CompanyPersonFormValues {
 	is_signatory: boolean
 	national_id: string
 	title: string
-	phone: string[] // مثل CompanyInfo
-	email: string[] // مثل CompanyInfo
+	phone: string
+	email: string
 }
 
-// اگر paginated عمومی ندارید:
 export interface Paginated<T> {
 	count: number
 	next: string | null

@@ -3,7 +3,7 @@ import { Collapse } from "antd";
 import React from "react";
 import { useWatch } from "react-hook-form";
 import BankAccountsPanel from "../../sections/bank-accounts/ui/BankAccountsPanel";
-import CompanyInfoPanel from "../../sections/company-info/ui/CompanyInfoPanel";
+import CompanyProfileAccordionPanel from "../../sections/company-info/ui/CompanyProfileAccordionPanel";
 import CompanyDocumentsPanel from "../../sections/documents/ui/CompanyDocumentsPanel";
 import CompanyPeoplePanel from "../../sections/key-people/ui/CompanyPeoplePanel";
 import ShareholdersPanel from "../../sections/shareholders/ui/ShareholdersPanel";
@@ -19,7 +19,7 @@ export default function CompanyProfileAccordion() {
 				{
 					key: "company-info",
 					label: "پروفایل شرکت",
-					children: companyId ? <CompanyInfoPanel companyId={companyId} /> : null,
+					children: companyId ? <CompanyProfileAccordionPanel companyId={companyId} /> : null,
 				},
 				{
 					key: "key-people",

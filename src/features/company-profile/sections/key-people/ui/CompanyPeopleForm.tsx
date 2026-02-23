@@ -1,12 +1,9 @@
 import type { Resolver } from "react-hook-form";
 import type { CompanyPersonFormValues } from "../model/company-people.types";
 import { RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
-import RHFFieldArrayText from "#src/shared/ui/rhf-pro/fields/RHFFieldArrayText.js";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button, Form } from "antd";
-// src/features/company-profile/sections/key-people/ui/CompanyPeopleForm.tsx
-import React from "react";
 
 import { FormProvider, useForm } from "react-hook-form";
 import { COMPANY_PERSON_ROLE_OPTIONS } from "../model/company-people.constants";
@@ -17,15 +14,15 @@ interface Props {
 	defaultValues: CompanyPersonFormValues
 	submitText: string
 	onSubmit: (values: CompanyPersonFormValues) => void | Promise<void>
+	onClose: () => void
 	submitting?: boolean
 }
 
-export default function CompanyPeopleForm({ disabled, defaultValues, onSubmit, submitText, submitting }: Props) {
+export default function CompanyPeopleForm({ disabled, defaultValues, onSubmit, onClose, submitText, submitting }: Props) {
 	const methods = useForm<CompanyPersonFormValues>({
 		defaultValues,
-		// ✅ مثل قبل: برای سازگاری تایپی با نسخه zod/resolver شما
 		resolver: (zodResolver(companyPersonSchema as any) as unknown) as Resolver<CompanyPersonFormValues>,
-		mode: "onBlur",
+		mode: "all",
 	});
 
 	const { handleSubmit } = methods;
@@ -33,7 +30,7 @@ export default function CompanyPeopleForm({ disabled, defaultValues, onSubmit, s
 	return (
 		<Form layout="vertical">
 			<FormProvider {...methods}>
-				<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+				<div className="grid grid-cols-2 gap-x-4 mt-4">
 					<RHFSelect
 						name="role"
 						label="نقش"
@@ -59,26 +56,24 @@ export default function CompanyPeopleForm({ disabled, defaultValues, onSubmit, s
 						itemProps={{ placeholder: "عنوان", disabled }}
 					/>
 
-					<div style={{ gridColumn: "1 / -1" }}>
-						{/* صاحب امضا */}
-						<label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-							<input type="checkbox" disabled={disabled} {...methods.register("is_signatory")} />
-							صاحب امضا
-						</label>
-					</div>
+					<RHFProText name="phone" label="تلفن" inputProps={{ placeholder: "تلفن", disabled }} />
 
-					<div style={{ gridColumn: "1 / -1" }}>
-						<RHFFieldArrayText name="phone" label="تلفن" disabled={disabled} />
-					</div>
+					<RHFProText name="email" label="ایمیل" inputProps={{ placeholder: "ایمیل", disabled }} />
 
-					<div style={{ gridColumn: "1 / -1" }}>
-						<RHFFieldArrayText name="email" label="ایمیل" disabled={disabled} />
-					</div>
 				</div>
-
-				<Button type="primary" onClick={handleSubmit(onSubmit)} loading={!!submitting} disabled={disabled}>
-					{submitText}
-				</Button>
+				<div style={{ gridColumn: "1 / -1" }}>
+					{/* صاحب امضا */}
+					<label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+						<input type="checkbox" disabled={disabled} {...methods.register("is_signatory")} />
+						صاحب امضا
+					</label>
+				</div>
+				<div className="flex justify-end gap-2 mt-4">
+					<Button onClick={onClose}>انصراف</Button>
+					<Button type="primary" onClick={handleSubmit(onSubmit)} loading={!!submitting} disabled={disabled}>
+						{submitText}
+					</Button>
+				</div>
 			</FormProvider>
 		</Form>
 	);

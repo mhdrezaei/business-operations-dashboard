@@ -1,5 +1,4 @@
 import type { ListCompanyPeopleParams } from "../sections/key-people/model/company-people.types";
-// src/features/company-profile/sections/key-people/queries/company-people.queries.ts
 import { queryOptions } from "@tanstack/react-query";
 import { getCompanyPerson, listCompanyPeople } from "../api/key-people.api";
 

@@ -1,10 +1,8 @@
-import type { Paginated } from "#src/features/company-profile/shared/types"; // اگر دارید، اگر ندارید همین رو تو model تعریف کن
+import type { Paginated } from "#src/features/company-profile/shared/types";
 import type { CompanyPersonDto, ListCompanyPeopleParams } from "../sections/key-people/model/company-people.types";
-// src/features/company-profile/sections/key-people/api/company-people.api.ts
 import { request } from "#src/utils/request/";
 
 function toSearchParams(params: ListCompanyPeopleParams) {
-	// ky SearchParamsOption نیاز به index signature داره
 	return params as unknown as Record<string, string | number | boolean | undefined>;
 }
 

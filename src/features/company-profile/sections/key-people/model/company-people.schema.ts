@@ -1,4 +1,3 @@
-// src/features/company-profile/sections/key-people/model/company-people.schema.ts
 import { z } from "zod";
 
 export const companyPersonSchema = z.object({
@@ -7,6 +6,6 @@ export const companyPersonSchema = z.object({
 	is_signatory: z.boolean(),
 	national_id: z.string().trim().optional().default(""),
 	title: z.string().trim().optional().default(""),
-	phone: z.array(z.string().trim()).default([]),
-	email: z.array(z.string().trim()).default([]),
+	phone: z.string().trim().optional().default(""),
+	email: z.string().trim().optional().default(""),
 });

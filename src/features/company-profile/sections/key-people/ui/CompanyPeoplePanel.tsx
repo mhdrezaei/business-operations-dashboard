@@ -1,9 +1,8 @@
-// src/features/company-profile/sections/key-people/ui/CompanyPeoplePanel.tsx
 import type { ActionType, ProColumns, ProCoreActionType, ProFormInstance } from "@ant-design/pro-components";
 import type { CompanyProfileFormValues } from "../../../model/company-profile.form.types";
 import type { CompanyPersonDto } from "../model/company-people.types";
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
-import { PlusCircleOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, PlusCircleOutlined } from "@ant-design/icons";
 
 import { Button, Popconfirm } from "antd";
 import React, { useMemo, useRef, useState } from "react";
@@ -40,13 +39,14 @@ export default function CompanyPeoplePanel() {
 					<BasicButton
 						key="edit"
 						type="link"
-						size="small"
+						title="ویرایش"
+						size="large"
+						icon={<EditOutlined />}
 						onClick={() => {
 							setSelectedId(record.id);
 							setOpenModal(true);
 						}}
 					>
-						ویرایش
 					</BasicButton>,
 					<Popconfirm
 						key="delete"
@@ -59,8 +59,8 @@ export default function CompanyPeoplePanel() {
 							window.$message?.success("حذف شد");
 						}}
 					>
-						<BasicButton type="link" size="small">
-							حذف
+						<BasicButton type="link" size="large" icon={<DeleteOutlined />} title="حذف">
+
 						</BasicButton>
 					</Popconfirm>,
 				],

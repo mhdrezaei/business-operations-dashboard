@@ -4,14 +4,12 @@ function splitMulti(v: unknown): string[] {
 	if (v == null)
 		return [];
 
-	// اگر بک‌اند آرایه برگرداند
 	if (Array.isArray(v)) {
 		return v
 			.map(x => (x == null ? "" : String(x)).trim())
 			.filter(Boolean);
 	}
 
-	// اگر عدد/boolean/... بود
 	const s = typeof v === "string" ? v : String(v);
 
 	return s

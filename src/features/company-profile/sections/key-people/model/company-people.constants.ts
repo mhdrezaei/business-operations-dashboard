@@ -1,4 +1,3 @@
-// src/features/company-profile/sections/key-people/model/company-people.constants.ts
 import type { CompanyPersonRole } from "./company-people.types";
 
 export const COMPANY_PERSON_ROLE_OPTIONS: Array<{ label: string, value: CompanyPersonRole }> = [

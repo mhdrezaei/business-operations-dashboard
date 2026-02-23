@@ -1,7 +1,7 @@
 import type { ShareholderFormValues } from "../model/shareholders.types";
 import { RHFProText, RHFProTextArea } from "#src/shared/ui/rhf-pro";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Form } from "antd";
+import { Button, Form } from "antd";
 
 import React from "react";
 import { FormProvider, useForm } from "react-hook-form";
@@ -27,23 +27,23 @@ export default function ShareholderForm({ disabled, defaultValues, onSubmit, sub
 	return (
 		<Form layout="vertical">
 			<FormProvider {...methods}>
-				<div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
+				<div className="grid col-span-1 mt-2">
 					<RHFProText
 						name="full_name"
 						label="نام سهامدار"
-						itemProps={{ placeholder: "نام و نام خانوادگی", disabled }}
+						inputProps={{ placeholder: "نام و نام خانوادگی", disabled }}
 					/>
 
 					<RHFProText
 						name="national_id"
 						label="شناسه ملی"
-						itemProps={{ placeholder: "شناسه ملی", disabled }}
+						inputProps={{ placeholder: "شناسه ملی", disabled }}
 					/>
 
 					<RHFProText
 						name="ownership_percent"
 						label="درصد مالکیت"
-						itemProps={{ placeholder: "مثلاً 25", disabled }}
+						inputProps={{ placeholder: "مثلاً 25", disabled }}
 					/>
 
 					<RHFProTextArea
@@ -53,15 +53,15 @@ export default function ShareholderForm({ disabled, defaultValues, onSubmit, sub
 					/>
 				</div>
 
-				<div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-					<button
-						type="button"
+				<div className="flex justify-end gap-2 mt-4">
+					<Button
+						type="primary"
 						className="ant-btn ant-btn-primary"
 						disabled={disabled || !!submitting}
 						onClick={handleSubmit(onSubmit)}
 					>
 						{submitting ? "در حال ذخیره..." : submitText}
-					</button>
+					</Button>
 				</div>
 			</FormProvider>
 		</Form>

@@ -141,7 +141,6 @@ export default function CompanyDocumentsTable({ serviceId, companyId }: Props) {
 				search: false,
 			},
 
-			// --- Filters (hide in table)
 			{
 				title: "نوع مدرک",
 				dataIndex: "doc_type",
