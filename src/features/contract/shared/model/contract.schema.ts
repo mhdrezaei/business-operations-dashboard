@@ -16,6 +16,7 @@ const fixedStartSchema = z.object({
 	startMonth: z.number().int().min(1).max(12).nullable(),
 	endYear: z.number().int().min(1401).max(1410).nullable(),
 	endMonth: z.number().int().min(1).max(12).nullable(),
+	contractNumber: z.string().optional(),
 });
 
 const fixedEndSchema = z.object({
