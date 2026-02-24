@@ -5,12 +5,10 @@ import { ContainerLayout } from "#src/layout";
 import { $t } from "#src/locales";
 import { access } from "#src/router/extra-info";
 
-import { lazy } from "react";
-
-const PageControl = lazy(() => import("#src/pages/access/page-control"));
-const ButtonControl = lazy(() => import("#src/pages/access/button-control"));
-const AdminVisible = lazy(() => import("#src/pages/access/admin-visible"));
-const CommonVisible = lazy(() => import("#src/pages/access/common-visible"));
+// const PageControl = lazy(() => import("#src/pages/access/page-control"));
+// const ButtonControl = lazy(() => import("#src/pages/access/button-control"));
+// const AdminVisible = lazy(() => import("#src/pages/access/admin-visible"));
+// const CommonVisible = lazy(() => import("#src/pages/access/common-visible"));
 
 const routes: AppRouteRecordRaw[] = [
 	{
@@ -24,7 +22,7 @@ const routes: AppRouteRecordRaw[] = [
 		children: [
 			{
 				path: "/access/page-control",
-				Component: PageControl,
+				Component: () => { return ""; },
 				handle: {
 					icon: "FileTextOutlined",
 					title: $t("common.menu.pageControl"),
@@ -35,7 +33,7 @@ const routes: AppRouteRecordRaw[] = [
 			},
 			{
 				path: "/access/button-control",
-				Component: ButtonControl,
+				Component: () => { return ""; },
 				handle: {
 					icon: "LockOutlined",
 					title: $t("common.menu.buttonControl"),
@@ -43,7 +41,7 @@ const routes: AppRouteRecordRaw[] = [
 			},
 			{
 				path: "/access/admin-visible",
-				Component: AdminVisible,
+				Component: () => { return ""; },
 				handle: {
 					icon: "EyeOutlined",
 					title: $t("common.menu.adminVisible"),
@@ -52,7 +50,7 @@ const routes: AppRouteRecordRaw[] = [
 			},
 			{
 				path: "/access/common-visible",
-				Component: CommonVisible,
+				Component: () => { return ""; },
 				handle: {
 					icon: "EyeOutlined",
 					title: $t("common.menu.commonVisible"),
