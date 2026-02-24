@@ -22,6 +22,7 @@ export interface FixedStartFields {
 	startMonth: number | null
 	endYear: number | null
 	endMonth: number | null
+	contractNunber?: string
 }
 
 export interface FixedEndFields {

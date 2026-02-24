@@ -1,7 +1,7 @@
 import type { ContractFormValues } from "../../../model/contract.form.types";
 import { BasicContent } from "#src/components/";
 import { useAccess } from "#src/hooks";
-import { RHFSelect } from "#src/shared/ui/rhf-pro";
+import { RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { ProCard } from "@ant-design/pro-components";
 import { useQuery } from "@tanstack/react-query";
 import { Col, Row } from "antd";
@@ -249,6 +249,11 @@ export function FixedStartSection() {
 						selectProps={{ allowClear: true, placeholder: "ماه" }}
 					/>
 				</div>
+				<Row>
+					<Col span={12}>
+						<RHFProText name="contractNumber" label="شماره قرارداد" />
+					</Col>
+				</Row>
 			</BasicContent>
 		</ProCard>
 	);
