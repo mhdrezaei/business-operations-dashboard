@@ -5,12 +5,13 @@
  */
 
 export const home = 1;
-export const access = 10;
-export const routeNest = 20;
-export const contract = 30;
-export const company = 40;
+export const contract = 10;
+export const company = 20;
+export const userManagement = 30;
+export const access = 40;
+export const routeNest = 60;
 
-export const outside = 50;
+export const outside = 70;
 
 export const exception = 90;
 export const system = 100;

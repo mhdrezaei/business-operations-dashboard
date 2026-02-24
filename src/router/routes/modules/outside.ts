@@ -1,14 +1,11 @@
 import type { AppRouteRecordRaw } from "#src/router/types";
 
-import { Iframe } from "#src/components/iframe";
-import { RiReactjsLine } from "#src/icons";
 import { ContainerLayout } from "#src/layout";
 import { $t } from "#src/locales";
 import { outside } from "#src/router/extra-info";
 
 import { AntDesignOutlined, ContainerOutlined } from "@ant-design/icons";
 import { createElement } from "react";
-import { Outlet } from "react-router";
 
 const routes: AppRouteRecordRaw[] = [
 	{
@@ -22,7 +19,7 @@ const routes: AppRouteRecordRaw[] = [
 		children: [
 			{
 				path: "/outside/embedded",
-				Component: Outlet,
+				Component: () => { return ""; },
 				handle: {
 					icon: "EmbeddedIcon",
 					title: $t("common.menu.embedded"),
@@ -30,43 +27,43 @@ const routes: AppRouteRecordRaw[] = [
 				children: [
 					{
 						path: "/outside/embedded/ant-design",
-						Component: Iframe,
+						Component: () => { return ""; },
 						handle: {
 							icon: createElement(AntDesignOutlined),
 							title: $t("common.menu.antd"),
-							iframeLink: "https://ant.design/",
+							// iframeLink: "https://ant.design/",
 						},
 					},
 					{
 						path: "/outside/embedded/project-docs",
-						Component: Iframe,
+						Component: () => { return ""; },
 						handle: {
 							icon: createElement(ContainerOutlined),
 							title: $t("common.menu.projectDocs"),
-							iframeLink: "https://condorheroblog.github.io/react-antd-admin/docs/",
+							// iframeLink: "https://condorheroblog.github.io/react-antd-admin/docs/",
 						},
 					},
 				],
 			},
-			{
-				path: "/outside/external-link",
-				Component: Outlet,
-				handle: {
-					icon: "ExternalIcon",
-					title: $t("common.menu.externalLink"),
-				},
-				children: [
-					{
-						path: "/outside/external-link/react-docs",
-						Component: Iframe,
-						handle: {
-							icon: createElement(RiReactjsLine),
-							title: $t("common.menu.reactDocs"),
-							externalLink: "https://react.dev/",
-						},
-					},
-				],
-			},
+			// {
+			// 	path: "/outside/external-link",
+			// 	Component: () => { return ""; },
+			// 	handle: {
+			// 		icon: "ExternalIcon",
+			// 		title: $t("common.menu.externalLink"),
+			// 	},
+			// 	children: [
+			// 		{
+			// 			path: "/outside/external-link/react-docs",
+			// 			Component: () => { return ""; },
+			// 			handle: {
+			// 				icon: createElement(RiReactjsLine),
+			// 				title: $t("common.menu.reactDocs"),
+			// 				// externalLink: "https://react.dev/",
+			// 			},
+			// 		},
+			// 	],
+			// },
 		],
 	},
 ];

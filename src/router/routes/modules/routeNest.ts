@@ -9,11 +9,11 @@ import {
 	SisternodeOutlined,
 	SubnodeOutlined,
 } from "@ant-design/icons";
-import { createElement, lazy } from "react";
+import { createElement } from "react";
 
-const Menu1And1 = lazy(() => import("#src/pages/route-nest/menu1/menu1-1"));
-const Menu1And2 = lazy(() => import("#src/pages/route-nest/menu1/menu1-2"));
-const Menu2 = lazy(() => import("#src/pages/route-nest/menu2"));
+// const Menu1And1 = lazy(() => import("#src/pages/route-nest/menu1/menu1-1"));
+// const Menu1And2 = lazy(() => import("#src/pages/route-nest/menu1/menu1-2"));
+// const Menu2 = lazy(() => import("#src/pages/route-nest/menu2"));
 
 const routes: AppRouteRecordRaw[] = [
 	{
@@ -35,7 +35,7 @@ const routes: AppRouteRecordRaw[] = [
 				children: [
 					{
 						path: "/route-nest/menu1/menu1-1",
-						Component: Menu1And1,
+						Component: () => { return ""; },
 						handle: {
 							title: $t("common.menu.menu1-1"),
 							icon: createElement(SubnodeOutlined),
@@ -43,7 +43,7 @@ const routes: AppRouteRecordRaw[] = [
 					},
 					{
 						path: "/route-nest/menu1/menu1-2",
-						Component: Menu1And2,
+						Component: () => { return ""; },
 						handle: {
 							title: $t("common.menu.menu1-2"),
 							icon: createElement(SubnodeOutlined),
@@ -53,7 +53,7 @@ const routes: AppRouteRecordRaw[] = [
 			},
 			{
 				path: "/route-nest/menu2",
-				Component: Menu2,
+				Component: () => { return ""; },
 				handle: {
 					title: $t("common.menu.menu2"),
 					icon: createElement(SubnodeOutlined),
