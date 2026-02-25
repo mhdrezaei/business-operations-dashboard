@@ -11,6 +11,35 @@ export type ContractServicePath = | "openapi" | "traffic" | "psp" | "commercial"
   | "sms/client"
   | "sms/vendor";
 
+export interface ContractGapsResponse {
+	company: {
+		id: number
+		name: string
+	} | null
+	service: {
+		id: number
+		name: string
+		code: string
+	} | null
+	allowed_jalali_range: {
+		start_jy: number
+		start_jm: number
+		end_jy: number
+		end_jm: number
+	} | null
+	missing_months_by_year: Record<string, number[]>
+	missing_gregorian_ranges: Array<{
+		start_jy: number
+		start_jm: number
+		end_jy: number
+		end_jm: number
+		start_date: string
+		end_date_exclusive: string
+	}>
+	vendor_gate_applied: boolean
+	vendor_gate_service_code: string | null
+}
+
 function buildContractPath(service: ContractServicePath, id?: number) {
 	return id
 		? `contracts/${service}/${id}/`
@@ -75,4 +104,15 @@ export function fetchDeleteContract(
 	return request
 		.delete(buildContractPath(service, id))
 		.json<any>();
+}
+
+export function fetchContractGaps(serviceId: number, companyId: number) {
+	return request
+		.get("contracts/gaps/", {
+			searchParams: {
+				service_id: serviceId,
+				company_id: companyId,
+			},
+		})
+		.json<ContractGapsResponse>();
 }

@@ -7,8 +7,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Col, Row } from "antd";
 import React, { useEffect, useMemo, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
-import { companiesByServiceQuery, servicesQuery } from "../../../queries/contract.queries";
-import { MONTH_OPTIONS, YEAR_OPTIONS } from "../constants/jalali-date-options";
+import { companiesByServiceQuery, contractGapsQuery, servicesQuery } from "../../../queries/contract.queries";
+import { MONTH_OPTIONS } from "../constants/jalali-date-options";
 
 const COUNTERPARTY_OPTIONS = [
 	{ label: "شرکای تجاری", value: "partners" },
@@ -22,6 +22,80 @@ const TRAFFIC_COMPANY_TYPE_OPTIONS = [
 	{ label: "PREMIUM", value: "PREMIUM" },
 ];
 
+interface JalaliRange {
+	start_jy: number
+	start_jm: number
+	end_jy: number
+	end_jm: number
+}
+
+interface YearMonthOption {
+	label: string
+	value: number
+}
+
+function normalizeMonthList(months: unknown): number[] {
+	if (!Array.isArray(months))
+		return [];
+
+	return Array.from(
+		new Set(
+			months
+				.map(month => Number(month))
+				.filter(month => Number.isInteger(month) && month >= 1 && month <= 12),
+		),
+	).sort((a, b) => a - b);
+}
+
+function buildYearOptionsFromRange(range: JalaliRange | null | undefined): YearMonthOption[] {
+	if (!range)
+		return [];
+
+	const startYear = Number(range.start_jy);
+	const endYear = Number(range.end_jy);
+	if (!Number.isInteger(startYear) || !Number.isInteger(endYear) || startYear > endYear)
+		return [];
+
+	return Array.from({ length: endYear - startYear + 1 }, (_, idx) => {
+		const year = startYear + idx;
+		return { label: String(year), value: year };
+	});
+}
+
+function buildMonthOptionsFromRange(year: number, range: JalaliRange | null | undefined): YearMonthOption[] {
+	if (!range)
+		return [];
+	if (year < range.start_jy || year > range.end_jy)
+		return [];
+
+	const startMonth = year === range.start_jy ? Math.max(1, Math.min(12, range.start_jm)) : 1;
+	const endMonth = year === range.end_jy ? Math.max(1, Math.min(12, range.end_jm)) : 12;
+	if (startMonth > endMonth)
+		return [];
+
+	return Array.from({ length: endMonth - startMonth + 1 }, (_, idx) => {
+		const month = startMonth + idx;
+		const found = MONTH_OPTIONS.find(option => option.value === month);
+		return { label: String(found?.label ?? month), value: month };
+	});
+}
+
+function mapMonthsToOptions(months: number[]): YearMonthOption[] {
+	return months.map((month) => {
+		const found = MONTH_OPTIONS.find(option => option.value === month);
+		return { label: String(found?.label ?? month), value: month };
+	});
+}
+
+function withSelectedOption(options: YearMonthOption[], selected: number | null): YearMonthOption[] {
+	if (selected == null)
+		return options;
+	if (options.some(option => option.value === selected))
+		return options;
+
+	return [...options, { label: String(selected), value: selected }].sort((a, b) => a.value - b.value);
+}
+
 export function FixedStartSection() {
 	const { setValue, control } = useFormContext<ContractFormValues>();
 	const { getPermittedServiceIds } = useAccess();
@@ -30,8 +104,13 @@ export function FixedStartSection() {
 
 	const serviceId = useWatch({ control, name: "serviceId" });
 	const serviceCode = useWatch({ control, name: "serviceCode" });
+	const companyId = useWatch({ control, name: "companyId" });
 	const counterpartyType = useWatch({ control, name: "counterpartyType" });
 	const trafficCompanyType = useWatch({ control, name: "trafficCompanyType" });
+	const startYear = useWatch({ control, name: "startYear" });
+	const startMonth = useWatch({ control, name: "startMonth" });
+	const endYear = useWatch({ control, name: "endYear" });
+	const endMonth = useWatch({ control, name: "endMonth" });
 
 	const permittedCreateServiceIdList = getPermittedServiceIds("contracts", "create");
 	const permittedCreateServiceIds = useMemo(
@@ -40,13 +119,17 @@ export function FixedStartSection() {
 	);
 
 	const companies = useQuery(companiesByServiceQuery(serviceId));
+	const contractGaps = useQuery(contractGapsQuery({ serviceId, companyId }));
 
 	const isSms = serviceCode === "sms";
 	const isTraffic = serviceCode === "traffic";
 
 	const prevServiceIdRef = useRef<typeof serviceId>(undefined);
+	const prevCompanyIdRef = useRef<typeof companyId>(undefined);
 	const prevTrafficCompanyTypeRef = useRef<typeof trafficCompanyType>(undefined);
 	const prevCounterpartyTypeRef = useRef<typeof counterpartyType>(undefined);
+	const prevStartYearRef = useRef<typeof startYear>(undefined);
+	const prevEndYearRef = useRef<typeof endYear>(undefined);
 
 	useEffect(() => {
 		const prev = prevServiceIdRef.current;
@@ -110,6 +193,45 @@ export function FixedStartSection() {
 		}
 	}, [isTraffic, trafficCompanyType, setValue]);
 
+	useEffect(() => {
+		const prev = prevCompanyIdRef.current;
+		prevCompanyIdRef.current = companyId;
+
+		if (prev === undefined)
+			return;
+
+		if (prev !== companyId) {
+			setValue("startYear", null, { shouldDirty: true, shouldValidate: true });
+			setValue("startMonth", null, { shouldDirty: true, shouldValidate: true });
+			setValue("endYear", null, { shouldDirty: true, shouldValidate: true });
+			setValue("endMonth", null, { shouldDirty: true, shouldValidate: true });
+		}
+	}, [companyId, setValue]);
+
+	useEffect(() => {
+		const prev = prevStartYearRef.current;
+		prevStartYearRef.current = startYear;
+
+		if (prev === undefined)
+			return;
+
+		if (prev !== startYear) {
+			setValue("startMonth", null, { shouldDirty: true, shouldValidate: true });
+		}
+	}, [startYear, setValue]);
+
+	useEffect(() => {
+		const prev = prevEndYearRef.current;
+		prevEndYearRef.current = endYear;
+
+		if (prev === undefined)
+			return;
+
+		if (prev !== endYear) {
+			setValue("endMonth", null, { shouldDirty: true, shouldValidate: true });
+		}
+	}, [endYear, setValue]);
+
 	const serviceOptions = useMemo(
 		() =>
 			(services.data?.results ?? [])
@@ -151,6 +273,77 @@ export function FixedStartSection() {
 				: isTraffic && !trafficCompanyType
 					? "ابتدا نوع شرکت (ترافیک) را انتخاب کنید"
 					: "شرکت را انتخاب کنید";
+
+	const missingMonthsByYear = useMemo(() => {
+		const output = new Map<number, number[]>();
+		const raw = contractGaps.data?.missing_months_by_year;
+		if (!raw)
+			return output;
+
+		Object.entries(raw).forEach(([yearStr, months]) => {
+			const year = Number(yearStr);
+			if (!Number.isInteger(year))
+				return;
+			output.set(year, normalizeMonthList(months));
+		});
+
+		return output;
+	}, [contractGaps.data]);
+
+	const baseYearOptions = useMemo(() => {
+		const yearsFromMissing = Array.from(missingMonthsByYear.keys()).sort((a, b) => a - b);
+		if (yearsFromMissing.length > 0) {
+			return yearsFromMissing.map(year => ({ label: String(year), value: year }));
+		}
+
+		return buildYearOptionsFromRange(contractGaps.data?.allowed_jalali_range as JalaliRange | null | undefined);
+	}, [missingMonthsByYear, contractGaps.data]);
+
+	const baseStartMonthOptions = useMemo(() => {
+		if (startYear == null)
+			return [];
+
+		const months = missingMonthsByYear.get(startYear);
+		if (months && months.length > 0)
+			return mapMonthsToOptions(months);
+		if (missingMonthsByYear.size > 0)
+			return [];
+
+		return buildMonthOptionsFromRange(startYear, contractGaps.data?.allowed_jalali_range as JalaliRange | null | undefined);
+	}, [startYear, missingMonthsByYear, contractGaps.data]);
+
+	const baseEndMonthOptions = useMemo(() => {
+		if (endYear == null)
+			return [];
+
+		const months = missingMonthsByYear.get(endYear);
+		if (months && months.length > 0)
+			return mapMonthsToOptions(months);
+		if (missingMonthsByYear.size > 0)
+			return [];
+
+		return buildMonthOptionsFromRange(endYear, contractGaps.data?.allowed_jalali_range as JalaliRange | null | undefined);
+	}, [endYear, missingMonthsByYear, contractGaps.data]);
+
+	const startYearOptions = useMemo(
+		() => withSelectedOption(baseYearOptions, startYear),
+		[baseYearOptions, startYear],
+	);
+	const endYearOptions = useMemo(
+		() => withSelectedOption(baseYearOptions, endYear),
+		[baseYearOptions, endYear],
+	);
+	const startMonthOptions = useMemo(
+		() => withSelectedOption(baseStartMonthOptions, startMonth),
+		[baseStartMonthOptions, startMonth],
+	);
+	const endMonthOptions = useMemo(
+		() => withSelectedOption(baseEndMonthOptions, endMonth),
+		[baseEndMonthOptions, endMonth],
+	);
+
+	const canQueryDateGaps = !!serviceId && !!companyId;
+	const isDateOptionsLoading = canQueryDateGaps && (contractGaps.isLoading || contractGaps.isFetching);
 
 	return (
 		<ProCard>
@@ -224,28 +417,32 @@ export function FixedStartSection() {
 					<RHFSelect<ContractFormValues, "startYear", number | null>
 						name="startYear"
 						label="سال شروع"
-						options={YEAR_OPTIONS}
+						loading={isDateOptionsLoading}
+						options={startYearOptions}
 						selectProps={{ allowClear: true, placeholder: "سال" }}
 					/>
 
 					<RHFSelect<ContractFormValues, "startMonth", number | null>
 						name="startMonth"
 						label="ماه شروع"
-						options={MONTH_OPTIONS as any}
+						loading={isDateOptionsLoading}
+						options={startMonthOptions}
 						selectProps={{ allowClear: true, placeholder: "ماه" }}
 					/>
 
 					<RHFSelect<ContractFormValues, "endYear", number | null>
 						name="endYear"
 						label="سال پایان"
-						options={YEAR_OPTIONS}
+						loading={isDateOptionsLoading}
+						options={endYearOptions}
 						selectProps={{ allowClear: true, placeholder: "سال" }}
 					/>
 
 					<RHFSelect<ContractFormValues, "endMonth", number | null>
 						name="endMonth"
 						label="ماه پایان"
-						options={MONTH_OPTIONS as any}
+						loading={isDateOptionsLoading}
+						options={endMonthOptions}
 						selectProps={{ allowClear: true, placeholder: "ماه" }}
 					/>
 				</div>

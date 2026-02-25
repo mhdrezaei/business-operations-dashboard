@@ -1,4 +1,5 @@
 import { fetchCompaniesByService, fetchServices } from "#src/api/common/common.api";
+import { fetchContractGaps } from "#src/features/contract/api/contracts.api";
 import { queryOptions } from "@tanstack/react-query";
 
 export function servicesQuery() {
@@ -15,5 +16,20 @@ export function companiesByServiceQuery(serviceId: number | null | undefined) {
 		enabled: !!serviceId,
 		queryFn: () => fetchCompaniesByService(serviceId!),
 		staleTime: 2 * 60 * 1000,
+	});
+}
+
+export function contractGapsQuery({
+	serviceId,
+	companyId,
+}: {
+	serviceId: number | null | undefined
+	companyId: number | null | undefined
+}) {
+	return queryOptions({
+		queryKey: ["contracts", "gaps", { serviceId, companyId }],
+		enabled: !!serviceId && !!companyId,
+		queryFn: () => fetchContractGaps(serviceId!, companyId!),
+		staleTime: 30 * 1000,
 	});
 }
