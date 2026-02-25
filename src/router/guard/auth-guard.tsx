@@ -24,6 +24,14 @@ function normalizeAccessKey(value?: string | null) {
 	return (value ?? "").trim().toLowerCase();
 }
 
+function isUnauthorizedReason(reason: unknown) {
+	if (!reason || typeof reason !== "object") {
+		return false;
+	}
+	const error = reason as { status?: number, response?: { status?: number } };
+	return error.status === 401 || error.response?.status === 401;
+}
+
 function hasRouteDomainPermission(
 	services: UserInfoType["services"],
 	domain: string,
@@ -141,7 +149,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
 			 * @en Network request failed, redirect to 500 page
 			 */
 			if (hasError) {
-				const unAuthorized = results.some((result: any) => result.reason.response.status === 401);
+				const unAuthorized = results.some(result => result.status === "rejected" && isUnauthorizedReason(result.reason));
 				if (!unAuthorized) {
 					return navigate(exception500Path);
 				}

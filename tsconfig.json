@@ -27,7 +27,6 @@
 	},
 	"include": [
 		"src",
-		"fake",
 		"tests",
 		"vite.config.ts",
 		"commitlint.config.ts"
