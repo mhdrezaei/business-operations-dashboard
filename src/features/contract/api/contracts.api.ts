@@ -1,3 +1,4 @@
+import type { Paginated } from "#src/api/types";
 import type {
 	ContractListItemType,
 	ContractsListQuery,
@@ -9,7 +10,45 @@ import { request } from "#src/utils/request";
 export type ContractServicePath = | "openapi" | "traffic" | "psp" | "commercial"
   | "shahkar"
   | "sms/client"
-  | "sms/vendor";
+  | "sms/vendor"
+  | "sms-commission";
+
+export interface ContractGapsResponse {
+	company: {
+		id: number
+		name: string
+	} | null
+	service: {
+		id: number
+		name: string
+		code: string
+	} | null
+	allowed_jalali_range: {
+		start_jy: number
+		start_jm: number
+		end_jy: number
+		end_jm: number
+	} | null
+	missing_months_by_year: Record<string, number[]>
+	missing_gregorian_ranges: Array<{
+		start_jy: number
+		start_jm: number
+		end_jy: number
+		end_jm: number
+		start_date: string
+		end_date_exclusive: string
+	}>
+	vendor_gate_applied: boolean
+	vendor_gate_service_code: string | null
+}
+
+export interface SmsCommissionAgentDto {
+	id: number
+	name: string
+	company: number
+	created_at: string
+	updated_at: string
+}
 
 function buildContractPath(service: ContractServicePath, id?: number) {
 	return id
@@ -75,4 +114,25 @@ export function fetchDeleteContract(
 	return request
 		.delete(buildContractPath(service, id))
 		.json<any>();
+}
+
+export function fetchContractGaps(serviceId: number, companyId: number) {
+	return request
+		.get("contracts/gaps/", {
+			searchParams: {
+				service_id: serviceId,
+				company_id: companyId,
+			},
+		})
+		.json<ContractGapsResponse>();
+}
+
+export function fetchSmsCommissionAgents() {
+	return request
+		.get("contracts/sms-commission/agents/", {
+			searchParams: {
+				page_size: 1000,
+			},
+		})
+		.json<Paginated<SmsCommissionAgentDto>>();
 }

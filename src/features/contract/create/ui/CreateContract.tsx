@@ -29,6 +29,8 @@ function resolveCreateServicePath(values: ContractFormValues): ContractServicePa
 		return "shahkar";
 	if (code === "commercial")
 		return "commercial";
+	if (code === "sms-commission" || code === "sms_commission")
+		return "sms-commission";
 	if (code === "sms") {
 		return values.counterpartyType === "gov_ops" ? "sms/client" : "sms/vendor";
 	}
