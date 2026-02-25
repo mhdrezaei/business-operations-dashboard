@@ -71,7 +71,8 @@ export default function ContractListPage() {
 	}, [services.data]);
 
 	const resolveServicePath = (row: ContractListItemType): ContractServicePath => {
-		const code = serviceCodeById.get(Number(row.service_id)) ?? null;
+		const rawCode = serviceCodeById.get(Number(row.service_id)) ?? null;
+		const code = typeof rawCode === "string" ? rawCode.trim().toLowerCase() : null;
 		if (code === "psp")
 			return "psp";
 
@@ -83,6 +84,9 @@ export default function ContractListPage() {
 
 		if (code === "commercial")
 			return "commercial";
+
+		if (code === "sms-commission" || code === "sms_commission")
+			return "sms-commission";
 
 		if (code === "sms") {
 			return row.sms_party === "client"
