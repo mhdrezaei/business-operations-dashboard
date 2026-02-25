@@ -9,7 +9,6 @@ import { FileSystemIconLoader } from "unplugin-icons/loaders";
 import Icons from "unplugin-icons/vite";
 import { defineConfig } from "vite";
 import { checker } from "vite-plugin-checker";
-import { vitePluginFakeServer } from "vite-plugin-fake-server";
 import svgrPlugin from "vite-plugin-svgr";
 
 import { author, dependencies, devDependencies, license, name, version } from "./package.json";
@@ -27,11 +26,6 @@ export default defineConfig({
 	base: isDev ? "/" : "/",
 	plugins: [
 		react(),
-		vitePluginFakeServer({
-			basename: "/api",
-			enableProd: true,
-			timeout: 1000,
-		}),
 		// https://github.com/pd4d10/vite-plugin-svgr#options
 		svgrPlugin({
 			// https://react-svgr.com/docs/options/
@@ -124,7 +118,6 @@ export default defineConfig({
 				manualChunks: {
 					react: ["react", "react-dom", "react-router"],
 					antd: ["antd", "@ant-design/icons"],
-					faker: ["@faker-js/faker"],
 				},
 			},
 		},
