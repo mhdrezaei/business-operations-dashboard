@@ -1,3 +1,4 @@
+import type { Paginated } from "#src/api/types";
 import type {
 	ContractListItemType,
 	ContractsListQuery,
@@ -9,7 +10,8 @@ import { request } from "#src/utils/request";
 export type ContractServicePath = | "openapi" | "traffic" | "psp" | "commercial"
   | "shahkar"
   | "sms/client"
-  | "sms/vendor";
+  | "sms/vendor"
+  | "sms-commission";
 
 export interface ContractGapsResponse {
 	company: {
@@ -38,6 +40,14 @@ export interface ContractGapsResponse {
 	}>
 	vendor_gate_applied: boolean
 	vendor_gate_service_code: string | null
+}
+
+export interface SmsCommissionAgentDto {
+	id: number
+	name: string
+	company: number
+	created_at: string
+	updated_at: string
 }
 
 function buildContractPath(service: ContractServicePath, id?: number) {
@@ -115,4 +125,14 @@ export function fetchContractGaps(serviceId: number, companyId: number) {
 			},
 		})
 		.json<ContractGapsResponse>();
+}
+
+export function fetchSmsCommissionAgents() {
+	return request
+		.get("contracts/sms-commission/agents/", {
+			searchParams: {
+				page_size: 1000,
+			},
+		})
+		.json<Paginated<SmsCommissionAgentDto>>();
 }

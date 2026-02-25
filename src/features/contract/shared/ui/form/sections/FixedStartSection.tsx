@@ -7,7 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Col, Row } from "antd";
 import React, { useEffect, useMemo, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
-import { companiesByServiceQuery, contractGapsQuery, servicesQuery } from "../../../queries/contract.queries";
+import { companiesByServiceQuery, contractGapsQuery, servicesQuery, smsCommissionAgentsQuery } from "../../../queries/contract.queries";
 import { MONTH_OPTIONS } from "../constants/jalali-date-options";
 
 const COUNTERPARTY_OPTIONS = [
@@ -21,6 +21,11 @@ const TRAFFIC_COMPANY_TYPE_OPTIONS = [
 	{ label: "TCI", value: "TCI" },
 	{ label: "PREMIUM", value: "PREMIUM" },
 ];
+
+function isSmsCommissionCode(code: string | null | undefined) {
+	const normalized = typeof code === "string" ? code.trim().toLowerCase() : "";
+	return normalized === "sms-commission" || normalized === "sms_commission";
+}
 
 interface JalaliRange {
 	start_jy: number
@@ -111,6 +116,7 @@ export function FixedStartSection() {
 	const startMonth = useWatch({ control, name: "startMonth" });
 	const endYear = useWatch({ control, name: "endYear" });
 	const endMonth = useWatch({ control, name: "endMonth" });
+	const selectedAgentId = useWatch({ control, name: "serviceFields.agent" as any });
 
 	const permittedCreateServiceIdList = getPermittedServiceIds("contracts", "create");
 	const permittedCreateServiceIds = useMemo(
@@ -123,6 +129,8 @@ export function FixedStartSection() {
 
 	const isSms = serviceCode === "sms";
 	const isTraffic = serviceCode === "traffic";
+	const isSmsCommission = isSmsCommissionCode(serviceCode);
+	const smsCommissionAgents = useQuery(smsCommissionAgentsQuery(isSmsCommission && !!companyId));
 
 	const prevServiceIdRef = useRef<typeof serviceId>(undefined);
 	const prevCompanyIdRef = useRef<typeof companyId>(undefined);
@@ -257,6 +265,45 @@ export function FixedStartSection() {
 			.filter((c: any) => c.company_type === trafficCompanyType)
 			.map((c: any) => ({ label: c.name, value: c.id }));
 	}, [companies.data, trafficCompanyType]);
+
+	const smsCommissionAgentOptions = useMemo(() => {
+		if (!companyId)
+			return [];
+
+		return (smsCommissionAgents.data?.results ?? [])
+			.filter(agent => Number(agent.company) === Number(companyId))
+			.map(agent => ({
+				label: agent.name,
+				value: agent.id,
+			}));
+	}, [smsCommissionAgents.data, companyId]);
+
+	const smsCommissionAgentPlaceholder
+		= !companyId
+			? "ابتدا شرکت را انتخاب کنید"
+			: smsCommissionAgents.isLoading
+				? "در حال دریافت نماینده فروش..."
+				: smsCommissionAgentOptions.length > 0
+					? "نماینده فروش به صورت خودکار انتخاب می‌شود"
+					: "نماینده فروشی برای این شرکت یافت نشد";
+
+	useEffect(() => {
+		if (!isSmsCommission)
+			return;
+
+		if (!companyId || smsCommissionAgentOptions.length === 0) {
+			setValue("serviceFields.agent" as any, null, { shouldDirty: true, shouldValidate: true });
+			return;
+		}
+
+		const hasSelected = smsCommissionAgentOptions.some(option => option.value === selectedAgentId);
+		if (!hasSelected) {
+			setValue("serviceFields.agent" as any, smsCommissionAgentOptions[0].value, {
+				shouldDirty: true,
+				shouldValidate: true,
+			});
+		}
+	}, [isSmsCommission, companyId, smsCommissionAgentOptions, selectedAgentId, setValue]);
 
 	const showCompanySelect
 		= (!isSms && !isTraffic) || (isSms && counterpartyType === "partners") || (isTraffic && !!trafficCompanyType);
@@ -399,6 +446,25 @@ export function FixedStartSection() {
 										placeholder: companyPlaceholder,
 										style: isCompanyDisabled ? { cursor: "not-allowed" } : undefined,
 										open: isCompanyDisabled ? false : undefined,
+									}}
+								/>
+							</Col>
+						)
+						: null}
+
+					{isSmsCommission
+						? (
+							<Col span={24}>
+								<RHFSelect<ContractFormValues, any, number | null>
+									name={"serviceFields.agent" as any}
+									label="نماینده فروش"
+									loading={smsCommissionAgents.isLoading || smsCommissionAgents.isFetching}
+									options={smsCommissionAgentOptions as any}
+									selectProps={{
+										allowClear: false,
+										disabled: true,
+										placeholder: smsCommissionAgentPlaceholder,
+										open: false,
 									}}
 								/>
 							</Col>
