@@ -6,6 +6,7 @@
 
 export const home = 1;
 export const contract = 10;
+export const performance = 15;
 export const company = 20;
 export const userManagement = 30;
 export const access = 40;
