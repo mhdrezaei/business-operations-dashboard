@@ -208,3 +208,16 @@ export function formatWithGrouping(raw: string, language: SupportedLang) {
 	// اگر منفی بود، Intl خودش ممکنه منفی رو اضافه کنه؛ ما کنترل می‌کنیم
 	return sign ? `-${grouped.replace(/^-/, "")}` : grouped;
 }
+export function toNumber(value: unknown) {
+	if (value == null || value === "")
+		return null;
+	const numeric = Number(value);
+	return Number.isFinite(numeric) ? numeric : null;
+}
+
+export function formatNumeric(value: unknown) {
+	const numeric = toNumber(value);
+	if (numeric == null)
+		return "-";
+	return numeric.toLocaleString("en-US");
+}

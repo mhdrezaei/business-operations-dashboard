@@ -1,4 +1,9 @@
-import type { PerformanceContractListItem, PerformanceServicePath } from "#src/features/performance/api/performances.api";
+import type {
+	PerformanceContractListItem,
+	PerformanceContractServicePath,
+	PerformanceListItem,
+	PerformanceServicePath,
+} from "#src/features/performance/api/performances.api";
 import type { OpenApiContractModel, PerformanceServiceCode } from "./performance.form.types";
 
 export function normalizeServiceCode(code: string | null | undefined) {
@@ -10,7 +15,7 @@ export function isSmsCommissionCode(code: string | null | undefined) {
 	return normalized === "sms-commission" || normalized === "sms_commission";
 }
 
-export function resolveContractServicePath(serviceCode: PerformanceServiceCode | null): PerformanceServicePath | null {
+export function resolveContractServicePath(serviceCode: PerformanceServiceCode | null): PerformanceContractServicePath | null {
 	const normalized = normalizeServiceCode(serviceCode);
 	if (!normalized)
 		return null;
@@ -31,7 +36,26 @@ export function resolveContractServicePath(serviceCode: PerformanceServiceCode |
 	return "openapi";
 }
 
-export const resolvePerformanceServicePath = resolveContractServicePath;
+export function resolvePerformanceServicePath(serviceCode: PerformanceServiceCode | null): PerformanceServicePath | null {
+	const normalized = normalizeServiceCode(serviceCode);
+	if (!normalized)
+		return null;
+
+	if (normalized === "psp")
+		return "psp";
+	if (normalized === "traffic")
+		return "traffic";
+	if (normalized === "shahkar")
+		return "shahkar";
+	if (normalized === "commercial")
+		return "commercial";
+	if (isSmsCommissionCode(normalized))
+		return "sms-commission";
+	if (normalized === "sms")
+		return "sms";
+
+	return "openapi";
+}
 
 export function compareYearMonth(aYear: number, aMonth: number, bYear: number, bMonth: number) {
 	if (aYear !== bYear)
@@ -117,4 +141,50 @@ export function getFirstFileFromUploadField(value: unknown) {
 
 	const first = value[0] as { originFileObj?: File };
 	return first?.originFileObj ?? null;
+}
+
+export function toNullableNumber(value: unknown): number | null {
+	if (value == null || value === "")
+		return null;
+	const numeric = Number(value);
+	return Number.isFinite(numeric) ? numeric : null;
+}
+
+export function pickNumberFromRecord(record: Record<string, unknown>, keys: string[]): number | null {
+	for (const key of keys) {
+		const value = toNullableNumber(record[key]);
+		if (value != null)
+			return value;
+	}
+	return null;
+}
+
+export function pickStringFromRecord(record: Record<string, unknown>, keys: string[]): string | null {
+	for (const key of keys) {
+		const value = record[key];
+		if (value == null)
+			continue;
+		const text = String(value).trim();
+		if (text)
+			return text;
+	}
+	return null;
+}
+
+export function normalizePerformanceRecord(record: PerformanceListItem | Record<string, unknown>) {
+	const raw = record as Record<string, unknown>;
+	return {
+		raw,
+		id: pickNumberFromRecord(raw, ["id"]),
+		companyId: pickNumberFromRecord(raw, ["company", "company_id"]),
+		serviceId: pickNumberFromRecord(raw, ["service", "service_id"]),
+		year: pickNumberFromRecord(raw, ["sh_year", "year", "start_jy"]),
+		month: pickNumberFromRecord(raw, ["sh_month", "month", "start_jm"]),
+		salesAgentId: pickNumberFromRecord(raw, ["sales_agent", "sales_agent_id", "agent"]),
+		companyType: pickStringFromRecord(raw, ["company_type"]),
+		location: pickStringFromRecord(raw, ["location"]),
+		operator: pickStringFromRecord(raw, ["operator"]),
+		language: pickStringFromRecord(raw, ["language"]),
+		operationType: pickStringFromRecord(raw, ["operation_type"]),
+	};
 }

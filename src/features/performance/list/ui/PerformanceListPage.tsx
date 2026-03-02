@@ -1,0 +1,401 @@
+import type { PerformanceServicePath } from "#src/features/performance/api/performances.api";
+import type { ActionType, ProColumns, ProCoreActionType, ProFormInstance } from "@ant-design/pro-components";
+import type { PerformanceListRow } from "../model/performance.list.types";
+import { BasicButton, BasicContent, BasicTable } from "#src/components";
+import {
+	deletePerformanceByComposite,
+	deletePerformanceById,
+	deleteSmsCommissionPerformanceByComposite,
+	fetchPerformanceList,
+} from "#src/features/performance/api/performances.api";
+import {
+	normalizePerformanceRecord,
+	resolvePerformanceServicePath,
+} from "#src/features/performance/shared/model/performance.helpers";
+import {
+	companiesByServiceQuery,
+	servicesQuery,
+	smsCommissionAgentsQuery,
+} from "#src/features/performance/shared/queries/performance.queries";
+import { useAccess } from "#src/hooks";
+import { DeleteOutlined, EditOutlined, PlusCircleOutlined } from "@ant-design/icons";
+import { useQuery } from "@tanstack/react-query";
+import { Button, Popconfirm } from "antd";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
+import { PerformanceDetailModal } from "./components/PerformanceDetailModal";
+import { getPerformanceColumns } from "./constants";
+
+function isSmsCommissionServicePath(service: PerformanceServicePath | null) {
+	return service === "sms-commission";
+}
+
+function isCompositeDeleteService(service: PerformanceServicePath | null) {
+	return service === "openapi" || service === "sms";
+}
+
+export default function PerformanceListPage() {
+	const { t } = useTranslation();
+	const navigate = useNavigate();
+	const { hasDomainPermissionByServiceId, getPermittedServiceIds } = useAccess();
+
+	const actionRef = useRef<ActionType>(null);
+	const formRef = useRef<ProFormInstance | undefined>(undefined);
+
+	const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
+	const [selectedServiceCode, setSelectedServiceCode] = useState<string | null>(null);
+	const [openDetail, setOpenDetail] = useState(false);
+	const [selectedRow, setSelectedRow] = useState<PerformanceListRow | null>(null);
+	const [deletingRowId, setDeletingRowId] = useState<number | null>(null);
+
+	const permittedViewIdsFromPerformances = getPermittedServiceIds("performances", "view");
+	const permittedViewIdsFromContracts = getPermittedServiceIds("contracts", "view");
+	const permittedViewServiceIdsList = permittedViewIdsFromPerformances.length > 0
+		? permittedViewIdsFromPerformances
+		: permittedViewIdsFromContracts;
+
+	const permittedViewServiceIds = useMemo(
+		() => new Set(permittedViewServiceIdsList),
+		[permittedViewServiceIdsList.join(",")],
+	);
+
+	const services = useQuery(servicesQuery());
+	const companies = useQuery(companiesByServiceQuery(selectedServiceId));
+	const selectedServicePath = useMemo(
+		() => resolvePerformanceServicePath(selectedServiceCode as any),
+		[selectedServiceCode],
+	);
+
+	const isSmsCommission = isSmsCommissionServicePath(selectedServicePath);
+	const smsCommissionAgents = useQuery(smsCommissionAgentsQuery(isSmsCommission));
+
+	const serviceOptions = useMemo(() => {
+		return (services.data?.results ?? [])
+			.filter(service => permittedViewServiceIds.has(Number(service.id)))
+			.map(service => ({
+				label: service.name,
+				value: service.id,
+				code: String(service.code ?? "").trim().toLowerCase(),
+			}));
+	}, [services.data, permittedViewServiceIdsList.join(",")]);
+
+	useEffect(() => {
+		if (!selectedServiceId)
+			return;
+		if (permittedViewServiceIds.has(selectedServiceId))
+			return;
+
+		setSelectedServiceId(null);
+		setSelectedServiceCode(null);
+		formRef.current?.setFieldsValue({
+			service: undefined,
+			company: undefined,
+		});
+	}, [selectedServiceId, permittedViewServiceIdsList.join(",")]);
+
+	const companyOptions = useMemo(
+		() => (companies.data?.results ?? []).map(company => ({
+			label: company.name,
+			value: company.id,
+		})),
+		[companies.data],
+	);
+
+	const salesAgentOptions = useMemo(() => {
+		const all = smsCommissionAgents.data?.results ?? [];
+		return all
+			.map(agent => ({
+				label: agent.name,
+				value: agent.id,
+			}));
+	}, [smsCommissionAgents.data]);
+
+	const clearDependentFilters = () => {
+		formRef.current?.setFieldsValue({
+			company: undefined,
+			search: undefined,
+			sh_year: undefined,
+			sh_month: undefined,
+			ordering: undefined,
+			gr_month_start_after: undefined,
+			gr_month_start_before: undefined,
+			operation_type: undefined,
+			operator: undefined,
+			language: undefined,
+			sales_agent: undefined,
+			location: undefined,
+			company_type: undefined,
+			is_official: undefined,
+			customer_name: undefined,
+			customer_nic: undefined,
+			province_code: undefined,
+			service_type: undefined,
+		});
+	};
+
+	const setSelectedService = (serviceId: number | null, serviceCode: string | null) => {
+		setSelectedServiceId(serviceId);
+		setSelectedServiceCode(serviceCode);
+		clearDependentFilters();
+		actionRef.current?.reload?.();
+	};
+
+	const canCreatePerformance = useMemo(() => {
+		if (!selectedServiceId)
+			return false;
+		return hasDomainPermissionByServiceId("performances", "create", selectedServiceId) || hasDomainPermissionByServiceId("contracts", "create", selectedServiceId);
+	}, [selectedServiceId, hasDomainPermissionByServiceId]);
+
+	const canUpdateRow = (row: PerformanceListRow) => {
+		const normalized = normalizePerformanceRecord(row);
+		const serviceId = normalized.serviceId ?? selectedServiceId;
+		if (!serviceId)
+			return false;
+		return hasDomainPermissionByServiceId("performances", "update", serviceId) || hasDomainPermissionByServiceId("contracts", "update", serviceId);
+	};
+
+	const canDeleteRow = (row: PerformanceListRow) => {
+		const normalized = normalizePerformanceRecord(row);
+		const serviceId = normalized.serviceId ?? selectedServiceId;
+		if (!serviceId)
+			return false;
+		return hasDomainPermissionByServiceId("performances", "delete", serviceId) || hasDomainPermissionByServiceId("contracts", "delete", serviceId);
+	};
+
+	const handleDeleteRow = async (row: PerformanceListRow, action?: ProCoreActionType<object>) => {
+		if (!selectedServicePath) {
+			window.$message?.warning("ابتدا سرویس را انتخاب کنید");
+			return;
+		}
+		if (!canDeleteRow(row)) {
+			window.$message?.warning("دسترسی حذف عملکرد ندارید.");
+			return;
+		}
+
+		const normalized = normalizePerformanceRecord(row);
+		const rowId = normalized.id;
+		setDeletingRowId(rowId ?? null);
+
+		try {
+			if (selectedServicePath === "sms-commission") {
+				if (
+					normalized.companyId == null
+					|| normalized.salesAgentId == null
+					|| normalized.year == null
+					|| normalized.month == null
+				) {
+					throw new Error("کلید رکورد برای حذف کامل نیست");
+				}
+				await deleteSmsCommissionPerformanceByComposite(
+					normalized.companyId,
+					normalized.salesAgentId,
+					normalized.year,
+					normalized.month,
+				);
+			}
+			else if (isCompositeDeleteService(selectedServicePath)) {
+				if (
+					normalized.companyId == null
+					|| normalized.year == null
+					|| normalized.month == null
+				) {
+					throw new Error("کلید رکورد برای حذف کامل نیست");
+				}
+				await deletePerformanceByComposite(
+					selectedServicePath,
+					normalized.companyId,
+					normalized.year,
+					normalized.month,
+				);
+			}
+			else if (normalized.id != null) {
+				await deletePerformanceById(selectedServicePath, normalized.id);
+			}
+			else if (
+				normalized.companyId != null
+				&& normalized.year != null
+				&& normalized.month != null
+			) {
+				await deletePerformanceByComposite(
+					selectedServicePath,
+					normalized.companyId,
+					normalized.year,
+					normalized.month,
+				);
+			}
+			else {
+				throw new Error("شناسه یا کلید یکتا برای حذف رکورد پیدا نشد");
+			}
+
+			await action?.reload?.();
+			window.$message?.success(t("common.deleteSuccess"));
+		}
+		finally {
+			setDeletingRowId(null);
+		}
+	};
+
+	const refreshTable = () => {
+		actionRef.current?.reload?.();
+	};
+
+	const baseColumns = useMemo(
+		() =>
+			getPerformanceColumns({
+				t,
+				selectedServiceId,
+				selectedServiceCode,
+				setSelectedService,
+				serviceOptions,
+				companyOptions,
+				isCompanyDisabled: !selectedServiceId || companies.isLoading,
+				companyPlaceholder: selectedServiceId ? "شرکت را انتخاب کنید" : "ابتدا سرویس را انتخاب کنید",
+				salesAgentOptions,
+			}),
+		[
+			t,
+			selectedServiceId,
+			selectedServiceCode,
+			serviceOptions,
+			companyOptions,
+			companies.isLoading,
+			salesAgentOptions,
+		],
+	);
+
+	const columns: ProColumns<PerformanceListRow>[] = useMemo(() => {
+		return [
+			...baseColumns,
+			{
+				title: t("common.action"),
+				valueType: "option",
+				key: "option",
+				width: 120,
+				fixed: "right",
+				align: "center",
+				render: (_, record, __, action) => {
+					const actions: React.ReactNode[] = [];
+
+					if (canUpdateRow(record)) {
+						actions.push(
+							<BasicButton
+								key="edit"
+								type="link"
+								size="large"
+								title="ویرایش عملکرد"
+								icon={<EditOutlined />}
+								onClick={() => {
+									setSelectedRow(record);
+									setOpenDetail(true);
+								}}
+							/>,
+						);
+					}
+
+					if (canDeleteRow(record)) {
+						actions.push(
+							<Popconfirm
+								key="delete"
+								title={t("common.confirmDelete")}
+								okText={t("common.confirm")}
+								cancelText={t("common.cancel")}
+								onConfirm={() => handleDeleteRow(record, action)}
+							>
+								<BasicButton
+									type="link"
+									size="large"
+									title="حذف عملکرد"
+									icon={<DeleteOutlined />}
+									loading={deletingRowId != null && normalizePerformanceRecord(record).id === deletingRowId}
+								/>
+							</Popconfirm>,
+						);
+					}
+
+					return actions;
+				},
+			},
+		];
+	}, [baseColumns, deletingRowId, t]);
+
+	return (
+		<BasicContent className="h-full">
+			<BasicTable<PerformanceListRow>
+				adaptive
+				rowKey={record => String(record.id ?? `${record.company}-${record.sh_year}-${record.sh_month}-${record.operation_type ?? ""}-${record.operator ?? ""}-${record.language ?? ""}`)}
+				columns={columns}
+				actionRef={actionRef}
+				formRef={formRef}
+				request={async (params) => {
+					if (!selectedServicePath || !selectedServiceId) {
+						return {
+							data: [],
+							total: 0,
+							success: true,
+						};
+					}
+
+					const query = {
+						page: params.current ?? 1,
+						page_size: params.pageSize ?? 20,
+						search: (params as any).search,
+						service: selectedServiceId,
+						company: (params as any).company,
+						sh_year: (params as any).sh_year,
+						sh_month: (params as any).sh_month,
+						ordering: (params as any).ordering,
+						gr_month_start_after: (params as any).gr_month_start_after,
+						gr_month_start_before: (params as any).gr_month_start_before,
+						operation_type: (params as any).operation_type,
+						operator: (params as any).operator,
+						language: (params as any).language,
+						sales_agent: (params as any).sales_agent,
+						location: (params as any).location,
+						company_type: (params as any).company_type,
+						is_official: (params as any).is_official,
+						customer_name: (params as any).customer_name,
+						customer_nic: (params as any).customer_nic,
+						province_code: (params as any).province_code,
+						service_type: (params as any).service_type,
+					};
+
+					const responseData = await fetchPerformanceList(selectedServicePath, query);
+					return {
+						data: responseData.results,
+						total: responseData.count,
+						success: true,
+					};
+				}}
+				headerTitle="لیست عملکردها"
+				toolBarRender={() => {
+					if (!canCreatePerformance) {
+						return [];
+					}
+					return [
+						<Button
+							key="add"
+							icon={<PlusCircleOutlined />}
+							type="primary"
+							onClick={() => navigate("/performances/new")}
+						>
+							{t("common.add")}
+						</Button>,
+					];
+				}}
+			/>
+
+			<PerformanceDetailModal
+				open={openDetail}
+				service={selectedServicePath}
+				companies={companies.data?.results}
+				record={selectedRow}
+				onClose={() => {
+					setOpenDetail(false);
+					setSelectedRow(null);
+				}}
+				onUpdated={refreshTable}
+			/>
+		</BasicContent>
+	);
+}

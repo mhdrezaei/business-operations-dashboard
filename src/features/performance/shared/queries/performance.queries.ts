@@ -1,4 +1,4 @@
-import type { PerformanceServicePath } from "#src/features/performance/api/performances.api";
+import type { PerformanceContractServicePath } from "#src/features/performance/api/performances.api";
 import { fetchCompaniesByService, fetchServices } from "#src/api/common/common.api";
 import {
 	fetchPerformanceContracts,
@@ -44,7 +44,7 @@ export function performanceContractsQuery({
 	serviceId,
 	companyId,
 }: {
-	servicePath: PerformanceServicePath | null
+	servicePath: PerformanceContractServicePath | null
 	serviceId: number | null | undefined
 	companyId: number | null | undefined
 }) {
