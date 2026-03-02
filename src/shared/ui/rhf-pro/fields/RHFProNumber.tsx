@@ -3,6 +3,7 @@ import type { FieldValues, Path } from "react-hook-form";
 import type { CommonFieldProps } from "../types";
 import { usePreferences } from "#src/hooks";
 import {
+	formatNumeric,
 	formatWithGrouping,
 	numberToWordsByLanguage,
 	sanitizeNumericInput,
@@ -54,7 +55,7 @@ export function RHFProNumber<
 			render={({ field, fieldState }) => {
 				const err = props.hideError ? undefined : fieldState.error?.message;
 
-				const raw = field.value == null ? "" : String(field.value);
+				const raw = field.value == null ? "" : String(formatNumeric(field.value));
 				const groupingEnabled = !!props.enableGrouping;
 
 				const displayValue = groupingEnabled

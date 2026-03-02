@@ -140,6 +140,7 @@ export function getContractColumns({
 			ellipsis: true,
 			width: 220,
 			search: false,
+
 		},
 
 		{

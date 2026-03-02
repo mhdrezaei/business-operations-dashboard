@@ -6,6 +6,7 @@ import { IssuesCloseOutlined } from "@ant-design/icons/lib";
 import { createElement, lazy } from "react";
 
 const CreatePerformancePage = lazy(() => import("#src/pages/performances/"));
+const EditPerformancePage = lazy(() => import("#src/pages/performances/edit"));
 
 const routes: AppRouteRecordRaw[] = [
 	{
@@ -27,6 +28,16 @@ const routes: AppRouteRecordRaw[] = [
 					title: $t("common.menu.newPerformance"),
 					accessDomain: "contracts",
 					accessAction: "create",
+				},
+			},
+			{
+				path: "/performances/edit",
+				Component: EditPerformancePage,
+				handle: {
+					icon: "FileTextOutlined",
+					title: $t("common.menu.editPerformance"),
+					accessDomain: "contracts",
+					accessAction: "view",
 				},
 			},
 		],

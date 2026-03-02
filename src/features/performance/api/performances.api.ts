@@ -1,7 +1,7 @@
 import type { Paginated } from "#src/api/types";
 import { request } from "#src/utils/request";
 
-export type PerformanceServicePath = | "openapi"
+export type PerformanceContractServicePath = | "openapi"
   | "commercial"
   | "traffic"
   | "psp"
@@ -9,6 +9,64 @@ export type PerformanceServicePath = | "openapi"
   | "sms/client"
   | "sms/vendor"
   | "sms-commission";
+
+export type PerformanceServicePath = | "openapi"
+  | "commercial"
+  | "traffic"
+  | "psp"
+  | "shahkar"
+  | "sms"
+  | "sms-commission";
+
+export interface PerformanceListItem {
+	id?: number
+	company?: number | null
+	company_id?: number | null
+	service?: number | null
+	service_id?: number | null
+	company_name?: string | null
+	service_name?: string | null
+	sh_year?: number | null
+	sh_month?: number | null
+	operation_type?: string | null
+	operator?: string | null
+	language?: string | null
+	location?: string | null
+	company_type?: string | null
+	sales_agent?: number | null
+	sales_agent_id?: number | null
+	sales_agent_name?: string | null
+	value?: string | number | null
+	value_receive?: string | number | null
+	income?: string | number | null
+	expense?: string | number | null
+	profit?: string | number | null
+	[key: string]: unknown
+}
+
+export interface PerformanceListQuery {
+	page?: number
+	page_size?: number
+	search?: string
+	service?: number
+	company?: number
+	sh_year?: number
+	sh_month?: number
+	ordering?: string
+	gr_month_start_after?: string
+	gr_month_start_before?: string
+	operation_type?: string
+	operator?: string
+	language?: string
+	sales_agent?: number
+	location?: string
+	company_type?: string
+	is_official?: boolean
+	customer_name?: string
+	customer_nic?: number
+	province_code?: string
+	service_type?: number
+}
 
 export interface PerformanceContractListItem {
 	id: number
@@ -95,12 +153,20 @@ interface UploadPerformanceFileParams {
 	searchParams?: Record<string, string | number | boolean | null | undefined>
 }
 
-function buildContractsPath(service: PerformanceServicePath) {
+function buildContractsPath(service: PerformanceContractServicePath) {
 	return `contracts/${service}/`;
 }
 
 function buildPerformancePath(service: PerformanceServicePath, companyId: number, year: number, month: number) {
 	return `performances/${service}/${companyId}-${year}-${month}/`;
+}
+
+function buildPerformanceByIdPath(service: PerformanceServicePath, id: number) {
+	return `performances/${service}/${id}/`;
+}
+
+function buildPerformanceSmsCommissionPath(companyId: number, salesAgentId: number, year: number, month: number) {
+	return `performances/sms-commission/${companyId}-${salesAgentId}-${year}-${month}/`;
 }
 
 function compactSearchParams(params: Record<string, unknown>) {
@@ -124,7 +190,7 @@ export function fetchPerformanceGaps(serviceId: number, companyId: number) {
 		.json<PerformanceGapsResponse>();
 }
 
-export function fetchPerformanceContracts(service: PerformanceServicePath, serviceId: number, companyId: number) {
+export function fetchPerformanceContracts(service: PerformanceContractServicePath, serviceId: number, companyId: number) {
 	return request
 		.get(buildContractsPath(service), {
 			searchParams: {
@@ -133,6 +199,63 @@ export function fetchPerformanceContracts(service: PerformanceServicePath, servi
 			},
 		})
 		.json<Paginated<PerformanceContractListItem>>();
+}
+
+export function fetchPerformanceList(service: PerformanceServicePath, params: PerformanceListQuery) {
+	return request
+		.get(`performances/${service}/`, {
+			searchParams: compactSearchParams(params as Record<string, unknown>),
+		})
+		.json<Paginated<PerformanceListItem>>();
+}
+
+export function fetchPerformanceDetail(service: PerformanceServicePath, id: number) {
+	return request
+		.get(buildPerformanceByIdPath(service, id))
+		.json<Record<string, unknown>>();
+}
+
+export function updatePerformanceById(service: PerformanceServicePath, id: number, payload: Record<string, unknown>) {
+	return request
+		.put(buildPerformanceByIdPath(service, id), { json: payload })
+		.json<Record<string, unknown>>();
+}
+
+export function updateSmsCommissionPerformanceByComposite(
+	companyId: number,
+	salesAgentId: number,
+	year: number,
+	month: number,
+	payload: Record<string, unknown>,
+) {
+	return request
+		.put(buildPerformanceSmsCommissionPath(companyId, salesAgentId, year, month), {
+			json: payload,
+		})
+		.json<Record<string, unknown>>();
+}
+
+export function deletePerformanceById(service: PerformanceServicePath, id: number) {
+	return request
+		.delete(buildPerformanceByIdPath(service, id))
+		.json<Record<string, unknown>>();
+}
+
+export function deletePerformanceByComposite(service: PerformanceServicePath, companyId: number, year: number, month: number) {
+	return request
+		.delete(buildPerformancePath(service, companyId, year, month))
+		.json<Record<string, unknown>>();
+}
+
+export function deleteSmsCommissionPerformanceByComposite(
+	companyId: number,
+	salesAgentId: number,
+	year: number,
+	month: number,
+) {
+	return request
+		.delete(buildPerformanceSmsCommissionPath(companyId, salesAgentId, year, month))
+		.json<Record<string, unknown>>();
 }
 
 export function upsertPerformance({
