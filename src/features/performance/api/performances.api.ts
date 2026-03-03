@@ -67,7 +67,11 @@ export interface PerformanceListQuery {
 	province_code?: string
 	service_type?: number
 }
-
+export interface UnregisterdPerformanceListQuery {
+	page?: number
+	page_size?: number
+	service_ids?: number
+}
 export interface PerformanceContractListItem {
 	id: number
 	company: number | null
@@ -324,4 +328,12 @@ export function fetchSmsCommissionAgents() {
 			},
 		})
 		.json<Paginated<SmsCommissionAgentDto>>();
+}
+
+export function fetchUnregisteredPerformanceList(params: UnregisterdPerformanceListQuery) {
+	return request
+		.get("performances/report/missing-contract-performances/", {
+			searchParams: compactSearchParams(params as Record<string, unknown>),
+		})
+		.json<Paginated<PerformanceListItem>>();
 }
