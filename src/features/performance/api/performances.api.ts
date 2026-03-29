@@ -72,6 +72,51 @@ export interface UnregisterdPerformanceListQuery {
 	page_size?: number
 	service_ids?: number
 }
+export interface PerformanceReportAvailability {
+	service_id: number
+	service_code: string
+	overall_sms_performance: boolean
+	periods: string[]
+	company_ids: number[]
+}
+
+export interface PerformanceReportListItem {
+	id: number
+	company_id: number
+	service_id?: number | null
+	service_code?: string | null
+	service_name?: string | null
+	sh_year: number
+	sh_month: number
+	value: number
+	operation_type: string
+	company_name: string
+	income_financial: number
+	expense_financial: number
+	profit_financial: number
+	[key: string]: unknown
+}
+
+export interface PerformanceReportTotals {
+	value: number
+	income_financial: number
+	expense_financial: number
+	profit_financial: number
+}
+
+export interface PerformanceReportListResponse extends Paginated<PerformanceReportListItem> {
+	totals?: PerformanceReportTotals | null
+}
+
+export interface PerformanceReportQuery {
+	service_id: number
+	service_code: string
+	sh_periods: string
+	company_ids?: string
+	page?: number
+	page_size?: number
+	total?: boolean
+}
 export interface PerformanceContractListItem {
 	id: number
 	company: number | null
@@ -336,4 +381,28 @@ export function fetchUnregisteredPerformanceList(params: UnregisterdPerformanceL
 			searchParams: compactSearchParams(params as Record<string, unknown>),
 		})
 		.json<Paginated<PerformanceListItem>>();
+}
+
+export function fetchPerformanceReportAvailability(serviceId: number, shPeriods?: string[]) {
+	const periods = (shPeriods ?? [])
+		.map(item => String(item ?? "").trim())
+		.filter(Boolean)
+		.join(",");
+
+	return request
+		.get("performances/report/availability/", {
+			searchParams: compactSearchParams({
+				service_id: serviceId,
+				sh_periods: periods,
+			}),
+		})
+		.json<PerformanceReportAvailability>();
+}
+
+export function fetchPerformanceReport(params: PerformanceReportQuery) {
+	return request
+		.get("performances/report/", {
+			searchParams: compactSearchParams(params as unknown as Record<string, unknown>),
+		})
+		.json<PerformanceReportListResponse>();
 }
