@@ -1,52 +1,106 @@
-import type { Resolver } from "react-hook-form";
+import type { ProfilePayload } from "./api/profile.api";
 import type { MyProfileFormValues } from "./model/profile.form.types";
-import { BasicContent } from "#src/components/index.js";
+import { BasicButton, BasicContent } from "#src/components/index.js";
+import { RHFProText } from "#src/shared/ui/rhf-pro/index.js";
 import { ProCard } from "@ant-design/pro-components";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery } from "@tanstack/react-query";
 import { Col, Row } from "antd";
-import { useCallback } from "react";
+import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
-import { baseSchema } from "./model/profile.schema";
-
-const defaultValues: MyProfileFormValues = {
-	email: null,
-	firstName: null,
-	lastName: null,
-	username: null,
-	isSuperuser: null,
-	mobile: null,
-	nationalCode: null,
-
-};
+import { updateProfile } from "./api/profile.api";
+import { userProfileQuery } from "./queries/profile.queries";
 
 export default function MyProfileForm() {
-	const dynamicResolver: Resolver<MyProfileFormValues> = useCallback(
-		async (values, context, options) => {
-			const schema = baseSchema;
-			const resolver = zodResolver(schema) as unknown as Resolver<MyProfileFormValues>;
-			return resolver(values, context, options);
-		},
-		[],
-	);
+	const [saving, setSaving] = useState(false);
 
-	const form = useForm<MyProfileFormValues>({
-		defaultValues,
-		mode: "all",
-		shouldUnregister: true,
-		resolver: dynamicResolver,
-	});
+	const userDetail = useQuery(userProfileQuery()).data;
+	const defaultValues: MyProfileFormValues = {
+		username: userDetail?.username ?? "",
+		first_name: userDetail?.first_name ?? "",
+		last_name: userDetail?.last_name ?? "",
+		email: userDetail?.email ?? "",
+		mobile: userDetail?.mobile ?? "",
+		national_code: userDetail?.national_code ?? "",
 
+	};
+
+	// const dynamicResolver: Resolver<MyProfileFormValues> = useCallback(
+	// 	async (values, context, options) => {
+	// 		const schema = baseSchema;
+	// 		const resolver = zodResolver(schema) as unknown as Resolver<MyProfileFormValues>;
+	// 		return resolver(values, context, options);
+	// 	},
+	// 	[],
+	// );
+
+	const form = useForm<MyProfileFormValues>({ defaultValues });
 	return (
 		<FormProvider {...form}>
-			<ProCard>
-				<BasicContent className="w-full">
-					<Row gutter={16}>
-						<Col span={12}>
+			<form
+				onSubmit={form.handleSubmit(async (values) => {
+					setSaving(true);
+					try {
+						const payload: ProfilePayload = { ...values };
 
-						</Col>
-					</Row>
-				</BasicContent>
-			</ProCard>
+						await updateProfile(payload);
+					}
+					finally {
+						setSaving(false);
+					}
+				})}
+			>
+				<ProCard>
+					<BasicContent className="w-full">
+						<Row gutter={16}>
+							<Col span={12}>
+							</Col>
+						</Row>
+						<div className="grid grid-cols-2 gap-3">
+							<RHFProText name="username" label="نام کاربری" />
+							<RHFProText name="email" label="ایمیل" />
+
+							<RHFProText name="first_name" label="نام" />
+							<RHFProText name="last_name" label="نام خانوادگی" />
+
+							<RHFProText name="mobile" label="موبایل" />
+							<RHFProText name="national_code" label="کد ملی" />
+
+						</div>
+						<ProCard bordered>
+							<div className="grid grid-cols-3 gap-3 ">
+								<RHFProText
+									name="password"
+
+									label="رمز فعلی"
+									inputProps={{ type: "password", defaultValue: "" }}
+								/>
+
+								<RHFProText
+									name="newPassword"
+									label="رمز جدید"
+									inputProps={{ type: "password", defaultValue: "" }}
+								/>
+
+								<RHFProText
+									name="ConfirmNewPassword"
+									label="تکرار رمز جدید"
+									inputProps={{ type: "password", defaultValue: "" }}
+								/>
+							</div>
+						</ProCard>
+					</BasicContent>
+				</ProCard>
+				<div className="flex justify-end gap-2 mt-2">
+					<BasicButton
+						htmlType="submit"
+						type="primary"
+						loading={saving}
+					>
+						ذخیره
+					</BasicButton>
+					<BasicButton>انصراف</BasicButton>
+				</div>
+			</form>
 		</FormProvider>
 	);
 }
