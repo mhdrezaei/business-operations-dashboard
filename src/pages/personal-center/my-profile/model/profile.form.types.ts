@@ -1,10 +1,9 @@
 export interface MyProfileFormValues {
 	id?: number
-	firstName: string | null
-	lastName: string | null
-	username: string | null
-	email: string | null
-	isSuperuser: boolean | null
-	mobile: string | null
-	nationalCode: string | null
+	first_name: string
+	last_name: string
+	username: string
+	email: string
+	mobile: string
+	national_code: string
 }
