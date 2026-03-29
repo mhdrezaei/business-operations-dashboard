@@ -37,7 +37,9 @@
 		"dept": "Department Management",
 		"personalCenter": "Personal Center",
 		"profile": "My Profile",
-		"settings": "Settings"
+		"settings": "Settings",
+		"unregisteredPerformances": "Unregistered Performances",
+		"performanceReports": "Performance Reports"
 	},
 	"appLoading": "Loading Resources...",
 	"back": "Back",

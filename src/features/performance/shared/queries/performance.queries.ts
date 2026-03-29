@@ -3,6 +3,7 @@ import { fetchCompaniesByService, fetchServices } from "#src/api/common/common.a
 import {
 	fetchPerformanceContracts,
 	fetchPerformanceGaps,
+	fetchPerformanceReportAvailability,
 	fetchSmsCommissionAgents,
 } from "#src/features/performance/api/performances.api";
 import { queryOptions } from "@tanstack/react-query";
@@ -62,5 +63,25 @@ export function smsCommissionAgentsQuery(enabled: boolean) {
 		enabled,
 		queryFn: fetchSmsCommissionAgents,
 		staleTime: 2 * 60 * 1000,
+	});
+}
+
+export function performanceReportAvailabilityQuery({
+	serviceId,
+	shPeriods,
+}: {
+	serviceId: number | null | undefined
+	shPeriods?: string[]
+}) {
+	const periodsKey = (shPeriods ?? [])
+		.map(item => String(item ?? "").trim())
+		.filter(Boolean)
+		.join(",");
+
+	return queryOptions({
+		queryKey: ["performances", "report", "availability", { serviceId, periods: periodsKey }],
+		enabled: !!serviceId,
+		queryFn: () => fetchPerformanceReportAvailability(serviceId!, shPeriods),
+		staleTime: 30 * 1000,
 	});
 }

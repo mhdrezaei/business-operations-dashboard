@@ -37,7 +37,9 @@
 		"dept": "Abteilungsverwaltung",
 		"personalCenter": "PersÃ¶nlicher Bereich",
 		"profile": "Mein Profil",
-		"settings": "Einstellungen"
+		"settings": "Einstellungen",
+		"unregisteredPerformances": "Nicht registrierte Leistungen",
+		"performanceReports": "Leistungsberichte"
 	},
 	"appLoading": "Ressourcen werden geladen ...",
 	"back": "ZurÃ¼ck",
