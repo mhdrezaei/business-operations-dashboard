@@ -2,9 +2,13 @@ import { addendumSchema } from "#src/features/contract/components/addenda/addend
 import { contractTypeSchema } from "#src/features/contract/components/contract-type/contract-type.schema";
 import { z } from "zod";
 
-// serviceFields.sms
+const isOfficialSchema = z.preprocess(
+	v => (v === "" || v == null ? true : v),
+	z.boolean(),
+).default(true);
+
 export const smsServiceFieldsSchema = z.object({
-	// ✅ حالت شرکای تجاری (طبق تصاویر)
+	isOfficial: isOfficialSchema,
 	operatorRevenue: z.object({
 		irancellFa: contractTypeSchema,
 		irancellEn: contractTypeSchema,
@@ -16,10 +20,9 @@ export const smsServiceFieldsSchema = z.object({
 	governmentRevenue: contractTypeSchema.optional(),
 	profit: z.object({
 		pricing: contractTypeSchema,
-		minProfit: z.number().nullable(), // اختیاری در UI گفتی "اختیاری"
+		minProfit: z.number().nullable(),
 	}).optional(),
 
-	// ✅ حالت دولت/اپراتورها: جایگزین درآمد دولت/سود
 	governmentRate: contractTypeSchema.optional(),
 	addenda: z.array(addendumSchema).default([]).optional(),
 

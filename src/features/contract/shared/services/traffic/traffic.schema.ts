@@ -3,9 +3,9 @@ import { contractTypeSchema } from "#src/features/contract/components/contract-t
 import { z } from "zod";
 
 const isOfficialSchema = z.preprocess(
-	v => (v === "" || v == null ? false : v),
+	v => (v === "" || v == null ? true : v),
 	z.boolean(),
-).default(false);
+).default(true);
 
 const premiumRevenuePercentSchema = z.preprocess(
 	(v) => {

@@ -61,6 +61,8 @@ interface Props<TFV extends FieldValues> {
 	contractTypeTitle?: string
 	contractTypeFieldKey?: string
 	renderAddendumFields?: (basePath: string, index: number) => React.ReactNode
+	canAddAddendum?: boolean
+	addendumAddBlockedMessage?: React.ReactNode
 
 	contractStartYearPath: Path<TFV>
 	contractStartMonthPath: Path<TFV>
@@ -74,6 +76,8 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 	contractTypeTitle = "",
 	contractTypeFieldKey = "pricing",
 	renderAddendumFields,
+	canAddAddendum = true,
+	addendumAddBlockedMessage,
 	contractStartYearPath,
 	contractStartMonthPath,
 	contractEndYearPath,
@@ -169,6 +173,11 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 	const addAddendum = async () => {
 		if (!contractRangeReady) {
 			message.warning("ابتدا تاریخ شروع و پایان قرارداد را انتخاب کنید.");
+			return;
+		}
+		if (!canAddAddendum) {
+			if (addendumAddBlockedMessage)
+				message.warning(addendumAddBlockedMessage);
 			return;
 		}
 
@@ -363,6 +372,8 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 		contractTypeTitle,
 		contractTypeFieldKey,
 		renderAddendumFields,
+		canAddAddendum,
+		addendumAddBlockedMessage,
 		trigger,
 	]);
 
@@ -373,7 +384,7 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 			style={{ borderRadius: 6, marginTop: 12 }}
 			title={title}
 			extra={(
-				<Button icon={<PlusOutlined />} onClick={addAddendum} disabled={!contractRangeReady}>
+				<Button icon={<PlusOutlined />} onClick={addAddendum} disabled={!contractRangeReady || !canAddAddendum}>
 					افزودن الحاقیه
 				</Button>
 			)}
@@ -382,6 +393,11 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 			{!contractRangeReady
 				? (
 					<div style={{ opacity: 0.75 }}>برای افزودن الحاقیه، ابتدا تاریخ شروع و پایان قرارداد را انتخاب کنید.</div>
+				)
+				: null}
+			{contractRangeReady && !canAddAddendum && addendumAddBlockedMessage
+				? (
+					<div style={{ opacity: 0.75, marginTop: 8 }}>{addendumAddBlockedMessage}</div>
 				)
 				: null}
 

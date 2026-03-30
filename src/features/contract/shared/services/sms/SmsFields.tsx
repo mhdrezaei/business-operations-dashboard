@@ -2,7 +2,7 @@ import type { ContractFormValues } from "#src/features/contract/shared/model/con
 import type { ArrayPath, Path } from "react-hook-form";
 import { ContractAddendaSection } from "#src/features/contract/components/addenda/ContractAddendaSection";
 import { ContractTypeSection } from "#src/features/contract/components/contract-type/ContractTypeSection";
-import { RHFProNumber } from "#src/shared/ui/rhf-pro";
+import { RHFProCheckbox, RHFProNumber } from "#src/shared/ui/rhf-pro";
 import { ProCard, ProFormGroup } from "@ant-design/pro-components";
 import { useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
@@ -12,7 +12,6 @@ const sf = (path: string) => `serviceFields.${path}` as any;
 export function SmsFields() {
 	const { control } = useFormContext<ContractFormValues>();
 
-	// تاریخ‌های اصلی قرارداد (root)
 	const startYear = useWatch({ control, name: "startYear" });
 	const startMonth = useWatch({ control, name: "startMonth" });
 	const endYear = useWatch({ control, name: "endYear" });
@@ -30,6 +29,14 @@ export function SmsFields() {
 
 	return (
 		<>
+			<ProCard bordered headerBordered style={{ borderRadius: 6, marginBottom: 12 }} bodyStyle={{ padding: 16 }}>
+				<RHFProCheckbox<ContractFormValues, any>
+					name={sf("isOfficial") as any}
+					label=""
+					checkboxLabel="قرارداد رسمی است"
+					checkboxProps={{}}
+				/>
+			</ProCard>
 
 			<ProCard bordered headerBordered style={{ borderRadius: 6 }} title="درآمد اپراتورها" bodyStyle={{ padding: 16 }}>
 				<div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
@@ -40,7 +47,7 @@ export function SmsFields() {
 					<ContractTypeSection title="سایر - انگلیسی" name={sf("operatorRevenue.otherEn")} />
 				</div>
 			</ProCard>
-			{/* حالت شرکای تجاری */}
+
 			{isPartners
 				? (
 					<>
@@ -65,7 +72,6 @@ export function SmsFields() {
 				)
 				: null}
 
-			{/* حالت دولت و اپراتورها */}
 			{isGovOps
 				? (
 					<ProCard bordered headerBordered style={{ borderRadius: 6, marginTop: 12 }} title="نرخ دولت" bodyStyle={{ padding: 16 }}>
@@ -73,8 +79,8 @@ export function SmsFields() {
 					</ProCard>
 				)
 				: null}
+
 			{showAddenda
-			// eslint-disable-next-line style/multiline-ternary
 				? (
 					<div style={{ marginTop: 12 }}>
 						<ContractAddendaSection<ContractFormValues>
@@ -127,15 +133,14 @@ export function SmsFields() {
 										: null}
 								</>
 							)}
-
-							// ✅ مسیر تاریخ‌های قرارداد اصلی (root) - اجباری در Props شما
 							contractStartYearPath={"startYear" as Path<ContractFormValues>}
 							contractStartMonthPath={"startMonth" as Path<ContractFormValues>}
 							contractEndYearPath={"endYear" as Path<ContractFormValues>}
 							contractEndMonthPath={"endMonth" as Path<ContractFormValues>}
 						/>
 					</div>
-				) : null}
+				)
+				: null}
 		</>
 	);
 }

@@ -36,10 +36,7 @@ export function TrafficFields() {
 		[startYear, startMonth, endYear, endMonth],
 	);
 
-	// Show the computational UI only when it is official.
 	const showPricingUi = !!isOfficial;
-
-	// Show revenue percentage only when it is official + PREMIUM
 	const showPremiumRevenuePercent = showPricingUi && trafficCompanyType === "PREMIUM";
 
 	const addTehran = () => {
@@ -66,9 +63,8 @@ export function TrafficFields() {
 	const removeProvince = () =>
 		setValue(sf("provincePricing") as any, undefined, { shouldDirty: true, shouldValidate: true });
 
-	// ✅ When it becomes unofficial: Clear all calculation fields to keep both UI and payload clean
 	React.useEffect(() => {
-		if (!isOfficial) {
+		if (isOfficial === false) {
 			setValue(sf("tehranPricing") as any, undefined, { shouldDirty: true, shouldValidate: true });
 			setValue(sf("provincePricing") as any, undefined, { shouldDirty: true, shouldValidate: true });
 			setValue(sf("addenda") as any, undefined, { shouldDirty: true, shouldValidate: true });
@@ -80,9 +76,7 @@ export function TrafficFields() {
 	return (
 		<>
 			<ProCard bordered headerBordered style={{ borderRadius: 6 }} bodyStyle={{ padding: 16 }}>
-				{/* ✅ Formal/Informal Field */}
 				<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-
 					<RHFProCheckbox<ContractFormValues, any>
 						name={sf("isOfficial") as any}
 						label=""
@@ -90,6 +84,7 @@ export function TrafficFields() {
 						checkboxProps={{}}
 					/>
 				</div>
+
 				{!isOfficial
 					? (
 						<div style={{ marginBottom: 12, color: "#faad14" }}>
@@ -102,11 +97,9 @@ export function TrafficFields() {
 						</div>
 					)}
 
-				{/* ✅ Only when official: Show calculated fields */}
 				{showPricingUi
 					? (
 						<>
-
 							<Row>
 								<ProCard bordered headerBordered style={{ borderRadius: 6, marginTop: 12 }} bodyStyle={{ padding: 16 }}>
 									<Row>
@@ -143,7 +136,6 @@ export function TrafficFields() {
 														)
 														: null}
 												</ProCard>
-
 											</Row>
 										)
 										: null}
@@ -196,7 +188,6 @@ export function TrafficFields() {
 					: null}
 			</ProCard>
 
-			{/* ✅ Addenda only when official */}
 			{showPricingUi && showAddenda
 				? (
 					<div style={{ marginTop: 12 }}>

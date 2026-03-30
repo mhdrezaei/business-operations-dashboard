@@ -102,7 +102,7 @@ function withSelectedOption(options: YearMonthOption[], selected: number | null)
 }
 
 export function FixedStartSection() {
-	const { setValue, control, trigger, formState } = useFormContext<ContractFormValues>();
+	const { setValue, control, trigger, formState, resetField } = useFormContext<ContractFormValues>();
 	const { getPermittedServiceIds } = useAccess();
 
 	const services = useQuery(servicesQuery());
@@ -117,6 +117,7 @@ export function FixedStartSection() {
 	const endYear = useWatch({ control, name: "endYear" });
 	const endMonth = useWatch({ control, name: "endMonth" });
 	const selectedAgentId = useWatch({ control, name: "serviceFields.agent" as any });
+	const serviceIsOfficial = useWatch({ control, name: "serviceFields.isOfficial" as any }) as boolean | null | undefined;
 
 	const permittedCreateServiceIdList = getPermittedServiceIds("contracts", "create");
 	const permittedCreateServiceIds = useMemo(
@@ -131,6 +132,18 @@ export function FixedStartSection() {
 	const isTraffic = serviceCode === "traffic";
 	const isSmsCommission = isSmsCommissionCode(serviceCode);
 	const smsCommissionAgents = useQuery(smsCommissionAgentsQuery(isSmsCommission && !!companyId));
+
+	useEffect(() => {
+		if (!isSms && !isTraffic)
+			return;
+
+		if (typeof serviceIsOfficial !== "boolean") {
+			setValue("serviceFields.isOfficial" as any, true, {
+				shouldDirty: false,
+				shouldValidate: false,
+			});
+		}
+	}, [isSms, isTraffic, serviceIsOfficial, setValue]);
 
 	const prevServiceIdRef = useRef<typeof serviceId>(undefined);
 	const prevCompanyIdRef = useRef<typeof companyId>(undefined);
@@ -148,11 +161,18 @@ export function FixedStartSection() {
 			return;
 
 		if (prev !== serviceId) {
-			setValue("companyId", null, { shouldDirty: true, shouldValidate: false });
-			setValue("counterpartyType", null, { shouldDirty: true, shouldValidate: false });
-			setValue("trafficCompanyType" as any, null, { shouldDirty: true, shouldValidate: false });
+			resetField("companyId", { defaultValue: null });
+			resetField("counterpartyType", { defaultValue: null });
+			resetField("trafficCompanyType" as any, { defaultValue: null });
+			resetField("startYear", { defaultValue: null });
+			resetField("startMonth", { defaultValue: null });
+			resetField("endYear", { defaultValue: null });
+			resetField("endMonth", { defaultValue: null });
+			resetField("contractNumber" as any, { defaultValue: "" as any });
+			resetField("serviceFields", { defaultValue: {} as any });
+			lastValidatedDateKeyRef.current = "";
 		}
-	}, [serviceId, setValue]);
+	}, [serviceId, resetField]);
 
 	useEffect(() => {
 		if (!serviceId) {

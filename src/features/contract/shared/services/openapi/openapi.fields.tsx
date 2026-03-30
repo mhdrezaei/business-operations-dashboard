@@ -80,6 +80,45 @@ export function OpenApiFields() {
 	}, [contractModel, setValue, getValues]);
 
 	React.useEffect(() => {
+		if (contractModel == null)
+			return;
+
+		const currentAddenda = getValues(sf("addenda")) as Array<Record<string, unknown>> | undefined;
+		if (!Array.isArray(currentAddenda) || currentAddenda.length === 0)
+			return;
+
+		const shouldKeepOperationType = isOpenApiService && contractModel === "legacy";
+
+		let changed = false;
+		const nextAddenda = currentAddenda.map((item) => {
+			if (!item || typeof item !== "object")
+				return item;
+
+			const nextItem: Record<string, unknown> = { ...item };
+
+			if (!shouldKeepOperationType) {
+				if ("operationType" in nextItem) {
+					delete nextItem.operationType;
+					changed = true;
+				}
+			}
+			else if (!("operationType" in nextItem)) {
+				nextItem.operationType = null;
+				changed = true;
+			}
+
+			return nextItem;
+		});
+
+		if (changed) {
+			setValue(sf("addenda"), nextAddenda as any, {
+				shouldDirty: true,
+				shouldValidate: true,
+			});
+		}
+	}, [contractModel, isOpenApiService, getValues, setValue]);
+
+	React.useEffect(() => {
 		if (contractModel !== "package")
 			return;
 		if (fields.length > 0)
@@ -458,9 +497,11 @@ export function OpenApiFields() {
 							name={sf("addenda") as ArrayPath<ContractFormValues>}
 							contractTypeTitle=""
 							contractTypeFieldKey="contractPricing"
+							canAddAddendum={!!contractModel}
+							addendumAddBlockedMessage="ابتدا مدل قرارداد را انتخاب کنید."
 							renderAddendumFields={base => (
 								<>
-									{isOpenApiService
+									{isOpenApiService && contractModel === "legacy"
 										? (
 											<RHFSelect
 												name={`${base}.operationType` as any}
@@ -471,11 +512,12 @@ export function OpenApiFields() {
 										)
 										: null}
 
-									<ContractTypeSection title="نوع قرارداد" name={`${base}.contractPricing` as any} />
+									<ContractTypeSection
+										title={contractModel === "package" ? "نوع قرارداد (الحاقیه بسته‌ای)" : "نوع قرارداد"}
+										name={`${base}.contractPricing` as any}
+									/>
 								</>
 							)}
-
-							// ✅ Root contract dates path - mandatory in your Props
 							contractStartYearPath={"startYear" as Path<ContractFormValues>}
 							contractStartMonthPath={"startMonth" as Path<ContractFormValues>}
 							contractEndYearPath={"endYear" as Path<ContractFormValues>}

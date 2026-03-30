@@ -66,14 +66,6 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 				});
 			}
 
-			if (val.companyId == null) {
-				ctx.addIssue({
-					code: "custom",
-					path: ["companyId"],
-					message: "شرکت الزامی است",
-				});
-			}
-
 			if (val.startYear == null) {
 				ctx.addIssue({
 					code: "custom",
