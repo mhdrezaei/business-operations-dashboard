@@ -21,6 +21,7 @@ const defaultValues: ContractFormValues = {
 	counterpartyType: null,
 	endYear: null,
 	endMonth: null,
+	contractNumber: "",
 	description: "",
 	documents: [],
 	serviceFields: {},

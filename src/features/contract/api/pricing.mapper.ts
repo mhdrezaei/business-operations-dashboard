@@ -31,9 +31,11 @@ export function apiPricingToContractType(p: ApiPricing | null | undefined): Cont
 	}
 
 	if (p.calculation_type === "FLAT") {
+		const firstRateRaw = p.tiers?.[0]?.rate_per_unit;
+		const firstRate = firstRateRaw == null || firstRateRaw === "" ? null : Number(firstRateRaw);
 		return {
 			type: "fixed",
-			fixedAmount: null,
+			fixedAmount: Number.isFinite(firstRate) ? firstRate : null,
 			rows: defaultRows,
 			sections: [],
 		};
@@ -58,7 +60,11 @@ export function contractTypeToApiPricing(v: ContractTypeValue): ApiPricing | nul
 	if (v.type === "fixed") {
 		return {
 			calculation_type: "FLAT",
-			tiers: rowsToApiTiers(v.rows),
+			tiers: [{
+				min_inclusive: null,
+				max_exclusive: null,
+				rate_per_unit: String(v.fixedAmount ?? 0),
+			}],
 		};
 	}
 

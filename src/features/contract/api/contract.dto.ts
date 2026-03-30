@@ -1,6 +1,6 @@
 // api-contract.dto.ts
 export interface ApiTier {
-	min_inclusive: string
+	min_inclusive: string | null
 	max_exclusive: string | null
 	rate_per_unit: string
 }

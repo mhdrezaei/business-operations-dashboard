@@ -18,6 +18,103 @@ function toStringOrNull(value: unknown): string | null {
 	return String(value);
 }
 
+function normalizeOperationType(value: unknown): "BILL_INQUIRY" | "RECEIPT_REGISTER" | null {
+	if (typeof value !== "string")
+		return null;
+	const normalized = value.trim().toUpperCase();
+	if (normalized === "BILL_INQUIRY" || normalized === "RECEIPT_REGISTER")
+		return normalized;
+	return null;
+}
+
+function mapOpenApiLegacyDetails(pricingValue: unknown, operationTypeValue?: unknown) {
+	const pricing = contractTypeToApiPricing((pricingValue ?? null) as any);
+	const operationType = normalizeOperationType(operationTypeValue);
+
+	if (operationType === "BILL_INQUIRY") {
+		return {
+			contract_model: "LEGACY",
+			bill_inquiry: pricing,
+			receipt_register: null,
+		};
+	}
+
+	if (operationType === "RECEIPT_REGISTER") {
+		return {
+			contract_model: "LEGACY",
+			bill_inquiry: null,
+			receipt_register: pricing,
+		};
+	}
+
+	return {
+		contract_model: "LEGACY",
+		bill_inquiry: pricing,
+		receipt_register: pricing,
+	};
+}
+
+function mapOpenApiPackageDetails(serviceFields: Record<string, any>) {
+	const plans = Array.isArray(serviceFields.plans) ? serviceFields.plans : [];
+	return {
+		contract_model: "PACKAGE",
+		package_model: {
+			mode: serviceFields.packageMode ?? "OR",
+			tiers: plans.map((plan: any) => ({
+				sms_min_inclusive: toNumberOrNull(plan?.smsMin),
+				sms_max_exclusive: toNumberOrNull(plan?.smsMax),
+				bill_min_inclusive: toNumberOrNull(plan?.billMin),
+				bill_max_exclusive: toNumberOrNull(plan?.billMax),
+				partner_share_percent: toStringOrNull(plan?.billPartnerShare),
+				karashab_share_percent: toStringOrNull(plan?.billKarashabShare),
+				traffic_partner_share_percent: toStringOrNull(plan?.trafficCommissionPercent),
+				bill_inquiry_rate: {
+					calculation_type: "FLAT",
+					tiers: [{ min_inclusive: null, max_exclusive: null, rate_per_unit: toStringOrNull(plan?.billFixedPrice) }],
+				},
+				sms_sale_rate: {
+					calculation_type: "FLAT",
+					tiers: [{ min_inclusive: null, max_exclusive: null, rate_per_unit: toStringOrNull(plan?.smsFixedPrice) }],
+				},
+			})),
+		},
+	};
+}
+
+function mapOpenApiAddenda(
+	addenda: unknown,
+	contractModel: "package" | "legacy" | null,
+	serviceFields: Record<string, any>,
+	mainOpenApiDetails: Record<string, any> | null,
+) {
+	const list = Array.isArray(addenda) ? addenda : [];
+
+	return list.map((item) => {
+		const row = (item ?? {}) as Record<string, any>;
+		const operationType = normalizeOperationType(row.operationType);
+
+		const mapped: Record<string, any> = {
+			start_jy: toNumberOrNull(row.startYear),
+			start_jm: toNumberOrNull(row.startMonth),
+			end_jy: toNumberOrNull(row.endYear),
+			end_jm: toNumberOrNull(row.endMonth),
+			contract_number: row.contractNumber ?? "",
+			note: row.description ?? "",
+		};
+
+		if (contractModel === "legacy") {
+			mapped.contract_openapi_details = mapOpenApiLegacyDetails(row.contractPricing, operationType);
+			if (operationType)
+				mapped.operation_type = operationType;
+		}
+		else if (contractModel === "package") {
+			mapped.contract_openapi_details = mainOpenApiDetails ?? mapOpenApiPackageDetails(serviceFields);
+		}
+
+		return mapped;
+	});
+}
+
 function resolveCreateServicePath(values: ContractFormValues): ContractServicePath {
 	const code = typeof values.serviceCode === "string" ? values.serviceCode.trim().toLowerCase() : "";
 
@@ -40,6 +137,8 @@ function resolveCreateServicePath(values: ContractFormValues): ContractServicePa
 function formValuesToApiPayload(values: ContractFormValues) {
 	const serviceCode = typeof values.serviceCode === "string" ? values.serviceCode.trim().toLowerCase() : "";
 	const serviceFields = (values.serviceFields ?? {}) as Record<string, any>;
+	const contractNumber = values.contractNumber;
+	const addenda = Array.isArray(serviceFields.addenda) ? serviceFields.addenda : [];
 
 	const payload: Record<string, any> = {
 		service: values.serviceId ?? null,
@@ -48,8 +147,9 @@ function formValuesToApiPayload(values: ContractFormValues) {
 		start_jm: values.startMonth ?? null,
 		end_jy: values.endYear ?? null,
 		end_jm: values.endMonth ?? null,
+		contract_number: contractNumber ?? "",
 		note: values.description ?? "",
-		addenda: Array.isArray(serviceFields.addenda) ? serviceFields.addenda : [],
+		addenda,
 	};
 
 	if (values.trafficCompanyType != null)
@@ -62,39 +162,27 @@ function formValuesToApiPayload(values: ContractFormValues) {
 			? serviceFields.contractModel.trim().toLowerCase()
 			: null;
 
+		let openApiDetails: Record<string, any> | null = null;
+
 		if (contractModel === "package") {
-			const plans = Array.isArray(serviceFields.plans) ? serviceFields.plans : [];
-			payload.contract_openapi_details = {
-				contract_model: "PACKAGE",
-				package_model: {
-					mode: serviceFields.packageMode ?? "OR",
-					tiers: plans.map((plan: any) => ({
-						sms_min_inclusive: toNumberOrNull(plan?.smsMin),
-						sms_max_exclusive: toNumberOrNull(plan?.smsMax),
-						bill_min_inclusive: toNumberOrNull(plan?.billMin),
-						bill_max_exclusive: toNumberOrNull(plan?.billMax),
-						partner_share_percent: toStringOrNull(plan?.billPartnerShare),
-						karashab_share_percent: toStringOrNull(plan?.billKarashabShare),
-						traffic_partner_share_percent: toStringOrNull(plan?.trafficCommissionPercent),
-						bill_inquiry_rate: {
-							calculation_type: "FLAT",
-							tiers: [{ min_inclusive: null, max_exclusive: null, rate_per_unit: toStringOrNull(plan?.billFixedPrice) }],
-						},
-						sms_sale_rate: {
-							calculation_type: "FLAT",
-							tiers: [{ min_inclusive: null, max_exclusive: null, rate_per_unit: toStringOrNull(plan?.smsFixedPrice) }],
-						},
-					})),
-				},
-			};
+			openApiDetails = mapOpenApiPackageDetails(serviceFields);
 		}
 		else if (contractModel === "legacy") {
-			payload.contract_openapi_details = {
+			openApiDetails = {
 				contract_model: "LEGACY",
 				receipt_register: contractTypeToApiPricing(serviceFields.legacyPricing?.paymentRegistration ?? null),
 				bill_inquiry: contractTypeToApiPricing(serviceFields.legacyPricing?.billInquiry ?? null),
 			};
 		}
+
+		if (openApiDetails)
+			payload.contract_openapi_details = openApiDetails;
+
+		if (serviceCode === "openapi" && contractModel) {
+			payload.openapi_model = contractModel === "package" ? "PACKAGE" : "LEGACY";
+		}
+
+		payload.addenda = mapOpenApiAddenda(addenda, contractModel as any, serviceFields, openApiDetails);
 		return payload;
 	}
 
