@@ -16,10 +16,22 @@ const requestWhiteList = [loginPath];
 
 // زمان پايان درخواست
 const API_TIMEOUT = Number(import.meta.env.VITE_API_TIMEOUT) || 10000;
+const RAW_API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL ?? "").trim();
+
+function normalizePrefixUrl(baseUrl: string) {
+	if (!baseUrl)
+		return "/api/v1/";
+
+	if (/^https?:\/\//i.test(baseUrl)) {
+		return baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+	}
+
+	const normalized = baseUrl.startsWith("/") ? baseUrl : `/${baseUrl}`;
+	return normalized.endsWith("/") ? normalized : `${normalized}/`;
+}
 
 const defaultConfig: Options = {
-	// The input argument cannot start with a slash / when using prefixUrl option.
-	prefixUrl: import.meta.env.VITE_API_BASE_URL,
+	prefixUrl: normalizePrefixUrl(RAW_API_BASE_URL),
 	timeout: API_TIMEOUT,
 	retry: {
 		// حداکثر تعداد تلاش مجدد هنگام شکست درخواست

@@ -1,7 +1,1 @@
-export interface NotificationItem {
-	avatar: string
-	date: string
-	isRead?: boolean
-	message: string
-	title: string
-}
+export type { NotificationItem } from "#src/api/notifications/types";
