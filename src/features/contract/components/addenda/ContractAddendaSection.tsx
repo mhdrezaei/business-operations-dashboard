@@ -1,5 +1,5 @@
 import type { ArrayPath, FieldValues, Path, PathValue } from "react-hook-form";
-import { RHFProTextArea, RHFSelect } from "#src/shared/ui/rhf-pro";
+import { RHFProText, RHFProTextArea, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { ProCard } from "@ant-design/pro-components";
 import { Button, Collapse, message } from "antd";
@@ -58,8 +58,9 @@ function monthsInYearOptions(year: number | string, startKey: number, endKey: nu
 interface Props<TFV extends FieldValues> {
 	name: ArrayPath<TFV>
 	title?: string
-	contractTypeTitle: string
+	contractTypeTitle?: string
 	contractTypeFieldKey?: string
+	renderAddendumFields?: (basePath: string, index: number) => React.ReactNode
 
 	contractStartYearPath: Path<TFV>
 	contractStartMonthPath: Path<TFV>
@@ -70,8 +71,9 @@ interface Props<TFV extends FieldValues> {
 export function ContractAddendaSection<TFV extends FieldValues>({
 	name,
 	title = "الحاقیه‌های قرارداد (اختیاری)",
-	contractTypeTitle,
+	contractTypeTitle = "",
 	contractTypeFieldKey = "pricing",
+	renderAddendumFields,
 	contractStartYearPath,
 	contractStartMonthPath,
 	contractEndYearPath,
@@ -325,7 +327,17 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 						</div>
 
 						<div style={{ marginTop: 12 }}>
-							<ContractTypeSection title={contractTypeTitle} name={p(base, contractTypeFieldKey)} />
+							<RHFProText
+								name={p(base, "contractNumber")}
+								label="شماره قرارداد الحاقیه"
+								inputProps={{ placeholder: "مثلاً ADD-1405-01" }}
+							/>
+						</div>
+
+						<div style={{ marginTop: 12 }}>
+							{renderAddendumFields
+								? renderAddendumFields(base, idx)
+								: <ContractTypeSection title={contractTypeTitle} name={p(base, contractTypeFieldKey)} />}
 						</div>
 
 						<div style={{ marginTop: 12 }}>
@@ -350,6 +362,7 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 		contractEndKey,
 		contractTypeTitle,
 		contractTypeFieldKey,
+		renderAddendumFields,
 		trigger,
 	]);
 

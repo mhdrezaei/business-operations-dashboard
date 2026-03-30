@@ -82,6 +82,51 @@ export function SmsFields() {
 							name={sf("addenda") as ArrayPath<ContractFormValues>}
 							contractTypeTitle=""
 							contractTypeFieldKey="contractPricing"
+							renderAddendumFields={base => (
+								<>
+									<ProCard bordered headerBordered style={{ borderRadius: 6 }} title="درآمد اپراتورها" bodyStyle={{ padding: 16 }}>
+										<div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
+											<ContractTypeSection title="ایرانسل - فارسی" name={`${base}.operatorRevenue.irancellFa` as any} />
+											<ContractTypeSection title="ایرانسل - انگلیسی" name={`${base}.operatorRevenue.irancellEn` as any} />
+											<ContractTypeSection title="همراه اول - فارسی" name={`${base}.operatorRevenue.hamrahAvalFa` as any} />
+											<ContractTypeSection title="سایر - فارسی" name={`${base}.operatorRevenue.otherFa` as any} />
+											<ContractTypeSection title="سایر - انگلیسی" name={`${base}.operatorRevenue.otherEn` as any} />
+										</div>
+									</ProCard>
+
+									{isPartners
+										? (
+											<>
+												<ProCard bordered headerBordered style={{ borderRadius: 6, marginTop: 12 }} title="درآمد دولت" bodyStyle={{ padding: 16 }}>
+													<ContractTypeSection title="درآمد دولت" name={`${base}.governmentRevenue` as any} />
+												</ProCard>
+												<ProCard bordered headerBordered style={{ borderRadius: 6, marginTop: 12 }} title="سود" bodyStyle={{ padding: 16 }}>
+													<ContractTypeSection title="سود" name={`${base}.profit.pricing` as any} />
+													<div style={{ marginTop: 12 }}>
+														<ProFormGroup>
+															<RHFProNumber
+																name={`${base}.profit.minProfit` as any}
+																label="حداقل سود (تومان)"
+																inputProps={{ placeholder: "اختیاری" }}
+																enableGrouping
+																enableWordsTooltip
+															/>
+														</ProFormGroup>
+													</div>
+												</ProCard>
+											</>
+										)
+										: null}
+
+									{isGovOps
+										? (
+											<ProCard bordered headerBordered style={{ borderRadius: 6, marginTop: 12 }} title="نرخ دولت" bodyStyle={{ padding: 16 }}>
+												<ContractTypeSection title="نرخ دولت" name={`${base}.governmentRate` as any} />
+											</ProCard>
+										)
+										: null}
+								</>
+							)}
 
 							// ✅ مسیر تاریخ‌های قرارداد اصلی (root) - اجباری در Props شما
 							contractStartYearPath={"startYear" as Path<ContractFormValues>}

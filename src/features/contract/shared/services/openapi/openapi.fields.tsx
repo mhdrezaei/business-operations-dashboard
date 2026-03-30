@@ -21,6 +21,10 @@ const PACKAGE_MODE_OPTIONS = [
 	{ label: "OR", value: "OR" },
 	{ label: "AND", value: "AND" },
 ];
+const ADDENDA_OPERATION_OPTIONS = [
+	{ label: "استعلام قبض", value: "BILL_INQUIRY" },
+	{ label: "ثبت وصولی", value: "RECEIPT_REGISTER" },
+];
 
 export function OpenApiFields() {
 	const { control, setValue, getValues } = useFormContext<ContractFormValues>();
@@ -53,6 +57,8 @@ export function OpenApiFields() {
 	const [activeKey, setActiveKey] = useState<string>("0");
 
 	const contractModel = useWatch({ control, name: sf("contractModel") }) as "package" | "legacy" | null;
+	const serviceCode = useWatch({ control, name: "serviceCode" }) as string | null;
+	const isOpenApiService = serviceCode === "openapi";
 	// When legacy is selected, create legacyPricing if it doesn't exist
 	React.useEffect(() => {
 		if (contractModel === "legacy") {
@@ -452,6 +458,22 @@ export function OpenApiFields() {
 							name={sf("addenda") as ArrayPath<ContractFormValues>}
 							contractTypeTitle=""
 							contractTypeFieldKey="contractPricing"
+							renderAddendumFields={base => (
+								<>
+									{isOpenApiService
+										? (
+											<RHFSelect
+												name={`${base}.operationType` as any}
+												label="نوع عملیات (الحاقیه)"
+												options={ADDENDA_OPERATION_OPTIONS}
+												selectProps={{ placeholder: "انتخاب کنید", allowClear: true }}
+											/>
+										)
+										: null}
+
+									<ContractTypeSection title="نوع قرارداد" name={`${base}.contractPricing` as any} />
+								</>
+							)}
 
 							// ✅ Root contract dates path - mandatory in your Props
 							contractStartYearPath={"startYear" as Path<ContractFormValues>}

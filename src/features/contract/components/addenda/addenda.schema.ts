@@ -21,10 +21,12 @@ export const addendumSchema = z
 		endYear: z.number().int().min(1401).max(1410).nullable(),
 		endMonth: z.number().int().min(1).max(12).nullable(),
 
-		contractPricing: contractTypeSchema,
+		contractPricing: contractTypeSchema.optional(),
+		contractNumber: z.string().optional(),
 
 		description: z.string().max(2000).optional(),
 	})
+	.passthrough()
 	.superRefine((v, ctx) => {
 		if (v.startYear == null)
 			ctx.addIssue({ code: "custom", path: ["startYear"], message: "سال شروع الحاقیه الزامی است" });

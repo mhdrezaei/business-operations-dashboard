@@ -3,7 +3,7 @@ import type { ContractFormValues } from "../../../shared/model/contract.form.typ
 import { ContractAddendaSection } from "#src/features/contract/components/addenda/ContractAddendaSection";
 import { defaultContractTypeValue } from "#src/features/contract/components/contract-type/contract-type.types";
 import { ContractTypeSection } from "#src/features/contract/components/contract-type/ContractTypeSection";
-import { RHFProCheckbox, RHFProNumber } from "#src/shared/ui/rhf-pro";
+import { RHFProCheckbox, RHFProNumber, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined } from "@ant-design/icons";
 import { ProCard } from "@ant-design/pro-components";
 import { Button, Row } from "antd";
@@ -11,6 +11,10 @@ import React, { useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
 const sf = (path: string) => `serviceFields.${path}` as const;
+const ADDENDA_LOCATION_OPTIONS = [
+	{ label: "تهران", value: "TEHRAN" },
+	{ label: "مراکز استانی", value: "PROVINCE" },
+];
 
 export function TrafficFields() {
 	const { control, setValue } = useFormContext<ContractFormValues>();
@@ -201,6 +205,17 @@ export function TrafficFields() {
 							name={sf("addenda") as ArrayPath<ContractFormValues>}
 							contractTypeTitle=""
 							contractTypeFieldKey="contractPricing"
+							renderAddendumFields={base => (
+								<>
+									<RHFSelect
+										name={`${base}.location` as any}
+										label="موقعیت"
+										options={ADDENDA_LOCATION_OPTIONS}
+										selectProps={{ placeholder: "انتخاب کنید", allowClear: true }}
+									/>
+									<ContractTypeSection title="نوع قرارداد" name={`${base}.contractPricing` as any} />
+								</>
+							)}
 							contractStartYearPath={"startYear" as Path<ContractFormValues>}
 							contractStartMonthPath={"startMonth" as Path<ContractFormValues>}
 							contractEndYearPath={"endYear" as Path<ContractFormValues>}
