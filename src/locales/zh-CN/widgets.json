@@ -20,5 +20,18 @@
 		"noResults": "未找到搜索结果",
 		"noRecent": "没有搜索历史",
 		"total": "共 {{total}} 项"
-	}
+	},
+	"notificationInboxTitle": "通知",
+	"notificationInboxSubtitle": "查看和管理已读与未读通知",
+	"notificationAll": "全部",
+	"notificationRead": "已读",
+	"notificationUnread": "未读",
+	"notificationRefresh": "刷新",
+	"notificationMarkAsRead": "标记为已读",
+	"notificationMarkAsUnread": "标记为未读",
+	"notificationReadAllOnPage": "全部标记已读",
+	"notificationSentAt": "发送时间",
+	"notificationEmpty": "暂无通知",
+	"notificationUnreadCount": "通知收件箱（未读：{{count}}）",
+	"notificationRelatedCompanies": "相关公司"
 }

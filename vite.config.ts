@@ -7,7 +7,7 @@ import { codeInspectorPlugin } from "code-inspector-plugin";
 import dayjs from "dayjs";
 import { FileSystemIconLoader } from "unplugin-icons/loaders";
 import Icons from "unplugin-icons/vite";
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import { checker } from "vite-plugin-checker";
 import svgrPlugin from "vite-plugin-svgr";
 
@@ -18,108 +18,112 @@ const __APP_INFO__ = {
 	lastBuildTime: dayjs(new Date()).format("YYYY-MM-DD HH:mm:ss"),
 };
 
-const isDev = process.env.NODE_ENV === "development";
-
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+	const env = loadEnv(mode, process.cwd(), "");
+	const isDev = process.env.NODE_ENV === "development";
+	const apiProxyTarget = env.VITE_API_PROXY_TARGET || "https://negah-dp.karashab-co.ir";
 
-	base: isDev ? "/" : "/",
-	plugins: [
-		react(),
-		// https://github.com/pd4d10/vite-plugin-svgr#options
-		svgrPlugin({
+	return {
+
+		base: isDev ? "/" : "/",
+		plugins: [
+			react(),
+			// https://github.com/pd4d10/vite-plugin-svgr#options
+			svgrPlugin({
 			// https://react-svgr.com/docs/options/
-			svgrOptions: {
-				plugins: ["@svgr/plugin-svgo", "@svgr/plugin-jsx"],
-				svgoConfig: {
-					floatPrecision: 2,
+				svgrOptions: {
+					plugins: ["@svgr/plugin-svgo", "@svgr/plugin-jsx"],
+					svgoConfig: {
+						floatPrecision: 2,
+					},
 				},
-			},
-		}),
-		checker({
-			typescript: true,
-			terminal: false,
-			enableBuild: false,
-		}),
+			}),
+			checker({
+				typescript: true,
+				terminal: false,
+				enableBuild: false,
+			}),
 
-		codeInspectorPlugin({
-			bundler: "vite",
+			codeInspectorPlugin({
+				bundler: "vite",
 			// hideConsole: true,
-		}),
+			}),
 
-		Icons({
-			customCollections: {
-				svg: FileSystemIconLoader("./src/icons/svg"),
-			},
-			/**
-			 * @see https://iconify.design/docs/articles/cleaning-up-icons/#parsing-one-monotone-icon
-			 * Cleaning up icons
-			 * Set default color to currentColor
-			 * Set default width and height to 1em
-			 */
-			transform: (svg, collection) => {
-				if (collection === "svg") {
-					const svgObject = new SVG(svg);
-					cleanupSVG(svgObject);
-					runSVGO(svgObject);
-					parseColors(svgObject, {
-						defaultColor: "currentColor",
-						callback: (attr, colorStr, color) => {
-							if (!color) {
+			Icons({
+				customCollections: {
+					svg: FileSystemIconLoader("./src/icons/svg"),
+				},
+				/**
+				 * @see https://iconify.design/docs/articles/cleaning-up-icons/#parsing-one-monotone-icon
+				 * Cleaning up icons
+				 * Set default color to currentColor
+				 * Set default width and height to 1em
+				 */
+				transform: (svg, collection) => {
+					if (collection === "svg") {
+						const svgObject = new SVG(svg);
+						cleanupSVG(svgObject);
+						runSVGO(svgObject);
+						parseColors(svgObject, {
+							defaultColor: "currentColor",
+							callback: (attr, colorStr, color) => {
+								if (!color) {
 								// Color cannot be parsed!
-								throw new Error(`Invalid color: "${colorStr}" in attribute ${attr}`);
-							}
+									throw new Error(`Invalid color: "${colorStr}" in attribute ${attr}`);
+								}
 
-							if (isEmptyColor(color)) {
+								if (isEmptyColor(color)) {
 								// Color is empty: 'none' or 'transparent'. Return as is
-								return color;
-							}
+									return color;
+								}
 
-							// If color is not empty, return it
-							return color;
-						},
-					});
-					return svgObject.toString({ height: "1em", width: "1em" });
-				}
-				return svg;
-			},
-			compiler: "jsx",
-			jsx: "react",
-			scale: 1,
-		}),
-	],
-	test: {
-		globals: true,
-		environment: "happy-dom",
-		setupFiles: ["./src/setupTests.ts"],
-	},
-	preview: {
-		port: 5173,
-	},
-	server: {
-		port: 5173,
-		// https://vitejs.dev/config/server-options#server-proxy
-		proxy: {
-			// "/api": {
-			// 	target: "http://191.255.255.123:8888",
-			// 	changeOrigin: true,
-			// 	rewrite: path => isDev ? path.replace(/^\/api/, "") : path,
-			// },
+								// If color is not empty, return it
+								return color;
+							},
+						});
+						return svgObject.toString({ height: "1em", width: "1em" });
+					}
+					return svg;
+				},
+				compiler: "jsx",
+				jsx: "react",
+				scale: 1,
+			}),
+		],
+		test: {
+			globals: true,
+			environment: "happy-dom",
+			setupFiles: ["./src/setupTests.ts"],
 		},
-	},
-	define: {
-		__APP_INFO__: JSON.stringify(__APP_INFO__),
-	},
-	build: {
-		outDir: "build",
-		sourcemap: false,
-		rollupOptions: {
-			output: {
-				manualChunks: {
-					react: ["react", "react-dom", "react-router"],
-					antd: ["antd", "@ant-design/icons"],
+		preview: {
+			port: 5173,
+		},
+		server: {
+			port: 5173,
+			// https://vitejs.dev/config/server-options#server-proxy
+			proxy: {
+				"/api": {
+					target: apiProxyTarget,
+					changeOrigin: true,
+					secure: false,
 				},
 			},
 		},
-	},
+		define: {
+			__APP_INFO__: JSON.stringify(__APP_INFO__),
+		},
+		build: {
+			outDir: "build",
+			sourcemap: false,
+			rollupOptions: {
+				output: {
+					manualChunks: {
+						react: ["react", "react-dom", "react-router"],
+						antd: ["antd", "@ant-design/icons"],
+					},
+				},
+			},
+		},
+	};
 });

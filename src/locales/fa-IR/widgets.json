@@ -20,5 +20,18 @@
 		"noResults": "نتیجه‌ای برای جستجو یافت نشد",
 		"noRecent": "هیچ سابقه جستجویی وجود ندارد",
 		"total": "مجموع {{total}} مورد"
-	}
+	},
+	"notificationInboxTitle": "نوتیفیکیشن‌ها",
+	"notificationInboxSubtitle": "مشاهده و مدیریت اعلان‌های خوانده‌شده و خوانده‌نشده",
+	"notificationAll": "همه",
+	"notificationRead": "خوانده‌شده",
+	"notificationUnread": "خوانده‌نشده",
+	"notificationRefresh": "به‌روزرسانی",
+	"notificationMarkAsRead": "علامت‌گذاری به‌عنوان خوانده‌شده",
+	"notificationMarkAsUnread": "علامت‌گذاری به‌عنوان خوانده‌نشده",
+	"notificationReadAllOnPage": "خواندن همه",
+	"notificationSentAt": "ارسال",
+	"notificationEmpty": "اعلانی یافت نشد",
+	"notificationUnreadCount": "صندوق نوتیفیکیشن (خوانده‌نشده: {{count}})",
+	"notificationRelatedCompanies": "شرکت‌های مرتبط"
 }

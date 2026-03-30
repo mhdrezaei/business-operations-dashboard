@@ -2,7 +2,7 @@ import type { ContractFormValues } from "#src/features/contract/shared/model/con
 import type { ContractServicePath } from "../../../api/contracts.api";
 import { apiPricingToContractType, contractTypeToApiPricing } from "#src/features/contract/api/pricing.mapper";
 import { ContractForm } from "#src/features/contract/shared/ui/form/ContractForm";
-import { Modal } from "antd";
+import { Empty, Modal, Spin } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
 import { fetchContractDetail, fetchUpdateContract } from "../../../api/contracts.api";
 
@@ -256,10 +256,27 @@ function formValuesToApiPayload(values: ContractFormValues) {
 	};
 }
 
+function isValidContractDetailResponse(dto: unknown, contractId: number) {
+	if (!dto || typeof dto !== "object")
+		return false;
+
+	const record = dto as Record<string, unknown>;
+	return Number(record.id) === contractId;
+}
+
+function getSmsFallbackService(service: ContractServicePath) {
+	if (service === "sms/client")
+		return "sms/vendor" as const;
+	if (service === "sms/vendor")
+		return "sms/client" as const;
+	return null;
+}
+
 export function ContractDetailModal({ open, contractId, service, onClose, onUpdated }: Props) {
 	const [loading, setLoading] = useState(false);
 	const [saving, setSaving] = useState(false);
 	const [initialValues, setInitialValues] = useState<ContractFormValues | null>(null);
+	const [resolvedService, setResolvedService] = useState<ContractServicePath | null>(null);
 
 	const modalTitle = useMemo(() => (contractId ? "ویرایش قرارداد" : "جزئیات قرارداد"), [contractId]);
 
@@ -268,13 +285,30 @@ export function ContractDetailModal({ open, contractId, service, onClose, onUpda
 			return;
 
 		let cancelled = false;
+		const smsFallbackService = getSmsFallbackService(service);
+		const candidateServices: ContractServicePath[] = smsFallbackService ? [service, smsFallbackService] : [service];
 
 		(async () => {
 			setLoading(true);
+			setInitialValues(null);
+			setResolvedService(service);
 			try {
-				const dto = await fetchContractDetail(service, contractId);
-				if (!cancelled)
-					setInitialValues(dtoToFormValues(dto, service));
+				for (const candidateService of candidateServices) {
+					try {
+						const dto = await fetchContractDetail(candidateService, contractId);
+						if (!isValidContractDetailResponse(dto, contractId))
+							continue;
+
+						if (!cancelled) {
+							setResolvedService(candidateService);
+							setInitialValues(dtoToFormValues(dto, candidateService));
+						}
+						return;
+					}
+					catch {
+						// try the next fallback service candidate
+					}
+				}
 			}
 			finally {
 				if (!cancelled)
@@ -296,27 +330,37 @@ export function ContractDetailModal({ open, contractId, service, onClose, onUpda
 			width={1000}
 			destroyOnClose
 		>
-			{!contractId || !service || loading || !initialValues
+			{!contractId || !resolvedService
 				? null
-				: (
-					<ContractForm
-						key={`${service}-${contractId}`}
-						initialValues={initialValues}
-						submitText="ذخیره تغییرات"
-						submitting={saving}
-						onSubmit={async (values) => {
-							setSaving(true);
-							try {
-								await fetchUpdateContract(service, contractId, formValuesToApiPayload(values));
-								onUpdated?.();
-								onClose();
-							}
-							finally {
-								setSaving(false);
-							}
-						}}
-					/>
-				)}
+				: loading
+					? (
+						<div className="flex min-h-[240px] items-center justify-center">
+							<Spin />
+						</div>
+					)
+					: !initialValues
+						? (
+							<Empty description="اطلاعات قرارداد یافت نشد" />
+						)
+						: (
+							<ContractForm
+								key={`${resolvedService}-${contractId}`}
+								initialValues={initialValues}
+								submitText="ذخیره تغییرات"
+								submitting={saving}
+								onSubmit={async (values) => {
+									setSaving(true);
+									try {
+										await fetchUpdateContract(resolvedService, contractId, formValuesToApiPayload(values));
+										onUpdated?.();
+										onClose();
+									}
+									finally {
+										setSaving(false);
+									}
+								}}
+							/>
+						)}
 		</Modal>
 	);
 }

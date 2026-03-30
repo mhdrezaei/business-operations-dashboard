@@ -7,12 +7,10 @@
 	"notifications": "Benachrichtigungen",
 	"markAllAsRead": "Alle als gelesen markieren",
 	"clearNotifications": "Leeren",
-
 	"versionMonitorTitle": "Systemaktualisierung verfügbar",
 	"versionMonitorContent": "Eine neue Version des Systems wurde erkannt. Möchten Sie die Seite jetzt aktualisieren?",
 	"versionMonitorConfirm": "Jetzt aktualisieren",
 	"versionMonitorCancel": "Später",
-
 	"search": {
 		"placeholder": "Suchbegriff zur Menüsuche eingeben",
 		"title": "Suche",
@@ -22,5 +20,18 @@
 		"noResults": "Keine Suchergebnisse gefunden",
 		"noRecent": "Kein Suchverlauf vorhanden",
 		"total": "Insgesamt {{total}} Einträge"
-	}
+	},
+	"notificationInboxTitle": "Benachrichtigungen",
+	"notificationInboxSubtitle": "Gelesene und ungelesene Benachrichtigungen anzeigen und verwalten",
+	"notificationAll": "Alle",
+	"notificationRead": "Gelesen",
+	"notificationUnread": "Ungelesen",
+	"notificationRefresh": "Aktualisieren",
+	"notificationMarkAsRead": "Als gelesen markieren",
+	"notificationMarkAsUnread": "Als ungelesen markieren",
+	"notificationReadAllOnPage": "Alle als gelesen",
+	"notificationSentAt": "Gesendet",
+	"notificationEmpty": "Keine Benachrichtigungen gefunden",
+	"notificationUnreadCount": "Benachrichtigungs-Postfach (Ungelesen: {{count}})",
+	"notificationRelatedCompanies": "Zugehörige Unternehmen"
 }

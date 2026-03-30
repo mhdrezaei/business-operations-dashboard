@@ -20,5 +20,18 @@
 		"noResults": "No Search Results Found",
 		"noRecent": "No Search History",
 		"total": "Total {{total}} items"
-	}
+	},
+	"notificationInboxTitle": "Notifications",
+	"notificationInboxSubtitle": "View and manage read and unread notifications",
+	"notificationAll": "All",
+	"notificationRead": "Read",
+	"notificationUnread": "Unread",
+	"notificationRefresh": "Refresh",
+	"notificationMarkAsRead": "Mark as read",
+	"notificationMarkAsUnread": "Mark as unread",
+	"notificationReadAllOnPage": "Mark all read",
+	"notificationSentAt": "Sent",
+	"notificationEmpty": "No notifications found",
+	"notificationUnreadCount": "Notification Inbox (Unread: {{count}})",
+	"notificationRelatedCompanies": "Related Companies"
 }
