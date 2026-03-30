@@ -3,8 +3,13 @@ import type { ApiPricing } from "./contract.dto";
 import { apiTiersToRows, rowsToApiTiers } from "./tiers.mapper";
 
 export function apiPricingToContractType(p: ApiPricing | null | undefined): ContractTypeValue {
+	const defaultRows = [
+		{ from: null, to: null, fee: null },
+		{ from: null, to: null, fee: null },
+	];
+
 	if (!p) {
-		return { type: null, fixedAmount: null, rows: [{ from: null, to: null, fee: null }], sections: [] };
+		return { type: null, fixedAmount: null, rows: defaultRows, sections: [] };
 	}
 
 	if (p.calculation_type === "TIER_SINGLE") {
@@ -29,7 +34,7 @@ export function apiPricingToContractType(p: ApiPricing | null | undefined): Cont
 		return {
 			type: "fixed",
 			fixedAmount: null,
-			rows: [{ from: null, to: null, fee: null }],
+			rows: defaultRows,
 			sections: [],
 		};
 	}
@@ -38,12 +43,12 @@ export function apiPricingToContractType(p: ApiPricing | null | undefined): Cont
 		return {
 			type: "tier_blended",
 			fixedAmount: null,
-			rows: [{ from: null, to: null, fee: null }],
+			rows: defaultRows,
 			sections: [],
 		};
 	}
 
-	return { type: null, fixedAmount: null, rows: [{ from: null, to: null, fee: null }], sections: [] };
+	return { type: null, fixedAmount: null, rows: defaultRows, sections: [] };
 }
 
 export function contractTypeToApiPricing(v: ContractTypeValue): ApiPricing | null {

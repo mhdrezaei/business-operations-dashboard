@@ -12,40 +12,62 @@ interface Props {
 	name: string
 }
 
-const DEFAULT_SECTION = {
-	mode: null,
-	rows: [{ from: null, to: null, fee: null }],
-};
+function createDefaultRows() {
+	return [
+		{ from: null, to: null, fee: null },
+		{ from: null, to: null, fee: null },
+	];
+}
+
+function createDefaultSection() {
+	return {
+		mode: null,
+		rows: createDefaultRows(),
+	};
+}
 
 export function ContractTypeSection({ title, name }: Props) {
-	const { control, getValues } = useFormContext();
+	const { control, getValues, setValue } = useFormContext();
 
 	const type = useWatch({ control, name: `${name}.type` as any }) as any;
 
 	const sectionsFa = useFieldArray({ control, name: `${name}.sections` as any });
-	const prevTypeRef = useRef<any>(null);
+	const prevTypeRef = useRef<any>(undefined);
 
 	useEffect(() => {
-		// only when we "enter" tier_blended
-		if (prevTypeRef.current !== "tier_blended" && type === "tier_blended") {
-			const current = (getValues(`${name}.sections` as any) ?? []) as any[];
+		const prevType = prevTypeRef.current;
 
+		if (
+			prevType !== undefined
+			&& prevType !== type
+			&& (type === "tier_fixed" || type === "tier_variable")
+		) {
+			const currentRows = (getValues(`${name}.rows` as any) ?? []) as any[];
+			if (currentRows.length < 2) {
+				setValue(`${name}.rows` as any, createDefaultRows() as any, {
+					shouldDirty: true,
+					shouldValidate: false,
+				});
+			}
+		}
+
+		if (prevType !== "tier_blended" && type === "tier_blended") {
+			const current = (getValues(`${name}.sections` as any) ?? []) as any[];
 			sectionsFa.replace(
-				(current.length > 0 ? current : [{ mode: null, rows: [{ from: null, to: null, fee: null }] }]) as any,
+				(current.length > 0 ? current : [createDefaultSection()]) as any,
 			);
 		}
 
 		prevTypeRef.current = type;
-	}, [type, name, getValues, sectionsFa]);
+	}, [type, name, getValues, setValue, sectionsFa]);
 
-	// ✅ Add a new section (if empty: replace with a section, if not: append)
 	const addSection = () => {
 		const current = (getValues(`${name}.sections` as any) ?? []) as any[];
 		if (current.length === 0) {
-			sectionsFa.replace([DEFAULT_SECTION] as any);
+			sectionsFa.replace([createDefaultSection()] as any);
 			return;
 		}
-		sectionsFa.append(DEFAULT_SECTION as any);
+		sectionsFa.append(createDefaultSection() as any);
 	};
 
 	return (

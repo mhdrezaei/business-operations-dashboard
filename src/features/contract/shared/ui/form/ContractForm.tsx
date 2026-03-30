@@ -66,7 +66,8 @@ export function ContractForm({
 
 	const form = useForm<ContractFormValues>({
 		defaultValues: mergedInitialValues as any,
-		mode: "all",
+		mode: "onTouched",
+		reValidateMode: "onChange",
 		shouldUnregister: true,
 		resolver: dynamicResolver,
 	});
