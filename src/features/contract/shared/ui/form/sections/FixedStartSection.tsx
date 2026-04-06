@@ -102,7 +102,7 @@ function withSelectedOption(options: YearMonthOption[], selected: number | null)
 }
 
 export function FixedStartSection() {
-	const { setValue, control } = useFormContext<ContractFormValues>();
+	const { setValue, control, trigger, formState, resetField } = useFormContext<ContractFormValues>();
 	const { getPermittedServiceIds } = useAccess();
 
 	const services = useQuery(servicesQuery());
@@ -117,6 +117,7 @@ export function FixedStartSection() {
 	const endYear = useWatch({ control, name: "endYear" });
 	const endMonth = useWatch({ control, name: "endMonth" });
 	const selectedAgentId = useWatch({ control, name: "serviceFields.agent" as any });
+	const serviceIsOfficial = useWatch({ control, name: "serviceFields.isOfficial" as any }) as boolean | null | undefined;
 
 	const permittedCreateServiceIdList = getPermittedServiceIds("contracts", "create");
 	const permittedCreateServiceIds = useMemo(
@@ -132,12 +133,25 @@ export function FixedStartSection() {
 	const isSmsCommission = isSmsCommissionCode(serviceCode);
 	const smsCommissionAgents = useQuery(smsCommissionAgentsQuery(isSmsCommission && !!companyId));
 
+	useEffect(() => {
+		if (!isSms && !isTraffic)
+			return;
+
+		if (typeof serviceIsOfficial !== "boolean") {
+			setValue("serviceFields.isOfficial" as any, true, {
+				shouldDirty: false,
+				shouldValidate: false,
+			});
+		}
+	}, [isSms, isTraffic, serviceIsOfficial, setValue]);
+
 	const prevServiceIdRef = useRef<typeof serviceId>(undefined);
 	const prevCompanyIdRef = useRef<typeof companyId>(undefined);
 	const prevTrafficCompanyTypeRef = useRef<typeof trafficCompanyType>(undefined);
 	const prevCounterpartyTypeRef = useRef<typeof counterpartyType>(undefined);
 	const prevStartYearRef = useRef<typeof startYear>(undefined);
 	const prevEndYearRef = useRef<typeof endYear>(undefined);
+	const lastValidatedDateKeyRef = useRef<string>("");
 
 	useEffect(() => {
 		const prev = prevServiceIdRef.current;
@@ -147,22 +161,29 @@ export function FixedStartSection() {
 			return;
 
 		if (prev !== serviceId) {
-			setValue("companyId", null, { shouldDirty: true, shouldValidate: true });
-			setValue("counterpartyType", null, { shouldDirty: true, shouldValidate: true });
-			setValue("trafficCompanyType" as any, null, { shouldDirty: true, shouldValidate: true });
+			resetField("companyId", { defaultValue: null });
+			resetField("counterpartyType", { defaultValue: null });
+			resetField("trafficCompanyType" as any, { defaultValue: null });
+			resetField("startYear", { defaultValue: null });
+			resetField("startMonth", { defaultValue: null });
+			resetField("endYear", { defaultValue: null });
+			resetField("endMonth", { defaultValue: null });
+			resetField("contractNumber" as any, { defaultValue: "" as any });
+			resetField("serviceFields", { defaultValue: {} as any });
+			lastValidatedDateKeyRef.current = "";
 		}
-	}, [serviceId, setValue]);
+	}, [serviceId, resetField]);
 
 	useEffect(() => {
 		if (!serviceId) {
-			setValue("serviceCode", null, { shouldDirty: true, shouldValidate: true });
+			setValue("serviceCode", null, { shouldDirty: true, shouldValidate: false });
 			return;
 		}
 
 		if (!permittedCreateServiceIds.has(serviceId)) {
-			setValue("serviceId", null, { shouldDirty: true, shouldValidate: true });
-			setValue("serviceCode", null, { shouldDirty: true, shouldValidate: true });
-			setValue("companyId", null, { shouldDirty: true, shouldValidate: true });
+			setValue("serviceId", null, { shouldDirty: true, shouldValidate: false });
+			setValue("serviceCode", null, { shouldDirty: true, shouldValidate: false });
+			setValue("companyId", null, { shouldDirty: true, shouldValidate: false });
 			return;
 		}
 
@@ -174,7 +195,7 @@ export function FixedStartSection() {
 		if (!normalizedCode)
 			return;
 
-		setValue("serviceCode", normalizedCode as any, { shouldDirty: true, shouldValidate: true });
+		setValue("serviceCode", normalizedCode as any, { shouldDirty: true, shouldValidate: false });
 	}, [serviceId, services.data, setValue, permittedCreateServiceIdList.join(",")]);
 
 	useEffect(() => {
@@ -185,7 +206,7 @@ export function FixedStartSection() {
 			return;
 
 		if (isSms && counterpartyType === "gov_ops" && prev !== counterpartyType) {
-			setValue("companyId", null, { shouldDirty: true, shouldValidate: true });
+			setValue("companyId", null, { shouldDirty: true, shouldValidate: false });
 		}
 	}, [isSms, counterpartyType, setValue]);
 
@@ -197,7 +218,7 @@ export function FixedStartSection() {
 			return;
 
 		if (isTraffic && prev !== trafficCompanyType) {
-			setValue("companyId", null, { shouldDirty: true, shouldValidate: true });
+			setValue("companyId", null, { shouldDirty: true, shouldValidate: false });
 		}
 	}, [isTraffic, trafficCompanyType, setValue]);
 
@@ -209,10 +230,10 @@ export function FixedStartSection() {
 			return;
 
 		if (prev !== companyId) {
-			setValue("startYear", null, { shouldDirty: true, shouldValidate: true });
-			setValue("startMonth", null, { shouldDirty: true, shouldValidate: true });
-			setValue("endYear", null, { shouldDirty: true, shouldValidate: true });
-			setValue("endMonth", null, { shouldDirty: true, shouldValidate: true });
+			setValue("startYear", null, { shouldDirty: true, shouldValidate: false });
+			setValue("startMonth", null, { shouldDirty: true, shouldValidate: false });
+			setValue("endYear", null, { shouldDirty: true, shouldValidate: false });
+			setValue("endMonth", null, { shouldDirty: true, shouldValidate: false });
 		}
 	}, [companyId, setValue]);
 
@@ -224,7 +245,7 @@ export function FixedStartSection() {
 			return;
 
 		if (prev !== startYear) {
-			setValue("startMonth", null, { shouldDirty: true, shouldValidate: true });
+			setValue("startMonth", null, { shouldDirty: true, shouldValidate: false });
 		}
 	}, [startYear, setValue]);
 
@@ -236,9 +257,37 @@ export function FixedStartSection() {
 			return;
 
 		if (prev !== endYear) {
-			setValue("endMonth", null, { shouldDirty: true, shouldValidate: true });
+			setValue("endMonth", null, { shouldDirty: true, shouldValidate: false });
 		}
 	}, [endYear, setValue]);
+
+	useEffect(() => {
+		const allDateFieldsAreSelected
+			= startYear != null && startMonth != null && endYear != null && endMonth != null;
+
+		const dateFieldsTouched
+			= !!formState.touchedFields.startYear || !!formState.touchedFields.startMonth || !!formState.touchedFields.endYear || !!formState.touchedFields.endMonth;
+
+		if (!allDateFieldsAreSelected || !dateFieldsTouched)
+			return;
+
+		const currentKey = `${startYear}-${startMonth}-${endYear}-${endMonth}`;
+		if (lastValidatedDateKeyRef.current === currentKey)
+			return;
+
+		lastValidatedDateKeyRef.current = currentKey;
+		void trigger(["endYear", "endMonth"]);
+	}, [
+		startYear,
+		startMonth,
+		endYear,
+		endMonth,
+		formState.touchedFields.startYear,
+		formState.touchedFields.startMonth,
+		formState.touchedFields.endYear,
+		formState.touchedFields.endMonth,
+		trigger,
+	]);
 
 	const serviceOptions = useMemo(
 		() =>
@@ -292,7 +341,7 @@ export function FixedStartSection() {
 			return;
 
 		if (!companyId || smsCommissionAgentOptions.length === 0) {
-			setValue("serviceFields.agent" as any, null, { shouldDirty: true, shouldValidate: true });
+			setValue("serviceFields.agent" as any, null, { shouldDirty: true, shouldValidate: false });
 			return;
 		}
 
@@ -300,7 +349,7 @@ export function FixedStartSection() {
 		if (!hasSelected) {
 			setValue("serviceFields.agent" as any, smsCommissionAgentOptions[0].value, {
 				shouldDirty: true,
-				shouldValidate: true,
+				shouldValidate: false,
 			});
 		}
 	}, [isSmsCommission, companyId, smsCommissionAgentOptions, selectedAgentId, setValue]);

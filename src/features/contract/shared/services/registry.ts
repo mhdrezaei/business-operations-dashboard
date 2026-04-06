@@ -1,5 +1,6 @@
 import type { ZodTypeAny } from "zod";
 import type { ContractServiceCode } from "../../shared/model/contract.form.types";
+import { commercialService } from "./commercial/commercial.registry";
 import { openapiService } from "./openapi/openapi.registry";
 import { shahkarService } from "./shahkar/shahkar.registry";
 import { smsCommissionService } from "./sms-commission/sms-commission.registry";
@@ -16,7 +17,7 @@ export interface ServiceModule {
 
 export const serviceRegistry: Partial<Record<ContractServiceCode, ServiceModule>> = {
 	"openapi": openapiService,
-	"commercial": openapiService,
+	"commercial": commercialService,
 	"shahkar": shahkarService,
 	"sms": smsService,
 	"sms-commission": smsCommissionService,

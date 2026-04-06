@@ -1,5 +1,5 @@
 import type { ArrayPath, FieldValues, Path, PathValue } from "react-hook-form";
-import { RHFProTextArea, RHFSelect } from "#src/shared/ui/rhf-pro";
+import { RHFProText, RHFProTextArea, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { ProCard } from "@ant-design/pro-components";
 import { Button, Collapse, message } from "antd";
@@ -58,8 +58,11 @@ function monthsInYearOptions(year: number | string, startKey: number, endKey: nu
 interface Props<TFV extends FieldValues> {
 	name: ArrayPath<TFV>
 	title?: string
-	contractTypeTitle: string
+	contractTypeTitle?: string
 	contractTypeFieldKey?: string
+	renderAddendumFields?: (basePath: string, index: number) => React.ReactNode
+	canAddAddendum?: boolean
+	addendumAddBlockedMessage?: React.ReactNode
 
 	contractStartYearPath: Path<TFV>
 	contractStartMonthPath: Path<TFV>
@@ -70,8 +73,11 @@ interface Props<TFV extends FieldValues> {
 export function ContractAddendaSection<TFV extends FieldValues>({
 	name,
 	title = "الحاقیه‌های قرارداد (اختیاری)",
-	contractTypeTitle,
+	contractTypeTitle = "",
 	contractTypeFieldKey = "pricing",
+	renderAddendumFields,
+	canAddAddendum = true,
+	addendumAddBlockedMessage,
 	contractStartYearPath,
 	contractStartMonthPath,
 	contractEndYearPath,
@@ -167,6 +173,11 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 	const addAddendum = async () => {
 		if (!contractRangeReady) {
 			message.warning("ابتدا تاریخ شروع و پایان قرارداد را انتخاب کنید.");
+			return;
+		}
+		if (!canAddAddendum) {
+			if (addendumAddBlockedMessage)
+				message.warning(addendumAddBlockedMessage);
 			return;
 		}
 
@@ -325,7 +336,17 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 						</div>
 
 						<div style={{ marginTop: 12 }}>
-							<ContractTypeSection title={contractTypeTitle} name={p(base, contractTypeFieldKey)} />
+							<RHFProText
+								name={p(base, "contractNumber")}
+								label="شماره قرارداد الحاقیه"
+								inputProps={{ placeholder: "مثلاً ADD-1405-01" }}
+							/>
+						</div>
+
+						<div style={{ marginTop: 12 }}>
+							{renderAddendumFields
+								? renderAddendumFields(base, idx)
+								: <ContractTypeSection title={contractTypeTitle} name={p(base, contractTypeFieldKey)} />}
 						</div>
 
 						<div style={{ marginTop: 12 }}>
@@ -350,6 +371,9 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 		contractEndKey,
 		contractTypeTitle,
 		contractTypeFieldKey,
+		renderAddendumFields,
+		canAddAddendum,
+		addendumAddBlockedMessage,
 		trigger,
 	]);
 
@@ -360,7 +384,7 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 			style={{ borderRadius: 6, marginTop: 12 }}
 			title={title}
 			extra={(
-				<Button icon={<PlusOutlined />} onClick={addAddendum} disabled={!contractRangeReady}>
+				<Button icon={<PlusOutlined />} onClick={addAddendum} disabled={!contractRangeReady || !canAddAddendum}>
 					افزودن الحاقیه
 				</Button>
 			)}
@@ -369,6 +393,11 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 			{!contractRangeReady
 				? (
 					<div style={{ opacity: 0.75 }}>برای افزودن الحاقیه، ابتدا تاریخ شروع و پایان قرارداد را انتخاب کنید.</div>
+				)
+				: null}
+			{contractRangeReady && !canAddAddendum && addendumAddBlockedMessage
+				? (
+					<div style={{ opacity: 0.75, marginTop: 8 }}>{addendumAddBlockedMessage}</div>
 				)
 				: null}
 

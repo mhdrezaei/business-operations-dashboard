@@ -36,6 +36,145 @@ function toStringOrNull(value: unknown): string | null {
 	return String(value);
 }
 
+function mapOpenApiLegacyDetails(pricingValue: unknown) {
+	const pricing = contractTypeToApiPricing((pricingValue ?? null) as any);
+
+	return {
+		contract_model: "LEGACY",
+		bill_inquiry: pricing,
+		receipt_register: pricing,
+	};
+}
+
+function mapOpenApiPackageDetails(serviceFields: Record<string, any>) {
+	const plans = Array.isArray(serviceFields.plans) ? serviceFields.plans : [];
+	return {
+		contract_model: "PACKAGE",
+		package_model: {
+			mode: serviceFields.packageMode ?? "OR",
+			tiers: plans.map((plan: any) => ({
+				sms_min_inclusive: toNumberOrNull(plan?.smsMin),
+				sms_max_exclusive: toNumberOrNull(plan?.smsMax),
+				bill_min_inclusive: toNumberOrNull(plan?.billMin),
+				bill_max_exclusive: toNumberOrNull(plan?.billMax),
+				partner_share_percent: toStringOrNull(plan?.billPartnerShare),
+				karashab_share_percent: toStringOrNull(plan?.billKarashabShare),
+				traffic_profit_percent: toStringOrNull(plan?.trafficProfitPercent),
+				traffic_partner_share_percent: toStringOrNull(plan?.trafficPartnerSharePercent ?? plan?.trafficCommissionPercent),
+				bill_inquiry_rate: {
+					calculation_type: "FLAT",
+					tiers: [{ min_inclusive: null, max_exclusive: null, rate_per_unit: toStringOrNull(plan?.billFixedPrice) }],
+				},
+				sms_sale_rate: {
+					calculation_type: "FLAT",
+					tiers: [{ min_inclusive: null, max_exclusive: null, rate_per_unit: toStringOrNull(plan?.smsFixedPrice) }],
+				},
+			})),
+		},
+	};
+}
+
+function mapOpenApiAddenda(
+	addenda: unknown,
+	contractModel: "package" | "legacy" | null,
+	serviceFields: Record<string, any>,
+	mainOpenApiDetails: Record<string, any> | null,
+) {
+	const list = Array.isArray(addenda) ? addenda : [];
+
+	return list.map((item) => {
+		const row = (item ?? {}) as Record<string, any>;
+
+		const mapped: Record<string, any> = {
+			start_jy: toNumberOrNull(row.startYear),
+			start_jm: toNumberOrNull(row.startMonth),
+			end_jy: toNumberOrNull(row.endYear),
+			end_jm: toNumberOrNull(row.endMonth),
+			contract_number: row.contractNumber ?? "",
+			note: row.description ?? "",
+		};
+
+		if (contractModel === "legacy") {
+			mapped.contract_openapi_details = mapOpenApiLegacyDetails(row.contractPricing);
+		}
+		else if (contractModel === "package") {
+			mapped.contract_openapi_details = mainOpenApiDetails ?? mapOpenApiPackageDetails(serviceFields);
+		}
+
+		return mapped;
+	});
+}
+
+function mapCommercialAddenda(addenda: unknown) {
+	const list = Array.isArray(addenda) ? addenda : [];
+
+	return list.map((item) => {
+		const row = (item ?? {}) as Record<string, any>;
+
+		return {
+			start_jy: toNumberOrNull(row.startYear),
+			start_jm: toNumberOrNull(row.startMonth),
+			end_jy: toNumberOrNull(row.endYear),
+			end_jm: toNumberOrNull(row.endMonth),
+			contract_number: row.contractNumber ?? "",
+			note: row.description ?? "",
+			contract_openapi_details: mapOpenApiLegacyDetails(row.contractPricing),
+		};
+	});
+}
+
+function mapSmsCommissionAddenda(addenda: unknown) {
+	const list = Array.isArray(addenda) ? addenda : [];
+
+	return list.map((item) => {
+		const row = (item ?? {}) as Record<string, any>;
+
+		return {
+			start_jy: toNumberOrNull(row.startYear),
+			start_jm: toNumberOrNull(row.startMonth),
+			end_jy: toNumberOrNull(row.endYear),
+			end_jm: toNumberOrNull(row.endMonth),
+			note: row.description ?? "",
+			contract_number: row.contractNumber ?? "",
+			initial_receive_fee: toStringOrNull(row.initialCommission),
+			final_receive_fee: toStringOrNull(row.finalCommission),
+			karashab_percent: toStringOrNull(row.expertPercent),
+			mokhaberat_percent: toStringOrNull(row.telecomPercent),
+			first_side_percent: toStringOrNull(row.firstPartySharePercent),
+			area_percent: toStringOrNull(row.regionSharePercent),
+			sales_agent_percent: toStringOrNull(row.salesAgentSharePercent),
+		};
+	});
+}
+
+function normalizeCommercialAddendaFromDto(addenda: unknown) {
+	const list = Array.isArray(addenda) ? addenda : [];
+
+	return list.map((item) => {
+		const row = (item ?? {}) as Record<string, any>;
+		const details = (row.contract_openapi_details ?? row.contractOpenapiDetails ?? null) as Record<string, any> | null;
+		const pricing = apiPricingToContractType(
+			details?.bill_inquiry
+			?? details?.billInquiry
+			?? details?.receipt_register
+			?? details?.receiptRegister
+			?? row.bill_inquiry
+			?? row.receipt_register
+			?? null,
+		);
+
+		return {
+			startYear: toNumberOrNull(row.start_jy ?? row.startYear),
+			startMonth: toNumberOrNull(row.start_jm ?? row.startMonth),
+			endYear: toNumberOrNull(row.end_jy ?? row.endYear),
+			endMonth: toNumberOrNull(row.end_jm ?? row.endMonth),
+			contractNumber: row.contract_number ?? row.contractNumber ?? "",
+			description: row.note ?? row.description ?? "",
+			contractPricing: pricing ?? undefined,
+		};
+	});
+}
+
 function normalizeOpenApiServiceFields(dto: any) {
 	// ✅ ساختار جدید
 	const details = dto?.contract_openapi_details ?? dto?.contractOpenapiDetails ?? null;
@@ -62,7 +201,8 @@ function normalizeOpenApiServiceFields(dto: any) {
 					billPartnerShare: toNumberOrStringNumber(tier?.partner_share_percent),
 					billKarashabShare: toNumberOrStringNumber(tier?.karashab_share_percent),
 
-					trafficCommissionPercent: toNumberOrStringNumber(tier?.traffic_partner_share_percent),
+					trafficProfitPercent: toNumberOrStringNumber(tier?.traffic_profit_percent),
+					trafficPartnerSharePercent: toNumberOrStringNumber(tier?.traffic_partner_share_percent),
 				})),
 			};
 		}
@@ -112,12 +252,81 @@ function normalizeOpenApiServiceFields(dto: any) {
 				billPartnerShare: toNumberOrStringNumber(tier?.partner_share_percent),
 				billKarashabShare: toNumberOrStringNumber(tier?.karashab_share_percent),
 
-				trafficCommissionPercent: toNumberOrStringNumber(tier?.traffic_partner_share_percent),
+				trafficProfitPercent: toNumberOrStringNumber(tier?.traffic_profit_percent),
+				trafficPartnerSharePercent: toNumberOrStringNumber(tier?.traffic_partner_share_percent),
 			})),
 		};
 	}
 
 	return {};
+}
+
+function normalizeCommercialServiceFields(dto: any) {
+	const details = dto?.contract_openapi_details ?? dto?.contractOpenapiDetails ?? null;
+	const pricing = apiPricingToContractType(
+		details?.bill_inquiry
+		?? details?.billInquiry
+		?? details?.receipt_register
+		?? details?.receiptRegister
+		?? dto?.bill_inquiry
+		?? dto?.receipt_register
+		?? null,
+	);
+
+	return {
+		contractPricing: pricing ?? null,
+		addenda: normalizeCommercialAddendaFromDto(dto?.addenda),
+	};
+}
+
+function normalizeShahkarServiceFields(dto: any) {
+	const pricing = apiPricingToContractType({
+		calculation_type: dto?.calculation_type ?? dto?.calculationType ?? null,
+		tiers: dto?.tiers ?? null,
+	} as any);
+
+	return {
+		contractPricing: pricing ?? null,
+		addenda: dto?.addenda ?? [],
+	};
+}
+
+function normalizeSmsCommissionAddendaFromDto(addenda: unknown) {
+	const list = Array.isArray(addenda) ? addenda : [];
+
+	return list.map((item) => {
+		const row = (item ?? {}) as Record<string, any>;
+
+		return {
+			startYear: toNumberOrNull(row.start_jy ?? row.startYear),
+			startMonth: toNumberOrNull(row.start_jm ?? row.startMonth),
+			endYear: toNumberOrNull(row.end_jy ?? row.endYear),
+			endMonth: toNumberOrNull(row.end_jm ?? row.endMonth),
+			description: row.note ?? row.description ?? "",
+			contractNumber: row.contract_number ?? row.contractNumber ?? "",
+			initialCommission: toNumberOrStringNumber(row.initial_receive_fee ?? row.initialReceiveFee),
+			finalCommission: toNumberOrStringNumber(row.final_receive_fee ?? row.finalReceiveFee),
+			expertPercent: toNumberOrStringNumber(row.karashab_percent ?? row.karashabPercent),
+			telecomPercent: toNumberOrStringNumber(row.mokhaberat_percent ?? row.mokhaberatPercent),
+			firstPartySharePercent: toNumberOrStringNumber(row.first_side_percent ?? row.firstSidePercent),
+			regionSharePercent: toNumberOrStringNumber(row.area_percent ?? row.areaPercent),
+			salesAgentSharePercent: toNumberOrStringNumber(row.sales_agent_percent ?? row.salesAgentPercent),
+		};
+	});
+}
+
+function normalizeSmsCommissionServiceFields(dto: any) {
+	return {
+		agent: toNumberOrNull(dto?.sales_agent ?? dto?.salesAgent ?? dto?.agent),
+		initialCommission: toNumberOrStringNumber(dto?.initial_receive_fee ?? dto?.initialReceiveFee),
+		finalCommission: toNumberOrStringNumber(dto?.final_receive_fee ?? dto?.finalReceiveFee),
+		expertPercent: toNumberOrStringNumber(dto?.karashab_percent ?? dto?.karashabPercent),
+		telecomPercent: toNumberOrStringNumber(dto?.mokhaberat_percent ?? dto?.mokhaberatPercent),
+		firstPartySharePercent: toNumberOrStringNumber(dto?.first_side_percent ?? dto?.firstSidePercent),
+		regionSharePercent: toNumberOrStringNumber(dto?.area_percent ?? dto?.areaPercent),
+		salesAgentSharePercent: toNumberOrStringNumber(dto?.sales_agent_percent ?? dto?.salesAgentPercent),
+		addenda: normalizeSmsCommissionAddendaFromDto(dto?.addenda),
+	};
 }
 
 function dtoToFormValues(dto: any, service: ContractServicePath): ContractFormValues {
@@ -134,11 +343,20 @@ function dtoToFormValues(dto: any, service: ContractServicePath): ContractFormVa
 
 	let serviceFields: any = {};
 
-	if (serviceCode === "openapi" || serviceCode === "commercial") {
+	if (serviceCode === "openapi") {
 		serviceFields = {
 			...normalizeOpenApiServiceFields(dto),
 			addenda: dto?.addenda ?? [],
 		};
+	}
+	else if (serviceCode === "sms-commission" || serviceCode === "sms_commission") {
+		serviceFields = normalizeSmsCommissionServiceFields(dto);
+	}
+	else if (serviceCode === "shahkar") {
+		serviceFields = normalizeShahkarServiceFields(dto);
+	}
+	else if (serviceCode === "commercial") {
+		serviceFields = normalizeCommercialServiceFields(dto);
 	}
 	else {
 		// ✅ سایر سرویس‌ها: هر فیلدی غیر از پایه‌ها => serviceFields
@@ -180,6 +398,7 @@ function dtoToFormValues(dto: any, service: ContractServicePath): ContractFormVa
 		startMonth: toNumberOrNull(dto?.start_jm),
 		endYear: toNumberOrNull(dto?.end_jy),
 		endMonth: toNumberOrNull(dto?.end_jm),
+		contractNumber: dto?.contract_number ?? "",
 
 		description,
 		documents: dto?.documents ?? [],
@@ -190,6 +409,8 @@ function dtoToFormValues(dto: any, service: ContractServicePath): ContractFormVa
 function formValuesToApiPayload(values: ContractFormValues) {
 	const serviceCode = typeof values.serviceCode === "string" ? values.serviceCode.trim().toLowerCase() : "";
 	const serviceFields = (values.serviceFields ?? {}) as Record<string, any>;
+	const contractNumber = values.contractNumber;
+	const addenda = Array.isArray(serviceFields.addenda) ? serviceFields.addenda : [];
 
 	const payload: Record<string, any> = {
 		service: values.serviceId ?? null,
@@ -198,8 +419,9 @@ function formValuesToApiPayload(values: ContractFormValues) {
 		start_jm: values.startMonth ?? null,
 		end_jy: values.endYear ?? null,
 		end_jm: values.endMonth ?? null,
+		contract_number: contractNumber ?? "",
 		note: values.description ?? "",
-		addenda: Array.isArray(serviceFields.addenda) ? serviceFields.addenda : [],
+		addenda,
 	};
 
 	if (values.trafficCompanyType != null)
@@ -207,44 +429,54 @@ function formValuesToApiPayload(values: ContractFormValues) {
 	if (values.counterpartyType != null)
 		payload.sms_party = values.counterpartyType;
 
-	if (serviceCode === "openapi" || serviceCode === "commercial") {
+	if (serviceCode === "sms-commission" || serviceCode === "sms_commission") {
+		payload.sales_agent = toNumberOrNull(serviceFields.agent);
+		payload.initial_receive_fee = toStringOrNull(serviceFields.initialCommission);
+		payload.final_receive_fee = toStringOrNull(serviceFields.finalCommission);
+		payload.karashab_percent = toStringOrNull(serviceFields.expertPercent);
+		payload.mokhaberat_percent = toStringOrNull(serviceFields.telecomPercent);
+		payload.first_side_percent = toStringOrNull(serviceFields.firstPartySharePercent);
+		payload.area_percent = toStringOrNull(serviceFields.regionSharePercent);
+		payload.sales_agent_percent = toStringOrNull(serviceFields.salesAgentSharePercent);
+		payload.addenda = mapSmsCommissionAddenda(addenda);
+		return payload;
+	}
+
+	if (serviceCode === "shahkar") {
+		const pricing = contractTypeToApiPricing((serviceFields.contractPricing ?? null) as any);
+		payload.calculation_type = pricing?.calculation_type ?? null;
+		payload.tiers = pricing?.tiers ?? [];
+		return payload;
+	}
+
+	if (serviceCode === "commercial") {
+		payload.contract_openapi_details = mapOpenApiLegacyDetails(serviceFields.contractPricing);
+		payload.addenda = mapCommercialAddenda(addenda);
+		return payload;
+	}
+
+	if (serviceCode === "openapi") {
 		const contractModel = typeof serviceFields.contractModel === "string"
 			? serviceFields.contractModel.trim().toLowerCase()
 			: null;
 
+		let openApiDetails: Record<string, any> | null = null;
+
 		if (contractModel === "package") {
-			const plans = Array.isArray(serviceFields.plans) ? serviceFields.plans : [];
-			payload.contract_openapi_details = {
-				contract_model: "PACKAGE",
-				package_model: {
-					mode: serviceFields.packageMode ?? "OR",
-					tiers: plans.map((plan: any) => ({
-						sms_min_inclusive: toNumberOrNull(plan?.smsMin),
-						sms_max_exclusive: toNumberOrNull(plan?.smsMax),
-						bill_min_inclusive: toNumberOrNull(plan?.billMin),
-						bill_max_exclusive: toNumberOrNull(plan?.billMax),
-						partner_share_percent: toStringOrNull(plan?.billPartnerShare),
-						karashab_share_percent: toStringOrNull(plan?.billKarashabShare),
-						traffic_partner_share_percent: toStringOrNull(plan?.trafficCommissionPercent),
-						bill_inquiry_rate: {
-							calculation_type: "FLAT",
-							tiers: [{ min_inclusive: null, max_exclusive: null, rate_per_unit: toStringOrNull(plan?.billFixedPrice) }],
-						},
-						sms_sale_rate: {
-							calculation_type: "FLAT",
-							tiers: [{ min_inclusive: null, max_exclusive: null, rate_per_unit: toStringOrNull(plan?.smsFixedPrice) }],
-						},
-					})),
-				},
-			};
+			openApiDetails = mapOpenApiPackageDetails(serviceFields);
 		}
 		else if (contractModel === "legacy") {
-			payload.contract_openapi_details = {
+			openApiDetails = {
 				contract_model: "LEGACY",
 				receipt_register: contractTypeToApiPricing(serviceFields.legacyPricing?.paymentRegistration ?? null),
 				bill_inquiry: contractTypeToApiPricing(serviceFields.legacyPricing?.billInquiry ?? null),
 			};
 		}
+
+		if (openApiDetails)
+			payload.contract_openapi_details = openApiDetails;
+
+		payload.addenda = mapOpenApiAddenda(addenda, contractModel as any, serviceFields, openApiDetails);
 		return payload;
 	}
 

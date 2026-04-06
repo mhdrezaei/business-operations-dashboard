@@ -1,3 +1,4 @@
+import { addendumSchema } from "#src/features/contract/components/addenda/addenda.schema";
 import { z } from "zod";
 
 const nullableNumberSchema = z.preprocess(
@@ -36,6 +37,7 @@ export const smsCommissionServiceFieldsSchema = z
 		firstPartySharePercent: nullablePercentSchema,
 		regionSharePercent: nullablePercentSchema,
 		salesAgentSharePercent: nullablePercentSchema,
+		addenda: z.array(addendumSchema).default([]).optional(),
 	})
 	.superRefine((val, ctx) => {
 		if (val.agent == null) {

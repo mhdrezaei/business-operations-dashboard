@@ -58,9 +58,10 @@ export const contractTypeSchema: z.ZodType<ContractTypeValue> = z
 			}
 
 			val.rows.forEach((r, i) => {
+				const isLastRow = i === val.rows.length - 1;
 				if (r.from == null)
 					ctx.addIssue({ code: "custom", path: ["rows", i, "from"], message: "از الزامی است" });
-				if (r.to == null)
+				if (!isLastRow && r.to == null)
 					ctx.addIssue({ code: "custom", path: ["rows", i, "to"], message: "تا الزامی است" });
 				if (r.fee == null)
 					ctx.addIssue({ code: "custom", path: ["rows", i, "fee"], message: "مقدار فی الزامی است" });
@@ -95,9 +96,10 @@ export const contractTypeSchema: z.ZodType<ContractTypeValue> = z
 					ctx.addIssue({ code: "custom", path: ["sections", si, "rows"], message: "حداقل یک ردیف برای این بخش لازم است" });
 
 				s.rows.forEach((r, ri) => {
+					const isLastRow = ri === s.rows.length - 1;
 					if (r.from == null)
 						ctx.addIssue({ code: "custom", path: ["sections", si, "rows", ri, "from"], message: "از الزامی است" });
-					if (r.to == null)
+					if (!isLastRow && r.to == null)
 						ctx.addIssue({ code: "custom", path: ["sections", si, "rows", ri, "to"], message: "تا الزامی است" });
 					if (r.fee == null)
 						ctx.addIssue({ code: "custom", path: ["sections", si, "rows", ri, "fee"], message: "مقدار فی الزامی است" });
@@ -115,6 +117,26 @@ export const contractTypeSchema: z.ZodType<ContractTypeValue> = z
 						}
 					}
 				});
+
+				if (si > 0) {
+					const prevSection = val.sections[si - 1];
+					const prevLastRow = prevSection?.rows?.[prevSection.rows.length - 1];
+					const currentFirstRow = s.rows?.[0];
+					const prevMaxExclusive = prevLastRow?.to ?? null;
+					const currentMinInclusive = currentFirstRow?.from ?? null;
+
+					if (
+						prevMaxExclusive != null
+						&& currentMinInclusive != null
+						&& currentMinInclusive !== prevMaxExclusive
+					) {
+						ctx.addIssue({
+							code: "custom",
+							path: ["sections", si, "rows", 0, "from"],
+							message: "مقدار «از» اولین ردیف این بخش باید برابر «تا» آخرین ردیف بخش قبلی باشد",
+						});
+					}
+				}
 			});
 		}
 	});

@@ -21,6 +21,10 @@ const PACKAGE_MODE_OPTIONS = [
 	{ label: "OR", value: "OR" },
 	{ label: "AND", value: "AND" },
 ];
+const ADDENDA_OPERATION_OPTIONS = [
+	{ label: "استعلام قبض", value: "BILL_INQUIRY" },
+	{ label: "ثبت وصولی", value: "RECEIPT_REGISTER" },
+];
 
 export function OpenApiFields() {
 	const { control, setValue, getValues } = useFormContext<ContractFormValues>();
@@ -37,10 +41,30 @@ export function OpenApiFields() {
 		control,
 		name: sf("plans"),
 	});
+	const plans = useWatch({ control, name: sf("plans") }) as Array<{
+		smsMin: number | null
+		smsMax: number | null
+		billMin: number | null
+		billMax: number | null
+		billPartnerShare: number | null
+		billKarashabShare: number | null
+		trafficProfitPercent: number | null
+		trafficPartnerSharePercent: number | null
+	}> | undefined;
+	const previousSharesRef = React.useRef<Array<{
+		billPartnerShare: number | null
+		billKarashabShare: number | null
+	}>>([]);
+	const previousTrafficSharesRef = React.useRef<Array<{
+		trafficProfitPercent: number | null
+		trafficPartnerSharePercent: number | null
+	}>>([]);
 	// ✅ By adding a new plan, the same plan will be opened and the others will be closed.
 	const [activeKey, setActiveKey] = useState<string>("0");
 
 	const contractModel = useWatch({ control, name: sf("contractModel") }) as "package" | "legacy" | null;
+	const serviceCode = useWatch({ control, name: "serviceCode" }) as string | null;
+	const isOpenApiService = serviceCode === "openapi";
 	// When legacy is selected, create legacyPricing if it doesn't exist
 	React.useEffect(() => {
 		if (contractModel === "legacy") {
@@ -61,9 +85,236 @@ export function OpenApiFields() {
 		}
 	}, [contractModel, setValue, getValues]);
 
+	React.useEffect(() => {
+		if (contractModel == null)
+			return;
+
+		const currentAddenda = getValues(sf("addenda")) as Array<Record<string, unknown>> | undefined;
+		if (!Array.isArray(currentAddenda) || currentAddenda.length === 0)
+			return;
+
+		const shouldKeepOperationType = isOpenApiService && contractModel === "legacy";
+
+		let changed = false;
+		const nextAddenda = currentAddenda.map((item) => {
+			if (!item || typeof item !== "object")
+				return item;
+
+			const nextItem: Record<string, unknown> = { ...item };
+
+			if (!shouldKeepOperationType) {
+				if ("operationType" in nextItem) {
+					delete nextItem.operationType;
+					changed = true;
+				}
+			}
+			else if (!("operationType" in nextItem)) {
+				nextItem.operationType = null;
+				changed = true;
+			}
+
+			return nextItem;
+		});
+
+		if (changed) {
+			setValue(sf("addenda"), nextAddenda as any, {
+				shouldDirty: true,
+				shouldValidate: true,
+			});
+		}
+	}, [contractModel, isOpenApiService, getValues, setValue]);
+
+	React.useEffect(() => {
+		if (contractModel !== "package")
+			return;
+		if (fields.length > 0)
+			return;
+
+		append(structuredClone(defaultOpenApiPlan) as any);
+		setActiveKey("0");
+	}, [contractModel, fields.length, append]);
+
+	React.useEffect(() => {
+		if (!plans || plans.length < 2)
+			return;
+
+		for (let i = 1; i < plans.length; i++) {
+			const prevPlan = plans[i - 1];
+			const currentPlan = plans[i];
+			if (!prevPlan || !currentPlan)
+				continue;
+
+			if (currentPlan.smsMin !== prevPlan.smsMax) {
+				setValue(sf(`plans.${i}.smsMin`), prevPlan.smsMax, {
+					shouldDirty: true,
+					shouldValidate: true,
+				});
+			}
+			if (currentPlan.billMin !== prevPlan.billMax) {
+				setValue(sf(`plans.${i}.billMin`), prevPlan.billMax, {
+					shouldDirty: true,
+					shouldValidate: true,
+				});
+			}
+		}
+	}, [plans, setValue]);
+
+	React.useEffect(() => {
+		if (!plans || plans.length === 0) {
+			previousSharesRef.current = [];
+			return;
+		}
+
+		const previousShares = previousSharesRef.current;
+
+		for (let i = 0; i < plans.length; i++) {
+			const currentPlan = plans[i];
+			const previousPlan = previousShares[i];
+			if (!currentPlan)
+				continue;
+
+			const currentPartnerShare = currentPlan.billPartnerShare ?? null;
+			const currentKarashabShare = currentPlan.billKarashabShare ?? null;
+			const previousPartnerShare = previousPlan?.billPartnerShare ?? null;
+			const previousKarashabShare = previousPlan?.billKarashabShare ?? null;
+
+			const partnerChanged = currentPartnerShare !== previousPartnerShare;
+			const karashabChanged = currentKarashabShare !== previousKarashabShare;
+
+			if (partnerChanged && !karashabChanged) {
+				if (currentPartnerShare != null) {
+					const remainingPercent = 100 - currentPartnerShare;
+					if (currentKarashabShare !== remainingPercent) {
+						setValue(sf(`plans.${i}.billKarashabShare`), remainingPercent, {
+							shouldDirty: true,
+							shouldValidate: true,
+						});
+					}
+				}
+				else if (currentKarashabShare != null) {
+					const remainingPercent = 100 - currentKarashabShare;
+					if (currentPartnerShare !== remainingPercent) {
+						setValue(sf(`plans.${i}.billPartnerShare`), remainingPercent, {
+							shouldDirty: true,
+							shouldValidate: true,
+						});
+					}
+				}
+				continue;
+			}
+
+			if (karashabChanged && !partnerChanged) {
+				if (currentKarashabShare != null) {
+					const remainingPercent = 100 - currentKarashabShare;
+					if (currentPartnerShare !== remainingPercent) {
+						setValue(sf(`plans.${i}.billPartnerShare`), remainingPercent, {
+							shouldDirty: true,
+							shouldValidate: true,
+						});
+					}
+				}
+				else if (currentPartnerShare != null) {
+					const remainingPercent = 100 - currentPartnerShare;
+					if (currentKarashabShare !== remainingPercent) {
+						setValue(sf(`plans.${i}.billKarashabShare`), remainingPercent, {
+							shouldDirty: true,
+							shouldValidate: true,
+						});
+					}
+				}
+			}
+		}
+
+		previousSharesRef.current = plans.map(plan => ({
+			billPartnerShare: plan?.billPartnerShare ?? null,
+			billKarashabShare: plan?.billKarashabShare ?? null,
+		}));
+	}, [plans, setValue]);
+
+	React.useEffect(() => {
+		if (!plans || plans.length === 0) {
+			previousTrafficSharesRef.current = [];
+			return;
+		}
+
+		const previousTrafficShares = previousTrafficSharesRef.current;
+
+		for (let i = 0; i < plans.length; i++) {
+			const currentPlan = plans[i];
+			const previousPlan = previousTrafficShares[i];
+			if (!currentPlan)
+				continue;
+
+			const currentProfitPercent = currentPlan.trafficProfitPercent ?? null;
+			const currentPartnerSharePercent = currentPlan.trafficPartnerSharePercent ?? null;
+			const previousProfitPercent = previousPlan?.trafficProfitPercent ?? null;
+			const previousPartnerSharePercent = previousPlan?.trafficPartnerSharePercent ?? null;
+
+			const profitChanged = currentProfitPercent !== previousProfitPercent;
+			const partnerChanged = currentPartnerSharePercent !== previousPartnerSharePercent;
+
+			if (profitChanged && !partnerChanged) {
+				if (currentProfitPercent != null) {
+					const remainingPercent = 100 - currentProfitPercent;
+					if (currentPartnerSharePercent !== remainingPercent) {
+						setValue(sf(`plans.${i}.trafficPartnerSharePercent`), remainingPercent, {
+							shouldDirty: true,
+							shouldValidate: true,
+						});
+					}
+				}
+				else if (currentPartnerSharePercent != null) {
+					const remainingPercent = 100 - currentPartnerSharePercent;
+					if (currentProfitPercent !== remainingPercent) {
+						setValue(sf(`plans.${i}.trafficProfitPercent`), remainingPercent, {
+							shouldDirty: true,
+							shouldValidate: true,
+						});
+					}
+				}
+				continue;
+			}
+
+			if (partnerChanged && !profitChanged) {
+				if (currentPartnerSharePercent != null) {
+					const remainingPercent = 100 - currentPartnerSharePercent;
+					if (currentProfitPercent !== remainingPercent) {
+						setValue(sf(`plans.${i}.trafficProfitPercent`), remainingPercent, {
+							shouldDirty: true,
+							shouldValidate: true,
+						});
+					}
+				}
+				else if (currentProfitPercent != null) {
+					const remainingPercent = 100 - currentProfitPercent;
+					if (currentPartnerSharePercent !== remainingPercent) {
+						setValue(sf(`plans.${i}.trafficPartnerSharePercent`), remainingPercent, {
+							shouldDirty: true,
+							shouldValidate: true,
+						});
+					}
+				}
+			}
+		}
+
+		previousTrafficSharesRef.current = plans.map(plan => ({
+			trafficProfitPercent: plan?.trafficProfitPercent ?? null,
+			trafficPartnerSharePercent: plan?.trafficPartnerSharePercent ?? null,
+		}));
+	}, [plans, setValue]);
+
 	const addPlan = () => {
 		const nextIndex = fields.length;
-		append(structuredClone(defaultOpenApiPlan) as any);
+		const prevPlan = (nextIndex > 0 ? getValues(sf(`plans.${nextIndex - 1}`)) : null) as {
+			smsMax: number | null
+			billMax: number | null
+		} | null;
+
+		append({
+			...structuredClone(defaultOpenApiPlan),
+			smsMin: prevPlan?.smsMax ?? null,
+			billMin: prevPlan?.billMax ?? null,
+		} as any);
 		setActiveKey(String(nextIndex));
 	};
 
@@ -121,19 +372,21 @@ export function OpenApiFields() {
 						<ProFormGroup grid>
 							<ProFormGroup colProps={{ span: 12 }}>
 								<RHFProNumber
-									name={sf(`plans.${idx}.smsMax`)}
-									label="حداکثر پیامک"
+									name={sf(`plans.${idx}.smsMin`)}
+									label="حداقل پیامک"
 									enableGrouping
 									enableWordsTooltip
-									inputProps={{ placeholder: "مثلاً 200000000" }}
+									inputProps={{ placeholder: "مثلاً 0", disabled: idx > 0 }}
 								/>
 							</ProFormGroup>
 
 							<ProFormGroup colProps={{ span: 12 }}>
 								<RHFProNumber
-									name={sf(`plans.${idx}.smsMin`)}
-									label="حداقل پیامک"
-									inputProps={{ placeholder: "مثلاً 0" }}
+									name={sf(`plans.${idx}.smsMax`)}
+									label="حداکثر پیامک"
+									enableGrouping
+									enableWordsTooltip
+									inputProps={{ placeholder: "مثلاً 200000000" }}
 								/>
 							</ProFormGroup>
 
@@ -174,21 +427,21 @@ export function OpenApiFields() {
 
 							<ProFormGroup colProps={{ span: 12 }}>
 								<RHFProNumber
-									name={sf(`plans.${idx}.billMax`)}
-									label="حداکثر استعلام قبض"
+									name={sf(`plans.${idx}.billMin`)}
+									label="حداقل استعلام قبض"
 									enableGrouping
 									enableWordsTooltip
-									inputProps={{ placeholder: "مثلاً 2000000" }}
+									inputProps={{ placeholder: "مثلاً 0", disabled: idx > 0 }}
 								/>
 							</ProFormGroup>
 
 							<ProFormGroup colProps={{ span: 12 }}>
 								<RHFProNumber
-									name={sf(`plans.${idx}.billMin`)}
-									label="حداقل استعلام قبض"
+									name={sf(`plans.${idx}.billMax`)}
+									label="حداکثر استعلام قبض"
 									enableGrouping
 									enableWordsTooltip
-									inputProps={{ placeholder: "مثلاً 0" }}
+									inputProps={{ placeholder: "مثلاً 2000000" }}
 								/>
 							</ProFormGroup>
 
@@ -204,19 +457,30 @@ export function OpenApiFields() {
 						</ProFormGroup>
 					</ProCard>
 
-					{/* کارمزد شریک ترافیک */}
+					{/* سهم ترافیک */}
 					<ProCard
-						title="کارمزد شریک ترافیک"
+						title="سهم ترافیک"
 						bordered
 						headerBordered
 						style={{ borderRadius: 12 }}
 						bodyStyle={{ padding: 12 }}
 					>
-						<RHFProNumber
-							name={sf(`plans.${idx}.trafficCommissionPercent`)}
-							label="درصد کارمزد (0 تا 100)"
-							inputProps={{ placeholder: "مثلاً 4" }}
-						/>
+						<ProFormGroup grid>
+							<ProFormGroup colProps={{ span: 12 }}>
+								<RHFProNumber
+									name={sf(`plans.${idx}.trafficProfitPercent`)}
+									label="درصد سود ترافیک (0 تا 100)"
+									inputProps={{ placeholder: "مثلاً 6" }}
+								/>
+							</ProFormGroup>
+							<ProFormGroup colProps={{ span: 12 }}>
+								<RHFProNumber
+									name={sf(`plans.${idx}.trafficPartnerSharePercent`)}
+									label="درصد سهم شریک ترافیک (0 تا 100)"
+									inputProps={{ placeholder: "مثلاً 4" }}
+								/>
+							</ProFormGroup>
+						</ProFormGroup>
 					</ProCard>
 
 					{/* <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
@@ -322,8 +586,27 @@ export function OpenApiFields() {
 							name={sf("addenda") as ArrayPath<ContractFormValues>}
 							contractTypeTitle=""
 							contractTypeFieldKey="contractPricing"
+							canAddAddendum={!!contractModel}
+							addendumAddBlockedMessage="ابتدا مدل قرارداد را انتخاب کنید."
+							renderAddendumFields={base => (
+								<>
+									{isOpenApiService && contractModel === "legacy"
+										? (
+											<RHFSelect
+												name={`${base}.operationType` as any}
+												label="نوع عملیات (الحاقیه)"
+												options={ADDENDA_OPERATION_OPTIONS}
+												selectProps={{ placeholder: "انتخاب کنید", allowClear: true }}
+											/>
+										)
+										: null}
 
-							// ✅ Root contract dates path - mandatory in your Props
+									<ContractTypeSection
+										title={contractModel === "package" ? "نوع قرارداد (الحاقیه بسته‌ای)" : "نوع قرارداد"}
+										name={`${base}.contractPricing` as any}
+									/>
+								</>
+							)}
 							contractStartYearPath={"startYear" as Path<ContractFormValues>}
 							contractStartMonthPath={"startMonth" as Path<ContractFormValues>}
 							contractEndYearPath={"endYear" as Path<ContractFormValues>}

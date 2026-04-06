@@ -66,14 +66,6 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 				});
 			}
 
-			if (val.companyId == null) {
-				ctx.addIssue({
-					code: "custom",
-					path: ["companyId"],
-					message: "شرکت الزامی است",
-				});
-			}
-
 			if (val.startYear == null) {
 				ctx.addIssue({
 					code: "custom",
@@ -101,6 +93,27 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 					path: ["endMonth"],
 					message: "ماه پایان الزامی است",
 				});
+			}
+			if (
+				val.startYear != null
+				&& val.startMonth != null
+				&& val.endYear != null
+				&& val.endMonth != null
+			) {
+				const startKey = val.startYear * 100 + val.startMonth;
+				const endKey = val.endYear * 100 + val.endMonth;
+				if (endKey < startKey) {
+					ctx.addIssue({
+						code: "custom",
+						path: ["endYear"],
+						message: "سال/ماه پایان قرارداد نمی‌تواند قبل از سال/ماه شروع باشد",
+					});
+					ctx.addIssue({
+						code: "custom",
+						path: ["endMonth"],
+						message: "سال/ماه پایان قرارداد نمی‌تواند قبل از سال/ماه شروع باشد",
+					});
+				}
 			}
 			if (val.serviceCode === "sms") {
 				if (val.counterpartyType == null) {

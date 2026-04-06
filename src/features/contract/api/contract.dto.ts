@@ -1,13 +1,18 @@
 // api-contract.dto.ts
 export interface ApiTier {
-	min_inclusive: string
+	min_inclusive: string | null
 	max_exclusive: string | null
 	rate_per_unit: string
 }
 
 export interface ApiPricing {
 	calculation_type: "FLAT" | "TIER_SINGLE" | "TIER_PROGRESSIVE" | "TIER_MIXED"
-	tiers?: ApiTier[]
+	tiers?: ApiTier[] | {
+		segments?: Array<{
+			mode: "FIXED" | "PROGRESSIVE" | "SINGLE" | string
+			tiers?: ApiTier[]
+		}>
+	}
 }
 
 export interface ApiContractDto {

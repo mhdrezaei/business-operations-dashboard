@@ -13,7 +13,6 @@ export function ContractTierTable({ name }: Props) {
 	const { control, setValue } = useFormContext();
 	const { fields, append, remove } = useFieldArray({ control, name });
 
-	// ✅ watch all rows for automatic sync
 	const rows = useWatch({ control, name }) as Array<{ from: any, to: any, fee: any }> | undefined;
 
 	const header = useMemo(
@@ -25,7 +24,6 @@ export function ContractTierTable({ name }: Props) {
 		[],
 	);
 
-	// ✅ Every time rows are changed: from row i must be = to row i-1
 	useEffect(() => {
 		if (!rows || rows.length < 2)
 			return;
@@ -48,7 +46,6 @@ export function ContractTierTable({ name }: Props) {
 			<div style={{ fontWeight: 600, marginBottom: 12 }}>تعریف بازه‌ها و نرخ</div>
 
 			<div style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, overflow: "hidden" }}>
-				{/* header */}
 				<div style={{ display: "grid", gridTemplateColumns: "64px 1fr 1fr 1fr" }}>
 					<div />
 					{header.map(h => (
@@ -58,7 +55,6 @@ export function ContractTierTable({ name }: Props) {
 					))}
 				</div>
 
-				{/* rows */}
 				{fields.map((f, idx) => (
 					<div
 						key={f.id}
@@ -86,7 +82,7 @@ export function ContractTierTable({ name }: Props) {
 								inputProps={{
 									placeholder: "از",
 									inputMode: "numeric",
-									disabled: idx > 0, // ✅ Disabled from the second row onwards
+									disabled: idx > 0,
 								} as any}
 								formItemProps={{ style: { marginBottom: 0 } }}
 							/>
@@ -99,7 +95,12 @@ export function ContractTierTable({ name }: Props) {
 								enableGrouping
 								enableWordsTooltip
 								inputProps={{ placeholder: "تا", inputMode: "numeric" } as any}
-								formItemProps={{ style: { marginBottom: 0 } }}
+								formItemProps={{
+									style: { marginBottom: 0 },
+									extra: idx === fields.length - 1
+										? "در صورت خالی بودن محدودیتی وجود ندارد."
+										: undefined,
+								}}
 							/>
 						</div>
 
@@ -120,13 +121,11 @@ export function ContractTierTable({ name }: Props) {
 					<Button
 						icon={<PlusOutlined />}
 						onClick={() => {
-							// ✅ If it is the first row: as before
 							if (!rows || rows.length === 0) {
 								append({ from: null, to: null, fee: null } as any);
 								return;
 							}
 
-							// ✅ New row: from = to previous
 							const prevTo = rows[rows.length - 1]?.to ?? null;
 							append({ from: prevTo, to: null, fee: null } as any);
 						}}

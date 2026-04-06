@@ -1,3 +1,8 @@
-import { openApiServiceFieldsSchema } from "../openapi/openapi.schema";
+import { addendumSchema } from "#src/features/contract/components/addenda/addenda.schema";
+import { contractTypeSchema } from "#src/features/contract/components/contract-type/contract-type.schema";
+import { z } from "zod";
 
-export const commercialServiceFieldsSchema = openApiServiceFieldsSchema;
+export const commercialServiceFieldsSchema = z.object({
+	contractPricing: contractTypeSchema,
+	addenda: z.array(addendumSchema).default([]).optional(),
+});

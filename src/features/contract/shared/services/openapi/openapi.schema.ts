@@ -21,7 +21,8 @@ const openApiPlanSchema = z
 		billFixedPrice: zNullableNonNegative("نرخ استعلام قبض را وارد کنید"),
 
 		// --- Traffic commission ---
-		trafficCommissionPercent: zNullablePercent("کارمزد باید بین 0 تا 100 باشد"),
+		trafficProfitPercent: zNullablePercent("درصد سود ترافیک باید بین 0 تا 100 باشد"),
+		trafficPartnerSharePercent: zNullablePercent("درصد سهم شریک ترافیک باید بین 0 تا 100 باشد"),
 
 	})
 	.superRefine((val, ctx) => {
@@ -113,6 +114,30 @@ export const openApiServiceFieldsSchema = z
 					path: ["plans"],
 					message: "حداقل یک پلن باید اضافه شود",
 				});
+				return;
+			}
+
+			for (let i = 1; i < val.plans.length; i++) {
+				const prevPlan = val.plans[i - 1];
+				const currentPlan = val.plans[i];
+				if (!prevPlan || !currentPlan)
+					continue;
+
+				if (currentPlan.smsMin !== prevPlan.smsMax) {
+					ctx.addIssue({
+						code: "custom",
+						path: ["plans", i, "smsMin"],
+						message: "حداقل پیامک این پلن باید برابر حداکثر پیامک پلن قبلی باشد",
+					});
+				}
+
+				if (currentPlan.billMin !== prevPlan.billMax) {
+					ctx.addIssue({
+						code: "custom",
+						path: ["plans", i, "billMin"],
+						message: "حداقل استعلام قبض این پلن باید برابر حداکثر استعلام قبض پلن قبلی باشد",
+					});
+				}
 			}
 		}
 	});

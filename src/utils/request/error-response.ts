@@ -1,38 +1,50 @@
 import { isObject, message } from "#src/utils";
 
+function extractFirstErrorMessage(value: unknown): string | null {
+	if (typeof value === "string") {
+		const text = value.trim();
+		return text.length ? text : null;
+	}
+
+	if (Array.isArray(value)) {
+		for (const item of value) {
+			const msg = extractFirstErrorMessage(item);
+			if (msg)
+				return msg;
+		}
+		return null;
+	}
+
+	if (isObject(value)) {
+		const obj = value as Record<string, unknown>;
+		if (typeof obj.errorMsg === "string" && obj.errorMsg.trim())
+			return obj.errorMsg.trim();
+		if (typeof obj.message === "string" && obj.message.trim())
+			return obj.message.trim();
+
+		for (const key of Object.keys(obj)) {
+			const msg = extractFirstErrorMessage(obj[key]);
+			if (msg)
+				return msg;
+		}
+	}
+
+	return null;
+}
+
 /**
- * پردازش پاسخ خطا
- *
- * @param response شيء پاسخ
- * @returns شيء پاسخ
+ * Handle error responses and display the most relevant server message.
  */
 export async function handleErrorResponse(response: Response) {
 	try {
-		// تجزيه محتواي پاسخ به JSON
 		const data = await response.json();
-
-		// بررسي اينکه داده تجزيه شده از نوع شيء است
-		if (isObject(data)) {
-			// تبديل داده تجزيه شده به شيء شامل اطلاعات خطا
-			const json = data as { errorMsg?: string, message?: string };
-
-			// اگر داده شامل errorMsg يا message باشد، خطا را نمايش بده
-			// در غير اين صورت متن وضعيت پاسخ را نمايش بده
-			message.error(json.errorMsg || json.message || response.statusText);
-		}
-		else {
-			// اگر داده از نوع شيء نبود، متن وضعيت پاسخ را نمايش بده
-			message.error(response.statusText);
-		}
+		const extracted = extractFirstErrorMessage(data);
+		message.error(extracted || response.statusText);
 	}
 	catch (e) {
-		// اگر تجزيه JSON خطا داشت، خطا را در کنسول چاپ کن
 		console.error("Error parsing JSON:", e);
-
-		// متن وضعيت پاسخ را به عنوان خطا نمايش بده
 		message.error(response.statusText);
 	}
 
-	// بازگرداندن شيء پاسخ
 	return response;
 }

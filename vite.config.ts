@@ -22,7 +22,7 @@ const __APP_INFO__ = {
 export default defineConfig(({ mode }) => {
 	const env = loadEnv(mode, process.cwd(), "");
 	const isDev = process.env.NODE_ENV === "development";
-	const apiProxyTarget = env.VITE_API_PROXY_TARGET || "https://negah-dp.karashab-co.ir";
+	const apiProxyTarget = env.VITE_API_PROXY_TARGET || "https://negah-dp-dev.karashab-co.ir";
 
 	return {
 

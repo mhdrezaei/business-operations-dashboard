@@ -21,6 +21,7 @@ const defaultValues: ContractFormValues = {
 	counterpartyType: null,
 	endYear: null,
 	endMonth: null,
+	contractNumber: "",
 	description: "",
 	documents: [],
 	serviceFields: {},
@@ -66,7 +67,8 @@ export function ContractForm({
 
 	const form = useForm<ContractFormValues>({
 		defaultValues: mergedInitialValues as any,
-		mode: "all",
+		mode: "onTouched",
+		reValidateMode: "onChange",
 		shouldUnregister: true,
 		resolver: dynamicResolver,
 	});
@@ -101,6 +103,8 @@ export function ContractForm({
 				console.warn("submit", values);
 			}
 			catch (e: any) {
+				if (e?.response)
+					return;
 				notification.error({
 					message: "خطا در ثبت/ویرایش",
 					description: e?.message ?? "خطای نامشخص",

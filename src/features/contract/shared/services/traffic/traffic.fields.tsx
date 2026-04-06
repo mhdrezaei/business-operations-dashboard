@@ -3,7 +3,7 @@ import type { ContractFormValues } from "../../../shared/model/contract.form.typ
 import { ContractAddendaSection } from "#src/features/contract/components/addenda/ContractAddendaSection";
 import { defaultContractTypeValue } from "#src/features/contract/components/contract-type/contract-type.types";
 import { ContractTypeSection } from "#src/features/contract/components/contract-type/ContractTypeSection";
-import { RHFProCheckbox, RHFProNumber } from "#src/shared/ui/rhf-pro";
+import { RHFProCheckbox, RHFProNumber, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined } from "@ant-design/icons";
 import { ProCard } from "@ant-design/pro-components";
 import { Button, Row } from "antd";
@@ -11,6 +11,10 @@ import React, { useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
 const sf = (path: string) => `serviceFields.${path}` as const;
+const ADDENDA_LOCATION_OPTIONS = [
+	{ label: "تهران", value: "TEHRAN" },
+	{ label: "مراکز استانی", value: "PROVINCE" },
+];
 
 export function TrafficFields() {
 	const { control, setValue } = useFormContext<ContractFormValues>();
@@ -32,10 +36,7 @@ export function TrafficFields() {
 		[startYear, startMonth, endYear, endMonth],
 	);
 
-	// Show the computational UI only when it is official.
 	const showPricingUi = !!isOfficial;
-
-	// Show revenue percentage only when it is official + PREMIUM
 	const showPremiumRevenuePercent = showPricingUi && trafficCompanyType === "PREMIUM";
 
 	const addTehran = () => {
@@ -62,9 +63,8 @@ export function TrafficFields() {
 	const removeProvince = () =>
 		setValue(sf("provincePricing") as any, undefined, { shouldDirty: true, shouldValidate: true });
 
-	// ✅ When it becomes unofficial: Clear all calculation fields to keep both UI and payload clean
 	React.useEffect(() => {
-		if (!isOfficial) {
+		if (isOfficial === false) {
 			setValue(sf("tehranPricing") as any, undefined, { shouldDirty: true, shouldValidate: true });
 			setValue(sf("provincePricing") as any, undefined, { shouldDirty: true, shouldValidate: true });
 			setValue(sf("addenda") as any, undefined, { shouldDirty: true, shouldValidate: true });
@@ -76,9 +76,7 @@ export function TrafficFields() {
 	return (
 		<>
 			<ProCard bordered headerBordered style={{ borderRadius: 6 }} bodyStyle={{ padding: 16 }}>
-				{/* ✅ Formal/Informal Field */}
 				<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-
 					<RHFProCheckbox<ContractFormValues, any>
 						name={sf("isOfficial") as any}
 						label=""
@@ -86,6 +84,7 @@ export function TrafficFields() {
 						checkboxProps={{}}
 					/>
 				</div>
+
 				{!isOfficial
 					? (
 						<div style={{ marginBottom: 12, color: "#faad14" }}>
@@ -98,11 +97,9 @@ export function TrafficFields() {
 						</div>
 					)}
 
-				{/* ✅ Only when official: Show calculated fields */}
 				{showPricingUi
 					? (
 						<>
-
 							<Row>
 								<ProCard bordered headerBordered style={{ borderRadius: 6, marginTop: 12 }} bodyStyle={{ padding: 16 }}>
 									<Row>
@@ -139,7 +136,6 @@ export function TrafficFields() {
 														)
 														: null}
 												</ProCard>
-
 											</Row>
 										)
 										: null}
@@ -192,7 +188,6 @@ export function TrafficFields() {
 					: null}
 			</ProCard>
 
-			{/* ✅ Addenda only when official */}
 			{showPricingUi && showAddenda
 				? (
 					<div style={{ marginTop: 12 }}>
@@ -201,6 +196,17 @@ export function TrafficFields() {
 							name={sf("addenda") as ArrayPath<ContractFormValues>}
 							contractTypeTitle=""
 							contractTypeFieldKey="contractPricing"
+							renderAddendumFields={base => (
+								<>
+									<RHFSelect
+										name={`${base}.location` as any}
+										label="موقعیت"
+										options={ADDENDA_LOCATION_OPTIONS}
+										selectProps={{ placeholder: "انتخاب کنید", allowClear: true }}
+									/>
+									<ContractTypeSection title="نوع قرارداد" name={`${base}.contractPricing` as any} />
+								</>
+							)}
 							contractStartYearPath={"startYear" as Path<ContractFormValues>}
 							contractStartMonthPath={"startMonth" as Path<ContractFormValues>}
 							contractEndYearPath={"endYear" as Path<ContractFormValues>}

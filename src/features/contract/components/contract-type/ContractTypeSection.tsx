@@ -12,40 +12,96 @@ interface Props {
 	name: string
 }
 
-const DEFAULT_SECTION = {
-	mode: null,
-	rows: [{ from: null, to: null, fee: null }],
-};
+function createDefaultRows() {
+	return [
+		{ from: null, to: null, fee: null },
+		{ from: null, to: null, fee: null },
+	];
+}
+
+function createDefaultSection(firstRowFrom: number | null = null) {
+	return {
+		mode: null,
+		rows: [
+			{ from: firstRowFrom, to: null, fee: null },
+			{ from: null, to: null, fee: null },
+		],
+	};
+}
 
 export function ContractTypeSection({ title, name }: Props) {
-	const { control, getValues } = useFormContext();
+	const { control, getValues, setValue } = useFormContext();
 
 	const type = useWatch({ control, name: `${name}.type` as any }) as any;
 
 	const sectionsFa = useFieldArray({ control, name: `${name}.sections` as any });
-	const prevTypeRef = useRef<any>(null);
+	const sections = useWatch({ control, name: `${name}.sections` as any }) as Array<{
+		mode: "fixed" | "variable" | null
+		rows: Array<{ from: number | null, to: number | null, fee: number | null }>
+	}> | undefined;
+	const prevTypeRef = useRef<any>(undefined);
 
 	useEffect(() => {
-		// only when we "enter" tier_blended
-		if (prevTypeRef.current !== "tier_blended" && type === "tier_blended") {
-			const current = (getValues(`${name}.sections` as any) ?? []) as any[];
+		const prevType = prevTypeRef.current;
 
+		if (
+			prevType !== undefined
+			&& prevType !== type
+			&& (type === "tier_fixed" || type === "tier_variable")
+		) {
+			const currentRows = (getValues(`${name}.rows` as any) ?? []) as any[];
+			if (currentRows.length < 2) {
+				setValue(`${name}.rows` as any, createDefaultRows() as any, {
+					shouldDirty: true,
+					shouldValidate: false,
+				});
+			}
+		}
+
+		if (prevType !== "tier_blended" && type === "tier_blended") {
+			const current = (getValues(`${name}.sections` as any) ?? []) as any[];
 			sectionsFa.replace(
-				(current.length > 0 ? current : [{ mode: null, rows: [{ from: null, to: null, fee: null }] }]) as any,
+				(current.length > 0 ? current : [createDefaultSection()]) as any,
 			);
 		}
 
 		prevTypeRef.current = type;
-	}, [type, name, getValues, sectionsFa]);
+	}, [type, name, getValues, setValue, sectionsFa]);
 
-	// ✅ Add a new section (if empty: replace with a section, if not: append)
+	useEffect(() => {
+		if (type !== "tier_blended" || !sections || sections.length < 2)
+			return;
+
+		for (let si = 1; si < sections.length; si++) {
+			const prevSection = sections[si - 1];
+			const currentSection = sections[si];
+			const prevRows = Array.isArray(prevSection?.rows) ? prevSection.rows : [];
+			const currentRows = Array.isArray(currentSection?.rows) ? currentSection.rows : [];
+
+			if (currentRows.length === 0)
+				continue;
+
+			const prevLastTo = prevRows.length > 0 ? (prevRows[prevRows.length - 1]?.to ?? null) : null;
+			const currentFirstFrom = currentRows[0]?.from ?? null;
+			if (currentFirstFrom !== prevLastTo) {
+				setValue(`${name}.sections.${si}.rows.0.from` as any, prevLastTo, {
+					shouldDirty: true,
+					shouldValidate: true,
+				});
+			}
+		}
+	}, [type, sections, name, setValue]);
+
 	const addSection = () => {
 		const current = (getValues(`${name}.sections` as any) ?? []) as any[];
 		if (current.length === 0) {
-			sectionsFa.replace([DEFAULT_SECTION] as any);
+			sectionsFa.replace([createDefaultSection()] as any);
 			return;
 		}
-		sectionsFa.append(DEFAULT_SECTION as any);
+		const prevSection = current[current.length - 1];
+		const prevRows = Array.isArray(prevSection?.rows) ? prevSection.rows : [];
+		const prevLastTo = prevRows.length > 0 ? (prevRows[prevRows.length - 1]?.to ?? null) : null;
+		sectionsFa.append(createDefaultSection(prevLastTo) as any);
 	};
 
 	return (
