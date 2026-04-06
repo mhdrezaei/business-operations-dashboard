@@ -18,7 +18,8 @@ export interface OpenApiPlan {
 	billFixedPrice: number | null // تومان
 
 	// کارمزد شریک ترافیک
-	trafficCommissionPercent: number | null // 0..100
+	trafficProfitPercent: number | null // 0..100
+	trafficPartnerSharePercent: number | null // 0..100
 }
 
 export interface OpenApiServiceFields {
@@ -43,7 +44,8 @@ export const defaultOpenApiPlan: OpenApiPlan = {
 	billMax: null,
 	billFixedPrice: null,
 
-	trafficCommissionPercent: null,
+	trafficProfitPercent: null,
+	trafficPartnerSharePercent: null,
 };
 
 export const defaultOpenApiServiceFields: OpenApiServiceFields = {

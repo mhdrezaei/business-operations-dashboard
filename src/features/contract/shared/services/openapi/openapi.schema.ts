@@ -21,7 +21,8 @@ const openApiPlanSchema = z
 		billFixedPrice: zNullableNonNegative("نرخ استعلام قبض را وارد کنید"),
 
 		// --- Traffic commission ---
-		trafficCommissionPercent: zNullablePercent("کارمزد باید بین 0 تا 100 باشد"),
+		trafficProfitPercent: zNullablePercent("درصد سود ترافیک باید بین 0 تا 100 باشد"),
+		trafficPartnerSharePercent: zNullablePercent("درصد سهم شریک ترافیک باید بین 0 تا 100 باشد"),
 
 	})
 	.superRefine((val, ctx) => {

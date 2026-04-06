@@ -19,10 +19,13 @@ function createDefaultRows() {
 	];
 }
 
-function createDefaultSection() {
+function createDefaultSection(firstRowFrom: number | null = null) {
 	return {
 		mode: null,
-		rows: createDefaultRows(),
+		rows: [
+			{ from: firstRowFrom, to: null, fee: null },
+			{ from: null, to: null, fee: null },
+		],
 	};
 }
 
@@ -32,6 +35,10 @@ export function ContractTypeSection({ title, name }: Props) {
 	const type = useWatch({ control, name: `${name}.type` as any }) as any;
 
 	const sectionsFa = useFieldArray({ control, name: `${name}.sections` as any });
+	const sections = useWatch({ control, name: `${name}.sections` as any }) as Array<{
+		mode: "fixed" | "variable" | null
+		rows: Array<{ from: number | null, to: number | null, fee: number | null }>
+	}> | undefined;
 	const prevTypeRef = useRef<any>(undefined);
 
 	useEffect(() => {
@@ -61,13 +68,40 @@ export function ContractTypeSection({ title, name }: Props) {
 		prevTypeRef.current = type;
 	}, [type, name, getValues, setValue, sectionsFa]);
 
+	useEffect(() => {
+		if (type !== "tier_blended" || !sections || sections.length < 2)
+			return;
+
+		for (let si = 1; si < sections.length; si++) {
+			const prevSection = sections[si - 1];
+			const currentSection = sections[si];
+			const prevRows = Array.isArray(prevSection?.rows) ? prevSection.rows : [];
+			const currentRows = Array.isArray(currentSection?.rows) ? currentSection.rows : [];
+
+			if (currentRows.length === 0)
+				continue;
+
+			const prevLastTo = prevRows.length > 0 ? (prevRows[prevRows.length - 1]?.to ?? null) : null;
+			const currentFirstFrom = currentRows[0]?.from ?? null;
+			if (currentFirstFrom !== prevLastTo) {
+				setValue(`${name}.sections.${si}.rows.0.from` as any, prevLastTo, {
+					shouldDirty: true,
+					shouldValidate: true,
+				});
+			}
+		}
+	}, [type, sections, name, setValue]);
+
 	const addSection = () => {
 		const current = (getValues(`${name}.sections` as any) ?? []) as any[];
 		if (current.length === 0) {
 			sectionsFa.replace([createDefaultSection()] as any);
 			return;
 		}
-		sectionsFa.append(createDefaultSection() as any);
+		const prevSection = current[current.length - 1];
+		const prevRows = Array.isArray(prevSection?.rows) ? prevSection.rows : [];
+		const prevLastTo = prevRows.length > 0 ? (prevRows[prevRows.length - 1]?.to ?? null) : null;
+		sectionsFa.append(createDefaultSection(prevLastTo) as any);
 	};
 
 	return (

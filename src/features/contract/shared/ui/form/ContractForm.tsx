@@ -103,6 +103,8 @@ export function ContractForm({
 				console.warn("submit", values);
 			}
 			catch (e: any) {
+				if (e?.response)
+					return;
 				notification.error({
 					message: "خطا در ثبت/ویرایش",
 					description: e?.message ?? "خطای نامشخص",

@@ -48,10 +48,16 @@ export function OpenApiFields() {
 		billMax: number | null
 		billPartnerShare: number | null
 		billKarashabShare: number | null
+		trafficProfitPercent: number | null
+		trafficPartnerSharePercent: number | null
 	}> | undefined;
 	const previousSharesRef = React.useRef<Array<{
 		billPartnerShare: number | null
 		billKarashabShare: number | null
+	}>>([]);
+	const previousTrafficSharesRef = React.useRef<Array<{
+		trafficProfitPercent: number | null
+		trafficPartnerSharePercent: number | null
 	}>>([]);
 	// ✅ By adding a new plan, the same plan will be opened and the others will be closed.
 	const [activeKey, setActiveKey] = useState<string>("0");
@@ -225,6 +231,78 @@ export function OpenApiFields() {
 		}));
 	}, [plans, setValue]);
 
+	React.useEffect(() => {
+		if (!plans || plans.length === 0) {
+			previousTrafficSharesRef.current = [];
+			return;
+		}
+
+		const previousTrafficShares = previousTrafficSharesRef.current;
+
+		for (let i = 0; i < plans.length; i++) {
+			const currentPlan = plans[i];
+			const previousPlan = previousTrafficShares[i];
+			if (!currentPlan)
+				continue;
+
+			const currentProfitPercent = currentPlan.trafficProfitPercent ?? null;
+			const currentPartnerSharePercent = currentPlan.trafficPartnerSharePercent ?? null;
+			const previousProfitPercent = previousPlan?.trafficProfitPercent ?? null;
+			const previousPartnerSharePercent = previousPlan?.trafficPartnerSharePercent ?? null;
+
+			const profitChanged = currentProfitPercent !== previousProfitPercent;
+			const partnerChanged = currentPartnerSharePercent !== previousPartnerSharePercent;
+
+			if (profitChanged && !partnerChanged) {
+				if (currentProfitPercent != null) {
+					const remainingPercent = 100 - currentProfitPercent;
+					if (currentPartnerSharePercent !== remainingPercent) {
+						setValue(sf(`plans.${i}.trafficPartnerSharePercent`), remainingPercent, {
+							shouldDirty: true,
+							shouldValidate: true,
+						});
+					}
+				}
+				else if (currentPartnerSharePercent != null) {
+					const remainingPercent = 100 - currentPartnerSharePercent;
+					if (currentProfitPercent !== remainingPercent) {
+						setValue(sf(`plans.${i}.trafficProfitPercent`), remainingPercent, {
+							shouldDirty: true,
+							shouldValidate: true,
+						});
+					}
+				}
+				continue;
+			}
+
+			if (partnerChanged && !profitChanged) {
+				if (currentPartnerSharePercent != null) {
+					const remainingPercent = 100 - currentPartnerSharePercent;
+					if (currentProfitPercent !== remainingPercent) {
+						setValue(sf(`plans.${i}.trafficProfitPercent`), remainingPercent, {
+							shouldDirty: true,
+							shouldValidate: true,
+						});
+					}
+				}
+				else if (currentProfitPercent != null) {
+					const remainingPercent = 100 - currentProfitPercent;
+					if (currentPartnerSharePercent !== remainingPercent) {
+						setValue(sf(`plans.${i}.trafficPartnerSharePercent`), remainingPercent, {
+							shouldDirty: true,
+							shouldValidate: true,
+						});
+					}
+				}
+			}
+		}
+
+		previousTrafficSharesRef.current = plans.map(plan => ({
+			trafficProfitPercent: plan?.trafficProfitPercent ?? null,
+			trafficPartnerSharePercent: plan?.trafficPartnerSharePercent ?? null,
+		}));
+	}, [plans, setValue]);
+
 	const addPlan = () => {
 		const nextIndex = fields.length;
 		const prevPlan = (nextIndex > 0 ? getValues(sf(`plans.${nextIndex - 1}`)) : null) as {
@@ -379,19 +457,30 @@ export function OpenApiFields() {
 						</ProFormGroup>
 					</ProCard>
 
-					{/* کارمزد شریک ترافیک */}
+					{/* سهم ترافیک */}
 					<ProCard
-						title="کارمزد شریک ترافیک"
+						title="سهم ترافیک"
 						bordered
 						headerBordered
 						style={{ borderRadius: 12 }}
 						bodyStyle={{ padding: 12 }}
 					>
-						<RHFProNumber
-							name={sf(`plans.${idx}.trafficCommissionPercent`)}
-							label="درصد کارمزد (0 تا 100)"
-							inputProps={{ placeholder: "مثلاً 4" }}
-						/>
+						<ProFormGroup grid>
+							<ProFormGroup colProps={{ span: 12 }}>
+								<RHFProNumber
+									name={sf(`plans.${idx}.trafficProfitPercent`)}
+									label="درصد سود ترافیک (0 تا 100)"
+									inputProps={{ placeholder: "مثلاً 6" }}
+								/>
+							</ProFormGroup>
+							<ProFormGroup colProps={{ span: 12 }}>
+								<RHFProNumber
+									name={sf(`plans.${idx}.trafficPartnerSharePercent`)}
+									label="درصد سهم شریک ترافیک (0 تا 100)"
+									inputProps={{ placeholder: "مثلاً 4" }}
+								/>
+							</ProFormGroup>
+						</ProFormGroup>
 					</ProCard>
 
 					{/* <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>

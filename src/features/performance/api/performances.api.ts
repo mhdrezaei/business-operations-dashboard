@@ -309,15 +309,16 @@ export function deleteSmsCommissionPerformanceByComposite(
 
 export function upsertPerformance({
 	service,
-	companyId,
-	year,
-	month,
+	// companyId,
+	// year,
+	// month,
 	payload,
-	searchParams,
+	// searchParams,
 }: UpsertPerformanceParams) {
 	return request
-		.put(buildPerformancePath(service, companyId, year, month), {
-			searchParams: compactSearchParams(searchParams ?? {}),
+		// .post(buildPerformancePath(service, companyId, year, month), {
+		.post(`performances/${service}/`, {
+			// searchParams: compactSearchParams(searchParams ?? {}),
 			json: payload,
 		})
 		.json<any>();

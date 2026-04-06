@@ -117,6 +117,26 @@ export const contractTypeSchema: z.ZodType<ContractTypeValue> = z
 						}
 					}
 				});
+
+				if (si > 0) {
+					const prevSection = val.sections[si - 1];
+					const prevLastRow = prevSection?.rows?.[prevSection.rows.length - 1];
+					const currentFirstRow = s.rows?.[0];
+					const prevMaxExclusive = prevLastRow?.to ?? null;
+					const currentMinInclusive = currentFirstRow?.from ?? null;
+
+					if (
+						prevMaxExclusive != null
+						&& currentMinInclusive != null
+						&& currentMinInclusive !== prevMaxExclusive
+					) {
+						ctx.addIssue({
+							code: "custom",
+							path: ["sections", si, "rows", 0, "from"],
+							message: "مقدار «از» اولین ردیف این بخش باید برابر «تا» آخرین ردیف بخش قبلی باشد",
+						});
+					}
+				}
 			});
 		}
 	});
