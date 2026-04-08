@@ -29,12 +29,14 @@ export function LanguageButton({ ...restProps }: ButtonProps) {
 			arrow={false}
 			placement="bottom"
 		>
-			<BasicButton
-				type="text"
-				{...restProps}
-			>
-				<TranslationOutlined />
-			</BasicButton>
+			<span>
+				<BasicButton
+					type="text"
+					{...restProps}
+				>
+					<TranslationOutlined />
+				</BasicButton>
+			</span>
 		</Dropdown>
 	);
 }

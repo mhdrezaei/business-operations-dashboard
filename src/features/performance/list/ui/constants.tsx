@@ -100,7 +100,6 @@ export function getPerformanceColumns({
 	companyPlaceholder,
 	salesAgentOptions,
 }: GetPerformanceColumnsArgs): ProColumns<PerformanceListRow>[] {
-	console.warn(serviceOptions, "serrrrrrrrrrrrrrr");
 	const serviceNameById = serviceOptions.reduce((acc, it) => {
 		acc[String(it.value)] = String(it.label);
 		return acc;
@@ -109,9 +108,6 @@ export function getPerformanceColumns({
 		acc[String(it.value)] = String(it.label);
 		return acc;
 	}, {} as Record<string, string>);
-	console.warn(companyOptions, "oppppppppppppppp1");
-	console.warn(companyNameById, "oppppppppppppppp2");
-
 	const serviceCode = (selectedServiceCode ?? "").trim().toLowerCase() as ServiceCode | "";
 
 	const hasSelectedService = Boolean(serviceCode);
@@ -121,6 +117,8 @@ export function getPerformanceColumns({
 	const isSms = serviceCode === "sms";
 	const isSmsCommission = isSmsCommissionService(serviceCode);
 	const isCommercial = serviceCode === "commercial";
+	const hideNonMatchingServiceColumn = (isVisibleForSelectedService: boolean) =>
+		hasSelectedService ? !isVisibleForSelectedService : true;
 
 	return [
 		{
@@ -266,6 +264,7 @@ export function getPerformanceColumns({
 			title: "درآمد",
 			dataIndex: "income",
 			width: 140,
+			hideInTable: hideNonMatchingServiceColumn(isPsp || isTraffic || isCommercial),
 			search: false,
 			render: (_, row) => formatNumeric(row.income),
 		},
@@ -273,6 +272,7 @@ export function getPerformanceColumns({
 			title: "نوع عملیات",
 			dataIndex: "operation_type",
 			width: 170,
+			hideInTable: hideNonMatchingServiceColumn(isOpenApi),
 			hideInSearch: !isOpenApi,
 			valueType: "select",
 			valueEnum: OPERATION_TYPE_OPTIONS.reduce((acc, option) => {
@@ -285,6 +285,7 @@ export function getPerformanceColumns({
 			title: "اپراتور",
 			dataIndex: "operator",
 			width: 120,
+			hideInTable: hideNonMatchingServiceColumn(isSms || isSmsCommission),
 			hideInSearch: !(isSms || isSmsCommission),
 			valueType: "select",
 			valueEnum: OPERATOR_OPTIONS.reduce((acc, option) => {
@@ -297,6 +298,7 @@ export function getPerformanceColumns({
 			title: "زبان",
 			dataIndex: "language",
 			width: 100,
+			hideInTable: hideNonMatchingServiceColumn(isSms || isSmsCommission),
 			hideInSearch: !(isSms || isSmsCommission),
 			valueType: "select",
 			valueEnum: LANGUAGE_OPTIONS.reduce((acc, option) => {
@@ -313,6 +315,7 @@ export function getPerformanceColumns({
 			title: "رسمی",
 			dataIndex: "is_official",
 			width: 100,
+			hideInTable: hideNonMatchingServiceColumn(isSms || isTraffic),
 			hideInSearch: !(isSms || isTraffic),
 			valueType: "select",
 			valueEnum: {
@@ -330,6 +333,7 @@ export function getPerformanceColumns({
 			title: "نماینده فروش",
 			dataIndex: "sales_agent",
 			width: 150,
+			hideInTable: hideNonMatchingServiceColumn(isSmsCommission),
 			hideInSearch: !isSmsCommission,
 			valueType: "select",
 			valueEnum: salesAgentOptions.reduce((acc, option) => {
@@ -342,6 +346,7 @@ export function getPerformanceColumns({
 			title: "نوع شرکت",
 			dataIndex: "company_type",
 			width: 120,
+			hideInTable: hideNonMatchingServiceColumn(isTraffic),
 			hideInSearch: !isTraffic,
 			valueType: "select",
 			valueEnum: TRAFFIC_COMPANY_TYPE_OPTIONS.reduce((acc, option) => {
@@ -354,6 +359,7 @@ export function getPerformanceColumns({
 			title: "لوکیشن",
 			dataIndex: "location",
 			width: 140,
+			hideInTable: hideNonMatchingServiceColumn(isTraffic),
 			hideInSearch: !isTraffic,
 			valueType: "text",
 			render: (_, row) => row.location ?? "-",
@@ -362,6 +368,7 @@ export function getPerformanceColumns({
 			title: "نام مشتری",
 			dataIndex: "customer_name",
 			width: 170,
+			hideInTable: hideNonMatchingServiceColumn(isCommercial),
 			hideInSearch: !isCommercial,
 			valueType: "text",
 		},
@@ -369,6 +376,7 @@ export function getPerformanceColumns({
 			title: "کد ملی مشتری",
 			dataIndex: "customer_nic",
 			width: 150,
+			hideInTable: hideNonMatchingServiceColumn(isCommercial),
 			hideInSearch: !isCommercial,
 			valueType: "text",
 		},
@@ -376,6 +384,7 @@ export function getPerformanceColumns({
 			title: "کد استان",
 			dataIndex: "province_code",
 			width: 130,
+			hideInTable: hideNonMatchingServiceColumn(isCommercial),
 			hideInSearch: !isCommercial,
 			valueType: "text",
 		},
@@ -383,6 +392,7 @@ export function getPerformanceColumns({
 			title: "نوع سرویس تجاری",
 			dataIndex: "service_type",
 			width: 140,
+			hideInTable: hideNonMatchingServiceColumn(isCommercial),
 			hideInSearch: !isCommercial,
 			valueType: "text",
 		},
@@ -391,6 +401,7 @@ export function getPerformanceColumns({
 			title: "دریافتی",
 			dataIndex: "value_receive",
 			width: 140,
+			hideInTable: hideNonMatchingServiceColumn(isTraffic),
 			search: false,
 			render: (_, row) => formatNumeric(row.value_receive),
 		},
@@ -399,6 +410,7 @@ export function getPerformanceColumns({
 			title: "هزینه",
 			dataIndex: "expense",
 			width: 140,
+			hideInTable: hideNonMatchingServiceColumn(isTraffic || isCommercial),
 			search: false,
 			render: (_, row) => formatNumeric(row.expense),
 		},
@@ -406,6 +418,7 @@ export function getPerformanceColumns({
 			title: "سود",
 			dataIndex: "profit",
 			width: 140,
+			hideInTable: hideNonMatchingServiceColumn(isTraffic),
 			search: false,
 			render: (_, row) => formatNumeric(row.profit),
 		},

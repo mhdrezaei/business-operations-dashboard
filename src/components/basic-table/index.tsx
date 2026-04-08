@@ -47,6 +47,15 @@ export function BasicTable<
 	 * @see https://gist.github.com/condorheroblog/557c18c61084a1296b716bcb1203315e
 	 */
 	const [scrollY, setScrollY] = useState<number | string | undefined>(adaptive ? "initial" : undefined);
+	const autoSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	const getObjectRefCurrent = <T,>(ref: unknown): T | undefined => {
+		if (!ref || typeof ref === "function" || typeof ref !== "object")
+			return undefined;
+		if (!("current" in ref))
+			return undefined;
+		return (ref as { current?: T | null }).current ?? undefined;
+	};
 
 	/**
 	 * @description ارتفاع پابرگ ثابت
@@ -146,6 +155,15 @@ export function BasicTable<
 		}
 	}, [size, adaptive, paginationHeight, footerHeight, props.scroll?.y]);
 
+	useEffect(() => {
+		return () => {
+			if (autoSearchTimerRef.current) {
+				clearTimeout(autoSearchTimerRef.current);
+				autoSearchTimerRef.current = null;
+			}
+		};
+	}, []);
+
 	const getLoadingProps = () => {
 		if (props.loading === false) {
 			return false;
@@ -174,6 +192,36 @@ export function BasicTable<
 		};
 	};
 
+	const getFormProps = () => {
+		const originalFormProps = props.form ?? {};
+		if (props.search === false) {
+			return originalFormProps;
+		}
+
+		return {
+			...originalFormProps,
+			onValuesChange: (changedValues: any, allValues: any) => {
+				originalFormProps.onValuesChange?.(changedValues, allValues);
+
+				if (autoSearchTimerRef.current) {
+					clearTimeout(autoSearchTimerRef.current);
+					autoSearchTimerRef.current = null;
+				}
+
+				autoSearchTimerRef.current = setTimeout(() => {
+					const formInstance = getObjectRefCurrent<{ submit?: () => void }>(props.formRef);
+					if (formInstance?.submit) {
+						formInstance.submit();
+						return;
+					}
+
+					const actionInstance = getObjectRefCurrent<{ reload?: () => void }>(props.actionRef);
+					actionInstance?.reload?.();
+				}, 0);
+			},
+		};
+	};
+
 	return (
 		<div className="h-full" ref={tableWrapperRef}>
 			<ProTable
@@ -191,6 +239,7 @@ export function BasicTable<
 				loading={getLoadingProps()}
 				pagination={getPaginationProps()}
 				search={getSearchProps()}
+				form={getFormProps()}
 				expandable={{
 					// expandIcon: ({ expanded, onExpand, record }) => {
 					// 	return expanded

@@ -89,7 +89,16 @@ export function PerformanceForm({
 		control: form.control,
 		name: "serviceCode",
 	});
+	const year = useWatch({
+		control: form.control,
+		name: "year",
+	});
+	const month = useWatch({
+		control: form.control,
+		name: "month",
+	});
 	const module = serviceCode ? performanceServiceRegistry[serviceCode] : undefined;
+	const canShowServiceForm = year != null && month != null;
 
 	const submitIntentRef = useRef<PerformanceSubmitIntent>("submit");
 
@@ -141,7 +150,7 @@ export function PerformanceForm({
 				<FixedStartSection />
 
 				<AnimatePresence mode="wait">
-					{module?.Fields
+					{module?.Fields && canShowServiceForm
 						? (
 							<motion.div
 								key={module.code}
@@ -157,15 +166,19 @@ export function PerformanceForm({
 						: null}
 				</AnimatePresence>
 
-				<div style={{ marginTop: 16, width: "100%" }}>
-					<ActionSection
-						submitting={submitting}
-						onSubmit={() => triggerSubmit("submit")}
-						onSubmitAndCreateAnother={() => triggerSubmit("submit_and_create_another")}
-						onSubmitAndEdit={() => triggerSubmit("submit_and_edit")}
-						onReset={resetForm}
-					/>
-				</div>
+				{canShowServiceForm
+					? (
+						<div style={{ marginTop: 16, width: "100%" }}>
+							<ActionSection
+								submitting={submitting}
+								onSubmit={() => triggerSubmit("submit")}
+								onSubmitAndCreateAnother={() => triggerSubmit("submit_and_create_another")}
+								onSubmitAndEdit={() => triggerSubmit("submit_and_edit")}
+								onReset={resetForm}
+							/>
+						</div>
+					)
+					: null}
 			</div>
 		</FormProvider>
 	);

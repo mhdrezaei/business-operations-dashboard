@@ -121,6 +121,7 @@ export function getContractColumns({
 			dataIndex: "traffic_company_type",
 			valueType: "select",
 			width: 150,
+			hideInTable: !isTrafficService,
 			hideInSearch: !isTrafficService,
 			valueEnum: TRAFFIC_COMPANY_TYPE_OPTIONS.reduce((acc, it) => {
 				acc[it.value] = it.label;
@@ -205,6 +206,7 @@ export function getContractColumns({
 			dataIndex: "is_official",
 			valueType: "select",
 			width: 130,
+			hideInTable: !isTrafficService,
 			hideInSearch: !isTrafficService,
 			valueEnum: {
 				true: { text: t("common.yes") },

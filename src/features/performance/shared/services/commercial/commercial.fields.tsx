@@ -25,11 +25,15 @@ function UploadCard({
 		<Controller
 			name={name as any}
 			control={control}
-			render={({ field, fieldState }) => (
+			render={({ field, fieldState, formState }) => (
 				<ProCard bordered headerBordered title={title} style={{ borderRadius: 8 }}>
 					<Form.Item
-						help={fieldState.error?.message}
-						validateStatus={fieldState.error?.message ? "error" : undefined}
+						help={(formState.isSubmitted || fieldState.isTouched)
+							? fieldState.error?.message
+							: undefined}
+						validateStatus={(formState.isSubmitted || fieldState.isTouched) && fieldState.error?.message
+							? "error"
+							: undefined}
 						style={{ marginBottom: 0 }}
 					>
 						<Upload.Dragger

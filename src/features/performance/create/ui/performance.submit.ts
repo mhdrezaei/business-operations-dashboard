@@ -24,22 +24,6 @@ function buildBasePayload(values: PerformanceFormValues) {
 	};
 }
 
-function withOperation(
-	values: PerformanceFormValues,
-	operationType: string,
-	value: number | null | undefined,
-	extra?: Record<string, unknown>,
-): PerformanceOperation {
-	return {
-		payload: {
-			...buildBasePayload(values),
-			operation_type: operationType,
-			value,
-			...extra,
-		},
-	};
-}
-
 function buildManualOperations(values: PerformanceFormValues): PerformanceOperation[] {
 	const code = (values.serviceCode ?? "").trim().toLowerCase();
 	const fields = (values.serviceFields ?? {}) as Record<string, any>;
@@ -47,21 +31,31 @@ function buildManualOperations(values: PerformanceFormValues): PerformanceOperat
 	if (code === "openapi") {
 		if (values.contractModel === "legacy") {
 			return [
-				withOperation(values, "BILL_INQUIRY", fields.billInquiryValue),
-				withOperation(values, "RECEIPT_REGISTER", fields.receiptRegisterValue),
+				{
+					payload: {
+						...buildBasePayload(values),
+						bill_inquiry_value: fields.billInquiryValue,
+						receipt_register_value: fields.receiptRegisterValue,
+					},
+				},
 			];
 		}
 		if (values.contractModel === "package") {
 			return [
-				withOperation(values, "BILL_INQUIRY", fields.billInquiryValue),
-				withOperation(values, "TRAFFIC_REVENUE", fields.trafficRevenue),
-				withOperation(values, "TRAFFIC_PACKAGE_COUNT", fields.trafficPackageCount),
-				withOperation(values, "IRANCELL_FA", fields.irancellFa),
-				withOperation(values, "IRANCELL_EN", fields.irancellEn),
-				withOperation(values, "MCI_FA", fields.mciFa),
-				withOperation(values, "MCI_EN", fields.mciEn),
-				withOperation(values, "OTHER_FA", fields.otherFa),
-				withOperation(values, "OTHER_EN", fields.otherEn),
+				{
+					payload: {
+						...buildBasePayload(values),
+						sms_mci_fa: fields.mciFa,
+						sms_mci_en: fields.mciEn,
+						sms_irancell_fa: fields.irancellFa,
+						sms_irancell_en: fields.irancellEn,
+						sms_other_fa: fields.otherFa,
+						sms_other_en: fields.otherEn,
+						bill_inquiry_value: fields.billInquiryValue,
+						traffic_income: fields.trafficRevenue,
+						traffic_package_count: fields.trafficPackageCount,
+					},
+				},
 			];
 		}
 		return [];
@@ -73,7 +67,7 @@ function buildManualOperations(values: PerformanceFormValues): PerformanceOperat
 				payload: {
 					...buildBasePayload(values),
 					value: fields.performanceValue,
-					profit: fields.monthlyRevenue,
+					income: fields.monthlyRevenue,
 				},
 			},
 		];
@@ -90,27 +84,41 @@ function buildManualOperations(values: PerformanceFormValues): PerformanceOperat
 		];
 	}
 
-	if (code === "sms" || isSmsCommissionCode(code)) {
-		const operations = [
-			withOperation(values, "IRANCELL_FA", fields.irancellFa),
-			withOperation(values, "IRANCELL_EN", fields.irancellEn),
-			withOperation(values, "MCI_FA", fields.mciFa),
-			withOperation(values, "MCI_EN", fields.mciEn),
-			withOperation(values, "OTHER_FA", fields.otherFa),
-			withOperation(values, "OTHER_EN", fields.otherEn),
+	if (code === "sms") {
+		return [
+			{
+				payload: {
+					...buildBasePayload(values),
+					items: [
+						{ operator: "IRANCELL", language: "FA", value: String(fields.irancellFa ?? "") },
+						{ operator: "IRANCELL", language: "EN", value: String(fields.irancellEn ?? "") },
+						{ operator: "MCI", language: "FA", value: String(fields.mciFa ?? "") },
+						{ operator: "MCI", language: "EN", value: String(fields.mciEn ?? "") },
+						{ operator: "OTHER", language: "FA", value: String(fields.otherFa ?? "") },
+						{ operator: "OTHER", language: "EN", value: String(fields.otherEn ?? "") },
+					],
+				},
+			},
 		];
+	}
 
-		if (isSmsCommissionCode(code)) {
-			operations.forEach((operation) => {
-				operation.payload.sales_agent = values.salesAgentId;
-				operation.searchParams = {
-					...(operation.searchParams ?? {}),
+	if (isSmsCommissionCode(code)) {
+		return [
+			{
+				payload: {
+					...buildBasePayload(values),
 					sales_agent: values.salesAgentId,
-				};
-			});
-		}
-
-		return operations;
+					items: [
+						{ operator: "IRANCELL", language: "FA", value: String(fields.irancellFa ?? "") },
+						{ operator: "IRANCELL", language: "EN", value: String(fields.irancellEn ?? "") },
+						{ operator: "MCI", language: "FA", value: String(fields.mciFa ?? "") },
+						{ operator: "MCI", language: "EN", value: String(fields.mciEn ?? "") },
+						{ operator: "OTHER", language: "FA", value: String(fields.otherFa ?? "") },
+						{ operator: "OTHER", language: "EN", value: String(fields.otherEn ?? "") },
+					],
+				},
+			},
+		];
 	}
 
 	return [];
@@ -146,9 +154,6 @@ async function submitTrafficFiles(values: PerformanceFormValues) {
 
 	await uploadPerformanceFiles({
 		service: "traffic",
-		companyId: values.companyId,
-		year: values.year,
-		month: values.month,
 		files: {
 			file: monthlyPerformanceFile,
 		},
@@ -158,6 +163,55 @@ async function submitTrafficFiles(values: PerformanceFormValues) {
 			company: values.companyId,
 			sh_year: values.year,
 			sh_month: values.month,
+		},
+	});
+}
+
+async function submitTrafficSingle(values: PerformanceFormValues) {
+	if (!values.companyId || !values.year || !values.month) {
+		throw new Error("اطلاعات پایه فرم کامل نیست");
+	}
+
+	const fields = (values.serviceFields ?? {}) as Record<string, any>;
+	const tehranValue = fields.tehranValue;
+	const tehranValueReceive = fields.tehranValueReceive;
+	const countyEnabled = Boolean(fields.countyEnabled);
+	const countyValue = fields.countyValue;
+	const countyValueReceive = fields.countyValueReceive;
+
+	if (tehranValue == null || tehranValueReceive == null) {
+		throw new Error("برای تهران مقدار ارسالی و دریافتی الزامی است");
+	}
+
+	const locations: Array<Record<string, unknown>> = [
+		{
+			location: "TEHRAN",
+			value: tehranValue,
+			value_receive: tehranValueReceive,
+		},
+	];
+
+	if (countyEnabled) {
+		if (countyValue == null || countyValueReceive == null) {
+			throw new Error("در صورت ثبت مراکز استان، مقدار ارسالی و دریافتی الزامی است");
+		}
+
+		locations.push({
+			location: "COUNTY",
+			value: countyValue,
+			value_receive: countyValueReceive,
+		});
+	}
+
+	await upsertPerformance({
+		service: "traffic",
+		companyId: values.companyId,
+		year: values.year,
+		month: values.month,
+		payload: {
+			...buildBasePayload(values),
+			company_type: values.trafficCompanyType,
+			locations,
 		},
 	});
 }
@@ -178,9 +232,6 @@ async function submitCommercialFiles(values: PerformanceFormValues) {
 
 	await uploadPerformanceFiles({
 		service: "commercial",
-		companyId: values.companyId,
-		year: values.year,
-		month: values.month,
 		files: {
 			services_file: servicesFile,
 			province_code_file: provinceCodeFile,
@@ -202,7 +253,13 @@ export async function submitPerformance(values: PerformanceFormValues) {
 	}
 
 	if (servicePath === "traffic") {
-		await submitTrafficFiles(values);
+		const mode = String((values.serviceFields as any)?.submitMode ?? "template");
+		if (mode === "single") {
+			await submitTrafficSingle(values);
+		}
+		else {
+			await submitTrafficFiles(values);
+		}
 		return;
 	}
 

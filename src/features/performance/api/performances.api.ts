@@ -194,9 +194,6 @@ interface UpsertPerformanceParams {
 
 interface UploadPerformanceFileParams {
 	service: PerformanceServicePath
-	companyId: number
-	year: number
-	month: number
 	files: Record<string, File>
 	extraFields?: Record<string, string | number | boolean | null | undefined>
 	searchParams?: Record<string, string | number | boolean | null | undefined>
@@ -326,9 +323,6 @@ export function upsertPerformance({
 
 export function uploadPerformanceFiles({
 	service,
-	companyId,
-	year,
-	month,
 	files,
 	extraFields,
 	searchParams,
@@ -346,7 +340,7 @@ export function uploadPerformanceFiles({
 	});
 
 	return request
-		.put(buildPerformancePath(service, companyId, year, month), {
+		.post(`performances/${service}/`, {
 			searchParams: compactSearchParams(searchParams ?? {}),
 			body,
 		})

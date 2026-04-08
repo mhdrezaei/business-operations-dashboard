@@ -63,6 +63,8 @@ export function smsCommissionAgentsQuery(enabled: boolean) {
 		enabled,
 		queryFn: fetchSmsCommissionAgents,
 		staleTime: 2 * 60 * 1000,
+		refetchOnWindowFocus: false,
+		refetchOnReconnect: false,
 	});
 }
 

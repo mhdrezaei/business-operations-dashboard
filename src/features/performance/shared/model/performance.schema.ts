@@ -198,17 +198,6 @@ export function buildPerformanceSchema(
 				return;
 			}
 
-			if (normalizedCode === "traffic") {
-				if (isUploadListEmpty(serviceFields.monthlyPerformanceFile)) {
-					ctx.addIssue({
-						code: "custom",
-						path: ["serviceFields", "monthlyPerformanceFile"],
-						message: "فایل عملکرد ماهانه الزامی است",
-					});
-				}
-				return;
-			}
-
 			if (normalizedCode === "commercial") {
 				if (isUploadListEmpty(serviceFields.servicesFile)) {
 					ctx.addIssue({
