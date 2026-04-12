@@ -70,7 +70,25 @@ export interface PerformanceListQuery {
 export interface UnregisterdPerformanceListQuery {
 	page?: number
 	page_size?: number
-	service_ids?: number
+	service_ids?: string
+	company_ids?: string
+	search?: string
+	sh_year?: number
+	sh_month?: number
+	ordering?: string
+	gr_month_start_after?: string
+	gr_month_start_before?: string
+	operation_type?: string
+	operator?: string
+	language?: string
+	sales_agent?: number
+	location?: string
+	company_type?: string
+	is_official?: boolean
+	customer_name?: string
+	customer_nic?: number
+	province_code?: string
+	service_type?: number
 }
 export interface PerformanceReportAvailability {
 	service_id: number

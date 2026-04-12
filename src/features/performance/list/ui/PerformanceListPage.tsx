@@ -21,7 +21,7 @@ import { useAccess } from "#src/hooks";
 import { DeleteOutlined, EditOutlined, PlusCircleOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Popconfirm } from "antd";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { PerformanceDetailModal } from "./components/PerformanceDetailModal";
@@ -49,6 +49,11 @@ export default function PerformanceListPage() {
 	const [openDetail, setOpenDetail] = useState(false);
 	const [selectedRow, setSelectedRow] = useState<PerformanceListRow | null>(null);
 	const [deletingRowId, setDeletingRowId] = useState<number | null>(null);
+	const resetInvalidSelectedService = useCallback(() => {
+		setSelectedServiceId(null);
+		setSelectedServiceCode(null);
+		setSelectedTrafficCompanyType(null);
+	}, []);
 
 	const permittedViewIdsFromPerformances = getPermittedServiceIds("performances", "view");
 	const permittedViewIdsFromContracts = getPermittedServiceIds("contracts", "view");
@@ -87,15 +92,13 @@ export default function PerformanceListPage() {
 		if (permittedViewServiceIds.has(selectedServiceId))
 			return;
 
-		setSelectedServiceId(null);
-		setSelectedServiceCode(null);
-		setSelectedTrafficCompanyType(null);
+		resetInvalidSelectedService();
 		formRef.current?.setFieldsValue({
 			service: undefined,
 			company: undefined,
 			company_type: undefined,
 		});
-	}, [selectedServiceId, permittedViewServiceIdsList.join(",")]);
+	}, [selectedServiceId, permittedViewServiceIdsList.join(","), resetInvalidSelectedService]);
 
 	const companyOptions = useMemo(
 		() => {
@@ -151,7 +154,6 @@ export default function PerformanceListPage() {
 		setSelectedServiceCode(serviceCode);
 		setSelectedTrafficCompanyType(null);
 		clearDependentFilters();
-		actionRef.current?.reload?.();
 	};
 
 	const canCreatePerformance = useMemo(() => {

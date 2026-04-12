@@ -19,7 +19,7 @@ import { RHFProNumber, RHFProText } from "#src/shared/ui/rhf-pro";
 import { ProCard } from "@ant-design/pro-components";
 import { Button, Modal, Spin } from "antd";
 import i18next from "i18next";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
@@ -59,7 +59,7 @@ interface SmsBreakdownCard {
 
 const SERVICE_DETAIL_KEYS: Record<PerformanceServicePath, string[]> = {
 	"openapi": ["value", "income", "expense", "profit", "traffic_income", "traffic_package_count"],
-	"psp": ["value", "income", "expense", "profit"],
+	"psp": [],
 	"shahkar": ["value", "income", "expense", "profit"],
 	"sms": [],
 	"sms-commission": [],
@@ -73,6 +73,7 @@ const HIDDEN_DETAIL_KEYS = new Set([
 	"company_id",
 	"service",
 	"service_id",
+	"service_code",
 	"created_at",
 	"updated_at",
 	"gr_month_start",
@@ -359,6 +360,22 @@ export function PerformanceDetailModal({
 	const [smsContract, setSmsContract] = useState<Record<string, unknown> | null>(null);
 	const [smsPerformances, setSmsPerformances] = useState<PerformanceListItem[]>([]);
 	const [openApiPerformances, setOpenApiPerformances] = useState<PerformanceListItem[]>([]);
+	const applyLoadingState = useCallback((nextLoading: boolean) => {
+		setLoading(nextLoading);
+	}, []);
+	const applyDetailState = useCallback((nextDetail: Record<string, unknown> | null, nextLoading: boolean) => {
+		setDetail(nextDetail);
+		setLoading(nextLoading);
+	}, []);
+	const applySmsContract = useCallback((nextValue: Record<string, unknown> | null) => {
+		setSmsContract(nextValue);
+	}, []);
+	const applySmsPerformances = useCallback((nextValue: PerformanceListItem[]) => {
+		setSmsPerformances(nextValue);
+	}, []);
+	const applyOpenApiPerformances = useCallback((nextValue: PerformanceListItem[]) => {
+		setOpenApiPerformances(nextValue);
+	}, []);
 
 	const normalizedRecord = useMemo(
 		() => normalizePerformanceRecord(record ?? {}),
@@ -379,7 +396,7 @@ export function PerformanceDetailModal({
 			readonlyKeys: [],
 			editableFields: [
 				{ key: "value", label: "مقدار عملکرد", type: "number", required: true },
-				{ key: "income", label: "درآمد این ماه", type: "number" },
+				{ key: "income", label: "درآمد این ماه (تومان)", type: "number" },
 			],
 			payloadKeys: ["value", "income"],
 		},
@@ -508,14 +525,6 @@ export function PerformanceDetailModal({
 			{ key: "income", label: "درآمد استعلام قبض این ماه", value: formatNumberLike(mergedDetail.income) },
 			{ key: "expense", label: "هزینه استعلام قبض این ماه", value: formatNumberLike(mergedDetail.expense) },
 			{ key: "profit", label: "درآمد ثبت وصولی این ماه", value: formatNumberLike(mergedDetail.profit) },
-		];
-	}, [service, mergedDetail]);
-	const pspSummaryFields = useMemo(() => {
-		if (service !== "psp")
-			return [];
-
-		return [
-			{ key: "income", label: "درآمد این ماه", value: formatNumberLike(mergedDetail.income) },
 		];
 	}, [service, mergedDetail]);
 	const shahkarSummaryFields = useMemo(() => {
@@ -688,44 +697,39 @@ export function PerformanceDetailModal({
 			return;
 
 		if (isUnregisteredMode) {
-			setLoading(false);
-			setDetail(record as Record<string, unknown>);
+			applyDetailState(record as Record<string, unknown>, false);
 			return;
 		}
 
 		let cancelled = false;
-		setLoading(true);
+		applyLoadingState(true);
 
 		(async () => {
 			try {
 				if (normalizedRecord.id != null && service !== "sms-commission") {
 					const response = await fetchPerformanceDetail(service, normalizedRecord.id);
 					if (!cancelled)
-						setDetail(response);
+						applyDetailState(response, false);
 					return;
 				}
 
 				if (!cancelled)
-					setDetail(record as Record<string, unknown>);
+					applyDetailState(record as Record<string, unknown>, false);
 			}
 			catch {
 				if (!cancelled)
-					setDetail(record as Record<string, unknown>);
-			}
-			finally {
-				if (!cancelled)
-					setLoading(false);
+					applyDetailState(record as Record<string, unknown>, false);
 			}
 		})();
 
 		return () => {
 			cancelled = true;
 		};
-	}, [open, service, record, normalizedRecord.id, isUnregisteredMode]);
+	}, [open, service, record, normalizedRecord.id, isUnregisteredMode, applyDetailState, applyLoadingState]);
 
 	useEffect(() => {
 		if (!open || service !== "sms" || isUnregisteredMode) {
-			setSmsContract(null);
+			applySmsContract(null);
 			return;
 		}
 
@@ -734,7 +738,7 @@ export function PerformanceDetailModal({
 		const year = normalizedRecord.year;
 		const month = normalizedRecord.month;
 		if (serviceId == null || companyId == null) {
-			setSmsContract(null);
+			applySmsContract(null);
 			return;
 		}
 
@@ -746,22 +750,22 @@ export function PerformanceDetailModal({
 					return;
 				const contracts = response?.results ?? [];
 				const active = pickActiveContract(contracts as any, year, month);
-				setSmsContract((active ?? contracts[0] ?? null) as Record<string, unknown> | null);
+				applySmsContract((active ?? contracts[0] ?? null) as Record<string, unknown> | null);
 			}
 			catch {
 				if (!cancelled)
-					setSmsContract(null);
+					applySmsContract(null);
 			}
 		})();
 
 		return () => {
 			cancelled = true;
 		};
-	}, [open, service, normalizedRecord.companyId, normalizedRecord.serviceId, normalizedRecord.year, normalizedRecord.month, isUnregisteredMode]);
+	}, [open, service, normalizedRecord.companyId, normalizedRecord.serviceId, normalizedRecord.year, normalizedRecord.month, isUnregisteredMode, applySmsContract]);
 
 	useEffect(() => {
 		if (!open || service !== "sms" || isUnregisteredMode) {
-			setSmsPerformances([]);
+			applySmsPerformances([]);
 			return;
 		}
 
@@ -770,7 +774,7 @@ export function PerformanceDetailModal({
 		const year = normalizedRecord.year;
 		const month = normalizedRecord.month;
 		if (serviceId == null || companyId == null || year == null || month == null) {
-			setSmsPerformances([]);
+			applySmsPerformances([]);
 			return;
 		}
 
@@ -786,22 +790,22 @@ export function PerformanceDetailModal({
 					sh_month: month,
 				});
 				if (!cancelled)
-					setSmsPerformances(response?.results ?? []);
+					applySmsPerformances(response?.results ?? []);
 			}
 			catch {
 				if (!cancelled)
-					setSmsPerformances([]);
+					applySmsPerformances([]);
 			}
 		})();
 
 		return () => {
 			cancelled = true;
 		};
-	}, [open, service, normalizedRecord.companyId, normalizedRecord.serviceId, normalizedRecord.year, normalizedRecord.month, isUnregisteredMode]);
+	}, [open, service, normalizedRecord.companyId, normalizedRecord.serviceId, normalizedRecord.year, normalizedRecord.month, isUnregisteredMode, applySmsPerformances]);
 
 	useEffect(() => {
 		if (!open || service !== "openapi" || isUnregisteredMode) {
-			setOpenApiPerformances([]);
+			applyOpenApiPerformances([]);
 			return;
 		}
 
@@ -810,7 +814,7 @@ export function PerformanceDetailModal({
 		const year = normalizedRecord.year;
 		const month = normalizedRecord.month;
 		if (serviceId == null || companyId == null || year == null || month == null) {
-			setOpenApiPerformances([]);
+			applyOpenApiPerformances([]);
 			return;
 		}
 
@@ -826,18 +830,18 @@ export function PerformanceDetailModal({
 					sh_month: month,
 				});
 				if (!cancelled)
-					setOpenApiPerformances(response?.results ?? []);
+					applyOpenApiPerformances(response?.results ?? []);
 			}
 			catch {
 				if (!cancelled)
-					setOpenApiPerformances([]);
+					applyOpenApiPerformances([]);
 			}
 		})();
 
 		return () => {
 			cancelled = true;
 		};
-	}, [open, service, normalizedRecord.companyId, normalizedRecord.serviceId, normalizedRecord.year, normalizedRecord.month, isUnregisteredMode]);
+	}, [open, service, normalizedRecord.companyId, normalizedRecord.serviceId, normalizedRecord.year, normalizedRecord.month, isUnregisteredMode, applyOpenApiPerformances]);
 
 	useEffect(() => {
 		if (!service || !record || !detail || !config)
@@ -1028,26 +1032,6 @@ export function PerformanceDetailModal({
 												}}
 											>
 												{openApiSummaryFields.map(field => (
-													<ReadOnlyBlock
-														key={field.key}
-														label={`${field.label}:`}
-														value={field.value}
-													/>
-												))}
-											</div>
-										)
-										: null}
-
-									{service === "psp"
-										? (
-											<div
-												style={{
-													display: "grid",
-													gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-													gap: 8,
-												}}
-											>
-												{pspSummaryFields.map(field => (
 													<ReadOnlyBlock
 														key={field.key}
 														label={`${field.label}:`}

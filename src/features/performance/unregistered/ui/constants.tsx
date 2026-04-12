@@ -14,9 +14,9 @@ type ServiceCode = | "openapi"
 
 export interface GetPerformanceColumnsArgs {
 	t: TFunction<"translation", undefined>
-	selectedServiceId: number | null
+	selectedServiceIds: number[]
 	selectedServiceCode: string | null
-	setSelectedService: (serviceId: number | null, serviceCode: string | null) => void
+	setSelectedServices: (serviceIds: number[], serviceCode: string | null) => void
 	serviceOptions: Array<{ label: string, value: number, code: string }>
 	companyOptions: Array<{ label: string, value: number }>
 	isCompanyDisabled: boolean
@@ -30,8 +30,9 @@ function isSmsCommissionService(code: string | null | undefined) {
 
 export function getPerformanceColumns({
 	t,
+	selectedServiceIds,
 	selectedServiceCode,
-	setSelectedService,
+	setSelectedServices,
 	serviceOptions,
 	companyOptions,
 	isCompanyDisabled,
@@ -67,7 +68,7 @@ export function getPerformanceColumns({
 		{ label: "PREMIUM", value: "PREMIUM" },
 	] as const;
 
-	const hasSelectedService = Boolean(serviceCode);
+	const hasSelectedService = selectedServiceIds.length > 0;
 
 	const isTraffic = serviceCode === "traffic";
 	const isSmsCommission = isSmsCommissionService(serviceCode);
@@ -90,7 +91,7 @@ export function getPerformanceColumns({
 		},
 		{
 			title: t("performance.columns.service"),
-			dataIndex: "service",
+			dataIndex: "service_ids",
 			hideInTable: true,
 			valueType: "select",
 			valueEnum: serviceOptions.reduce((acc, option) => {
@@ -98,12 +99,23 @@ export function getPerformanceColumns({
 				return acc;
 			}, {} as Record<string, string>),
 			fieldProps: {
+				mode: "multiple",
+				maxTagCount: "responsive",
 				allowClear: true,
 				placeholder: t("performance.placeholders.selectService"),
-				onChange: (value: number | null) => {
-					const numericId = value == null ? null : Number(value);
-					const selected = serviceOptions.find(option => option.value === numericId);
-					setSelectedService(numericId, selected?.code ?? null);
+				onChange: (value: Array<string | number> | string | number | null) => {
+					const rawValues = Array.isArray(value)
+						? value
+						: value == null || value === ""
+							? []
+							: [value];
+					const serviceIds = rawValues
+						.map(item => Number(item))
+						.filter(item => Number.isInteger(item) && item > 0);
+					const selected = serviceIds.length === 1
+						? serviceOptions.find(option => option.value === serviceIds[0])
+						: null;
+					setSelectedServices(serviceIds, selected?.code ?? null);
 				},
 			},
 		},
@@ -117,7 +129,7 @@ export function getPerformanceColumns({
 		},
 		{
 			title: t("performance.columns.company"),
-			dataIndex: "company",
+			dataIndex: "company_ids",
 			hideInTable: true,
 			valueType: "select",
 			valueEnum: companyOptions.reduce((acc, option) => {
@@ -125,6 +137,8 @@ export function getPerformanceColumns({
 				return acc;
 			}, {} as Record<string, string>),
 			fieldProps: {
+				mode: "multiple",
+				maxTagCount: "responsive",
 				allowClear: true,
 				disabled: isCompanyDisabled,
 				placeholder: companyPlaceholder,

@@ -1,3 +1,4 @@
+import type { CompanyDto } from "#src/api/common/common.types";
 import type { PerformanceServicePath } from "#src/features/performance/api/performances.api";
 import type { ActionType, ProColumns, ProFormInstance } from "@ant-design/pro-components";
 import type { PerformanceListRow } from "../model/performance.list.types";
@@ -13,9 +14,9 @@ import {
 } from "#src/features/performance/shared/queries/performance.queries";
 import { useAccess } from "#src/hooks";
 import { FileAddOutlined, PlusCircleOutlined } from "@ant-design/icons";
-import { useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { Button } from "antd";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { PerformanceDetailModal } from "./components/PerformanceDetailModal";
@@ -23,6 +24,20 @@ import { getPerformanceColumns } from "./constants";
 
 function isSmsCommissionServicePath(service: PerformanceServicePath | null) {
 	return service === "sms-commission";
+}
+
+function normalizeNumberList(values: unknown) {
+	if (!Array.isArray(values))
+		return [];
+
+	const dedup = new Set<number>();
+	values.forEach((item) => {
+		const numeric = Number(item);
+		if (Number.isInteger(numeric) && numeric > 0)
+			dedup.add(numeric);
+	});
+
+	return Array.from(dedup);
 }
 
 export default function UnregisteredPerformanceList() {
@@ -33,10 +48,14 @@ export default function UnregisteredPerformanceList() {
 	const actionRef = useRef<ActionType>(null);
 	const formRef = useRef<ProFormInstance | undefined>(undefined);
 
-	const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
+	const [selectedServiceIds, setSelectedServiceIds] = useState<number[]>([]);
 	const [selectedServiceCode, setSelectedServiceCode] = useState<string | null>(null);
 	const [openDetail, setOpenDetail] = useState(false);
 	const [selectedRow, setSelectedRow] = useState<PerformanceListRow | null>(null);
+	const applySelectedServicesState = useCallback((serviceIds: number[], serviceCode: string | null) => {
+		setSelectedServiceIds(serviceIds);
+		setSelectedServiceCode(serviceCode);
+	}, []);
 
 	const permittedViewIdsFromPerformances = getPermittedServiceIds("performances", "view");
 	const permittedViewIdsFromContracts = getPermittedServiceIds("contracts", "view");
@@ -50,11 +69,18 @@ export default function UnregisteredPerformanceList() {
 	);
 
 	const services = useQuery(servicesQuery());
-	const companies = useQuery(companiesByServiceQuery(selectedServiceId));
+	const companyQueries = useQueries({
+		queries: selectedServiceIds.map(serviceId => companiesByServiceQuery(serviceId)),
+	});
+	const selectedServiceId = selectedServiceIds.length === 1 ? selectedServiceIds[0] : null;
 	const selectedServicePath = useMemo(
 		() => resolvePerformanceServicePath(selectedServiceCode as any),
 		[selectedServiceCode],
 	);
+	const selectedRowServicePath = useMemo(() => {
+		const serviceCode = String(selectedRow?.service_code ?? selectedServiceCode ?? "").trim().toLowerCase();
+		return resolvePerformanceServicePath(serviceCode as any);
+	}, [selectedRow, selectedServiceCode]);
 
 	const isSmsCommission = isSmsCommissionServicePath(selectedServicePath);
 	const smsCommissionAgents = useQuery(smsCommissionAgentsQuery(isSmsCommission));
@@ -70,26 +96,44 @@ export default function UnregisteredPerformanceList() {
 	}, [services.data, permittedViewServiceIdsList.join(",")]);
 
 	useEffect(() => {
-		if (!selectedServiceId)
+		if (selectedServiceIds.length === 0)
 			return;
-		if (permittedViewServiceIds.has(selectedServiceId))
+		const nextServiceIds = selectedServiceIds.filter(serviceId => permittedViewServiceIds.has(serviceId));
+		if (nextServiceIds.length === selectedServiceIds.length)
 			return;
 
-		setSelectedServiceId(null);
-		setSelectedServiceCode(null);
+		if (nextServiceIds.length === 1) {
+			const selected = serviceOptions.find(option => option.value === nextServiceIds[0]);
+			applySelectedServicesState(nextServiceIds, selected?.code ?? null);
+		}
+		else {
+			applySelectedServicesState(nextServiceIds, null);
+		}
 		formRef.current?.setFieldsValue({
-			service: undefined,
-			company: undefined,
+			service_ids: nextServiceIds.length > 0 ? nextServiceIds : undefined,
+			company_ids: undefined,
 		});
-	}, [selectedServiceId, permittedViewServiceIdsList.join(",")]);
+	}, [selectedServiceIds, permittedViewServiceIdsList.join(","), serviceOptions, applySelectedServicesState]);
+
+	const companyItems = useMemo<CompanyDto[]>(() => {
+		const dedup = new Map<number, CompanyDto>();
+		companyQueries.forEach((query) => {
+			(query.data?.results ?? []).forEach((company) => {
+				if (company.id != null && !dedup.has(company.id))
+					dedup.set(company.id, company);
+			});
+		});
+		return Array.from(dedup.values());
+	}, [companyQueries]);
 
 	const companyOptions = useMemo(
-		() => (companies.data?.results ?? []).map(company => ({
+		() => companyItems.map(company => ({
 			label: company.name,
 			value: company.id,
 		})),
-		[companies.data],
+		[companyItems],
 	);
+	const companiesLoading = companyQueries.some(query => query.isLoading);
 
 	const salesAgentOptions = useMemo(() => {
 		const all = smsCommissionAgents.data?.results ?? [];
@@ -102,7 +146,7 @@ export default function UnregisteredPerformanceList() {
 
 	const clearDependentFilters = () => {
 		formRef.current?.setFieldsValue({
-			company: undefined,
+			company_ids: undefined,
 			search: undefined,
 			sh_year: undefined,
 			sh_month: undefined,
@@ -123,11 +167,10 @@ export default function UnregisteredPerformanceList() {
 		});
 	};
 
-	const setSelectedService = (serviceId: number | null, serviceCode: string | null) => {
-		setSelectedServiceId(serviceId);
+	const setSelectedServices = (serviceIds: number[], serviceCode: string | null) => {
+		setSelectedServiceIds(serviceIds);
 		setSelectedServiceCode(serviceCode);
 		clearDependentFilters();
-		actionRef.current?.reload?.();
 	};
 
 	const canCreatePerformance = useMemo(() => {
@@ -144,22 +187,22 @@ export default function UnregisteredPerformanceList() {
 		() =>
 			getPerformanceColumns({
 				t,
-				selectedServiceId,
+				selectedServiceIds,
 				selectedServiceCode,
-				setSelectedService,
+				setSelectedServices,
 				serviceOptions,
 				companyOptions,
-				isCompanyDisabled: !selectedServiceId || companies.isLoading,
-				companyPlaceholder: selectedServiceId ? t("performance.placeholders.selectCompany") : t("performance.placeholders.selectServiceFirst"),
+				isCompanyDisabled: selectedServiceIds.length === 0 || companiesLoading,
+				companyPlaceholder: selectedServiceIds.length > 0 ? t("performance.placeholders.selectCompany") : t("performance.placeholders.selectServiceFirst"),
 				salesAgentOptions,
 			}),
 		[
 			t,
-			selectedServiceId,
+			selectedServiceIds,
 			selectedServiceCode,
 			serviceOptions,
 			companyOptions,
-			companies.isLoading,
+			companiesLoading,
 			salesAgentOptions,
 		],
 	);
@@ -176,8 +219,13 @@ export default function UnregisteredPerformanceList() {
 				align: "center",
 				render: (_, record, __) => {
 					const actions: React.ReactNode[] = [];
+					const rowServiceId = Number((record as any).service ?? (record as any).service_id);
+					const canCreateRow = Number.isInteger(rowServiceId) && (
+						hasDomainPermissionByServiceId("performances", "create", rowServiceId)
+						|| hasDomainPermissionByServiceId("contracts", "create", rowServiceId)
+					);
 
-					if (canCreatePerformance) {
+					if (canCreateRow) {
 						actions.push(
 							<BasicButton
 								key="add"
@@ -208,7 +256,7 @@ export default function UnregisteredPerformanceList() {
 				actionRef={actionRef}
 				formRef={formRef}
 				request={async (params) => {
-					if (!selectedServicePath || !selectedServiceId) {
+					if (selectedServiceIds.length === 0) {
 						return {
 							data: [],
 							total: 0,
@@ -216,12 +264,13 @@ export default function UnregisteredPerformanceList() {
 						};
 					}
 
+					const companyIds = normalizeNumberList((params as any).company_ids);
 					const query = {
 						page: params.current ?? 1,
 						page_size: params.pageSize ?? 20,
 						search: (params as any).search,
-						service_ids: selectedServiceId,
-						company: (params as any).company,
+						service_ids: selectedServiceIds.join(","),
+						company_ids: companyIds.length > 0 ? companyIds.join(",") : undefined,
 						sh_year: (params as any).sh_year,
 						sh_month: (params as any).sh_month,
 						ordering: (params as any).ordering,
@@ -267,8 +316,8 @@ export default function UnregisteredPerformanceList() {
 
 			<PerformanceDetailModal
 				open={openDetail}
-				service={selectedServicePath}
-				companies={companies.data?.results}
+				service={selectedRowServicePath}
+				companies={companyItems}
 				record={selectedRow}
 				onClose={() => {
 					setOpenDetail(false);
