@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Alert, Col, Form, Input, Row } from "antd";
 import { useEffect, useMemo, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import {
 	extractOpenApiContractModel,
 	extractSalesAgentId,
@@ -77,6 +78,7 @@ function buildYearOptionsFromRange(range: JalaliYearRange | null | undefined) {
 }
 
 export function FixedStartSection() {
+	const { t } = useTranslation();
 	const { control, setValue, getValues } = useFormContext<PerformanceFormValues>();
 	const { getPermittedServiceIds } = useAccess();
 
@@ -234,12 +236,12 @@ export function FixedStartSection() {
 
 	const companyPlaceholder
 		= !serviceId
-			? "ابتدا سرویس را انتخاب کنید"
+			? t("performance.placeholders.selectServiceFirst")
 			: companies.isLoading
-				? "در حال دریافت لیست شرکت‌ها..."
+				? t("performance.placeholders.loadingCompanies")
 				: isTraffic && !trafficCompanyType
-					? "ابتدا نوع شرکت (ترافیک) را انتخاب کنید"
-					: "شرکت را انتخاب کنید";
+					? t("performance.placeholders.selectTrafficCompanyTypeFirst")
+					: t("performance.placeholders.selectCompany");
 
 	const contractMonthsByYear = useMemo(() => {
 		const map = new Map<number, number[]>();
@@ -326,10 +328,10 @@ export function FixedStartSection() {
 
 	const salesAgentDisplayValue = useMemo(() => {
 		if (!companyId)
-			return "ابتدا شرکت را انتخاب کنید";
+			return t("performance.placeholders.selectCompanyFirst");
 
 		if (smsCommissionAgents.isLoading)
-			return "در حال دریافت نماینده فروش...";
+			return t("performance.placeholders.loadingSalesAgent");
 
 		const selected = smsCommissionAgentOptions.find(option => option.value === salesAgentId);
 		if (selected)
@@ -338,8 +340,8 @@ export function FixedStartSection() {
 		if (smsCommissionAgentOptions.length > 0)
 			return String(smsCommissionAgentOptions[0].label);
 
-		return "نماینده فروشی برای شرکت انتخاب‌شده یافت نشد";
-	}, [companyId, smsCommissionAgents.isLoading, smsCommissionAgentOptions, salesAgentId]);
+		return t("performance.messages.salesAgentNotFound");
+	}, [companyId, smsCommissionAgents.isLoading, smsCommissionAgentOptions, salesAgentId, t]);
 
 	useEffect(() => {
 		if (!isSmsCommission)
@@ -402,12 +404,12 @@ export function FixedStartSection() {
 					<Col span={12}>
 						<RHFSelect<PerformanceFormValues, "serviceId", number | null>
 							name="serviceId"
-							label="نام سرویس"
+							label={t("performance.labels.serviceName")}
 							loading={services.isLoading}
 							options={serviceOptions}
 							selectProps={{
 								allowClear: true,
-								placeholder: "سرویس را انتخاب کنید",
+								placeholder: t("performance.placeholders.selectService"),
 							}}
 						/>
 					</Col>
@@ -417,11 +419,11 @@ export function FixedStartSection() {
 							<Col span={12}>
 								<RHFSelect<PerformanceFormValues, "trafficCompanyType", any>
 									name="trafficCompanyType"
-									label="نوع شرکت (ترافیک)"
+									label={t("performance.labels.trafficCompanyType")}
 									options={TRAFFIC_COMPANY_TYPE_OPTIONS}
 									selectProps={{
 										allowClear: true,
-										placeholder: "انتخاب کنید",
+										placeholder: t("performance.placeholders.select"),
 									}}
 								/>
 							</Col>
@@ -431,7 +433,7 @@ export function FixedStartSection() {
 					<Col span={12}>
 						<RHFSelect<PerformanceFormValues, "companyId", number | null>
 							name="companyId"
-							label="نام شرکت"
+							label={t("performance.labels.companyName")}
 							loading={companies.isLoading}
 							options={companyOptions as any}
 							selectProps={{
@@ -448,8 +450,8 @@ export function FixedStartSection() {
 						? (
 							<Col span={24}>
 								<Form.Item
-									label="نماینده فروش"
-									extra={companyId ? "نماینده فروش به‌صورت خودکار انتخاب می‌شود." : undefined}
+									label={t("performance.columns.salesAgent")}
+									extra={companyId ? t("performance.messages.salesAgentAutoSelected") : undefined}
 								>
 									<Input readOnly value={salesAgentDisplayValue} />
 								</Form.Item>
@@ -466,8 +468,8 @@ export function FixedStartSection() {
 									type="error"
 									showIcon
 									message={hasNoContractsForCompany
-										? "قراردادی برای این شرکت موجود نیست."
-										: "سال و ماهی برای این شرکت موجود نیست."}
+										? t("performance.messages.noContractForCompany")
+										: t("performance.messages.noYearMonthForCompany")}
 								/>
 							</Col>
 						</Row>
@@ -480,24 +482,24 @@ export function FixedStartSection() {
 							<Col span={12}>
 								<RHFSelect<PerformanceFormValues, "year", number | null>
 									name="year"
-									label="سال قرارداد"
+									label={t("performance.labels.contractYear")}
 									loading={isDateOptionsLoading}
 									options={yearOptions}
 									selectProps={{
 										allowClear: true,
-										placeholder: "سال",
+										placeholder: t("performance.placeholders.year"),
 									}}
 								/>
 							</Col>
 							<Col span={12}>
 								<RHFSelect<PerformanceFormValues, "month", number | null>
 									name="month"
-									label="ماه قرارداد"
+									label={t("performance.labels.contractMonth")}
 									loading={isDateOptionsLoading}
 									options={monthOptions}
 									selectProps={{
 										allowClear: true,
-										placeholder: year == null ? "ابتدا سال را انتخاب کنید" : "ماه",
+										placeholder: year == null ? t("performance.placeholders.selectYearFirst") : t("performance.placeholders.month"),
 										disabled: year == null,
 									}}
 								/>

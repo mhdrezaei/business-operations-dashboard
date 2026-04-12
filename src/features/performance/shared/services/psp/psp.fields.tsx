@@ -1,10 +1,13 @@
 import type { PerformanceFormValues } from "../../model/performance.form.types";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
 import { ProCard } from "@ant-design/pro-components";
+import { useTranslation } from "react-i18next";
 
 const sf = (path: string) => `serviceFields.${path}` as const;
 
 export function PspPerformanceFields() {
+	const { t } = useTranslation();
+
 	return (
 		<ProCard bordered headerBordered style={{ borderRadius: 8 }}>
 			<div
@@ -16,16 +19,16 @@ export function PspPerformanceFields() {
 			>
 				<RHFProNumber<PerformanceFormValues, any>
 					name={sf("performanceValue") as any}
-					label="مقدار عملکرد"
-					inputProps={{ placeholder: "مثلاً تعداد تراکنش" }}
+					label={t("performance.fields.psp.performanceValue")}
+					inputProps={{ placeholder: t("performance.placeholders.pspValue") }}
 					enableGrouping
 					enableWordsTooltip
 				/>
 
 				<RHFProNumber<PerformanceFormValues, any>
 					name={sf("monthlyRevenue") as any}
-					label="درآمد این ماه (تومان)"
-					inputProps={{ placeholder: "مثلاً 10000000" }}
+					label={t("performance.fields.psp.monthlyRevenue")}
+					inputProps={{ placeholder: t("performance.placeholders.example10000000") }}
 					enableGrouping
 					enableWordsTooltip
 				/>

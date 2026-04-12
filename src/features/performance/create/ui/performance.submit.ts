@@ -1,5 +1,6 @@
 import type { PerformanceServicePath } from "../../api/performances.api";
 import type { PerformanceFormValues } from "../../shared/model/performance.form.types";
+import i18next from "i18next";
 import {
 	uploadPerformanceFiles,
 	upsertPerformance,
@@ -126,7 +127,7 @@ function buildManualOperations(values: PerformanceFormValues): PerformanceOperat
 
 async function submitManualPerformance(values: PerformanceFormValues, servicePath: PerformanceServicePath) {
 	if (!values.companyId || !values.year || !values.month) {
-		throw new Error("اطلاعات پایه فرم کامل نیست");
+		throw new Error(i18next.t("performance.errors.baseFormIncomplete"));
 	}
 
 	const operations = buildManualOperations(values);
@@ -144,12 +145,12 @@ async function submitManualPerformance(values: PerformanceFormValues, servicePat
 
 async function submitTrafficFiles(values: PerformanceFormValues) {
 	if (!values.companyId || !values.year || !values.month) {
-		throw new Error("اطلاعات پایه فرم کامل نیست");
+		throw new Error(i18next.t("performance.errors.baseFormIncomplete"));
 	}
 
 	const monthlyPerformanceFile = getFirstFileFromUploadField((values.serviceFields as any)?.monthlyPerformanceFile);
 	if (!monthlyPerformanceFile) {
-		throw new Error("فایل عملکرد ماهانه الزامی است");
+		throw new Error(i18next.t("performance.errors.monthlyPerformanceFileRequired"));
 	}
 
 	await uploadPerformanceFiles({
@@ -169,7 +170,7 @@ async function submitTrafficFiles(values: PerformanceFormValues) {
 
 async function submitTrafficSingle(values: PerformanceFormValues) {
 	if (!values.companyId || !values.year || !values.month) {
-		throw new Error("اطلاعات پایه فرم کامل نیست");
+		throw new Error(i18next.t("performance.errors.baseFormIncomplete"));
 	}
 
 	const fields = (values.serviceFields ?? {}) as Record<string, any>;
@@ -180,7 +181,7 @@ async function submitTrafficSingle(values: PerformanceFormValues) {
 	const countyValueReceive = fields.countyValueReceive;
 
 	if (tehranValue == null || tehranValueReceive == null) {
-		throw new Error("برای تهران مقدار ارسالی و دریافتی الزامی است");
+		throw new Error(i18next.t("performance.errors.trafficTehranRequired"));
 	}
 
 	const locations: Array<Record<string, unknown>> = [
@@ -193,7 +194,7 @@ async function submitTrafficSingle(values: PerformanceFormValues) {
 
 	if (countyEnabled) {
 		if (countyValue == null || countyValueReceive == null) {
-			throw new Error("در صورت ثبت مراکز استان، مقدار ارسالی و دریافتی الزامی است");
+			throw new Error(i18next.t("performance.errors.trafficCountyRequiredWhenEnabled"));
 		}
 
 		locations.push({
@@ -218,7 +219,7 @@ async function submitTrafficSingle(values: PerformanceFormValues) {
 
 async function submitCommercialFiles(values: PerformanceFormValues) {
 	if (!values.companyId || !values.year || !values.month) {
-		throw new Error("اطلاعات پایه فرم کامل نیست");
+		throw new Error(i18next.t("performance.errors.baseFormIncomplete"));
 	}
 
 	const fields = (values.serviceFields ?? {}) as Record<string, unknown>;
@@ -227,7 +228,7 @@ async function submitCommercialFiles(values: PerformanceFormValues) {
 	const monthlyPerformanceFile = getFirstFileFromUploadField(fields.monthlyPerformanceFile);
 
 	if (!servicesFile || !provinceCodeFile || !monthlyPerformanceFile) {
-		throw new Error("تمام فایل‌های سرویس تجاری باید انتخاب شوند");
+		throw new Error(i18next.t("performance.errors.allCommercialFilesRequired"));
 	}
 
 	await uploadPerformanceFiles({
@@ -249,7 +250,7 @@ async function submitCommercialFiles(values: PerformanceFormValues) {
 export async function submitPerformance(values: PerformanceFormValues) {
 	const servicePath = resolvePerformanceServicePath(values.serviceCode);
 	if (!servicePath) {
-		throw new Error("سرویس انتخاب نشده است");
+		throw new Error(i18next.t("performance.errors.serviceNotSelected"));
 	}
 
 	if (servicePath === "traffic") {

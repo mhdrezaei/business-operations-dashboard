@@ -5,6 +5,7 @@ import { notification } from "antd";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { buildPerformanceSchema } from "../../model/performance.schema";
 import { performanceServiceRegistry } from "../../services/registry";
 import { ActionSection } from "./sections/ActionSection";
@@ -40,6 +41,8 @@ export function PerformanceForm({
 	onSubmit: onSubmitProp,
 	submitting,
 }: Props) {
+	const { t } = useTranslation();
+
 	const dynamicResolver: Resolver<PerformanceFormValues> = useCallback(
 		async (values, context, options) => {
 			const schema = buildPerformanceSchema(values.serviceCode, values.contractModel);
@@ -112,8 +115,8 @@ export function PerformanceForm({
 			}
 			catch (error: any) {
 				notification.error({
-					message: "خطا در ثبت عملکرد",
-					description: error?.message ?? "خطای نامشخص",
+					message: t("performance.messages.submitError"),
+					description: error?.message ?? t("performance.messages.unknownError"),
 					placement: "top",
 				});
 			}
@@ -121,10 +124,10 @@ export function PerformanceForm({
 		(errors) => {
 			const firstPath = Object.keys(errors ?? {})[0];
 			notification.error({
-				message: "لطفاً خطاهای فرم را اصلاح کنید",
+				message: t("performance.messages.fixFormErrors"),
 				description: firstPath
-					? String((errors as any)[firstPath]?.message ?? "ورودی‌های فرم معتبر نیستند")
-					: "ورودی‌های فرم معتبر نیستند",
+					? String((errors as any)[firstPath]?.message ?? t("performance.messages.invalidFormInputs"))
+					: t("performance.messages.invalidFormInputs"),
 				placement: "top",
 			});
 		},

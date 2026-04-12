@@ -24,24 +24,6 @@ export interface GetPerformanceColumnsArgs {
 	salesAgentOptions: Array<{ label: string, value: number }>
 }
 
-const ORDERING_OPTIONS = [
-	{ label: "جدیدترین (شناسه)", value: "-id" },
-	{ label: "قدیمی‌ترین (شناسه)", value: "id" },
-	{ label: "سال (نزولی)", value: "-sh_year" },
-	{ label: "سال (صعودی)", value: "sh_year" },
-	{ label: "ماه (نزولی)", value: "-sh_month" },
-	{ label: "ماه (صعودی)", value: "sh_month" },
-	{ label: "مقدار (نزولی)", value: "-value" },
-	{ label: "مقدار (صعودی)", value: "value" },
-] as const;
-
-const TRAFFIC_COMPANY_TYPE_OPTIONS = [
-	{ label: "CP", value: "CP" },
-	{ label: "IXP", value: "IXP" },
-	{ label: "TCI", value: "TCI" },
-	{ label: "PREMIUM", value: "PREMIUM" },
-] as const;
-
 function isSmsCommissionService(code: string | null | undefined) {
 	return code === "sms-commission" || code === "sms_commission";
 }
@@ -67,6 +49,24 @@ export function getPerformanceColumns({
 
 	const serviceCode = (selectedServiceCode ?? "").trim().toLowerCase() as ServiceCode | "";
 
+	const ORDERING_OPTIONS = [
+		{ label: t("performance.ordering.newestId"), value: "-id" },
+		{ label: t("performance.ordering.oldestId"), value: "id" },
+		{ label: t("performance.ordering.yearDesc"), value: "-sh_year" },
+		{ label: t("performance.ordering.yearAsc"), value: "sh_year" },
+		{ label: t("performance.ordering.monthDesc"), value: "-sh_month" },
+		{ label: t("performance.ordering.monthAsc"), value: "sh_month" },
+		{ label: t("performance.ordering.valueDesc"), value: "-value" },
+		{ label: t("performance.ordering.valueAsc"), value: "value" },
+	] as const;
+
+	const TRAFFIC_COMPANY_TYPE_OPTIONS = [
+		{ label: "CP", value: "CP" },
+		{ label: "IXP", value: "IXP" },
+		{ label: "TCI", value: "TCI" },
+		{ label: "PREMIUM", value: "PREMIUM" },
+	] as const;
+
 	const hasSelectedService = Boolean(serviceCode);
 
 	const isTraffic = serviceCode === "traffic";
@@ -81,7 +81,7 @@ export function getPerformanceColumns({
 			hideInSearch: true,
 		},
 		{
-			title: "سرویس",
+			title: t("performance.columns.service"),
 			dataIndex: "service_name",
 			search: false,
 			width: 160,
@@ -89,7 +89,7 @@ export function getPerformanceColumns({
 
 		},
 		{
-			title: "سرویس",
+			title: t("performance.columns.service"),
 			dataIndex: "service",
 			hideInTable: true,
 			valueType: "select",
@@ -99,7 +99,7 @@ export function getPerformanceColumns({
 			}, {} as Record<string, string>),
 			fieldProps: {
 				allowClear: true,
-				placeholder: "سرویس را انتخاب کنید",
+				placeholder: t("performance.placeholders.selectService"),
 				onChange: (value: number | null) => {
 					const numericId = value == null ? null : Number(value);
 					const selected = serviceOptions.find(option => option.value === numericId);
@@ -108,7 +108,7 @@ export function getPerformanceColumns({
 			},
 		},
 		{
-			title: "شرکت",
+			title: t("performance.columns.company"),
 			dataIndex: "company_name",
 			search: false,
 			width: 220,
@@ -116,7 +116,7 @@ export function getPerformanceColumns({
 
 		},
 		{
-			title: "شرکت",
+			title: t("performance.columns.company"),
 			dataIndex: "company",
 			hideInTable: true,
 			valueType: "select",
@@ -131,7 +131,7 @@ export function getPerformanceColumns({
 			},
 		},
 		{
-			title: "سال",
+			title: t("performance.columns.year"),
 			dataIndex: "sh_year",
 			hideInSearch: true,
 			width: 100,
@@ -139,7 +139,7 @@ export function getPerformanceColumns({
 		},
 
 		{
-			title: "ماه",
+			title: t("performance.columns.month"),
 			dataIndex: "sh_month",
 			width: 100,
 			hideInSearch: true,
@@ -151,7 +151,7 @@ export function getPerformanceColumns({
 		},
 
 		{
-			title: "مرتب‌سازی",
+			title: t("performance.columns.ordering"),
 			dataIndex: "ordering",
 			hideInTable: true,
 			hideInSearch: !hasSelectedService,
@@ -164,7 +164,7 @@ export function getPerformanceColumns({
 		},
 
 		{
-			title: "نماینده فروش",
+			title: t("performance.columns.salesAgent"),
 			dataIndex: "sales_agent",
 			width: 150,
 			hideInSearch: !isSmsCommission,
@@ -176,7 +176,7 @@ export function getPerformanceColumns({
 			render: (_, row) => row.sales_agent_name ?? row.sales_agent ?? "-",
 		},
 		{
-			title: "نوع شرکت",
+			title: t("performance.columns.companyType"),
 			dataIndex: "company_type",
 			width: 120,
 			hideInSearch: !isTraffic,

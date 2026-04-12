@@ -1,0 +1,278 @@
+{
+	"titles": {
+		"performanceList": "لیست عملکردها",
+		"performanceReport": "گزارش عملکردها"
+	},
+	"actions": {
+		"clearForm": "پاکسازی فرم",
+		"submit": "ثبت",
+		"submitAndCreateAnother": "ثبت و ایجاد یکی دیگر",
+		"submitAndEdit": "ثبت و ویرایش",
+		"editPerformance": "ویرایش عملکرد",
+		"deletePerformance": "حذف عملکرد"
+	},
+	"columns": {
+		"id": "شناسه",
+		"service": "سرویس",
+		"serviceName": "نام سرویس",
+		"company": "شرکت",
+		"companyName": "نام شرکت",
+		"search": "جستجو",
+		"year": "سال",
+		"month": "ماه",
+		"ordering": "مرتب‌سازی",
+		"fromGregorianDate": "از تاریخ میلادی",
+		"toGregorianDate": "تا تاریخ میلادی",
+		"value": "مقدار",
+		"count": "تعداد",
+		"income": "درآمد",
+		"expense": "هزینه",
+		"profit": "سود",
+		"operationType": "نوع عملیات",
+		"operator": "اپراتور",
+		"language": "زبان",
+		"official": "رسمی",
+		"salesAgent": "نماینده فروش",
+		"companyType": "نوع شرکت",
+		"location": "لوکیشن",
+		"customerName": "نام مشتری",
+		"customerNationalId": "کد ملی مشتری",
+		"provinceCode": "کد استان",
+		"commercialServiceType": "نوع سرویس تجاری",
+		"valueReceive": "مقدار دریافتی"
+	},
+	"ordering": {
+		"newestId": "جدیدترین (شناسه)",
+		"oldestId": "قدیمی‌ترین (شناسه)",
+		"yearDesc": "سال (نزولی)",
+		"yearAsc": "سال (صعودی)",
+		"monthDesc": "ماه (نزولی)",
+		"monthAsc": "ماه (صعودی)",
+		"valueDesc": "مقدار (نزولی)",
+		"valueAsc": "مقدار (صعودی)"
+	},
+	"language": {
+		"fa": "فارسی",
+		"en": "انگلیسی"
+	},
+	"operator": {
+		"irancell": "ایرانسل",
+		"mci": "همراه اول",
+		"other": "سایر"
+	},
+	"operationType": {
+		"billInquiry": "استعلام قبض",
+		"receiptRegister": "ثبت وصولی"
+	},
+	"placeholders": {
+		"select": "انتخاب کنید",
+		"selectService": "سرویس را انتخاب کنید",
+		"selectServiceFirst": "ابتدا سرویس را انتخاب کنید",
+		"selectCompany": "شرکت را انتخاب کنید",
+		"selectCompanyFirst": "ابتدا شرکت را انتخاب کنید",
+		"selectTrafficCompanyTypeFirst": "ابتدا نوع شرکت (ترافیک) را انتخاب کنید",
+		"loadingCompanies": "در حال دریافت لیست شرکت‌ها...",
+		"loadingSalesAgent": "در حال دریافت نماینده فروش...",
+		"year": "سال",
+		"month": "ماه",
+		"selectYear": "سال را انتخاب کنید",
+		"selectYearFirst": "ابتدا سال را انتخاب کنید",
+		"selectMonthFirst": "ابتدا ماه را انتخاب کنید",
+		"selectMonths": "ماه‌ها را انتخاب کنید",
+		"selectCompanies": "شرکت‌ها را انتخاب کنید",
+		"pspValue": "مثلاً تعداد تراکنش",
+		"shahkarValue": "مثلاً 123.45",
+		"example100": "مثلاً 100",
+		"example10000": "مثلاً 10000",
+		"example100000": "مثلاً 100000",
+		"example10000000": "مثلاً 10000000",
+		"example60000": "مثلاً 60000",
+		"example80000": "مثلاً 80000",
+		"example120000000": "مثلاً 120000000",
+		"example450": "مثلاً 450"
+	},
+	"labels": {
+		"serviceName": "نام سرویس",
+		"companyName": "نام شرکت",
+		"trafficCompanyType": "نوع شرکت (ترافیک)",
+		"contractYear": "سال قرارداد",
+		"contractMonth": "ماه قرارداد",
+		"openapiContractModel": "مدل قرارداد OpenAPI:",
+		"selectExcelFile": "فایل اکسل را انتخاب کنید",
+		"selectOrDropExcel": "فایل اکسل را انتخاب کنید یا بکشید و رها کنید",
+		"allowedFormatsXls": "فرمت‌های مجاز: xlsx, xls"
+	},
+	"messages": {
+		"createSuccess": "عملکرد با موفقیت ثبت شد",
+		"createAndAnotherSuccess": "عملکرد ثبت شد. فرم برای ثبت مورد بعدی آماده است",
+		"createAndEditSuccess": "عملکرد ثبت شد. می‌توانید ادامه ویرایش را انجام دهید",
+		"submitError": "خطا در ثبت عملکرد",
+		"unknownError": "خطای نامشخص",
+		"fixFormErrors": "لطفاً خطاهای فرم را اصلاح کنید",
+		"invalidFormInputs": "ورودی‌های فرم معتبر نیستند",
+		"selectServiceFirst": "ابتدا سرویس را انتخاب کنید",
+		"noDeleteAccess": "دسترسی حذف عملکرد ندارید.",
+		"noActiveContractForMonth": "برای ماه انتخاب‌شده قرارداد فعالی پیدا نشد.",
+		"salesAgentAutoSelected": "نماینده فروش به‌صورت خودکار انتخاب می‌شود.",
+		"salesAgentNotFound": "نماینده فروشی برای شرکت انتخاب‌شده یافت نشد",
+		"noContractForCompany": "قراردادی برای این شرکت موجود نیست.",
+		"noYearMonthForCompany": "سال و ماهی برای این شرکت موجود نیست.",
+		"registerSuccess": "عملکرد با موفقیت ثبت شد",
+		"updateSuccess": "عملکرد با موفقیت ویرایش شد"
+	},
+	"modal": {
+		"registerPerformance": "ثبت عملکرد",
+		"editPerformance": "ویرایش عملکرد",
+		"titles": {
+			"openapi": "ویرایش عملکرد OpenAPI",
+			"psp": "ویرایش عملکرد PSP",
+			"shahkar": "ویرایش عملکرد شاهکار",
+			"sms": "ویرایش عملکرد پیامک",
+			"smsCommission": "ویرایش عملکرد کمیسیون پیامک",
+			"traffic": "ویرایش عملکرد ترافیک",
+			"commercial": "ویرایش عملکرد سرویس تجاری"
+		},
+		"labels": {
+			"smsItems": "اقلام پیامک",
+			"operatorIncome": "درآمد اپراتور",
+			"governmentIncome": "درآمد حاکمیتی",
+			"unitPrice": "نرخ واحد",
+			"operatorExpense": "هزینه اپراتور",
+			"governmentExpense": "هزینه حاکمیتی"
+		},
+		"placeholders": {
+			"enterNumber": "عدد را وارد کنید",
+			"enterValue": "مقدار را وارد کنید"
+		}
+	},
+	"errors": {
+		"baseFormIncomplete": "اطلاعات پایه فرم کامل نیست",
+		"monthlyPerformanceFileRequired": "فایل عملکرد ماهانه الزامی است",
+		"trafficTehranRequired": "برای تهران مقدار ارسالی و دریافتی الزامی است",
+		"trafficCountyRequiredWhenEnabled": "در صورت ثبت مراکز استان، مقدار ارسالی و دریافتی الزامی است",
+		"allCommercialFilesRequired": "تمام فایل‌های سرویس تجاری باید انتخاب شوند",
+		"serviceNotSelected": "سرویس انتخاب نشده است",
+		"deleteCompositeKeyIncomplete": "کلید رکورد برای حذف کامل نیست",
+		"deleteUniqueKeyNotFound": "شناسه یا کلید یکتا برای حذف رکورد پیدا نشد",
+		"invalidSalesAgentId": "شناسه نماینده فروش نامعتبر است"
+	},
+	"contractModel": {
+		"legacy": "قدیمی",
+		"package": "بسته‌ای"
+	},
+	"traffic": {
+		"excelTitle": "فایل اکسل عملکرد ترافیک",
+		"submitMethod": "روش ثبت عملکرد",
+		"templateUpload": "آپلود از تمپلیت",
+		"singleEntry": "ثبت تکی",
+		"downloadTemplate": "دانلود فایل تمپلیت",
+		"preUploadHint": "قبل از دانلود/آپلود، نوع شرکت، سال و ماه را انتخاب کنید.",
+		"unitPriceHint": "توجه: هر واحد قیمت برابر با یک گیگابایت است.",
+		"tehranPerformance": "عملکرد تهران",
+		"countyPerformance": "عملکرد مراکز استان",
+		"addCountyPerformance": "افزودن عملکرد مراکز استان"
+	},
+	"commercial": {
+		"title": "آپلود فایل‌های سرویس‌های تجاری",
+		"uploadOnlyDescription": "برای این سرویس ثبت عملکرد دستی وجود ندارد و فقط آپلود فایل انجام می‌شود.",
+		"servicesFile": "آپلود فایل سرویس‌ها",
+		"provinceCodeFile": "آپلود فایل کد استانی",
+		"monthlyPerformanceFile": "آپلود عملکرد ماهانه"
+	},
+	"fields": {
+		"psp": {
+			"performanceValue": "مقدار عملکرد",
+			"monthlyRevenue": "درآمد این ماه (تومان)"
+		},
+		"shahkar": {
+			"performanceValue": "مقدار عملکرد"
+		},
+		"sms": {
+			"irancellFa": "مقدار عملکرد ایرانسل - فارسی",
+			"irancellEn": "مقدار عملکرد ایرانسل - انگلیسی",
+			"mciFa": "مقدار عملکرد همراه اول - فارسی",
+			"mciEn": "مقدار عملکرد همراه اول - انگلیسی",
+			"otherFa": "مقدار عملکرد سایر - فارسی",
+			"otherEn": "مقدار عملکرد سایر - انگلیسی"
+		},
+		"openapi": {
+			"billInquiryValue": "مقدار عملکرد استعلام قبض",
+			"receiptRegisterValue": "مقدار عملکرد ثبت وصولی",
+			"trafficRevenue": "درآمد ترافیک",
+			"trafficPackageCount": "تعداد بسته ترافیک"
+		},
+		"traffic": {
+			"tehranValue": "مقدار ترافیک ارسالی در تهران",
+			"tehranValueReceive": "مقدار ترافیک دریافتی در تهران",
+			"countyValue": "مقدار ترافیک ارسالی در مراکز استان",
+			"countyValueReceive": "مقدار ترافیک دریافتی در مراکز استان"
+		}
+	},
+	"summary": {
+		"totalCount": "جمع تعداد",
+		"totalIncome": "جمع درآمد",
+		"totalExpense": "جمع هزینه",
+		"totalProfit": "جمع سود"
+	},
+	"months": {
+		"1": "فروردین",
+		"2": "اردیبهشت",
+		"3": "خرداد",
+		"4": "تیر",
+		"5": "مرداد",
+		"6": "شهریور",
+		"7": "مهر",
+		"8": "آبان",
+		"9": "آذر",
+		"10": "دی",
+		"11": "بهمن",
+		"12": "اسفند"
+	},
+	"validation": {
+		"base": {
+			"serviceRequired": "انتخاب سرویس الزامی است",
+			"serviceCodeRequired": "کد سرویس الزامی است",
+			"companyRequired": "انتخاب شرکت الزامی است",
+			"yearRequired": "سال الزامی است",
+			"monthRequired": "ماه الزامی است",
+			"contractForMonthNotFound": "برای ماه انتخاب‌شده قرارداد فعال پیدا نشد",
+			"trafficCompanyTypeRequired": "نوع شرکت (ترافیک) الزامی است",
+			"salesAgentRequired": "نماینده فروش الزامی است",
+			"openapiContractModelUnknown": "مدل قرارداد OpenAPI مشخص نیست"
+		},
+		"openapi": {
+			"billInquiryValueRequired": "مقدار عملکرد استعلام قبض الزامی است",
+			"receiptRegisterValueRequired": "مقدار عملکرد ثبت وصولی الزامی است",
+			"trafficRevenueRequired": "درآمد ترافیک الزامی است",
+			"trafficPackageCountRequired": "تعداد بسته ترافیک الزامی است"
+		},
+		"psp": {
+			"performanceValueRequired": "مقدار عملکرد الزامی است",
+			"monthlyRevenueRequired": "درآمد این ماه الزامی است"
+		},
+		"shahkar": {
+			"performanceValueRequired": "مقدار عملکرد الزامی است"
+		},
+		"sms": {
+			"irancellFaRequired": "مقدار عملکرد ایرانسل - فارسی الزامی است",
+			"irancellEnRequired": "مقدار عملکرد ایرانسل - انگلیسی الزامی است",
+			"mciFaRequired": "مقدار عملکرد همراه اول - فارسی الزامی است",
+			"mciEnRequired": "مقدار عملکرد همراه اول - انگلیسی الزامی است",
+			"otherFaRequired": "مقدار عملکرد سایر - فارسی الزامی است",
+			"otherEnRequired": "مقدار عملکرد سایر - انگلیسی الزامی است"
+		},
+		"traffic": {
+			"monthlyPerformanceFileRequired": "فایل عملکرد ماهانه الزامی است",
+			"tehranValueRequired": "مقدار ترافیک ارسالی تهران الزامی است",
+			"tehranValueReceiveRequired": "مقدار ترافیک دریافتی تهران الزامی است",
+			"countyValueRequired": "مقدار ترافیک ارسالی مراکز استان الزامی است",
+			"countyValueReceiveRequired": "مقدار ترافیک دریافتی مراکز استان الزامی است"
+		},
+		"commercial": {
+			"servicesFileRequired": "فایل سرویس‌ها الزامی است",
+			"provinceCodeFileRequired": "فایل کد استانی الزامی است",
+			"monthlyPerformanceFileRequired": "فایل عملکرد ماهانه الزامی است"
+		},
+		"requiredField": "این فیلد الزامی است"
+	}
+}

@@ -18,8 +18,10 @@ import {
 import { RHFProNumber, RHFProText } from "#src/shared/ui/rhf-pro";
 import { ProCard } from "@ant-design/pro-components";
 import { Button, Modal, Spin } from "antd";
+import i18next from "i18next";
 import { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 type EditFormValues = Record<string, unknown>;
 
@@ -55,119 +57,6 @@ interface SmsBreakdownCard {
 	expenseGovernment: unknown
 }
 
-const SERVICE_EDIT_CONFIG: Record<PerformanceServicePath, ServiceEditConfig> = {
-	"openapi": {
-		title: "ویرایش عملکرد OpenAPI",
-		readonlyKeys: [],
-		editableFields: [
-			{ key: "bill_inquiry_value", label: "\u0645\u0642\u062F\u0627\u0631 \u0639\u0645\u0644\u06A9\u0631\u062F \u0627\u0633\u062A\u0639\u0644\u0627\u0645 \u0642\u0628\u0636", type: "number", required: true },
-			{ key: "receipt_register_value", label: "\u0645\u0642\u062F\u0627\u0631 \u0639\u0645\u0644\u06A9\u0631\u062F \u062B\u0628\u062A \u0648\u0635\u0648\u0644\u06CC", type: "number", required: true },
-		],
-		payloadKeys: ["bill_inquiry_value", "receipt_register_value"],
-	},
-	"psp": {
-		title: "ویرایش عملکرد PSP",
-		readonlyKeys: [],
-		editableFields: [
-			{ key: "value", label: "مقدار عملکرد", type: "number", required: true },
-			{ key: "income", label: "درآمد این ماه", type: "number" },
-		],
-		payloadKeys: ["value", "income"],
-	},
-	"shahkar": {
-		title: "ویرایش عملکرد شاهکار",
-		readonlyKeys: [],
-		editableFields: [
-			{ key: "value", label: "مقدار عملکرد", type: "number", required: true },
-		],
-		payloadKeys: ["value"],
-	},
-	"sms": {
-		title: "ویرایش عملکرد پیامک",
-		readonlyKeys: [],
-		editableFields: [
-			{ key: "irancellFa", label: "مقدار عملکرد ایرانسل - فارسی", type: "number", required: true },
-			{ key: "irancellEn", label: "مقدار عملکرد ایرانسل - انگلیسی", type: "number", required: true },
-			{ key: "mciFa", label: "مقدار عملکرد همراه اول - فارسی", type: "number", required: true },
-			{ key: "mciEn", label: "مقدار عملکرد همراه اول - انگلیسی", type: "number", required: true },
-			{ key: "otherFa", label: "مقدار عملکرد سایر - فارسی", type: "number", required: true },
-			{ key: "otherEn", label: "مقدار عملکرد سایر - انگلیسی", type: "number", required: true },
-		],
-		payloadKeys: ["irancellFa", "irancellEn", "mciFa", "mciEn", "otherFa", "otherEn"],
-	},
-	"sms-commission": {
-		title: "ویرایش عملکرد پیامک عاملیت",
-		readonlyKeys: ["sales_agent", "operator", "language"],
-		editableFields: [
-			{ key: "irancellFa", label: "مقدار عملکرد ایرانسل - فارسی", type: "number", required: true },
-			{ key: "irancellEn", label: "مقدار عملکرد ایرانسل - انگلیسی", type: "number", required: true },
-			{ key: "mciFa", label: "مقدار عملکرد همراه اول - فارسی", type: "number", required: true },
-			{ key: "mciEn", label: "مقدار عملکرد همراه اول - انگلیسی", type: "number", required: true },
-			{ key: "otherFa", label: "مقدار عملکرد سایر - فارسی", type: "number", required: true },
-			{ key: "otherEn", label: "مقدار عملکرد سایر - انگلیسی", type: "number", required: true },
-		],
-		payloadKeys: ["sales_agent", "operator", "language", "irancellFa", "irancellEn", "mciFa", "mciEn", "otherFa", "otherEn"],
-	},
-	"traffic": {
-		title: "ویرایش عملکرد ترافیک",
-		readonlyKeys: ["location", "company_type"],
-		editableFields: [
-			{ key: "value", label: "مقدار عملکرد", type: "number", required: true },
-			{ key: "value_receive", label: "مقدار دریافتی", type: "number" },
-			{ key: "income", label: "درآمد", type: "number" },
-			{ key: "expense", label: "هزینه", type: "number" },
-			{ key: "profit", label: "سود", type: "number" },
-		],
-		payloadKeys: ["location", "company_type", "value", "value_receive", "income", "expense", "profit"],
-	},
-	"commercial": {
-		title: "ویرایش عملکرد تجاری",
-		readonlyKeys: ["customer_name", "customer_nic", "province_code", "service_type"],
-		editableFields: [
-			{ key: "value", label: "مقدار عملکرد", type: "number", required: true },
-			{ key: "income", label: "درآمد", type: "number" },
-			{ key: "expense", label: "هزینه", type: "number" },
-			{ key: "profit", label: "سود", type: "number" },
-		],
-		payloadKeys: ["customer_name", "customer_nic", "province_code", "service_type", "value", "income", "expense", "profit"],
-	},
-};
-
-const FIELD_LABELS: Record<string, string> = {
-	service_name: "سرویس",
-	company_name: "شرکت",
-	sh_year: "سال",
-	sh_month: "ماه",
-	value: "مقدار عملکرد",
-	value_receive: "مقدار عملکرد دریافتی",
-	income: "درآمد این ماه",
-	expense: "هزینه این ماه",
-	profit: "سود این ماه",
-	bill_inquiry_value: "مقدار عملکرد استعلام قبض",
-	receipt_register_value: "مقدار عملکرد ثبت وصولی",
-	traffic_income: "درآمد ترافیک",
-	traffic_package_count: "تعداد بسته ترافیک",
-	sms_mci_fa: "مقدار عملکرد همراه اول - فارسی",
-	sms_mci_en: "مقدار عملکرد همراه اول - انگلیسی",
-	sms_irancell_fa: "مقدار عملکرد ایرانسل - فارسی",
-	sms_irancell_en: "مقدار عملکرد ایرانسل - انگلیسی",
-	sms_other_fa: "مقدار عملکرد سایر - فارسی",
-	sms_other_en: "مقدار عملکرد سایر - انگلیسی",
-	operation_type: "نوع عملیات",
-	operator: "اپراتور",
-	language: "زبان",
-	sales_agent: "نماینده فروش",
-	sales_agent_name: "نام نماینده فروش",
-	location: "لوکیشن",
-	company_type: "نوع شرکت",
-	is_official: "رسمی",
-	customer_name: "نام مشتری",
-	customer_nic: "کد ملی مشتری",
-	province_code: "کد استان",
-	service_type: "نوع سرویس تجاری",
-	items: "آیتم‌های پیامک",
-};
-
 const SERVICE_DETAIL_KEYS: Record<PerformanceServicePath, string[]> = {
 	"openapi": ["value", "income", "expense", "profit", "traffic_income", "traffic_package_count"],
 	"psp": ["value", "income", "expense", "profit"],
@@ -176,19 +65,6 @@ const SERVICE_DETAIL_KEYS: Record<PerformanceServicePath, string[]> = {
 	"sms-commission": [],
 	"traffic": ["location", "company_type", "is_official", "value", "value_receive", "income", "expense", "profit"],
 	"commercial": ["customer_name", "customer_nic", "province_code", "service_type", "value", "income", "expense", "profit"],
-};
-
-const OPERATION_TYPE_LABELS: Record<string, string> = {
-	BILL_INQUIRY: "استعلام قبض",
-	RECEIPT_REGISTER: "ثبت وصولی",
-	TRAFFIC_REVENUE: "درآمد ترافیک",
-	TRAFFIC_PACKAGE_COUNT: "تعداد بسته ترافیک",
-	IRANCELL_FA: "ایرانسل - فارسی",
-	IRANCELL_EN: "ایرانسل - انگلیسی",
-	MCI_FA: "همراه اول - فارسی",
-	MCI_EN: "همراه اول - انگلیسی",
-	OTHER_FA: "سایر - فارسی",
-	OTHER_EN: "سایر - انگلیسی",
 };
 
 const HIDDEN_DETAIL_KEYS = new Set([
@@ -253,30 +129,35 @@ function formatNumberLike(value: unknown) {
 	return String(value);
 }
 
-function formatDetailValue(key: string, value: unknown) {
+function formatDetailValue(
+	key: string,
+	value: unknown,
+	operationTypeLabels: Record<string, string>,
+	t: (key: string) => string,
+) {
 	if (!isVisibleDetailValue(value))
 		return "-";
 
 	if (key === "operation_type") {
 		const raw = String(value);
-		return OPERATION_TYPE_LABELS[raw] ?? raw;
+		return operationTypeLabels[raw] ?? raw;
 	}
 	if (key === "language") {
 		if (value === "FA")
-			return "فارسی";
+			return t("performance.language.fa");
 		if (value === "EN")
-			return "انگلیسی";
+			return t("performance.language.en");
 	}
 	if (key === "operator") {
 		if (value === "IRANCELL")
-			return "ایرانسل";
+			return t("performance.operator.irancell");
 		if (value === "MCI")
-			return "همراه اول";
+			return t("performance.operator.mci");
 		if (value === "OTHER")
-			return "سایر";
+			return t("performance.operator.other");
 	}
 	if (key === "is_official")
-		return value ? "بله" : "خیر";
+		return value ? t("common.yes") : t("common.no");
 	if (key === "items" && Array.isArray(value)) {
 		return value
 			.map((item: any) => `${item?.operator ?? "-"}-${item?.language ?? "-"}: ${formatNumberLike(item?.value)}`)
@@ -294,6 +175,19 @@ function resolveMonthLabel(value: unknown) {
 	return found?.label ?? String(value);
 }
 
+function resolveServiceDisplayName(service: PerformanceServicePath | null, value: unknown) {
+	const text = String(value ?? "").trim();
+	if (service === "openapi")
+		return "سرویس OpenAPI";
+	if (service === "psp")
+		return "سرویس PSP";
+	if (service === "sms")
+		return "سرویس پیامک";
+	if (service === "shahkar")
+		return "کلاسه شاهکار";
+	return text || "-";
+}
+
 function toUpperText(value: unknown) {
 	return String(value ?? "").trim().toUpperCase();
 }
@@ -303,21 +197,21 @@ function getTierRate(record: any) {
 	return first?.rate_per_unit ?? null;
 }
 
-function getOperatorLabel(operator: string) {
+function getOperatorLabel(operator: string, t: (key: string) => string) {
 	if (operator === "IRANCELL")
-		return "ایرانسل";
+		return t("performance.operator.irancell");
 	if (operator === "MCI")
-		return "همراه اول";
+		return t("performance.operator.mci");
 	if (operator === "OTHER")
-		return "سایر";
+		return t("performance.operator.other");
 	return operator || "-";
 }
 
-function getLanguageLabel(language: string) {
+function getLanguageLabel(language: string, t: (key: string) => string) {
 	if (language === "FA")
-		return "فارسی";
+		return t("performance.language.fa");
 	if (language === "EN")
-		return "انگلیسی";
+		return t("performance.language.en");
 	return language || "-";
 }
 
@@ -339,11 +233,11 @@ function toPayloadValue(value: unknown) {
 }
 
 function buildInitialValues(
+	config: ServiceEditConfig,
 	service: PerformanceServicePath,
 	detail: Record<string, unknown>,
 	recordFallback: Record<string, unknown>,
 ): EditFormValues {
-	const config = SERVICE_EDIT_CONFIG[service];
 	const mergedKeys = Array.from(new Set([
 		...config.payloadKeys,
 		...config.readonlyKeys,
@@ -372,6 +266,73 @@ function buildInitialValues(
 	return values;
 }
 
+function getFirstDefinedValue(source: Record<string, unknown>, keys: string[]) {
+	for (const key of keys) {
+		const value = source[key];
+		if (value != null && value !== "")
+			return value;
+	}
+	return null;
+}
+
+function applyOpenApiInitialValues(
+	initialValues: EditFormValues,
+	detail: Record<string, unknown>,
+	recordFallback: Record<string, unknown>,
+	rows: PerformanceListItem[],
+) {
+	const sources = [detail, recordFallback];
+	const operationRows = new Map<string, Record<string, unknown>>();
+
+	const pushRow = (row: Record<string, unknown>) => {
+		const operationType = toUpperText(row.operation_type);
+		if (!operationType)
+			return;
+		operationRows.set(operationType, row);
+	};
+
+	sources.forEach(pushRow);
+	rows.forEach(row => pushRow(row as Record<string, unknown>));
+
+	const assignValue = (targetKey: string, directKeys: string[], operationType?: string) => {
+		for (const source of sources) {
+			const direct = getFirstDefinedValue(source, directKeys);
+			if (direct != null) {
+				initialValues[targetKey] = direct;
+				return;
+			}
+		}
+
+		if (!operationType)
+			return;
+
+		const row = operationRows.get(operationType);
+		if (!row)
+			return;
+
+		const direct = getFirstDefinedValue(row, directKeys);
+		if (direct != null) {
+			initialValues[targetKey] = direct;
+			return;
+		}
+
+		const fallbackValue = getFirstDefinedValue(row, ["value"]);
+		if (fallbackValue != null)
+			initialValues[targetKey] = fallbackValue;
+	};
+
+	assignValue("bill_inquiry_value", ["bill_inquiry_value"], "BILL_INQUIRY");
+	assignValue("receipt_register_value", ["receipt_register_value"], "RECEIPT_REGISTER");
+	assignValue("traffic_income", ["traffic_income"], "TRAFFIC_REVENUE");
+	assignValue("traffic_package_count", ["traffic_package_count"], "TRAFFIC_PACKAGE_COUNT");
+	assignValue("sms_irancell_fa", ["sms_irancell_fa"], "IRANCELL_FA");
+	assignValue("sms_irancell_en", ["sms_irancell_en"], "IRANCELL_EN");
+	assignValue("sms_mci_fa", ["sms_mci_fa"], "MCI_FA");
+	assignValue("sms_mci_en", ["sms_mci_en"], "MCI_EN");
+	assignValue("sms_other_fa", ["sms_other_fa"], "OTHER_FA");
+	assignValue("sms_other_en", ["sms_other_en"], "OTHER_EN");
+}
+
 function ReadOnlyBlock({ label, value }: { label: string, value: unknown }) {
 	return (
 		<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -390,18 +351,143 @@ export function PerformanceDetailModal({
 	onUpdated,
 	mode = "default",
 }: Props) {
+	const { t } = useTranslation();
 	const isUnregisteredMode = mode === "unregistered";
 	const [loading, setLoading] = useState(false);
 	const [saving, setSaving] = useState(false);
 	const [detail, setDetail] = useState<Record<string, unknown> | null>(null);
 	const [smsContract, setSmsContract] = useState<Record<string, unknown> | null>(null);
 	const [smsPerformances, setSmsPerformances] = useState<PerformanceListItem[]>([]);
+	const [openApiPerformances, setOpenApiPerformances] = useState<PerformanceListItem[]>([]);
 
 	const normalizedRecord = useMemo(
 		() => normalizePerformanceRecord(record ?? {}),
 		[record],
 	);
-	const config = useMemo(() => (service ? SERVICE_EDIT_CONFIG[service] : null), [service]);
+	const serviceEditConfig = useMemo<Record<PerformanceServicePath, ServiceEditConfig>>(() => ({
+		"openapi": {
+			title: "ویرایش عملکرد OpenAPI",
+			readonlyKeys: [],
+			editableFields: [
+				{ key: "bill_inquiry_value", label: "مقدار عملکرد استعلام قبض", type: "number", required: true },
+				{ key: "receipt_register_value", label: "مقدار عملکرد ثبت وصولی", type: "number", required: true },
+			],
+			payloadKeys: ["bill_inquiry_value", "receipt_register_value"],
+		},
+		"psp": {
+			title: "ویرایش عملکرد PSP",
+			readonlyKeys: [],
+			editableFields: [
+				{ key: "value", label: "مقدار عملکرد", type: "number", required: true },
+				{ key: "income", label: "درآمد این ماه", type: "number" },
+			],
+			payloadKeys: ["value", "income"],
+		},
+		"shahkar": {
+			title: "ویرایش عملکرد شاهکار",
+			readonlyKeys: [],
+			editableFields: [
+				{ key: "value", label: "مقدار عملکرد", type: "number", required: true },
+			],
+			payloadKeys: ["value"],
+		},
+		"sms": {
+			title: "ویرایش عملکرد پیامک",
+			readonlyKeys: [],
+			editableFields: [
+				{ key: "irancellFa", label: t("performance.fields.sms.irancellFa"), type: "number", required: true },
+				{ key: "irancellEn", label: t("performance.fields.sms.irancellEn"), type: "number", required: true },
+				{ key: "mciFa", label: t("performance.fields.sms.mciFa"), type: "number", required: true },
+				{ key: "mciEn", label: t("performance.fields.sms.mciEn"), type: "number", required: true },
+				{ key: "otherFa", label: t("performance.fields.sms.otherFa"), type: "number", required: true },
+				{ key: "otherEn", label: t("performance.fields.sms.otherEn"), type: "number", required: true },
+			],
+			payloadKeys: ["irancellFa", "irancellEn", "mciFa", "mciEn", "otherFa", "otherEn"],
+		},
+		"sms-commission": {
+			title: "ویرایش عملکرد کمیسیون پیامک",
+			readonlyKeys: ["sales_agent", "operator", "language"],
+			editableFields: [
+				{ key: "irancellFa", label: t("performance.fields.sms.irancellFa"), type: "number", required: true },
+				{ key: "irancellEn", label: t("performance.fields.sms.irancellEn"), type: "number", required: true },
+				{ key: "mciFa", label: t("performance.fields.sms.mciFa"), type: "number", required: true },
+				{ key: "mciEn", label: t("performance.fields.sms.mciEn"), type: "number", required: true },
+				{ key: "otherFa", label: t("performance.fields.sms.otherFa"), type: "number", required: true },
+				{ key: "otherEn", label: t("performance.fields.sms.otherEn"), type: "number", required: true },
+			],
+			payloadKeys: ["sales_agent", "operator", "language", "irancellFa", "irancellEn", "mciFa", "mciEn", "otherFa", "otherEn"],
+		},
+		"traffic": {
+			title: "ویرایش عملکرد ترافیک",
+			readonlyKeys: ["location", "company_type"],
+			editableFields: [
+				{ key: "value", label: "مقدار", type: "number", required: true },
+				{ key: "value_receive", label: "مقدار دریافتی", type: "number" },
+				{ key: "income", label: "درآمد", type: "number" },
+				{ key: "expense", label: "هزینه", type: "number" },
+				{ key: "profit", label: "سود", type: "number" },
+			],
+			payloadKeys: ["location", "company_type", "value", "value_receive", "income", "expense", "profit"],
+		},
+		"commercial": {
+			title: "ویرایش عملکرد سرویس تجاری",
+			readonlyKeys: ["customer_name", "customer_nic", "province_code", "service_type"],
+			editableFields: [
+				{ key: "value", label: "مقدار", type: "number", required: true },
+				{ key: "income", label: "درآمد", type: "number" },
+				{ key: "expense", label: "هزینه", type: "number" },
+				{ key: "profit", label: "سود", type: "number" },
+			],
+			payloadKeys: ["customer_name", "customer_nic", "province_code", "service_type", "value", "income", "expense", "profit"],
+		},
+	}), [t]);
+	const config = useMemo(() => (service ? serviceEditConfig[service] : null), [service, serviceEditConfig]);
+	const fieldLabels = useMemo<Record<string, string>>(() => ({
+		service_name: "سرویس",
+		company_name: "شرکت",
+		sh_year: "سال",
+		sh_month: "ماه",
+		value: "مقدار",
+		value_receive: "مقدار دریافتی",
+		income: "درآمد استعلام قبض این ماه",
+		expense: "هزینه استعلام قبض این ماه",
+		profit: "سود",
+		bill_inquiry_value: "مقدار عملکرد استعلام قبض",
+		receipt_register_value: "مقدار عملکرد ثبت وصولی",
+		traffic_income: t("performance.fields.openapi.trafficRevenue"),
+		traffic_package_count: t("performance.fields.openapi.trafficPackageCount"),
+		sms_mci_fa: t("performance.fields.sms.mciFa"),
+		sms_mci_en: t("performance.fields.sms.mciEn"),
+		sms_irancell_fa: t("performance.fields.sms.irancellFa"),
+		sms_irancell_en: t("performance.fields.sms.irancellEn"),
+		sms_other_fa: t("performance.fields.sms.otherFa"),
+		sms_other_en: t("performance.fields.sms.otherEn"),
+		operation_type: t("performance.columns.operationType"),
+		operator: t("performance.columns.operator"),
+		language: t("performance.columns.language"),
+		sales_agent: t("performance.columns.salesAgent"),
+		sales_agent_name: t("performance.columns.salesAgent"),
+		location: t("performance.columns.location"),
+		company_type: t("performance.columns.companyType"),
+		is_official: t("performance.columns.official"),
+		customer_name: t("performance.columns.customerName"),
+		customer_nic: t("performance.columns.customerNationalId"),
+		province_code: t("performance.columns.provinceCode"),
+		service_type: t("performance.columns.commercialServiceType"),
+		items: t("performance.modal.labels.smsItems"),
+	}), [t]);
+	const operationTypeLabels = useMemo<Record<string, string>>(() => ({
+		BILL_INQUIRY: t("performance.operationType.billInquiry"),
+		RECEIPT_REGISTER: t("performance.operationType.receiptRegister"),
+		TRAFFIC_REVENUE: t("performance.fields.openapi.trafficRevenue"),
+		TRAFFIC_PACKAGE_COUNT: t("performance.fields.openapi.trafficPackageCount"),
+		IRANCELL_FA: t("performance.fields.sms.irancellFa"),
+		IRANCELL_EN: t("performance.fields.sms.irancellEn"),
+		MCI_FA: t("performance.fields.sms.mciFa"),
+		MCI_EN: t("performance.fields.sms.mciEn"),
+		OTHER_FA: t("performance.fields.sms.otherFa"),
+		OTHER_EN: t("performance.fields.sms.otherEn"),
+	}), [t]);
 	const isSmsService = service === "sms";
 	const mergedDetail = useMemo(
 		() => ({ ...(record as Record<string, unknown> ?? {}), ...(detail ?? {}) }),
@@ -414,6 +500,32 @@ export function PerformanceDetailModal({
 		const found = companies?.find(company => company.id === companyId);
 		return found?.name ?? String(mergedDetail.company_name ?? "-");
 	}, [companies, mergedDetail, record]);
+	const openApiSummaryFields = useMemo(() => {
+		if (service !== "openapi")
+			return [];
+
+		return [
+			{ key: "income", label: "درآمد استعلام قبض این ماه", value: formatNumberLike(mergedDetail.income) },
+			{ key: "expense", label: "هزینه استعلام قبض این ماه", value: formatNumberLike(mergedDetail.expense) },
+			{ key: "profit", label: "درآمد ثبت وصولی این ماه", value: formatNumberLike(mergedDetail.profit) },
+		];
+	}, [service, mergedDetail]);
+	const pspSummaryFields = useMemo(() => {
+		if (service !== "psp")
+			return [];
+
+		return [
+			{ key: "income", label: "درآمد این ماه", value: formatNumberLike(mergedDetail.income) },
+		];
+	}, [service, mergedDetail]);
+	const shahkarSummaryFields = useMemo(() => {
+		if (service !== "shahkar")
+			return [];
+
+		return [
+			{ key: "income", label: "درآمد این ماه", value: formatNumberLike(mergedDetail.income) },
+		];
+	}, [service, mergedDetail]);
 
 	const readonlyDetailFields = useMemo<DetailField[]>(() => {
 		if (!service || !config)
@@ -438,13 +550,13 @@ export function PerformanceDetailModal({
 					const value = source[key];
 					return {
 						key,
-						label: FIELD_LABELS[key] ?? key,
-						value: formatDetailValue(key, value),
+						label: fieldLabels[key] ?? key,
+						value: formatDetailValue(key, value, operationTypeLabels, t),
 					};
 				});
 		}
 
-		if (service === "sms" || service === "sms-commission")
+		if (service === "sms" || service === "sms-commission" || service === "openapi" || service === "psp" || service === "shahkar")
 			return [];
 
 		const skipKeys = new Set([
@@ -467,14 +579,12 @@ export function PerformanceDetailModal({
 			seenKeys.add(key);
 			result.push({
 				key,
-				label: FIELD_LABELS[key] ?? key,
-				value: formatDetailValue(key, value),
+				label: fieldLabels[key] ?? key,
+				value: formatDetailValue(key, value, operationTypeLabels, t),
 			});
 		};
 
 		[...config.readonlyKeys, ...(SERVICE_DETAIL_KEYS[service] ?? [])].forEach(pushField);
-		if (service === "openapi")
-			return result;
 		Object.keys(mergedDetail).forEach((key) => {
 			const value = mergedDetail[key];
 			if (typeof value === "object" && key !== "items")
@@ -483,7 +593,7 @@ export function PerformanceDetailModal({
 		});
 
 		return result;
-	}, [service, config, mergedDetail, isUnregisteredMode, record]);
+	}, [service, config, mergedDetail, isUnregisteredMode, record, fieldLabels, operationTypeLabels, t]);
 
 	const smsBreakdownCards = useMemo<SmsBreakdownCard[]>(() => {
 		if (!isSmsService)
@@ -515,7 +625,7 @@ export function PerformanceDetailModal({
 
 			return {
 				key,
-				title: `${getOperatorLabel(operator)} - ${getLanguageLabel(language)}`,
+				title: `${getOperatorLabel(operator, t)} - ${getLanguageLabel(language, t)}`,
 				value: perf?.value ?? null,
 				incomeOperator: perf?.income_operator ?? perf?.income ?? null,
 				incomeGovernment: perf?.income_government ?? null,
@@ -534,7 +644,7 @@ export function PerformanceDetailModal({
 				return;
 			cards.push({
 				key,
-				title: `${getOperatorLabel(operator)} - ${getLanguageLabel(language)}`,
+				title: `${getOperatorLabel(operator, t)} - ${getLanguageLabel(language, t)}`,
 				value: item?.value ?? null,
 				incomeOperator: item?.income_operator ?? item?.income ?? null,
 				incomeGovernment: item?.income_government ?? null,
@@ -553,7 +663,7 @@ export function PerformanceDetailModal({
 				return;
 			cards.push({
 				key,
-				title: `${getOperatorLabel(operator)} - ${getLanguageLabel(language)}`,
+				title: `${getOperatorLabel(operator, t)} - ${getLanguageLabel(language, t)}`,
 				value: item?.value ?? null,
 				incomeOperator: item?.income_operator ?? item?.income ?? null,
 				incomeGovernment: item?.income_government ?? null,
@@ -565,7 +675,7 @@ export function PerformanceDetailModal({
 		});
 
 		return cards;
-	}, [isSmsService, mergedDetail.items, smsContract, smsPerformances]);
+	}, [isSmsService, mergedDetail.items, smsContract, smsPerformances, t]);
 
 	const form = useForm<EditFormValues>({
 		defaultValues: {},
@@ -690,10 +800,52 @@ export function PerformanceDetailModal({
 	}, [open, service, normalizedRecord.companyId, normalizedRecord.serviceId, normalizedRecord.year, normalizedRecord.month, isUnregisteredMode]);
 
 	useEffect(() => {
-		if (!service || !record || !detail)
+		if (!open || service !== "openapi" || isUnregisteredMode) {
+			setOpenApiPerformances([]);
+			return;
+		}
+
+		const serviceId = normalizedRecord.serviceId;
+		const companyId = normalizedRecord.companyId;
+		const year = normalizedRecord.year;
+		const month = normalizedRecord.month;
+		if (serviceId == null || companyId == null || year == null || month == null) {
+			setOpenApiPerformances([]);
+			return;
+		}
+
+		let cancelled = false;
+		(async () => {
+			try {
+				const response = await fetchPerformanceList("openapi", {
+					page: 1,
+					page_size: 250,
+					service: serviceId,
+					company: companyId,
+					sh_year: year,
+					sh_month: month,
+				});
+				if (!cancelled)
+					setOpenApiPerformances(response?.results ?? []);
+			}
+			catch {
+				if (!cancelled)
+					setOpenApiPerformances([]);
+			}
+		})();
+
+		return () => {
+			cancelled = true;
+		};
+	}, [open, service, normalizedRecord.companyId, normalizedRecord.serviceId, normalizedRecord.year, normalizedRecord.month, isUnregisteredMode]);
+
+	useEffect(() => {
+		if (!service || !record || !detail || !config)
 			return;
 
-		const initialValues = buildInitialValues(service, detail, record as Record<string, unknown>);
+		const initialValues = buildInitialValues(config, service, detail, record as Record<string, unknown>);
+		if (service === "openapi")
+			applyOpenApiInitialValues(initialValues, detail, record as Record<string, unknown>, openApiPerformances);
 		if (service === "sms" || service === "sms-commission") {
 			const lookup = new Map<string, unknown>();
 			smsBreakdownCards.forEach((card) => {
@@ -725,7 +877,7 @@ export function PerformanceDetailModal({
 			}
 		}
 		form.reset(initialValues);
-	}, [service, record, detail, form, smsBreakdownCards, isUnregisteredMode]);
+	}, [service, record, detail, config, form, smsBreakdownCards, openApiPerformances, isUnregisteredMode]);
 
 	const handleSubmit = form.handleSubmit(async (values) => {
 		if (!service || !config)
@@ -742,7 +894,7 @@ export function PerformanceDetailModal({
 			hasError = true;
 			form.setError(field.key as any, {
 				type: "required",
-				message: "این فیلد الزامی است",
+				message: i18next.t("performance.validation.requiredField"),
 			});
 		});
 		if (hasError)
@@ -755,7 +907,7 @@ export function PerformanceDetailModal({
 		const salesAgentId = toNullableNumber(values.sales_agent);
 
 		if (companyId == null || serviceId == null || year == null || month == null) {
-			window.$message?.error("اطلاعات پایه عملکرد ناقص است");
+			window.$message?.error(i18next.t("performance.errors.baseFormIncomplete"));
 			return;
 		}
 
@@ -801,7 +953,7 @@ export function PerformanceDetailModal({
 			}
 			else if (service === "sms-commission") {
 				if (salesAgentId == null) {
-					window.$message?.error("شناسه نماینده فروش نامعتبر است");
+					window.$message?.error(i18next.t("performance.errors.invalidSalesAgentId"));
 					return;
 				}
 				await updateSmsCommissionPerformanceByComposite(companyId, salesAgentId, year, month, payload);
@@ -828,7 +980,7 @@ export function PerformanceDetailModal({
 				});
 			}
 
-			window.$message?.success(isUnregisteredMode ? "Performance registered successfully" : "Performance updated successfully");
+			window.$message?.success(isUnregisteredMode ? i18next.t("performance.messages.registerSuccess") : i18next.t("performance.messages.updateSuccess"));
 			onUpdated?.();
 			onClose();
 		}
@@ -840,7 +992,7 @@ export function PerformanceDetailModal({
 	return (
 		<Modal
 			open={open}
-			title={isUnregisteredMode ? "Register Performance" : (config?.title ?? "Edit Performance")}
+			title={isUnregisteredMode ? "ثبت عملکرد" : (config?.title ?? "ویرایش عملکرد")}
 			onCancel={onClose}
 			footer={null}
 			width={920}
@@ -860,11 +1012,71 @@ export function PerformanceDetailModal({
 											gap: 8,
 										}}
 									>
-										<ReadOnlyBlock label="سرویس:" value={mergedDetail.service_name ?? service ?? "-"} />
+										<ReadOnlyBlock label="سرویس:" value={resolveServiceDisplayName(service, mergedDetail.service_name ?? service)} />
 										<ReadOnlyBlock label="شرکت:" value={selectedCompany} />
 										<ReadOnlyBlock label="سال:" value={mergedDetail.sh_year ?? "-"} />
 										<ReadOnlyBlock label="ماه:" value={resolveMonthLabel(mergedDetail.sh_month)} />
 									</div>
+
+									{service === "openapi"
+										? (
+											<div
+												style={{
+													display: "grid",
+													gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+													gap: 8,
+												}}
+											>
+												{openApiSummaryFields.map(field => (
+													<ReadOnlyBlock
+														key={field.key}
+														label={`${field.label}:`}
+														value={field.value}
+													/>
+												))}
+											</div>
+										)
+										: null}
+
+									{service === "psp"
+										? (
+											<div
+												style={{
+													display: "grid",
+													gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+													gap: 8,
+												}}
+											>
+												{pspSummaryFields.map(field => (
+													<ReadOnlyBlock
+														key={field.key}
+														label={`${field.label}:`}
+														value={field.value}
+													/>
+												))}
+											</div>
+										)
+										: null}
+
+									{service === "shahkar"
+										? (
+											<div
+												style={{
+													display: "grid",
+													gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+													gap: 8,
+												}}
+											>
+												{shahkarSummaryFields.map(field => (
+													<ReadOnlyBlock
+														key={field.key}
+														label={`${field.label}:`}
+														value={field.value}
+													/>
+												))}
+											</div>
+										)
+										: null}
 
 									{!isUnregisteredMode && isSmsService && smsBreakdownCards.length > 0
 										? (
@@ -887,10 +1099,10 @@ export function PerformanceDetailModal({
 														}}
 													>
 														<div style={{ fontWeight: 700 }}>{card.title}</div>
-														<ReadOnlyBlock label="مقدار عملکرد:" value={formatNumberLike(card.value)} />
+														<ReadOnlyBlock label="مقدار:" value={formatNumberLike(card.value)} />
 														<ReadOnlyBlock label="درآمد اپراتور:" value={formatNumberLike(card.incomeOperator)} />
 														<ReadOnlyBlock label="درآمد دولت:" value={formatNumberLike(card.incomeGovernment)} />
-														<ReadOnlyBlock label="قیمت واحد:" value={formatNumberLike(card.price)} />
+														<ReadOnlyBlock label="نرخ واحد:" value={formatNumberLike(card.price)} />
 														<ReadOnlyBlock label="سود:" value={formatNumberLike(card.profit)} />
 														<ReadOnlyBlock label="هزینه اپراتور:" value={formatNumberLike(card.expenseOperator)} />
 														<ReadOnlyBlock label="هزینه دولت:" value={formatNumberLike(card.expenseGovernment)} />
@@ -936,7 +1148,7 @@ export function PerformanceDetailModal({
 																key={field.key}
 																name={field.key as any}
 																label={field.label}
-																inputProps={{ placeholder: "عدد وارد کنید", inputMode: "numeric" } as any}
+																inputProps={{ placeholder: "عدد را وارد کنید", inputMode: "numeric" } as any}
 																enableGrouping
 																enableWordsTooltip
 															/>
@@ -969,7 +1181,7 @@ export function PerformanceDetailModal({
 								{config.editableFields.length > 0
 									? (
 										<Button type="primary" loading={saving} onClick={() => void handleSubmit()}>
-											ذخیره تغییرات
+											ویرایش
 										</Button>
 									)
 									: null}

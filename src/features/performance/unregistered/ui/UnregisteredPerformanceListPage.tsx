@@ -3,7 +3,6 @@ import type { ActionType, ProColumns, ProFormInstance } from "@ant-design/pro-co
 import type { PerformanceListRow } from "../model/performance.list.types";
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import {
-
 	fetchUnregisteredPerformanceList,
 } from "#src/features/performance/api/performances.api";
 import { resolvePerformanceServicePath } from "#src/features/performance/shared/model/performance.helpers";
@@ -76,9 +75,7 @@ export default function UnregisteredPerformanceList() {
 		if (permittedViewServiceIds.has(selectedServiceId))
 			return;
 
-		// eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
 		setSelectedServiceId(null);
-		// eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
 		setSelectedServiceCode(null);
 		formRef.current?.setFieldsValue({
 			service: undefined,
@@ -153,7 +150,7 @@ export default function UnregisteredPerformanceList() {
 				serviceOptions,
 				companyOptions,
 				isCompanyDisabled: !selectedServiceId || companies.isLoading,
-				companyPlaceholder: selectedServiceId ? "شرکت را انتخاب کنید" : "ابتدا سرویس را انتخاب کنید",
+				companyPlaceholder: selectedServiceId ? t("performance.placeholders.selectCompany") : t("performance.placeholders.selectServiceFirst"),
 				salesAgentOptions,
 			}),
 		[
@@ -186,7 +183,7 @@ export default function UnregisteredPerformanceList() {
 								key="add"
 								type="link"
 								size="large"
-								title="ویرایش عملکرد"
+								title={t("performance.actions.editPerformance")}
 								icon={<FileAddOutlined />}
 								onClick={() => {
 									setSelectedRow(record);
@@ -250,7 +247,7 @@ export default function UnregisteredPerformanceList() {
 						success: true,
 					};
 				}}
-				headerTitle="لیست عملکردها"
+				headerTitle={t("performance.titles.performanceList")}
 				toolBarRender={() => {
 					if (!canCreatePerformance) {
 						return [];

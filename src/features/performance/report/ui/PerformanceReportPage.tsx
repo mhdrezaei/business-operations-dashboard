@@ -148,15 +148,10 @@ export default function PerformanceReportPage() {
 		if (permittedViewServiceIds.has(selectedServiceId))
 			return;
 
-		// eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
 		setSelectedServiceId(null);
-		// eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
 		setSelectedServiceCode(null);
-		// eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
 		setSelectedYear(null);
-		// eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
 		setSelectedPeriods([]);
-		// eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
 		setSummary(null);
 		formRef.current?.setFieldsValue({
 			service_id: undefined,
@@ -358,17 +353,17 @@ export default function PerformanceReportPage() {
 						success: true,
 					};
 				}}
-				headerTitle="گزارش عملکردها"
+				headerTitle={t("performance.titles.performanceReport")}
 				toolBarRender={() => {
 					if (!summary)
 						return [];
 
 					return [
 						<Space key="summary" size={16}>
-							<Typography.Text>{`جمع تعداد: ${formatSummaryNumber(summary.value)}`}</Typography.Text>
-							<Typography.Text>{`جمع درآمد: ${formatSummaryNumber(summary.income_financial)}`}</Typography.Text>
-							<Typography.Text>{`جمع هزینه: ${formatSummaryNumber(summary.expense_financial)}`}</Typography.Text>
-							<Typography.Text>{`جمع سود: ${formatSummaryNumber(summary.profit_financial)}`}</Typography.Text>
+							<Typography.Text>{`${t("performance.summary.totalCount")}: ${formatSummaryNumber(summary.value)}`}</Typography.Text>
+							<Typography.Text>{`${t("performance.summary.totalIncome")}: ${formatSummaryNumber(summary.income_financial)}`}</Typography.Text>
+							<Typography.Text>{`${t("performance.summary.totalExpense")}: ${formatSummaryNumber(summary.expense_financial)}`}</Typography.Text>
+							<Typography.Text>{`${t("performance.summary.totalProfit")}: ${formatSummaryNumber(summary.profit_financial)}`}</Typography.Text>
 						</Space>,
 					];
 				}}

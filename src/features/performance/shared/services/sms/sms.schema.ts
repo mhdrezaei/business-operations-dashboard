@@ -1,11 +1,12 @@
+import i18next from "i18next";
 import { z } from "zod";
 import { zNullableNonNegative } from "../../model/zod-helpers";
 
 export const smsPerformanceSchema = z.object({
-	irancellFa: zNullableNonNegative("مقدار عملکرد ایرانسل - فارسی الزامی است"),
-	irancellEn: zNullableNonNegative("مقدار عملکرد ایرانسل - انگلیسی الزامی است"),
-	mciFa: zNullableNonNegative("مقدار عملکرد همراه اول - فارسی الزامی است"),
-	mciEn: zNullableNonNegative("مقدار عملکرد همراه اول - انگلیسی الزامی است"),
-	otherFa: zNullableNonNegative("مقدار عملکرد سایر - فارسی الزامی است"),
-	otherEn: zNullableNonNegative("مقدار عملکرد سایر - انگلیسی الزامی است"),
+	irancellFa: zNullableNonNegative(i18next.t("performance.validation.sms.irancellFaRequired")),
+	irancellEn: zNullableNonNegative(i18next.t("performance.validation.sms.irancellEnRequired")),
+	mciFa: zNullableNonNegative(i18next.t("performance.validation.sms.mciFaRequired")),
+	mciEn: zNullableNonNegative(i18next.t("performance.validation.sms.mciEnRequired")),
+	otherFa: zNullableNonNegative(i18next.t("performance.validation.sms.otherFaRequired")),
+	otherEn: zNullableNonNegative(i18next.t("performance.validation.sms.otherEnRequired")),
 });

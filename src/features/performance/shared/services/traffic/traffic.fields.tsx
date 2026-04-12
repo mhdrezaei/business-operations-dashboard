@@ -7,6 +7,7 @@ import { ProCard } from "@ant-design/pro-components";
 import { Alert, Button, Col, Form, Radio, Row, Tag, Upload } from "antd";
 import { useEffect, useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 const sf = (path: string) => `serviceFields.${path}` as const;
 
@@ -20,6 +21,7 @@ function downloadBlob(blob: Blob, filename: string) {
 }
 
 export function TrafficPerformanceFields() {
+	const { t } = useTranslation();
 	const { control, setValue } = useFormContext<PerformanceFormValues>();
 	const [downloading, setDownloading] = useState(false);
 
@@ -65,27 +67,27 @@ export function TrafficPerformanceFields() {
 			bordered
 			headerBordered
 			style={{ borderRadius: 8 }}
-			title="فایل اکسل عملکرد ترافیک"
+			title={t("performance.traffic.excelTitle")}
 		>
 			<div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
-				<Tag color="blue">{`نوع شرکت: ${companyType ?? "-"}`}</Tag>
-				<Tag color="blue">{`سال: ${year ?? "-"}`}</Tag>
-				<Tag color="blue">{`ماه: ${month ?? "-"}`}</Tag>
+				<Tag color="blue">{`${t("performance.columns.companyType")}: ${companyType ?? "-"}`}</Tag>
+				<Tag color="blue">{`${t("performance.columns.year")}: ${year ?? "-"}`}</Tag>
+				<Tag color="blue">{`${t("performance.columns.month")}: ${month ?? "-"}`}</Tag>
 			</div>
 
 			<Controller
 				name={sf("submitMode") as any}
 				control={control}
 				render={({ field }) => (
-					<Form.Item label="روش ثبت عملکرد">
+					<Form.Item label={t("performance.traffic.submitMethod")}>
 						<Radio.Group
 							optionType="button"
 							buttonStyle="solid"
 							value={field.value ?? "template"}
 							onChange={e => field.onChange(e.target.value)}
 						>
-							<Radio.Button value="template">آپلود از تمپلیت</Radio.Button>
-							<Radio.Button value="single">ثبت تکی</Radio.Button>
+							<Radio.Button value="template">{t("performance.traffic.templateUpload")}</Radio.Button>
+							<Radio.Button value="single">{t("performance.traffic.singleEntry")}</Radio.Button>
 						</Radio.Group>
 					</Form.Item>
 				)}
@@ -124,11 +126,11 @@ export function TrafficPerformanceFields() {
 									}
 								}}
 							>
-								دانلود فایل تمپلیت
+								{t("performance.traffic.downloadTemplate")}
 							</Button>
 
 							<div style={{ opacity: 0.8, fontSize: 12, lineHeight: 1.8 }}>
-								قبل از دانلود/آپلود، نوع شرکت، سال و ماه را انتخاب کنید.
+								{t("performance.traffic.preUploadHint")}
 							</div>
 						</div>
 
@@ -149,8 +151,8 @@ export function TrafficPerformanceFields() {
 										fileList={field.value ?? []}
 										onChange={info => field.onChange(info.fileList.slice(-1))}
 									>
-										<p style={{ margin: 0, fontSize: 18 }}>فایل اکسل را انتخاب کنید یا بکشید و رها کنید</p>
-										<p style={{ margin: 0, marginTop: 8 }}>فرمت‌های مجاز: xlsx, xls</p>
+										<p style={{ margin: 0, fontSize: 18 }}>{t("performance.labels.selectOrDropExcel")}</p>
+										<p style={{ margin: 0, marginTop: 8 }}>{t("performance.labels.allowedFormatsXls")}</p>
 									</Upload.Dragger>
 								</Form.Item>
 							)}
@@ -162,23 +164,23 @@ export function TrafficPerformanceFields() {
 						<Alert
 							type="info"
 							showIcon
-							message="توجه: هر واحد قیمت برابر با یک گیگابایت است."
+							message={t("performance.traffic.unitPriceHint")}
 						/>
 
-						<ProCard bordered title="عملکرد تهران" style={{ borderRadius: 10 }}>
+						<ProCard bordered title={t("performance.traffic.tehranPerformance")} style={{ borderRadius: 10 }}>
 							<Row gutter={16}>
 								<Col span={12}>
 									<RHFProNumber
 										name={sf("tehranValue") as any}
-										label="مقدار ترافیک ارسالی در تهران"
-										inputProps={{ placeholder: "مثلا 100" }}
+										label={t("performance.fields.traffic.tehranValue")}
+										inputProps={{ placeholder: t("performance.placeholders.example100") }}
 									/>
 								</Col>
 								<Col span={12}>
 									<RHFProNumber
 										name={sf("tehranValueReceive") as any}
-										label="مقدار ترافیک دریافتی در تهران"
-										inputProps={{ placeholder: "مثلا 10000" }}
+										label={t("performance.fields.traffic.tehranValueReceive")}
+										inputProps={{ placeholder: t("performance.placeholders.example10000") }}
 									/>
 								</Col>
 							</Row>
@@ -188,7 +190,7 @@ export function TrafficPerformanceFields() {
 							? (
 								<ProCard
 									bordered
-									title="عملکرد مراکز استان"
+									title={t("performance.traffic.countyPerformance")}
 									style={{ borderRadius: 10 }}
 									extra={(
 										<Button
@@ -201,7 +203,7 @@ export function TrafficPerformanceFields() {
 													shouldValidate: false,
 												})}
 										>
-											حذف
+											{t("common.delete")}
 										</Button>
 									)}
 								>
@@ -209,15 +211,15 @@ export function TrafficPerformanceFields() {
 										<Col span={12}>
 											<RHFProNumber
 												name={sf("countyValue") as any}
-												label="مقدار ترافیک ارسالی در مراکز استان"
-												inputProps={{ placeholder: "مثلا 100" }}
+												label={t("performance.fields.traffic.countyValue")}
+												inputProps={{ placeholder: t("performance.placeholders.example100") }}
 											/>
 										</Col>
 										<Col span={12}>
 											<RHFProNumber
 												name={sf("countyValueReceive") as any}
-												label="مقدار ترافیک دریافتی در مراکز استان"
-												inputProps={{ placeholder: "مثلا 10000" }}
+												label={t("performance.fields.traffic.countyValueReceive")}
+												inputProps={{ placeholder: t("performance.placeholders.example10000") }}
 											/>
 										</Col>
 									</Row>
@@ -232,7 +234,7 @@ export function TrafficPerformanceFields() {
 											shouldValidate: false,
 										})}
 								>
-									افزودن عملکرد مراکز استان
+									{t("performance.traffic.addCountyPerformance")}
 								</Button>
 							)}
 					</div>

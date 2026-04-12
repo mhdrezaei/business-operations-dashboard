@@ -3,6 +3,7 @@ import type { PerformanceFormValues } from "../../model/performance.form.types";
 import { ProCard } from "@ant-design/pro-components";
 import { Form, Upload } from "antd";
 import { Controller, useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 const sf = (path: string) => `serviceFields.${path}` as const;
 
@@ -13,6 +14,7 @@ function UploadCard({
 	title: string
 	name: string
 }) {
+	const { t } = useTranslation();
 	const { control } = useFormContext<PerformanceFormValues>();
 
 	const uploadProps: Omit<UploadProps, "fileList" | "onChange"> = {
@@ -41,8 +43,8 @@ function UploadCard({
 							fileList={field.value ?? []}
 							onChange={info => field.onChange(info.fileList.slice(-1))}
 						>
-							<p style={{ margin: 0, fontSize: 18 }}>فایل اکسل را انتخاب کنید</p>
-							<p style={{ margin: 0, marginTop: 8 }}>فرمت‌های مجاز: xlsx, xls</p>
+							<p style={{ margin: 0, fontSize: 18 }}>{t("performance.labels.selectExcelFile")}</p>
+							<p style={{ margin: 0, marginTop: 8 }}>{t("performance.labels.allowedFormatsXls")}</p>
 						</Upload.Dragger>
 					</Form.Item>
 				</ProCard>
@@ -52,15 +54,17 @@ function UploadCard({
 }
 
 export function CommercialPerformanceFields() {
+	const { t } = useTranslation();
+
 	return (
 		<ProCard
 			bordered
 			headerBordered
 			style={{ borderRadius: 8 }}
-			title="آپلود فایل‌های سرویس‌های تجاری"
+			title={t("performance.commercial.title")}
 		>
 			<div style={{ marginBottom: 12, opacity: 0.8 }}>
-				برای این سرویس ثبت عملکرد دستی وجود ندارد و فقط آپلود فایل انجام می‌شود.
+				{t("performance.commercial.uploadOnlyDescription")}
 			</div>
 
 			<div
@@ -70,9 +74,9 @@ export function CommercialPerformanceFields() {
 					gap: 12,
 				}}
 			>
-				<UploadCard title="آپلود فایل سرویس‌ها" name={sf("servicesFile")} />
-				<UploadCard title="آپلود فایل کد استانی" name={sf("provinceCodeFile")} />
-				<UploadCard title="آپلود عملکرد ماهانه" name={sf("monthlyPerformanceFile")} />
+				<UploadCard title={t("performance.commercial.servicesFile")} name={sf("servicesFile")} />
+				<UploadCard title={t("performance.commercial.provinceCodeFile")} name={sf("provinceCodeFile")} />
+				<UploadCard title={t("performance.commercial.monthlyPerformanceFile")} name={sf("monthlyPerformanceFile")} />
 			</div>
 		</ProCard>
 	);

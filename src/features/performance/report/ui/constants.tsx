@@ -27,10 +27,12 @@ export interface GetPerformanceReportColumnsArgs {
 	onPeriodsChange: (periods: string[]) => void
 }
 
-const OPERATION_TYPE_LABELS: Record<string, string> = {
-	BILL_INQUIRY: "استعلام قبض",
-	RECEIPT_REGISTER: "ثبت وصولی",
-};
+function createOperationTypeLabels(t: TFunction<"translation", undefined>) {
+	return {
+		BILL_INQUIRY: t("performance.operationType.billInquiry"),
+		RECEIPT_REGISTER: t("performance.operationType.receiptRegister"),
+	} as Record<string, string>;
+}
 
 function createValueEnum(options: ReportSelectOption[]) {
 	return options.reduce((acc, option) => {
@@ -74,6 +76,8 @@ export function getPerformanceReportColumns({
 	onYearChange,
 	onPeriodsChange,
 }: GetPerformanceReportColumnsArgs): ProColumns<PerformanceReportRow>[] {
+	const operationTypeLabels = createOperationTypeLabels(t);
+
 	return [
 		{
 			dataIndex: "index",
@@ -83,34 +87,34 @@ export function getPerformanceReportColumns({
 			hideInSearch: true,
 		},
 		{
-			title: "شناسه",
+			title: t("performance.columns.id"),
 			dataIndex: "id",
 			search: false,
 			width: 110,
 		},
 		{
-			title: "نام سرویس",
+			title: t("performance.columns.serviceName"),
 			dataIndex: "service_name",
 			search: false,
 			width: 180,
 			render: (_, row) => String(row.service_name ?? selectedServiceName ?? "-"),
 		},
 		{
-			title: "نام شرکت",
+			title: t("performance.columns.companyName"),
 			dataIndex: "company_name",
 			search: false,
 			width: 260,
 			render: (_, row) => row.company_name ?? "-",
 		},
 		{
-			title: "سال",
+			title: t("performance.columns.year"),
 			dataIndex: "sh_year",
 			search: false,
 			width: 100,
 			render: (_, row) => row.sh_year ?? "-",
 		},
 		{
-			title: "ماه",
+			title: t("performance.columns.month"),
 			dataIndex: "sh_month",
 			search: false,
 			width: 110,
@@ -121,53 +125,53 @@ export function getPerformanceReportColumns({
 			},
 		},
 		{
-			title: "تعداد",
+			title: t("performance.columns.count"),
 			dataIndex: "value",
 			search: false,
 			width: 140,
 			render: (_, row) => formatNumeric(row.value),
 		},
 		{
-			title: "نوع عملیات",
+			title: t("performance.columns.operationType"),
 			dataIndex: "operation_type",
 			search: false,
 			width: 190,
 			render: (_, row) => {
 				if (!row.operation_type)
 					return "-";
-				return OPERATION_TYPE_LABELS[row.operation_type] ?? row.operation_type;
+				return operationTypeLabels[row.operation_type] ?? row.operation_type;
 			},
 		},
 		{
-			title: "درآمد",
+			title: t("performance.columns.income"),
 			dataIndex: "income_financial",
 			search: false,
 			width: 160,
 			render: (_, row) => formatNumeric(row.income_financial),
 		},
 		{
-			title: "هزینه",
+			title: t("performance.columns.expense"),
 			dataIndex: "expense_financial",
 			search: false,
 			width: 160,
 			render: (_, row) => formatNumeric(row.expense_financial),
 		},
 		{
-			title: "سود",
+			title: t("performance.columns.profit"),
 			dataIndex: "profit_financial",
 			search: false,
 			width: 160,
 			render: (_, row) => formatNumeric(row.profit_financial),
 		},
 		{
-			title: "سرویس",
+			title: t("performance.columns.service"),
 			dataIndex: "service_id",
 			hideInTable: true,
 			valueType: "select",
 			valueEnum: createValueEnum(serviceOptions),
 			fieldProps: {
 				allowClear: true,
-				placeholder: "سرویس را انتخاب کنید",
+				placeholder: t("performance.placeholders.selectService"),
 				onChange: (value: number | null) => {
 					const numericId = value == null ? null : Number(value);
 					const selected = serviceOptions.find(option => option.value === numericId);
@@ -176,14 +180,14 @@ export function getPerformanceReportColumns({
 			},
 		},
 		{
-			title: "سال",
+			title: t("performance.columns.year"),
 			dataIndex: "sh_year",
 			hideInTable: true,
 			valueType: "select",
 			valueEnum: createValueEnum(yearOptions),
 			fieldProps: {
 				allowClear: true,
-				placeholder: "سال را انتخاب کنید",
+				placeholder: t("performance.placeholders.selectYear"),
 				onChange: (value: string | number | null) => {
 					const year = value == null || value === "" ? null : Number(value);
 					onYearChange(Number.isFinite(year as number) ? Number(year) : null);
@@ -191,7 +195,7 @@ export function getPerformanceReportColumns({
 			},
 		},
 		{
-			title: "ماه",
+			title: t("performance.columns.month"),
 			dataIndex: "sh_periods",
 			hideInTable: true,
 			valueType: "select",
@@ -201,14 +205,14 @@ export function getPerformanceReportColumns({
 				maxTagCount: "responsive",
 				allowClear: true,
 				disabled: isPeriodDisabled,
-				placeholder: isPeriodDisabled ? "ابتدا سال را انتخاب کنید" : "ماه‌ها را انتخاب کنید",
+				placeholder: isPeriodDisabled ? t("performance.placeholders.selectYearFirst") : t("performance.placeholders.selectMonths"),
 				onChange: (values: Array<string | number>) => {
 					onPeriodsChange(normalizePeriods(values));
 				},
 			},
 		},
 		{
-			title: "شرکت",
+			title: t("performance.columns.company"),
 			dataIndex: "company_ids",
 			hideInTable: true,
 			valueType: "select",
@@ -218,7 +222,7 @@ export function getPerformanceReportColumns({
 				maxTagCount: "responsive",
 				allowClear: true,
 				disabled: isCompanyDisabled,
-				placeholder: isCompanyDisabled ? "ابتدا ماه را انتخاب کنید" : "شرکت‌ها را انتخاب کنید",
+				placeholder: isCompanyDisabled ? t("performance.placeholders.selectMonthFirst") : t("performance.placeholders.selectCompanies"),
 			},
 		},
 	];

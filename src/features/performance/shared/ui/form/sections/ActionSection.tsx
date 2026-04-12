@@ -1,4 +1,5 @@
 import { Button } from "antd";
+import { useTranslation } from "react-i18next";
 
 interface Props {
 	submitting?: boolean
@@ -15,6 +16,8 @@ export function ActionSection({
 	onSubmitAndEdit,
 	onReset,
 }: Props) {
+	const { t } = useTranslation();
+
 	return (
 		<div
 			style={{
@@ -25,17 +28,17 @@ export function ActionSection({
 				flexWrap: "wrap",
 			}}
 		>
-			<Button onClick={onReset}>پاکسازی فرم</Button>
+			<Button onClick={onReset}>{t("performance.actions.clearForm")}</Button>
 
 			<div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
 				<Button loading={!!submitting} onClick={onSubmit}>
-					ثبت
+					{t("performance.actions.submit")}
 				</Button>
 				<Button loading={!!submitting} onClick={onSubmitAndCreateAnother}>
-					ثبت و ایجاد یکی دیگر
+					{t("performance.actions.submitAndCreateAnother")}
 				</Button>
 				<Button loading={!!submitting} type="primary" onClick={onSubmitAndEdit}>
-					ثبت و ویرایش
+					{t("performance.actions.submitAndEdit")}
 				</Button>
 			</div>
 		</div>
