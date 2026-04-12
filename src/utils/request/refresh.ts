@@ -21,12 +21,12 @@ export async function refreshTokenAndRetry(request: Request, options: Options, r
 	if (!isRefreshing) {
 		isRefreshing = true;
 		try {
-			// فراخواني fetchRefreshToken با refreshToken براي دريافت token و refreshToken جديد
-			const freshResponse = await fetchRefreshToken({ refreshToken });
-			// استخراج token جديد از پاسخ
-			const newToken = freshResponse.result.token;
-			// استخراج refreshToken جديد از پاسخ
-			const newRefreshToken = freshResponse.result.refreshToken;
+			// فراخواني fetchRefreshToken با refresh براي دريافت access و refresh جديد
+			const freshResponse = await fetchRefreshToken({ refresh: refreshToken });
+			// استخراج access جديد از پاسخ
+			const newToken = freshResponse.access;
+			// استخراج refresh جديد از پاسخ
+			const newRefreshToken = freshResponse.refresh;
 			// ذخيره token و refreshToken جديد در userStore
 			useAuthStore.setState({ access: newToken, refresh: newRefreshToken });
 			// فراخواني onRefreshed با token جديد
