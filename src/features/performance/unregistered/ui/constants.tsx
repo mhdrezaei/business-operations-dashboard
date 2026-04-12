@@ -14,9 +14,9 @@ type ServiceCode = | "openapi"
 
 export interface GetPerformanceColumnsArgs {
 	t: TFunction<"translation", undefined>
-	selectedServiceId: number | null
+	selectedServiceIds: number[]
 	selectedServiceCode: string | null
-	setSelectedService: (serviceId: number | null, serviceCode: string | null) => void
+	setSelectedServices: (serviceIds: number[], serviceCode: string | null) => void
 	serviceOptions: Array<{ label: string, value: number, code: string }>
 	companyOptions: Array<{ label: string, value: number }>
 	isCompanyDisabled: boolean
@@ -24,32 +24,15 @@ export interface GetPerformanceColumnsArgs {
 	salesAgentOptions: Array<{ label: string, value: number }>
 }
 
-const ORDERING_OPTIONS = [
-	{ label: "جدیدترین (شناسه)", value: "-id" },
-	{ label: "قدیمی‌ترین (شناسه)", value: "id" },
-	{ label: "سال (نزولی)", value: "-sh_year" },
-	{ label: "سال (صعودی)", value: "sh_year" },
-	{ label: "ماه (نزولی)", value: "-sh_month" },
-	{ label: "ماه (صعودی)", value: "sh_month" },
-	{ label: "مقدار (نزولی)", value: "-value" },
-	{ label: "مقدار (صعودی)", value: "value" },
-] as const;
-
-const TRAFFIC_COMPANY_TYPE_OPTIONS = [
-	{ label: "CP", value: "CP" },
-	{ label: "IXP", value: "IXP" },
-	{ label: "TCI", value: "TCI" },
-	{ label: "PREMIUM", value: "PREMIUM" },
-] as const;
-
 function isSmsCommissionService(code: string | null | undefined) {
 	return code === "sms-commission" || code === "sms_commission";
 }
 
 export function getPerformanceColumns({
 	t,
+	selectedServiceIds,
 	selectedServiceCode,
-	setSelectedService,
+	setSelectedServices,
 	serviceOptions,
 	companyOptions,
 	isCompanyDisabled,
@@ -67,7 +50,25 @@ export function getPerformanceColumns({
 
 	const serviceCode = (selectedServiceCode ?? "").trim().toLowerCase() as ServiceCode | "";
 
-	const hasSelectedService = Boolean(serviceCode);
+	const ORDERING_OPTIONS = [
+		{ label: t("performance.ordering.newestId"), value: "-id" },
+		{ label: t("performance.ordering.oldestId"), value: "id" },
+		{ label: t("performance.ordering.yearDesc"), value: "-sh_year" },
+		{ label: t("performance.ordering.yearAsc"), value: "sh_year" },
+		{ label: t("performance.ordering.monthDesc"), value: "-sh_month" },
+		{ label: t("performance.ordering.monthAsc"), value: "sh_month" },
+		{ label: t("performance.ordering.valueDesc"), value: "-value" },
+		{ label: t("performance.ordering.valueAsc"), value: "value" },
+	] as const;
+
+	const TRAFFIC_COMPANY_TYPE_OPTIONS = [
+		{ label: "CP", value: "CP" },
+		{ label: "IXP", value: "IXP" },
+		{ label: "TCI", value: "TCI" },
+		{ label: "PREMIUM", value: "PREMIUM" },
+	] as const;
+
+	const hasSelectedService = selectedServiceIds.length > 0;
 
 	const isTraffic = serviceCode === "traffic";
 	const isSmsCommission = isSmsCommissionService(serviceCode);
@@ -81,7 +82,7 @@ export function getPerformanceColumns({
 			hideInSearch: true,
 		},
 		{
-			title: "سرویس",
+			title: t("performance.columns.service"),
 			dataIndex: "service_name",
 			search: false,
 			width: 160,
@@ -89,8 +90,8 @@ export function getPerformanceColumns({
 
 		},
 		{
-			title: "سرویس",
-			dataIndex: "service",
+			title: t("performance.columns.service"),
+			dataIndex: "service_ids",
 			hideInTable: true,
 			valueType: "select",
 			valueEnum: serviceOptions.reduce((acc, option) => {
@@ -98,17 +99,28 @@ export function getPerformanceColumns({
 				return acc;
 			}, {} as Record<string, string>),
 			fieldProps: {
+				mode: "multiple",
+				maxTagCount: "responsive",
 				allowClear: true,
-				placeholder: "سرویس را انتخاب کنید",
-				onChange: (value: number | null) => {
-					const numericId = value == null ? null : Number(value);
-					const selected = serviceOptions.find(option => option.value === numericId);
-					setSelectedService(numericId, selected?.code ?? null);
+				placeholder: t("performance.placeholders.selectService"),
+				onChange: (value: Array<string | number> | string | number | null) => {
+					const rawValues = Array.isArray(value)
+						? value
+						: value == null || value === ""
+							? []
+							: [value];
+					const serviceIds = rawValues
+						.map(item => Number(item))
+						.filter(item => Number.isInteger(item) && item > 0);
+					const selected = serviceIds.length === 1
+						? serviceOptions.find(option => option.value === serviceIds[0])
+						: null;
+					setSelectedServices(serviceIds, selected?.code ?? null);
 				},
 			},
 		},
 		{
-			title: "شرکت",
+			title: t("performance.columns.company"),
 			dataIndex: "company_name",
 			search: false,
 			width: 220,
@@ -116,8 +128,8 @@ export function getPerformanceColumns({
 
 		},
 		{
-			title: "شرکت",
-			dataIndex: "company",
+			title: t("performance.columns.company"),
+			dataIndex: "company_ids",
 			hideInTable: true,
 			valueType: "select",
 			valueEnum: companyOptions.reduce((acc, option) => {
@@ -125,13 +137,15 @@ export function getPerformanceColumns({
 				return acc;
 			}, {} as Record<string, string>),
 			fieldProps: {
+				mode: "multiple",
+				maxTagCount: "responsive",
 				allowClear: true,
 				disabled: isCompanyDisabled,
 				placeholder: companyPlaceholder,
 			},
 		},
 		{
-			title: "سال",
+			title: t("performance.columns.year"),
 			dataIndex: "sh_year",
 			hideInSearch: true,
 			width: 100,
@@ -139,7 +153,7 @@ export function getPerformanceColumns({
 		},
 
 		{
-			title: "ماه",
+			title: t("performance.columns.month"),
 			dataIndex: "sh_month",
 			width: 100,
 			hideInSearch: true,
@@ -151,7 +165,7 @@ export function getPerformanceColumns({
 		},
 
 		{
-			title: "مرتب‌سازی",
+			title: t("performance.columns.ordering"),
 			dataIndex: "ordering",
 			hideInTable: true,
 			hideInSearch: !hasSelectedService,
@@ -164,7 +178,7 @@ export function getPerformanceColumns({
 		},
 
 		{
-			title: "نماینده فروش",
+			title: t("performance.columns.salesAgent"),
 			dataIndex: "sales_agent",
 			width: 150,
 			hideInSearch: !isSmsCommission,
@@ -176,7 +190,7 @@ export function getPerformanceColumns({
 			render: (_, row) => row.sales_agent_name ?? row.sales_agent ?? "-",
 		},
 		{
-			title: "نوع شرکت",
+			title: t("performance.columns.companyType"),
 			dataIndex: "company_type",
 			width: 120,
 			hideInSearch: !isTraffic,

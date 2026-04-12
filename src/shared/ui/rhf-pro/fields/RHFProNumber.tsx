@@ -52,8 +52,9 @@ export function RHFProNumber<
 		<Controller
 			name={props.name}
 			control={control}
-			render={({ field, fieldState }) => {
-				const err = props.hideError ? undefined : fieldState.error?.message;
+			render={({ field, fieldState, formState }) => {
+				const shouldShowError = formState.isSubmitted || fieldState.isTouched;
+				const err = (props.hideError || !shouldShowError) ? undefined : fieldState.error?.message;
 
 				const raw = field.value == null ? "" : String(formatNumeric(field.value));
 				const groupingEnabled = !!props.enableGrouping;

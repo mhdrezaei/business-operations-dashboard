@@ -50,8 +50,9 @@ export function RHFSelect<
 		<Controller
 			name={props.name}
 			control={control}
-			render={({ field, fieldState }) => {
-				const err = props.hideError ? undefined : fieldState.error?.message;
+			render={({ field, fieldState, formState }) => {
+				const shouldShowError = formState.isSubmitted || fieldState.isTouched;
+				const err = (props.hideError || !shouldShowError) ? undefined : fieldState.error?.message;
 
 				return (
 					<Form.Item

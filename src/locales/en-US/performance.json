@@ -1,0 +1,278 @@
+{
+	"titles": {
+		"performanceList": "Performance List",
+		"performanceReport": "Performance Report"
+	},
+	"actions": {
+		"clearForm": "Clear Form",
+		"submit": "Submit",
+		"submitAndCreateAnother": "Submit and Create Another",
+		"submitAndEdit": "Submit and Edit",
+		"editPerformance": "Edit Performance",
+		"deletePerformance": "Delete Performance"
+	},
+	"columns": {
+		"id": "ID",
+		"service": "Service",
+		"serviceName": "Service Name",
+		"company": "Company",
+		"companyName": "Company Name",
+		"search": "Search",
+		"year": "Year",
+		"month": "Month",
+		"ordering": "Ordering",
+		"fromGregorianDate": "From Gregorian Date",
+		"toGregorianDate": "To Gregorian Date",
+		"value": "Value",
+		"count": "Count",
+		"income": "Income",
+		"expense": "Expense",
+		"profit": "Profit",
+		"operationType": "Operation Type",
+		"operator": "Operator",
+		"language": "Language",
+		"official": "Official",
+		"salesAgent": "Sales Agent",
+		"companyType": "Company Type",
+		"location": "Location",
+		"customerName": "Customer Name",
+		"customerNationalId": "Customer National ID",
+		"provinceCode": "Province Code",
+		"commercialServiceType": "Commercial Service Type",
+		"valueReceive": "Received Value"
+	},
+	"ordering": {
+		"newestId": "Newest (ID)",
+		"oldestId": "Oldest (ID)",
+		"yearDesc": "Year (Desc)",
+		"yearAsc": "Year (Asc)",
+		"monthDesc": "Month (Desc)",
+		"monthAsc": "Month (Asc)",
+		"valueDesc": "Value (Desc)",
+		"valueAsc": "Value (Asc)"
+	},
+	"language": {
+		"fa": "Persian",
+		"en": "English"
+	},
+	"operator": {
+		"irancell": "Irancell",
+		"mci": "MCI",
+		"other": "Other"
+	},
+	"operationType": {
+		"billInquiry": "Bill Inquiry",
+		"receiptRegister": "Receipt Register"
+	},
+	"placeholders": {
+		"select": "Select",
+		"selectService": "Select service",
+		"selectServiceFirst": "Select service first",
+		"selectCompany": "Select company",
+		"selectCompanyFirst": "Select company first",
+		"selectTrafficCompanyTypeFirst": "Select traffic company type first",
+		"loadingCompanies": "Loading companies...",
+		"loadingSalesAgent": "Loading sales agent...",
+		"year": "Year",
+		"month": "Month",
+		"selectYear": "Select year",
+		"selectYearFirst": "Select year first",
+		"selectMonthFirst": "Select month first",
+		"selectMonths": "Select months",
+		"selectCompanies": "Select companies",
+		"pspValue": "e.g. number of transactions",
+		"shahkarValue": "e.g. 123.45",
+		"example100": "e.g. 100",
+		"example10000": "e.g. 10000",
+		"example100000": "e.g. 100000",
+		"example10000000": "e.g. 10000000",
+		"example60000": "e.g. 60000",
+		"example80000": "e.g. 80000",
+		"example120000000": "e.g. 120000000",
+		"example450": "e.g. 450"
+	},
+	"labels": {
+		"serviceName": "Service Name",
+		"companyName": "Company Name",
+		"trafficCompanyType": "Traffic Company Type",
+		"contractYear": "Contract Year",
+		"contractMonth": "Contract Month",
+		"openapiContractModel": "OpenAPI Contract Model:",
+		"selectExcelFile": "Select excel file",
+		"selectOrDropExcel": "Select or drag and drop excel file",
+		"allowedFormatsXls": "Allowed formats: xlsx, xls"
+	},
+	"messages": {
+		"createSuccess": "Performance submitted successfully",
+		"createAndAnotherSuccess": "Performance submitted. Form is ready for the next one",
+		"createAndEditSuccess": "Performance submitted. You can continue editing",
+		"submitError": "Error submitting performance",
+		"unknownError": "Unknown error",
+		"fixFormErrors": "Please fix form errors",
+		"invalidFormInputs": "Form inputs are invalid",
+		"selectServiceFirst": "Select service first",
+		"noDeleteAccess": "You do not have permission to delete performance.",
+		"noActiveContractForMonth": "No active contract found for selected month.",
+		"salesAgentAutoSelected": "Sales agent will be selected automatically.",
+		"salesAgentNotFound": "No sales agent found for selected company",
+		"noContractForCompany": "No contract exists for this company.",
+		"noYearMonthForCompany": "No year/month exists for this company.",
+		"registerSuccess": "Performance registered successfully",
+		"updateSuccess": "Performance updated successfully"
+	},
+	"modal": {
+		"registerPerformance": "Register Performance",
+		"editPerformance": "Edit Performance",
+		"titles": {
+			"openapi": "Edit OpenAPI Performance",
+			"psp": "Edit PSP Performance",
+			"shahkar": "Edit Shahkar Performance",
+			"sms": "Edit SMS Performance",
+			"smsCommission": "Edit SMS Commission Performance",
+			"traffic": "Edit Traffic Performance",
+			"commercial": "Edit Commercial Performance"
+		},
+		"labels": {
+			"smsItems": "SMS Items",
+			"operatorIncome": "Operator Income",
+			"governmentIncome": "Government Income",
+			"unitPrice": "Unit Price",
+			"operatorExpense": "Operator Expense",
+			"governmentExpense": "Government Expense"
+		},
+		"placeholders": {
+			"enterNumber": "Enter a number",
+			"enterValue": "Enter a value"
+		}
+	},
+	"errors": {
+		"baseFormIncomplete": "Base form information is incomplete",
+		"monthlyPerformanceFileRequired": "Monthly performance file is required",
+		"trafficTehranRequired": "Tehran sent and received values are required",
+		"trafficCountyRequiredWhenEnabled": "County sent and received values are required when county entry is enabled",
+		"allCommercialFilesRequired": "All commercial service files must be selected",
+		"serviceNotSelected": "Service is not selected",
+		"deleteCompositeKeyIncomplete": "Composite key for delete operation is incomplete",
+		"deleteUniqueKeyNotFound": "ID or unique key was not found for deleting record",
+		"invalidSalesAgentId": "Sales agent id is invalid"
+	},
+	"contractModel": {
+		"legacy": "Legacy",
+		"package": "Package"
+	},
+	"traffic": {
+		"excelTitle": "Traffic Performance Excel",
+		"submitMethod": "Submission Method",
+		"templateUpload": "Template Upload",
+		"singleEntry": "Single Entry",
+		"downloadTemplate": "Download Template",
+		"preUploadHint": "Select company type, year and month before download/upload.",
+		"unitPriceHint": "Note: each unit price equals one gigabyte.",
+		"tehranPerformance": "Tehran Performance",
+		"countyPerformance": "County Centers Performance",
+		"addCountyPerformance": "Add County Centers Performance"
+	},
+	"commercial": {
+		"title": "Commercial Service File Upload",
+		"uploadOnlyDescription": "Manual registration is not available for this service and only file upload is supported.",
+		"servicesFile": "Upload Services File",
+		"provinceCodeFile": "Upload Province Code File",
+		"monthlyPerformanceFile": "Upload Monthly Performance"
+	},
+	"fields": {
+		"psp": {
+			"performanceValue": "Performance Value",
+			"monthlyRevenue": "Monthly Revenue (IRR)"
+		},
+		"shahkar": {
+			"performanceValue": "Performance Value"
+		},
+		"sms": {
+			"irancellFa": "Irancell Performance - Persian",
+			"irancellEn": "Irancell Performance - English",
+			"mciFa": "MCI Performance - Persian",
+			"mciEn": "MCI Performance - English",
+			"otherFa": "Other Performance - Persian",
+			"otherEn": "Other Performance - English"
+		},
+		"openapi": {
+			"billInquiryValue": "Bill Inquiry Performance",
+			"receiptRegisterValue": "Receipt Register Performance",
+			"trafficRevenue": "Traffic Revenue",
+			"trafficPackageCount": "Traffic Package Count"
+		},
+		"traffic": {
+			"tehranValue": "Sent Traffic in Tehran",
+			"tehranValueReceive": "Received Traffic in Tehran",
+			"countyValue": "Sent Traffic in County Centers",
+			"countyValueReceive": "Received Traffic in County Centers"
+		}
+	},
+	"summary": {
+		"totalCount": "Total Count",
+		"totalIncome": "Total Income",
+		"totalExpense": "Total Expense",
+		"totalProfit": "Total Profit"
+	},
+	"months": {
+		"1": "Farvardin",
+		"2": "Ordibehesht",
+		"3": "Khordad",
+		"4": "Tir",
+		"5": "Mordad",
+		"6": "Shahrivar",
+		"7": "Mehr",
+		"8": "Aban",
+		"9": "Azar",
+		"10": "Dey",
+		"11": "Bahman",
+		"12": "Esfand"
+	},
+	"validation": {
+		"base": {
+			"serviceRequired": "Service selection is required",
+			"serviceCodeRequired": "Service code is required",
+			"companyRequired": "Company selection is required",
+			"yearRequired": "Year is required",
+			"monthRequired": "Month is required",
+			"contractForMonthNotFound": "No active contract found for selected month",
+			"trafficCompanyTypeRequired": "Traffic company type is required",
+			"salesAgentRequired": "Sales agent is required",
+			"openapiContractModelUnknown": "OpenAPI contract model is not specified"
+		},
+		"openapi": {
+			"billInquiryValueRequired": "Bill inquiry performance value is required",
+			"receiptRegisterValueRequired": "Receipt register performance value is required",
+			"trafficRevenueRequired": "Traffic revenue is required",
+			"trafficPackageCountRequired": "Traffic package count is required"
+		},
+		"psp": {
+			"performanceValueRequired": "Performance value is required",
+			"monthlyRevenueRequired": "Monthly revenue is required"
+		},
+		"shahkar": {
+			"performanceValueRequired": "Performance value is required"
+		},
+		"sms": {
+			"irancellFaRequired": "Irancell Persian performance value is required",
+			"irancellEnRequired": "Irancell English performance value is required",
+			"mciFaRequired": "MCI Persian performance value is required",
+			"mciEnRequired": "MCI English performance value is required",
+			"otherFaRequired": "Other Persian performance value is required",
+			"otherEnRequired": "Other English performance value is required"
+		},
+		"traffic": {
+			"monthlyPerformanceFileRequired": "Monthly performance file is required",
+			"tehranValueRequired": "Tehran sent traffic value is required",
+			"tehranValueReceiveRequired": "Tehran received traffic value is required",
+			"countyValueRequired": "County sent traffic value is required",
+			"countyValueReceiveRequired": "County received traffic value is required"
+		},
+		"commercial": {
+			"servicesFileRequired": "Services file is required",
+			"provinceCodeFileRequired": "Province code file is required",
+			"monthlyPerformanceFileRequired": "Monthly performance file is required"
+		},
+		"requiredField": "This field is required"
+	}
+}

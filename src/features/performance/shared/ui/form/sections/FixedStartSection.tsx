@@ -4,9 +4,10 @@ import { useAccess } from "#src/hooks";
 import { RHFSelect } from "#src/shared/ui/rhf-pro";
 import { ProCard } from "@ant-design/pro-components";
 import { useQuery } from "@tanstack/react-query";
-import { Col, Row } from "antd";
+import { Alert, Col, Form, Input, Row } from "antd";
 import { useEffect, useMemo, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import {
 	extractOpenApiContractModel,
 	extractSalesAgentId,
@@ -77,7 +78,8 @@ function buildYearOptionsFromRange(range: JalaliYearRange | null | undefined) {
 }
 
 export function FixedStartSection() {
-	const { control, setValue } = useFormContext<PerformanceFormValues>();
+	const { t } = useTranslation();
+	const { control, setValue, getValues } = useFormContext<PerformanceFormValues>();
 	const { getPermittedServiceIds } = useAccess();
 
 	const services = useQuery(servicesQuery());
@@ -124,14 +126,14 @@ export function FixedStartSection() {
 		if (prevServiceId === serviceId)
 			return;
 
-		setValue("companyId", null, { shouldDirty: true, shouldValidate: true });
-		setValue("trafficCompanyType", null, { shouldDirty: true, shouldValidate: true });
-		setValue("year", null, { shouldDirty: true, shouldValidate: true });
-		setValue("month", null, { shouldDirty: true, shouldValidate: true });
-		setValue("contractId", null, { shouldDirty: true, shouldValidate: true });
-		setValue("contractModel", null, { shouldDirty: true, shouldValidate: true });
-		setValue("salesAgentId", null, { shouldDirty: true, shouldValidate: true });
-		setValue("serviceFields", {}, { shouldDirty: true, shouldValidate: true });
+		setValue("companyId", null, { shouldDirty: true, shouldValidate: false });
+		setValue("trafficCompanyType", null, { shouldDirty: true, shouldValidate: false });
+		setValue("year", null, { shouldDirty: true, shouldValidate: false });
+		setValue("month", null, { shouldDirty: true, shouldValidate: false });
+		setValue("contractId", null, { shouldDirty: true, shouldValidate: false });
+		setValue("contractModel", null, { shouldDirty: true, shouldValidate: false });
+		setValue("salesAgentId", null, { shouldDirty: true, shouldValidate: false });
+		setValue("serviceFields", {}, { shouldDirty: true, shouldValidate: false });
 	}, [serviceId, setValue]);
 
 	useEffect(() => {
@@ -143,12 +145,12 @@ export function FixedStartSection() {
 		if (prevCompanyId === companyId)
 			return;
 
-		setValue("year", null, { shouldDirty: true, shouldValidate: true });
-		setValue("month", null, { shouldDirty: true, shouldValidate: true });
-		setValue("contractId", null, { shouldDirty: true, shouldValidate: true });
-		setValue("contractModel", null, { shouldDirty: true, shouldValidate: true });
-		setValue("salesAgentId", null, { shouldDirty: true, shouldValidate: true });
-		setValue("serviceFields", {}, { shouldDirty: true, shouldValidate: true });
+		setValue("year", null, { shouldDirty: true, shouldValidate: false });
+		setValue("month", null, { shouldDirty: true, shouldValidate: false });
+		setValue("contractId", null, { shouldDirty: true, shouldValidate: false });
+		setValue("contractModel", null, { shouldDirty: true, shouldValidate: false });
+		setValue("salesAgentId", null, { shouldDirty: true, shouldValidate: false });
+		setValue("serviceFields", {}, { shouldDirty: true, shouldValidate: false });
 	}, [companyId, setValue]);
 
 	useEffect(() => {
@@ -160,10 +162,10 @@ export function FixedStartSection() {
 		if (prevYear === year)
 			return;
 
-		setValue("month", null, { shouldDirty: true, shouldValidate: true });
-		setValue("contractId", null, { shouldDirty: true, shouldValidate: true });
-		setValue("contractModel", null, { shouldDirty: true, shouldValidate: true });
-		setValue("serviceFields", {}, { shouldDirty: true, shouldValidate: true });
+		setValue("month", null, { shouldDirty: true, shouldValidate: false });
+		setValue("contractId", null, { shouldDirty: true, shouldValidate: false });
+		setValue("contractModel", null, { shouldDirty: true, shouldValidate: false });
+		setValue("serviceFields", {}, { shouldDirty: true, shouldValidate: false });
 	}, [year, setValue]);
 
 	useEffect(() => {
@@ -176,27 +178,33 @@ export function FixedStartSection() {
 			return;
 
 		if (isTraffic) {
-			setValue("companyId", null, { shouldDirty: true, shouldValidate: true });
+			setValue("companyId", null, { shouldDirty: true, shouldValidate: false });
 		}
 	}, [isTraffic, trafficCompanyType, setValue]);
 
 	useEffect(() => {
 		if (!serviceId) {
-			setValue("serviceCode", null, { shouldDirty: true, shouldValidate: true });
+			if (getValues("serviceCode") !== null) {
+				setValue("serviceCode", null, { shouldDirty: false, shouldValidate: false });
+			}
 			return;
 		}
 
 		if (!permittedCreateServiceIds.has(serviceId)) {
-			setValue("serviceId", null, { shouldDirty: true, shouldValidate: true });
-			setValue("serviceCode", null, { shouldDirty: true, shouldValidate: true });
+			setValue("serviceId", null, { shouldDirty: true, shouldValidate: false });
+			if (getValues("serviceCode") !== null) {
+				setValue("serviceCode", null, { shouldDirty: false, shouldValidate: false });
+			}
 			return;
 		}
 
 		const selected = (services.data?.results ?? []).find(service => service.id === serviceId);
 		const code = typeof selected?.code === "string" ? selected.code.trim().toLowerCase() : "";
-
-		setValue("serviceCode", (code || null) as any, { shouldDirty: true, shouldValidate: true });
-	}, [serviceId, services.data, setValue, permittedCreateServiceIdList.join(",")]);
+		const nextServiceCode = (code || null) as any;
+		if (getValues("serviceCode") !== nextServiceCode) {
+			setValue("serviceCode", nextServiceCode, { shouldDirty: false, shouldValidate: false });
+		}
+	}, [serviceId, services.data, setValue, getValues, permittedCreateServiceIdList.join(",")]);
 
 	const serviceOptions = useMemo(
 		() =>
@@ -228,12 +236,12 @@ export function FixedStartSection() {
 
 	const companyPlaceholder
 		= !serviceId
-			? "ابتدا سرویس را انتخاب کنید"
+			? t("performance.placeholders.selectServiceFirst")
 			: companies.isLoading
-				? "در حال دریافت لیست شرکت‌ها..."
+				? t("performance.placeholders.loadingCompanies")
 				: isTraffic && !trafficCompanyType
-					? "ابتدا نوع شرکت (ترافیک) را انتخاب کنید"
-					: "شرکت را انتخاب کنید";
+					? t("performance.placeholders.selectTrafficCompanyTypeFirst")
+					: t("performance.placeholders.selectCompany");
 
 	const contractMonthsByYear = useMemo(() => {
 		const map = new Map<number, number[]>();
@@ -285,18 +293,26 @@ export function FixedStartSection() {
 	);
 
 	useEffect(() => {
-		setValue("contractId", activeContract?.id ?? null, { shouldDirty: true, shouldValidate: true });
+		const nextContractId = activeContract?.id ?? null;
+		if (getValues("contractId") !== nextContractId) {
+			setValue("contractId", nextContractId, { shouldDirty: false, shouldValidate: false });
+		}
 
 		if (serviceCode === "openapi") {
-			setValue("contractModel", extractOpenApiContractModel(activeContract), {
-				shouldDirty: true,
-				shouldValidate: true,
-			});
+			const nextContractModel = extractOpenApiContractModel(activeContract);
+			if (getValues("contractModel") !== nextContractModel) {
+				setValue("contractModel", nextContractModel, {
+					shouldDirty: false,
+					shouldValidate: false,
+				});
+			}
 		}
 		else {
-			setValue("contractModel", null, { shouldDirty: true, shouldValidate: true });
+			if (getValues("contractModel") !== null) {
+				setValue("contractModel", null, { shouldDirty: false, shouldValidate: false });
+			}
 		}
-	}, [activeContract, serviceCode, setValue]);
+	}, [activeContract, serviceCode, setValue, getValues]);
 
 	const smsCommissionAgentOptions = useMemo(() => {
 		if (!companyId)
@@ -310,31 +326,76 @@ export function FixedStartSection() {
 			}));
 	}, [smsCommissionAgents.data, companyId]);
 
+	const salesAgentDisplayValue = useMemo(() => {
+		if (!companyId)
+			return t("performance.placeholders.selectCompanyFirst");
+
+		if (smsCommissionAgents.isLoading)
+			return t("performance.placeholders.loadingSalesAgent");
+
+		const selected = smsCommissionAgentOptions.find(option => option.value === salesAgentId);
+		if (selected)
+			return String(selected.label);
+
+		if (smsCommissionAgentOptions.length > 0)
+			return String(smsCommissionAgentOptions[0].label);
+
+		return t("performance.messages.salesAgentNotFound");
+	}, [companyId, smsCommissionAgents.isLoading, smsCommissionAgentOptions, salesAgentId, t]);
+
 	useEffect(() => {
 		if (!isSmsCommission)
 			return;
 
 		const contractAgent = extractSalesAgentId(activeContract);
 		if (contractAgent != null) {
-			setValue("salesAgentId", contractAgent, { shouldDirty: true, shouldValidate: true });
+			if (salesAgentId !== contractAgent) {
+				setValue("salesAgentId", contractAgent, { shouldDirty: false, shouldValidate: false });
+			}
 			return;
 		}
 
 		if (!companyId || smsCommissionAgentOptions.length < 1) {
-			setValue("salesAgentId", null, { shouldDirty: true, shouldValidate: true });
+			if (salesAgentId != null) {
+				setValue("salesAgentId", null, { shouldDirty: false, shouldValidate: false });
+			}
 			return;
 		}
 
 		const hasSelected = smsCommissionAgentOptions.some(option => option.value === salesAgentId);
 		if (!hasSelected) {
 			setValue("salesAgentId", smsCommissionAgentOptions[0].value, {
-				shouldDirty: true,
-				shouldValidate: true,
+				shouldDirty: false,
+				shouldValidate: false,
 			});
 		}
 	}, [isSmsCommission, companyId, smsCommissionAgentOptions, salesAgentId, activeContract, setValue]);
 
 	const isDateOptionsLoading = !!serviceId && !!companyId && (gaps.isLoading || gaps.isFetching);
+	const hasCompanySelection = !!serviceId && !!companyId;
+	const hasNoContractsForCompany = hasCompanySelection && contracts.isSuccess && (contracts.data?.results?.length ?? 0) < 1;
+	const hasAnyYearMonthOption = Array.from(contractMonthsByYear.values()).some(months => months.length > 0);
+	const isPeriodStateLoading = hasCompanySelection && (gaps.isLoading || gaps.isFetching || contracts.isLoading || contracts.isFetching);
+	const shouldShowPeriodSelectors = hasCompanySelection && !isPeriodStateLoading && !hasNoContractsForCompany && hasAnyYearMonthOption;
+	const shouldShowMissingPeriodError = hasCompanySelection && !isPeriodStateLoading && !shouldShowPeriodSelectors;
+
+	useEffect(() => {
+		if (!shouldShowMissingPeriodError)
+			return;
+
+		if (getValues("year") != null) {
+			setValue("year", null, { shouldDirty: true, shouldValidate: false });
+		}
+		if (getValues("month") != null) {
+			setValue("month", null, { shouldDirty: true, shouldValidate: false });
+		}
+		if (getValues("contractId") != null) {
+			setValue("contractId", null, { shouldDirty: true, shouldValidate: false });
+		}
+		if (getValues("contractModel") != null) {
+			setValue("contractModel", null, { shouldDirty: true, shouldValidate: false });
+		}
+	}, [shouldShowMissingPeriodError, setValue, getValues]);
 
 	return (
 		<ProCard>
@@ -343,12 +404,12 @@ export function FixedStartSection() {
 					<Col span={12}>
 						<RHFSelect<PerformanceFormValues, "serviceId", number | null>
 							name="serviceId"
-							label="نام سرویس"
+							label={t("performance.labels.serviceName")}
 							loading={services.isLoading}
 							options={serviceOptions}
 							selectProps={{
 								allowClear: true,
-								placeholder: "سرویس را انتخاب کنید",
+								placeholder: t("performance.placeholders.selectService"),
 							}}
 						/>
 					</Col>
@@ -358,11 +419,11 @@ export function FixedStartSection() {
 							<Col span={12}>
 								<RHFSelect<PerformanceFormValues, "trafficCompanyType", any>
 									name="trafficCompanyType"
-									label="نوع شرکت (ترافیک)"
+									label={t("performance.labels.trafficCompanyType")}
 									options={TRAFFIC_COMPANY_TYPE_OPTIONS}
 									selectProps={{
 										allowClear: true,
-										placeholder: "انتخاب کنید",
+										placeholder: t("performance.placeholders.select"),
 									}}
 								/>
 							</Col>
@@ -372,7 +433,7 @@ export function FixedStartSection() {
 					<Col span={12}>
 						<RHFSelect<PerformanceFormValues, "companyId", number | null>
 							name="companyId"
-							label="نام شرکت"
+							label={t("performance.labels.companyName")}
 							loading={companies.isLoading}
 							options={companyOptions as any}
 							selectProps={{
@@ -388,52 +449,64 @@ export function FixedStartSection() {
 					{isSmsCommission
 						? (
 							<Col span={24}>
-								<RHFSelect<PerformanceFormValues, "salesAgentId", number | null>
-									name="salesAgentId"
-									label="نماینده فروش"
-									loading={smsCommissionAgents.isLoading || smsCommissionAgents.isFetching}
-									options={smsCommissionAgentOptions}
-									selectProps={{
-										allowClear: false,
-										disabled: true,
-										placeholder: !companyId
-											? "ابتدا شرکت را انتخاب کنید"
-											: "نماینده فروش به‌صورت خودکار انتخاب می‌شود",
-										open: false,
-									}}
-								/>
+								<Form.Item
+									label={t("performance.columns.salesAgent")}
+									extra={companyId ? t("performance.messages.salesAgentAutoSelected") : undefined}
+								>
+									<Input readOnly value={salesAgentDisplayValue} />
+								</Form.Item>
 							</Col>
 						)
 						: null}
 				</Row>
 
-				<Row gutter={16}>
-					<Col span={12}>
-						<RHFSelect<PerformanceFormValues, "year", number | null>
-							name="year"
-							label="سال قرارداد"
-							loading={isDateOptionsLoading}
-							options={yearOptions}
-							selectProps={{
-								allowClear: true,
-								placeholder: "سال",
-							}}
-						/>
-					</Col>
-					<Col span={12}>
-						<RHFSelect<PerformanceFormValues, "month", number | null>
-							name="month"
-							label="ماه قرارداد"
-							loading={isDateOptionsLoading}
-							options={monthOptions}
-							selectProps={{
-								allowClear: true,
-								placeholder: year == null ? "ابتدا سال را انتخاب کنید" : "ماه",
-								disabled: year == null,
-							}}
-						/>
-					</Col>
-				</Row>
+				{shouldShowMissingPeriodError
+					? (
+						<Row>
+							<Col span={24}>
+								<Alert
+									type="error"
+									showIcon
+									message={hasNoContractsForCompany
+										? t("performance.messages.noContractForCompany")
+										: t("performance.messages.noYearMonthForCompany")}
+								/>
+							</Col>
+						</Row>
+					)
+					: null}
+
+				{shouldShowPeriodSelectors
+					? (
+						<Row gutter={16}>
+							<Col span={12}>
+								<RHFSelect<PerformanceFormValues, "year", number | null>
+									name="year"
+									label={t("performance.labels.contractYear")}
+									loading={isDateOptionsLoading}
+									options={yearOptions}
+									selectProps={{
+										allowClear: true,
+										placeholder: t("performance.placeholders.year"),
+									}}
+								/>
+							</Col>
+							<Col span={12}>
+								<RHFSelect<PerformanceFormValues, "month", number | null>
+									name="month"
+									label={t("performance.labels.contractMonth")}
+									loading={isDateOptionsLoading}
+									options={monthOptions}
+									selectProps={{
+										allowClear: true,
+										placeholder: year == null ? t("performance.placeholders.selectYearFirst") : t("performance.placeholders.month"),
+										disabled: year == null,
+									}}
+								/>
+							</Col>
+						</Row>
+					)
+					: null}
 			</BasicContent>
 		</ProCard>
 	);

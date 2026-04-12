@@ -1,4 +1,5 @@
 import type { OpenApiContractModel, PerformanceServiceCode } from "./performance.form.types";
+import i18next from "i18next";
 import { z } from "zod";
 import { performanceServiceRegistry } from "../services/registry";
 import { isSmsCommissionCode } from "./performance.helpers";
@@ -52,12 +53,12 @@ export function buildPerformanceSchema(
 			}),
 		)
 		.superRefine((value, ctx) => {
-			requireNotNull(value.serviceId, ["serviceId"], "انتخاب سرویس الزامی است", ctx);
-			requireNotNull(value.serviceCode, ["serviceCode"], "کد سرویس الزامی است", ctx);
-			requireNotNull(value.companyId, ["companyId"], "انتخاب شرکت الزامی است", ctx);
-			requireNotNull(value.year, ["year"], "سال الزامی است", ctx);
-			requireNotNull(value.month, ["month"], "ماه الزامی است", ctx);
-			requireNotNull(value.contractId, ["contractId"], "برای ماه انتخاب‌شده قرارداد فعال پیدا نشد", ctx);
+			requireNotNull(value.serviceId, ["serviceId"], i18next.t("performance.validation.base.serviceRequired"), ctx);
+			requireNotNull(value.serviceCode, ["serviceCode"], i18next.t("performance.validation.base.serviceCodeRequired"), ctx);
+			requireNotNull(value.companyId, ["companyId"], i18next.t("performance.validation.base.companyRequired"), ctx);
+			requireNotNull(value.year, ["year"], i18next.t("performance.validation.base.yearRequired"), ctx);
+			requireNotNull(value.month, ["month"], i18next.t("performance.validation.base.monthRequired"), ctx);
+			requireNotNull(value.contractId, ["contractId"], i18next.t("performance.validation.base.contractForMonthNotFound"), ctx);
 
 			const normalizedCode = (value.serviceCode ?? "").trim().toLowerCase();
 			const serviceFields = (value.serviceFields ?? {}) as Record<string, unknown>;
@@ -66,7 +67,7 @@ export function buildPerformanceSchema(
 				ctx.addIssue({
 					code: "custom",
 					path: ["trafficCompanyType"],
-					message: "نوع شرکت (ترافیک) الزامی است",
+					message: i18next.t("performance.validation.base.trafficCompanyTypeRequired"),
 				});
 			}
 
@@ -74,7 +75,7 @@ export function buildPerformanceSchema(
 				ctx.addIssue({
 					code: "custom",
 					path: ["salesAgentId"],
-					message: "نماینده فروش الزامی است",
+					message: i18next.t("performance.validation.base.salesAgentRequired"),
 				});
 			}
 
@@ -83,7 +84,7 @@ export function buildPerformanceSchema(
 					ctx.addIssue({
 						code: "custom",
 						path: ["contractModel"],
-						message: "مدل قرارداد OpenAPI مشخص نیست",
+						message: i18next.t("performance.validation.base.openapiContractModelUnknown"),
 					});
 					return;
 				}
@@ -92,13 +93,13 @@ export function buildPerformanceSchema(
 					requireNotNull(
 						serviceFields.billInquiryValue,
 						["serviceFields", "billInquiryValue"],
-						"مقدار عملکرد استعلام قبض الزامی است",
+						i18next.t("performance.validation.openapi.billInquiryValueRequired"),
 						ctx,
 					);
 					requireNotNull(
 						serviceFields.receiptRegisterValue,
 						["serviceFields", "receiptRegisterValue"],
-						"مقدار عملکرد ثبت وصولی الزامی است",
+						i18next.t("performance.validation.openapi.receiptRegisterValueRequired"),
 						ctx,
 					);
 				}
@@ -107,57 +108,27 @@ export function buildPerformanceSchema(
 					requireNotNull(
 						serviceFields.billInquiryValue,
 						["serviceFields", "billInquiryValue"],
-						"مقدار عملکرد استعلام قبض الزامی است",
+						i18next.t("performance.validation.openapi.billInquiryValueRequired"),
 						ctx,
 					);
 					requireNotNull(
 						serviceFields.trafficRevenue,
 						["serviceFields", "trafficRevenue"],
-						"درآمد ترافیک الزامی است",
+						i18next.t("performance.validation.openapi.trafficRevenueRequired"),
 						ctx,
 					);
 					requireNotNull(
 						serviceFields.trafficPackageCount,
 						["serviceFields", "trafficPackageCount"],
-						"تعداد بسته ترافیک الزامی است",
+						i18next.t("performance.validation.openapi.trafficPackageCountRequired"),
 						ctx,
 					);
-					requireNotNull(
-						serviceFields.irancellFa,
-						["serviceFields", "irancellFa"],
-						"مقدار عملکرد ایرانسل - فارسی الزامی است",
-						ctx,
-					);
-					requireNotNull(
-						serviceFields.irancellEn,
-						["serviceFields", "irancellEn"],
-						"مقدار عملکرد ایرانسل - انگلیسی الزامی است",
-						ctx,
-					);
-					requireNotNull(
-						serviceFields.mciFa,
-						["serviceFields", "mciFa"],
-						"مقدار عملکرد همراه اول - فارسی الزامی است",
-						ctx,
-					);
-					requireNotNull(
-						serviceFields.mciEn,
-						["serviceFields", "mciEn"],
-						"مقدار عملکرد همراه اول - انگلیسی الزامی است",
-						ctx,
-					);
-					requireNotNull(
-						serviceFields.otherFa,
-						["serviceFields", "otherFa"],
-						"مقدار عملکرد سایر - فارسی الزامی است",
-						ctx,
-					);
-					requireNotNull(
-						serviceFields.otherEn,
-						["serviceFields", "otherEn"],
-						"مقدار عملکرد سایر - انگلیسی الزامی است",
-						ctx,
-					);
+					requireNotNull(serviceFields.irancellFa, ["serviceFields", "irancellFa"], i18next.t("performance.validation.sms.irancellFaRequired"), ctx);
+					requireNotNull(serviceFields.irancellEn, ["serviceFields", "irancellEn"], i18next.t("performance.validation.sms.irancellEnRequired"), ctx);
+					requireNotNull(serviceFields.mciFa, ["serviceFields", "mciFa"], i18next.t("performance.validation.sms.mciFaRequired"), ctx);
+					requireNotNull(serviceFields.mciEn, ["serviceFields", "mciEn"], i18next.t("performance.validation.sms.mciEnRequired"), ctx);
+					requireNotNull(serviceFields.otherFa, ["serviceFields", "otherFa"], i18next.t("performance.validation.sms.otherFaRequired"), ctx);
+					requireNotNull(serviceFields.otherEn, ["serviceFields", "otherEn"], i18next.t("performance.validation.sms.otherEnRequired"), ctx);
 				}
 				return;
 			}
@@ -166,13 +137,13 @@ export function buildPerformanceSchema(
 				requireNotNull(
 					serviceFields.performanceValue,
 					["serviceFields", "performanceValue"],
-					"مقدار عملکرد الزامی است",
+					i18next.t("performance.validation.psp.performanceValueRequired"),
 					ctx,
 				);
 				requireNotNull(
 					serviceFields.monthlyRevenue,
 					["serviceFields", "monthlyRevenue"],
-					"درآمد این ماه الزامی است",
+					i18next.t("performance.validation.psp.monthlyRevenueRequired"),
 					ctx,
 				);
 				return;
@@ -182,30 +153,19 @@ export function buildPerformanceSchema(
 				requireNotNull(
 					serviceFields.performanceValue,
 					["serviceFields", "performanceValue"],
-					"مقدار عملکرد الزامی است",
+					i18next.t("performance.validation.shahkar.performanceValueRequired"),
 					ctx,
 				);
 				return;
 			}
 
 			if (normalizedCode === "sms" || isSmsCommissionCode(normalizedCode)) {
-				requireNotNull(serviceFields.irancellFa, ["serviceFields", "irancellFa"], "مقدار عملکرد ایرانسل - فارسی الزامی است", ctx);
-				requireNotNull(serviceFields.irancellEn, ["serviceFields", "irancellEn"], "مقدار عملکرد ایرانسل - انگلیسی الزامی است", ctx);
-				requireNotNull(serviceFields.mciFa, ["serviceFields", "mciFa"], "مقدار عملکرد همراه اول - فارسی الزامی است", ctx);
-				requireNotNull(serviceFields.mciEn, ["serviceFields", "mciEn"], "مقدار عملکرد همراه اول - انگلیسی الزامی است", ctx);
-				requireNotNull(serviceFields.otherFa, ["serviceFields", "otherFa"], "مقدار عملکرد سایر - فارسی الزامی است", ctx);
-				requireNotNull(serviceFields.otherEn, ["serviceFields", "otherEn"], "مقدار عملکرد سایر - انگلیسی الزامی است", ctx);
-				return;
-			}
-
-			if (normalizedCode === "traffic") {
-				if (isUploadListEmpty(serviceFields.monthlyPerformanceFile)) {
-					ctx.addIssue({
-						code: "custom",
-						path: ["serviceFields", "monthlyPerformanceFile"],
-						message: "فایل عملکرد ماهانه الزامی است",
-					});
-				}
+				requireNotNull(serviceFields.irancellFa, ["serviceFields", "irancellFa"], i18next.t("performance.validation.sms.irancellFaRequired"), ctx);
+				requireNotNull(serviceFields.irancellEn, ["serviceFields", "irancellEn"], i18next.t("performance.validation.sms.irancellEnRequired"), ctx);
+				requireNotNull(serviceFields.mciFa, ["serviceFields", "mciFa"], i18next.t("performance.validation.sms.mciFaRequired"), ctx);
+				requireNotNull(serviceFields.mciEn, ["serviceFields", "mciEn"], i18next.t("performance.validation.sms.mciEnRequired"), ctx);
+				requireNotNull(serviceFields.otherFa, ["serviceFields", "otherFa"], i18next.t("performance.validation.sms.otherFaRequired"), ctx);
+				requireNotNull(serviceFields.otherEn, ["serviceFields", "otherEn"], i18next.t("performance.validation.sms.otherEnRequired"), ctx);
 				return;
 			}
 
@@ -214,21 +174,21 @@ export function buildPerformanceSchema(
 					ctx.addIssue({
 						code: "custom",
 						path: ["serviceFields", "servicesFile"],
-						message: "فایل سرویس‌ها الزامی است",
+						message: i18next.t("performance.validation.commercial.servicesFileRequired"),
 					});
 				}
 				if (isUploadListEmpty(serviceFields.provinceCodeFile)) {
 					ctx.addIssue({
 						code: "custom",
 						path: ["serviceFields", "provinceCodeFile"],
-						message: "فایل کد استانی الزامی است",
+						message: i18next.t("performance.validation.commercial.provinceCodeFileRequired"),
 					});
 				}
 				if (isUploadListEmpty(serviceFields.monthlyPerformanceFile)) {
 					ctx.addIssue({
 						code: "custom",
 						path: ["serviceFields", "monthlyPerformanceFile"],
-						message: "فایل عملکرد ماهانه الزامی است",
+						message: i18next.t("performance.validation.commercial.monthlyPerformanceFileRequired"),
 					});
 				}
 			}

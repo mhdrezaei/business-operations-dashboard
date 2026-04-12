@@ -21,7 +21,7 @@ import { useAccess } from "#src/hooks";
 import { DeleteOutlined, EditOutlined, PlusCircleOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Popconfirm } from "antd";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { PerformanceDetailModal } from "./components/PerformanceDetailModal";
@@ -45,9 +45,15 @@ export default function PerformanceListPage() {
 
 	const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
 	const [selectedServiceCode, setSelectedServiceCode] = useState<string | null>(null);
+	const [selectedTrafficCompanyType, setSelectedTrafficCompanyType] = useState<string | null>(null);
 	const [openDetail, setOpenDetail] = useState(false);
 	const [selectedRow, setSelectedRow] = useState<PerformanceListRow | null>(null);
 	const [deletingRowId, setDeletingRowId] = useState<number | null>(null);
+	const resetInvalidSelectedService = useCallback(() => {
+		setSelectedServiceId(null);
+		setSelectedServiceCode(null);
+		setSelectedTrafficCompanyType(null);
+	}, []);
 
 	const permittedViewIdsFromPerformances = getPermittedServiceIds("performances", "view");
 	const permittedViewIdsFromContracts = getPermittedServiceIds("contracts", "view");
@@ -86,20 +92,29 @@ export default function PerformanceListPage() {
 		if (permittedViewServiceIds.has(selectedServiceId))
 			return;
 
-		setSelectedServiceId(null);
-		setSelectedServiceCode(null);
+		resetInvalidSelectedService();
 		formRef.current?.setFieldsValue({
 			service: undefined,
 			company: undefined,
+			company_type: undefined,
 		});
-	}, [selectedServiceId, permittedViewServiceIdsList.join(",")]);
+	}, [selectedServiceId, permittedViewServiceIdsList.join(","), resetInvalidSelectedService]);
 
 	const companyOptions = useMemo(
-		() => (companies.data?.results ?? []).map(company => ({
-			label: company.name,
-			value: company.id,
-		})),
-		[companies.data],
+		() => {
+			const allCompanies = companies.data?.results ?? [];
+			const filteredCompanies = selectedServiceCode === "traffic"
+				? selectedTrafficCompanyType
+					? allCompanies.filter(company => company.company_type === selectedTrafficCompanyType)
+					: []
+				: allCompanies;
+
+			return filteredCompanies.map(company => ({
+				label: company.name,
+				value: company.id,
+			}));
+		},
+		[companies.data, selectedServiceCode, selectedTrafficCompanyType],
 	);
 
 	const salesAgentOptions = useMemo(() => {
@@ -137,8 +152,8 @@ export default function PerformanceListPage() {
 	const setSelectedService = (serviceId: number | null, serviceCode: string | null) => {
 		setSelectedServiceId(serviceId);
 		setSelectedServiceCode(serviceCode);
+		setSelectedTrafficCompanyType(null);
 		clearDependentFilters();
-		actionRef.current?.reload?.();
 	};
 
 	const canCreatePerformance = useMemo(() => {
@@ -165,11 +180,11 @@ export default function PerformanceListPage() {
 
 	const handleDeleteRow = async (row: PerformanceListRow, action?: ProCoreActionType<object>) => {
 		if (!selectedServicePath) {
-			window.$message?.warning("ابتدا سرویس را انتخاب کنید");
+			window.$message?.warning(t("performance.messages.selectServiceFirst"));
 			return;
 		}
 		if (!canDeleteRow(row)) {
-			window.$message?.warning("دسترسی حذف عملکرد ندارید.");
+			window.$message?.warning(t("performance.messages.noDeleteAccess"));
 			return;
 		}
 
@@ -185,7 +200,7 @@ export default function PerformanceListPage() {
 					|| normalized.year == null
 					|| normalized.month == null
 				) {
-					throw new Error("کلید رکورد برای حذف کامل نیست");
+					throw new Error(t("performance.errors.deleteCompositeKeyIncomplete"));
 				}
 				await deleteSmsCommissionPerformanceByComposite(
 					normalized.companyId,
@@ -200,7 +215,7 @@ export default function PerformanceListPage() {
 					|| normalized.year == null
 					|| normalized.month == null
 				) {
-					throw new Error("کلید رکورد برای حذف کامل نیست");
+					throw new Error(t("performance.errors.deleteCompositeKeyIncomplete"));
 				}
 				await deletePerformanceByComposite(
 					selectedServicePath,
@@ -225,7 +240,7 @@ export default function PerformanceListPage() {
 				);
 			}
 			else {
-				throw new Error("شناسه یا کلید یکتا برای حذف رکورد پیدا نشد");
+				throw new Error(t("performance.errors.deleteUniqueKeyNotFound"));
 			}
 
 			await action?.reload?.();
@@ -246,17 +261,23 @@ export default function PerformanceListPage() {
 				t,
 				selectedServiceId,
 				selectedServiceCode,
+				selectedTrafficCompanyType,
 				setSelectedService,
 				serviceOptions,
 				companyOptions,
-				isCompanyDisabled: !selectedServiceId || companies.isLoading,
-				companyPlaceholder: selectedServiceId ? "شرکت را انتخاب کنید" : "ابتدا سرویس را انتخاب کنید",
+				isCompanyDisabled: !selectedServiceId || companies.isLoading || (selectedServiceCode === "traffic" && !selectedTrafficCompanyType),
+				companyPlaceholder: !selectedServiceId
+					? t("performance.placeholders.selectServiceFirst")
+					: selectedServiceCode === "traffic" && !selectedTrafficCompanyType
+						? t("performance.placeholders.selectTrafficCompanyTypeFirst")
+						: t("performance.placeholders.selectCompany"),
 				salesAgentOptions,
 			}),
 		[
 			t,
 			selectedServiceId,
 			selectedServiceCode,
+			selectedTrafficCompanyType,
 			serviceOptions,
 			companyOptions,
 			companies.isLoading,
@@ -283,7 +304,7 @@ export default function PerformanceListPage() {
 								key="edit"
 								type="link"
 								size="large"
-								title="ویرایش عملکرد"
+								title={t("performance.actions.editPerformance")}
 								icon={<EditOutlined />}
 								onClick={() => {
 									setSelectedRow(record);
@@ -305,7 +326,7 @@ export default function PerformanceListPage() {
 								<BasicButton
 									type="link"
 									size="large"
-									title="حذف عملکرد"
+									title={t("performance.actions.deletePerformance")}
 									icon={<DeleteOutlined />}
 									loading={deletingRowId != null && normalizePerformanceRecord(record).id === deletingRowId}
 								/>
@@ -327,6 +348,15 @@ export default function PerformanceListPage() {
 				columns={columns}
 				actionRef={actionRef}
 				formRef={formRef}
+				form={{
+					onValuesChange: (changedValues) => {
+						if (Object.prototype.hasOwnProperty.call(changedValues, "company_type")) {
+							const nextCompanyType = changedValues.company_type == null ? null : String(changedValues.company_type);
+							setSelectedTrafficCompanyType(nextCompanyType);
+							formRef.current?.setFieldsValue({ company: undefined });
+						}
+					},
+				}}
 				request={async (params) => {
 					if (!selectedServicePath || !selectedServiceId) {
 						return {
@@ -367,7 +397,7 @@ export default function PerformanceListPage() {
 						success: true,
 					};
 				}}
-				headerTitle="لیست عملکردها"
+				headerTitle={t("performance.titles.performanceList")}
 				toolBarRender={() => {
 					if (!canCreatePerformance) {
 						return [];

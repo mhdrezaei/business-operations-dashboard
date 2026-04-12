@@ -1,15 +1,16 @@
+import i18next from "i18next";
 import { z } from "zod";
 import { zNullableNonNegative } from "../../model/zod-helpers";
 
 export const openapiPerformanceSchema = z.object({
-	billInquiryValue: zNullableNonNegative("مقدار عملکرد استعلام قبض را وارد کنید"),
-	receiptRegisterValue: zNullableNonNegative("مقدار عملکرد ثبت وصولی را وارد کنید"),
-	trafficRevenue: zNullableNonNegative("درآمد ترافیک را وارد کنید"),
-	trafficPackageCount: zNullableNonNegative("تعداد بسته ترافیک را وارد کنید"),
-	irancellFa: zNullableNonNegative("مقدار عملکرد ایرانسل - فارسی را وارد کنید"),
-	irancellEn: zNullableNonNegative("مقدار عملکرد ایرانسل - انگلیسی را وارد کنید"),
-	mciFa: zNullableNonNegative("مقدار عملکرد همراه اول - فارسی را وارد کنید"),
-	mciEn: zNullableNonNegative("مقدار عملکرد همراه اول - انگلیسی را وارد کنید"),
-	otherFa: zNullableNonNegative("مقدار عملکرد سایر - فارسی را وارد کنید"),
-	otherEn: zNullableNonNegative("مقدار عملکرد سایر - انگلیسی را وارد کنید"),
+	billInquiryValue: zNullableNonNegative(i18next.t("performance.validation.openapi.billInquiryValueRequired")),
+	receiptRegisterValue: zNullableNonNegative(i18next.t("performance.validation.openapi.receiptRegisterValueRequired")),
+	trafficRevenue: zNullableNonNegative(i18next.t("performance.validation.openapi.trafficRevenueRequired")),
+	trafficPackageCount: zNullableNonNegative(i18next.t("performance.validation.openapi.trafficPackageCountRequired")),
+	irancellFa: zNullableNonNegative(i18next.t("performance.validation.sms.irancellFaRequired")),
+	irancellEn: zNullableNonNegative(i18next.t("performance.validation.sms.irancellEnRequired")),
+	mciFa: zNullableNonNegative(i18next.t("performance.validation.sms.mciFaRequired")),
+	mciEn: zNullableNonNegative(i18next.t("performance.validation.sms.mciEnRequired")),
+	otherFa: zNullableNonNegative(i18next.t("performance.validation.sms.otherFaRequired")),
+	otherEn: zNullableNonNegative(i18next.t("performance.validation.sms.otherEnRequired")),
 });

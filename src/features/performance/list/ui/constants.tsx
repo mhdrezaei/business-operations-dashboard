@@ -17,6 +17,7 @@ export interface GetPerformanceColumnsArgs {
 	t: TFunction<"translation", undefined>
 	selectedServiceId: number | null
 	selectedServiceCode: string | null
+	selectedTrafficCompanyType: string | null
 	setSelectedService: (serviceId: number | null, serviceCode: string | null) => void
 	serviceOptions: Array<{ label: string, value: number, code: string }>
 	companyOptions: Array<{ label: string, value: number }>
@@ -30,17 +31,6 @@ const YEAR_OPTIONS = Array.from({ length: 20 }, (_, index) => {
 	return { label: String(year), value: year };
 });
 
-const ORDERING_OPTIONS = [
-	{ label: "جدیدترین (شناسه)", value: "-id" },
-	{ label: "قدیمی‌ترین (شناسه)", value: "id" },
-	{ label: "سال (نزولی)", value: "-sh_year" },
-	{ label: "سال (صعودی)", value: "sh_year" },
-	{ label: "ماه (نزولی)", value: "-sh_month" },
-	{ label: "ماه (صعودی)", value: "sh_month" },
-	{ label: "مقدار (نزولی)", value: "-value" },
-	{ label: "مقدار (صعودی)", value: "value" },
-] as const;
-
 const OPERATION_TYPE_OPTIONS = [
 	"BILL_INQUIRY",
 	"RECEIPT_REGISTER",
@@ -52,17 +42,6 @@ const OPERATION_TYPE_OPTIONS = [
 	"MCI_EN",
 	"OTHER_FA",
 	"OTHER_EN",
-] as const;
-
-const LANGUAGE_OPTIONS = [
-	{ label: "فارسی", value: "FA" },
-	{ label: "انگلیسی", value: "EN" },
-] as const;
-
-const OPERATOR_OPTIONS = [
-	{ label: "ایرانسل", value: "IRANCELL" },
-	{ label: "همراه اول", value: "MCI" },
-	{ label: "سایر", value: "OTHER" },
 ] as const;
 
 const TRAFFIC_COMPANY_TYPE_OPTIONS = [
@@ -93,6 +72,7 @@ function isSmsCommissionService(code: string | null | undefined) {
 export function getPerformanceColumns({
 	t,
 	selectedServiceCode,
+	selectedTrafficCompanyType,
 	setSelectedService,
 	serviceOptions,
 	companyOptions,
@@ -100,7 +80,6 @@ export function getPerformanceColumns({
 	companyPlaceholder,
 	salesAgentOptions,
 }: GetPerformanceColumnsArgs): ProColumns<PerformanceListRow>[] {
-	console.warn(serviceOptions, "serrrrrrrrrrrrrrr");
 	const serviceNameById = serviceOptions.reduce((acc, it) => {
 		acc[String(it.value)] = String(it.label);
 		return acc;
@@ -109,10 +88,29 @@ export function getPerformanceColumns({
 		acc[String(it.value)] = String(it.label);
 		return acc;
 	}, {} as Record<string, string>);
-	console.warn(companyOptions, "oppppppppppppppp1");
-	console.warn(companyNameById, "oppppppppppppppp2");
-
 	const serviceCode = (selectedServiceCode ?? "").trim().toLowerCase() as ServiceCode | "";
+
+	const ORDERING_OPTIONS = [
+		{ label: t("performance.ordering.newestId"), value: "-id" },
+		{ label: t("performance.ordering.oldestId"), value: "id" },
+		{ label: t("performance.ordering.yearDesc"), value: "-sh_year" },
+		{ label: t("performance.ordering.yearAsc"), value: "sh_year" },
+		{ label: t("performance.ordering.monthDesc"), value: "-sh_month" },
+		{ label: t("performance.ordering.monthAsc"), value: "sh_month" },
+		{ label: t("performance.ordering.valueDesc"), value: "-value" },
+		{ label: t("performance.ordering.valueAsc"), value: "value" },
+	] as const;
+
+	const LANGUAGE_OPTIONS = [
+		{ label: t("performance.language.fa"), value: "FA" },
+		{ label: t("performance.language.en"), value: "EN" },
+	] as const;
+
+	const OPERATOR_OPTIONS = [
+		{ label: t("performance.operator.irancell"), value: "IRANCELL" },
+		{ label: t("performance.operator.mci"), value: "MCI" },
+		{ label: t("performance.operator.other"), value: "OTHER" },
+	] as const;
 
 	const hasSelectedService = Boolean(serviceCode);
 	const isOpenApi = serviceCode === "openapi";
@@ -121,6 +119,8 @@ export function getPerformanceColumns({
 	const isSms = serviceCode === "sms";
 	const isSmsCommission = isSmsCommissionService(serviceCode);
 	const isCommercial = serviceCode === "commercial";
+	const hideNonMatchingServiceColumn = (isVisibleForSelectedService: boolean) =>
+		hasSelectedService ? !isVisibleForSelectedService : true;
 
 	return [
 		{
@@ -131,16 +131,14 @@ export function getPerformanceColumns({
 			hideInSearch: true,
 		},
 		{
-			title: "سرویس",
+			title: t("performance.columns.service"),
 			dataIndex: "service_name",
 			search: false,
 			width: 160,
 			render: (_, r) => (r as any).service_name ?? serviceNameById[String((r as any).service)] ?? "-",
-			// render: (_, r) => console.warn(r, "rrrrrrrrrrrr"),
-			// render: (_, row) => row.service_name ?? "-",
 		},
 		{
-			title: "سرویس",
+			title: t("performance.columns.service"),
 			dataIndex: "service",
 			hideInTable: true,
 			valueType: "select",
@@ -150,7 +148,7 @@ export function getPerformanceColumns({
 			}, {} as Record<string, string>),
 			fieldProps: {
 				allowClear: true,
-				placeholder: "سرویس را انتخاب کنید",
+				placeholder: t("performance.placeholders.selectService"),
 				onChange: (value: number | null) => {
 					const numericId = value == null ? null : Number(value);
 					const selected = serviceOptions.find(option => option.value === numericId);
@@ -159,16 +157,25 @@ export function getPerformanceColumns({
 			},
 		},
 		{
-			title: "شرکت",
+			title: t("performance.columns.company"),
 			dataIndex: "company_name",
 			search: false,
 			width: 220,
-			// render: (_, row) => row.company_name ?? "-",
 			render: (_, r) => (r as any).company_name ?? companyNameById[String((r as any).company)] ?? "-",
-
 		},
 		{
-			title: "شرکت",
+			title: t("performance.columns.companyType"),
+			dataIndex: "company_type",
+			hideInTable: true,
+			hideInSearch: !isTraffic,
+			valueType: "select",
+			valueEnum: TRAFFIC_COMPANY_TYPE_OPTIONS.reduce((acc, option) => {
+				acc[option.value] = option.label;
+				return acc;
+			}, {} as Record<string, string>),
+		},
+		{
+			title: t("performance.columns.company"),
 			dataIndex: "company",
 			hideInTable: true,
 			valueType: "select",
@@ -178,25 +185,25 @@ export function getPerformanceColumns({
 			}, {} as Record<string, string>),
 			fieldProps: {
 				allowClear: true,
-				disabled: isCompanyDisabled,
+				disabled: isCompanyDisabled || (isTraffic && !selectedTrafficCompanyType),
 				placeholder: companyPlaceholder,
 			},
 		},
 		{
-			title: "جستجو",
+			title: t("performance.columns.search"),
 			dataIndex: "search",
 			hideInTable: true,
 			hideInSearch: !hasSelectedService,
 			valueType: "text",
 		},
 		{
-			title: "سال",
+			title: t("performance.columns.year"),
 			dataIndex: "sh_year",
 			width: 100,
 			render: (_, row) => row.sh_year ?? "-",
 		},
 		{
-			title: "سال",
+			title: t("performance.columns.year"),
 			dataIndex: "sh_year",
 			hideInTable: true,
 			hideInSearch: !hasSelectedService,
@@ -205,10 +212,10 @@ export function getPerformanceColumns({
 				acc[String(option.value)] = option.label;
 				return acc;
 			}, {} as Record<string, string>),
-			fieldProps: { allowClear: true, placeholder: "سال" },
+			fieldProps: { allowClear: true, placeholder: t("performance.placeholders.year") },
 		},
 		{
-			title: "ماه",
+			title: t("performance.columns.month"),
 			dataIndex: "sh_month",
 			width: 100,
 			render: (_, row) => {
@@ -218,7 +225,7 @@ export function getPerformanceColumns({
 			},
 		},
 		{
-			title: "ماه",
+			title: t("performance.columns.month"),
 			dataIndex: "sh_month",
 			hideInTable: true,
 			hideInSearch: !hasSelectedService,
@@ -227,10 +234,10 @@ export function getPerformanceColumns({
 				acc[String(option.value)] = option.label;
 				return acc;
 			}, {} as Record<string, string>),
-			fieldProps: { allowClear: true, placeholder: "ماه" },
+			fieldProps: { allowClear: true, placeholder: t("performance.placeholders.month") },
 		},
 		{
-			title: "مرتب‌سازی",
+			title: t("performance.columns.ordering"),
 			dataIndex: "ordering",
 			hideInTable: true,
 			hideInSearch: !hasSelectedService,
@@ -242,37 +249,39 @@ export function getPerformanceColumns({
 			fieldProps: { allowClear: true },
 		},
 		{
-			title: "از تاریخ میلادی",
+			title: t("performance.columns.fromGregorianDate"),
 			dataIndex: "gr_month_start_after",
 			hideInTable: true,
 			hideInSearch: !hasSelectedService || isPsp,
 			valueType: "date",
 		},
 		{
-			title: "تا تاریخ میلادی",
+			title: t("performance.columns.toGregorianDate"),
 			dataIndex: "gr_month_start_before",
 			hideInTable: true,
 			hideInSearch: !hasSelectedService || isPsp,
 			valueType: "date",
 		},
 		{
-			title: "مقدار",
+			title: t("performance.columns.value"),
 			dataIndex: "value",
 			width: 140,
 			search: false,
 			render: (_, row) => formatNumeric(row.value),
 		},
 		{
-			title: "درآمد",
+			title: t("performance.columns.income"),
 			dataIndex: "income",
 			width: 140,
+			hideInTable: hideNonMatchingServiceColumn(isPsp || isTraffic || isCommercial),
 			search: false,
 			render: (_, row) => formatNumeric(row.income),
 		},
 		{
-			title: "نوع عملیات",
+			title: t("performance.columns.operationType"),
 			dataIndex: "operation_type",
 			width: 170,
+			hideInTable: hideNonMatchingServiceColumn(isOpenApi),
 			hideInSearch: !isOpenApi,
 			valueType: "select",
 			valueEnum: OPERATION_TYPE_OPTIONS.reduce((acc, option) => {
@@ -282,9 +291,10 @@ export function getPerformanceColumns({
 			render: (_, row) => row.operation_type ?? "-",
 		},
 		{
-			title: "اپراتور",
+			title: t("performance.columns.operator"),
 			dataIndex: "operator",
 			width: 120,
+			hideInTable: hideNonMatchingServiceColumn(isSms || isSmsCommission),
 			hideInSearch: !(isSms || isSmsCommission),
 			valueType: "select",
 			valueEnum: OPERATOR_OPTIONS.reduce((acc, option) => {
@@ -294,9 +304,10 @@ export function getPerformanceColumns({
 			render: (_, row) => row.operator ?? "-",
 		},
 		{
-			title: "زبان",
+			title: t("performance.columns.language"),
 			dataIndex: "language",
 			width: 100,
+			hideInTable: hideNonMatchingServiceColumn(isSms || isSmsCommission),
 			hideInSearch: !(isSms || isSmsCommission),
 			valueType: "select",
 			valueEnum: LANGUAGE_OPTIONS.reduce((acc, option) => {
@@ -306,13 +317,14 @@ export function getPerformanceColumns({
 			render: (_, row) => {
 				if (!row.language)
 					return "-";
-				return row.language === "FA" ? "فارسی" : row.language === "EN" ? "انگلیسی" : row.language;
+				return row.language === "FA" ? t("performance.language.fa") : row.language === "EN" ? t("performance.language.en") : row.language;
 			},
 		},
 		{
-			title: "رسمی",
+			title: t("performance.columns.official"),
 			dataIndex: "is_official",
 			width: 100,
+			hideInTable: hideNonMatchingServiceColumn(isSms || isTraffic),
 			hideInSearch: !(isSms || isTraffic),
 			valueType: "select",
 			valueEnum: {
@@ -327,9 +339,10 @@ export function getPerformanceColumns({
 			},
 		},
 		{
-			title: "نماینده فروش",
+			title: t("performance.columns.salesAgent"),
 			dataIndex: "sales_agent",
 			width: 150,
+			hideInTable: hideNonMatchingServiceColumn(isSmsCommission),
 			hideInSearch: !isSmsCommission,
 			valueType: "select",
 			valueEnum: salesAgentOptions.reduce((acc, option) => {
@@ -339,73 +352,75 @@ export function getPerformanceColumns({
 			render: (_, row) => row.sales_agent_name ?? row.sales_agent ?? "-",
 		},
 		{
-			title: "نوع شرکت",
+			title: t("performance.columns.companyType"),
 			dataIndex: "company_type",
 			width: 120,
-			hideInSearch: !isTraffic,
-			valueType: "select",
-			valueEnum: TRAFFIC_COMPANY_TYPE_OPTIONS.reduce((acc, option) => {
-				acc[option.value] = option.label;
-				return acc;
-			}, {} as Record<string, string>),
+			hideInTable: hideNonMatchingServiceColumn(isTraffic),
+			hideInSearch: true,
 			render: (_, row) => row.company_type ?? "-",
 		},
 		{
-			title: "لوکیشن",
+			title: t("performance.columns.location"),
 			dataIndex: "location",
 			width: 140,
+			hideInTable: hideNonMatchingServiceColumn(isTraffic),
 			hideInSearch: !isTraffic,
 			valueType: "text",
 			render: (_, row) => row.location ?? "-",
 		},
 		{
-			title: "نام مشتری",
+			title: t("performance.columns.customerName"),
 			dataIndex: "customer_name",
 			width: 170,
+			hideInTable: hideNonMatchingServiceColumn(isCommercial),
 			hideInSearch: !isCommercial,
 			valueType: "text",
 		},
 		{
-			title: "کد ملی مشتری",
+			title: t("performance.columns.customerNationalId"),
 			dataIndex: "customer_nic",
 			width: 150,
+			hideInTable: hideNonMatchingServiceColumn(isCommercial),
 			hideInSearch: !isCommercial,
 			valueType: "text",
 		},
 		{
-			title: "کد استان",
+			title: t("performance.columns.provinceCode"),
 			dataIndex: "province_code",
 			width: 130,
+			hideInTable: hideNonMatchingServiceColumn(isCommercial),
 			hideInSearch: !isCommercial,
 			valueType: "text",
 		},
 		{
-			title: "نوع سرویس تجاری",
+			title: t("performance.columns.commercialServiceType"),
 			dataIndex: "service_type",
 			width: 140,
+			hideInTable: hideNonMatchingServiceColumn(isCommercial),
 			hideInSearch: !isCommercial,
 			valueType: "text",
 		},
-
 		{
-			title: "دریافتی",
+			title: t("performance.columns.valueReceive"),
 			dataIndex: "value_receive",
 			width: 140,
+			hideInTable: hideNonMatchingServiceColumn(isTraffic),
 			search: false,
 			render: (_, row) => formatNumeric(row.value_receive),
 		},
-
 		{
-			title: "هزینه",
+			title: t("performance.columns.expense"),
 			dataIndex: "expense",
 			width: 140,
+			hideInTable: hideNonMatchingServiceColumn(isTraffic || isCommercial),
 			search: false,
 			render: (_, row) => formatNumeric(row.expense),
 		},
 		{
-			title: "سود",
+			title: t("performance.columns.profit"),
 			dataIndex: "profit",
 			width: 140,
+			hideInTable: hideNonMatchingServiceColumn(isTraffic),
 			search: false,
 			render: (_, row) => formatNumeric(row.profit),
 		},
