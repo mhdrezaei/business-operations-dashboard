@@ -35,7 +35,10 @@ function extractFirstErrorMessage(value: unknown): string | null {
 /**
  * Handle error responses and display the most relevant server message.
  */
-export async function handleErrorResponse(response: Response) {
+export async function handleErrorResponse(response: Response, suppressErrorNotification = false) {
+	if (suppressErrorNotification)
+		return response;
+
 	try {
 		const data = await response.json();
 		const extracted = extractFirstErrorMessage(data);

@@ -208,6 +208,7 @@ interface UpsertPerformanceParams {
 	month: number
 	payload: Record<string, unknown>
 	searchParams?: Record<string, string | number | boolean | null | undefined>
+	suppressErrorNotification?: boolean
 }
 
 interface UploadPerformanceFileParams {
@@ -215,6 +216,7 @@ interface UploadPerformanceFileParams {
 	files: Record<string, File>
 	extraFields?: Record<string, string | number | boolean | null | undefined>
 	searchParams?: Record<string, string | number | boolean | null | undefined>
+	suppressErrorNotification?: boolean
 }
 
 function buildContractsPath(service: PerformanceContractServicePath) {
@@ -328,6 +330,7 @@ export function upsertPerformance({
 	// year,
 	// month,
 	payload,
+	suppressErrorNotification,
 	// searchParams,
 }: UpsertPerformanceParams) {
 	return request
@@ -335,6 +338,7 @@ export function upsertPerformance({
 		.post(`performances/${service}/`, {
 			// searchParams: compactSearchParams(searchParams ?? {}),
 			json: payload,
+			suppressErrorNotification,
 		})
 		.json<any>();
 }
@@ -344,6 +348,7 @@ export function uploadPerformanceFiles({
 	files,
 	extraFields,
 	searchParams,
+	suppressErrorNotification,
 }: UploadPerformanceFileParams) {
 	const body = new FormData();
 
@@ -361,6 +366,7 @@ export function uploadPerformanceFiles({
 		.post(`performances/${service}/`, {
 			searchParams: compactSearchParams(searchParams ?? {}),
 			body,
+			suppressErrorNotification,
 		})
 		.json<any>();
 }

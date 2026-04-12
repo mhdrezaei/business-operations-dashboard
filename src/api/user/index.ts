@@ -27,14 +27,9 @@ export function fetchAuditAccess() {
 	return request.get("audit/access/").json<AuditAccessType>();
 }
 
-export interface RefreshTokenResult {
-	token: string
-	refreshToken: string
-}
-
-export const refreshTokenPath = "auth/refresh";
-export function fetchRefreshToken(data: { readonly refreshToken: string }) {
-	return request.post(refreshTokenPath, { json: data }).json<ApiResponse<RefreshTokenResult>>();
+export const refreshTokenPath = "auth/refresh/";
+export function fetchRefreshToken(data: { readonly refresh: string }) {
+	return request.post(refreshTokenPath, { json: data }).json<AuthType>();
 }
 export const requestOtpPath = "auth/request-otp/";
 export function fetchRequestOtp(data: { mobile: string }) {

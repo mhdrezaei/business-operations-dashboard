@@ -2,8 +2,10 @@ import type { ButtonProps } from "antd";
 
 import { markNotificationInboxState } from "#src/api/notifications";
 import { notificationInboxQuery, notificationUnreadCountQuery } from "#src/features/notification/queries/notifications.queries";
+import { emitNotificationSync, subscribeNotificationSync } from "#src/features/notification/shared/notification-sync";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { NotificationPopup } from "./index";
@@ -24,12 +26,19 @@ export function NotificationContainer({ ...restProps }: ButtonProps) {
 	const notifications = inbox.data?.results ?? [];
 	const unreadCount = unreadCountQuery.data ?? 0;
 
+	useEffect(() => {
+		return subscribeNotificationSync(() => {
+			queryClient.invalidateQueries({ queryKey: ["notifications", "inbox"] });
+		});
+	}, [queryClient]);
+
 	const markReadMutation = useMutation({
 		mutationFn: async (payload: { ids: number[], isRead: boolean }) => {
 			await markNotificationInboxState(payload);
 		},
 		onSuccess: async () => {
 			await queryClient.invalidateQueries({ queryKey: ["notifications", "inbox"] });
+			emitNotificationSync();
 		},
 	});
 

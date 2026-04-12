@@ -410,6 +410,8 @@ export function FixedStartSection() {
 							selectProps={{
 								allowClear: true,
 								placeholder: t("performance.placeholders.selectService"),
+								showSearch: true,
+								optionFilterProp: "label",
 							}}
 						/>
 					</Col>
@@ -424,6 +426,8 @@ export function FixedStartSection() {
 									selectProps={{
 										allowClear: true,
 										placeholder: t("performance.placeholders.select"),
+										showSearch: true,
+										optionFilterProp: "label",
 									}}
 								/>
 							</Col>
@@ -440,6 +444,8 @@ export function FixedStartSection() {
 								allowClear: true,
 								disabled: isCompanyDisabled,
 								placeholder: companyPlaceholder,
+								showSearch: true,
+								optionFilterProp: "label",
 								style: isCompanyDisabled ? { cursor: "not-allowed" } : undefined,
 								open: isCompanyDisabled ? false : undefined,
 							}}

@@ -1,10 +1,12 @@
 import { PageError } from "#src/components";
+import { notificationUnreadCountQuery } from "#src/features/notification/queries/notifications.queries";
 import { usePreferences } from "#src/hooks";
 import { AuthGuard } from "#src/router/guard";
 import { whiteRouteNames } from "#src/router/routes";
 import { useAuthStore, useUserStore } from "#src/store";
 import { isString, NProgress, toggleHtmlClass } from "#src/utils";
 
+import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { useTranslation } from "react-i18next";
@@ -21,6 +23,10 @@ export default function LayoutRoot() {
 	const { language, isDark, enableDynamicTitle } = usePreferences();
 	const isLogin = useAuthStore(state => Boolean(state.access));
 	const isAuthorized = useUserStore(state => Boolean(state.id));
+	const unreadCountQuery = useQuery({
+		...notificationUnreadCountQuery(),
+		enabled: isLogin,
+	});
 
 	/* document title */
 	useEffect(() => {
@@ -35,10 +41,12 @@ export default function LayoutRoot() {
 		if (!authGuardDependencies) {
 			const currentRoute = matches[matches.length - 1];
 			const documentTitle = currentRoute.handle?.title as React.ReactElement | string;
-			const newTitle = isString(documentTitle) ? documentTitle : documentTitle?.props?.children;
-			document.title = t(newTitle) || document.title;
+			const rawTitle = isString(documentTitle) ? documentTitle : documentTitle?.props?.children;
+			const baseTitle = t(rawTitle) || document.title;
+			const unreadCount = unreadCountQuery.data ?? 0;
+			document.title = unreadCount > 0 ? `(${unreadCount}) ${baseTitle}` : baseTitle;
 		}
-	}, [enableDynamicTitle, language, location]);
+	}, [enableDynamicTitle, language, location, matches, isLogin, isAuthorized, t, unreadCountQuery.data]);
 
 	/* tailwind theme */
 	useEffect(() => {

@@ -139,6 +139,7 @@ async function submitManualPerformance(values: PerformanceFormValues, servicePat
 			month: values.month,
 			payload: operation.payload,
 			searchParams: operation.searchParams,
+			suppressErrorNotification: true,
 		});
 	}
 }
@@ -165,6 +166,7 @@ async function submitTrafficFiles(values: PerformanceFormValues) {
 			sh_year: values.year,
 			sh_month: values.month,
 		},
+		suppressErrorNotification: true,
 	});
 }
 
@@ -214,6 +216,7 @@ async function submitTrafficSingle(values: PerformanceFormValues) {
 			company_type: values.trafficCompanyType,
 			locations,
 		},
+		suppressErrorNotification: true,
 	});
 }
 
@@ -244,6 +247,7 @@ async function submitCommercialFiles(values: PerformanceFormValues) {
 			sh_year: values.year,
 			sh_month: values.month,
 		},
+		suppressErrorNotification: true,
 	});
 }
 

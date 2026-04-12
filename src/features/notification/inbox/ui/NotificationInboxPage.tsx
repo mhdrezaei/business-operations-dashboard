@@ -2,11 +2,12 @@ import type { NotificationItem } from "#src/api/notifications/types";
 import { markNotificationInboxState } from "#src/api/notifications";
 import { BasicContent } from "#src/components";
 import { notificationInboxQuery, notificationUnreadCountQuery } from "#src/features/notification/queries/notifications.queries";
+import { emitNotificationSync, subscribeNotificationSync } from "#src/features/notification/shared/notification-sync";
 import { dayjs } from "#src/shared/lib/dayjs-jalali";
 import { CheckOutlined, LinkOutlined, ReloadOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Empty, Pagination, Tag, Typography } from "antd";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 
@@ -143,12 +144,19 @@ export default function NotificationInboxPage() {
 	}));
 	const unreadCountQuery = useQuery(notificationUnreadCountQuery());
 
+	useEffect(() => {
+		return subscribeNotificationSync(() => {
+			queryClient.invalidateQueries({ queryKey: ["notifications", "inbox"] });
+		});
+	}, [queryClient]);
+
 	const markReadMutation = useMutation({
 		mutationFn: async (payload: { ids: number[], isRead: boolean }) => {
 			await markNotificationInboxState(payload);
 		},
 		onSuccess: async () => {
 			await queryClient.invalidateQueries({ queryKey: ["notifications", "inbox"] });
+			emitNotificationSync();
 		},
 	});
 
