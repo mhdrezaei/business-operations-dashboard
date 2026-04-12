@@ -57,3 +57,95 @@ html.color-blind-mode {
 html.gray-mode {
 	@apply grayscale;
 }
+
+.ant-alert {
+	padding: 14px 16px;
+	border-radius: 12px;
+	background: var(--ant-colorBgElevated);
+	border-color: var(--ant-colorBorderSecondary);
+}
+
+.ant-alert .ant-alert-message {
+	font-size: 15px;
+	font-weight: 600;
+	line-height: 1.8;
+	color: var(--ant-colorText);
+}
+
+.ant-alert .ant-alert-description {
+	font-size: 14px;
+	line-height: 1.9;
+	color: var(--ant-colorTextDescription);
+}
+
+.ant-alert .ant-alert-icon {
+	font-size: 18px;
+	margin-inline-start: 2px;
+}
+
+.ant-message .ant-message-notice-content {
+	padding: 14px 18px;
+	border-radius: 14px;
+	background: var(--ant-colorBgElevated) !important;
+	color: var(--ant-colorText) !important;
+	box-shadow: var(--ant-boxShadowSecondary);
+}
+
+.ant-message .ant-message-custom-content {
+	font-size: 14px;
+	line-height: 1.9;
+}
+
+.ant-notification .ant-notification-notice-wrapper .ant-notification-notice,
+.ant-notification .ant-notification-notice {
+	padding: 16px 18px;
+	border-radius: 16px;
+	background: var(--ant-colorBgElevated) !important;
+	color: var(--ant-colorText) !important;
+	box-shadow: var(--ant-boxShadowSecondary) !important;
+	border: 1px solid var(--ant-colorBorderSecondary);
+}
+
+.ant-notification .ant-notification-notice-content {
+	background: transparent !important;
+	color: var(--ant-colorText) !important;
+}
+
+.ant-notification .ant-notification-notice-message {
+	font-size: 15px;
+	font-weight: 700;
+	line-height: 1.8;
+	color: var(--ant-colorText) !important;
+}
+
+.ant-notification .ant-notification-notice-description {
+	font-size: 14px;
+	line-height: 1.9;
+	color: var(--ant-colorTextDescription) !important;
+}
+
+.ant-notification .ant-notification-notice-close,
+.ant-notification .ant-notification-notice-close-x {
+	color: var(--ant-colorTextSecondary) !important;
+}
+
+.ant-notification .ant-notification-notice.performance-submit-notification,
+.ant-notification .ant-notification-notice-wrapper .ant-notification-notice.performance-submit-notification {
+	min-width: 420px;
+	max-width: 520px;
+	border-radius: 20px;
+	backdrop-filter: blur(18px);
+	-webkit-backdrop-filter: blur(18px);
+}
+
+.ant-notification .ant-notification-notice.performance-submit-notification .ant-notification-notice-message {
+	margin-bottom: 10px;
+	font-size: 18px;
+	font-weight: 800;
+}
+
+.ant-notification .ant-notification-notice.performance-submit-notification .ant-notification-notice-description {
+	font-size: 14px;
+	line-height: 2;
+	white-space: pre-wrap;
+}

@@ -1,7 +1,7 @@
 import type { Resolver, UseFormReturn } from "react-hook-form";
 import type { PerformanceFormValues } from "../../model/performance.form.types";
+import { notification } from "#src/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { notification } from "antd";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
@@ -36,12 +36,77 @@ const defaultValues: PerformanceFormValues = {
 	serviceFields: {},
 };
 
+function extractFirstErrorMessage(value: unknown): string | null {
+	if (typeof value === "string") {
+		const text = value.trim();
+		return text.length ? text : null;
+	}
+
+	if (Array.isArray(value)) {
+		for (const item of value) {
+			const message = extractFirstErrorMessage(item);
+			if (message)
+				return message;
+		}
+		return null;
+	}
+
+	if (value && typeof value === "object") {
+		const record = value as Record<string, unknown>;
+		if (Array.isArray(record.non_field_errors)) {
+			const message = extractFirstErrorMessage(record.non_field_errors);
+			if (message)
+				return message;
+		}
+		for (const key of Object.keys(record)) {
+			const message = extractFirstErrorMessage(record[key]);
+			if (message)
+				return message;
+		}
+	}
+
+	return null;
+}
+
 export function PerformanceForm({
 	initialValues,
 	onSubmit: onSubmitProp,
 	submitting,
 }: Props) {
 	const { t } = useTranslation();
+	const operationTypeLabels = useMemo(() => ({
+		BILL_INQUIRY: t("performance.operationType.billInquiry"),
+		RECEIPT_REGISTER: t("performance.operationType.receiptRegister"),
+		TRAFFIC_REVENUE: t("performance.fields.openapi.trafficRevenue"),
+		TRAFFIC_PACKAGE_COUNT: t("performance.fields.openapi.trafficPackageCount"),
+	}), [t]);
+
+	const formatServerErrorMessage = useCallback((messageText: string) => {
+		let nextMessage = messageText;
+		Object.entries(operationTypeLabels).forEach(([key, label]) => {
+			nextMessage = nextMessage.replaceAll(key, label);
+		});
+		return nextMessage;
+	}, [operationTypeLabels]);
+
+	const resolveSubmitErrorMessage = useCallback(async (error: any) => {
+		if (error?.response) {
+			try {
+				const data = await error.response.clone().json();
+				const extracted = extractFirstErrorMessage(data);
+				if (extracted)
+					return formatServerErrorMessage(extracted);
+			}
+			catch {
+				// ignore invalid response body
+			}
+		}
+
+		if (typeof error?.message === "string" && error.message.trim())
+			return formatServerErrorMessage(error.message);
+
+		return t("performance.messages.unknownError");
+	}, [formatServerErrorMessage, t]);
 
 	const dynamicResolver: Resolver<PerformanceFormValues> = useCallback(
 		async (values, context, options) => {
@@ -114,10 +179,12 @@ export function PerformanceForm({
 				await onSubmitProp(values, submitIntentRef.current, form);
 			}
 			catch (error: any) {
+				const description = await resolveSubmitErrorMessage(error);
 				notification.error({
 					message: t("performance.messages.submitError"),
-					description: error?.message ?? t("performance.messages.unknownError"),
-					placement: "top",
+					description,
+					placement: "topRight",
+					className: "performance-submit-notification",
 				});
 			}
 		},
@@ -128,7 +195,8 @@ export function PerformanceForm({
 				description: firstPath
 					? String((errors as any)[firstPath]?.message ?? t("performance.messages.invalidFormInputs"))
 					: t("performance.messages.invalidFormInputs"),
-				placement: "top",
+				placement: "topRight",
+				className: "performance-submit-notification",
 			});
 		},
 	);

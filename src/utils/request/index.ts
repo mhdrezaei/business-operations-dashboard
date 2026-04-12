@@ -85,7 +85,7 @@ const defaultConfig: Options = {
 						return refreshTokenAndRetry(request, options, refresh);
 					}
 					else {
-						return handleErrorResponse(response);
+						return handleErrorResponse(response, Boolean(options.suppressErrorNotification));
 					}
 				}
 				// request success

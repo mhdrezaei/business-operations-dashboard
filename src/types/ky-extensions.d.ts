@@ -10,11 +10,19 @@ declare module "ky" {
 		 * تنظيم ناديده گرفتن لودينگ سراسري
 		 */
 		ignoreLoading?: boolean
+		/**
+		 * تنظيم ناديده گرفتن نمايش خطاي سراسري
+		 */
+		suppressErrorNotification?: boolean
 	}
 	interface NormalizedOptions {
 		/**
 		 * تنظيم ناديده گرفتن لودينگ سراسري
 		 */
 		ignoreLoading?: boolean
+		/**
+		 * تنظيم ناديده گرفتن نمايش خطاي سراسري
+		 */
+		suppressErrorNotification?: boolean
 	}
 }
