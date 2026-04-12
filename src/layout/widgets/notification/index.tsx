@@ -67,6 +67,12 @@ export const NotificationPopup: React.FC<Props> = ({
 		action.set(false);
 	};
 
+	const handleOpenChange = (nextOpen: boolean) => {
+		action.set(nextOpen);
+		if (nextOpen)
+			onEventChange && onEventChange("refresh");
+	};
+
 	const handleViewAll = () => {
 		onEventChange && onEventChange("viewAll");
 		close();
@@ -95,7 +101,7 @@ export const NotificationPopup: React.FC<Props> = ({
 			open={open}
 			arrow={false}
 			trigger="click"
-			onOpenChange={action.set}
+			onOpenChange={handleOpenChange}
 			content={(
 				<List
 					size="small"
