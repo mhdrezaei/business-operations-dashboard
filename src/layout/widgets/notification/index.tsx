@@ -131,7 +131,7 @@ export const NotificationPopup: React.FC<Props> = ({
 					)}
 					footer={(
 						<div className="flex items-center justify-end">
-							<BasicButton onClick={handleViewAll} disabled={!items.length}>
+							<BasicButton onClick={handleViewAll}>
 								{t("widgets.viewAll")}
 							</BasicButton>
 						</div>
