@@ -1,10 +1,10 @@
 import type { PerformanceFormValues } from "../../../model/performance.form.types";
-import { BasicContent } from "#src/components";
+import { BasicContent, TopRightAlert } from "#src/components";
 import { useAccess } from "#src/hooks";
 import { RHFSelect } from "#src/shared/ui/rhf-pro";
 import { ProCard } from "@ant-design/pro-components";
 import { useQuery } from "@tanstack/react-query";
-import { Alert, Col, Form, Input, Row } from "antd";
+import { Col, Form, Input, Row } from "antd";
 import i18next from "i18next";
 import { useEffect, useMemo, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
@@ -448,21 +448,14 @@ export function FixedStartSection() {
 						: null}
 				</Row>
 
-				{shouldShowMissingPeriodError
-					? (
-						<Row>
-							<Col span={24}>
-								<Alert
-									type="error"
-									showIcon
-									message={hasNoContractsForCompany
-										? t("performance.messages.noContractForCompany")
-										: t("performance.messages.noYearMonthForCompany")}
-								/>
-							</Col>
-						</Row>
-					)
-					: null}
+				<TopRightAlert
+					alertKey="performance-missing-period-alert"
+					type="error"
+					open={shouldShowMissingPeriodError}
+					message={hasNoContractsForCompany
+						? t("performance.messages.noContractForCompany")
+						: t("performance.messages.noYearMonthForCompany")}
+				/>
 
 				{shouldShowPeriodSelectors
 					? (

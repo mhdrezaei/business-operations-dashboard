@@ -1,7 +1,8 @@
 import type { Resolver, UseFormReturn } from "react-hook-form";
 import type { ContractFormValues, ContractServiceCode } from "../../model/contract.form.types";
+import { notification } from "#src/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, notification } from "antd";
+import { Button } from "antd";
 import { AnimatePresence, motion } from "framer-motion";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";

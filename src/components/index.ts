@@ -12,3 +12,4 @@ export * from "./jss-theme-provider";
 export * from "./page-error";
 export * from "./scrollbar";
 export * from "./tanstack-query";
+export * from "./top-right-alert";

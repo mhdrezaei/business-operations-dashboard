@@ -1,9 +1,9 @@
 import type { PasswordLoginFormType } from "#src/pages/login/components/password-login";
-import { AccessControl, BasicContent } from "#src/components";
+import { AccessControl, BasicContent, TopRightAlert } from "#src/components";
 import { accessControlCodes, AccessControlRoles, useAccess } from "#src/hooks";
 import { useAuthStore, useUserStore } from "#src/store";
 
-import { Alert, Button, Card, Typography } from "antd";
+import { Button, Card, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 
@@ -46,7 +46,12 @@ export default function ButtonControl() {
 
 	return (
 		<BasicContent className="flex flex-col gap-4">
-			<Alert message={t("access.buttonControl.alertMessage")} description={t("access.buttonControl.alertDescription")}></Alert>
+			<TopRightAlert
+				alertKey="access-button-control-info"
+				type="info"
+				message={t("access.buttonControl.alertMessage")}
+				description={t("access.buttonControl.alertDescription")}
+			/>
 			<Card
 				title={(
 					<>
