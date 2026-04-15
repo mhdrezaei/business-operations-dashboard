@@ -24,6 +24,7 @@ export interface BasicTableProps<D, U, V> extends ProTableProps<D, U, V> {
 		/** فاصله جدول تا پايين صفحه، پيش فرض `16` */
 		offsetBottom?: number
 	}
+	autoSearchDebounceTime?: number
 }
 
 export function BasicTable<
@@ -36,6 +37,7 @@ export function BasicTable<
 	const classes = useStyles();
 	const { t } = useTranslation();
 	const { adaptive } = props;
+	const autoSearchDebounceTime = Math.max(0, props.autoSearchDebounceTime ?? 0);
 	const tableWrapperRef = useRef<HTMLDivElement>(null);
 	const size = useSize(tableWrapperRef);
 	const {
@@ -217,7 +219,7 @@ export function BasicTable<
 
 					const actionInstance = getObjectRefCurrent<{ reload?: () => void }>(props.actionRef);
 					actionInstance?.reload?.();
-				}, 0);
+				}, autoSearchDebounceTime);
 			},
 		};
 	};

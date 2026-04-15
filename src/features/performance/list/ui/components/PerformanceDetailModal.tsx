@@ -19,7 +19,7 @@ import { RHFProNumber, RHFProText } from "#src/shared/ui/rhf-pro";
 import { ProCard } from "@ant-design/pro-components";
 import { Button, Modal, Spin } from "antd";
 import i18next from "i18next";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
@@ -360,22 +360,6 @@ export function PerformanceDetailModal({
 	const [smsContract, setSmsContract] = useState<Record<string, unknown> | null>(null);
 	const [smsPerformances, setSmsPerformances] = useState<PerformanceListItem[]>([]);
 	const [openApiPerformances, setOpenApiPerformances] = useState<PerformanceListItem[]>([]);
-	const applyLoadingState = useCallback((nextLoading: boolean) => {
-		setLoading(nextLoading);
-	}, []);
-	const applyDetailState = useCallback((nextDetail: Record<string, unknown> | null, nextLoading: boolean) => {
-		setDetail(nextDetail);
-		setLoading(nextLoading);
-	}, []);
-	const applySmsContract = useCallback((nextValue: Record<string, unknown> | null) => {
-		setSmsContract(nextValue);
-	}, []);
-	const applySmsPerformances = useCallback((nextValue: PerformanceListItem[]) => {
-		setSmsPerformances(nextValue);
-	}, []);
-	const applyOpenApiPerformances = useCallback((nextValue: PerformanceListItem[]) => {
-		setOpenApiPerformances(nextValue);
-	}, []);
 
 	const normalizedRecord = useMemo(
 		() => normalizePerformanceRecord(record ?? {}),
@@ -697,39 +681,45 @@ export function PerformanceDetailModal({
 			return;
 
 		if (isUnregisteredMode) {
-			applyDetailState(record as Record<string, unknown>, false);
+			// eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
+			setLoading(false);
+			setDetail(record as Record<string, unknown>);
 			return;
 		}
 
 		let cancelled = false;
-		applyLoadingState(true);
+		setLoading(true);
 
 		(async () => {
 			try {
 				if (normalizedRecord.id != null && service !== "sms-commission") {
 					const response = await fetchPerformanceDetail(service, normalizedRecord.id);
 					if (!cancelled)
-						applyDetailState(response, false);
+						setDetail(response);
 					return;
 				}
 
 				if (!cancelled)
-					applyDetailState(record as Record<string, unknown>, false);
+					setDetail(record as Record<string, unknown>);
 			}
 			catch {
 				if (!cancelled)
-					applyDetailState(record as Record<string, unknown>, false);
+					setDetail(record as Record<string, unknown>);
+			}
+			finally {
+				if (!cancelled)
+					setLoading(false);
 			}
 		})();
 
 		return () => {
 			cancelled = true;
 		};
-	}, [open, service, record, normalizedRecord.id, isUnregisteredMode, applyDetailState, applyLoadingState]);
+	}, [open, service, record, normalizedRecord.id, isUnregisteredMode]);
 
 	useEffect(() => {
 		if (!open || service !== "sms" || isUnregisteredMode) {
-			applySmsContract(null);
+			setSmsContract(null);
 			return;
 		}
 
@@ -738,7 +728,7 @@ export function PerformanceDetailModal({
 		const year = normalizedRecord.year;
 		const month = normalizedRecord.month;
 		if (serviceId == null || companyId == null) {
-			applySmsContract(null);
+			setSmsContract(null);
 			return;
 		}
 
@@ -750,22 +740,22 @@ export function PerformanceDetailModal({
 					return;
 				const contracts = response?.results ?? [];
 				const active = pickActiveContract(contracts as any, year, month);
-				applySmsContract((active ?? contracts[0] ?? null) as Record<string, unknown> | null);
+				setSmsContract((active ?? contracts[0] ?? null) as Record<string, unknown> | null);
 			}
 			catch {
 				if (!cancelled)
-					applySmsContract(null);
+					setSmsContract(null);
 			}
 		})();
 
 		return () => {
 			cancelled = true;
 		};
-	}, [open, service, normalizedRecord.companyId, normalizedRecord.serviceId, normalizedRecord.year, normalizedRecord.month, isUnregisteredMode, applySmsContract]);
+	}, [open, service, normalizedRecord.companyId, normalizedRecord.serviceId, normalizedRecord.year, normalizedRecord.month, isUnregisteredMode]);
 
 	useEffect(() => {
 		if (!open || service !== "sms" || isUnregisteredMode) {
-			applySmsPerformances([]);
+			setSmsPerformances([]);
 			return;
 		}
 
@@ -774,7 +764,7 @@ export function PerformanceDetailModal({
 		const year = normalizedRecord.year;
 		const month = normalizedRecord.month;
 		if (serviceId == null || companyId == null || year == null || month == null) {
-			applySmsPerformances([]);
+			setSmsPerformances([]);
 			return;
 		}
 
@@ -790,22 +780,22 @@ export function PerformanceDetailModal({
 					sh_month: month,
 				});
 				if (!cancelled)
-					applySmsPerformances(response?.results ?? []);
+					setSmsPerformances(response?.results ?? []);
 			}
 			catch {
 				if (!cancelled)
-					applySmsPerformances([]);
+					setSmsPerformances([]);
 			}
 		})();
 
 		return () => {
 			cancelled = true;
 		};
-	}, [open, service, normalizedRecord.companyId, normalizedRecord.serviceId, normalizedRecord.year, normalizedRecord.month, isUnregisteredMode, applySmsPerformances]);
+	}, [open, service, normalizedRecord.companyId, normalizedRecord.serviceId, normalizedRecord.year, normalizedRecord.month, isUnregisteredMode]);
 
 	useEffect(() => {
 		if (!open || service !== "openapi" || isUnregisteredMode) {
-			applyOpenApiPerformances([]);
+			setOpenApiPerformances([]);
 			return;
 		}
 
@@ -814,7 +804,7 @@ export function PerformanceDetailModal({
 		const year = normalizedRecord.year;
 		const month = normalizedRecord.month;
 		if (serviceId == null || companyId == null || year == null || month == null) {
-			applyOpenApiPerformances([]);
+			setOpenApiPerformances([]);
 			return;
 		}
 
@@ -830,18 +820,18 @@ export function PerformanceDetailModal({
 					sh_month: month,
 				});
 				if (!cancelled)
-					applyOpenApiPerformances(response?.results ?? []);
+					setOpenApiPerformances(response?.results ?? []);
 			}
 			catch {
 				if (!cancelled)
-					applyOpenApiPerformances([]);
+					setOpenApiPerformances([]);
 			}
 		})();
 
 		return () => {
 			cancelled = true;
 		};
-	}, [open, service, normalizedRecord.companyId, normalizedRecord.serviceId, normalizedRecord.year, normalizedRecord.month, isUnregisteredMode, applyOpenApiPerformances]);
+	}, [open, service, normalizedRecord.companyId, normalizedRecord.serviceId, normalizedRecord.year, normalizedRecord.month, isUnregisteredMode]);
 
 	useEffect(() => {
 		if (!service || !record || !detail || !config)

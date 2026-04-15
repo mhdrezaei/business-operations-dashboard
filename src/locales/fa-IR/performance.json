@@ -9,7 +9,9 @@
 		"submitAndCreateAnother": "ثبت و ایجاد یکی دیگر",
 		"submitAndEdit": "ثبت و ویرایش",
 		"editPerformance": "ویرایش عملکرد",
-		"deletePerformance": "حذف عملکرد"
+		"deletePerformance": "حذف عملکرد",
+		"downloadPdf": "دانلود PDF",
+		"downloadExcel": "دانلود Excel"
 	},
 	"columns": {
 		"id": "شناسه",
@@ -25,9 +27,19 @@
 		"toGregorianDate": "تا تاریخ میلادی",
 		"value": "مقدار",
 		"count": "تعداد",
+		"total": "جمع کل",
 		"income": "درآمد",
 		"expense": "هزینه",
 		"profit": "سود",
+		"unitPrice": "قیمت واحد",
+		"karashabIncome": "درآمد کاراشاب",
+		"karashabExpense": "هزینه کاراشاب",
+		"karashabProfit": "سود کاراشاب",
+		"telecomIncome": "درآمد مخابرات",
+		"firstPartyIncome": "درآمد طرف اول",
+		"regionIncome": "درآمد منطقه",
+		"salesAgentIncome": "درآمد نماینده فروش",
+		"contractType": "نوع قرارداد",
 		"operationType": "نوع عملیات",
 		"operator": "اپراتور",
 		"language": "زبان",
@@ -80,6 +92,7 @@
 		"selectMonthFirst": "ابتدا ماه را انتخاب کنید",
 		"selectMonths": "ماه‌ها را انتخاب کنید",
 		"selectCompanies": "شرکت‌ها را انتخاب کنید",
+		"selectFinancialColumns": "ستون های مالی را انتخاب کنید",
 		"pspValue": "مثلاً تعداد تراکنش",
 		"shahkarValue": "مثلاً 123.45",
 		"example100": "مثلاً 100",
@@ -95,6 +108,9 @@
 		"serviceName": "نام سرویس",
 		"companyName": "نام شرکت",
 		"trafficCompanyType": "نوع شرکت (ترافیک)",
+		"financialColumns": "نمایش ستون های مالی",
+		"selectAll": "انتخاب همه",
+		"smsReportType": "نوع گزارش پیامک",
 		"contractYear": "سال قرارداد",
 		"contractMonth": "ماه قرارداد",
 		"openapiContractModel": "مدل قرارداد OpenAPI:",
@@ -118,7 +134,20 @@
 		"noContractForCompany": "قراردادی برای این شرکت موجود نیست.",
 		"noYearMonthForCompany": "سال و ماهی برای این شرکت موجود نیست.",
 		"registerSuccess": "عملکرد با موفقیت ثبت شد",
-		"updateSuccess": "عملکرد با موفقیت ویرایش شد"
+		"updateSuccess": "عملکرد با موفقیت ویرایش شد",
+		"selectReportFiltersFirst": "ابتدا سرویس، سال و ماه های گزارش را انتخاب کنید",
+		"noReportData": "داده ای برای گزارش وجود ندارد",
+		"popupBlocked": "پنجره دانلود PDF توسط مرورگر مسدود شد"
+	},
+	"smsReportType": {
+		"normal": "گزارش عادی",
+		"finance": "گزارش واحد مالی",
+		"summary": "گزارش تجمیعی"
+	},
+	"contractType": {
+		"all": "همه قراردادها",
+		"official": "رسمی",
+		"unofficial": "غیررسمی"
 	},
 	"modal": {
 		"registerPerformance": "ثبت عملکرد",

@@ -109,6 +109,7 @@ export interface PerformanceReportListItem {
 	value: number
 	operation_type: string
 	company_name: string
+	is_official?: boolean | null
 	income_financial: number
 	expense_financial: number
 	profit_financial: number
@@ -131,6 +132,8 @@ export interface PerformanceReportQuery {
 	service_code: string
 	sh_periods: string
 	company_ids?: string
+	company_type?: string
+	is_official?: boolean
 	page?: number
 	page_size?: number
 	total?: boolean
