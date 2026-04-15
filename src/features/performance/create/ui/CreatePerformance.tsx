@@ -13,6 +13,7 @@ function applySubmitIntent(
 ) {
 	if (intent === "submit") {
 		window.$message?.success(t("performance.messages.createSuccess"));
+		form.reset();
 		return;
 	}
 

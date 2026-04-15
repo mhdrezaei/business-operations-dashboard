@@ -1,9 +1,8 @@
 import type { PasswordLoginFormType } from "#src/pages/login/components/password-login";
-import { BasicContent } from "#src/components";
+import { BasicContent, TopRightAlert } from "#src/components";
 import { AccessControlRoles, usePreferences } from "#src/hooks";
 import { useAuthStore, useUserStore } from "#src/store";
-import { Alert, Button, Card, Typography } from "antd";
-import { clsx } from "clsx";
+import { Button, Card, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 
@@ -76,16 +75,19 @@ export default function PageControl() {
 
 	return (
 		<BasicContent className="flex flex-col gap-4">
-			<Alert type="info" message={t("access.pageControl.alertMessage")} description={t("access.pageControl.alertDescription")}></Alert>
+			<TopRightAlert
+				alertKey="access-page-control-info"
+				type="info"
+				message={t("access.pageControl.alertMessage")}
+				description={t("access.pageControl.alertDescription")}
+			/>
+			<TopRightAlert
+				alertKey="access-page-control-warning"
+				type="warning"
+				open={enableFrontendAceess === enableBackendAccess}
+				message={t("access.pageControl.warningMessage")}
+			/>
 			<Card title={t("access.pageControl.cardTitle")}>
-				<Alert
-					type="warning"
-					className={clsx(
-						"mb-4",
-						{ hidden: enableFrontendAceess !== enableBackendAccess },
-					)}
-					description={t("access.pageControl.warningMessage")}
-				/>
 				<div className="flex items-center gap-4">
 					{t("access.pageControl.currentPermissionMode")}
 					{enableFrontendAceess

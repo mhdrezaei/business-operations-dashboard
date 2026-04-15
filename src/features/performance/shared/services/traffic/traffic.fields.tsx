@@ -1,10 +1,11 @@
 import type { UploadProps } from "antd";
 import type { PerformanceFormValues } from "../../model/performance.form.types";
+import { TopRightAlert } from "#src/components";
 import { downloadPerformanceTemplate } from "#src/features/performance/api/performances.api";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined, DownloadOutlined, PlusOutlined } from "@ant-design/icons";
 import { ProCard } from "@ant-design/pro-components";
-import { Alert, Button, Col, Form, Radio, Row, Tag, Upload } from "antd";
+import { Button, Col, Form, Radio, Row, Tag, Upload } from "antd";
 import { useEffect, useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -161,9 +162,9 @@ export function TrafficPerformanceFields() {
 				)
 				: (
 					<div style={{ display: "grid", gap: 12 }}>
-						<Alert
+						<TopRightAlert
+							alertKey="traffic-performance-unit-price-hint"
 							type="info"
-							showIcon
 							message={t("performance.traffic.unitPriceHint")}
 						/>
 

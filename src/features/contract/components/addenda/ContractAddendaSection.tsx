@@ -1,8 +1,9 @@
 import type { ArrayPath, FieldValues, Path, PathValue } from "react-hook-form";
 import { RHFProText, RHFProTextArea, RHFSelect } from "#src/shared/ui/rhf-pro";
+import { message } from "#src/utils";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { ProCard } from "@ant-design/pro-components";
-import { Button, Collapse, message } from "antd";
+import { Button, Collapse } from "antd";
 import React, { useMemo, useState } from "react";
 
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
