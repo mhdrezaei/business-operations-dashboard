@@ -1,6 +1,8 @@
 import type { ContractServicePath } from "#src/features/contract/api/contracts.api";
 import type { ContractFormValues } from "#src/features/contract/shared/model/contract.form.types";
+import type { ContractSubmitIntent } from "#src/features/contract/shared/ui/form/ContractForm";
 import { contractTypeToApiPricing } from "#src/features/contract/api/pricing.mapper";
+import { defaultContractFormValues } from "#src/features/contract/shared/ui/form/ContractForm";
 import React, { useState } from "react";
 import { fetchCreateContract } from "../../api/contracts.api";
 import { ContractForm } from "../../shared/ui/form/ContractForm";
@@ -333,6 +335,15 @@ function formValuesToApiPayload(values: ContractFormValues) {
 	};
 }
 
+function applySubmitIntent(intent: ContractSubmitIntent, form: any) {
+	window.$message?.success("قرارداد با موفقیت ثبت شد");
+
+	if (intent === "submit_and_edit")
+		return;
+
+	form.reset(defaultContractFormValues);
+}
+
 function CreateContract() {
 	const [submitting, setSubmitting] = useState(false);
 
@@ -340,13 +351,14 @@ function CreateContract() {
 		<>
 			<ContractForm
 				submitText="ثبت قرارداد"
+				showExtendedActions
 				submitting={submitting}
-				onSubmit={async (values) => {
+				onSubmit={async (values, intent, form) => {
 					setSubmitting(true);
 					try {
 						const service = resolveCreateServicePath(values);
 						await fetchCreateContract(service, formValuesToApiPayload(values));
-						window.$message?.success("قرارداد با موفقیت ثبت شد");
+						applySubmitIntent(intent, form);
 					}
 					finally {
 						setSubmitting(false);
