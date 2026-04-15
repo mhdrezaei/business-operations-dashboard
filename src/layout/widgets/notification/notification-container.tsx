@@ -52,6 +52,7 @@ export function NotificationContainer({ ...restProps }: ButtonProps) {
 	const handleRead = async (id: number, isRead: boolean) => {
 		try {
 			await markReadMutation.mutateAsync({ ids: [id], isRead: !isRead });
+			navigate(`/notifications/inbox?highlightId=${id}`);
 		}
 		catch {
 			window.$message?.error(t("common.error"));
