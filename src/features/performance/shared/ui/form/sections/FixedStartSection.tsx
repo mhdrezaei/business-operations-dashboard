@@ -5,6 +5,7 @@ import { RHFSelect } from "#src/shared/ui/rhf-pro";
 import { ProCard } from "@ant-design/pro-components";
 import { useQuery } from "@tanstack/react-query";
 import { Alert, Col, Form, Input, Row } from "antd";
+import i18next from "i18next";
 import { useEffect, useMemo, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -22,13 +23,8 @@ import {
 	servicesQuery,
 	smsCommissionAgentsQuery,
 } from "../../../queries/performance.queries";
-import { MONTH_OPTIONS } from "../constants/jalali-date-options";
 
 interface YearMonthOption { label: string, value: number }
-interface JalaliYearRange {
-	start_jy: number
-	end_jy: number
-}
 
 const TRAFFIC_COMPANY_TYPE_OPTIONS = [
 	{ label: "CP", value: "CP" },
@@ -49,32 +45,24 @@ function normalizeMonthList(months: unknown) {
 	).sort((a, b) => a - b);
 }
 
-function mapMonthsToOptions(months: number[]) {
-	return months.map((month) => {
-		const found = MONTH_OPTIONS.find(option => option.value === month);
-		return { label: String(found?.label ?? month), value: month };
-	});
+function getMonthLabel(month: number) {
+	return i18next.t(`performance.months.${month}`);
 }
 
-function withSelectedOption(options: YearMonthOption[], selected: number | null) {
+function mapMonthsToOptions(months: number[]) {
+	return months.map(month => ({ label: getMonthLabel(month), value: month }));
+}
+
+function withSelectedOption(
+	options: YearMonthOption[],
+	selected: number | null,
+	getLabel: (value: number) => string = value => String(value),
+) {
 	if (selected == null)
 		return options;
 	if (options.some(option => option.value === selected))
 		return options;
-	return [...options, { label: String(selected), value: selected }].sort((a, b) => a.value - b.value);
-}
-
-function buildYearOptionsFromRange(range: JalaliYearRange | null | undefined) {
-	if (!range)
-		return [];
-	const startYear = Number(range.start_jy);
-	const endYear = Number(range.end_jy);
-	if (!Number.isInteger(startYear) || !Number.isInteger(endYear) || startYear > endYear)
-		return [];
-	return Array.from({ length: endYear - startYear + 1 }, (_, idx) => {
-		const year = startYear + idx;
-		return { label: String(year), value: year };
-	});
+	return [...options, { label: getLabel(selected), value: selected }].sort((a, b) => a.value - b.value);
 }
 
 export function FixedStartSection() {
@@ -243,9 +231,9 @@ export function FixedStartSection() {
 					? t("performance.placeholders.selectTrafficCompanyTypeFirst")
 					: t("performance.placeholders.selectCompany");
 
-	const contractMonthsByYear = useMemo(() => {
+	const missingMonthsByYear = useMemo(() => {
 		const map = new Map<number, number[]>();
-		const raw = gaps.data?.contract_months_by_year;
+		const raw = gaps.data?.missing_months_by_year;
 		if (!raw)
 			return map;
 
@@ -259,33 +247,27 @@ export function FixedStartSection() {
 		return map;
 	}, [gaps.data]);
 
-	const baseYearOptions = useMemo(() => {
-		const years = Array.from(contractMonthsByYear.keys()).sort((a, b) => a - b);
-		if (years.length > 0) {
-			return years.map(value => ({ label: String(value), value }));
-		}
-
-		const range = gaps.data?.allowed_jalali_range;
-		if (!range)
-			return [];
-
-		return buildYearOptionsFromRange({
-			start_jy: range.start_jy,
-			end_jy: range.end_jy,
-		});
-	}, [contractMonthsByYear, gaps.data]);
+	const baseYearOptions = useMemo(
+		() => Array.from(missingMonthsByYear.keys())
+			.sort((a, b) => a - b)
+			.map(value => ({ label: String(value), value })),
+		[missingMonthsByYear],
+	);
 
 	const baseMonthOptions = useMemo(() => {
 		if (year == null)
 			return [];
-		const months = contractMonthsByYear.get(year);
+		const months = missingMonthsByYear.get(year);
 		if (months && months.length > 0)
 			return mapMonthsToOptions(months);
 		return [];
-	}, [contractMonthsByYear, year]);
+	}, [missingMonthsByYear, year]);
 
 	const yearOptions = useMemo(() => withSelectedOption(baseYearOptions, year), [baseYearOptions, year]);
-	const monthOptions = useMemo(() => withSelectedOption(baseMonthOptions, month), [baseMonthOptions, month]);
+	const monthOptions = useMemo(
+		() => withSelectedOption(baseMonthOptions, month, getMonthLabel),
+		[baseMonthOptions, month],
+	);
 
 	const activeContract = useMemo(
 		() => pickActiveContract(contracts.data?.results ?? [], year, month),
@@ -374,7 +356,7 @@ export function FixedStartSection() {
 	const isDateOptionsLoading = !!serviceId && !!companyId && (gaps.isLoading || gaps.isFetching);
 	const hasCompanySelection = !!serviceId && !!companyId;
 	const hasNoContractsForCompany = hasCompanySelection && contracts.isSuccess && (contracts.data?.results?.length ?? 0) < 1;
-	const hasAnyYearMonthOption = Array.from(contractMonthsByYear.values()).some(months => months.length > 0);
+	const hasAnyYearMonthOption = Array.from(missingMonthsByYear.values()).some(months => months.length > 0);
 	const isPeriodStateLoading = hasCompanySelection && (gaps.isLoading || gaps.isFetching || contracts.isLoading || contracts.isFetching);
 	const shouldShowPeriodSelectors = hasCompanySelection && !isPeriodStateLoading && !hasNoContractsForCompany && hasAnyYearMonthOption;
 	const shouldShowMissingPeriodError = hasCompanySelection && !isPeriodStateLoading && !shouldShowPeriodSelectors;

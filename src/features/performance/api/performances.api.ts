@@ -193,6 +193,15 @@ export interface PerformanceGapsResponse {
 		start_date: string
 		end_date_exclusive: string
 	}>
+	missing_months_by_year: Record<string, number[]>
+	missing_gregorian_ranges: Array<{
+		start_jy: number
+		start_jm: number
+		end_jy: number
+		end_jm: number
+		start_date: string
+		end_date_exclusive: string
+	}>
 	contract_source: string | null
 }
 
