@@ -1,18 +1,21 @@
-import type { Resolver } from "react-hook-form";
+import type { Resolver, UseFormReturn } from "react-hook-form";
 import type { ContractFormValues, ContractServiceCode } from "../../model/contract.form.types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, notification } from "antd";
 import { AnimatePresence, motion } from "framer-motion";
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 
 import { buildContractSchema } from "../../model/contract.schema";
 import { serviceRegistry } from "../../services/registry";
 import { findFirstError } from "../../utils";
+import { ActionSection } from "./sections/ActionSection";
 import { FixedEndSection } from "./sections/FixedEndSection";
 import { FixedStartSection } from "./sections/FixedStartSection";
 
-const defaultValues: ContractFormValues = {
+export type ContractSubmitIntent = "submit" | "submit_and_create_another" | "submit_and_edit";
+
+export const defaultContractFormValues: ContractFormValues = {
 	serviceId: null,
 	serviceCode: null,
 	companyId: null,
@@ -29,9 +32,14 @@ const defaultValues: ContractFormValues = {
 
 interface Props {
 	initialValues?: Partial<ContractFormValues> | null
-	onSubmit?: (values: ContractFormValues) => void | Promise<void>
+	onSubmit?: (
+		values: ContractFormValues,
+		intent: ContractSubmitIntent,
+		form: UseFormReturn<ContractFormValues>,
+	) => void | Promise<void>
 	submitText?: string
 	submitting?: boolean
+	showExtendedActions?: boolean
 }
 
 export function ContractForm({
@@ -39,6 +47,7 @@ export function ContractForm({
 	onSubmit: onSubmitProp,
 	submitText = "ثبت قرارداد",
 	submitting,
+	showExtendedActions = false,
 }: Props) {
 	const dynamicResolver: Resolver<ContractFormValues> = useCallback(
 		async (values, context, options) => {
@@ -53,13 +62,13 @@ export function ContractForm({
 
 	const mergedInitialValues = useMemo<ContractFormValues>(() => {
 		if (!initialValues)
-			return defaultValues;
+			return defaultContractFormValues;
 
 		return {
-			...defaultValues,
+			...defaultContractFormValues,
 			...initialValues,
 			serviceFields: {
-				...(defaultValues.serviceFields ?? {}),
+				...(defaultContractFormValues.serviceFields ?? {}),
 				...(initialValues.serviceFields ?? {}),
 			},
 		} as ContractFormValues;
@@ -93,11 +102,12 @@ export function ContractForm({
 		name: "serviceCode",
 	}) as ContractServiceCode | null;
 	const module = serviceCode ? serviceRegistry[serviceCode] : undefined;
+	const submitIntentRef = useRef<ContractSubmitIntent>("submit");
 	const onSubmit = form.handleSubmit(
 		async (values) => {
 			try {
 				if (onSubmitProp) {
-					await onSubmitProp(values);
+					await onSubmitProp(values, submitIntentRef.current, form);
 					return;
 				}
 				console.warn("submit", values);
@@ -123,6 +133,13 @@ export function ContractForm({
 			}
 		},
 	);
+	const triggerSubmit = (intent: ContractSubmitIntent) => {
+		submitIntentRef.current = intent;
+		void onSubmit();
+	};
+	const resetForm = () => {
+		form.reset(defaultContractFormValues);
+	};
 
 	return (
 		<FormProvider {...form}>
@@ -149,10 +166,23 @@ export function ContractForm({
 
 				<FixedEndSection />
 
-				<div style={{ marginTop: 16 }}>
-					<Button type="primary" onClick={onSubmit} loading={!!submitting}>
-						{submitText}
-					</Button>
+				<div style={{ marginTop: 16, width: "100%" }}>
+					{showExtendedActions
+						? (
+							<ActionSection
+								submitting={submitting}
+								submitText={submitText}
+								onSubmit={() => triggerSubmit("submit")}
+								onSubmitAndCreateAnother={() => triggerSubmit("submit_and_create_another")}
+								onSubmitAndEdit={() => triggerSubmit("submit_and_edit")}
+								onReset={resetForm}
+							/>
+						)
+						: (
+							<Button type="primary" onClick={() => triggerSubmit("submit")} loading={!!submitting}>
+								{submitText}
+							</Button>
+						)}
 				</div>
 			</div>
 		</FormProvider>
