@@ -7,9 +7,9 @@ import { dayjs } from "#src/shared/lib/dayjs-jalali";
 import { CheckOutlined, LinkOutlined, ReloadOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Empty, Pagination, Tag, Typography } from "antd";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 
 type NotificationFilter = "all" | "read" | "unread";
 
@@ -135,6 +135,8 @@ export default function NotificationInboxPage() {
 	const [filter, setFilter] = useState<NotificationFilter>("all");
 	const [page, setPage] = useState(1);
 	const [pageSize, setPageSize] = useState(10);
+	const [searchParams] = useSearchParams();
+	const highlightId = Number(searchParams.get("highlightId"));
 
 	const inbox = useQuery(notificationInboxQuery({
 		page,
@@ -161,12 +163,32 @@ export default function NotificationInboxPage() {
 	});
 
 	const notifications = inbox.data?.results ?? [];
-	const unreadCount = unreadCountQuery.data ?? 0;
 	const total = inbox.data?.count ?? 0;
 	const loading = inbox.isLoading || inbox.isFetching;
+	const unreadCount = unreadCountQuery.data ?? 0;
+
+	const processedNotifications = useMemo(() => {
+		if (highlightId && notifications.some(item => item.id === highlightId)) {
+			const hit = notifications.find(item => item.id === highlightId)!;
+			const rest = notifications.filter(item => item.id !== highlightId);
+			return [hit, ...rest];
+		}
+		return notifications;
+	}, [notifications, highlightId]);
+
+	const highlightRef = useRef<HTMLDivElement | null>(null);
+	useEffect(() => {
+		if (highlightRef.current) {
+			highlightRef.current.scrollIntoView({
+				behavior: "smooth",
+				block: "start",
+			});
+		}
+	}, [processedNotifications, highlightId]);
+
 	const unreadIdsOnPage = useMemo(
-		() => notifications.filter(item => !item.isRead).map(item => item.id),
-		[notifications],
+		() => processedNotifications.filter(item => !item.isRead).map(item => item.id),
+		[processedNotifications],
 	);
 
 	const handleRefresh = async () => {
@@ -263,18 +285,21 @@ export default function NotificationInboxPage() {
 					</div>
 
 					{
-						!notifications.length
+						!processedNotifications.length
 							? (
 								<Empty description={t("widgets.notificationEmpty")} />
 							)
 							: (
 								<div className="flex flex-col gap-3">
-									{notifications.map((item) => {
+									{processedNotifications.map((item) => {
 										const contracts = extractRelatedContracts(item);
 										return (
 											<div
 												key={item.id}
-												className="relative overflow-hidden rounded-2xl border border-[var(--ant-colorPrimaryBorder)] bg-[var(--ant-colorBgElevated)] p-4 shadow-[0_14px_32px_rgba(15,23,42,0.2)]"
+												ref={item.id === highlightId ? highlightRef : null}
+												className={`relative overflow-hidden rounded-2xl p-4 shadow-[0_14px_32px_rgba(15,23,42,0.2)]
+												border-[var(--ant-colorPrimaryBorder)]
+												${item.id === highlightId ? "border-2 border-red-500" : ""}`}
 											>
 												<div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500" />
 												<div className="relative z-10">
