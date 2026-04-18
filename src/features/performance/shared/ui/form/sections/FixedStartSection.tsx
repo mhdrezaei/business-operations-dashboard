@@ -133,12 +133,17 @@ export function FixedStartSection() {
 		if (prevCompanyId === companyId)
 			return;
 
-		setValue("year", null, { shouldDirty: true, shouldValidate: false });
-		setValue("month", null, { shouldDirty: true, shouldValidate: false });
 		setValue("contractId", null, { shouldDirty: true, shouldValidate: false });
 		setValue("contractModel", null, { shouldDirty: true, shouldValidate: false });
 		setValue("salesAgentId", null, { shouldDirty: true, shouldValidate: false });
 		setValue("serviceFields", {}, { shouldDirty: true, shouldValidate: false });
+
+		// Keep year/month when company is cleared by "submit and create another".
+		if (companyId == null)
+			return;
+
+		setValue("year", null, { shouldDirty: true, shouldValidate: false });
+		setValue("month", null, { shouldDirty: true, shouldValidate: false });
 	}, [companyId, setValue]);
 
 	useEffect(() => {

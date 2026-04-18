@@ -21,7 +21,8 @@ function applySubmitIntent(
 		window.$message?.success(t("performance.messages.createAndAnotherSuccess"));
 		form.reset({
 			...values,
-			month: null,
+			companyId: null,
+			salesAgentId: null,
 			contractId: null,
 			contractModel: null,
 			serviceFields: {},
