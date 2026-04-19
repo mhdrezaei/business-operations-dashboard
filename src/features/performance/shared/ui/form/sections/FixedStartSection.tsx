@@ -1,7 +1,7 @@
 import type { PerformanceFormValues } from "../../../model/performance.form.types";
 import { BasicContent, TopRightAlert } from "#src/components";
 import { useAccess } from "#src/hooks";
-import { RHFSelect } from "#src/shared/ui/rhf-pro";
+import { RHFProRadioGroup, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { ProCard } from "@ant-design/pro-components";
 import { useQuery } from "@tanstack/react-query";
 import { Col, Form, Input, Row } from "antd";
@@ -31,6 +31,11 @@ const TRAFFIC_COMPANY_TYPE_OPTIONS = [
 	{ label: "IXP", value: "IXP" },
 	{ label: "TCI", value: "TCI" },
 	{ label: "PREMIUM", value: "PREMIUM" },
+];
+
+const TRAFFIC_SUBMIT_MODE_OPTIONS = [
+	{ label: i18next.t("performance.traffic.singleEntry"), value: "single" },
+	{ label: i18next.t("performance.traffic.templateUpload"), value: "template" },
 ];
 
 function normalizeMonthList(months: unknown) {
@@ -79,10 +84,19 @@ export function FixedStartSection() {
 	const year = useWatch({ control, name: "year" });
 	const month = useWatch({ control, name: "month" });
 	const salesAgentId = useWatch({ control, name: "salesAgentId" });
+	const trafficSubmitMode = useWatch({ control, name: "serviceFields.submitMode" as const }) as "single" | "template" | undefined;
 
 	const servicePath = useMemo(() => resolveContractServicePath(serviceCode), [serviceCode]);
 	const isTraffic = serviceCode === "traffic";
 	const isSmsCommission = isSmsCommissionCode(serviceCode);
+	const isTrafficTemplateMode = isTraffic && trafficSubmitMode === "template";
+	const isTrafficSingleMode = isTraffic && trafficSubmitMode === "single";
+	const preservedServiceFields = useMemo(() => {
+		if (!isTraffic || !trafficSubmitMode)
+			return {};
+
+		return { submitMode: trafficSubmitMode };
+	}, [isTraffic, trafficSubmitMode]);
 
 	const permittedCreateIdsFromPerformance = getPermittedServiceIds("performances", "create");
 	const permittedCreateIdsFromContracts = getPermittedServiceIds("contracts", "create");
@@ -96,7 +110,11 @@ export function FixedStartSection() {
 	);
 
 	const companies = useQuery(companiesByServiceQuery(serviceId));
-	const gaps = useQuery(performanceGapsQuery({ serviceId, companyId }));
+	const gaps = useQuery(performanceGapsQuery({
+		serviceId,
+		companyId: isTrafficTemplateMode ? null : companyId,
+		companyType: isTrafficTemplateMode ? trafficCompanyType : null,
+	}));
 	const contracts = useQuery(performanceContractsQuery({ servicePath, serviceId, companyId }));
 	const smsCommissionAgents = useQuery(smsCommissionAgentsQuery(isSmsCommission && !!companyId));
 
@@ -136,7 +154,7 @@ export function FixedStartSection() {
 		setValue("contractId", null, { shouldDirty: true, shouldValidate: false });
 		setValue("contractModel", null, { shouldDirty: true, shouldValidate: false });
 		setValue("salesAgentId", null, { shouldDirty: true, shouldValidate: false });
-		setValue("serviceFields", {}, { shouldDirty: true, shouldValidate: false });
+		setValue("serviceFields", preservedServiceFields, { shouldDirty: true, shouldValidate: false });
 
 		// Keep year/month when company is cleared by "submit and create another".
 		if (companyId == null)
@@ -144,7 +162,7 @@ export function FixedStartSection() {
 
 		setValue("year", null, { shouldDirty: true, shouldValidate: false });
 		setValue("month", null, { shouldDirty: true, shouldValidate: false });
-	}, [companyId, setValue]);
+	}, [companyId, setValue, preservedServiceFields]);
 
 	useEffect(() => {
 		const prevYear = prevYearRef.current;
@@ -158,8 +176,8 @@ export function FixedStartSection() {
 		setValue("month", null, { shouldDirty: true, shouldValidate: false });
 		setValue("contractId", null, { shouldDirty: true, shouldValidate: false });
 		setValue("contractModel", null, { shouldDirty: true, shouldValidate: false });
-		setValue("serviceFields", {}, { shouldDirty: true, shouldValidate: false });
-	}, [year, setValue]);
+		setValue("serviceFields", preservedServiceFields, { shouldDirty: true, shouldValidate: false });
+	}, [year, setValue, preservedServiceFields]);
 
 	useEffect(() => {
 		const prevTrafficCompanyType = prevTrafficCompanyTypeRef.current;
@@ -174,6 +192,25 @@ export function FixedStartSection() {
 			setValue("companyId", null, { shouldDirty: true, shouldValidate: false });
 		}
 	}, [isTraffic, trafficCompanyType, setValue]);
+
+	useEffect(() => {
+		if (!isTraffic) {
+			if (getValues("serviceFields.submitMode" as const) != null) {
+				setValue("serviceFields.submitMode" as const, undefined, { shouldDirty: false, shouldValidate: false });
+			}
+			return;
+		}
+
+		if (!trafficCompanyType)
+			return;
+
+		if (!trafficSubmitMode) {
+			setValue("serviceFields.submitMode" as const, "single", {
+				shouldDirty: false,
+				shouldValidate: false,
+			});
+		}
+	}, [isTraffic, trafficCompanyType, trafficSubmitMode, setValue, getValues]);
 
 	useEffect(() => {
 		if (!serviceId) {
@@ -198,6 +235,23 @@ export function FixedStartSection() {
 			setValue("serviceCode", nextServiceCode, { shouldDirty: false, shouldValidate: false });
 		}
 	}, [serviceId, services.data, setValue, getValues, permittedCreateServiceIdList.join(",")]);
+
+	useEffect(() => {
+		if (!isTraffic)
+			return;
+
+		if (!trafficSubmitMode)
+			return;
+
+		setValue("year", null, { shouldDirty: true, shouldValidate: false });
+		setValue("month", null, { shouldDirty: true, shouldValidate: false });
+		setValue("contractId", null, { shouldDirty: true, shouldValidate: false });
+		setValue("serviceFields.monthlyPerformanceFile" as const, [], { shouldDirty: false, shouldValidate: false });
+
+		if (trafficSubmitMode === "template") {
+			setValue("companyId", null, { shouldDirty: true, shouldValidate: false });
+		}
+	}, [isTraffic, trafficSubmitMode, setValue]);
 
 	const serviceOptions = useMemo(
 		() =>
@@ -225,7 +279,7 @@ export function FixedStartSection() {
 	}, [companies.data, trafficCompanyType]);
 
 	const companyOptions = isTraffic ? companyOptionsTraffic : companyOptionsDefault;
-	const isCompanyDisabled = !serviceId || companies.isLoading || (isTraffic && !trafficCompanyType);
+	const isCompanyDisabled = !serviceId || companies.isLoading || (isTraffic && (!trafficCompanyType || !isTrafficSingleMode));
 
 	const companyPlaceholder
 		= !serviceId
@@ -234,7 +288,9 @@ export function FixedStartSection() {
 				? t("performance.placeholders.loadingCompanies")
 				: isTraffic && !trafficCompanyType
 					? t("performance.placeholders.selectTrafficCompanyTypeFirst")
-					: t("performance.placeholders.selectCompany");
+					: isTraffic && !isTrafficSingleMode
+						? t("performance.traffic.singleEntry")
+						: t("performance.placeholders.selectCompany");
 
 	const missingMonthsByYear = useMemo(() => {
 		const map = new Map<number, number[]>();
@@ -252,12 +308,11 @@ export function FixedStartSection() {
 		return map;
 	}, [gaps.data]);
 
-	const baseYearOptions = useMemo(
-		() => Array.from(missingMonthsByYear.keys())
+	const baseYearOptions = useMemo(() => {
+		return Array.from(missingMonthsByYear.keys())
 			.sort((a, b) => a - b)
-			.map(value => ({ label: String(value), value })),
-		[missingMonthsByYear],
-	);
+			.map(value => ({ label: String(value), value }));
+	}, [missingMonthsByYear]);
 
 	const baseMonthOptions = useMemo(() => {
 		if (year == null)
@@ -280,6 +335,16 @@ export function FixedStartSection() {
 	);
 
 	useEffect(() => {
+		if (isTrafficTemplateMode) {
+			if (getValues("contractId") !== null) {
+				setValue("contractId", null, { shouldDirty: false, shouldValidate: false });
+			}
+			if (getValues("contractModel") !== null) {
+				setValue("contractModel", null, { shouldDirty: false, shouldValidate: false });
+			}
+			return;
+		}
+
 		const nextContractId = activeContract?.id ?? null;
 		if (getValues("contractId") !== nextContractId) {
 			setValue("contractId", nextContractId, { shouldDirty: false, shouldValidate: false });
@@ -299,7 +364,7 @@ export function FixedStartSection() {
 				setValue("contractModel", null, { shouldDirty: false, shouldValidate: false });
 			}
 		}
-	}, [activeContract, serviceCode, setValue, getValues]);
+	}, [activeContract, serviceCode, setValue, getValues, isTrafficTemplateMode]);
 
 	const smsCommissionAgentOptions = useMemo(() => {
 		if (!companyId)
@@ -358,13 +423,16 @@ export function FixedStartSection() {
 		}
 	}, [isSmsCommission, companyId, smsCommissionAgentOptions, salesAgentId, activeContract, setValue]);
 
-	const isDateOptionsLoading = !!serviceId && !!companyId && (gaps.isLoading || gaps.isFetching);
+	const isDateOptionsLoading = isTrafficTemplateMode
+		? !!serviceId && !!trafficCompanyType && (gaps.isLoading || gaps.isFetching)
+		: !!serviceId && !!companyId && (gaps.isLoading || gaps.isFetching);
 	const hasCompanySelection = !!serviceId && !!companyId;
 	const hasNoContractsForCompany = hasCompanySelection && contracts.isSuccess && (contracts.data?.results?.length ?? 0) < 1;
 	const hasAnyYearMonthOption = Array.from(missingMonthsByYear.values()).some(months => months.length > 0);
-	const isPeriodStateLoading = hasCompanySelection && (gaps.isLoading || gaps.isFetching || contracts.isLoading || contracts.isFetching);
-	const shouldShowPeriodSelectors = hasCompanySelection && !isPeriodStateLoading && !hasNoContractsForCompany && hasAnyYearMonthOption;
-	const shouldShowMissingPeriodError = hasCompanySelection && !isPeriodStateLoading && !shouldShowPeriodSelectors;
+	const isPeriodStateLoading = !isTrafficTemplateMode && hasCompanySelection && (gaps.isLoading || gaps.isFetching || contracts.isLoading || contracts.isFetching);
+	const shouldShowTrafficTemplatePeriodSelectors = isTrafficTemplateMode && !!serviceId && !!trafficCompanyType && hasAnyYearMonthOption;
+	const shouldShowPeriodSelectors = shouldShowTrafficTemplatePeriodSelectors || (hasCompanySelection && !isPeriodStateLoading && !hasNoContractsForCompany && hasAnyYearMonthOption);
+	const shouldShowMissingPeriodError = !isTrafficTemplateMode && hasCompanySelection && !isPeriodStateLoading && !shouldShowPeriodSelectors;
 
 	useEffect(() => {
 		if (!shouldShowMissingPeriodError)
@@ -421,23 +489,43 @@ export function FixedStartSection() {
 						)
 						: null}
 
-					<Col span={12}>
-						<RHFSelect<PerformanceFormValues, "companyId", number | null>
-							name="companyId"
-							label={t("performance.labels.companyName")}
-							loading={companies.isLoading}
-							options={companyOptions as any}
-							selectProps={{
-								allowClear: true,
-								disabled: isCompanyDisabled,
-								placeholder: companyPlaceholder,
-								showSearch: true,
-								optionFilterProp: "label",
-								style: isCompanyDisabled ? { cursor: "not-allowed" } : undefined,
-								open: isCompanyDisabled ? false : undefined,
-							}}
-						/>
-					</Col>
+					{isTraffic && trafficCompanyType
+						? (
+							<Col span={12}>
+								<RHFProRadioGroup<PerformanceFormValues, "serviceFields.submitMode">
+									name={"serviceFields.submitMode" as const}
+									label={t("performance.traffic.submitMethod")}
+									radioProps={{
+										optionType: "button",
+										buttonStyle: "solid",
+										options: TRAFFIC_SUBMIT_MODE_OPTIONS,
+									}}
+								/>
+							</Col>
+						)
+						: null}
+
+					{(!isTraffic || isTrafficSingleMode)
+						? (
+							<Col span={12}>
+								<RHFSelect<PerformanceFormValues, "companyId", number | null>
+									name="companyId"
+									label={t("performance.labels.companyName")}
+									loading={companies.isLoading}
+									options={companyOptions as any}
+									selectProps={{
+										allowClear: true,
+										disabled: isCompanyDisabled,
+										placeholder: companyPlaceholder,
+										showSearch: true,
+										optionFilterProp: "label",
+										style: isCompanyDisabled ? { cursor: "not-allowed" } : undefined,
+										open: isCompanyDisabled ? false : undefined,
+									}}
+								/>
+							</Col>
+						)
+						: null}
 
 					{isSmsCommission
 						? (

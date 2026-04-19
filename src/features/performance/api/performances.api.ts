@@ -231,6 +231,31 @@ interface UploadPerformanceFileParams {
 	suppressErrorNotification?: boolean
 }
 
+interface UploadTrafficExcelImportParams {
+	file: File
+	searchParams: {
+		sh_year: number
+		sh_month: number
+		company_type: string
+	}
+	suppressErrorNotification?: boolean
+}
+
+export interface TrafficExcelImportResponse {
+	total_rows_in_file: number
+	filled_rows: number
+	created: number
+	skipped_empty: number
+	rejected: number
+	rejected_by_reason: Record<string, number>
+	rejected_items: Array<{
+		row_no: number
+		company_name: string
+		reason: string
+		details: Record<string, unknown>
+	}>
+}
+
 function buildContractsPath(service: PerformanceContractServicePath) {
 	return `contracts/${service}/`;
 }
@@ -257,13 +282,22 @@ function compactSearchParams(params: Record<string, unknown>) {
 	return output;
 }
 
-export function fetchPerformanceGaps(serviceId: number, companyId: number) {
+export function fetchPerformanceGaps({
+	serviceId,
+	companyId,
+	companyType,
+}: {
+	serviceId: number
+	companyId?: number | null
+	companyType?: string | null
+}) {
 	return request
 		.get("performances/gaps/", {
-			searchParams: {
+			searchParams: compactSearchParams({
 				service_id: serviceId,
 				company_id: companyId,
-			},
+				company_type: companyType,
+			}),
 		})
 		.json<PerformanceGapsResponse>();
 }
@@ -383,12 +417,33 @@ export function uploadPerformanceFiles({
 		.json<any>();
 }
 
+export function uploadTrafficExcelImport({
+	file,
+	searchParams,
+	suppressErrorNotification,
+}: UploadTrafficExcelImportParams) {
+	const body = new FormData();
+	body.append("file", file);
+
+	return request
+		.post("performances/traffic/excel-import/", {
+			searchParams: compactSearchParams(searchParams),
+			body,
+			suppressErrorNotification,
+		})
+		.json<TrafficExcelImportResponse>();
+}
+
 export async function downloadPerformanceTemplate(
 	service: "traffic" | "commercial",
 	params: Record<string, string | number | boolean | null | undefined>,
 ) {
+	const path = service === "traffic"
+		? "performances/traffic/excel-template/"
+		: `performances/${service}/template/`;
+
 	const blob = await request
-		.get(`performances/${service}/template/`, {
+		.get(path, {
 			searchParams: compactSearchParams(params),
 		})
 		.blob();

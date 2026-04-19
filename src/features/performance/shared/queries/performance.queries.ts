@@ -28,14 +28,20 @@ export function companiesByServiceQuery(serviceId: number | null | undefined) {
 export function performanceGapsQuery({
 	serviceId,
 	companyId,
+	companyType,
 }: {
 	serviceId: number | null | undefined
 	companyId: number | null | undefined
+	companyType?: string | null | undefined
 }) {
 	return queryOptions({
-		queryKey: ["performances", "gaps", { serviceId, companyId }],
-		enabled: !!serviceId && !!companyId,
-		queryFn: () => fetchPerformanceGaps(serviceId!, companyId!),
+		queryKey: ["performances", "gaps", { serviceId, companyId, companyType }],
+		enabled: !!serviceId && (!!companyId || !!companyType),
+		queryFn: () => fetchPerformanceGaps({
+			serviceId: serviceId!,
+			companyId,
+			companyType,
+		}),
 		staleTime: 30 * 1000,
 	});
 }

@@ -9,8 +9,10 @@ import {
 	fetchPerformanceList,
 } from "#src/features/performance/api/performances.api";
 import {
+	aggregatePerformanceRows,
 	normalizePerformanceRecord,
 	resolvePerformanceServicePath,
+	shouldAggregatePerformanceRows,
 } from "#src/features/performance/shared/model/performance.helpers";
 import {
 	companiesByServiceQuery,
@@ -390,10 +392,40 @@ export default function PerformanceListPage() {
 						service_type: (params as any).service_type,
 					};
 
-					const responseData = await fetchPerformanceList(selectedServicePath, query);
+					if (!shouldAggregatePerformanceRows(selectedServicePath)) {
+						const responseData = await fetchPerformanceList(selectedServicePath, query);
+						return {
+							data: responseData.results,
+							total: responseData.count,
+							success: true,
+						};
+					}
+
+					const rawRows: PerformanceListRow[] = [];
+					const aggregatePageSize = 250;
+					let currentPage = 1;
+					let totalRawRows = 0;
+
+					do {
+						const responseData = await fetchPerformanceList(selectedServicePath, {
+							...query,
+							page: currentPage,
+							page_size: aggregatePageSize,
+						});
+						totalRawRows = responseData.count ?? 0;
+						rawRows.push(...responseData.results);
+						currentPage += 1;
+					}
+					while (rawRows.length < totalRawRows);
+
+					const aggregatedRows = aggregatePerformanceRows(selectedServicePath, rawRows);
+					const current = params.current ?? 1;
+					const pageSize = params.pageSize ?? 20;
+					const start = (current - 1) * pageSize;
+
 					return {
-						data: responseData.results,
-						total: responseData.count,
+						data: aggregatedRows.slice(start, start + pageSize),
+						total: aggregatedRows.length,
 						success: true,
 					};
 				}}

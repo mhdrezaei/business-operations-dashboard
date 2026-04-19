@@ -61,15 +61,24 @@ export function buildPerformanceSchema(
 			}),
 		)
 		.superRefine((value, ctx) => {
-			requireNotNull(value.serviceId, ["serviceId"], i18next.t("performance.validation.base.serviceRequired"), ctx);
-			requireNotNull(value.serviceCode, ["serviceCode"], i18next.t("performance.validation.base.serviceCodeRequired"), ctx);
-			requireNotNull(value.companyId, ["companyId"], i18next.t("performance.validation.base.companyRequired"), ctx);
-			requireNotNull(value.year, ["year"], i18next.t("performance.validation.base.yearRequired"), ctx);
-			requireNotNull(value.month, ["month"], i18next.t("performance.validation.base.monthRequired"), ctx);
-			requireNotNull(value.contractId, ["contractId"], i18next.t("performance.validation.base.contractForMonthNotFound"), ctx);
-
 			const normalizedCode = (value.serviceCode ?? "").trim().toLowerCase();
 			const serviceFields = (value.serviceFields ?? {}) as Record<string, unknown>;
+			const trafficSubmitMode = normalizedCode === "traffic"
+				? String(serviceFields.submitMode ?? "").trim().toLowerCase()
+				: "";
+
+			requireNotNull(value.serviceId, ["serviceId"], i18next.t("performance.validation.base.serviceRequired"), ctx);
+			requireNotNull(value.serviceCode, ["serviceCode"], i18next.t("performance.validation.base.serviceCodeRequired"), ctx);
+			requireNotNull(value.year, ["year"], i18next.t("performance.validation.base.yearRequired"), ctx);
+			requireNotNull(value.month, ["month"], i18next.t("performance.validation.base.monthRequired"), ctx);
+
+			if (!(normalizedCode === "traffic" && trafficSubmitMode === "template")) {
+				requireNotNull(value.companyId, ["companyId"], i18next.t("performance.validation.base.companyRequired"), ctx);
+			}
+
+			if (!(normalizedCode === "traffic" && trafficSubmitMode === "template")) {
+				requireNotNull(value.contractId, ["contractId"], i18next.t("performance.validation.base.contractForMonthNotFound"), ctx);
+			}
 
 			if (normalizedCode === "traffic") {
 				if (value.trafficCompanyType == null || !TRAFFIC_COMPANY_TYPE_VALUES.includes(value.trafficCompanyType as typeof TRAFFIC_COMPANY_TYPE_VALUES[number])) {

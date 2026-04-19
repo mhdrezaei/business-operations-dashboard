@@ -134,6 +134,7 @@ export default function PerformanceReportPage() {
 	const [selectedServiceCode, setSelectedServiceCode] = useState<string | null>(null);
 	const [selectedYear, setSelectedYear] = useState<number | null>(null);
 	const [selectedPeriods, setSelectedPeriods] = useState<string[]>([]);
+	const [selectedCompanyIds, setSelectedCompanyIds] = useState<number[]>([]);
 	const [selectedSmsReportType, setSelectedSmsReportType] = useState<SmsReportType>("normal");
 	const [selectedTrafficCompanyType, setSelectedTrafficCompanyType] = useState<TrafficCompanyType | null>(null);
 	const [selectedContractType, setSelectedContractType] = useState<SmsContractTypeFilter>("all");
@@ -187,6 +188,7 @@ export default function PerformanceReportPage() {
 		setSelectedServiceCode(null);
 		setSelectedYear(null);
 		setSelectedPeriods([]);
+		setSelectedCompanyIds([]);
 		setSelectedSmsReportType("normal");
 		setSelectedTrafficCompanyType(null);
 		setSelectedContractType("all");
@@ -386,6 +388,7 @@ export default function PerformanceReportPage() {
 		setSelectedServiceCode(normalizedServiceCode);
 		setSelectedYear(null);
 		setSelectedPeriods([]);
+		setSelectedCompanyIds([]);
 		setSelectedSmsReportType(nextSmsReportType);
 		setSelectedTrafficCompanyType(null);
 		setSelectedContractType("all");
@@ -408,6 +411,7 @@ export default function PerformanceReportPage() {
 	const handleYearChange = (year: number | null) => {
 		setSelectedYear(year);
 		setSelectedPeriods([]);
+		setSelectedCompanyIds([]);
 		setSummary(null);
 		formRef.current?.setFieldsValue({
 			sh_periods: undefined,
@@ -417,14 +421,21 @@ export default function PerformanceReportPage() {
 
 	const handlePeriodsChange = (periods: string[]) => {
 		setSelectedPeriods(periods);
+		setSelectedCompanyIds([]);
 		setSummary(null);
 		formRef.current?.setFieldsValue({
 			company_ids: undefined,
 		});
 	};
 
+	const handleCompanyIdsChange = (companyIds: number[]) => {
+		setSelectedCompanyIds(companyIds);
+		setSummary(null);
+	};
+
 	const handleTrafficCompanyTypeChange = (value: TrafficCompanyType | null) => {
 		setSelectedTrafficCompanyType(value);
+		setSelectedCompanyIds([]);
 		setSummary(null);
 		formRef.current?.setFieldsValue({
 			company_ids: undefined,
@@ -469,6 +480,8 @@ export default function PerformanceReportPage() {
 			contractTypeOptions,
 			smsReportTypeOptions,
 			financialColumnOptions,
+			selectedPeriods,
+			selectedCompanyIds,
 			selectedFinancialColumns,
 			selectedSmsReportType,
 			isSmsService,
@@ -479,6 +492,7 @@ export default function PerformanceReportPage() {
 			onServiceChange: setSelectedService,
 			onYearChange: handleYearChange,
 			onPeriodsChange: handlePeriodsChange,
+			onCompanyIdsChange: handleCompanyIdsChange,
 			onTrafficCompanyTypeChange: handleTrafficCompanyTypeChange,
 			onContractTypeChange: handleContractTypeChange,
 			onSmsReportTypeChange: handleSmsReportTypeChange,
@@ -494,6 +508,8 @@ export default function PerformanceReportPage() {
 		contractTypeOptions,
 		smsReportTypeOptions,
 		financialColumnOptions,
+		selectedPeriods,
+		selectedCompanyIds,
 		selectedFinancialColumns,
 		selectedSmsReportType,
 		isSmsService,
@@ -526,7 +542,7 @@ export default function PerformanceReportPage() {
 		if (periods.length === 0)
 			return null;
 
-		const companyIds = normalizeNumberList(formValues?.company_ids);
+		const companyIds = normalizeNumberList(formValues?.company_ids ?? selectedCompanyIds);
 		const trafficCompanyType = isTrafficService
 			? (formValues?.company_type == null || formValues.company_type === "" ? undefined : String(formValues.company_type))
 			: undefined;
@@ -544,7 +560,7 @@ export default function PerformanceReportPage() {
 			page_size: pageSize,
 			total,
 		};
-	}, [isSmsService, isTrafficService, selectedContractType, selectedPeriods, selectedServiceId, selectedServiceCode, supportsContractType]);
+	}, [isSmsService, isTrafficService, selectedCompanyIds, selectedContractType, selectedPeriods, selectedServiceId, selectedServiceCode, supportsContractType]);
 
 	const exportColumns = useMemo(() => {
 		return createPerformanceReportExportColumns({
@@ -678,7 +694,7 @@ export default function PerformanceReportPage() {
 						};
 					}
 
-					const companyIds = normalizeNumberList(formValues.company_ids);
+					const companyIds = normalizeNumberList(formValues.company_ids ?? selectedCompanyIds);
 					const trafficCompanyType = isTrafficService
 						? (formValues.company_type == null || formValues.company_type === "" ? undefined : String(formValues.company_type))
 						: undefined;
