@@ -189,6 +189,11 @@
 		"legacy": "Legacy",
 		"package": "Package"
 	},
+	"badges": {
+		"usedAddendum": "Based on addendum",
+		"hasCountyContract": "Has county contract",
+		"noCountyContract": "No county contract"
+	},
 	"traffic": {
 		"excelTitle": "Traffic Performance Excel",
 		"submitMethod": "Submission Method",

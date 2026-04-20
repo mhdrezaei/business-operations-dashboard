@@ -117,10 +117,10 @@ export function pickActiveContract(
 }
 
 export function extractOpenApiContractModel(contract: PerformanceContractListItem | null): OpenApiContractModel | null {
-	if (!contract)
-		return null;
+	return normalizeOpenApiContractModel(contract?.contract_openapi_details?.contract_model);
+}
 
-	const raw = contract.contract_openapi_details?.contract_model;
+export function normalizeOpenApiContractModel(raw: unknown): OpenApiContractModel | null {
 	const normalized = typeof raw === "string" ? raw.trim().toLowerCase() : "";
 
 	if (normalized === "legacy")

@@ -4,7 +4,7 @@ import { useAccess } from "#src/hooks";
 import { RHFProRadioGroup, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { ProCard } from "@ant-design/pro-components";
 import { useQuery } from "@tanstack/react-query";
-import { Col, Form, Input, Row } from "antd";
+import { Col, Form, Input, Row, Tag } from "antd";
 import i18next from "i18next";
 import { useEffect, useMemo, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
@@ -13,11 +13,13 @@ import {
 	extractOpenApiContractModel,
 	extractSalesAgentId,
 	isSmsCommissionCode,
+	normalizeOpenApiContractModel,
 	pickActiveContract,
 	resolveContractServicePath,
 } from "../../../model/performance.helpers";
 import {
 	companiesByServiceQuery,
+	monthlyContractStatusQuery,
 	performanceContractsQuery,
 	performanceGapsQuery,
 	servicesQuery,
@@ -91,6 +93,7 @@ export function FixedStartSection() {
 	const isSmsCommission = isSmsCommissionCode(serviceCode);
 	const isTrafficTemplateMode = isTraffic && trafficSubmitMode === "template";
 	const isTrafficSingleMode = isTraffic && trafficSubmitMode === "single";
+	const usesMonthlyStatus = serviceCode === "openapi" || isTrafficSingleMode;
 	const preservedServiceFields = useMemo(() => {
 		if (!isTraffic || !trafficSubmitMode)
 			return {};
@@ -115,7 +118,17 @@ export function FixedStartSection() {
 		companyId: isTrafficTemplateMode ? null : companyId,
 		companyType: isTrafficTemplateMode ? trafficCompanyType : null,
 	}));
-	const contracts = useQuery(performanceContractsQuery({ servicePath, serviceId, companyId }));
+	const monthlyStatus = useQuery(monthlyContractStatusQuery({
+		serviceId: usesMonthlyStatus ? serviceId : null,
+		companyId: usesMonthlyStatus ? companyId : null,
+		year: usesMonthlyStatus ? year : null,
+		month: usesMonthlyStatus ? month : null,
+	}));
+	const contracts = useQuery(performanceContractsQuery({
+		servicePath: usesMonthlyStatus ? null : servicePath,
+		serviceId,
+		companyId,
+	}));
 	const smsCommissionAgents = useQuery(smsCommissionAgentsQuery(isSmsCommission && !!companyId));
 
 	const prevServiceIdRef = useRef<typeof serviceId>(undefined);
@@ -333,6 +346,11 @@ export function FixedStartSection() {
 		() => pickActiveContract(contracts.data?.results ?? [], year, month),
 		[contracts.data, year, month],
 	);
+	const monthlyStatusContractId = monthlyStatus.data?.has_contract
+		? monthlyStatus.data.base_contract_id ?? null
+		: null;
+	const monthlyStatusOpenApiContractModel = normalizeOpenApiContractModel(monthlyStatus.data?.openapi?.contract_model);
+	const trafficHasCountyContract = monthlyStatus.data?.traffic?.has_county_contract === true;
 
 	useEffect(() => {
 		if (isTrafficTemplateMode) {
@@ -340,6 +358,29 @@ export function FixedStartSection() {
 				setValue("contractId", null, { shouldDirty: false, shouldValidate: false });
 			}
 			if (getValues("contractModel") !== null) {
+				setValue("contractModel", null, { shouldDirty: false, shouldValidate: false });
+			}
+			return;
+		}
+
+		if (usesMonthlyStatus) {
+			const nextContractId = monthlyStatus.isSuccess ? monthlyStatusContractId : null;
+			if (getValues("contractId") !== nextContractId) {
+				setValue("contractId", nextContractId, { shouldDirty: false, shouldValidate: false });
+			}
+
+			if (serviceCode === "openapi") {
+				const nextContractModel = monthlyStatus.isSuccess && monthlyStatus.data?.has_contract
+					? monthlyStatusOpenApiContractModel
+					: null;
+				if (getValues("contractModel") !== nextContractModel) {
+					setValue("contractModel", nextContractModel, {
+						shouldDirty: false,
+						shouldValidate: false,
+					});
+				}
+			}
+			else if (getValues("contractModel") !== null) {
 				setValue("contractModel", null, { shouldDirty: false, shouldValidate: false });
 			}
 			return;
@@ -364,7 +405,30 @@ export function FixedStartSection() {
 				setValue("contractModel", null, { shouldDirty: false, shouldValidate: false });
 			}
 		}
-	}, [activeContract, serviceCode, setValue, getValues, isTrafficTemplateMode]);
+	}, [
+		activeContract,
+		getValues,
+		isTrafficTemplateMode,
+		monthlyStatus.data?.has_contract,
+		monthlyStatus.isSuccess,
+		monthlyStatusContractId,
+		monthlyStatusOpenApiContractModel,
+		serviceCode,
+		setValue,
+		usesMonthlyStatus,
+	]);
+
+	useEffect(() => {
+		if (!isTrafficSingleMode)
+			return;
+		if (!monthlyStatus.isSuccess)
+			return;
+
+		setValue("serviceFields.countyEnabled" as const, trafficHasCountyContract, {
+			shouldDirty: false,
+			shouldValidate: false,
+		});
+	}, [isTrafficSingleMode, monthlyStatus.isSuccess, setValue, trafficHasCountyContract]);
 
 	const smsCommissionAgentOptions = useMemo(() => {
 		if (!companyId)
@@ -433,6 +497,7 @@ export function FixedStartSection() {
 	const shouldShowTrafficTemplatePeriodSelectors = isTrafficTemplateMode && !!serviceId && !!trafficCompanyType && hasAnyYearMonthOption;
 	const shouldShowPeriodSelectors = shouldShowTrafficTemplatePeriodSelectors || (hasCompanySelection && !isPeriodStateLoading && !hasNoContractsForCompany && hasAnyYearMonthOption);
 	const shouldShowMissingPeriodError = !isTrafficTemplateMode && hasCompanySelection && !isPeriodStateLoading && !shouldShowPeriodSelectors;
+	const shouldShowNoMonthlyContractAlert = usesMonthlyStatus	&& year != null	&& month != null && monthlyStatus.isSuccess && !monthlyStatus.data?.has_contract;
 
 	useEffect(() => {
 		if (!shouldShowMissingPeriodError)
@@ -549,6 +614,12 @@ export function FixedStartSection() {
 						? t("performance.messages.noContractForCompany")
 						: t("performance.messages.noYearMonthForCompany")}
 				/>
+				<TopRightAlert
+					alertKey="performance-no-monthly-contract-alert"
+					type="error"
+					open={shouldShowNoMonthlyContractAlert}
+					message={t("performance.messages.noActiveContractForMonth")}
+				/>
 
 				{shouldShowPeriodSelectors
 					? (
@@ -578,6 +649,33 @@ export function FixedStartSection() {
 									}}
 								/>
 							</Col>
+							{usesMonthlyStatus && year != null && month != null && monthlyStatus.data
+								? (
+									<Col span={24}>
+										<div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+											{monthlyStatus.data.used_addendum
+												? <Tag color="gold">{t("performance.badges.usedAddendum")}</Tag>
+												: null}
+											{serviceCode === "openapi" && monthlyStatusOpenApiContractModel
+												? (
+													<Tag color="blue">
+														{t(`performance.contractModel.${monthlyStatusOpenApiContractModel}`)}
+													</Tag>
+												)
+												: null}
+											{isTrafficSingleMode
+												? (
+													<Tag color={trafficHasCountyContract ? "green" : "default"}>
+														{trafficHasCountyContract
+															? t("performance.badges.hasCountyContract")
+															: t("performance.badges.noCountyContract")}
+													</Tag>
+												)
+												: null}
+										</div>
+									</Col>
+								)
+								: null}
 						</Row>
 					)
 					: null}

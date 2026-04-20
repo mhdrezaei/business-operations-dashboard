@@ -205,6 +205,32 @@ export interface PerformanceGapsResponse {
 	contract_source: string | null
 }
 
+export interface MonthlyContractStatusResponse {
+	service: {
+		id: number
+		code: string
+		name: string
+	} | null
+	company: {
+		id: number
+		name: string
+	} | null
+	period: {
+		year: number
+		month: number
+	}
+	has_contract: boolean
+	base_contract_id: number | null
+	used_addendum: boolean
+	source?: "addendum" | "base_contract" | string
+	openapi?: {
+		contract_model: string | null
+	} | null
+	traffic?: {
+		has_county_contract: boolean
+	} | null
+}
+
 export interface SmsCommissionAgentDto {
 	id: number
 	name: string
@@ -300,6 +326,29 @@ export function fetchPerformanceGaps({
 			}),
 		})
 		.json<PerformanceGapsResponse>();
+}
+
+export function fetchMonthlyContractStatus({
+	serviceId,
+	companyId,
+	year,
+	month,
+}: {
+	serviceId: number
+	companyId: number
+	year: number
+	month: number
+}) {
+	return request
+		.get("contracts/monthly-status/", {
+			searchParams: compactSearchParams({
+				service_id: serviceId,
+				company_id: companyId,
+				year,
+				month,
+			}),
+		})
+		.json<MonthlyContractStatusResponse>();
 }
 
 export function fetchPerformanceContracts(service: PerformanceContractServicePath, serviceId: number, companyId: number) {
