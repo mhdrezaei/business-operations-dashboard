@@ -1,0 +1,136 @@
+{
+	"titles": {
+		"create": "فرم ایجاد پیش‌بینی"
+	},
+	"actions": {
+		"clearForm": "پاکسازی فرم",
+		"submit": "ثبت پیش‌بینی",
+		"submitAndCreateAnother": "ثبت و ایجاد یکی دیگر",
+		"submitAndEdit": "ثبت و ویرایش",
+		"removeCompanyShare": "حذف شرکت",
+		"addLocation": "افزودن موقعیت"
+	},
+	"labels": {
+		"service": "نام سرویس",
+		"fiscalYear": "سال مالی",
+		"annualValue": "مقدار سالانه",
+		"annualIncome": "درآمد سالانه",
+		"annualExpense": "هزینه سالانه",
+		"smsAnnualValue": "تعداد پیامک سالانه",
+		"smsPriceBuy": "قیمت خرید هر پیامک",
+		"smsPriceSell": "قیمت فروش هر پیامک",
+		"trafficCompanyType": "نوع شرکت (ترافیک)",
+		"trafficLocation": "موقعیت",
+		"trafficAnnualValueReceive": "مقدار دریافتی سالانه",
+		"companySelect": "انتخاب شرکت",
+		"note": "توضیحات (اختیاری)"
+	},
+	"quarters": {
+		"q1": "کوارتر اول",
+		"q2": "کوارتر دوم",
+		"q3": "کوارتر سوم",
+		"q4": "کوارتر چهارم"
+	},
+	"sections": {
+		"quarters": "توزیع فصلی",
+		"companyShares": "سهم شرکت‌ها"
+	},
+	"operations": {
+		"billInquiry": "استعلام قبض",
+		"receiptRegister": "ثبت وصولی",
+		"smsTotal": "جمع کل پیامک",
+		"trafficTotal": "جمع کل بسته های ترافیک",
+		"psp": "PSP",
+		"shahkar": "شاهکار",
+		"sms": "سرویس پیامک",
+		"traffic": "سرویس ترافیک"
+	},
+	"metrics": {
+		"value": "مقدار",
+		"valueReceive": "مقدار دریافتی",
+		"income": "درآمد",
+		"expense": "هزینه"
+	},
+	"locations": {
+		"tehran": "تهران",
+		"province": "مراکز استانی"
+	},
+	"shareModes": {
+		"auto": "اتومات",
+		"manual": "اختصاصی"
+	},
+	"placeholders": {
+		"selectService": "سرویس را انتخاب کنید",
+		"selectFiscalYear": "سال مالی را انتخاب کنید",
+		"selectCompanies": "شرکت‌ها را انتخاب کنید",
+		"selectTrafficCompanyType": "نوع شرکت ترافیک را انتخاب کنید",
+		"selectLocation": "موقعیت را انتخاب کنید",
+		"percentExample": "مثلاً 25",
+		"amountExample": "مثلاً 10000000",
+		"smsPriceBuy": "مثلاً 120",
+		"smsPriceSell": "مثلاً 180",
+		"note": "مثلاً توضیح کوتاه درباره پیش‌بینی"
+	},
+	"messages": {
+		"unknownError": "خطای نامشخص",
+		"submitError": "خطا در ثبت پیش‌بینی",
+		"fixFormErrors": "لطفاً خطاهای فرم را اصلاح کنید",
+		"invalidFormInputs": "ورودی‌های فرم معتبر نیستند",
+		"companySharesDescription": "برای هر بخش می‌توانید حالت اتومات (بر اساس عملکرد سال قبل) یا اختصاصی را انتخاب کنید. در حالت اختصاصی، مجموع درصدهای هر بخش باید 100 باشد.",
+		"autoShareDescription": "تقسیم سهم بصورت اتومات بر اساس عملکرد سال قبل انجام می‌شود.",
+		"manualShareSum": "جمع {{title}}: {{total}}٪",
+		"editingExistingYear": "برای سال مالی {{fiscalYear}} رکورد قبلی پیدا شد و فرم در حالت ویرایش قرار گرفت.",
+		"createSuccess": "پیش‌بینی با موفقیت ثبت شد",
+		"createAndAnotherSuccess": "پیش‌بینی ثبت شد. فرم برای مورد بعدی آماده است.",
+		"createAndEditSuccess": "پیش‌بینی ثبت شد. می‌توانید ویرایش را ادامه دهید.",
+		"updateSuccess": "پیش‌بینی با موفقیت ویرایش شد"
+	},
+	"errors": {
+		"baseFormIncomplete": "اطلاعات پایه فرم کامل نیست",
+		"unsupportedService": "این سرویس هنوز برای پیش‌بینی پشتیبانی نشده است"
+	},
+	"validation": {
+		"base": {
+			"serviceRequired": "انتخاب سرویس الزامی است",
+			"serviceCodeRequired": "کد سرویس الزامی است",
+			"fiscalYearRequired": "سال مالی الزامی است"
+		},
+		"quarters": {
+			"allRequired": "درصد هر چهار کوارتر باید وارد شود",
+			"sumMustBeHundred": "مجموع درصد کوارترها باید 100 باشد"
+		},
+		"openapi": {
+			"nonNegativeNumber": "مقدار این فیلد باید صفر یا بیشتر باشد"
+		},
+		"psp": {
+			"valueRequired": "مقدار سالانه الزامی است و باید صفر یا بیشتر باشد",
+			"incomeRequired": "درآمد سالانه الزامی است و باید صفر یا بیشتر باشد"
+		},
+		"shahkar": {
+			"valueRequired": "مقدار سالانه الزامی است و باید صفر یا بیشتر باشد",
+			"incomeRequired": "درآمد سالانه الزامی است و باید صفر یا بیشتر باشد"
+		},
+		"sms": {
+			"valueRequired": "تعداد پیامک سالانه الزامی است و باید صفر یا بیشتر باشد",
+			"incomeRequired": "درآمد سالانه الزامی است و باید صفر یا بیشتر باشد",
+			"expenseRequired": "هزینه سالانه الزامی است و باید صفر یا بیشتر باشد",
+			"priceBuyRequired": "قیمت خرید هر پیامک الزامی است و باید صفر یا بیشتر باشد",
+			"priceSellRequired": "قیمت فروش هر پیامک الزامی است و باید صفر یا بیشتر باشد"
+		},
+		"traffic": {
+			"nonNegativeNumber": "مقدار این فیلد باید صفر یا بیشتر باشد",
+			"companyTypeRequired": "نوع شرکت ترافیک الزامی است",
+			"locationsRequired": "حداقل یک موقعیت باید ثبت شود",
+			"locationRequired": "انتخاب موقعیت الزامی است",
+			"locationDuplicate": "هر موقعیت فقط یک‌بار قابل انتخاب است",
+			"valueRequired": "مقدار سالانه الزامی است و باید صفر یا بیشتر باشد",
+			"valueReceiveRequired": "مقدار دریافتی سالانه الزامی است و باید صفر یا بیشتر باشد",
+			"incomeRequired": "درآمد سالانه الزامی است و باید صفر یا بیشتر باشد",
+			"expenseRequired": "هزینه سالانه الزامی است و باید صفر یا بیشتر باشد"
+		},
+		"manualShares": {
+			"companyRequired": "حداقل یک شرکت باید انتخاب شود",
+			"sumMustBeHundred": "مجموع درصد شرکت‌ها باید 100 باشد"
+		}
+	}
+}
