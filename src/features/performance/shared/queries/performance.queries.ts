@@ -1,6 +1,7 @@
 import type { PerformanceContractServicePath } from "#src/features/performance/api/performances.api";
 import { fetchCompaniesByService, fetchServices } from "#src/api/common/common.api";
 import {
+	fetchMonthlyContractStatus,
 	fetchPerformanceContracts,
 	fetchPerformanceGaps,
 	fetchPerformanceReportAvailability,
@@ -28,14 +29,20 @@ export function companiesByServiceQuery(serviceId: number | null | undefined) {
 export function performanceGapsQuery({
 	serviceId,
 	companyId,
+	companyType,
 }: {
 	serviceId: number | null | undefined
 	companyId: number | null | undefined
+	companyType?: string | null | undefined
 }) {
 	return queryOptions({
-		queryKey: ["performances", "gaps", { serviceId, companyId }],
-		enabled: !!serviceId && !!companyId,
-		queryFn: () => fetchPerformanceGaps(serviceId!, companyId!),
+		queryKey: ["performances", "gaps", { serviceId, companyId, companyType }],
+		enabled: !!serviceId && (!!companyId || !!companyType),
+		queryFn: () => fetchPerformanceGaps({
+			serviceId: serviceId!,
+			companyId,
+			companyType,
+		}),
 		staleTime: 30 * 1000,
 	});
 }
@@ -53,6 +60,30 @@ export function performanceContractsQuery({
 		queryKey: ["performances", "contracts", { servicePath, serviceId, companyId }],
 		enabled: !!servicePath && !!serviceId && !!companyId,
 		queryFn: () => fetchPerformanceContracts(servicePath!, serviceId!, companyId!),
+		staleTime: 30 * 1000,
+	});
+}
+
+export function monthlyContractStatusQuery({
+	serviceId,
+	companyId,
+	year,
+	month,
+}: {
+	serviceId: number | null | undefined
+	companyId: number | null | undefined
+	year: number | null | undefined
+	month: number | null | undefined
+}) {
+	return queryOptions({
+		queryKey: ["contracts", "monthly-status", { serviceId, companyId, year, month }],
+		enabled: !!serviceId && !!companyId && !!year && !!month,
+		queryFn: () => fetchMonthlyContractStatus({
+			serviceId: serviceId!,
+			companyId: companyId!,
+			year: year!,
+			month: month!,
+		}),
 		staleTime: 30 * 1000,
 	});
 }

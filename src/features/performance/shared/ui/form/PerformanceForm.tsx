@@ -165,8 +165,13 @@ export function PerformanceForm({
 		control: form.control,
 		name: "month",
 	});
+	const trafficSubmitMode = useWatch({
+		control: form.control,
+		name: "serviceFields.submitMode" as const,
+	}) as "single" | "template" | undefined;
 	const module = serviceCode ? performanceServiceRegistry[serviceCode] : undefined;
 	const canShowServiceForm = year != null && month != null;
+	const showActionSection = canShowServiceForm && !(serviceCode === "traffic" && trafficSubmitMode === "template");
 
 	const submitIntentRef = useRef<PerformanceSubmitIntent>("submit");
 
@@ -237,7 +242,7 @@ export function PerformanceForm({
 						: null}
 				</AnimatePresence>
 
-				{canShowServiceForm
+				{showActionSection
 					? (
 						<div style={{ marginTop: 16, width: "100%" }}>
 							<ActionSection

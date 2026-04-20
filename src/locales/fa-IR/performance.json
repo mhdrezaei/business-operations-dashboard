@@ -189,6 +189,11 @@
 		"legacy": "قدیمی",
 		"package": "بسته‌ای"
 	},
+	"badges": {
+		"usedAddendum": "بر اساس الحاقیه",
+		"hasCountyContract": "دارای قرارداد شهرستان",
+		"noCountyContract": "فاقد قرارداد شهرستان"
+	},
 	"traffic": {
 		"excelTitle": "فایل اکسل عملکرد ترافیک",
 		"submitMethod": "روش ثبت عملکرد",

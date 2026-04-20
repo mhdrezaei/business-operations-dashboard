@@ -15,6 +15,10 @@ export function isSmsCommissionCode(code: string | null | undefined) {
 	return normalized === "sms-commission" || normalized === "sms_commission";
 }
 
+export function shouldAggregatePerformanceRows(service: PerformanceServicePath | null | undefined) {
+	return service === "openapi" || service === "sms" || service === "sms-commission";
+}
+
 export function resolveContractServicePath(serviceCode: PerformanceServiceCode | null): PerformanceContractServicePath | null {
 	const normalized = normalizeServiceCode(serviceCode);
 	if (!normalized)
@@ -113,10 +117,10 @@ export function pickActiveContract(
 }
 
 export function extractOpenApiContractModel(contract: PerformanceContractListItem | null): OpenApiContractModel | null {
-	if (!contract)
-		return null;
+	return normalizeOpenApiContractModel(contract?.contract_openapi_details?.contract_model);
+}
 
-	const raw = contract.contract_openapi_details?.contract_model;
+export function normalizeOpenApiContractModel(raw: unknown): OpenApiContractModel | null {
 	const normalized = typeof raw === "string" ? raw.trim().toLowerCase() : "";
 
 	if (normalized === "legacy")
@@ -187,4 +191,67 @@ export function normalizePerformanceRecord(record: PerformanceListItem | Record<
 		language: pickStringFromRecord(raw, ["language"]),
 		operationType: pickStringFromRecord(raw, ["operation_type"]),
 	};
+}
+
+function buildAggregatedPerformanceRowKey(service: PerformanceServicePath, record: PerformanceListItem) {
+	const normalized = normalizePerformanceRecord(record);
+	const base = [
+		service,
+		normalized.companyId ?? "company",
+		normalized.serviceId ?? "service",
+		normalized.year ?? "year",
+		normalized.month ?? "month",
+	];
+
+	if (service === "sms-commission")
+		base.push(normalized.salesAgentId ?? "sales-agent");
+
+	return base.join(":");
+}
+
+function sumPerformanceField(currentValue: unknown, nextValue: unknown) {
+	const current = toNullableNumber(currentValue) ?? 0;
+	const next = toNullableNumber(nextValue) ?? 0;
+	return current + next;
+}
+
+export function aggregatePerformanceRows(
+	service: PerformanceServicePath,
+	rows: PerformanceListItem[],
+) {
+	if (!shouldAggregatePerformanceRows(service))
+		return rows;
+
+	const grouped = new Map<string, PerformanceListItem>();
+
+	rows.forEach((row) => {
+		const key = buildAggregatedPerformanceRowKey(service, row);
+		const existing = grouped.get(key);
+		if (!existing) {
+			grouped.set(key, {
+				...row,
+				operation_type: null,
+				operator: null,
+				language: null,
+			});
+			return;
+		}
+
+		existing.value = sumPerformanceField(existing.value, row.value);
+		existing.income = sumPerformanceField(existing.income, row.income);
+		existing.expense = sumPerformanceField(existing.expense, row.expense);
+		existing.profit = sumPerformanceField(existing.profit, row.profit);
+		existing.value_receive = sumPerformanceField(existing.value_receive, row.value_receive);
+
+		if (existing.company_name == null && row.company_name != null)
+			existing.company_name = row.company_name;
+		if (existing.service_name == null && row.service_name != null)
+			existing.service_name = row.service_name;
+		if (existing.sales_agent_name == null && row.sales_agent_name != null)
+			existing.sales_agent_name = row.sales_agent_name;
+		if (existing.is_official == null && row.is_official != null)
+			existing.is_official = row.is_official as boolean;
+	});
+
+	return Array.from(grouped.values());
 }

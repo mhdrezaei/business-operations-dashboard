@@ -16,6 +16,11 @@ interface PerformanceOperation {
 	searchParams?: Record<string, string | number | boolean | null | undefined>
 }
 
+export interface SubmitPerformanceResult {
+	servicePath: PerformanceServicePath
+	record: Record<string, unknown> | null
+}
+
 function buildBasePayload(values: PerformanceFormValues) {
 	return {
 		company: values.companyId,
@@ -23,6 +28,14 @@ function buildBasePayload(values: PerformanceFormValues) {
 		sh_year: values.year,
 		sh_month: values.month,
 	};
+}
+
+function toNullableNumber(value: unknown) {
+	if (value == null || value === "")
+		return null;
+
+	const numeric = Number(value);
+	return Number.isFinite(numeric) ? numeric : null;
 }
 
 function buildManualOperations(values: PerformanceFormValues): PerformanceOperation[] {
@@ -125,14 +138,15 @@ function buildManualOperations(values: PerformanceFormValues): PerformanceOperat
 	return [];
 }
 
-async function submitManualPerformance(values: PerformanceFormValues, servicePath: PerformanceServicePath) {
+async function submitManualPerformance(values: PerformanceFormValues, servicePath: PerformanceServicePath): Promise<Record<string, unknown> | null> {
 	if (!values.companyId || !values.year || !values.month) {
 		throw new Error(i18next.t("performance.errors.baseFormIncomplete"));
 	}
 
 	const operations = buildManualOperations(values);
+	let lastResponse: Record<string, unknown> | null = null;
 	for (const operation of operations) {
-		await upsertPerformance({
+		lastResponse = await upsertPerformance({
 			service: servicePath,
 			companyId: values.companyId,
 			year: values.year,
@@ -142,10 +156,12 @@ async function submitManualPerformance(values: PerformanceFormValues, servicePat
 			suppressErrorNotification: true,
 		});
 	}
+
+	return lastResponse;
 }
 
-async function submitTrafficFiles(values: PerformanceFormValues) {
-	if (!values.companyId || !values.year || !values.month) {
+async function submitTrafficFiles(values: PerformanceFormValues): Promise<Record<string, unknown> | null> {
+	if (!values.year || !values.month || !values.trafficCompanyType) {
 		throw new Error(i18next.t("performance.errors.baseFormIncomplete"));
 	}
 
@@ -154,15 +170,13 @@ async function submitTrafficFiles(values: PerformanceFormValues) {
 		throw new Error(i18next.t("performance.errors.monthlyPerformanceFileRequired"));
 	}
 
-	await uploadPerformanceFiles({
+	return await uploadPerformanceFiles({
 		service: "traffic",
 		files: {
 			file: monthlyPerformanceFile,
 		},
 		extraFields: {
 			company_type: values.trafficCompanyType,
-			service: values.serviceId,
-			company: values.companyId,
 			sh_year: values.year,
 			sh_month: values.month,
 		},
@@ -170,17 +184,17 @@ async function submitTrafficFiles(values: PerformanceFormValues) {
 	});
 }
 
-async function submitTrafficSingle(values: PerformanceFormValues) {
+async function submitTrafficSingle(values: PerformanceFormValues): Promise<Record<string, unknown> | null> {
 	if (!values.companyId || !values.year || !values.month) {
 		throw new Error(i18next.t("performance.errors.baseFormIncomplete"));
 	}
 
 	const fields = (values.serviceFields ?? {}) as Record<string, any>;
-	const tehranValue = fields.tehranValue;
-	const tehranValueReceive = fields.tehranValueReceive;
+	const tehranValue = toNullableNumber(fields.tehranValue);
+	const tehranValueReceive = toNullableNumber(fields.tehranValueReceive);
 	const countyEnabled = Boolean(fields.countyEnabled);
-	const countyValue = fields.countyValue;
-	const countyValueReceive = fields.countyValueReceive;
+	const countyValue = toNullableNumber(fields.countyValue);
+	const countyValueReceive = toNullableNumber(fields.countyValueReceive);
 
 	if (tehranValue == null || tehranValueReceive == null) {
 		throw new Error(i18next.t("performance.errors.trafficTehranRequired"));
@@ -206,21 +220,20 @@ async function submitTrafficSingle(values: PerformanceFormValues) {
 		});
 	}
 
-	await upsertPerformance({
+	return await upsertPerformance({
 		service: "traffic",
 		companyId: values.companyId,
 		year: values.year,
 		month: values.month,
 		payload: {
 			...buildBasePayload(values),
-			company_type: values.trafficCompanyType,
 			locations,
 		},
 		suppressErrorNotification: true,
 	});
 }
 
-async function submitCommercialFiles(values: PerformanceFormValues) {
+async function submitCommercialFiles(values: PerformanceFormValues): Promise<Record<string, unknown> | null> {
 	if (!values.companyId || !values.year || !values.month) {
 		throw new Error(i18next.t("performance.errors.baseFormIncomplete"));
 	}
@@ -234,7 +247,7 @@ async function submitCommercialFiles(values: PerformanceFormValues) {
 		throw new Error(i18next.t("performance.errors.allCommercialFilesRequired"));
 	}
 
-	await uploadPerformanceFiles({
+	return await uploadPerformanceFiles({
 		service: "commercial",
 		files: {
 			services_file: servicesFile,
@@ -251,7 +264,7 @@ async function submitCommercialFiles(values: PerformanceFormValues) {
 	});
 }
 
-export async function submitPerformance(values: PerformanceFormValues) {
+export async function submitPerformance(values: PerformanceFormValues): Promise<SubmitPerformanceResult> {
 	const servicePath = resolvePerformanceServicePath(values.serviceCode);
 	if (!servicePath) {
 		throw new Error(i18next.t("performance.errors.serviceNotSelected"));
@@ -260,18 +273,26 @@ export async function submitPerformance(values: PerformanceFormValues) {
 	if (servicePath === "traffic") {
 		const mode = String((values.serviceFields as any)?.submitMode ?? "template");
 		if (mode === "single") {
-			await submitTrafficSingle(values);
+			return {
+				servicePath,
+				record: await submitTrafficSingle(values),
+			};
 		}
-		else {
-			await submitTrafficFiles(values);
-		}
-		return;
+		return {
+			servicePath,
+			record: await submitTrafficFiles(values),
+		};
 	}
 
 	if (servicePath === "commercial") {
-		await submitCommercialFiles(values);
-		return;
+		return {
+			servicePath,
+			record: await submitCommercialFiles(values),
+		};
 	}
 
-	await submitManualPerformance(values, servicePath);
+	return {
+		servicePath,
+		record: await submitManualPerformance(values, servicePath),
+	};
 }

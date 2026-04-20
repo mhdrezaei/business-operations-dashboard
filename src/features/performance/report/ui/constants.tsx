@@ -36,6 +36,8 @@ export interface GetPerformanceReportColumnsArgs {
 	contractTypeOptions: ReportSelectOption[]
 	smsReportTypeOptions: ReportSelectOption[]
 	financialColumnOptions: ReportSelectOption[]
+	selectedPeriods: string[]
+	selectedCompanyIds: number[]
 	selectedFinancialColumns: ReportFinancialColumnKey[]
 	selectedSmsReportType: SmsReportType
 	isSmsService: boolean
@@ -46,6 +48,7 @@ export interface GetPerformanceReportColumnsArgs {
 	onServiceChange: (serviceId: number | null, serviceCode: string | null) => void
 	onYearChange: (year: number | null) => void
 	onPeriodsChange: (periods: string[]) => void
+	onCompanyIdsChange: (companyIds: number[]) => void
 	onTrafficCompanyTypeChange: (value: TrafficCompanyType | null) => void
 	onContractTypeChange: (value: SmsContractTypeFilter) => void
 	onSmsReportTypeChange: (value: SmsReportType) => void
@@ -127,6 +130,20 @@ function normalizeFinancialColumns(values: Array<string | number> | undefined | 
 	return Array.from(dedup);
 }
 
+function normalizeNumberList(values: Array<string | number> | undefined | null) {
+	if (!Array.isArray(values))
+		return [];
+
+	const dedup = new Set<number>();
+	values.forEach((item) => {
+		const numeric = Number(item);
+		if (Number.isInteger(numeric) && numeric > 0)
+			dedup.add(numeric);
+	});
+
+	return Array.from(dedup);
+}
+
 function getContractTypeLabel(t: TFunction<"translation", undefined>, value: unknown) {
 	if (value === true)
 		return t("performance.contractType.official");
@@ -145,6 +162,8 @@ export function getPerformanceReportColumns({
 	contractTypeOptions,
 	smsReportTypeOptions,
 	financialColumnOptions,
+	selectedPeriods,
+	selectedCompanyIds,
 	selectedFinancialColumns,
 	selectedSmsReportType,
 	isSmsService,
@@ -155,6 +174,7 @@ export function getPerformanceReportColumns({
 	onServiceChange,
 	onYearChange,
 	onPeriodsChange,
+	onCompanyIdsChange,
 	onTrafficCompanyTypeChange,
 	onContractTypeChange,
 	onSmsReportTypeChange,
@@ -443,6 +463,7 @@ export function getPerformanceReportColumns({
 				maxTagCount: "responsive",
 				allowClear: true,
 				disabled: isPeriodDisabled,
+				value: selectedPeriods,
 				placeholder: isPeriodDisabled ? t("performance.placeholders.selectYearFirst") : t("performance.placeholders.selectMonths"),
 				onChange: (values: Array<string | number>) => {
 					onPeriodsChange(normalizePeriods(values));
@@ -457,11 +478,19 @@ export function getPerformanceReportColumns({
 			valueType: "select",
 			valueEnum: createValueEnum(companyOptions),
 			fieldProps: {
+				options: companyOptions.map(option => ({
+					label: option.label,
+					value: option.value,
+				})),
 				mode: "multiple",
 				maxTagCount: "responsive",
 				allowClear: true,
 				disabled: isCompanyDisabled,
+				value: selectedCompanyIds,
 				placeholder: isCompanyDisabled ? t("performance.placeholders.selectMonthFirst") : t("performance.placeholders.selectCompanies"),
+				onChange: (values: Array<string | number>) => {
+					onCompanyIdsChange(normalizeNumberList(values));
+				},
 			},
 		},
 		{
@@ -474,7 +503,7 @@ export function getPerformanceReportColumns({
 					maxTagCount="responsive"
 					allowClear={false}
 					placeholder={t("performance.placeholders.selectFinancialColumns")}
-					value={(config.value as Array<string | number> | undefined)?.map(String) ?? []}
+					value={selectedFinancialColumns.map(String)}
 					onChange={(values) => {
 						config.onChange?.(values);
 						onFinancialColumnsChange(normalizeFinancialColumns(values));

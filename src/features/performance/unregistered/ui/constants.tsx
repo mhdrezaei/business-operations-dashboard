@@ -31,7 +31,7 @@ function isSmsCommissionService(code: string | null | undefined) {
 export function getPerformanceColumns({
 	t,
 	selectedServiceIds,
-	selectedServiceCode,
+	// selectedServiceCode,
 	setSelectedServices,
 	serviceOptions,
 	companyOptions,
@@ -48,7 +48,15 @@ export function getPerformanceColumns({
 		return acc;
 	}, {} as Record<string, string>);
 
-	const serviceCode = (selectedServiceCode ?? "").trim().toLowerCase() as ServiceCode | "";
+	// const serviceCode = (selectedServiceCode ?? "").trim().toLowerCase() as ServiceCode | "";
+	const selectedServiceCodes = Array.from(
+		new Set(
+			selectedServiceIds
+				.map(serviceId => serviceOptions.find(option => option.value === serviceId)?.code ?? "")
+				.map(code => String(code).trim().toLowerCase())
+				.filter(Boolean),
+		),
+	) as ServiceCode[];
 
 	const ORDERING_OPTIONS = [
 		{ label: t("performance.ordering.newestId"), value: "-id" },
@@ -69,9 +77,8 @@ export function getPerformanceColumns({
 	] as const;
 
 	const hasSelectedService = selectedServiceIds.length > 0;
-
-	const isTraffic = serviceCode === "traffic";
-	const isSmsCommission = isSmsCommissionService(serviceCode);
+	const showTrafficSpecificFields = selectedServiceCodes.length > 0 && selectedServiceCodes.every(code => code === "traffic");
+	const showSmsCommissionSpecificFields = selectedServiceCodes.length > 0 && selectedServiceCodes.every(code => isSmsCommissionService(code));
 
 	return [
 		{
@@ -181,7 +188,8 @@ export function getPerformanceColumns({
 			title: t("performance.columns.salesAgent"),
 			dataIndex: "sales_agent",
 			width: 150,
-			hideInSearch: !isSmsCommission,
+			hideInTable: !showSmsCommissionSpecificFields,
+			hideInSearch: !showSmsCommissionSpecificFields,
 			valueType: "select",
 			valueEnum: salesAgentOptions.reduce((acc, option) => {
 				acc[String(option.value)] = option.label;
@@ -193,7 +201,8 @@ export function getPerformanceColumns({
 			title: t("performance.columns.companyType"),
 			dataIndex: "company_type",
 			width: 120,
-			hideInSearch: !isTraffic,
+			hideInTable: !showTrafficSpecificFields,
+			hideInSearch: !showTrafficSpecificFields,
 			valueType: "select",
 			valueEnum: TRAFFIC_COMPANY_TYPE_OPTIONS.reduce((acc, option) => {
 				acc[option.value] = option.label;

@@ -4,11 +4,19 @@ import { z } from "zod";
 import { performanceServiceRegistry } from "../services/registry";
 import { isSmsCommissionCode } from "./performance.helpers";
 
+const TRAFFIC_COMPANY_TYPE_VALUES = ["CP", "IXP", "TCI", "PREMIUM"] as const;
+
 const baseSchema = z.object({
 	serviceId: z.number().int().positive().nullable(),
 	serviceCode: z.preprocess(v => (v === undefined ? null : v), z.string().nullable()),
 	companyId: z.number().int().positive().nullable(),
-	trafficCompanyType: z.enum(["CP", "IXP", "TCI", "PREMIUM"]).nullable(),
+	trafficCompanyType: z.preprocess((value) => {
+		if (value == null || value === "")
+			return null;
+
+		const normalized = String(value).trim().toUpperCase();
+		return normalized || null;
+	}, z.string().nullable()),
 	salesAgentId: z.number().int().positive().nullable(),
 	year: z.number().int().min(1401).max(1415).nullable(),
 	month: z.number().int().min(1).max(12).nullable(),
@@ -53,22 +61,33 @@ export function buildPerformanceSchema(
 			}),
 		)
 		.superRefine((value, ctx) => {
-			requireNotNull(value.serviceId, ["serviceId"], i18next.t("performance.validation.base.serviceRequired"), ctx);
-			requireNotNull(value.serviceCode, ["serviceCode"], i18next.t("performance.validation.base.serviceCodeRequired"), ctx);
-			requireNotNull(value.companyId, ["companyId"], i18next.t("performance.validation.base.companyRequired"), ctx);
-			requireNotNull(value.year, ["year"], i18next.t("performance.validation.base.yearRequired"), ctx);
-			requireNotNull(value.month, ["month"], i18next.t("performance.validation.base.monthRequired"), ctx);
-			requireNotNull(value.contractId, ["contractId"], i18next.t("performance.validation.base.contractForMonthNotFound"), ctx);
-
 			const normalizedCode = (value.serviceCode ?? "").trim().toLowerCase();
 			const serviceFields = (value.serviceFields ?? {}) as Record<string, unknown>;
+			const trafficSubmitMode = normalizedCode === "traffic"
+				? String(serviceFields.submitMode ?? "").trim().toLowerCase()
+				: "";
 
-			if (normalizedCode === "traffic" && value.trafficCompanyType == null) {
-				ctx.addIssue({
-					code: "custom",
-					path: ["trafficCompanyType"],
-					message: i18next.t("performance.validation.base.trafficCompanyTypeRequired"),
-				});
+			requireNotNull(value.serviceId, ["serviceId"], i18next.t("performance.validation.base.serviceRequired"), ctx);
+			requireNotNull(value.serviceCode, ["serviceCode"], i18next.t("performance.validation.base.serviceCodeRequired"), ctx);
+			requireNotNull(value.year, ["year"], i18next.t("performance.validation.base.yearRequired"), ctx);
+			requireNotNull(value.month, ["month"], i18next.t("performance.validation.base.monthRequired"), ctx);
+
+			if (!(normalizedCode === "traffic" && trafficSubmitMode === "template")) {
+				requireNotNull(value.companyId, ["companyId"], i18next.t("performance.validation.base.companyRequired"), ctx);
+			}
+
+			if (!(normalizedCode === "traffic" && trafficSubmitMode === "template")) {
+				requireNotNull(value.contractId, ["contractId"], i18next.t("performance.validation.base.contractForMonthNotFound"), ctx);
+			}
+
+			if (normalizedCode === "traffic") {
+				if (value.trafficCompanyType == null || !TRAFFIC_COMPANY_TYPE_VALUES.includes(value.trafficCompanyType as typeof TRAFFIC_COMPANY_TYPE_VALUES[number])) {
+					ctx.addIssue({
+						code: "custom",
+						path: ["trafficCompanyType"],
+						message: i18next.t("performance.validation.base.trafficCompanyTypeRequired"),
+					});
+				}
 			}
 
 			if (isSmsCommissionCode(normalizedCode) && value.salesAgentId == null) {

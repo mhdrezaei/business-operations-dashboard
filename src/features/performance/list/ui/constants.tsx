@@ -119,6 +119,7 @@ export function getPerformanceColumns({
 	const isSms = serviceCode === "sms";
 	const isSmsCommission = isSmsCommissionService(serviceCode);
 	const isCommercial = serviceCode === "commercial";
+	const isMonthlyAggregatedService = isOpenApi || isSms || isSmsCommission;
 	const hideNonMatchingServiceColumn = (isVisibleForSelectedService: boolean) =>
 		hasSelectedService ? !isVisibleForSelectedService : true;
 
@@ -200,6 +201,7 @@ export function getPerformanceColumns({
 			title: t("performance.columns.year"),
 			dataIndex: "sh_year",
 			width: 100,
+			hideInSearch: true,
 			render: (_, row) => row.sh_year ?? "-",
 		},
 		{
@@ -218,6 +220,7 @@ export function getPerformanceColumns({
 			title: t("performance.columns.month"),
 			dataIndex: "sh_month",
 			width: 100,
+			hideInSearch: true,
 			render: (_, row) => {
 				const month = Number(row.sh_month);
 				const found = MONTH_OPTIONS.find(option => option.value === month);
@@ -281,8 +284,8 @@ export function getPerformanceColumns({
 			title: t("performance.columns.operationType"),
 			dataIndex: "operation_type",
 			width: 170,
-			hideInTable: hideNonMatchingServiceColumn(isOpenApi),
-			hideInSearch: !isOpenApi,
+			hideInTable: hideNonMatchingServiceColumn(isOpenApi && !isMonthlyAggregatedService),
+			hideInSearch: !isOpenApi || isMonthlyAggregatedService,
 			valueType: "select",
 			valueEnum: OPERATION_TYPE_OPTIONS.reduce((acc, option) => {
 				acc[option] = option;
@@ -294,8 +297,8 @@ export function getPerformanceColumns({
 			title: t("performance.columns.operator"),
 			dataIndex: "operator",
 			width: 120,
-			hideInTable: hideNonMatchingServiceColumn(isSms || isSmsCommission),
-			hideInSearch: !(isSms || isSmsCommission),
+			hideInTable: hideNonMatchingServiceColumn((isSms || isSmsCommission) && !isMonthlyAggregatedService),
+			hideInSearch: !(isSms || isSmsCommission) || isMonthlyAggregatedService,
 			valueType: "select",
 			valueEnum: OPERATOR_OPTIONS.reduce((acc, option) => {
 				acc[option.value] = option.label;
@@ -307,8 +310,8 @@ export function getPerformanceColumns({
 			title: t("performance.columns.language"),
 			dataIndex: "language",
 			width: 100,
-			hideInTable: hideNonMatchingServiceColumn(isSms || isSmsCommission),
-			hideInSearch: !(isSms || isSmsCommission),
+			hideInTable: hideNonMatchingServiceColumn((isSms || isSmsCommission) && !isMonthlyAggregatedService),
+			hideInSearch: !(isSms || isSmsCommission) || isMonthlyAggregatedService,
 			valueType: "select",
 			valueEnum: LANGUAGE_OPTIONS.reduce((acc, option) => {
 				acc[option.value] = option.label;
