@@ -478,6 +478,10 @@ export function getPerformanceReportColumns({
 			valueType: "select",
 			valueEnum: createValueEnum(companyOptions),
 			fieldProps: {
+				options: companyOptions.map(option => ({
+					label: option.label,
+					value: option.value,
+				})),
 				mode: "multiple",
 				maxTagCount: "responsive",
 				allowClear: true,
