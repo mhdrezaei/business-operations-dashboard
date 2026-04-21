@@ -100,7 +100,13 @@ export function TrafficFields() {
 				{showPricingUi
 					? (
 						<>
-							<Row>
+							<div
+								style={{
+									display: "grid",
+									gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+									gap: 12,
+								}}
+							>
 								<ProCard bordered headerBordered style={{ borderRadius: 6, marginTop: 12 }} bodyStyle={{ padding: 16 }}>
 									<Row>
 										<Button onClick={addTehran} disabled={!!tehranPricing}>افزودن قرارداد تهران</Button>
@@ -140,9 +146,6 @@ export function TrafficFields() {
 										)
 										: null}
 								</ProCard>
-							</Row>
-
-							<Row>
 								<ProCard bordered headerBordered style={{ borderRadius: 6, marginTop: 12 }} bodyStyle={{ padding: 16 }}>
 									<Row>
 										<Button onClick={addProvince} disabled={!!provincePricing}>افزودن قرارداد مراکز استانی</Button>
@@ -182,7 +185,7 @@ export function TrafficFields() {
 										)
 										: null}
 								</ProCard>
-							</Row>
+							</div>
 						</>
 					)
 					: null}

@@ -4,10 +4,10 @@ import { useAccess } from "#src/hooks";
 import { RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { ProCard } from "@ant-design/pro-components";
 import { useQuery } from "@tanstack/react-query";
-import { Col, Row } from "antd";
 import React, { useEffect, useMemo, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { companiesByServiceQuery, contractGapsQuery, servicesQuery, smsCommissionAgentsQuery } from "../../../queries/contract.queries";
+import { ContractAlignedField, useContractAlignedLabelWidth } from "../components/ContractAlignedField";
 import { MONTH_OPTIONS } from "../constants/jalali-date-options";
 
 const COUNTERPARTY_OPTIONS = [
@@ -356,6 +356,26 @@ export function FixedStartSection() {
 
 	const showCompanySelect
 		= (!isSms && !isTraffic) || (isSms && counterpartyType === "partners") || (isTraffic && !!trafficCompanyType);
+	const visibleLabels = useMemo(() => {
+		const labels = [
+			"نوع سرویس",
+			"سال شروع",
+			"ماه شروع",
+			"سال پایان",
+			"ماه پایان",
+			"شماره قرارداد",
+		];
+		if (isSms)
+			labels.push("طرف قرارداد");
+		if (isTraffic)
+			labels.push("نوع شرکت (ترافیک)");
+		if (showCompanySelect)
+			labels.push("شرکت");
+		if (isSmsCommission)
+			labels.push("نماینده فروش");
+		return labels;
+	}, [isSms, isTraffic, showCompanySelect, isSmsCommission]);
+	const alignedLabelStyle = useContractAlignedLabelWidth(visibleLabels);
 
 	const companyOptions = isTraffic ? companyOptionsTraffic : companyOptionsDefault;
 
@@ -388,9 +408,8 @@ export function FixedStartSection() {
 
 	const baseYearOptions = useMemo(() => {
 		const yearsFromMissing = Array.from(missingMonthsByYear.keys()).sort((a, b) => a - b);
-		if (yearsFromMissing.length > 0) {
+		if (yearsFromMissing.length > 0)
 			return yearsFromMissing.map(year => ({ label: String(year), value: year }));
-		}
 
 		return buildYearOptionsFromRange(contractGaps.data?.allowed_jalali_range as JalaliRange | null | undefined);
 	}, [missingMonthsByYear, contractGaps.data]);
@@ -440,132 +459,177 @@ export function FixedStartSection() {
 
 	const canQueryDateGaps = !!serviceId && !!companyId;
 	const isDateOptionsLoading = canQueryDateGaps && (contractGaps.isLoading || contractGaps.isFetching);
+	const compactFormItemStyle = { style: { marginBottom: 0 } };
 
 	return (
 		<ProCard>
 			<BasicContent className="w-full">
-				<Row gutter={16}>
-					<Col span={12}>
+				<div className="contract-form-aligned-grid contract-form-aligned-grid--two" style={alignedLabelStyle}>
+					<ContractAlignedField label="نوع سرویس" labelId="contract-form-label-service">
 						<RHFSelect<ContractFormValues, "serviceId", number | null>
 							name="serviceId"
-							label="نوع سرویس"
+							formItemProps={compactFormItemStyle}
 							loading={services.isLoading}
 							options={serviceOptions}
-							selectProps={{ allowClear: true, placeholder: "سرویس را انتخاب کنید" }}
+							selectProps={{
+								"allowClear": true,
+								"placeholder": "سرویس را انتخاب کنید",
+								"aria-labelledby": "contract-form-label-service",
+							} as any}
 						/>
-					</Col>
+					</ContractAlignedField>
 
 					{isSms
 						? (
-							<Col span={12}>
+							<ContractAlignedField label="طرف قرارداد" labelId="contract-form-label-counterparty">
 								<RHFSelect<ContractFormValues, "counterpartyType", "partners" | "gov_ops" | null>
 									name="counterpartyType"
-									label="طرف قرارداد"
+									formItemProps={compactFormItemStyle}
 									options={COUNTERPARTY_OPTIONS}
-									selectProps={{ allowClear: true, placeholder: "انتخاب کنید" }}
+									selectProps={{
+										"allowClear": true,
+										"placeholder": "انتخاب کنید",
+										"aria-labelledby": "contract-form-label-counterparty",
+									} as any}
 								/>
-							</Col>
+							</ContractAlignedField>
 						)
 						: null}
 
 					{isTraffic
 						? (
-							<Col span={12}>
+							<ContractAlignedField label="نوع شرکت (ترافیک)" labelId="contract-form-label-traffic-company-type">
 								<RHFSelect<ContractFormValues, "trafficCompanyType", any>
 									name="trafficCompanyType"
-									label="نوع شرکت (ترافیک)"
+									formItemProps={compactFormItemStyle}
 									options={TRAFFIC_COMPANY_TYPE_OPTIONS}
-									selectProps={{ allowClear: true, placeholder: "انتخاب کنید" }}
+									selectProps={{
+										"allowClear": true,
+										"placeholder": "انتخاب کنید",
+										"aria-labelledby": "contract-form-label-traffic-company-type",
+									} as any}
 								/>
-							</Col>
+							</ContractAlignedField>
 						)
 						: null}
 
 					{showCompanySelect
 						? (
-							<Col span={12}>
+							<ContractAlignedField label="شرکت" labelId="contract-form-label-company">
 								<RHFSelect<ContractFormValues, "companyId", number | null>
 									name="companyId"
-									label="شرکت"
+									formItemProps={compactFormItemStyle}
 									loading={companies.isLoading}
 									options={companyOptions as any}
 									selectProps={{
-										allowClear: true,
-										disabled: isCompanyDisabled,
-										placeholder: companyPlaceholder,
-										style: isCompanyDisabled ? { cursor: "not-allowed" } : undefined,
-										open: isCompanyDisabled ? false : undefined,
+										"allowClear": true,
+										"disabled": isCompanyDisabled,
+										"placeholder": companyPlaceholder,
+										"style": isCompanyDisabled ? { cursor: "not-allowed" } : undefined,
+										"open": isCompanyDisabled ? false : undefined,
+										"aria-labelledby": "contract-form-label-company",
 									}}
 								/>
-							</Col>
+							</ContractAlignedField>
 						)
 						: null}
 
 					{isSmsCommission
 						? (
-							<Col span={24}>
+							<ContractAlignedField label="نماینده فروش" labelId="contract-form-label-agent">
 								<RHFSelect<ContractFormValues, any, number | null>
 									name={"serviceFields.agent" as any}
-									label="نماینده فروش"
+									formItemProps={compactFormItemStyle}
 									loading={smsCommissionAgents.isLoading || smsCommissionAgents.isFetching}
 									options={smsCommissionAgentOptions as any}
 									selectProps={{
-										allowClear: false,
-										disabled: true,
-										placeholder: smsCommissionAgentPlaceholder,
-										open: false,
+										"allowClear": false,
+										"disabled": true,
+										"placeholder": smsCommissionAgentPlaceholder,
+										"open": false,
+										"aria-labelledby": "contract-form-label-agent",
 									}}
 								/>
-							</Col>
+							</ContractAlignedField>
 						)
 						: null}
-				</Row>
+				</div>
 
 				<div
-					style={{
-						display: "grid",
-						gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-						gap: 12,
-						marginTop: 8,
-					}}
+					className="contract-form-aligned-grid contract-form-aligned-grid--four"
+					style={{ ...alignedLabelStyle, marginTop: 12 }}
 				>
-					<RHFSelect<ContractFormValues, "startYear", number | null>
-						name="startYear"
-						label="سال شروع"
-						loading={isDateOptionsLoading}
-						options={startYearOptions}
-						selectProps={{ allowClear: true, placeholder: "سال" }}
-					/>
+					<ContractAlignedField label="سال شروع" labelId="contract-form-label-start-year">
+						<RHFSelect<ContractFormValues, "startYear", number | null>
+							name="startYear"
+							formItemProps={compactFormItemStyle}
+							loading={isDateOptionsLoading}
+							options={startYearOptions}
+							selectProps={{
+								"allowClear": true,
+								"placeholder": "سال",
+								"aria-labelledby": "contract-form-label-start-year",
+							} as any}
+						/>
+					</ContractAlignedField>
 
-					<RHFSelect<ContractFormValues, "startMonth", number | null>
-						name="startMonth"
-						label="ماه شروع"
-						loading={isDateOptionsLoading}
-						options={startMonthOptions}
-						selectProps={{ allowClear: true, placeholder: "ماه" }}
-					/>
+					<ContractAlignedField label="ماه شروع" labelId="contract-form-label-start-month">
+						<RHFSelect<ContractFormValues, "startMonth", number | null>
+							name="startMonth"
+							formItemProps={compactFormItemStyle}
+							loading={isDateOptionsLoading}
+							options={startMonthOptions}
+							selectProps={{
+								"allowClear": true,
+								"placeholder": "ماه",
+								"aria-labelledby": "contract-form-label-start-month",
+							} as any}
+						/>
+					</ContractAlignedField>
 
-					<RHFSelect<ContractFormValues, "endYear", number | null>
-						name="endYear"
-						label="سال پایان"
-						loading={isDateOptionsLoading}
-						options={endYearOptions}
-						selectProps={{ allowClear: true, placeholder: "سال" }}
-					/>
+					<ContractAlignedField label="سال پایان" labelId="contract-form-label-end-year">
+						<RHFSelect<ContractFormValues, "endYear", number | null>
+							name="endYear"
+							formItemProps={compactFormItemStyle}
+							loading={isDateOptionsLoading}
+							options={endYearOptions}
+							selectProps={{
+								"allowClear": true,
+								"placeholder": "سال",
+								"aria-labelledby": "contract-form-label-end-year",
+							} as any}
+						/>
+					</ContractAlignedField>
 
-					<RHFSelect<ContractFormValues, "endMonth", number | null>
-						name="endMonth"
-						label="ماه پایان"
-						loading={isDateOptionsLoading}
-						options={endMonthOptions}
-						selectProps={{ allowClear: true, placeholder: "ماه" }}
-					/>
+					<ContractAlignedField label="ماه پایان" labelId="contract-form-label-end-month">
+						<RHFSelect<ContractFormValues, "endMonth", number | null>
+							name="endMonth"
+							formItemProps={compactFormItemStyle}
+							loading={isDateOptionsLoading}
+							options={endMonthOptions}
+							selectProps={{
+								"allowClear": true,
+								"placeholder": "ماه",
+								"aria-labelledby": "contract-form-label-end-month",
+							} as any}
+						/>
+					</ContractAlignedField>
 				</div>
-				<Row>
-					<Col span={12}>
-						<RHFProText name="contractNumber" label="شماره قرارداد" />
-					</Col>
-				</Row>
+
+				<div
+					className="contract-form-aligned-grid contract-form-aligned-grid--two"
+					style={{ ...alignedLabelStyle, marginTop: 12 }}
+				>
+					<ContractAlignedField label="شماره قرارداد" labelId="contract-form-label-contract-number">
+						<RHFProText<ContractFormValues, "contractNumber">
+							name="contractNumber"
+							formItemProps={compactFormItemStyle}
+							inputProps={{
+								"aria-labelledby": "contract-form-label-contract-number",
+							} as any}
+						/>
+					</ContractAlignedField>
+				</div>
 			</BasicContent>
 		</ProCard>
 	);

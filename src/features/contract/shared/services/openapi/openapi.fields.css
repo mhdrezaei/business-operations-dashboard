@@ -1,0 +1,34 @@
+.openapi-plan-grid {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 12px;
+	align-items: stretch;
+}
+
+.openapi-plan-card {
+	height: 100%;
+	border-radius: 12px;
+}
+
+.openapi-plan-card :where(.ant-pro-card-body) {
+	height: 100%;
+}
+
+.openapi-plan-fields {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	height: 100%;
+}
+
+@media (max-width: 1280px) {
+	.openapi-plan-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 900px) {
+	.openapi-plan-grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
