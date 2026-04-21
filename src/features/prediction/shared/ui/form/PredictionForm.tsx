@@ -17,6 +17,10 @@ export type PredictionSubmitIntent = "submit" | "submit_and_create_another" | "s
 
 interface Props {
 	initialValues?: Partial<PredictionFormValues> | null
+	mode?: "create" | "edit"
+	titleKey?: string
+	baseFieldsDisabled?: boolean
+	onCancel?: () => void
 	onSubmit?: (
 		values: PredictionFormValues,
 		intent: PredictionSubmitIntent,
@@ -68,6 +72,10 @@ function extractFirstErrorMessage(value: unknown): string | null {
 
 export function PredictionForm({
 	initialValues,
+	mode = "create",
+	titleKey,
+	baseFieldsDisabled = false,
+	onCancel,
 	onSubmit: onSubmitProp,
 	submitting,
 }: Props) {
@@ -194,7 +202,12 @@ export function PredictionForm({
 				<input type="hidden" {...form.register("recordId")} />
 				<input type="hidden" {...form.register("serviceCode")} />
 
-				<FixedStartSection />
+				<FixedStartSection
+					titleKey={titleKey}
+					disabled={baseFieldsDisabled}
+					autoHydrateBySelection={mode !== "edit"}
+					hideMatchedRecordAlert={mode === "edit"}
+				/>
 
 				<AnimatePresence mode="wait">
 					{module?.Fields && canShowServiceForm
@@ -218,11 +231,13 @@ export function PredictionForm({
 							<ProseNote />
 
 							<ActionSection
+								mode={mode}
 								submitting={submitting}
 								onSubmit={() => triggerSubmit("submit")}
 								onSubmitAndCreateAnother={() => triggerSubmit("submit_and_create_another")}
 								onSubmitAndEdit={() => triggerSubmit("submit_and_edit")}
 								onReset={resetForm}
+								onCancel={onCancel}
 							/>
 						</>
 					)

@@ -19,7 +19,15 @@ function nullableNonNegativeNumber() {
 	});
 }
 
-const quarterPercentSchema = z.number().int().min(0).max(100).nullable();
+const quarterRangeMessage = i18next.t("prediction.validation.quarters.range", {
+	defaultValue: "درصد هر کوارتر باید بین 0 تا 100 باشد",
+});
+
+const quarterPercentSchema = z.number()
+	.int({ message: quarterRangeMessage })
+	.min(0, { message: quarterRangeMessage })
+	.max(100, { message: quarterRangeMessage })
+	.nullable();
 
 const shareSectionSchema = z.object({
 	mode: z.enum(["auto", "manual"]),

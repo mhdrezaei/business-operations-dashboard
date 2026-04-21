@@ -15,6 +15,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { predictionCompaniesByServiceQuery } from "../../queries/prediction.queries";
+import { QuarterDistributionSection } from "../../ui/form/sections/QuarterDistributionSection";
 import {
 	createEmptyTrafficLocation,
 	createEmptyTrafficManualShares,
@@ -281,35 +282,7 @@ export function TrafficPredictionFields() {
 
 	return (
 		<div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-			<ProCard
-				bordered
-				headerBordered
-				style={{ borderRadius: 16 }}
-				title={t("prediction.sections.quarters")}
-			>
-				<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-					<RHFProNumber<PredictionFormValues, any>
-						name={sf("q1Percent") as any}
-						label={t("prediction.quarters.q1")}
-						inputProps={{ placeholder: t("prediction.placeholders.percentExample"), addonAfter: "%" }}
-					/>
-					<RHFProNumber<PredictionFormValues, any>
-						name={sf("q2Percent") as any}
-						label={t("prediction.quarters.q2")}
-						inputProps={{ placeholder: t("prediction.placeholders.percentExample"), addonAfter: "%" }}
-					/>
-					<RHFProNumber<PredictionFormValues, any>
-						name={sf("q3Percent") as any}
-						label={t("prediction.quarters.q3")}
-						inputProps={{ placeholder: t("prediction.placeholders.percentExample"), addonAfter: "%" }}
-					/>
-					<RHFProNumber<PredictionFormValues, any>
-						name={sf("q4Percent") as any}
-						label={t("prediction.quarters.q4")}
-						inputProps={{ placeholder: t("prediction.placeholders.percentExample"), addonAfter: "%" }}
-					/>
-				</div>
-			</ProCard>
+			<QuarterDistributionSection />
 
 			<ProCard
 				bordered

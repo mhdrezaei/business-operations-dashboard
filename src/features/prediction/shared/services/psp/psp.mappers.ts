@@ -1,12 +1,15 @@
 import type { PspPredictionPayload, PspPredictionYearDto } from "../../../api/predictions.api";
 import type {
 	PredictionFormValues,
+	PredictionServiceCode,
 	PredictionShareMode,
 	PredictionShareSectionValue,
 	PspPredictionServiceFields,
 	YearlyValueIncomeManualSharesValue,
 } from "../../model/prediction.form.types";
-import { toNullableNumber, toNumberOrZero } from "../../model/prediction.helpers";
+import type { PredictionListRow } from "../../model/prediction.list.types";
+import i18next from "i18next";
+import { formatPredictionNumber, toNullableNumber, toNumberOrZero } from "../../model/prediction.helpers";
 import {
 	createEmptyYearlyValueIncomeFields,
 	createEmptyYearlyValueIncomeManualShares,
@@ -159,4 +162,22 @@ export function findPspPredictionByFiscalYear(
 	fiscalYear: number | null | undefined,
 ) {
 	return findYearlyValueIncomePredictionByFiscalYear(records, fiscalYear);
+}
+
+export function yearlyValueIncomePredictionToListRow(
+	record: PspPredictionYearDto,
+	context: { serviceId: number, serviceCode: PredictionServiceCode, serviceLabel: string },
+): PredictionListRow {
+	return {
+		id: record.id,
+		serviceId: context.serviceId,
+		serviceCode: context.serviceCode,
+		serviceLabel: context.serviceLabel,
+		fiscalYear: toNullableNumber(record.fiscal_year),
+		preview: `${i18next.t("prediction.list.preview.value")}: ${formatPredictionNumber(record.value_year)} | ${i18next.t("prediction.list.preview.income")}: ${formatPredictionNumber(record.income_year)}`,
+		note: String(record.note ?? ""),
+		createdAt: record.created_at ?? null,
+		updatedAt: record.updated_at ?? null,
+		raw: record,
+	};
 }

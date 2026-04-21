@@ -3,8 +3,14 @@ import type { ServiceDto } from "#src/api/common/common.types";
 export type PredictionServiceCode = ServiceDto["code"];
 export type PredictionShareMode = "auto" | "manual";
 export type PredictionMetricCode = "value" | "income" | "expense";
-export type OpenApiPredictionModel = "LEGACY";
+export type OpenApiPredictionModel = "LEGACY" | "PACKAGE";
 export type OpenApiOperationCode = "billInquiry" | "receiptRegister" | "smsTotal" | "trafficTotal";
+export type OpenApiChannelCode	= | "SMS_MCI_FA"
+  | "SMS_MCI_EN"
+  | "SMS_IRANCELL_FA"
+  | "SMS_IRANCELL_EN"
+  | "SMS_OTHER_FA"
+  | "SMS_OTHER_EN";
 export type TrafficCompanyType = "CP" | "IXP" | "TCI" | "PREMIUM";
 export type TrafficLocationCode = "TEHRAN" | "PROVINCE";
 export type TrafficPredictionMetricCode = "value" | "valueReceive" | "income" | "expense";
@@ -26,6 +32,10 @@ export type OpenApiManualSharesValue = Record<
 	OpenApiOperationCode,
 	Record<PredictionMetricCode, PredictionShareSectionValue>
 >;
+
+export interface OpenApiChannelSharesValue {
+	value: Record<OpenApiChannelCode, number | null>
+}
 
 export type YearlyValueIncomeManualSharesValue = PredictionMetricSharesValue<"value" | "income">;
 export type PspManualSharesValue = YearlyValueIncomeManualSharesValue;
@@ -55,6 +65,7 @@ export interface OpenApiPredictionServiceFields {
 	trafficTotalIncomeYear: number | null
 	trafficTotalExpenseYear: number | null
 	manualShares: OpenApiManualSharesValue
+	channels: OpenApiChannelSharesValue
 }
 
 export interface PspPredictionServiceFields {

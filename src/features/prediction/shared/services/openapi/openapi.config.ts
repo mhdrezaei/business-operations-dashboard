@@ -1,6 +1,9 @@
 import type {
+	OpenApiChannelCode,
+	OpenApiChannelSharesValue,
 	OpenApiManualSharesValue,
 	OpenApiOperationCode,
+	OpenApiPredictionModel,
 	OpenApiPredictionServiceFields,
 	PredictionMetricCode,
 	PredictionShareSectionValue,
@@ -17,6 +20,7 @@ export const OPENAPI_OPERATION_SECTIONS = [
 		key: "billInquiry",
 		apiKey: "bill_inquiry",
 		titleKey: "prediction.operations.billInquiry",
+		models: ["LEGACY", "PACKAGE"],
 		fields: {
 			value: "billInquiryValueYear",
 			income: "billInquiryIncomeYear",
@@ -27,6 +31,7 @@ export const OPENAPI_OPERATION_SECTIONS = [
 		key: "receiptRegister",
 		apiKey: "receipt_register",
 		titleKey: "prediction.operations.receiptRegister",
+		models: ["LEGACY"],
 		fields: {
 			value: "receiptRegisterValueYear",
 			income: "receiptRegisterIncomeYear",
@@ -37,6 +42,7 @@ export const OPENAPI_OPERATION_SECTIONS = [
 		key: "smsTotal",
 		apiKey: "sms_total",
 		titleKey: "prediction.operations.smsTotal",
+		models: ["PACKAGE"],
 		fields: {
 			value: "smsTotalValueYear",
 			income: "smsTotalIncomeYear",
@@ -47,6 +53,7 @@ export const OPENAPI_OPERATION_SECTIONS = [
 		key: "trafficTotal",
 		apiKey: "traffic_total",
 		titleKey: "prediction.operations.trafficTotal",
+		models: ["PACKAGE"],
 		fields: {
 			value: "trafficTotalValueYear",
 			income: "trafficTotalIncomeYear",
@@ -57,8 +64,48 @@ export const OPENAPI_OPERATION_SECTIONS = [
 	key: OpenApiOperationCode
 	apiKey: string
 	titleKey: string
+	models: readonly OpenApiPredictionModel[]
 	fields: Record<PredictionMetricCode, keyof OpenApiPredictionServiceFields>
 }>;
+
+export const OPENAPI_MODEL_OPTIONS = [
+	{
+		labelKey: "prediction.openapi.models.legacy",
+		value: "LEGACY",
+	},
+	{
+		labelKey: "prediction.openapi.models.package",
+		value: "PACKAGE",
+	},
+] as const satisfies ReadonlyArray<{
+	labelKey: string
+	value: OpenApiPredictionModel
+}>;
+
+export const OPENAPI_API_SECTION_KEYS = {
+	billInquiry: "BILL_INQUIRY",
+	receiptRegister: "RECEIPT_REGISTER",
+	smsTotal: "SMS_TOTAL",
+	trafficTotal: "TRAFFIC",
+} as const satisfies Record<OpenApiOperationCode, string>;
+
+export const OPENAPI_CHANNEL_OPTIONS = [
+	{ key: "SMS_MCI_FA", titleKey: "prediction.openapi.channels.smsMciFa" },
+	{ key: "SMS_MCI_EN", titleKey: "prediction.openapi.channels.smsMciEn" },
+	{ key: "SMS_IRANCELL_FA", titleKey: "prediction.openapi.channels.smsIrancellFa" },
+	{ key: "SMS_IRANCELL_EN", titleKey: "prediction.openapi.channels.smsIrancellEn" },
+	{ key: "SMS_OTHER_FA", titleKey: "prediction.openapi.channels.smsOtherFa" },
+	{ key: "SMS_OTHER_EN", titleKey: "prediction.openapi.channels.smsOtherEn" },
+] as const satisfies ReadonlyArray<{
+	key: OpenApiChannelCode
+	titleKey: string
+}>;
+
+export function getOpenApiOperationSections(model: OpenApiPredictionModel) {
+	return OPENAPI_OPERATION_SECTIONS.filter(
+		section => (section.models as readonly OpenApiPredictionModel[]).includes(model),
+	);
+}
 
 function createEmptyShareSection(): PredictionShareSectionValue {
 	return {
@@ -93,9 +140,21 @@ export function createEmptyOpenApiManualShares(): OpenApiManualSharesValue {
 	};
 }
 
-export function createEmptyOpenApiFields(): OpenApiPredictionServiceFields {
+export function createEmptyOpenApiChannelShares(): OpenApiChannelSharesValue {
 	return {
-		openapiModel: "LEGACY",
+		value: Object.fromEntries(
+			OPENAPI_CHANNEL_OPTIONS.map(channel => [channel.key, null]),
+		) as Record<OpenApiChannelCode, number | null>,
+	};
+}
+
+export function createEmptyOpenApiFields(
+	previous?: Partial<OpenApiPredictionServiceFields> | Record<string, unknown>,
+): OpenApiPredictionServiceFields {
+	const previousFields = (previous ?? {}) as Partial<OpenApiPredictionServiceFields>;
+
+	return {
+		openapiModel: previousFields.openapiModel === "PACKAGE" ? "PACKAGE" : "LEGACY",
 		q1Percent: null,
 		q2Percent: null,
 		q3Percent: null,
@@ -113,5 +172,6 @@ export function createEmptyOpenApiFields(): OpenApiPredictionServiceFields {
 		trafficTotalIncomeYear: null,
 		trafficTotalExpenseYear: null,
 		manualShares: createEmptyOpenApiManualShares(),
+		channels: createEmptyOpenApiChannelShares(),
 	};
 }

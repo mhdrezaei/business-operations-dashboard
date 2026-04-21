@@ -11,7 +11,19 @@ import { buildFiscalYearOptions } from "../../../model/prediction.helpers";
 import { predictionServicesQuery } from "../../../queries/prediction.queries";
 import { predictionServiceRegistry } from "../../../services/registry";
 
-export function FixedStartSection() {
+interface Props {
+	titleKey?: string
+	disabled?: boolean
+	autoHydrateBySelection?: boolean
+	hideMatchedRecordAlert?: boolean
+}
+
+export function FixedStartSection({
+	titleKey = "prediction.titles.create",
+	disabled = false,
+	autoHydrateBySelection = true,
+	hideMatchedRecordAlert = false,
+}: Props) {
 	const { t } = useTranslation();
 	const { getPermittedServiceIds } = useAccess();
 	const { control, getValues, setValue } = useFormContext<PredictionFormValues>();
@@ -40,7 +52,7 @@ export function FixedStartSection() {
 
 	const yearRecordsQuery = useQuery({
 		queryKey: module?.getYearsQueryKey(serviceId) ?? ["predictions", "years", { serviceId, serviceCode }],
-		enabled: !!module && !!serviceId,
+		enabled: autoHydrateBySelection && !!module && !!serviceId,
 		queryFn: () => module!.fetchYears(serviceId!),
 		staleTime: 30 * 1000,
 	});
@@ -89,17 +101,25 @@ export function FixedStartSection() {
 
 	const existingYearRecords = yearRecordsQuery.data?.results ?? [];
 	const matchedYearRecord = useMemo(
-		() =>
-			module?.findRecordBySelection(existingYearRecords, {
+		() => {
+			if (!autoHydrateBySelection)
+				return null;
+
+			return module?.findRecordBySelection(existingYearRecords, {
 				fiscalYear,
 				serviceFields: {
 					companyType: trafficCompanyType ?? null,
 				},
-			}) ?? null,
-		[existingYearRecords, fiscalYear, module, trafficCompanyType],
+			}) ?? null;
+		},
+		[autoHydrateBySelection, existingYearRecords, fiscalYear, module, trafficCompanyType],
 	);
 
 	useEffect(() => {
+		if (!autoHydrateBySelection) {
+			return;
+		}
+
 		if (yearRecordsQuery.isLoading) {
 			return;
 		}
@@ -155,7 +175,7 @@ export function FixedStartSection() {
 			shouldValidate: false,
 		});
 		lastHydratedStateKeyRef.current = stateKey;
-	}, [fiscalYear, getValues, matchedYearRecord, module, setValue, trafficCompanyType, yearRecordsQuery.isLoading]);
+	}, [autoHydrateBySelection, fiscalYear, getValues, matchedYearRecord, module, setValue, trafficCompanyType, yearRecordsQuery.isLoading]);
 
 	const fiscalYearOptions = useMemo(() => {
 		const existingYears = existingYearRecords.map(record => Number((record as any).fiscal_year));
@@ -168,7 +188,7 @@ export function FixedStartSection() {
 				bordered
 				headerBordered
 				style={{ borderRadius: 16 }}
-				title={t("prediction.titles.create")}
+				title={t(titleKey)}
 			>
 				<div className="grid gap-3 md:grid-cols-2">
 					<RHFSelect<PredictionFormValues, "serviceId", number | null>
@@ -180,6 +200,7 @@ export function FixedStartSection() {
 						}))}
 						loading={services.isLoading}
 						selectProps={{
+							disabled,
 							placeholder: t("prediction.placeholders.selectService"),
 							showSearch: true,
 							optionFilterProp: "label",
@@ -192,6 +213,7 @@ export function FixedStartSection() {
 						options={fiscalYearOptions}
 						loading={yearRecordsQuery.isLoading}
 						selectProps={{
+							disabled,
 							placeholder: t("prediction.placeholders.selectFiscalYear"),
 							showSearch: true,
 							optionFilterProp: "label",
@@ -200,7 +222,7 @@ export function FixedStartSection() {
 				</div>
 			</ProCard>
 
-			{matchedYearRecord
+			{matchedYearRecord && !hideMatchedRecordAlert
 				? (
 					<Alert
 						type="info"

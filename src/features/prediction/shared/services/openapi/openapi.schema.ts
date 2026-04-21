@@ -1,13 +1,27 @@
 import type { OpenApiPredictionServiceFields, PredictionShareSectionValue } from "../../model/prediction.form.types";
 import i18next from "i18next";
 import { z } from "zod";
-import { createEmptyOpenApiManualShares, OPENAPI_METRICS, OPENAPI_OPERATION_SECTIONS } from "./openapi.config";
+import {
+	createEmptyOpenApiChannelShares,
+	createEmptyOpenApiManualShares,
+	getOpenApiOperationSections,
+	OPENAPI_CHANNEL_OPTIONS,
+	OPENAPI_METRICS,
+} from "./openapi.config";
 
 function nullableNonNegativeNumber(message: string) {
 	return z.number({ message }).nullable().refine(value => value == null || value >= 0, { message });
 }
 
-const quarterPercentSchema = z.number().int().min(0).max(100).nullable();
+const quarterRangeMessage = i18next.t("prediction.validation.quarters.range", {
+	defaultValue: "درصد هر کوارتر باید بین 0 تا 100 باشد",
+});
+
+const quarterPercentSchema = z.number()
+	.int({ message: quarterRangeMessage })
+	.min(0, { message: quarterRangeMessage })
+	.max(100, { message: quarterRangeMessage })
+	.nullable();
 
 const shareSectionSchema = z.object({
 	mode: z.enum(["auto", "manual"]),
@@ -19,6 +33,14 @@ const metricShareSchema = z.object({
 	value: shareSectionSchema,
 	income: shareSectionSchema,
 	expense: shareSectionSchema,
+});
+
+const channelSharesSchema = z.object({
+	value: z.object(
+		Object.fromEntries(
+			OPENAPI_CHANNEL_OPTIONS.map(channel => [channel.key, z.number().nullable()]),
+		),
+	),
 });
 
 function getShareTotal(section: PredictionShareSectionValue) {
@@ -42,7 +64,7 @@ function addManualShareIssue(
 }
 
 export const openApiPredictionSchema = z.object({
-	openapiModel: z.literal("LEGACY"),
+	openapiModel: z.enum(["LEGACY", "PACKAGE"]),
 	q1Percent: quarterPercentSchema,
 	q2Percent: quarterPercentSchema,
 	q3Percent: quarterPercentSchema,
@@ -65,6 +87,7 @@ export const openApiPredictionSchema = z.object({
 		smsTotal: metricShareSchema,
 		trafficTotal: metricShareSchema,
 	}).default(createEmptyOpenApiManualShares()),
+	channels: channelSharesSchema.default(createEmptyOpenApiChannelShares()),
 }) satisfies z.ZodType<OpenApiPredictionServiceFields>;
 
 export const validatedOpenApiPredictionSchema = openApiPredictionSchema.superRefine((value, ctx) => {
@@ -87,7 +110,7 @@ export const validatedOpenApiPredictionSchema = openApiPredictionSchema.superRef
 		});
 	}
 
-	OPENAPI_OPERATION_SECTIONS.forEach((section) => {
+	getOpenApiOperationSections(value.openapiModel).forEach((section) => {
 		OPENAPI_METRICS.forEach((metric) => {
 			const shareState = value.manualShares[section.key][metric.key];
 			if (shareState.mode !== "manual")
@@ -114,4 +137,18 @@ export const validatedOpenApiPredictionSchema = openApiPredictionSchema.superRef
 			}
 		});
 	});
+
+	if (value.openapiModel === "PACKAGE") {
+		const channelTotal = OPENAPI_CHANNEL_OPTIONS.reduce((total, channel) => {
+			return total + Number(value.channels.value[channel.key] ?? 0);
+		}, 0);
+
+		if (channelTotal !== 100) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["channels", "value"],
+				message: i18next.t("prediction.validation.manualShares.sumMustBeHundred"),
+			});
+		}
+	}
 });

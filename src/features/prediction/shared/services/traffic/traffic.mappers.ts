@@ -5,6 +5,7 @@ import type {
 } from "../../../api/predictions.api";
 import type {
 	PredictionFormValues,
+	PredictionServiceCode,
 	PredictionShareMode,
 	PredictionShareSectionValue,
 	TrafficCompanyType,
@@ -14,7 +15,9 @@ import type {
 	TrafficPredictionMetricCode,
 	TrafficPredictionServiceFields,
 } from "../../model/prediction.form.types";
-import { toNullableNumber, toNumberOrZero } from "../../model/prediction.helpers";
+import type { PredictionListRow } from "../../model/prediction.list.types";
+import i18next from "i18next";
+import { formatPredictionNumber, toNullableNumber, toNumberOrZero } from "../../model/prediction.helpers";
 import {
 	createEmptyTrafficFields,
 	createEmptyTrafficLocation,
@@ -216,4 +219,22 @@ export function findTrafficPredictionBySelection(
 		Number(record.fiscal_year) === Number(fiscalYear)
 		&& record.company_type === companyType,
 	) ?? null;
+}
+
+export function trafficPredictionToListRow(
+	record: TrafficPredictionYearDto,
+	context: { serviceId: number, serviceCode: PredictionServiceCode, serviceLabel: string },
+): PredictionListRow {
+	return {
+		id: record.id,
+		serviceId: context.serviceId,
+		serviceCode: context.serviceCode,
+		serviceLabel: context.serviceLabel,
+		fiscalYear: toNullableNumber(record.fiscal_year),
+		preview: `${i18next.t("prediction.list.preview.companyType")}: ${record.company_type ?? "-"} | ${i18next.t("prediction.list.preview.locations")}: ${formatPredictionNumber(record.locations?.length ?? 0)}`,
+		note: String(record.note ?? ""),
+		createdAt: record.created_at ?? null,
+		updatedAt: record.updated_at ?? null,
+		raw: record,
+	};
 }

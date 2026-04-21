@@ -1,11 +1,13 @@
 import type {
+	OpenApiChannelCode,
 	OpenApiOperationCode,
+	OpenApiPredictionModel,
 	PredictionCompanyOption,
 	PredictionFormValues,
 	PredictionMetricCode,
 	PredictionShareSectionValue,
 } from "../../model/prediction.form.types";
-import { RHFProNumber } from "#src/shared/ui/rhf-pro";
+import { RHFProNumber, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined } from "@ant-design/icons";
 import { ProCard } from "@ant-design/pro-components";
 import { useQuery } from "@tanstack/react-query";
@@ -14,7 +16,13 @@ import { useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { predictionCompaniesByServiceQuery } from "../../queries/prediction.queries";
-import { OPENAPI_METRICS, OPENAPI_OPERATION_SECTIONS } from "./openapi.config";
+import { QuarterDistributionSection } from "../../ui/form/sections/QuarterDistributionSection";
+import {
+	getOpenApiOperationSections,
+	OPENAPI_CHANNEL_OPTIONS,
+	OPENAPI_METRICS,
+	OPENAPI_MODEL_OPTIONS,
+} from "./openapi.config";
 
 const sf = (path: string) => `serviceFields.${path}` as const;
 
@@ -43,6 +51,10 @@ function normalizeShareValue(value: unknown): PredictionShareSectionValue {
 
 function getShareFieldPath(operationKey: OpenApiOperationCode, metricKey: PredictionMetricCode) {
 	return `serviceFields.manualShares.${operationKey}.${metricKey}` as const;
+}
+
+function getChannelFieldPath(channelKey: OpenApiChannelCode) {
+	return `serviceFields.channels.value.${channelKey}` as const;
 }
 
 function getSelectedCompanyOptions(
@@ -207,6 +219,8 @@ export function OpenApiPredictionFields() {
 	const { t } = useTranslation();
 	const { control } = useFormContext<PredictionFormValues>();
 	const serviceId = useWatch({ control, name: "serviceId" });
+	const openapiModel = useWatch({ control, name: sf("openapiModel") as any }) as OpenApiPredictionModel | null;
+	const activeModel = openapiModel === "PACKAGE" ? "PACKAGE" : "LEGACY";
 
 	const companies = useQuery(predictionCompaniesByServiceQuery(serviceId));
 	const companyOptions = useMemo(
@@ -223,6 +237,15 @@ export function OpenApiPredictionFields() {
 		) as Record<PredictionMetricCode, string>,
 		[t],
 	);
+	const activeSections = useMemo(
+		() => getOpenApiOperationSections(activeModel),
+		[activeModel],
+	);
+	const channelValues = useWatch({ control, name: "serviceFields.channels.value" as any }) as Record<string, number | null> | undefined;
+	const channelTotal = useMemo(
+		() => OPENAPI_CHANNEL_OPTIONS.reduce((total, channel) => total + Number(channelValues?.[channel.key] ?? 0), 0),
+		[channelValues],
+	);
 
 	return (
 		<div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -230,33 +253,29 @@ export function OpenApiPredictionFields() {
 				bordered
 				headerBordered
 				style={{ borderRadius: 16 }}
-				title={t("prediction.sections.quarters")}
 			>
-				<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-					<RHFProNumber<PredictionFormValues, any>
-						name={sf("q1Percent") as any}
-						label={t("prediction.quarters.q1")}
-						inputProps={{ placeholder: t("prediction.placeholders.percentExample"), addonAfter: "%" }}
-					/>
-					<RHFProNumber<PredictionFormValues, any>
-						name={sf("q2Percent") as any}
-						label={t("prediction.quarters.q2")}
-						inputProps={{ placeholder: t("prediction.placeholders.percentExample"), addonAfter: "%" }}
-					/>
-					<RHFProNumber<PredictionFormValues, any>
-						name={sf("q3Percent") as any}
-						label={t("prediction.quarters.q3")}
-						inputProps={{ placeholder: t("prediction.placeholders.percentExample"), addonAfter: "%" }}
-					/>
-					<RHFProNumber<PredictionFormValues, any>
-						name={sf("q4Percent") as any}
-						label={t("prediction.quarters.q4")}
-						inputProps={{ placeholder: t("prediction.placeholders.percentExample"), addonAfter: "%" }}
+				<div className="grid gap-3 md:grid-cols-2">
+					<RHFSelect<PredictionFormValues, any, OpenApiPredictionModel>
+						name={sf("openapiModel") as any}
+						label={t("prediction.labels.openapiModel", { defaultValue: "مدل OpenAPI" })}
+						options={OPENAPI_MODEL_OPTIONS.map(option => ({
+							label: t(option.labelKey, {
+								defaultValue: option.value === "PACKAGE" ? "بسته‌ای (Package)" : "قدیمی (Legacy)",
+							}),
+							value: option.value,
+						}))}
+						selectProps={{
+							placeholder: t("prediction.placeholders.selectOpenapiModel", {
+								defaultValue: "مدل OpenAPI را انتخاب کنید",
+							}),
+						}}
 					/>
 				</div>
 			</ProCard>
 
-			{OPENAPI_OPERATION_SECTIONS.map(section => (
+			<QuarterDistributionSection />
+
+			{activeSections.map(section => (
 				<ProCard
 					key={section.key}
 					bordered
@@ -301,7 +320,7 @@ export function OpenApiPredictionFields() {
 						{t("prediction.messages.companySharesDescription")}
 					</Typography.Paragraph>
 
-					{OPENAPI_OPERATION_SECTIONS.map(section => (
+					{activeSections.map(section => (
 						<ProCard
 							key={`${section.key}-shares`}
 							bordered
@@ -323,6 +342,38 @@ export function OpenApiPredictionFields() {
 							</div>
 						</ProCard>
 					))}
+
+					{activeModel === "PACKAGE"
+						? (
+							<ProCard
+								bordered
+								style={{ borderRadius: 16 }}
+								title={t("prediction.openapi.sections.channels", { defaultValue: "کانال‌ها" })}
+								bodyStyle={{ display: "flex", flexDirection: "column", gap: 16 }}
+							>
+								<div className="grid gap-4 xl:grid-cols-3">
+									{OPENAPI_CHANNEL_OPTIONS.map(channel => (
+										<RHFProNumber<PredictionFormValues, any>
+											key={channel.key}
+											name={getChannelFieldPath(channel.key) as any}
+											label={t(channel.titleKey, { defaultValue: channel.key })}
+											inputProps={{
+												placeholder: t("prediction.placeholders.percentExample"),
+												addonAfter: "%",
+											}}
+										/>
+									))}
+								</div>
+
+								<Typography.Text type={channelTotal === 100 ? "success" : "danger"}>
+									{t("prediction.messages.manualShareSum", {
+										title: t("prediction.openapi.sections.channels", { defaultValue: "کانال‌ها" }),
+										total: channelTotal,
+									})}
+								</Typography.Text>
+							</ProCard>
+						)
+						: null}
 				</div>
 			</ProCard>
 		</div>

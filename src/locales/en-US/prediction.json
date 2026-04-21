@@ -1,6 +1,10 @@
 {
 	"titles": {
-		"create": "Prediction Form"
+		"create": "Prediction Form",
+		"edit": "Edit Prediction",
+		"editForm": "Edit Prediction Form",
+		"editModal": "Edit {{service}} Prediction - Fiscal Year {{fiscalYear}}",
+		"list": "Predictions List"
 	},
 	"actions": {
 		"clearForm": "Clear Form",
@@ -8,11 +12,14 @@
 		"submitAndCreateAnother": "Submit and Create Another",
 		"submitAndEdit": "Submit and Edit",
 		"removeCompanyShare": "Remove Company",
-		"addLocation": "Add Location"
+		"addLocation": "Add Location",
+		"saveChanges": "Save Changes",
+		"editPrediction": "Edit Prediction"
 	},
 	"labels": {
 		"service": "Service",
 		"fiscalYear": "Fiscal Year",
+		"openapiModel": "OpenAPI Model",
 		"annualValue": "Annual Value",
 		"annualIncome": "Annual Income",
 		"annualExpense": "Annual Expense",
@@ -45,6 +52,12 @@
 		"sms": "SMS",
 		"traffic": "Traffic"
 	},
+	"openapi": {
+		"models": {
+			"legacy": "Legacy",
+			"package": "Package"
+		}
+	},
 	"metrics": {
 		"value": "Value",
 		"valueReceive": "Received Value",
@@ -62,6 +75,7 @@
 	"placeholders": {
 		"selectService": "Select service",
 		"selectFiscalYear": "Select fiscal year",
+		"selectOpenapiModel": "Select OpenAPI model",
 		"selectCompanies": "Select companies",
 		"selectTrafficCompanyType": "Select traffic company type",
 		"selectLocation": "Select location",
@@ -83,7 +97,34 @@
 		"createSuccess": "Prediction created successfully",
 		"createAndAnotherSuccess": "Prediction created. The form is ready for the next item.",
 		"createAndEditSuccess": "Prediction created. You can continue editing.",
-		"updateSuccess": "Prediction updated successfully"
+		"updateSuccess": "Prediction updated successfully",
+		"loadDetailFailed": "Failed to load prediction details"
+	},
+	"list": {
+		"columns": {
+			"fiscalYear": "Fiscal Year",
+			"preview": "Summary",
+			"note": "Note",
+			"updatedAt": "Updated At",
+			"ordering": "Ordering"
+		},
+		"placeholders": {
+			"ordering": "Select ordering"
+		},
+		"ordering": {
+			"updatedAtDesc": "Updated At (Newest)",
+			"updatedAtAsc": "Updated At (Oldest)",
+			"fiscalYearDesc": "Fiscal Year (Desc)",
+			"fiscalYearAsc": "Fiscal Year (Asc)"
+		},
+		"preview": {
+			"model": "Model",
+			"value": "Value",
+			"income": "Income",
+			"price": "Sell Price",
+			"companyType": "Company Type",
+			"locations": "Locations"
+		}
 	},
 	"errors": {
 		"baseFormIncomplete": "The base form data is incomplete",
@@ -97,6 +138,7 @@
 		},
 		"quarters": {
 			"allRequired": "All quarter percentages are required",
+			"range": "Each quarter percentage must be between 0 and 100",
 			"sumMustBeHundred": "Quarter percentages must add up to 100"
 		},
 		"openapi": {

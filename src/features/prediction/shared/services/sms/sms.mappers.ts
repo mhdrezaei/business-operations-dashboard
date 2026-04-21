@@ -1,12 +1,15 @@
 import type { SmsPredictionPayload, SmsPredictionYearDto } from "../../../api/predictions.api";
 import type {
 	PredictionFormValues,
+	PredictionServiceCode,
 	PredictionShareMode,
 	PredictionShareSectionValue,
 	SmsManualSharesValue,
 	SmsPredictionServiceFields,
 } from "../../model/prediction.form.types";
-import { toNullableNumber, toNumberOrZero } from "../../model/prediction.helpers";
+import type { PredictionListRow } from "../../model/prediction.list.types";
+import i18next from "i18next";
+import { formatPredictionNumber, toNullableNumber, toNumberOrZero } from "../../model/prediction.helpers";
 import { createEmptySmsFields, createEmptySmsManualShares } from "./sms.config";
 
 function isShareMode(value: unknown): value is PredictionShareMode {
@@ -145,4 +148,22 @@ export function findSmsPredictionByFiscalYear(
 		return null;
 
 	return records.find(record => Number(record.fiscal_year) === Number(fiscalYear)) ?? null;
+}
+
+export function smsPredictionToListRow(
+	record: SmsPredictionYearDto,
+	context: { serviceId: number, serviceCode: PredictionServiceCode, serviceLabel: string },
+): PredictionListRow {
+	return {
+		id: record.id,
+		serviceId: context.serviceId,
+		serviceCode: context.serviceCode,
+		serviceLabel: context.serviceLabel,
+		fiscalYear: toNullableNumber(record.fiscal_year),
+		preview: `${i18next.t("prediction.list.preview.value")}: ${formatPredictionNumber(record.value_year)} | ${i18next.t("prediction.list.preview.price")}: ${formatPredictionNumber(record.price_sell)}`,
+		note: String(record.note ?? ""),
+		createdAt: record.created_at ?? null,
+		updatedAt: record.updated_at ?? null,
+		raw: record,
+	};
 }

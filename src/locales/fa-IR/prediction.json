@@ -1,6 +1,10 @@
 {
 	"titles": {
-		"create": "فرم ایجاد پیش‌بینی"
+		"create": "فرم ایجاد پیش‌بینی",
+		"edit": "ویرایش پیش‌بینی",
+		"editForm": "فرم ویرایش پیش‌بینی",
+		"editModal": "ویرایش پیش‌بینی {{service}} - سال {{fiscalYear}}",
+		"list": "لیست پیش‌بینی‌ها"
 	},
 	"actions": {
 		"clearForm": "پاکسازی فرم",
@@ -8,7 +12,9 @@
 		"submitAndCreateAnother": "ثبت و ایجاد یکی دیگر",
 		"submitAndEdit": "ثبت و ویرایش",
 		"removeCompanyShare": "حذف شرکت",
-		"addLocation": "افزودن موقعیت"
+		"addLocation": "افزودن موقعیت",
+		"saveChanges": "ذخیره تغییرات",
+		"editPrediction": "ویرایش پیش‌بینی"
 	},
 	"labels": {
 		"service": "نام سرویس",
@@ -83,7 +89,34 @@
 		"createSuccess": "پیش‌بینی با موفقیت ثبت شد",
 		"createAndAnotherSuccess": "پیش‌بینی ثبت شد. فرم برای مورد بعدی آماده است.",
 		"createAndEditSuccess": "پیش‌بینی ثبت شد. می‌توانید ویرایش را ادامه دهید.",
-		"updateSuccess": "پیش‌بینی با موفقیت ویرایش شد"
+		"updateSuccess": "پیش‌بینی با موفقیت ویرایش شد",
+		"loadDetailFailed": "بارگذاری جزئیات پیش‌بینی ناموفق بود"
+	},
+	"list": {
+		"columns": {
+			"fiscalYear": "سال مالی",
+			"preview": "خلاصه",
+			"note": "توضیحات",
+			"updatedAt": "آخرین ویرایش",
+			"ordering": "مرتب‌سازی"
+		},
+		"placeholders": {
+			"ordering": "مرتب‌سازی را انتخاب کنید"
+		},
+		"ordering": {
+			"updatedAtDesc": "آخرین ویرایش (جدیدتر)",
+			"updatedAtAsc": "آخرین ویرایش (قدیمی‌تر)",
+			"fiscalYearDesc": "سال مالی (نزولی)",
+			"fiscalYearAsc": "سال مالی (صعودی)"
+		},
+		"preview": {
+			"model": "مدل",
+			"value": "مقدار",
+			"income": "درآمد",
+			"price": "قیمت فروش",
+			"companyType": "نوع شرکت",
+			"locations": "تعداد موقعیت"
+		}
 	},
 	"errors": {
 		"baseFormIncomplete": "اطلاعات پایه فرم کامل نیست",

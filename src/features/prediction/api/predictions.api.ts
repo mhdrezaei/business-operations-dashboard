@@ -1,4 +1,5 @@
 import type { Paginated } from "#src/api/types";
+import type { PredictionListParams } from "../shared/model/prediction.list.types";
 import { request } from "#src/utils/request";
 
 export interface OpenApiPredictionYearDto {
@@ -164,12 +165,32 @@ export interface TrafficPredictionPayload {
 	note: string
 }
 
+function buildPredictionListSearchParams(params: PredictionListParams) {
+	return Object.fromEntries(
+		Object.entries(params).filter(([, value]) => value != null && value !== ""),
+	);
+}
+
 export function fetchOpenApiPredictionYears(serviceId: number) {
 	return request
 		.get("predictions/openapi/years/", {
 			searchParams: { service: serviceId },
 		})
 		.json<Paginated<OpenApiPredictionYearDto>>();
+}
+
+export function listOpenApiPredictions(params: PredictionListParams) {
+	return request
+		.get("predictions/openapi/years/", {
+			searchParams: buildPredictionListSearchParams(params),
+		})
+		.json<Paginated<OpenApiPredictionYearDto>>();
+}
+
+export function fetchOpenApiPredictionDetail(id: number) {
+	return request
+		.get(`predictions/openapi/years/${id}/`)
+		.json<OpenApiPredictionYearDto>();
 }
 
 export function createOpenApiPrediction(payload: OpenApiPredictionPayload) {
@@ -196,6 +217,20 @@ export function fetchPspPredictionYears(serviceId: number) {
 		.json<Paginated<PspPredictionYearDto>>();
 }
 
+export function listPspPredictions(params: PredictionListParams) {
+	return request
+		.get("predictions/psp/years/", {
+			searchParams: buildPredictionListSearchParams(params),
+		})
+		.json<Paginated<PspPredictionYearDto>>();
+}
+
+export function fetchPspPredictionDetail(id: number) {
+	return request
+		.get(`predictions/psp/years/${id}/`)
+		.json<PspPredictionYearDto>();
+}
+
 export function createPspPrediction(payload: PspPredictionPayload) {
 	return request
 		.post("predictions/psp/years/", {
@@ -218,6 +253,20 @@ export function fetchShahkarPredictionYears(serviceId: number) {
 			searchParams: { service: serviceId },
 		})
 		.json<Paginated<ShahkarPredictionYearDto>>();
+}
+
+export function listShahkarPredictions(params: PredictionListParams) {
+	return request
+		.get("predictions/shahkar/years/", {
+			searchParams: buildPredictionListSearchParams(params),
+		})
+		.json<Paginated<ShahkarPredictionYearDto>>();
+}
+
+export function fetchShahkarPredictionDetail(id: number) {
+	return request
+		.get(`predictions/shahkar/years/${id}/`)
+		.json<ShahkarPredictionYearDto>();
 }
 
 export function createShahkarPrediction(payload: ShahkarPredictionPayload) {
@@ -244,6 +293,20 @@ export function fetchSmsPredictionYears(serviceId: number) {
 		.json<Paginated<SmsPredictionYearDto>>();
 }
 
+export function listSmsPredictions(params: PredictionListParams) {
+	return request
+		.get("predictions/sms/years/", {
+			searchParams: buildPredictionListSearchParams(params),
+		})
+		.json<Paginated<SmsPredictionYearDto>>();
+}
+
+export function fetchSmsPredictionDetail(id: number) {
+	return request
+		.get(`predictions/sms/years/${id}/`)
+		.json<SmsPredictionYearDto>();
+}
+
 export function createSmsPrediction(payload: SmsPredictionPayload) {
 	return request
 		.post("predictions/sms/years/", {
@@ -266,6 +329,20 @@ export function fetchTrafficPredictionYears(serviceId: number) {
 			searchParams: { service: serviceId },
 		})
 		.json<Paginated<TrafficPredictionYearDto>>();
+}
+
+export function listTrafficPredictions(params: PredictionListParams) {
+	return request
+		.get("predictions/traffic/years/", {
+			searchParams: buildPredictionListSearchParams(params),
+		})
+		.json<Paginated<TrafficPredictionYearDto>>();
+}
+
+export function fetchTrafficPredictionDetail(id: number) {
+	return request
+		.get(`predictions/traffic/years/${id}/`)
+		.json<TrafficPredictionYearDto>();
 }
 
 export function createTrafficPrediction(payload: TrafficPredictionPayload) {
