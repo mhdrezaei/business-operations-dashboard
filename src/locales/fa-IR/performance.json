@@ -107,7 +107,7 @@
 	"labels": {
 		"serviceName": "نام سرویس",
 		"companyName": "نام شرکت",
-		"trafficCompanyType": "نوع شرکت (ترافیک)",
+		"trafficCompanyType": "نوع شرکت",
 		"financialColumns": "نمایش ستون های مالی",
 		"selectAll": "انتخاب همه",
 		"smsReportType": "نوع گزارش پیامک",

@@ -185,7 +185,7 @@ async function submitTrafficFiles(values: PerformanceFormValues): Promise<Record
 }
 
 async function submitTrafficSingle(values: PerformanceFormValues): Promise<Record<string, unknown> | null> {
-	if (!values.companyId || !values.year || !values.month) {
+	if (!values.companyId || !values.year || !values.month || !values.trafficCompanyType) {
 		throw new Error(i18next.t("performance.errors.baseFormIncomplete"));
 	}
 
@@ -227,6 +227,7 @@ async function submitTrafficSingle(values: PerformanceFormValues): Promise<Recor
 		month: values.month,
 		payload: {
 			...buildBasePayload(values),
+			company_type: values.trafficCompanyType,
 			locations,
 		},
 		suppressErrorNotification: true,

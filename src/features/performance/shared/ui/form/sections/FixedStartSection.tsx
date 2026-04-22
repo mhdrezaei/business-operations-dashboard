@@ -121,6 +121,7 @@ export function FixedStartSection() {
 	const monthlyStatus = useQuery(monthlyContractStatusQuery({
 		serviceId: usesMonthlyStatus ? serviceId : null,
 		companyId: usesMonthlyStatus ? companyId : null,
+		companyType: isTrafficSingleMode ? trafficCompanyType : null,
 		year: usesMonthlyStatus ? year : null,
 		month: usesMonthlyStatus ? month : null,
 	}));
