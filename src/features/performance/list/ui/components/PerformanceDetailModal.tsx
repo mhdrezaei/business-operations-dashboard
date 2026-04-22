@@ -566,9 +566,8 @@ export function PerformanceDetailModal({
 				readonlyKeys: [],
 				editableFields: [
 					{ key: "value", label: t("performance.fields.psp.performanceValue"), type: "number", required: true },
-					{ key: "income", label: t("performance.fields.psp.monthlyRevenue"), type: "number" },
 				],
-				payloadKeys: ["value", "income"],
+				payloadKeys: ["value"],
 			};
 		}
 
@@ -622,11 +621,8 @@ export function PerformanceDetailModal({
 				editableFields: [
 					{ key: "value", label: t("performance.columns.value"), type: "number", required: true },
 					{ key: "value_receive", label: t("performance.columns.valueReceive"), type: "number" },
-					{ key: "income", label: t("performance.columns.income"), type: "number" },
-					{ key: "expense", label: t("performance.columns.expense"), type: "number" },
-					{ key: "profit", label: t("performance.columns.profit"), type: "number" },
 				],
-				payloadKeys: ["location", "company_type", "value", "value_receive", "income", "expense", "profit"],
+				payloadKeys: ["location", "company_type", "value", "value_receive"],
 			};
 		}
 
@@ -635,11 +631,8 @@ export function PerformanceDetailModal({
 			readonlyKeys: ["customer_name", "customer_nic", "province_code", "service_type"],
 			editableFields: [
 				{ key: "value", label: t("performance.columns.value"), type: "number", required: true },
-				{ key: "income", label: t("performance.columns.income"), type: "number" },
-				{ key: "expense", label: t("performance.columns.expense"), type: "number" },
-				{ key: "profit", label: t("performance.columns.profit"), type: "number" },
 			],
-			payloadKeys: ["customer_name", "customer_nic", "province_code", "service_type", "value", "income", "expense", "profit"],
+			payloadKeys: ["customer_name", "customer_nic", "province_code", "service_type", "value"],
 		};
 	}, [service, openApiContractModel, t]);
 	const isOpenApiPackageEditLayout = service === "openapi" && openApiContractModel === "package";
