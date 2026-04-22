@@ -58,3 +58,11 @@ export function toNullableNumber(value: unknown): number | null {
 export function toNumberOrZero(value: unknown) {
 	return toNullableNumber(value) ?? 0;
 }
+
+export function formatPredictionNumber(value: unknown) {
+	const numeric = toNullableNumber(value);
+	if (numeric == null)
+		return "-";
+
+	return numeric.toLocaleString("en-US");
+}

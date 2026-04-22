@@ -2,6 +2,12 @@ export interface ServiceDto {
 	id: number
 	code: "commercial" | "openapi" | "psp" | "shahkar" | "sms" | "traffic" | (string & {})
 	name: string
+	permissions?: {
+		view: boolean
+		create: boolean
+		update: boolean
+		delete: boolean
+	}
 	created_at: string
 	updated_at: string
 }

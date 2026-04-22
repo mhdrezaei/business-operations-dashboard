@@ -1,0 +1,178 @@
+{
+	"titles": {
+		"create": "Prediction Form",
+		"edit": "Edit Prediction",
+		"editForm": "Edit Prediction Form",
+		"editModal": "Edit {{service}} Prediction - Fiscal Year {{fiscalYear}}",
+		"list": "Predictions List"
+	},
+	"actions": {
+		"clearForm": "Clear Form",
+		"submit": "Submit Prediction",
+		"submitAndCreateAnother": "Submit and Create Another",
+		"submitAndEdit": "Submit and Edit",
+		"removeCompanyShare": "Remove Company",
+		"addLocation": "Add Location",
+		"saveChanges": "Save Changes",
+		"editPrediction": "Edit Prediction"
+	},
+	"labels": {
+		"service": "Service",
+		"fiscalYear": "Fiscal Year",
+		"openapiModel": "OpenAPI Model",
+		"annualValue": "Annual Value",
+		"annualIncome": "Annual Income",
+		"annualExpense": "Annual Expense",
+		"smsAnnualValue": "Annual SMS Count",
+		"smsPriceBuy": "SMS Buy Price",
+		"smsPriceSell": "SMS Sell Price",
+		"trafficCompanyType": "Traffic Company Type",
+		"trafficLocation": "Location",
+		"trafficAnnualValueReceive": "Annual Received Value",
+		"companySelect": "Select Company",
+		"note": "Note (Optional)"
+	},
+	"quarters": {
+		"q1": "Quarter 1",
+		"q2": "Quarter 2",
+		"q3": "Quarter 3",
+		"q4": "Quarter 4"
+	},
+	"sections": {
+		"quarters": "Quarter Distribution",
+		"companyShares": "Company Shares"
+	},
+	"operations": {
+		"billInquiry": "Bill Inquiry",
+		"receiptRegister": "Receipt Register",
+		"smsTotal": "SMS Total",
+		"trafficTotal": "Traffic Total",
+		"psp": "PSP",
+		"shahkar": "Shahkar",
+		"sms": "SMS",
+		"traffic": "Traffic"
+	},
+	"openapi": {
+		"models": {
+			"legacy": "Legacy",
+			"package": "Package"
+		}
+	},
+	"metrics": {
+		"value": "Value",
+		"valueReceive": "Received Value",
+		"income": "Income",
+		"expense": "Expense"
+	},
+	"locations": {
+		"tehran": "Tehran",
+		"province": "Province Centers"
+	},
+	"shareModes": {
+		"auto": "Auto",
+		"manual": "Manual"
+	},
+	"placeholders": {
+		"selectService": "Select service",
+		"selectFiscalYear": "Select fiscal year",
+		"selectOpenapiModel": "Select OpenAPI model",
+		"selectCompanies": "Select companies",
+		"selectTrafficCompanyType": "Select traffic company type",
+		"selectLocation": "Select location",
+		"percentExample": "e.g. 25",
+		"amountExample": "e.g. 10000000",
+		"smsPriceBuy": "e.g. 120",
+		"smsPriceSell": "e.g. 180",
+		"note": "e.g. short note about the prediction"
+	},
+	"messages": {
+		"unknownError": "Unknown error",
+		"submitError": "Prediction submission failed",
+		"fixFormErrors": "Please fix the form errors",
+		"invalidFormInputs": "The form inputs are invalid",
+		"companySharesDescription": "Each section can be automatic or manual. In manual mode, the total percentage for the selected companies must be 100.",
+		"autoShareDescription": "Shares will be distributed automatically based on the previous year.",
+		"manualShareSum": "Total {{title}}: {{total}}%",
+		"editingExistingYear": "An existing record was found for fiscal year {{fiscalYear}} and the form is now in edit mode.",
+		"createSuccess": "Prediction created successfully",
+		"createAndAnotherSuccess": "Prediction created. The form is ready for the next item.",
+		"createAndEditSuccess": "Prediction created. You can continue editing.",
+		"updateSuccess": "Prediction updated successfully",
+		"loadDetailFailed": "Failed to load prediction details"
+	},
+	"list": {
+		"columns": {
+			"fiscalYear": "Fiscal Year",
+			"preview": "Summary",
+			"note": "Note",
+			"updatedAt": "Updated At",
+			"ordering": "Ordering"
+		},
+		"placeholders": {
+			"ordering": "Select ordering"
+		},
+		"ordering": {
+			"updatedAtDesc": "Updated At (Newest)",
+			"updatedAtAsc": "Updated At (Oldest)",
+			"fiscalYearDesc": "Fiscal Year (Desc)",
+			"fiscalYearAsc": "Fiscal Year (Asc)"
+		},
+		"preview": {
+			"model": "Model",
+			"value": "Value",
+			"income": "Income",
+			"price": "Sell Price",
+			"companyType": "Company Type",
+			"locations": "Locations"
+		}
+	},
+	"errors": {
+		"baseFormIncomplete": "The base form data is incomplete",
+		"unsupportedService": "This service is not supported for predictions yet"
+	},
+	"validation": {
+		"base": {
+			"serviceRequired": "Service is required",
+			"serviceCodeRequired": "Service code is required",
+			"fiscalYearRequired": "Fiscal year is required"
+		},
+		"quarters": {
+			"allRequired": "All quarter percentages are required",
+			"range": "Each quarter percentage must be between 0 and 100",
+			"sumMustBeHundred": "Quarter percentages must add up to 100"
+		},
+		"openapi": {
+			"nonNegativeNumber": "This value must be zero or greater"
+		},
+		"psp": {
+			"valueRequired": "Annual value is required and must be zero or greater",
+			"incomeRequired": "Annual income is required and must be zero or greater"
+		},
+		"shahkar": {
+			"valueRequired": "Annual value is required and must be zero or greater",
+			"incomeRequired": "Annual income is required and must be zero or greater"
+		},
+		"sms": {
+			"valueRequired": "Annual SMS count is required and must be zero or greater",
+			"incomeRequired": "Annual income is required and must be zero or greater",
+			"expenseRequired": "Annual expense is required and must be zero or greater",
+			"priceBuyRequired": "SMS buy price is required and must be zero or greater",
+			"priceSellRequired": "SMS sell price is required and must be zero or greater"
+		},
+		"traffic": {
+			"nonNegativeNumber": "This value must be zero or greater",
+			"companyTypeRequired": "Traffic company type is required",
+			"locationsRequired": "At least one location is required",
+			"locationRequired": "Location is required",
+			"locationDuplicate": "Each location can only be selected once",
+			"valueRequired": "Annual value is required and must be zero or greater",
+			"valueReceiveRequired": "Annual received value is required and must be zero or greater",
+			"incomeRequired": "Annual income is required and must be zero or greater",
+			"expenseRequired": "Annual expense is required and must be zero or greater"
+		},
+		"manualShares": {
+			"companyRequired": "Select at least one company",
+			"sumMustBeHundred": "The total company percentage must be 100"
+		}
+	}
+}
