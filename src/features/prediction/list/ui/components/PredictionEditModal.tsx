@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { submitPrediction } from "../../../create/ui/prediction.submit";
 import { predictionServiceRegistry } from "../../../shared/services/registry";
 import { PredictionForm } from "../../../shared/ui/form/PredictionForm";
+import "./prediction-edit-modal.css";
 
 interface Props {
 	open: boolean
@@ -62,6 +63,7 @@ export function PredictionEditModal({
 			footer={null}
 			destroyOnClose
 			width={1120}
+			className="prediction-edit-modal"
 		>
 			{!row || !module
 				? null

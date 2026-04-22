@@ -1,7 +1,7 @@
 import type { PredictionShareSectionValue, SmsPredictionServiceFields } from "../../model/prediction.form.types";
 import i18next from "i18next";
 import { z } from "zod";
-import { createEmptySmsManualShares } from "./sms.config";
+import { createEmptySmsChannelShares, createEmptySmsManualShares, SMS_CHANNEL_OPTIONS } from "./sms.config";
 
 function nullableNonNegativeNumber(message: string) {
 	return z.number({ message }).nullable().refine(value => value == null || value >= 0, { message });
@@ -45,6 +45,13 @@ export const smsPredictionSchema = z.object({
 		income: shareSectionSchema,
 		expense: shareSectionSchema,
 	}).default(createEmptySmsManualShares()),
+	channels: z.object({
+		value: z.object(
+			Object.fromEntries(
+				SMS_CHANNEL_OPTIONS.map(channel => [channel.key, z.number().nullable()]),
+			),
+		).default(createEmptySmsChannelShares().value),
+	}).default(createEmptySmsChannelShares()),
 }) satisfies z.ZodType<SmsPredictionServiceFields>;
 
 export const validatedSmsPredictionSchema = smsPredictionSchema.superRefine((value, ctx) => {
@@ -89,4 +96,17 @@ export const validatedSmsPredictionSchema = smsPredictionSchema.superRefine((val
 			});
 		}
 	});
+
+	const channelTotal = Object.values(value.channels.value).reduce(
+		(total, amount) => Number(total) + Number(amount ?? 0),
+		0,
+	);
+
+	if (channelTotal !== 100) {
+		ctx.addIssue({
+			code: "custom",
+			path: ["channels"],
+			message: i18next.t("prediction.validation.manualShares.sumMustBeHundred"),
+		});
+	}
 });

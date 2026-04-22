@@ -211,7 +211,7 @@ export function updateOpenApiPrediction(id: number, payload: OpenApiPredictionPa
 
 export function fetchPspPredictionYears(serviceId: number) {
 	return request
-		.get("predictions/psp/years/", {
+		.get("prediction/psp/year/", {
 			searchParams: { service: serviceId },
 		})
 		.json<Paginated<PspPredictionYearDto>>();
@@ -219,7 +219,7 @@ export function fetchPspPredictionYears(serviceId: number) {
 
 export function listPspPredictions(params: PredictionListParams) {
 	return request
-		.get("predictions/psp/years/", {
+		.get("prediction/psp/year/", {
 			searchParams: buildPredictionListSearchParams(params),
 		})
 		.json<Paginated<PspPredictionYearDto>>();
@@ -227,13 +227,13 @@ export function listPspPredictions(params: PredictionListParams) {
 
 export function fetchPspPredictionDetail(id: number) {
 	return request
-		.get(`predictions/psp/years/${id}/`)
+		.get(`prediction/psp/year/${id}/`)
 		.json<PspPredictionYearDto>();
 }
 
 export function createPspPrediction(payload: PspPredictionPayload) {
 	return request
-		.post("predictions/psp/years/", {
+		.post("prediction/psp/year/", {
 			json: payload,
 		})
 		.json<PspPredictionYearDto>();
@@ -241,7 +241,7 @@ export function createPspPrediction(payload: PspPredictionPayload) {
 
 export function updatePspPrediction(id: number, payload: PspPredictionPayload) {
 	return request
-		.put(`predictions/psp/years/${id}/`, {
+		.put(`prediction/psp/year/${id}/`, {
 			json: payload,
 		})
 		.json<PspPredictionYearDto>();
@@ -249,7 +249,7 @@ export function updatePspPrediction(id: number, payload: PspPredictionPayload) {
 
 export function fetchShahkarPredictionYears(serviceId: number) {
 	return request
-		.get("predictions/shahkar/years/", {
+		.get("prediction/shahkar/year/", {
 			searchParams: { service: serviceId },
 		})
 		.json<Paginated<ShahkarPredictionYearDto>>();
@@ -257,7 +257,7 @@ export function fetchShahkarPredictionYears(serviceId: number) {
 
 export function listShahkarPredictions(params: PredictionListParams) {
 	return request
-		.get("predictions/shahkar/years/", {
+		.get("prediction/shahkar/year/", {
 			searchParams: buildPredictionListSearchParams(params),
 		})
 		.json<Paginated<ShahkarPredictionYearDto>>();
@@ -265,13 +265,13 @@ export function listShahkarPredictions(params: PredictionListParams) {
 
 export function fetchShahkarPredictionDetail(id: number) {
 	return request
-		.get(`predictions/shahkar/years/${id}/`)
+		.get(`prediction/shahkar/year/${id}/`)
 		.json<ShahkarPredictionYearDto>();
 }
 
 export function createShahkarPrediction(payload: ShahkarPredictionPayload) {
 	return request
-		.post("predictions/shahkar/years/", {
+		.post("prediction/shahkar/year/", {
 			json: payload,
 		})
 		.json<ShahkarPredictionYearDto>();
@@ -279,7 +279,7 @@ export function createShahkarPrediction(payload: ShahkarPredictionPayload) {
 
 export function updateShahkarPrediction(id: number, payload: ShahkarPredictionPayload) {
 	return request
-		.put(`predictions/shahkar/years/${id}/`, {
+		.put(`prediction/shahkar/year/${id}/`, {
 			json: payload,
 		})
 		.json<ShahkarPredictionYearDto>();
@@ -287,7 +287,7 @@ export function updateShahkarPrediction(id: number, payload: ShahkarPredictionPa
 
 export function fetchSmsPredictionYears(serviceId: number) {
 	return request
-		.get("predictions/sms/years/", {
+		.get("prediction/sms/year/", {
 			searchParams: { service: serviceId },
 		})
 		.json<Paginated<SmsPredictionYearDto>>();
@@ -295,7 +295,7 @@ export function fetchSmsPredictionYears(serviceId: number) {
 
 export function listSmsPredictions(params: PredictionListParams) {
 	return request
-		.get("predictions/sms/years/", {
+		.get("prediction/sms/year/", {
 			searchParams: buildPredictionListSearchParams(params),
 		})
 		.json<Paginated<SmsPredictionYearDto>>();
@@ -303,13 +303,13 @@ export function listSmsPredictions(params: PredictionListParams) {
 
 export function fetchSmsPredictionDetail(id: number) {
 	return request
-		.get(`predictions/sms/years/${id}/`)
+		.get(`prediction/sms/year/${id}/`)
 		.json<SmsPredictionYearDto>();
 }
 
 export function createSmsPrediction(payload: SmsPredictionPayload) {
 	return request
-		.post("predictions/sms/years/", {
+		.post("prediction/sms/year/", {
 			json: payload,
 		})
 		.json<SmsPredictionYearDto>();
@@ -317,7 +317,7 @@ export function createSmsPrediction(payload: SmsPredictionPayload) {
 
 export function updateSmsPrediction(id: number, payload: SmsPredictionPayload) {
 	return request
-		.put(`predictions/sms/years/${id}/`, {
+		.put(`prediction/sms/year/${id}/`, {
 			json: payload,
 		})
 		.json<SmsPredictionYearDto>();
@@ -325,7 +325,7 @@ export function updateSmsPrediction(id: number, payload: SmsPredictionPayload) {
 
 export function fetchTrafficPredictionYears(serviceId: number) {
 	return request
-		.get("predictions/traffic/years/", {
+		.get("prediction/traffic/year/", {
 			searchParams: { service: serviceId },
 		})
 		.json<Paginated<TrafficPredictionYearDto>>();
@@ -333,7 +333,7 @@ export function fetchTrafficPredictionYears(serviceId: number) {
 
 export function listTrafficPredictions(params: PredictionListParams) {
 	return request
-		.get("predictions/traffic/years/", {
+		.get("prediction/traffic/year/", {
 			searchParams: buildPredictionListSearchParams(params),
 		})
 		.json<Paginated<TrafficPredictionYearDto>>();
@@ -341,13 +341,13 @@ export function listTrafficPredictions(params: PredictionListParams) {
 
 export function fetchTrafficPredictionDetail(id: number) {
 	return request
-		.get(`predictions/traffic/years/${id}/`)
+		.get(`prediction/traffic/year/${id}/`)
 		.json<TrafficPredictionYearDto>();
 }
 
 export function createTrafficPrediction(payload: TrafficPredictionPayload) {
 	return request
-		.post("predictions/traffic/years/", {
+		.post("prediction/traffic/year/", {
 			json: payload,
 		})
 		.json<TrafficPredictionYearDto>();
@@ -355,7 +355,7 @@ export function createTrafficPrediction(payload: TrafficPredictionPayload) {
 
 export function updateTrafficPrediction(id: number, payload: TrafficPredictionPayload) {
 	return request
-		.put(`predictions/traffic/years/${id}/`, {
+		.put(`prediction/traffic/year/${id}/`, {
 			json: payload,
 		})
 		.json<TrafficPredictionYearDto>();

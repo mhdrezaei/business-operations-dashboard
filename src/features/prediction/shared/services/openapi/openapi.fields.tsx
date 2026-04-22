@@ -328,7 +328,7 @@ export function OpenApiPredictionFields() {
 							title={t(section.titleKey)}
 							bodyStyle={{ display: "flex", flexDirection: "column", gap: 16 }}
 						>
-							<div className="grid gap-4 xl:grid-cols-3">
+							<div className="prediction-share-editor-grid grid gap-4 xl:grid-cols-3">
 								{OPENAPI_METRICS.map(metric => (
 									<CompanyShareEditor
 										key={`${section.key}-${metric.key}`}

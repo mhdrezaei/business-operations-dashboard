@@ -24,6 +24,7 @@ import {
 	createEmptyTrafficManualShares,
 	isTrafficCompanyType,
 	isTrafficLocationCode,
+	normalizeTrafficLocationCode,
 	TRAFFIC_LOCATION_OPTIONS,
 	TRAFFIC_METRICS,
 } from "./traffic.config";
@@ -43,6 +44,24 @@ function normalizeShareSection(value: unknown): PredictionShareSectionValue {
 		return fallback;
 
 	const raw = value as Record<string, unknown>;
+	const directShares = Object.entries(raw)
+		.filter(([, amount]) => amount != null && amount !== "")
+		.map(([key, amount]) => [key, toNullableNumber(amount)] as const)
+		.filter(([, amount]) => amount != null);
+
+	if (directShares.length > 0 && !("shares" in raw) && !("selectedCompanyIds" in raw)) {
+		const shares = Object.fromEntries(directShares);
+		const selectedCompanyIds = Object.keys(shares)
+			.map(Number)
+			.filter(companyId => Number.isInteger(companyId) && companyId > 0);
+
+		return {
+			mode: selectedCompanyIds.length > 0 ? "manual" : "auto",
+			selectedCompanyIds,
+			shares,
+		};
+	}
+
 	const selectedCompanyIds = Array.isArray(raw.selectedCompanyIds)
 		? raw.selectedCompanyIds
 			.map(item => Number(item))
@@ -70,7 +89,7 @@ function normalizeManualShares(value: unknown): TrafficManualSharesValue {
 	const raw = value as Record<string, unknown>;
 	return Object.fromEntries(
 		TRAFFIC_LOCATION_OPTIONS.map((locationOption) => {
-			const locationRaw = raw[locationOption.value] as Record<string, unknown> | undefined;
+			const locationRaw = (raw[locationOption.value] ?? raw.PROVINCE) as Record<string, unknown> | undefined;
 			return [
 				locationOption.value,
 				Object.fromEntries(
@@ -89,7 +108,7 @@ function normalizeLocation(value: unknown): TrafficPredictionLocationFormValue |
 		return null;
 
 	const raw = value as Record<string, unknown>;
-	const location = isTrafficLocationCode(raw.location) ? raw.location : null;
+	const location = normalizeTrafficLocationCode(raw.location);
 	if (!location)
 		return null;
 
@@ -117,18 +136,22 @@ function buildLocationSharePayload(
 	relevantCompanyIds: number[],
 ) {
 	const selected = new Set(state.selectedCompanyIds.map(String));
-	return {
-		mode: state.mode,
-		shares: Object.fromEntries(
-			relevantCompanyIds.map((companyId) => {
+	if (state.mode !== "manual")
+		return null;
+
+	const shares = Object.fromEntries(
+		relevantCompanyIds
+			.map((companyId) => {
 				const companyKey = String(companyId);
 				const amount = selected.has(companyKey)
 					? toNumberOrZero(state.shares[companyKey])
 					: 0;
-				return [companyKey, amount];
-			}),
-		),
-	};
+				return [companyKey, amount] as const;
+			})
+			.filter(([, amount]) => amount > 0),
+	);
+
+	return Object.keys(shares).length > 0 ? shares : null;
 }
 
 export function dtoToTrafficPredictionForm(record: TrafficPredictionYearDto): Partial<PredictionFormValues> {
@@ -192,15 +215,20 @@ export function trafficPredictionFormToPayload(
 		q3_percent: Number(fields.q3Percent ?? 0),
 		q4_percent: Number(fields.q4Percent ?? 0),
 		manual_shares: Object.fromEntries(
-			activeLocationCodes.map(locationCode => [
-				locationCode,
-				Object.fromEntries(
-					TRAFFIC_METRICS.map(metric => [
-						metric.key,
-						buildLocationSharePayload(fields.manualShares[locationCode][metric.key], relevantCompanyIds),
-					]),
-				),
-			]),
+			activeLocationCodes
+				.map((locationCode) => {
+					const locationShares = Object.fromEntries(
+						TRAFFIC_METRICS
+							.map(metric => [
+								metric.key,
+								buildLocationSharePayload(fields.manualShares[locationCode][metric.key], relevantCompanyIds),
+							] as const)
+							.filter(([, shareValue]) => shareValue != null),
+					);
+
+					return [locationCode, locationShares] as const;
+				})
+				.filter(([, locationShares]) => Object.keys(locationShares).length > 0),
 		),
 		note: String(values.note ?? ""),
 	};

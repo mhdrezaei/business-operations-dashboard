@@ -11,8 +11,10 @@ export type OpenApiChannelCode	= | "SMS_MCI_FA"
   | "SMS_IRANCELL_EN"
   | "SMS_OTHER_FA"
   | "SMS_OTHER_EN";
+export type SmsChannelCode
+	= | "MCI_FA"	| "MCI_EN" | "IRANCELL_FA" | "IRANCELL_EN" | "OTHER_FA" | "OTHER_EN";
 export type TrafficCompanyType = "CP" | "IXP" | "TCI" | "PREMIUM";
-export type TrafficLocationCode = "TEHRAN" | "PROVINCE";
+export type TrafficLocationCode = "TEHRAN" | "COUNTY";
 export type TrafficPredictionMetricCode = "value" | "valueReceive" | "income" | "expense";
 
 export interface PredictionCompanyOption {
@@ -35,6 +37,10 @@ export type OpenApiManualSharesValue = Record<
 
 export interface OpenApiChannelSharesValue {
 	value: Record<OpenApiChannelCode, number | null>
+}
+
+export interface SmsChannelSharesValue {
+	value: Record<SmsChannelCode, number | null>
 }
 
 export type YearlyValueIncomeManualSharesValue = PredictionMetricSharesValue<"value" | "income">;
@@ -91,6 +97,7 @@ export interface SmsPredictionServiceFields {
 	priceBuy: number | null
 	priceSell: number | null
 	manualShares: SmsManualSharesValue
+	channels: SmsChannelSharesValue
 }
 
 export interface TrafficPredictionLocationFormValue {

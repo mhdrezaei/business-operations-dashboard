@@ -23,16 +23,7 @@ const routes: AppRouteRecordRaw[] = [
 			accessAction: "view",
 		},
 		children: [
-			{
-				path: "/predictions/list",
-				Component: PredictionListPage,
-				handle: {
-					icon: createElement(TableOutlined),
-					title: "\u0648\u06CC\u0631\u0627\u06CC\u0634 \u067E\u06CC\u0634 \u0628\u06CC\u0646\u06CC\u200C\u0647\u0627",
-					accessDomain: "predictions",
-					accessAction: "view",
-				},
-			},
+
 			{
 				path: "/predictions/new",
 				Component: CreatePredictionPage,
@@ -41,6 +32,16 @@ const routes: AppRouteRecordRaw[] = [
 					title: "\u062B\u0628\u062A \u067E\u06CC\u0634 \u0628\u06CC\u0646\u06CC",
 					accessDomain: "predictions",
 					accessAction: "create",
+				},
+			},
+			{
+				path: "/predictions/list",
+				Component: PredictionListPage,
+				handle: {
+					icon: createElement(TableOutlined),
+					title: "\u0648\u06CC\u0631\u0627\u06CC\u0634 \u067E\u06CC\u0634 \u0628\u06CC\u0646\u06CC\u200C\u0647\u0627",
+					accessDomain: "predictions",
+					accessAction: "view",
 				},
 			},
 		],

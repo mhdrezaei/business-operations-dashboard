@@ -13,6 +13,7 @@ import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { predictionCompaniesByServiceQuery } from "../../queries/prediction.queries";
 import { QuarterDistributionSection } from "../../ui/form/sections/QuarterDistributionSection";
+import { SMS_CHANNEL_OPTIONS } from "./sms.config";
 
 const sf = (path: string) => `serviceFields.${path}` as const;
 
@@ -184,6 +185,7 @@ export function SmsPredictionFields() {
 	const { control } = useFormContext<PredictionFormValues>();
 	const serviceId = useWatch({ control, name: "serviceId" });
 	const companies = useQuery(predictionCompaniesByServiceQuery(serviceId));
+	const channelValues = useWatch({ control, name: "serviceFields.channels.value" as any }) as Record<string, number | null> | undefined;
 
 	const companyOptions = useMemo(
 		() => (companies.data?.results ?? []).map(company => ({
@@ -191,6 +193,10 @@ export function SmsPredictionFields() {
 			value: company.id,
 		})),
 		[companies.data],
+	);
+	const channelTotal = useMemo(
+		() => SMS_CHANNEL_OPTIONS.reduce((total, channel) => total + Number(channelValues?.[channel.key] ?? 0), 0),
+		[channelValues],
 	);
 
 	return (
@@ -253,7 +259,7 @@ export function SmsPredictionFields() {
 						{t("prediction.messages.companySharesDescription")}
 					</Typography.Paragraph>
 
-					<div className="grid gap-4 xl:grid-cols-3">
+					<div className="prediction-share-editor-grid grid gap-4 xl:grid-cols-3">
 						<SmsShareEditor
 							companyOptions={companyOptions}
 							fieldName="value"
@@ -270,6 +276,34 @@ export function SmsPredictionFields() {
 							title={t("prediction.metrics.expense")}
 						/>
 					</div>
+
+					<ProCard
+						bordered
+						style={{ borderRadius: 12 }}
+						title={t("prediction.sections.channels", { defaultValue: "کانال‌ها" })}
+						bodyStyle={{ display: "flex", flexDirection: "column", gap: 16 }}
+					>
+						<div className="grid gap-4 xl:grid-cols-3">
+							{SMS_CHANNEL_OPTIONS.map(channel => (
+								<RHFProNumber<PredictionFormValues, any>
+									key={channel.key}
+									name={`serviceFields.channels.value.${channel.key}` as any}
+									label={channel.title}
+									inputProps={{
+										placeholder: t("prediction.placeholders.percentExample"),
+										addonAfter: "%",
+									}}
+								/>
+							))}
+						</div>
+
+						<Typography.Text type={channelTotal === 100 ? "success" : "danger"}>
+							{t("prediction.messages.manualShareSum", {
+								title: t("prediction.sections.channels", { defaultValue: "کانال‌ها" }),
+								total: channelTotal,
+							})}
+						</Typography.Text>
+					</ProCard>
 				</div>
 			</ProCard>
 		</div>

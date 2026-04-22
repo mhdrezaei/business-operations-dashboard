@@ -20,11 +20,45 @@ export async function submitPrediction(values: PredictionFormValues) {
 		companies: companyList,
 	});
 
-	if (values.recordId) {
-		return module.updateRecord(values.recordId, payload as any);
-	}
+	const operation = values.recordId ? "update" : "create";
 
-	return module.createRecord(payload as any);
+	try {
+		if (values.recordId) {
+			return await module.updateRecord(values.recordId, payload as any);
+		}
+
+		return await module.createRecord(payload as any);
+	}
+	catch (error: any) {
+		let responseBody: unknown = null;
+
+		if (error?.response) {
+			try {
+				responseBody = await error.response.clone().json();
+			}
+			catch {
+				try {
+					responseBody = await error.response.clone().text();
+				}
+				catch {
+					responseBody = null;
+				}
+			}
+		}
+
+		console.error("[prediction.submit] error", {
+			operation,
+			serviceCode: values.serviceCode,
+			serviceId: values.serviceId,
+			recordId: values.recordId ?? null,
+			payload,
+			status: error?.response?.status ?? null,
+			responseBody,
+			error,
+		});
+
+		throw error;
+	}
 }
 
 export function getReturnedRecordId(record: unknown) {

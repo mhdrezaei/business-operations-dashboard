@@ -4,13 +4,20 @@ import type {
 	PredictionServiceCode,
 	PredictionShareMode,
 	PredictionShareSectionValue,
+	SmsChannelCode,
+	SmsChannelSharesValue,
 	SmsManualSharesValue,
 	SmsPredictionServiceFields,
 } from "../../model/prediction.form.types";
 import type { PredictionListRow } from "../../model/prediction.list.types";
 import i18next from "i18next";
 import { formatPredictionNumber, toNullableNumber, toNumberOrZero } from "../../model/prediction.helpers";
-import { createEmptySmsFields, createEmptySmsManualShares } from "./sms.config";
+import {
+	createEmptySmsChannelShares,
+	createEmptySmsFields,
+	createEmptySmsManualShares,
+	SMS_CHANNEL_OPTIONS,
+} from "./sms.config";
 
 function isShareMode(value: unknown): value is PredictionShareMode {
 	return value === "auto" || value === "manual";
@@ -59,6 +66,30 @@ function normalizeManualShares(value: unknown): SmsManualSharesValue {
 	};
 }
 
+function normalizeChannelShares(value: unknown): SmsChannelSharesValue {
+	const fallback = createEmptySmsChannelShares();
+	if (!value || typeof value !== "object")
+		return fallback;
+
+	const raw = value as Record<string, unknown>;
+	const channels = raw.channels;
+	const channelValue = channels && typeof channels === "object"
+		? (channels as Record<string, unknown>).value
+		: null;
+
+	if (!channelValue || typeof channelValue !== "object")
+		return fallback;
+
+	return {
+		value: Object.fromEntries(
+			SMS_CHANNEL_OPTIONS.map(channel => [
+				channel.key,
+				toNullableNumber((channelValue as Record<string, unknown>)[channel.key]),
+			]),
+		) as Record<SmsChannelCode, number | null>,
+	};
+}
+
 function buildSharePayload(
 	manualShares: SmsManualSharesValue,
 	allCompanyIds: number[],
@@ -91,6 +122,18 @@ function buildSharePayload(
 	);
 }
 
+function buildChannelPayload(channels: SmsChannelSharesValue) {
+	const value = Object.fromEntries(
+		SMS_CHANNEL_OPTIONS
+			.map(channel => [channel.key, toNumberOrZero(channels.value[channel.key])] as const)
+			.filter(([, amount]) => amount > 0),
+	);
+
+	return Object.keys(value).length > 0
+		? { value }
+		: null;
+}
+
 export function dtoToSmsPredictionForm(record: SmsPredictionYearDto): Partial<PredictionFormValues> {
 	const empty = createEmptySmsFields();
 
@@ -110,6 +153,7 @@ export function dtoToSmsPredictionForm(record: SmsPredictionYearDto): Partial<Pr
 			priceBuy: toNullableNumber(record.price_buy),
 			priceSell: toNullableNumber(record.price_sell),
 			manualShares: normalizeManualShares(record.manual_shares),
+			channels: normalizeChannelShares(record.manual_shares),
 		} satisfies SmsPredictionServiceFields,
 	};
 }
@@ -122,6 +166,7 @@ export function smsPredictionFormToPayload(
 		...createEmptySmsFields(),
 		...(values.serviceFields as Partial<SmsPredictionServiceFields>),
 	};
+	const channelPayload = buildChannelPayload(fields.channels);
 
 	return {
 		service: Number(values.serviceId),
@@ -135,7 +180,10 @@ export function smsPredictionFormToPayload(
 		q2_percent: Number(fields.q2Percent ?? 0),
 		q3_percent: Number(fields.q3Percent ?? 0),
 		q4_percent: Number(fields.q4Percent ?? 0),
-		manual_shares: buildSharePayload(fields.manualShares, allCompanyIds),
+		manual_shares: {
+			...buildSharePayload(fields.manualShares, allCompanyIds),
+			...(channelPayload ? { channels: channelPayload } : {}),
+		},
 		note: String(values.note ?? ""),
 	};
 }

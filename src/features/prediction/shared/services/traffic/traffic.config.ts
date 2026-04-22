@@ -16,7 +16,7 @@ export const TRAFFIC_COMPANY_TYPE_OPTIONS: Array<{ label: TrafficCompanyType, va
 
 export const TRAFFIC_LOCATION_OPTIONS = [
 	{ labelKey: "prediction.locations.tehran", value: "TEHRAN" },
-	{ labelKey: "prediction.locations.province", value: "PROVINCE" },
+	{ labelKey: "prediction.locations.province", value: "COUNTY" },
 ] as const satisfies Array<{ labelKey: string, value: TrafficLocationCode }>;
 
 export const TRAFFIC_METRICS = [
@@ -32,6 +32,15 @@ export function isTrafficCompanyType(value: unknown): value is TrafficCompanyTyp
 
 export function isTrafficLocationCode(value: unknown): value is TrafficLocationCode {
 	return TRAFFIC_LOCATION_OPTIONS.some(option => option.value === value);
+}
+
+export function normalizeTrafficLocationCode(value: unknown): TrafficLocationCode | null {
+	if (value === "PROVINCE")
+		return "COUNTY";
+
+	return isTrafficLocationCode(value)
+		? value
+		: null;
 }
 
 export function createEmptyTrafficLocation(
@@ -62,7 +71,7 @@ export function createEmptyTrafficManualShares(): TrafficManualSharesValue {
 			income: createEmptyShareSection(),
 			expense: createEmptyShareSection(),
 		},
-		PROVINCE: {
+		COUNTY: {
 			value: createEmptyShareSection(),
 			valueReceive: createEmptyShareSection(),
 			income: createEmptyShareSection(),

@@ -20,6 +20,7 @@ import {
 	createEmptyTrafficLocation,
 	createEmptyTrafficManualShares,
 	isTrafficLocationCode,
+	normalizeTrafficLocationCode,
 	TRAFFIC_COMPANY_TYPE_OPTIONS,
 	TRAFFIC_LOCATION_OPTIONS,
 	TRAFFIC_METRICS,
@@ -201,7 +202,7 @@ function normalizeLocations(value: unknown): TrafficPredictionLocationFormValue[
 	return value.map((item) => {
 		const raw = item && typeof item === "object" ? item as Record<string, unknown> : {};
 		return {
-			location: isTrafficLocationCode(raw.location) ? raw.location : null,
+			location: normalizeTrafficLocationCode(raw.location),
 			valueYear: typeof raw.valueYear === "number" ? raw.valueYear : null,
 			valueReceiveYear: typeof raw.valueReceiveYear === "number" ? raw.valueReceiveYear : null,
 			incomeYear: typeof raw.incomeYear === "number" ? raw.incomeYear : null,

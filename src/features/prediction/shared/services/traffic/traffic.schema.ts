@@ -64,7 +64,7 @@ export const trafficPredictionSchema = z.object({
 			income: shareSectionSchema,
 			expense: shareSectionSchema,
 		}),
-		PROVINCE: z.object({
+		COUNTY: z.object({
 			value: shareSectionSchema,
 			valueReceive: shareSectionSchema,
 			income: shareSectionSchema,
