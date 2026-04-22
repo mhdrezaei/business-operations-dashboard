@@ -4,6 +4,10 @@ import type { OpenApiContractModel } from "#src/features/performance/shared/mode
 import type { PerformanceListRow } from "../../model/performance.list.types";
 import { MONTH_OPTIONS } from "#src/features/contract/constant/jalali-date-options.js";
 import {
+	ContractAlignedField,
+	useContractAlignedLabelWidth,
+} from "#src/features/contract/shared/ui/form/components/ContractAlignedField";
+import {
 	fetchPerformanceContracts,
 	fetchPerformanceDetail,
 	fetchPerformanceList,
@@ -23,6 +27,7 @@ import i18next from "i18next";
 import { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import "#src/features/contract/shared/ui/form/contract-form.css";
 
 type EditFormValues = Record<string, unknown>;
 
@@ -87,6 +92,33 @@ const HIDDEN_DETAIL_KEYS = new Set([
 	"is_official_display",
 	"url",
 ]);
+
+const OPENAPI_PACKAGE_PERFORMANCE_LABEL = "مقدار عملکرد پیامک";
+
+function getSmsPerformanceFieldAddon(fieldKey: string) {
+	switch (fieldKey) {
+		case "sms_irancell_fa":
+		case "irancellFa":
+			return "ایرانسل - فارسی";
+		case "sms_irancell_en":
+		case "irancellEn":
+			return "ایرانسل - انگلیسی";
+		case "sms_mci_fa":
+		case "mciFa":
+			return "همراه اول - فارسی";
+		case "sms_mci_en":
+		case "mciEn":
+			return "همراه اول - انگلیسی";
+		case "sms_other_fa":
+		case "otherFa":
+			return "سایر - فارسی";
+		case "sms_other_en":
+		case "otherEn":
+			return "سایر - انگلیسی";
+		default:
+			return undefined;
+	}
+}
 
 interface Props {
 	open: boolean
@@ -476,6 +508,13 @@ export function PerformanceDetailModal({
 		() => resolveOpenApiContractModel(detail, record, openApiPerformances),
 		[detail, record, openApiPerformances],
 	);
+	const openApiPackageAlignedLabelStyle = useContractAlignedLabelWidth([
+		t("performance.fields.openapi.billInquiryValue"),
+		t("performance.fields.openapi.trafficRevenue"),
+		t("performance.fields.openapi.trafficPackageCount"),
+		OPENAPI_PACKAGE_PERFORMANCE_LABEL,
+	]);
+	const smsAlignedLabelStyle = useContractAlignedLabelWidth([OPENAPI_PACKAGE_PERFORMANCE_LABEL]);
 	const config = useMemo<ServiceEditConfig | null>(() => {
 		if (!service)
 			return null;
@@ -603,6 +642,8 @@ export function PerformanceDetailModal({
 			payloadKeys: ["customer_name", "customer_nic", "province_code", "service_type", "value", "income", "expense", "profit"],
 		};
 	}, [service, openApiContractModel, t]);
+	const isOpenApiPackageEditLayout = service === "openapi" && openApiContractModel === "package";
+	const isSmsEditAlignedLayout = service === "sms" || service === "sms-commission";
 	const fieldLabels = useMemo<Record<string, string>>(() => ({
 		service_name: t("performance.columns.service"),
 		company_name: t("performance.columns.company"),
@@ -1337,37 +1378,72 @@ export function PerformanceDetailModal({
 
 									{config.editableFields.length > 0
 										? (
-											<div
-												style={{
-													display: "grid",
-													gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-													gap: 12,
-												}}
-											>
-												{config.editableFields.map((field) => {
-													if (field.type === "number") {
-														return (
-															<RHFProNumber<EditFormValues, any>
-																key={field.key}
-																name={field.key as any}
-																label={field.label}
-																inputProps={{ placeholder: t("performance.modal.placeholders.enterNumber"), inputMode: "numeric" } as any}
-																enableGrouping
-																enableWordsTooltip
-															/>
-														);
-													}
+											isOpenApiPackageEditLayout || isSmsEditAlignedLayout
+												? (
+													<div style={isOpenApiPackageEditLayout ? openApiPackageAlignedLabelStyle : smsAlignedLabelStyle}>
+														<div
+															className="contract-form-aligned-grid contract-form-aligned-grid--two"
+															style={{ gap: 12 }}
+														>
+															{config.editableFields.map((field) => {
+																const addonAfter = getSmsPerformanceFieldAddon(field.key);
+																const alignedLabel = addonAfter
+																	? OPENAPI_PACKAGE_PERFORMANCE_LABEL
+																	: field.label;
 
-													return (
-														<RHFProText<EditFormValues, any>
-															key={field.key}
-															name={field.key as any}
-															label={field.label}
-															inputProps={{ placeholder: t("performance.modal.placeholders.enterValue") }}
-														/>
-													);
-												})}
-											</div>
+																return (
+																	<ContractAlignedField key={field.key} label={alignedLabel}>
+																		<RHFProNumber<EditFormValues, any>
+																			name={field.key as any}
+																			label=""
+																			formItemProps={{ style: { marginBottom: 0 } }}
+																			inputProps={{
+																				placeholder: t("performance.modal.placeholders.enterNumber"),
+																				inputMode: "numeric",
+																				...(addonAfter ? { addonAfter } : {}),
+																			} as any}
+																			enableGrouping
+																			enableWordsTooltip
+																		/>
+																	</ContractAlignedField>
+																);
+															})}
+														</div>
+													</div>
+												)
+												: (
+													<div
+														style={{
+															display: "grid",
+															gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+															gap: 12,
+														}}
+													>
+														{config.editableFields.map((field) => {
+															if (field.type === "number") {
+																return (
+																	<RHFProNumber<EditFormValues, any>
+																		key={field.key}
+																		name={field.key as any}
+																		label={field.label}
+																		inputProps={{ placeholder: t("performance.modal.placeholders.enterNumber"), inputMode: "numeric" } as any}
+																		enableGrouping
+																		enableWordsTooltip
+																	/>
+																);
+															}
+
+															return (
+																<RHFProText<EditFormValues, any>
+																	key={field.key}
+																	name={field.key as any}
+																	label={field.label}
+																	inputProps={{ placeholder: t("performance.modal.placeholders.enterValue") }}
+																/>
+															);
+														})}
+													</div>
+												)
 										)
 										: null}
 								</div>
