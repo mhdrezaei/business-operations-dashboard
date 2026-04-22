@@ -4,7 +4,7 @@ import type { PerformanceFormValues } from "../../model/performance.form.types";
 import { TopRightAlert } from "#src/components";
 import { downloadPerformanceTemplate, uploadTrafficExcelImport } from "#src/features/performance/api/performances.api";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
-import { CloudUploadOutlined, DeleteOutlined, DownloadOutlined, InfoCircleOutlined, PlusOutlined } from "@ant-design/icons";
+import { CloudUploadOutlined, DeleteOutlined, DownloadOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import { ProCard } from "@ant-design/pro-components";
 import { Button, Col, Form, Modal, Row, Tag, theme, Upload } from "antd";
 import { useEffect, useMemo, useState } from "react";
@@ -104,15 +104,6 @@ export function TrafficPerformanceFields() {
 		maxCount: 1,
 		accept: ".xlsx,.xls",
 	};
-
-	useEffect(() => {
-		if (countyEnabled == null) {
-			setValue(sf("countyEnabled") as any, true, {
-				shouldDirty: false,
-				shouldValidate: false,
-			});
-		}
-	}, [submitMode, countyEnabled, setValue]);
 
 	useEffect(() => {
 		if (!countyEnabled) {
@@ -326,18 +317,7 @@ export function TrafficPerformanceFields() {
 										</Row>
 									</ProCard>
 								)
-								: (
-									<Button
-										icon={<PlusOutlined />}
-										onClick={() =>
-											setValue(sf("countyEnabled") as any, true, {
-												shouldDirty: true,
-												shouldValidate: false,
-											})}
-									>
-										{t("performance.traffic.addCountyPerformance")}
-									</Button>
-								)}
+								: null}
 						</div>
 					)}
 			</ProCard>

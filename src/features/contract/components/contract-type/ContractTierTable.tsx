@@ -1,12 +1,67 @@
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { ProCard } from "@ant-design/pro-components";
-import { Button } from "antd";
-import React, { useEffect, useMemo } from "react";
+import { Button, Tooltip } from "antd";
+import React, { useEffect, useMemo, useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 
 interface Props {
 	name: string
+}
+
+interface TierToFieldProps {
+	name: string
+	showHint: boolean
+}
+
+function TierToField({ name, showHint }: TierToFieldProps): React.JSX.Element {
+	const [open, setOpen] = useState(showHint);
+
+	useEffect(() => {
+		setOpen(showHint);
+	}, [showHint]);
+
+	function handleCloseHint() {
+		setOpen(false);
+	}
+
+	return (
+		<Tooltip
+			open={open}
+			trigger={[]}
+			placement="bottomRight"
+			destroyTooltipOnHide
+			title={(
+				<button
+					type="button"
+					onClick={handleCloseHint}
+					style={{
+						border: 0,
+						background: "transparent",
+						color: "inherit",
+						padding: 0,
+						font: "inherit",
+						cursor: "pointer",
+						textAlign: "right",
+						lineHeight: 1.6,
+					}}
+				>
+					در صورت خالی بودن محدودیتی وجود ندارد.
+				</button>
+			)}
+		>
+			<div>
+				<RHFProNumber
+					name={name as any}
+					label=""
+					enableGrouping
+					enableWordsTooltip
+					inputProps={{ placeholder: "تا", inputMode: "numeric" } as any}
+					formItemProps={{ style: { marginBottom: 0 } }}
+				/>
+			</div>
+		</Tooltip>
+	);
 }
 
 export function ContractTierTable({ name }: Props) {
@@ -17,9 +72,9 @@ export function ContractTierTable({ name }: Props) {
 
 	const header = useMemo(
 		() => [
-			{ key: "from", title: "بازه اول", sub: "از" },
-			{ key: "to", title: "بازه دوم", sub: "تا" },
-			{ key: "fee", title: "مقدار فی", sub: "فی" },
+			{ key: "from", title: "بازه اول" },
+			{ key: "to", title: "بازه دوم" },
+			{ key: "fee", title: "مقدار فی" },
 		],
 		[],
 	);
@@ -28,12 +83,12 @@ export function ContractTierTable({ name }: Props) {
 		if (!rows || rows.length < 2)
 			return;
 
-		for (let i = 1; i < rows.length; i++) {
-			const prevTo = rows[i - 1]?.to ?? null;
-			const currFrom = rows[i]?.from ?? null;
+		for (let index = 1; index < rows.length; index++) {
+			const previousTo = rows[index - 1]?.to ?? null;
+			const currentFrom = rows[index]?.from ?? null;
 
-			if (currFrom !== prevTo) {
-				setValue(`${name}.${i}.from` as any, prevTo, {
+			if (currentFrom !== previousTo) {
+				setValue(`${name}.${index}.from` as any, previousTo, {
 					shouldDirty: true,
 					shouldValidate: true,
 				});
@@ -41,72 +96,68 @@ export function ContractTierTable({ name }: Props) {
 		}
 	}, [rows, name, setValue]);
 
+	function handleRemoveRow(index: number) {
+		remove(index);
+	}
+
+	function handleAddRow() {
+		if (!rows || rows.length === 0) {
+			append({ from: null, to: null, fee: null } as any);
+			return;
+		}
+
+		const previousTo = rows[rows.length - 1]?.to ?? null;
+		append({ from: previousTo, to: null, fee: null } as any);
+	}
+
 	return (
 		<ProCard bordered style={{ borderRadius: 12 }} bodyStyle={{ padding: 12 }}>
 			<div style={{ fontWeight: 600, marginBottom: 12 }}>تعریف بازه‌ها و نرخ</div>
 
-			<div style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, overflow: "hidden" }}>
-				<div style={{ display: "grid", gridTemplateColumns: "64px 1fr 1fr 1fr" }}>
-					<div />
-					{header.map(h => (
-						<div key={h.key} style={{ padding: 12, textAlign: "center", fontWeight: 600 }}>
-							{h.title}
+			<div style={{ overflow: "hidden" }}>
+				<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 64px" }}>
+					{header.map(item => (
+						<div key={item.key} style={{ padding: 12, textAlign: "center", fontWeight: 600 }}>
+							{item.title}
 						</div>
 					))}
+					<div />
 				</div>
 
-				{fields.map((f, idx) => (
+				{fields.map((field, index) => (
 					<div
-						key={f.id}
+						key={field.id}
 						style={{
 							display: "grid",
-							gridTemplateColumns: "64px 1fr 1fr 1fr",
+							gridTemplateColumns: "1fr 1fr 1fr 64px",
 							borderTop: "1px solid rgba(255,255,255,0.08)",
 						}}
 					>
-						<div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-							<Button
-								type="text"
-								danger
-								icon={<DeleteOutlined />}
-								onClick={() => remove(idx)}
-							/>
-						</div>
-
 						<div style={{ padding: 12 }}>
 							<RHFProNumber
-								name={`${name}.${idx}.from` as any}
+								name={`${name}.${index}.from` as any}
 								label=""
 								enableGrouping
 								enableWordsTooltip
 								inputProps={{
 									placeholder: "از",
 									inputMode: "numeric",
-									disabled: idx > 0,
+									disabled: index > 0,
 								} as any}
 								formItemProps={{ style: { marginBottom: 0 } }}
 							/>
 						</div>
 
 						<div style={{ padding: 12 }}>
-							<RHFProNumber
-								name={`${name}.${idx}.to` as any}
-								label=""
-								enableGrouping
-								enableWordsTooltip
-								inputProps={{ placeholder: "تا", inputMode: "numeric" } as any}
-								formItemProps={{
-									style: { marginBottom: 0 },
-									extra: idx === fields.length - 1
-										? "در صورت خالی بودن محدودیتی وجود ندارد."
-										: undefined,
-								}}
+							<TierToField
+								name={`${name}.${index}.to`}
+								showHint={index === fields.length - 1}
 							/>
 						</div>
 
 						<div style={{ padding: 12 }}>
 							<RHFProNumber
-								name={`${name}.${idx}.fee` as any}
+								name={`${name}.${index}.fee` as any}
 								label=""
 								enableGrouping
 								enableWordsTooltip
@@ -114,22 +165,20 @@ export function ContractTierTable({ name }: Props) {
 								formItemProps={{ style: { marginBottom: 0 } }}
 							/>
 						</div>
+
+						<div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 12 }}>
+							<Button
+								type="text"
+								danger
+								icon={<DeleteOutlined />}
+								onClick={() => handleRemoveRow(index)}
+							/>
+						</div>
 					</div>
 				))}
 
 				<div style={{ padding: 12 }}>
-					<Button
-						icon={<PlusOutlined />}
-						onClick={() => {
-							if (!rows || rows.length === 0) {
-								append({ from: null, to: null, fee: null } as any);
-								return;
-							}
-
-							const prevTo = rows[rows.length - 1]?.to ?? null;
-							append({ from: prevTo, to: null, fee: null } as any);
-						}}
-					>
+					<Button icon={<PlusOutlined />} onClick={handleAddRow}>
 						افزودن ردیف
 					</Button>
 				</div>

@@ -165,12 +165,17 @@ export function PerformanceForm({
 		control: form.control,
 		name: "month",
 	});
+	const contractId = useWatch({
+		control: form.control,
+		name: "contractId",
+	});
 	const trafficSubmitMode = useWatch({
 		control: form.control,
 		name: "serviceFields.submitMode" as const,
 	}) as "single" | "template" | undefined;
 	const module = serviceCode ? performanceServiceRegistry[serviceCode] : undefined;
-	const canShowServiceForm = year != null && month != null;
+	const requiresMonthlyStatusContract = serviceCode === "openapi" || (serviceCode === "traffic" && trafficSubmitMode === "single");
+	const canShowServiceForm = year != null	&& month != null && (!requiresMonthlyStatusContract || contractId != null);
 	const showActionSection = canShowServiceForm && !(serviceCode === "traffic" && trafficSubmitMode === "template");
 
 	const submitIntentRef = useRef<PerformanceSubmitIntent>("submit");

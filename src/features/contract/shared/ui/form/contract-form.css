@@ -1,0 +1,86 @@
+.contract-form-aligned-grid {
+	display: grid;
+	gap: 12px 16px;
+}
+
+.contract-form-aligned-grid--two {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.contract-form-aligned-grid--four {
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.contract-form-field {
+	display: grid;
+	grid-template-columns: var(--contract-form-label-width, 9ch) minmax(0, 1fr);
+	align-items: center;
+	column-gap: 6px;
+	min-width: 0;
+}
+
+.contract-form-field--start {
+	align-items: start;
+}
+
+.contract-form-field__label {
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	min-width: 0;
+}
+
+.contract-form-field__label-text {
+	color: var(--ant-colorText);
+	font-weight: 600;
+	line-height: 1.5715;
+	text-align: right;
+	white-space: nowrap;
+}
+
+.contract-form-field__label--measure {
+	position: fixed;
+	inset-inline-start: -9999px;
+	inset-block-start: -9999px;
+	visibility: hidden;
+	pointer-events: none;
+}
+
+.contract-form-field__control {
+	min-width: 0;
+}
+
+.contract-form-field__control :where(.ant-form-item, .ant-pro-form-item) {
+	margin-bottom: 0;
+}
+
+.contract-form-field__control :where(.ant-select, .ant-input, .ant-input-number, .ant-picker, .ant-upload-wrapper) {
+	width: 100%;
+}
+
+.contract-form-field__control :where(.ant-form-item-explain, .ant-form-item-extra) {
+	padding-top: 4px;
+	text-align: right;
+}
+
+@media (max-width: 1200px) {
+	.contract-form-aligned-grid--four {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 768px) {
+	.contract-form-aligned-grid--two,
+	.contract-form-aligned-grid--four {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.contract-form-field {
+		grid-template-columns: minmax(0, 1fr);
+		row-gap: 8px;
+	}
+
+	.contract-form-field__label {
+		white-space: normal;
+	}
+}

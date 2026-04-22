@@ -10,11 +10,11 @@ import { ContractTierTable } from "./ContractTierTable";
 interface Props {
 	title: string
 	name: string
+	topAside?: React.ReactNode
 }
 
 function createDefaultRows() {
 	return [
-		{ from: null, to: null, fee: null },
 		{ from: null, to: null, fee: null },
 	];
 }
@@ -29,7 +29,7 @@ function createDefaultSection(firstRowFrom: number | null = null) {
 	};
 }
 
-export function ContractTypeSection({ title, name }: Props) {
+export function ContractTypeSection({ title, name, topAside }: Props) {
 	const { control, getValues, setValue } = useFormContext();
 
 	const type = useWatch({ control, name: `${name}.type` as any }) as any;
@@ -45,12 +45,11 @@ export function ContractTypeSection({ title, name }: Props) {
 		const prevType = prevTypeRef.current;
 
 		if (
-			prevType !== undefined
-			&& prevType !== type
+			prevType !== type
 			&& (type === "tier_fixed" || type === "tier_variable")
 		) {
 			const currentRows = (getValues(`${name}.rows` as any) ?? []) as any[];
-			if (currentRows.length < 2) {
+			if (currentRows.length < 1) {
 				setValue(`${name}.rows` as any, createDefaultRows() as any, {
 					shouldDirty: true,
 					shouldValidate: false,
@@ -72,19 +71,19 @@ export function ContractTypeSection({ title, name }: Props) {
 		if (type !== "tier_blended" || !sections || sections.length < 2)
 			return;
 
-		for (let si = 1; si < sections.length; si++) {
-			const prevSection = sections[si - 1];
-			const currentSection = sections[si];
-			const prevRows = Array.isArray(prevSection?.rows) ? prevSection.rows : [];
+		for (let sectionIndex = 1; sectionIndex < sections.length; sectionIndex++) {
+			const previousSection = sections[sectionIndex - 1];
+			const currentSection = sections[sectionIndex];
+			const previousRows = Array.isArray(previousSection?.rows) ? previousSection.rows : [];
 			const currentRows = Array.isArray(currentSection?.rows) ? currentSection.rows : [];
 
 			if (currentRows.length === 0)
 				continue;
 
-			const prevLastTo = prevRows.length > 0 ? (prevRows[prevRows.length - 1]?.to ?? null) : null;
+			const previousLastTo = previousRows.length > 0 ? (previousRows[previousRows.length - 1]?.to ?? null) : null;
 			const currentFirstFrom = currentRows[0]?.from ?? null;
-			if (currentFirstFrom !== prevLastTo) {
-				setValue(`${name}.sections.${si}.rows.0.from` as any, prevLastTo, {
+			if (currentFirstFrom !== previousLastTo) {
+				setValue(`${name}.sections.${sectionIndex}.rows.0.from` as any, previousLastTo, {
 					shouldDirty: true,
 					shouldValidate: true,
 				});
@@ -92,17 +91,59 @@ export function ContractTypeSection({ title, name }: Props) {
 		}
 	}, [type, sections, name, setValue]);
 
-	const addSection = () => {
+	function addSection() {
 		const current = (getValues(`${name}.sections` as any) ?? []) as any[];
 		if (current.length === 0) {
 			sectionsFa.replace([createDefaultSection()] as any);
 			return;
 		}
-		const prevSection = current[current.length - 1];
-		const prevRows = Array.isArray(prevSection?.rows) ? prevSection.rows : [];
-		const prevLastTo = prevRows.length > 0 ? (prevRows[prevRows.length - 1]?.to ?? null) : null;
-		sectionsFa.append(createDefaultSection(prevLastTo) as any);
-	};
+
+		const previousSection = current[current.length - 1];
+		const previousRows = Array.isArray(previousSection?.rows) ? previousSection.rows : [];
+		const previousLastTo = previousRows.length > 0 ? (previousRows[previousRows.length - 1]?.to ?? null) : null;
+		sectionsFa.append(createDefaultSection(previousLastTo) as any);
+	}
+
+	function handleRemoveSection(index: number) {
+		sectionsFa.remove(index);
+	}
+
+	function renderTopRow() {
+		if (!topAside) {
+			return (
+				<RHFSelect
+					name={`${name}.type` as any}
+					label="نوع قرارداد"
+					options={CONTRACT_TYPE_OPTIONS}
+					selectProps={{ placeholder: "انتخاب کنید", allowClear: true }}
+				/>
+			);
+		}
+
+		return (
+			<div
+				style={{
+					display: "flex",
+					flexWrap: "wrap",
+					gap: 12,
+					alignItems: "flex-start",
+				}}
+			>
+				<div style={{ flex: "1 1 320px", minWidth: 0 }}>
+					<RHFSelect
+						name={`${name}.type` as any}
+						label="نوع قرارداد"
+						options={CONTRACT_TYPE_OPTIONS}
+						selectProps={{ placeholder: "انتخاب کنید", allowClear: true }}
+					/>
+				</div>
+
+				<div style={{ flex: "1 1 320px", minWidth: 0 }}>
+					{topAside}
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<ProCard bordered style={{ borderRadius: 6 }} bodyStyle={{ padding: 16 }}>
@@ -110,12 +151,7 @@ export function ContractTypeSection({ title, name }: Props) {
 				<div style={{ fontWeight: 700 }}>{title}</div>
 			</div>
 
-			<RHFSelect
-				name={`${name}.type` as any}
-				label="نوع قرارداد"
-				options={CONTRACT_TYPE_OPTIONS}
-				selectProps={{ placeholder: "انتخاب کنید", allowClear: true }}
-			/>
+			{renderTopRow()}
 
 			{type === "fixed"
 				? (
@@ -146,9 +182,9 @@ export function ContractTypeSection({ title, name }: Props) {
 					<div style={{ marginTop: 12 }}>
 						<div style={{ fontWeight: 600, marginBottom: 12 }}>بخش‌های پلکانی تلفیقی</div>
 
-						{sectionsFa.fields.map((s, si) => (
+						{sectionsFa.fields.map((sectionField, sectionIndex) => (
 							<ProCard
-								key={s.id}
+								key={sectionField.id}
 								bordered
 								style={{ borderRadius: 12, marginBottom: 12, width: "100%" }}
 								bodyStyle={{ padding: 12 }}
@@ -161,16 +197,16 @@ export function ContractTypeSection({ title, name }: Props) {
 											width: "100%",
 										}}
 									>
-										<span>{`بخش ${si + 1}`}</span>
+										<span>{`بخش ${sectionIndex + 1}`}</span>
 
 										<Button
 											danger
 											size="small"
 											icon={<DeleteOutlined />}
 											disabled={sectionsFa.fields.length <= 1}
-											onClick={(e) => {
-												e.stopPropagation();
-												sectionsFa.remove(si);
+											onClick={(event) => {
+												event.stopPropagation();
+												handleRemoveSection(sectionIndex);
 											}}
 										>
 											حذف بخش
@@ -179,14 +215,14 @@ export function ContractTypeSection({ title, name }: Props) {
 								)}
 							>
 								<RHFSelect
-									name={`${name}.sections.${si}.mode` as any}
+									name={`${name}.sections.${sectionIndex}.mode` as any}
 									label=""
 									options={BLENDED_MODE_OPTIONS}
 									selectProps={{ placeholder: "انتخاب کنید", allowClear: true }}
 									formItemProps={{ style: { marginBottom: 12 } }}
 								/>
 
-								<ContractTierTable name={`${name}.sections.${si}.rows`} />
+								<ContractTierTable name={`${name}.sections.${sectionIndex}.rows`} />
 							</ProCard>
 						))}
 

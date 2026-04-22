@@ -2,8 +2,10 @@ import type { UploadProps } from "antd";
 import type { ContractFormValues } from "../../../model/contract.form.types";
 import { RHFProTextArea, RHFProUploadButton } from "#src/shared/ui/rhf-pro";
 import { ProCard } from "@ant-design/pro-components";
+import { ContractAlignedField, useContractAlignedLabelWidth } from "../components/ContractAlignedField";
 
 export function FixedEndSection() {
+	const alignedLabelStyle = useContractAlignedLabelWidth(["توضیحات", "مدارک"]);
 	const uploadProps: UploadProps = {
 		multiple: true,
 		maxCount: 10,
@@ -15,27 +17,31 @@ export function FixedEndSection() {
 	};
 
 	return (
-		<>
-			<ProCard>
-				<RHFProTextArea<ContractFormValues, "description">
-					name="description"
-					label="توضیحات"
-					textAreaProps={{
-						rows: 4,
-						placeholder: "توضیحات قرارداد را وارد کنید...",
-						showCount: true,
-						maxLength: 2000,
-					}}
-				/>
+		<ProCard>
+			<div className="flex flex-col gap-3" style={alignedLabelStyle}>
+				<ContractAlignedField label="توضیحات" labelId="contract-form-label-description" align="start">
+					<RHFProTextArea<ContractFormValues, "description">
+						name="description"
+						formItemProps={{ style: { marginBottom: 0 } }}
+						textAreaProps={{
+							"rows": 4,
+							"placeholder": "توضیحات قرارداد را وارد کنید...",
+							"showCount": true,
+							"maxLength": 2000,
+							"aria-labelledby": "contract-form-label-description",
+						} as any}
+					/>
+				</ContractAlignedField>
 
-				<RHFProUploadButton<ContractFormValues, "documents">
-					name="documents"
-					label="مدارک"
-					buttonText="آپلود مدارک (PDF) "
-					uploadProps={uploadProps}
-
-				/>
-			</ProCard>
-		</>
+				<ContractAlignedField label="مدارک" labelId="contract-form-label-documents">
+					<RHFProUploadButton<ContractFormValues, "documents">
+						name="documents"
+						buttonText="آپلود مدارک (PDF)"
+						itemProps={{ style: { marginBottom: 0 } }}
+						uploadProps={uploadProps}
+					/>
+				</ContractAlignedField>
+			</div>
+		</ProCard>
 	);
 }

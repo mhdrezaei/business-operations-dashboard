@@ -13,6 +13,7 @@ export const smsServiceFieldsSchema = z.object({
 		irancellFa: contractTypeSchema,
 		irancellEn: contractTypeSchema,
 		hamrahAvalFa: contractTypeSchema,
+		hamrahAvalEn: contractTypeSchema,
 		otherFa: contractTypeSchema,
 		otherEn: contractTypeSchema,
 	}).optional(),

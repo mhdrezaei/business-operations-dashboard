@@ -3,11 +3,24 @@ import type { ArrayPath, Path } from "react-hook-form";
 import { ContractAddendaSection } from "#src/features/contract/components/addenda/ContractAddendaSection";
 import { ContractTypeSection } from "#src/features/contract/components/contract-type/ContractTypeSection";
 import { RHFProCheckbox, RHFProNumber } from "#src/shared/ui/rhf-pro";
-import { ProCard, ProFormGroup } from "@ant-design/pro-components";
+import { ProCard } from "@ant-design/pro-components";
 import { useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
+import "./sms.fields.css";
 
 const sf = (path: string) => `serviceFields.${path}` as any;
+
+function renderMinProfitField(name: string) {
+	return (
+		<RHFProNumber
+			name={name as any}
+			label="حداقل سود (تومان)"
+			inputProps={{ placeholder: "اختیاری" }}
+			enableGrouping
+			enableWordsTooltip
+		/>
+	);
+}
 
 export function SmsFields() {
 	const { control } = useFormContext<ContractFormValues>();
@@ -39,10 +52,11 @@ export function SmsFields() {
 			</ProCard>
 
 			<ProCard bordered headerBordered style={{ borderRadius: 6 }} title="درآمد اپراتورها" bodyStyle={{ padding: 16 }}>
-				<div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
+				<div className="sms-operator-grid">
 					<ContractTypeSection title="ایرانسل - فارسی" name={sf("operatorRevenue.irancellFa")} />
 					<ContractTypeSection title="ایرانسل - انگلیسی" name={sf("operatorRevenue.irancellEn")} />
 					<ContractTypeSection title="همراه اول - فارسی" name={sf("operatorRevenue.hamrahAvalFa")} />
+					<ContractTypeSection title="همراه اول - انگلیسی" name={sf("operatorRevenue.hamrahAvalEn")} />
 					<ContractTypeSection title="سایر - فارسی" name={sf("operatorRevenue.otherFa")} />
 					<ContractTypeSection title="سایر - انگلیسی" name={sf("operatorRevenue.otherEn")} />
 				</div>
@@ -54,20 +68,13 @@ export function SmsFields() {
 						<ProCard bordered headerBordered style={{ borderRadius: 6 }} title="درآمد دولت" bodyStyle={{ padding: 16 }}>
 							<ContractTypeSection title="درآمد دولت" name={sf("governmentRevenue")} />
 						</ProCard>
-						<ProCard bordered headerBordered style={{ borderRadius: 6, marginTop: 12 }} title="سود" bodyStyle={{ padding: 16 }}>
-							<ContractTypeSection title="سود" name={sf("profit.pricing")} />
-							<div style={{ marginTop: 12 }}>
-								<ProFormGroup>
-									<RHFProNumber
-										name={sf("profit.minProfit")}
-										label="حداقل سود (تومان)"
-										inputProps={{ placeholder: "اختیاری" }}
-										enableGrouping
-										enableWordsTooltip
-									/>
-								</ProFormGroup>
-							</div>
-						</ProCard>
+						<div style={{ marginTop: 12 }}>
+							<ContractTypeSection
+								title="سود"
+								name={sf("profit.pricing")}
+								topAside={renderMinProfitField(sf("profit.minProfit"))}
+							/>
+						</div>
 					</>
 				)
 				: null}
@@ -91,10 +98,11 @@ export function SmsFields() {
 							renderAddendumFields={base => (
 								<>
 									<ProCard bordered headerBordered style={{ borderRadius: 6 }} title="درآمد اپراتورها" bodyStyle={{ padding: 16 }}>
-										<div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
+										<div className="sms-operator-grid">
 											<ContractTypeSection title="ایرانسل - فارسی" name={`${base}.operatorRevenue.irancellFa` as any} />
 											<ContractTypeSection title="ایرانسل - انگلیسی" name={`${base}.operatorRevenue.irancellEn` as any} />
 											<ContractTypeSection title="همراه اول - فارسی" name={`${base}.operatorRevenue.hamrahAvalFa` as any} />
+											<ContractTypeSection title="همراه اول - انگلیسی" name={`${base}.operatorRevenue.hamrahAvalEn` as any} />
 											<ContractTypeSection title="سایر - فارسی" name={`${base}.operatorRevenue.otherFa` as any} />
 											<ContractTypeSection title="سایر - انگلیسی" name={`${base}.operatorRevenue.otherEn` as any} />
 										</div>
@@ -106,20 +114,13 @@ export function SmsFields() {
 												<ProCard bordered headerBordered style={{ borderRadius: 6, marginTop: 12 }} title="درآمد دولت" bodyStyle={{ padding: 16 }}>
 													<ContractTypeSection title="درآمد دولت" name={`${base}.governmentRevenue` as any} />
 												</ProCard>
-												<ProCard bordered headerBordered style={{ borderRadius: 6, marginTop: 12 }} title="سود" bodyStyle={{ padding: 16 }}>
-													<ContractTypeSection title="سود" name={`${base}.profit.pricing` as any} />
-													<div style={{ marginTop: 12 }}>
-														<ProFormGroup>
-															<RHFProNumber
-																name={`${base}.profit.minProfit` as any}
-																label="حداقل سود (تومان)"
-																inputProps={{ placeholder: "اختیاری" }}
-																enableGrouping
-																enableWordsTooltip
-															/>
-														</ProFormGroup>
-													</div>
-												</ProCard>
+												<div style={{ marginTop: 12 }}>
+													<ContractTypeSection
+														title="سود"
+														name={`${base}.profit.pricing` as any}
+														topAside={renderMinProfitField(`${base}.profit.minProfit`)}
+													/>
+												</div>
 											</>
 										)
 										: null}

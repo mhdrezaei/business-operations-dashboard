@@ -2,29 +2,212 @@ import type { ArrayPath, Path } from "react-hook-form";
 import type { ContractFormValues } from "../../../shared/model/contract.form.types";
 import { BasicContent } from "#src/components/index.js";
 import { ContractAddendaSection } from "#src/features/contract/components/addenda/ContractAddendaSection.js";
-
 import { RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro/fields/RHFProNumber.js";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import { ProCard, ProFormGroup } from "@ant-design/pro-components";
+import { ProCard } from "@ant-design/pro-components";
 import { Button, Col, Collapse, Row } from "antd";
 import React, { useMemo, useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { ContractTypeSection } from "../../../components/contract-type/ContractTypeSection";
+import { ContractAlignedField, useContractAlignedLabelWidth } from "../../ui/form/components/ContractAlignedField";
 import { defaultLegacyPricing, defaultOpenApiPlan } from "./openapi.types";
+import "./openapi.fields.css";
 
-// helper for serviceFields routes.
 const sf = (path: string) => `serviceFields.${path}` as any;
 
-const CONTRACT_MODEL_OPTIONS = [{ label: "Package (بسته‌ای)", value: "package" }, { label: "Legacy (قدیمی)", value: "legacy" }];
+const CONTRACT_MODEL_OPTIONS = [
+	{ label: "Package (بسته‌ای)", value: "package" },
+	{ label: "Legacy (قدیمی)", value: "legacy" },
+];
+
 const PACKAGE_MODE_OPTIONS = [
 	{ label: "OR", value: "OR" },
 	{ label: "AND", value: "AND" },
 ];
+
 const ADDENDA_OPERATION_OPTIONS = [
 	{ label: "استعلام قبض", value: "BILL_INQUIRY" },
 	{ label: "ثبت وصولی", value: "RECEIPT_REGISTER" },
 ];
+
+function OpenApiPackagePlanPanel({ idx }: { idx: number }) {
+	const smsLabelStyle = useContractAlignedLabelWidth(["حداقل پیامک", "حداکثر پیامک", "نرخ فروش پیامک"]);
+	const billLabelStyle = useContractAlignedLabelWidth([
+		"سهم شریک",
+		"سهم کاراشاب",
+		"حداقل استعلام قبض",
+		"حداکثر استعلام قبض",
+		"نرخ استعلام قبض",
+	]);
+	const trafficLabelStyle = useContractAlignedLabelWidth(["درصد سود ترافیک", "درصد سهم شریک ترافیک"]);
+	const compactFormItemStyle = { style: { marginBottom: 0 } };
+
+	return (
+		<div className="openapi-plan-grid">
+			<ProCard
+				title="بخش پیامک"
+				bordered
+				headerBordered
+				className="openapi-plan-card"
+				bodyStyle={{ padding: 12 }}
+			>
+				<div className="openapi-plan-fields" style={smsLabelStyle}>
+					<ContractAlignedField label="حداقل پیامک" labelId={`openapi-plan-${idx}-sms-min`}>
+						<RHFProNumber
+							name={sf(`plans.${idx}.smsMin`)}
+							formItemProps={compactFormItemStyle}
+							enableGrouping
+							enableWordsTooltip
+							inputProps={{
+								"placeholder": "مثلاً 0",
+								"disabled": idx > 0,
+								"aria-labelledby": `openapi-plan-${idx}-sms-min`,
+							} as any}
+						/>
+					</ContractAlignedField>
+
+					<ContractAlignedField label="حداکثر پیامک" labelId={`openapi-plan-${idx}-sms-max`}>
+						<RHFProNumber
+							name={sf(`plans.${idx}.smsMax`)}
+							formItemProps={compactFormItemStyle}
+							enableGrouping
+							enableWordsTooltip
+							inputProps={{
+								"placeholder": "مثلاً 200000000",
+								"aria-labelledby": `openapi-plan-${idx}-sms-max`,
+							} as any}
+						/>
+					</ContractAlignedField>
+
+					<ContractAlignedField label="نرخ فروش پیامک" labelId={`openapi-plan-${idx}-sms-rate`}>
+						<RHFProNumber
+							name={sf(`plans.${idx}.smsFixedPrice`)}
+							formItemProps={compactFormItemStyle}
+							enableGrouping
+							enableWordsTooltip
+							inputProps={{
+								"placeholder": "مثلاً 120",
+								"addonAfter": "تومان",
+								"aria-labelledby": `openapi-plan-${idx}-sms-rate`,
+							} as any}
+						/>
+					</ContractAlignedField>
+				</div>
+			</ProCard>
+
+			<ProCard
+				title="بخش استعلام قبض"
+				bordered
+				headerBordered
+				className="openapi-plan-card"
+				bodyStyle={{ padding: 12 }}
+			>
+				<div className="openapi-plan-fields" style={billLabelStyle}>
+					<ContractAlignedField label="سهم شریک" labelId={`openapi-plan-${idx}-bill-partner-share`}>
+						<RHFProNumber
+							name={sf(`plans.${idx}.billPartnerShare`)}
+							formItemProps={compactFormItemStyle}
+							inputProps={{
+								"placeholder": "مثلاً 40",
+								"addonAfter": "%",
+								"aria-labelledby": `openapi-plan-${idx}-bill-partner-share`,
+							} as any}
+						/>
+					</ContractAlignedField>
+
+					<ContractAlignedField label="سهم کاراشاب" labelId={`openapi-plan-${idx}-bill-karashab-share`}>
+						<RHFProText
+							name={sf(`plans.${idx}.billKarashabShare`)}
+							formItemProps={compactFormItemStyle}
+							inputProps={{
+								"placeholder": "مثلاً 60",
+								"inputMode": "numeric",
+								"addonAfter": "%",
+								"aria-labelledby": `openapi-plan-${idx}-bill-karashab-share`,
+							} as any}
+						/>
+					</ContractAlignedField>
+
+					<ContractAlignedField label="حداقل استعلام قبض" labelId={`openapi-plan-${idx}-bill-min`}>
+						<RHFProNumber
+							name={sf(`plans.${idx}.billMin`)}
+							formItemProps={compactFormItemStyle}
+							enableGrouping
+							enableWordsTooltip
+							inputProps={{
+								"placeholder": "مثلاً 0",
+								"disabled": idx > 0,
+								"aria-labelledby": `openapi-plan-${idx}-bill-min`,
+							} as any}
+						/>
+					</ContractAlignedField>
+
+					<ContractAlignedField label="حداکثر استعلام قبض" labelId={`openapi-plan-${idx}-bill-max`}>
+						<RHFProNumber
+							name={sf(`plans.${idx}.billMax`)}
+							formItemProps={compactFormItemStyle}
+							enableGrouping
+							enableWordsTooltip
+							inputProps={{
+								"placeholder": "مثلاً 2000000",
+								"aria-labelledby": `openapi-plan-${idx}-bill-max`,
+							} as any}
+						/>
+					</ContractAlignedField>
+
+					<ContractAlignedField label="نرخ استعلام قبض" labelId={`openapi-plan-${idx}-bill-rate`}>
+						<RHFProNumber
+							name={sf(`plans.${idx}.billFixedPrice`)}
+							formItemProps={compactFormItemStyle}
+							enableGrouping
+							enableWordsTooltip
+							inputProps={{
+								"placeholder": "مثلاً 120",
+								"addonAfter": "تومان",
+								"aria-labelledby": `openapi-plan-${idx}-bill-rate`,
+							} as any}
+						/>
+					</ContractAlignedField>
+				</div>
+			</ProCard>
+
+			<ProCard
+				title="سهم ترافیک"
+				bordered
+				headerBordered
+				className="openapi-plan-card"
+				bodyStyle={{ padding: 12 }}
+			>
+				<div className="openapi-plan-fields" style={trafficLabelStyle}>
+					<ContractAlignedField label="درصد سود ترافیک" labelId={`openapi-plan-${idx}-traffic-profit`}>
+						<RHFProNumber
+							name={sf(`plans.${idx}.trafficProfitPercent`)}
+							formItemProps={compactFormItemStyle}
+							inputProps={{
+								"placeholder": "مثلاً 6",
+								"addonAfter": "%",
+								"aria-labelledby": `openapi-plan-${idx}-traffic-profit`,
+							} as any}
+						/>
+					</ContractAlignedField>
+
+					<ContractAlignedField label="درصد سهم شریک ترافیک" labelId={`openapi-plan-${idx}-traffic-partner-share`}>
+						<RHFProNumber
+							name={sf(`plans.${idx}.trafficPartnerSharePercent`)}
+							formItemProps={compactFormItemStyle}
+							inputProps={{
+								"placeholder": "مثلاً 4",
+								"addonAfter": "%",
+								"aria-labelledby": `openapi-plan-${idx}-traffic-partner-share`,
+							} as any}
+						/>
+					</ContractAlignedField>
+				</div>
+			</ProCard>
+		</div>
+	);
+}
 
 export function OpenApiFields() {
 	const { control, setValue, getValues } = useFormContext<ContractFormValues>();
@@ -59,13 +242,12 @@ export function OpenApiFields() {
 		trafficProfitPercent: number | null
 		trafficPartnerSharePercent: number | null
 	}>>([]);
-	// ✅ By adding a new plan, the same plan will be opened and the others will be closed.
 	const [activeKey, setActiveKey] = useState<string>("0");
 
 	const contractModel = useWatch({ control, name: sf("contractModel") }) as "package" | "legacy" | null;
 	const serviceCode = useWatch({ control, name: "serviceCode" }) as string | null;
 	const isOpenApiService = serviceCode === "openapi";
-	// When legacy is selected, create legacyPricing if it doesn't exist
+
 	React.useEffect(() => {
 		if (contractModel === "legacy") {
 			const current = getValues(sf("legacyPricing"));
@@ -303,7 +485,7 @@ export function OpenApiFields() {
 		}));
 	}, [plans, setValue]);
 
-	const addPlan = () => {
+	function addPlan() {
 		const nextIndex = fields.length;
 		const prevPlan = (nextIndex > 0 ? getValues(sf(`plans.${nextIndex - 1}`)) : null) as {
 			smsMax: number | null
@@ -316,187 +498,44 @@ export function OpenApiFields() {
 			billMin: prevPlan?.billMax ?? null,
 		} as any);
 		setActiveKey(String(nextIndex));
-	};
+	}
 
-	const removePlan = (idx: number) => {
+	function removePlan(idx: number) {
 		remove(idx);
 		const next = idx === 0 ? "0" : String(idx - 1);
 		setActiveKey(next);
-	};
+	}
 
-	const collapseItems = useMemo(() => {
-		return fields.map((f, idx) => ({
-			key: String(idx),
-			label: (
-				<div
-					style={{
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "space-between",
-						width: "100%",
-						gap: 12,
+	const collapseItems = fields.map((_, idx) => ({
+		key: String(idx),
+		label: (
+			<div
+				style={{
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "space-between",
+					width: "100%",
+					gap: 12,
+				}}
+			>
+				<span>{`پلن بسته ${idx + 1}`}</span>
+
+				<Button
+					danger
+					size="small"
+					icon={<DeleteOutlined />}
+					disabled={idx === 0}
+					onClick={(e) => {
+						e.stopPropagation();
+						removePlan(idx);
 					}}
 				>
-					<span>{`پلن بسته ${idx + 1}`}</span>
-
-					<Button
-						danger
-						size="small"
-						icon={<DeleteOutlined />}
-						disabled={idx === 0}
-						onClick={(e) => {
-							e.stopPropagation();
-							removePlan(idx);
-						}}
-					>
-						حذف پلن
-					</Button>
-				</div>
-			),
-			children: (
-				<ProCard
-					ghost
-					gutter={8}
-
-					style={{ borderRadius: 12 }}
-					bodyStyle={{ padding: 12 }}
-				>
-					{/* بخش پیامک */}
-					<ProCard
-						title="بخش پیامک"
-						bordered
-						headerBordered
-						style={{ marginBottom: 12, borderRadius: 12 }}
-						bodyStyle={{ padding: 12 }}
-					>
-						<ProFormGroup grid>
-							<ProFormGroup colProps={{ span: 12 }}>
-								<RHFProNumber
-									name={sf(`plans.${idx}.smsMin`)}
-									label="حداقل پیامک"
-									enableGrouping
-									enableWordsTooltip
-									inputProps={{ placeholder: "مثلاً 0", disabled: idx > 0 }}
-								/>
-							</ProFormGroup>
-
-							<ProFormGroup colProps={{ span: 12 }}>
-								<RHFProNumber
-									name={sf(`plans.${idx}.smsMax`)}
-									label="حداکثر پیامک"
-									enableGrouping
-									enableWordsTooltip
-									inputProps={{ placeholder: "مثلاً 200000000" }}
-								/>
-							</ProFormGroup>
-
-							<ProFormGroup colProps={{ span: 12 }}>
-								<RHFProNumber
-									name={sf(`plans.${idx}.smsFixedPrice`)}
-									label="نرخ فروش پیامک - مبلغ ثابت (تومان)"
-									inputProps={{ placeholder: "مثلاً 120" }}
-								/>
-							</ProFormGroup>
-						</ProFormGroup>
-					</ProCard>
-
-					{/* بخش استعلام قبض */}
-					<ProCard
-						title="بخش استعلام قبض"
-						bordered
-						headerBordered
-						style={{ marginBottom: 12, borderRadius: 12 }}
-						bodyStyle={{ padding: 12 }}
-					>
-						<ProFormGroup grid>
-							<ProFormGroup colProps={{ span: 12 }}>
-								<RHFProNumber
-									name={sf(`plans.${idx}.billPartnerShare`)}
-									label="سهم شریک (%)"
-									inputProps={{ placeholder: "مثلاً 40" }}
-								/>
-							</ProFormGroup>
-
-							<ProFormGroup colProps={{ span: 12 }}>
-								<RHFProText
-									name={sf(`plans.${idx}.billKarashabShare`)}
-									label="سهم کاراشاب (%)"
-									inputProps={{ placeholder: "مثلاً 60", inputMode: "numeric" }}
-								/>
-							</ProFormGroup>
-
-							<ProFormGroup colProps={{ span: 12 }}>
-								<RHFProNumber
-									name={sf(`plans.${idx}.billMin`)}
-									label="حداقل استعلام قبض"
-									enableGrouping
-									enableWordsTooltip
-									inputProps={{ placeholder: "مثلاً 0", disabled: idx > 0 }}
-								/>
-							</ProFormGroup>
-
-							<ProFormGroup colProps={{ span: 12 }}>
-								<RHFProNumber
-									name={sf(`plans.${idx}.billMax`)}
-									label="حداکثر استعلام قبض"
-									enableGrouping
-									enableWordsTooltip
-									inputProps={{ placeholder: "مثلاً 2000000" }}
-								/>
-							</ProFormGroup>
-
-							<ProFormGroup colProps={{ span: 12 }}>
-								<RHFProNumber
-									name={sf(`plans.${idx}.billFixedPrice`)}
-									label="نرخ استعلام قبض - مبلغ ثابت (تومان)"
-									enableGrouping
-									enableWordsTooltip
-									inputProps={{ placeholder: "مثلاً 120" }}
-								/>
-							</ProFormGroup>
-						</ProFormGroup>
-					</ProCard>
-
-					{/* سهم ترافیک */}
-					<ProCard
-						title="سهم ترافیک"
-						bordered
-						headerBordered
-						style={{ borderRadius: 12 }}
-						bodyStyle={{ padding: 12 }}
-					>
-						<ProFormGroup grid>
-							<ProFormGroup colProps={{ span: 12 }}>
-								<RHFProNumber
-									name={sf(`plans.${idx}.trafficProfitPercent`)}
-									label="درصد سود ترافیک (0 تا 100)"
-									inputProps={{ placeholder: "مثلاً 6" }}
-								/>
-							</ProFormGroup>
-							<ProFormGroup colProps={{ span: 12 }}>
-								<RHFProNumber
-									name={sf(`plans.${idx}.trafficPartnerSharePercent`)}
-									label="درصد سهم شریک ترافیک (0 تا 100)"
-									inputProps={{ placeholder: "مثلاً 4" }}
-								/>
-							</ProFormGroup>
-						</ProFormGroup>
-					</ProCard>
-
-					{/* <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
-						<Button
-							danger
-							icon={<DeleteOutlined />}
-							onClick={() => removePlan(idx)}
-							disabled={fields.length <= 1}
-						>
-							حذف پلن
-						</Button>
-					</div> */}
-				</ProCard>
-			),
-		}));
-	}, [fields, remove]);
+					حذف پلن
+				</Button>
+			</div>
+		),
+		children: <OpenApiPackagePlanPanel idx={idx} />,
+	}));
 
 	return (
 		<ProCard
@@ -528,20 +567,19 @@ export function OpenApiFields() {
 						: null}
 				</Col>
 			</Row>
+
 			<Row>
-				{/* ✅ فقط وقتی legacy */}
 				{contractModel === "legacy"
 					? (
 						<BasicContent className="w-full overflow-hidden ">
-
-							<Row gutter={12} justify="space-between" className="gap-3">
-								<Col span={24}>
+							<Row gutter={[12, 12]} align="stretch">
+								<Col xs={24} xl={12}>
 									<ContractTypeSection
 										title="بهای ثبت وصولی"
 										name={sf("legacyPricing.paymentRegistration")}
 									/>
 								</Col>
-								<Col span={24}>
+								<Col xs={24} xl={12}>
 									<ContractTypeSection
 										title="بهای استعلام قبض"
 										name={sf("legacyPricing.billInquiry")}
@@ -551,6 +589,7 @@ export function OpenApiFields() {
 						</BasicContent>
 					)
 					: null}
+
 				{contractModel === "package"
 					? (
 						<ProCard
@@ -575,10 +614,9 @@ export function OpenApiFields() {
 						</ProCard>
 					)
 					: null}
-
 			</Row>
+
 			{showAddenda
-				// eslint-disable-next-line style/multiline-ternary
 				? (
 					<div style={{ marginTop: 12 }}>
 						<ContractAddendaSection<ContractFormValues>
@@ -613,7 +651,8 @@ export function OpenApiFields() {
 							contractEndMonthPath={"endMonth" as Path<ContractFormValues>}
 						/>
 					</div>
-				) : null}
+				)
+				: null}
 		</ProCard>
 	);
 }

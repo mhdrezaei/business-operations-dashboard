@@ -67,20 +67,23 @@ export function performanceContractsQuery({
 export function monthlyContractStatusQuery({
 	serviceId,
 	companyId,
+	companyType,
 	year,
 	month,
 }: {
 	serviceId: number | null | undefined
 	companyId: number | null | undefined
+	companyType?: string | null | undefined
 	year: number | null | undefined
 	month: number | null | undefined
 }) {
 	return queryOptions({
-		queryKey: ["contracts", "monthly-status", { serviceId, companyId, year, month }],
+		queryKey: ["contracts", "monthly-status", { serviceId, companyId, companyType, year, month }],
 		enabled: !!serviceId && !!companyId && !!year && !!month,
 		queryFn: () => fetchMonthlyContractStatus({
 			serviceId: serviceId!,
 			companyId: companyId!,
+			companyType,
 			year: year!,
 			month: month!,
 		}),

@@ -9,7 +9,7 @@ export const trafficPerformanceSchema = z.object({
 	monthlyPerformanceFile: uploadFileListSchema,
 	tehranValue: zNullableNonNegative(i18next.t("performance.validation.traffic.tehranValueRequired")),
 	tehranValueReceive: zNullableNonNegative(i18next.t("performance.validation.traffic.tehranValueReceiveRequired")),
-	countyEnabled: z.boolean().default(true),
+	countyEnabled: z.boolean().default(false),
 	countyValue: zNullableNonNegative(i18next.t("performance.validation.traffic.countyValueRequired")),
 	countyValueReceive: zNullableNonNegative(i18next.t("performance.validation.traffic.countyValueReceiveRequired")),
 }).superRefine((value, ctx) => {

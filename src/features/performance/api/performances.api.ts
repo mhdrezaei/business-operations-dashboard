@@ -331,11 +331,13 @@ export function fetchPerformanceGaps({
 export function fetchMonthlyContractStatus({
 	serviceId,
 	companyId,
+	companyType,
 	year,
 	month,
 }: {
 	serviceId: number
 	companyId: number
+	companyType?: string | null
 	year: number
 	month: number
 }) {
@@ -344,6 +346,7 @@ export function fetchMonthlyContractStatus({
 			searchParams: compactSearchParams({
 				service_id: serviceId,
 				company_id: companyId,
+				company_type: companyType,
 				year,
 				month,
 			}),

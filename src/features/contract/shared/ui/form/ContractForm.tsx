@@ -13,6 +13,7 @@ import { findFirstError } from "../../utils";
 import { ActionSection } from "./sections/ActionSection";
 import { FixedEndSection } from "./sections/FixedEndSection";
 import { FixedStartSection } from "./sections/FixedStartSection";
+import "./contract-form.css";
 
 export type ContractSubmitIntent = "submit" | "submit_and_create_another" | "submit_and_edit";
 

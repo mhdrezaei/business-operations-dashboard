@@ -4,6 +4,10 @@ import type { OpenApiContractModel } from "#src/features/performance/shared/mode
 import type { PerformanceListRow } from "../../model/performance.list.types";
 import { MONTH_OPTIONS } from "#src/features/contract/constant/jalali-date-options.js";
 import {
+	ContractAlignedField,
+	useContractAlignedLabelWidth,
+} from "#src/features/contract/shared/ui/form/components/ContractAlignedField";
+import {
 	fetchPerformanceContracts,
 	fetchPerformanceDetail,
 	fetchPerformanceList,
@@ -18,11 +22,12 @@ import {
 } from "#src/features/performance/shared/model/performance.helpers";
 import { RHFProNumber, RHFProText } from "#src/shared/ui/rhf-pro";
 import { ProCard } from "@ant-design/pro-components";
-import { Button, Modal, Spin } from "antd";
+import { Button, Input, Modal, Spin } from "antd";
 import i18next from "i18next";
 import { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import "#src/features/contract/shared/ui/form/contract-form.css";
 
 type EditFormValues = Record<string, unknown>;
 
@@ -87,6 +92,33 @@ const HIDDEN_DETAIL_KEYS = new Set([
 	"is_official_display",
 	"url",
 ]);
+
+const OPENAPI_PACKAGE_PERFORMANCE_LABEL = "مقدار عملکرد پیامک";
+
+function getSmsPerformanceFieldAddon(fieldKey: string) {
+	switch (fieldKey) {
+		case "sms_irancell_fa":
+		case "irancellFa":
+			return "ایرانسل - فارسی";
+		case "sms_irancell_en":
+		case "irancellEn":
+			return "ایرانسل - انگلیسی";
+		case "sms_mci_fa":
+		case "mciFa":
+			return "همراه اول - فارسی";
+		case "sms_mci_en":
+		case "mciEn":
+			return "همراه اول - انگلیسی";
+		case "sms_other_fa":
+		case "otherFa":
+			return "سایر - فارسی";
+		case "sms_other_en":
+		case "otherEn":
+			return "سایر - انگلیسی";
+		default:
+			return undefined;
+	}
+}
 
 interface Props {
 	open: boolean
@@ -185,6 +217,8 @@ function resolveServiceDisplayName(service: PerformanceServicePath | null, value
 		return "سرویس PSP";
 	if (service === "sms")
 		return "سرویس پیامک";
+	if (service === "sms-commission")
+		return "سرویس پیامک عاملیت";
 	if (service === "shahkar")
 		return "کلاسه شاهکار";
 	return text || "-";
@@ -476,6 +510,17 @@ export function PerformanceDetailModal({
 		() => resolveOpenApiContractModel(detail, record, openApiPerformances),
 		[detail, record, openApiPerformances],
 	);
+	const openApiPackageAlignedLabelStyle = useContractAlignedLabelWidth([
+		t("performance.fields.openapi.billInquiryValue"),
+		t("performance.fields.openapi.trafficRevenue"),
+		t("performance.fields.openapi.trafficPackageCount"),
+		OPENAPI_PACKAGE_PERFORMANCE_LABEL,
+	]);
+	const smsAlignedLabelStyle = useContractAlignedLabelWidth([OPENAPI_PACKAGE_PERFORMANCE_LABEL]);
+	const pspAlignedLabelStyle = useContractAlignedLabelWidth([
+		t("performance.fields.psp.performanceValue"),
+		t("performance.fields.psp.monthlyRevenue"),
+	]);
 	const config = useMemo<ServiceEditConfig | null>(() => {
 		if (!service)
 			return null;
@@ -527,9 +572,8 @@ export function PerformanceDetailModal({
 				readonlyKeys: [],
 				editableFields: [
 					{ key: "value", label: t("performance.fields.psp.performanceValue"), type: "number", required: true },
-					{ key: "income", label: t("performance.fields.psp.monthlyRevenue"), type: "number" },
 				],
-				payloadKeys: ["value", "income"],
+				payloadKeys: ["value"],
 			};
 		}
 
@@ -562,7 +606,7 @@ export function PerformanceDetailModal({
 
 		if (service === "sms-commission") {
 			return {
-				title: t("performance.modal.titles.smsCommission"),
+				title: "ویرایش عملکرد پیامک عاملیت",
 				readonlyKeys: ["sales_agent", "operator", "language"],
 				editableFields: [
 					{ key: "irancellFa", label: t("performance.fields.sms.irancellFa"), type: "number", required: true },
@@ -583,11 +627,8 @@ export function PerformanceDetailModal({
 				editableFields: [
 					{ key: "value", label: t("performance.columns.value"), type: "number", required: true },
 					{ key: "value_receive", label: t("performance.columns.valueReceive"), type: "number" },
-					{ key: "income", label: t("performance.columns.income"), type: "number" },
-					{ key: "expense", label: t("performance.columns.expense"), type: "number" },
-					{ key: "profit", label: t("performance.columns.profit"), type: "number" },
 				],
-				payloadKeys: ["location", "company_type", "value", "value_receive", "income", "expense", "profit"],
+				payloadKeys: ["location", "company_type", "value", "value_receive"],
 			};
 		}
 
@@ -596,13 +637,13 @@ export function PerformanceDetailModal({
 			readonlyKeys: ["customer_name", "customer_nic", "province_code", "service_type"],
 			editableFields: [
 				{ key: "value", label: t("performance.columns.value"), type: "number", required: true },
-				{ key: "income", label: t("performance.columns.income"), type: "number" },
-				{ key: "expense", label: t("performance.columns.expense"), type: "number" },
-				{ key: "profit", label: t("performance.columns.profit"), type: "number" },
 			],
-			payloadKeys: ["customer_name", "customer_nic", "province_code", "service_type", "value", "income", "expense", "profit"],
+			payloadKeys: ["customer_name", "customer_nic", "province_code", "service_type", "value"],
 		};
 	}, [service, openApiContractModel, t]);
+	const isOpenApiPackageEditLayout = service === "openapi" && openApiContractModel === "package";
+	const isSmsEditAlignedLayout = service === "sms" || service === "sms-commission";
+	const isPspEditLayout = service === "psp";
 	const fieldLabels = useMemo<Record<string, string>>(() => ({
 		service_name: t("performance.columns.service"),
 		company_name: t("performance.columns.company"),
@@ -700,6 +741,14 @@ export function PerformanceDetailModal({
 			{ key: "income", label: "درآمد این ماه", value: formatNumberLike(mergedDetail.income) },
 		];
 	}, [service, mergedDetail]);
+	const pspSummaryFields = useMemo(() => {
+		if (service !== "psp")
+			return [];
+
+		return [
+			{ key: "income", label: t("performance.fields.psp.monthlyRevenue"), value: formatNumberLike(mergedDetail.income) },
+		];
+	}, [service, mergedDetail, t]);
 
 	const readonlyDetailFields = useMemo<DetailField[]>(() => {
 		if (!service || !config)
@@ -1281,6 +1330,26 @@ export function PerformanceDetailModal({
 										)
 										: null}
 
+									{service === "psp"
+										? (
+											<div
+												style={{
+													display: "grid",
+													gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+													gap: 8,
+												}}
+											>
+												{pspSummaryFields.map(field => (
+													<ReadOnlyBlock
+														key={field.key}
+														label={`${field.label}:`}
+														value={field.value}
+													/>
+												))}
+											</div>
+										)
+										: null}
+
 									{!isUnregisteredMode && isSmsService && smsBreakdownCards.length > 0
 										? (
 											<div
@@ -1337,37 +1406,100 @@ export function PerformanceDetailModal({
 
 									{config.editableFields.length > 0
 										? (
-											<div
-												style={{
-													display: "grid",
-													gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-													gap: 12,
-												}}
-											>
-												{config.editableFields.map((field) => {
-													if (field.type === "number") {
-														return (
-															<RHFProNumber<EditFormValues, any>
-																key={field.key}
-																name={field.key as any}
-																label={field.label}
-																inputProps={{ placeholder: t("performance.modal.placeholders.enterNumber"), inputMode: "numeric" } as any}
-																enableGrouping
-																enableWordsTooltip
-															/>
-														);
-													}
+											isPspEditLayout
+												? (
+													<div style={pspAlignedLabelStyle}>
+														<div
+															className="contract-form-aligned-grid contract-form-aligned-grid--two"
+															style={{ gap: 12 }}
+														>
+															<ContractAlignedField label={t("performance.fields.psp.performanceValue")}>
+																<RHFProNumber<EditFormValues, any>
+																	name={"value" as any}
+																	label=""
+																	formItemProps={{ style: { marginBottom: 0 } }}
+																	inputProps={{ placeholder: t("performance.modal.placeholders.enterNumber"), inputMode: "numeric" } as any}
+																	enableGrouping
+																	enableWordsTooltip
+																/>
+															</ContractAlignedField>
 
-													return (
-														<RHFProText<EditFormValues, any>
-															key={field.key}
-															name={field.key as any}
-															label={field.label}
-															inputProps={{ placeholder: t("performance.modal.placeholders.enterValue") }}
-														/>
-													);
-												})}
-											</div>
+															<ContractAlignedField label={t("performance.fields.psp.monthlyRevenue")}>
+																<Input
+																	readOnly
+																	value={formatNumberLike(mergedDetail.income)}
+																	inputMode="numeric"
+																/>
+															</ContractAlignedField>
+														</div>
+													</div>
+												)
+												: isOpenApiPackageEditLayout || isSmsEditAlignedLayout
+													? (
+														<div style={isOpenApiPackageEditLayout ? openApiPackageAlignedLabelStyle : smsAlignedLabelStyle}>
+															<div
+																className="contract-form-aligned-grid contract-form-aligned-grid--two"
+																style={{ gap: 12 }}
+															>
+																{config.editableFields.map((field) => {
+																	const addonAfter = getSmsPerformanceFieldAddon(field.key);
+																	const alignedLabel = addonAfter
+																		? OPENAPI_PACKAGE_PERFORMANCE_LABEL
+																		: field.label;
+
+																	return (
+																		<ContractAlignedField key={field.key} label={alignedLabel}>
+																			<RHFProNumber<EditFormValues, any>
+																				name={field.key as any}
+																				label=""
+																				formItemProps={{ style: { marginBottom: 0 } }}
+																				inputProps={{
+																					placeholder: t("performance.modal.placeholders.enterNumber"),
+																					inputMode: "numeric",
+																					...(addonAfter ? { addonAfter } : {}),
+																				} as any}
+																				enableGrouping
+																				enableWordsTooltip
+																			/>
+																		</ContractAlignedField>
+																	);
+																})}
+															</div>
+														</div>
+													)
+													: (
+														<div
+															style={{
+																display: "grid",
+																gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+																gap: 12,
+															}}
+														>
+															{config.editableFields.map((field) => {
+																if (field.type === "number") {
+																	return (
+																		<RHFProNumber<EditFormValues, any>
+																			key={field.key}
+																			name={field.key as any}
+																			label={field.label}
+																			inputProps={{ placeholder: t("performance.modal.placeholders.enterNumber"), inputMode: "numeric" } as any}
+																			enableGrouping
+																			enableWordsTooltip
+																		/>
+																	);
+																}
+
+																return (
+																	<RHFProText<EditFormValues, any>
+																		key={field.key}
+																		name={field.key as any}
+																		label={field.label}
+																		inputProps={{ placeholder: t("performance.modal.placeholders.enterValue") }}
+																	/>
+																);
+															})}
+														</div>
+													)
 										)
 										: null}
 								</div>
