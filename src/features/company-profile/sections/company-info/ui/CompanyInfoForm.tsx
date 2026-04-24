@@ -33,13 +33,13 @@ interface Props {
 	onSubmit: (values: CompanyInfoFormValues) => void | Promise<void>
 }
 
-export default function CompanyInfoForm({ disabled, defaultValues, onSubmit }: Props) {
+export default function CompanyInfoForm({ defaultValues, onSubmit }: Props) {
 	const { useToken } = theme;
 	const { token } = useToken();
 	const methods = useForm<CompanyInfoFormValues>({
 		defaultValues,
 		resolver: zodResolver(companyInfoSchema as any) as unknown as Resolver<CompanyInfoFormValues>,
-		mode: "onBlur",
+		mode: "onChange",
 	});
 
 	const { handleSubmit } = methods;
@@ -49,68 +49,68 @@ export default function CompanyInfoForm({ disabled, defaultValues, onSubmit }: P
 			<FormProvider {...methods}>
 				<ProCard bordered title="اطلاعات پایه" style={{ backgroundColor: token.colorBgMask }}>
 					<div className="grid grid-cols-2 gap-x-4">
-						<RHFProText name="legal_name" label="نام حقوقی" inputProps={{ placeholder: "نام حقوقی", disabled }} />
-						<RHFProText name="brand_name" label="نام برند" inputProps={{ placeholder: "نام برند", disabled }} />
+						<RHFProText name="legal_name" label="نام حقوقی" inputProps={{ placeholder: "نام حقوقی" }} />
+						<RHFProText name="brand_name" label="نام برند" inputProps={{ placeholder: "نام برند" }} />
 
-						<RHFProText name="national_id" label="شناسه ملی" inputProps={{ placeholder: "شناسه ملی", disabled }} />
+						<RHFProText name="national_id" label="شناسه ملی" inputProps={{ placeholder: "شناسه ملی" }} />
 						<RHFSelect
 							name="legal_person_type"
 							label="نوع شخصیت حقوقی"
-							selectProps={{ placeholder: "انتخاب کنید", allowClear: true, disabled }}
+							selectProps={{ placeholder: "انتخاب کنید", allowClear: true }}
 							options={LEGAL_PERSON_TYPE_OPTIONS}
 						/>
 
-						<RHFProText name="tax_national_id" label="شناسه مالیاتی" inputProps={{ placeholder: "شناسه مالیاتی", disabled }} />
+						<RHFProText name="tax_national_id" label="شناسه مالیاتی" inputProps={{ placeholder: "شناسه مالیاتی" }} />
 					</div>
 				</ProCard>
 
 				<ProCard bordered title="ثبت شرکت" style={{ backgroundColor: token.colorBgMask }}>
 					<div className=" grid grid-cols-2 gap-x-4">
-						<RHFProText name="registration_number" label="شماره ثبت" inputProps={{ placeholder: "شماره ثبت", disabled }} />
-						<RHFProText name="tax_registration_number" label="شماره ثبت مالیاتی" inputProps={{ placeholder: "شماره ثبت مالیاتی", disabled }} />
+						<RHFProText name="registration_number" label="شماره ثبت" inputProps={{ placeholder: "شماره ثبت" }} />
+						<RHFProText name="tax_registration_number" label="شماره ثبت مالیاتی" inputProps={{ placeholder: "شماره ثبت مالیاتی" }} />
 
-						<RHFProText name="registration_place" label="محل ثبت" inputProps={{ placeholder: "محل ثبت", disabled }} />
-						<RHFProDate name="registration_date" label="تاریخ ثبت" itemProps={{ placeholder: "تاریخ ثبت", disabled }} />
+						<RHFProText name="registration_place" label="محل ثبت" inputProps={{ placeholder: "محل ثبت" }} />
+						<RHFProDate name="registration_date" label="تاریخ ثبت" itemProps={{ placeholder: "تاریخ ثبت" }} />
 
-						<RHFProText name="branch_code" label="کد شعبه" inputProps={{ placeholder: "کد شعبه", disabled }} />
+						<RHFProText name="branch_code" label="کد شعبه" inputProps={{ placeholder: "کد شعبه" }} />
 					</div>
 				</ProCard>
 
 				<ProCard bordered title="آدرس و نقشه" style={{ backgroundColor: token.colorBgMask }}>
 					<div className=" grid grid-cols-2 gap-x-4">
-						<RHFProText name="postal_code" label="کد پستی" inputProps={{ placeholder: "کد پستی", disabled }} />
-						<RHFProText name="map_address" label="آدرس روی نقشه" inputProps={{ placeholder: "آدرس روی نقشه", disabled }} />
+						<RHFProText name="postal_code" label="کد پستی" inputProps={{ placeholder: "کد پستی" }} />
+						<RHFProText name="map_address" label="آدرس روی نقشه" inputProps={{ placeholder: "آدرس روی نقشه" }} />
 
 						<div className="col-span-2">
-							<RHFProTextArea name="legal_address" label="آدرس حقوقی" textAreaProps={{ disabled }} />
+							<RHFProTextArea name="legal_address" label="آدرس حقوقی" />
 						</div>
 
 						<div className="col-span-2">
-							<CompanyInfoMapField disabled={disabled} />
+							<CompanyInfoMapField />
 						</div>
 					</div>
 				</ProCard>
 
 				<ProCard bordered title="راهای ارتباطی" style={{ backgroundColor: token.colorBgMask }}>
 					<div className=" grid grid-cols-2 gap-x-4">
-						<RHFFieldArrayText name="phone" label="تلفن" disabled={disabled} />
-						<RHFFieldArrayText name="mobile" label="موبایل" disabled={disabled} />
-						<RHFFieldArrayText name="email" label="ایمیل" disabled={disabled} />
-						<RHFFieldArrayText name="fax" label="فکس" disabled={disabled} />
-						<RHFProText name="website" label="وبسایت" inputProps={{ placeholder: "وبسایت", disabled }} />
+						<RHFFieldArrayText name="phone" label="تلفن" />
+						<RHFFieldArrayText name="mobile" label="موبایل" />
+						<RHFFieldArrayText name="email" label="ایمیل" />
+						<RHFFieldArrayText name="fax" label="فکس" />
+						<RHFProText name="website" label="وبسایت" inputProps={{ placeholder: "وبسایت" }} />
 					</div>
 				</ProCard>
 
 				<ProCard bordered title="مالی و مالیات" style={{ backgroundColor: token.colorBgMask }}>
 					<div className=" grid grid-cols-2 gap-x-4">
-						<RHFProText name="economic_code" label="کد اقتصادی" inputProps={{ placeholder: "کد اقتصادی", disabled }} />
-						<RHFProText name="tax_file_number" label="شماره پرونده مالیاتی" inputProps={{ placeholder: "شماره پرونده مالیاتی", disabled }} />
-						<RHFProText name="tax_office" label="اداره مالیاتی" inputProps={{ placeholder: "اداره مالیاتی", disabled }} />
+						<RHFProText name="economic_code" label="کد اقتصادی" inputProps={{ placeholder: "کد اقتصادی" }} />
+						<RHFProText name="tax_file_number" label="شماره پرونده مالیاتی" inputProps={{ placeholder: "شماره پرونده مالیاتی" }} />
+						<RHFProText name="tax_office" label="اداره مالیاتی" inputProps={{ placeholder: "اداره مالیاتی" }} />
 
 						<RHFSelect
 							name="vat_status"
 							label="وضعیت ارزش افزوده"
-							selectProps={{ placeholder: "انتخاب کنید", allowClear: true, disabled }}
+							selectProps={{ placeholder: "انتخاب کنید", allowClear: true }}
 							options={VAT_STATUS_OPTIONS}
 						/>
 					</div>
@@ -120,35 +120,35 @@ export default function CompanyInfoForm({ disabled, defaultValues, onSubmit }: P
 						<RHFSelect
 							name="cooperation_status"
 							label="وضعیت همکاری"
-							selectProps={{ placeholder: "انتخاب کنید", allowClear: true, disabled }}
+							selectProps={{ placeholder: "انتخاب کنید", allowClear: true }}
 							options={COOPERATION_STATUS_OPTIONS}
 						/>
 						<RHFSelect
 							name="settlement_term"
 							label="شرایط تسویه"
-							selectProps={{ placeholder: "انتخاب کنید", allowClear: true, disabled }}
+							selectProps={{ placeholder: "انتخاب کنید", allowClear: true }}
 							options={SETTLEMENT_TERM_OPTIONS}
 						/>
 
-						<RHFProDate name="cooperation_start_date" label="تاریخ شروع همکاری" itemProps={{ placeholder: "تاریخ شروع همکاری", disabled }} />
-						<RHFProText name="financial_commitment_cap" label="سقف تعهد مالی" inputProps={{ placeholder: "سقف تعهد مالی", disabled }} />
+						<RHFProDate name="cooperation_start_date" label="تاریخ شروع همکاری" itemProps={{ placeholder: "تاریخ شروع همکاری" }} />
+						<RHFProText name="financial_commitment_cap" label="سقف تعهد مالی" inputProps={{ placeholder: "سقف تعهد مالی" }} />
 
-						<RHFProText name="working_hours" label="ساعات کاری" inputProps={{ placeholder: "ساعات کاری", disabled }} />
+						<RHFProText name="working_hours" label="ساعات کاری" inputProps={{ placeholder: "ساعات کاری" }} />
 					</div>
 				</ProCard>
 				<ProCard bordered title="سایر اطلاعات" style={{ backgroundColor: token.colorBgMask }}>
 					<div className=" grid grid-cols-2 gap-x-4">
-						<RHFProText name="internal_code" label="کد داخلی" inputProps={{ placeholder: "کد داخلی", disabled }} />
+						<RHFProText name="internal_code" label="کد داخلی" inputProps={{ placeholder: "کد داخلی" }} />
 
 						<RHFSelect
 							name="info_verification_status"
 							label="وضعیت تایید اطلاعات"
-							selectProps={{ placeholder: "در انتظار", allowClear: true, disabled }}
+							selectProps={{ placeholder: "در انتظار", allowClear: true }}
 							options={INFO_VERIFICATION_STATUS_OPTIONS}
 						/>
 
 						<div className="col-span-2">
-							<RHFProTextArea name="internal_note" label="یادداشت داخلی" textAreaProps={{ disabled, rows: 4 }} />
+							<RHFProTextArea name="internal_note" label="یادداشت داخلی" textAreaProps={{ rows: 4 }} />
 						</div>
 					</div>
 				</ProCard>
@@ -158,7 +158,7 @@ export default function CompanyInfoForm({ disabled, defaultValues, onSubmit }: P
 					style={{ backgroundColor: token.colorBgMask }}
 				>
 					<div className="mt-6">
-						<CompanyInfoSocialLinksField disabled={disabled} />
+						<CompanyInfoSocialLinksField />
 					</div>
 				</ProCard>
 				<Button

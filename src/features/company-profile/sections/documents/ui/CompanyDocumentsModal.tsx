@@ -34,14 +34,19 @@ export default function CompanyDocumentsModal({
 	const methods = useForm<CompanyDocumentFormValues>({
 		defaultValues,
 		resolver: zodResolver(companyDocumentSchema as any) as unknown as Resolver<CompanyDocumentFormValues>,
-		mode: "onBlur",
+		mode: "onChange",
 	});
 
-	const { handleSubmit, reset } = methods;
+	const {
+		handleSubmit,
+		reset,
+		formState: { isDirty, isValid, isSubmitting },
+	} = methods;
 
 	useEffect(() => {
-		if (open)
+		if (open) {
 			reset(defaultValues);
+		}
 	}, [open, defaultValues, reset]);
 
 	const footer = useMemo(() => {
@@ -50,14 +55,15 @@ export default function CompanyDocumentsModal({
 				<Button onClick={onClose}>انصراف</Button>
 				<Button
 					type="primary"
-					onClick={handleSubmit(values => onSubmit(values as unknown as CompanyDocumentFormValues))}
-					loading={disabled}
+					onClick={handleSubmit(values => onSubmit(values))}
+					disabled={disabled || !isDirty || !isValid}
+					loading={isSubmitting}
 				>
 					ذخیره
 				</Button>
 			</div>
 		);
-	}, [disabled, handleSubmit, onClose, onSubmit]);
+	}, [disabled, handleSubmit, isDirty, isValid, isSubmitting, onClose, onSubmit]);
 
 	return (
 		<Modal
@@ -125,8 +131,9 @@ export default function CompanyDocumentsModal({
 									}}
 								/>
 							</div>
-
-							{loading ? <div className="col-span-2 text-xs opacity-70">در حال بارگذاری...</div> : null}
+							{loading && (
+								<div className="col-span-2 text-xs opacity-70">در حال بارگذاری...</div>
+							)}
 						</div>
 					</ProCard>
 				</FormProvider>

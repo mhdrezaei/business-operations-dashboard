@@ -23,10 +23,33 @@ export type RHFProDateProps<
 		React.ComponentProps<typeof DatePicker>,
     "value" | "onChange"
 	>
-
-	toPickerValue?: (value: unknown) => Dayjs | null
-	fromPickerValue?: (value: Dayjs | null) => unknown
 };
+
+// تبدیل رشته میلادی "YYYY-MM-DD" به شیء Date در منطقه زمانی محلی
+function parseLocalGregorian(dateStr: string): Date | null {
+	if (!dateStr)
+		return null;
+	const parts = dateStr.split("-");
+	if (parts.length !== 3)
+		return null;
+	const year = Number.parseInt(parts[0], 10);
+	const month = Number.parseInt(parts[1], 10) - 1; // months 0-index
+	const day = Number.parseInt(parts[2], 10);
+	const date = new Date(year, month, day);
+	// اعتبارسنجی
+	if (date.getFullYear() === year && date.getMonth() === month && date.getDate() === day) {
+		return date;
+	}
+	return null;
+}
+
+// تبدیل شیء Date به رشته میلادی "YYYY-MM-DD" در منطقه زمانی محلی
+function formatLocalGregorian(date: Date): string {
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, "0");
+	const day = String(date.getDate()).padStart(2, "0");
+	return `${year}-${month}-${day}`;
+}
 
 export function RHFProDate<TFV extends FieldValues, TName extends Path<TFV>>(
 	props: RHFProDateProps<TFV, TName>,
@@ -34,7 +57,6 @@ export function RHFProDate<TFV extends FieldValues, TName extends Path<TFV>>(
 	const control = useSmartControl<TFV>(props.control);
 
 	const valueType = props.valueType ?? "string";
-	const format = props.dateFormat ?? "YYYY-MM-DD";
 
 	return (
 		<Controller
@@ -44,29 +66,35 @@ export function RHFProDate<TFV extends FieldValues, TName extends Path<TFV>>(
 				const err = props.hideError ? undefined : fieldState.error?.message;
 				const status = buildItemStatus(err);
 
-				// value داخل فرم: معمولاً Gregorian string
-				// برای نمایش شمسی باید به jalali calendar تبدیل شود
-				const pickerValue: Dayjs | null = props.toPickerValue
-					? props.toPickerValue(field.value)
-					: valueType === "dayjs"
-						? ((field.value as Dayjs | null) ?? null)
-						: typeof field.value === "string" && field.value
-							? dayjs(field.value).calendar("jalali")
-							: null;
+				// مقدار dayjs برای نمایش در DatePicker (شمسی)
+				let pickerValue: Dayjs | null = null;
+				const fieldValue = field.value;
 
-				const handleChange = (v: Dayjs | null) => {
-					if (props.fromPickerValue) {
-						field.onChange(props.fromPickerValue(v));
+				if (valueType === "dayjs" && fieldValue) {
+					pickerValue = fieldValue as Dayjs;
+				}
+				else if (typeof fieldValue === "string" && fieldValue) {
+					// تبدیل رشته میلادی ذخیره‌شده به شیء Date محلی و سپس به Dayjs شمسی
+					const localDate = parseLocalGregorian(fieldValue);
+					if (localDate) {
+						pickerValue = dayjs(localDate);
+					}
+				}
+
+				const handleChange = (value: Dayjs | null) => {
+					if (valueType === "dayjs") {
+						field.onChange(value);
 						return;
 					}
 
-					if (valueType === "dayjs") {
-						// اگر تصمیم گرفتی داخل فرم dayjs نگه داری، همین v (jalali) رو ذخیره می‌کنی
-						field.onChange(v);
+					// تبدیل Dayjs شمسی به رشته میلادی محلی
+					if (value && typeof value.toDate === "function") {
+						const gregorianDate = value.toDate(); // تبدیل شمسی → میلادی (شیء Date محلی)
+						const gregorianString = formatLocalGregorian(gregorianDate);
+						field.onChange(gregorianString);
 					}
 					else {
-						// ذخیره برای backend به میلادی
-						field.onChange(v ? v.calendar("gregory").format(format) : "");
+						field.onChange("");
 					}
 				};
 
@@ -74,9 +102,10 @@ export function RHFProDate<TFV extends FieldValues, TName extends Path<TFV>>(
 					<ProForm.Item label={props.label} {...props.itemProps} {...status}>
 						<DatePicker
 							className="w-full"
+							getPopupContainer={(trigger: { parentElement: any }) => trigger.parentElement!}
 							{...props.pickerProps}
-							value={pickerValue as any}
-							onChange={(v: Dayjs | null) => handleChange(v)}
+							value={pickerValue}
+							onChange={handleChange}
 							onBlur={field.onBlur}
 						/>
 					</ProForm.Item>

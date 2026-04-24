@@ -8,7 +8,7 @@ import {
 } from "#src/features/company-profile/api/company-profile.api";
 import { useAccess } from "#src/hooks";
 
-import { Button, Spin } from "antd";
+import { Spin } from "antd";
 
 import React, { useEffect, useMemo, useState } from "react";
 
@@ -23,7 +23,6 @@ import PublicProfileForm from "./PublicProfileForm";
 
 export default function PublicProfilePanel({ companyId }: { companyId: number }) {
 	const [loading, setLoading] = useState(true);
-	const [saving, setSaving] = useState(false);
 	const [editMode, setEditMode] = useState(false);
 
 	const serviceId = useWatch<CompanyProfileFormValues, "serviceId">({ name: "serviceId" }) || 0;
@@ -52,7 +51,6 @@ export default function PublicProfilePanel({ companyId }: { companyId: number })
 			window.$message?.warning("دسترسی ویرایش پروفایل شرکت ندارید.");
 			return;
 		}
-		setSaving(true);
 		try {
 			const payload = publicFormToPayload(values);
 
@@ -73,9 +71,6 @@ export default function PublicProfilePanel({ companyId }: { companyId: number })
 			console.error(error);
 			window.$message?.error("در حال حاضر مشکلی وجود دارد");
 		}
-		finally {
-			setSaving(false);
-		}
 	}
 
 	if (loading)
@@ -83,19 +78,6 @@ export default function PublicProfilePanel({ companyId }: { companyId: number })
 
 	return (
 		<div>
-			<div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginBottom: 12 }}>
-				{!editMode
-					? (
-						<Button type="primary" onClick={() => setEditMode(true)} disabled={!canUpdateProfile}>
-							ویرایش
-						</Button>
-					)
-					: (
-						<Button onClick={() => setEditMode(false)} disabled={saving}>
-							انصراف
-						</Button>
-					)}
-			</div>
 
 			<PublicProfileForm
 				key={profile?.id ?? "new"}
