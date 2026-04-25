@@ -17,7 +17,7 @@ import { FormModeContext } from "../form-mode-context";
 
 const FORM_INITIAL_VALUES = {
 	username: "admin",
-	password: "123456789admin",
+	password: "",
 };
 export type PasswordLoginFormType = typeof FORM_INITIAL_VALUES;
 

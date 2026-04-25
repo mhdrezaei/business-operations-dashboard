@@ -1,4 +1,12 @@
-import type { AdminRoleDto, AdminUserDto, AdminUserSetRolesPayload, AdminUsersListQuery, AdminUserUpsertPayload, PaginatedResponse } from "../model/admin-users.types";
+import type {
+	AdminRoleDto,
+	AdminUserDto,
+	AdminUserServiceAdminSummaryDto,
+	AdminUserSetRolesPayload,
+	AdminUsersListQuery,
+	AdminUserUpsertPayload,
+	PaginatedResponse,
+} from "../model/admin-users.types";
 // src/features/audit/admin-users/api/admin-users.api.ts
 import { request } from "#src/utils/request/";
 
@@ -51,4 +59,10 @@ export async function fetchSetAdminUserRoles(id: number, payload: AdminUserSetRo
 	return request
 		.post(`${BASE}/users/${id}/set-roles/`, { json: payload })
 		.json<any>();
+}
+
+export async function fetchAdminUserServiceAdminSummary(id: number) {
+	return request
+		.get(`${BASE}/users/${id}/service-admin-summary/`)
+		.json<AdminUserServiceAdminSummaryDto>();
 }

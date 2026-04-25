@@ -52,3 +52,43 @@ export interface AdminUserUpsertPayload {
 export interface AdminUserSetRolesPayload {
 	role_ids: number[]
 }
+
+export interface AdminUserSummaryManagedUserDto {
+	id: number
+	username: string
+	first_name: string
+	last_name: string
+	email: string
+}
+
+export interface AdminUserSummaryRoleDto {
+	id: number
+	name: string
+	scope: string
+	assigned_user_ids: number[]
+	assigned_user_count: number
+	allowed_service_ids: number[]
+}
+
+export interface AdminUserSummaryDeputyDto {
+	deputy_user_id: number
+	username: string
+	permissions: {
+		can_create_users: boolean
+		can_create_roles: boolean
+		can_edit_users: boolean
+		can_assign_roles: boolean
+		can_manage_policies: boolean
+	}
+	created_user_ids: number[]
+	owned_roles: AdminUserSummaryRoleDto[]
+}
+
+export interface AdminUserServiceAdminSummaryDto {
+	admin_user_id: number
+	service_admin_service_ids: number[]
+	managed_users: AdminUserSummaryManagedUserDto[]
+	created_user_ids: number[]
+	owned_roles: AdminUserSummaryRoleDto[]
+	deputies: AdminUserSummaryDeputyDto[]
+}

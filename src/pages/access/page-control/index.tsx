@@ -8,11 +8,11 @@ import { useNavigate } from "react-router";
 
 const accounts: Record<string, PasswordLoginFormType> = {
 	[AccessControlRoles.admin]: {
-		password: "123456789admin",
+		password: "",
 		username: AccessControlRoles.admin,
 	},
 	[AccessControlRoles.common]: {
-		password: "123456789admin",
+		password: "",
 		username: AccessControlRoles.common,
 	},
 };
