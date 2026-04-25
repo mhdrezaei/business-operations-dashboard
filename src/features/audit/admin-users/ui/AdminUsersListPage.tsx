@@ -3,7 +3,7 @@ import type { AdminRoleDto, AdminUserDto } from "../model/admin-users.types";
 
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import { useAccess } from "#src/hooks";
-import { DeleteOutlined, EditOutlined, PlusCircleOutlined, SafetyOutlined, StopOutlined, TeamOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, EyeOutlined, PlusCircleOutlined, SafetyOutlined, StopOutlined, TeamOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Popconfirm } from "antd";
 import React, { useMemo, useRef, useState } from "react";
@@ -21,6 +21,7 @@ import {
 } from "../api/admin-users.api";
 import { adminRolesQuery } from "../queries/admin-users.queries";
 import { AdminUserRolesModal } from "./components/AdminUserRolesModal";
+import { AdminUserSummaryModal } from "./components/AdminUserSummaryModal";
 import { AdminUserUpsertModal } from "./components/AdminUserUpsertModal";
 import { getAdminUsersColumns } from "./constants/admin-users.columns";
 
@@ -38,6 +39,7 @@ export default function AdminUsersListPage() {
 	const [loadingUserDetail, setLoadingUserDetail] = useState(false);
 
 	const [openRoles, setOpenRoles] = useState(false);
+	const [openSummary, setOpenSummary] = useState(false);
 
 	// permissions
 	const canCreate = hasDomainPermission("contracts", "create");
@@ -128,6 +130,11 @@ export default function AdminUsersListPage() {
 		}
 	};
 
+	const handleOpenSummary = (row: AdminUserDto) => {
+		setSelectedUser(row);
+		setOpenSummary(true);
+	};
+
 	const columns: ProColumns<AdminUserDto>[] = useMemo(() => {
 		return [
 			...baseColumns,
@@ -166,6 +173,17 @@ export default function AdminUsersListPage() {
 							/>,
 						);
 					}
+
+					actions.push(
+						<BasicButton
+							key="summary"
+							type="link"
+							size="large"
+							title="خلاصه"
+							icon={<EyeOutlined />}
+							onClick={() => handleOpenSummary(record)}
+						/>,
+					);
 
 					if (canToggleActive) {
 						const isActive = !!record.is_active;
@@ -286,6 +304,15 @@ export default function AdminUsersListPage() {
 					window.$message?.success("نقش‌های کاربر بروزرسانی شد.");
 					setOpenRoles(false);
 					refreshTable();
+				}}
+			/>
+
+			<AdminUserSummaryModal
+				open={openSummary}
+				user={selectedUser}
+				onClose={() => {
+					setOpenSummary(false);
+					setSelectedUser(null);
 				}}
 			/>
 		</BasicContent>
