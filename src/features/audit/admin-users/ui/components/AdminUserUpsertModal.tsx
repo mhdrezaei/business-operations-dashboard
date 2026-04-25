@@ -7,6 +7,7 @@ import { ProCard } from "@ant-design/pro-components";
 import { Modal } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
+import "./admin-user-upsert-modal.css";
 
 interface Props {
 	open: boolean
@@ -59,6 +60,7 @@ export function AdminUserUpsertModal({ open, mode, loading, initial, onClose, on
 	}, [open, defaultValues]);
 
 	const title = mode === "create" ? "ایجاد کاربر" : "ویرایش کاربر";
+	const fieldClassName = "admin-user-upsert-field";
 
 	return (
 		<Modal
@@ -94,18 +96,19 @@ export function AdminUserUpsertModal({ open, mode, loading, initial, onClose, on
 							>
 								<ProCard>
 									<div className="grid grid-cols-2 gap-3">
-										<RHFProText name="username" label="نام کاربری" />
-										<RHFProText name="email" label="ایمیل" />
+										<RHFProText name="username" label="نام کاربری" formItemProps={{ className: fieldClassName }} />
+										<RHFProText name="email" label="ایمیل" formItemProps={{ className: fieldClassName }} />
 
-										<RHFProText name="first_name" label="نام" />
-										<RHFProText name="last_name" label="نام خانوادگی" />
+										<RHFProText name="first_name" label="نام" formItemProps={{ className: fieldClassName }} />
+										<RHFProText name="last_name" label="نام خانوادگی" formItemProps={{ className: fieldClassName }} />
 
-										<RHFProText name="mobile" label="موبایل" />
-										<RHFProText name="national_code" label="کد ملی" />
+										<RHFProText name="mobile" label="موبایل" formItemProps={{ className: fieldClassName }} />
+										<RHFProText name="national_code" label="کد ملی" formItemProps={{ className: fieldClassName }} />
 
 										<RHFProText
 											name="password"
 											label={mode === "create" ? "رمز عبور" : "رمز عبور جدید (اختیاری)"}
+											formItemProps={{ className: fieldClassName }}
 										/>
 
 										{/* اگر RHFCheckbox/RHFSwitch دارید بهتره؛ اینجا فقط نمونه */}

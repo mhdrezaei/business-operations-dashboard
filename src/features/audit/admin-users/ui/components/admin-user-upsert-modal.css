@@ -1,0 +1,29 @@
+.admin-user-upsert-field {
+	margin-bottom: 0;
+}
+
+.admin-user-upsert-field .ant-form-item-row {
+	display: grid;
+	grid-template-columns: max-content minmax(0, 1fr);
+	align-items: center;
+	column-gap: 6px;
+	justify-content: start;
+}
+
+.admin-user-upsert-field .ant-form-item-label {
+	padding: 0;
+	text-align: right;
+	white-space: nowrap;
+}
+
+.admin-user-upsert-field .ant-form-item-label > label {
+	justify-content: flex-end;
+}
+
+.admin-user-upsert-field .ant-form-item-control {
+	min-width: 0;
+}
+
+.admin-user-upsert-field .ant-form-item-explain-error {
+	text-align: right;
+}
