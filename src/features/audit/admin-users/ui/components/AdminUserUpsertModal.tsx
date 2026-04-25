@@ -108,7 +108,7 @@ export function AdminUserUpsertModal({ open, mode, loading, initial, onClose, on
 										<RHFProText
 											name="password"
 											label={mode === "create" ? "رمز عبور" : "رمز عبور جدید (اختیاری)"}
-											formItemProps={{ className: fieldClassName }}
+											formItemProps={{ className: `${fieldClassName} admin-user-upsert-field--long-label` }}
 										/>
 
 										{/* اگر RHFCheckbox/RHFSwitch دارید بهتره؛ اینجا فقط نمونه */}
