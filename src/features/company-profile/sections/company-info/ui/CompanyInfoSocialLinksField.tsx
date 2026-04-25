@@ -2,7 +2,7 @@ import { RHFProText } from "#src/shared/ui/rhf-pro/index.js";
 import { Button } from "antd";
 import { useFieldArray, useFormContext } from "react-hook-form";
 
-export default function CompanyInfoSocialLinksField({ disabled }: { disabled: boolean }) {
+export default function CompanyInfoSocialLinksField() {
 	const { control } = useFormContext();
 	const { fields, append, remove } = useFieldArray({ control, name: "social_links" });
 
@@ -12,16 +12,16 @@ export default function CompanyInfoSocialLinksField({ disabled }: { disabled: bo
 
 			{fields.map((f, idx) => (
 				<div key={f.id} style={{ display: "grid", gridTemplateColumns: "1fr 2fr auto", gap: 12, marginBottom: 12, alignItems: "center" }}>
-					<RHFProText name={`social_links.${idx}.label`} label="عنوان" inputProps={{ disabled }} />
-					<RHFProText name={`social_links.${idx}.url`} label="لینک" inputProps={{ disabled }} />
-					<Button danger type="text" disabled={disabled} onClick={() => remove(idx)}>
+					<RHFProText name={`social_links.${idx}.label`} label="عنوان" />
+					<RHFProText name={`social_links.${idx}.url`} label="لینک" />
+					<Button danger type="text" onClick={() => remove(idx)}>
 						حذف
 					</Button>
 				</div>
 			))}
 
 			<div style={{ display: "flex", justifyContent: "flex-end" }}>
-				<Button type="dashed" disabled={disabled} onClick={() => append({ label: "", url: "" })}>
+				<Button type="dashed" onClick={() => append({ label: "", url: "" })}>
 					افزودن شبکه اجتماعی
 				</Button>
 			</div>

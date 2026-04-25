@@ -1,12 +1,12 @@
 import { RHFProText } from "#src/shared/ui/rhf-pro/index.js";
 import React from "react";
 
-export default function CompanyInfoMapField({ disabled }: { disabled: boolean }) {
+export default function CompanyInfoMapField() {
 	return (
 		<div>
 			<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-				<RHFProText name="map_latitude" label="Latitude" inputProps={{ disabled }} />
-				<RHFProText name="map_longitude" label="Longitude" inputProps={{ disabled }} />
+				<RHFProText name="map_latitude" label="Latitude" />
+				<RHFProText name="map_longitude" label="Longitude" />
 			</div>
 
 			<div

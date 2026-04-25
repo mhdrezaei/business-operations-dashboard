@@ -8,7 +8,7 @@ import {
 	updateLegalProfile,
 } from "#src/features/company-profile/api/company-profile.api";
 import { useAccess } from "#src/hooks";
-import { Button, Spin } from "antd";
+import { Spin } from "antd";
 
 import React, { useEffect, useMemo, useState } from "react";
 
@@ -24,7 +24,6 @@ import LegalProfileForm from "./LegalProfileForm";
 
 export default function LegalProfilePanel({ companyId }: { companyId: number }) {
 	const [loading, setLoading] = useState(true);
-	const [saving, setSaving] = useState(false);
 	const [editMode, setEditMode] = useState(false);
 
 	const serviceId = useWatch<CompanyProfileFormValues, "serviceId">({ name: "serviceId" }) || 0;
@@ -53,7 +52,6 @@ export default function LegalProfilePanel({ companyId }: { companyId: number }) 
 			window.$message?.warning("دسترسی ویرایش پروفایل شرکت ندارید.");
 			return;
 		}
-		setSaving(true);
 		try {
 			const payload = legalFormToPayload(values);
 
@@ -74,9 +72,6 @@ export default function LegalProfilePanel({ companyId }: { companyId: number }) 
 			console.error(error);
 			window.$message?.error("در حال حاضر مشکلی وجود دارد");
 		}
-		finally {
-			setSaving(false);
-		}
 	}
 
 	if (loading)
@@ -84,11 +79,6 @@ export default function LegalProfilePanel({ companyId }: { companyId: number }) 
 
 	return (
 		<div>
-			<div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginBottom: 12 }}>
-				{!editMode
-					? <Button type="primary" onClick={() => setEditMode(true)} disabled={!canUpdateProfile}>ویرایش</Button>
-					: <Button onClick={() => setEditMode(false)} disabled={saving}>انصراف</Button>}
-			</div>
 
 			<LegalProfileForm
 				key={profile?.id ?? "new"}

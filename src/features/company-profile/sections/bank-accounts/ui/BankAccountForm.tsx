@@ -158,11 +158,9 @@ function SegmentedNumericInput({
 							}}
 							onBlur={onBlur}
 						/>
-						{showSeparators && index < segments.length - 1
-							? (
-								<span style={{ color: "var(--ant-colorTextDescription)", userSelect: "none" }}>-</span>
-							)
-							: null}
+						{showSeparators && index < segments.length - 1 && (
+							<span style={{ color: "var(--ant-colorTextDescription)", userSelect: "none" }}>-</span>
+						)}
 					</React.Fragment>
 				))}
 			</div>
@@ -180,10 +178,14 @@ export default function BankAccountForm({ disabled, defaultValues, onSubmit }: P
 	const methods = useForm<BankAccountFormValues>({
 		defaultValues,
 		resolver: zodResolver(bankAccountSchema),
-		mode: "onBlur",
+		mode: "onChange",
 	});
 
-	const { control, handleSubmit, setValue } = methods;
+	const { control, handleSubmit, setValue, reset, formState: { isDirty, isValid, isSubmitting } } = methods;
+
+	useEffect(() => {
+		reset(defaultValues);
+	}, [defaultValues, reset]);
 
 	return (
 		<Form layout="vertical">
@@ -287,11 +289,15 @@ export default function BankAccountForm({ disabled, defaultValues, onSubmit }: P
 				</div>
 
 				<div style={{ display: "flex", justifyContent: "space-between", marginTop: 16 }}>
-					<Button onClick={() => methods.reset(defaultValues)} disabled={disabled}>
+					<Button onClick={() => reset(defaultValues)} disabled={disabled || !isDirty || isSubmitting}>
 						پاکسازی فرم
 					</Button>
-
-					<Button type="primary" onClick={handleSubmit(onSubmit)} loading={disabled}>
+					<Button
+						type="primary"
+						onClick={handleSubmit(onSubmit)}
+						disabled={disabled || !isDirty || !isValid}
+						loading={isSubmitting}
+					>
 						ثبت حساب
 					</Button>
 				</div>

@@ -9,12 +9,12 @@ import RHFFieldArrayText from "#src/shared/ui/rhf-pro/fields/RHFFieldArrayText.j
 import { ProCard } from "@ant-design/pro-components";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Form, theme } from "antd";
-import React from "react";
+import React, { useEffect } from "react";
 
 import { FormProvider, useForm } from "react-hook-form";
 import CompanyInfoMapField from "../../../company-info/ui/CompanyInfoMapField";
-
 import CompanyInfoSocialLinksField from "../../../company-info/ui/CompanyInfoSocialLinksField";
+
 import { publicProfileSchema } from "../../model/public/company-public.schema";
 
 interface Props {
@@ -23,61 +23,104 @@ interface Props {
 	onSubmit: (values: PublicProfileFormValues) => void | Promise<void>
 }
 
-export default function PublicProfileForm({ disabled, defaultValues, onSubmit }: Props) {
+export default function PublicProfileForm({ defaultValues, onSubmit }: Props) {
 	const { useToken } = theme;
 	const { token } = useToken();
 
 	const methods = useForm<PublicProfileFormValues>({
 		defaultValues,
 		resolver: zodResolver(publicProfileSchema as any) as unknown as Resolver<PublicProfileFormValues>,
-		mode: "onBlur",
+		mode: "onChange",
 	});
 
-	const { handleSubmit } = methods;
+	const {
+		handleSubmit,
+		reset,
+		formState: { isDirty, isValid, isSubmitting },
+	} = methods;
+
+	useEffect(() => {
+		reset(defaultValues);
+	}, [defaultValues, reset]);
+
+	const isChanged = isDirty;
 
 	return (
 		<Form layout="vertical" className="space-y-4">
 			<FormProvider {...methods}>
 				<ProCard bordered title="اطلاعات عمومی شرکت" style={{ backgroundColor: token.colorBgMask }}>
 					<div className="grid grid-cols-2 gap-x-4">
-						<RHFProText name="legal_name" label="نام حقوقی" inputProps={{ placeholder: "نام حقوقی", disabled }} />
-						<RHFProText name="brand_name" label="نام برند" inputProps={{ placeholder: "نام برند", disabled }} />
+						<RHFProText
+							name="legal_name"
+							label="نام حقوقی"
+							inputProps={{ placeholder: "نام حقوقی" }}
+						/>
+						<RHFProText
+							name="brand_name"
+							label="نام برند"
+							inputProps={{ placeholder: "نام برند" }}
+						/>
 					</div>
 				</ProCard>
 
 				<ProCard bordered title="آدرس و نقشه" style={{ backgroundColor: token.colorBgMask }}>
 					<div className="grid grid-cols-2 gap-x-4">
-						<RHFProText name="postal_code" label="کد پستی" inputProps={{ placeholder: "کد پستی", disabled }} />
-						<RHFProText name="map_address" label="آدرس روی نقشه" inputProps={{ placeholder: "آدرس روی نقشه", disabled }} />
+						<RHFProText
+							name="postal_code"
+							label="کد پستی"
+							inputProps={{ placeholder: "کد پستی" }}
+						/>
+						<RHFProText
+							name="map_address"
+							label="آدرس روی نقشه"
+							inputProps={{ placeholder: "آدرس روی نقشه" }}
+						/>
 
 						<div className="col-span-2">
-							<RHFProTextArea name="legal_address" label="آدرس حقوقی" textAreaProps={{ disabled }} />
+							<RHFProTextArea
+								name="legal_address"
+								label="آدرس حقوقی"
+							/>
 						</div>
 
 						<div className="col-span-2">
-							<CompanyInfoMapField disabled={disabled} />
+							<CompanyInfoMapField />
 						</div>
 					</div>
 				</ProCard>
 
 				<ProCard bordered title="راه‌های ارتباطی" style={{ backgroundColor: token.colorBgMask }}>
 					<div className="grid grid-cols-2 gap-x-4">
-						<RHFFieldArrayText name="phone" label="تلفن" disabled={disabled} />
-						<RHFFieldArrayText name="mobile" label="موبایل" disabled={disabled} />
-						<RHFFieldArrayText name="email" label="ایمیل" disabled={disabled} />
-						<RHFFieldArrayText name="fax" label="فکس" disabled={disabled} />
-						<RHFProText name="website" label="وبسایت" inputProps={{ placeholder: "وبسایت", disabled }} />
-						<RHFProText name="working_hours" label="ساعات کاری" inputProps={{ placeholder: "ساعات کاری", disabled }} />
+						<RHFFieldArrayText name="phone" label="تلفن" />
+						<RHFFieldArrayText name="mobile" label="موبایل" />
+						<RHFFieldArrayText name="email" label="ایمیل" />
+						<RHFFieldArrayText name="fax" label="فکس" />
+
+						<RHFProText
+							name="website"
+							label="وبسایت"
+							inputProps={{ placeholder: "وبسایت" }}
+						/>
+						<RHFProText
+							name="working_hours"
+							label="ساعات کاری"
+							inputProps={{ placeholder: "ساعات کاری" }}
+						/>
 					</div>
 				</ProCard>
 
 				<ProCard bordered title="شبکه‌های اجتماعی" style={{ backgroundColor: token.colorBgMask }}>
 					<div className="mt-6">
-						<CompanyInfoSocialLinksField disabled={disabled} />
+						<CompanyInfoSocialLinksField />
 					</div>
 				</ProCard>
 
-				<Button type="primary" onClick={handleSubmit(values => onSubmit(values))}>
+				<Button
+					type="primary"
+					loading={isSubmitting}
+					disabled={!isChanged || !isValid}
+					onClick={handleSubmit(values => onSubmit(values))}
+				>
 					ذخیره تغییرات
 				</Button>
 			</FormProvider>

@@ -3,7 +3,7 @@ import { RHFProText, RHFProTextArea } from "#src/shared/ui/rhf-pro";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Form } from "antd";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { shareholderSchema } from "../model/shareholders.schema";
 
@@ -19,10 +19,13 @@ export default function ShareholderForm({ disabled, defaultValues, onSubmit, sub
 	const methods = useForm<ShareholderFormValues>({
 		defaultValues,
 		resolver: zodResolver(shareholderSchema) as any,
-		mode: "onBlur",
+		mode: "onChange",
 	});
 
-	const { handleSubmit } = methods;
+	const { handleSubmit, reset, formState: { isDirty, isSubmitting } } = methods;
+	useEffect(() => {
+		reset(defaultValues);
+	}, [defaultValues, reset]);
 
 	return (
 		<Form layout="vertical">
@@ -57,7 +60,7 @@ export default function ShareholderForm({ disabled, defaultValues, onSubmit, sub
 					<Button
 						type="primary"
 						className="ant-btn ant-btn-primary"
-						disabled={disabled || !!submitting}
+						disabled={disabled || !!submitting || !isDirty || isSubmitting}
 						onClick={handleSubmit(onSubmit)}
 					>
 						{submitting ? "در حال ذخیره..." : submitText}

@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button, Form } from "antd";
 
+import { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { COMPANY_PERSON_ROLE_OPTIONS } from "../model/company-people.constants";
 import { companyPersonSchema } from "../model/company-people.schema";
@@ -22,11 +23,14 @@ export default function CompanyPeopleForm({ disabled, defaultValues, onSubmit, o
 	const methods = useForm<CompanyPersonFormValues>({
 		defaultValues,
 		resolver: (zodResolver(companyPersonSchema as any) as unknown) as Resolver<CompanyPersonFormValues>,
-		mode: "all",
+		mode: "onChange",
 	});
 
-	const { handleSubmit } = methods;
+	const { handleSubmit, reset, formState: { isDirty, isSubmitting } } = methods;
 
+	useEffect(() => {
+		reset(defaultValues);
+	}, [defaultValues, reset]);
 	return (
 		<Form layout="vertical">
 			<FormProvider {...methods}>
@@ -70,7 +74,7 @@ export default function CompanyPeopleForm({ disabled, defaultValues, onSubmit, o
 				</div>
 				<div className="flex justify-end gap-2 mt-4">
 					<Button onClick={onClose}>انصراف</Button>
-					<Button type="primary" onClick={handleSubmit(onSubmit)} loading={!!submitting} disabled={disabled}>
+					<Button type="primary" onClick={handleSubmit(onSubmit)} loading={!!submitting} disabled={disabled || !isDirty || isSubmitting}>
 						{submitText}
 					</Button>
 				</div>
