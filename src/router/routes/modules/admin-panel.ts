@@ -8,6 +8,7 @@ import { lazy } from "react";
 
 const ListUsers = lazy(() => import("#src/pages/user-management/UsersList"));
 const ListRoles = lazy(() => import("#src/pages/user-management/RolesList"));
+const AuditLogs = lazy(() => import("#src/pages/user-management/AuditLogsList"));
 // const EditContractPage = lazy(() => import("#src/pages/user-management/edit"));
 
 const routes: AppRouteRecordRaw[] = [
@@ -45,6 +46,16 @@ const routes: AppRouteRecordRaw[] = [
 				handle: {
 					icon: "TeamOutlined",
 					title: $t("common.menu.role"),
+					accessDomain: "contracts",
+					accessAction: "view",
+				},
+			},
+			{
+				path: "/admin-panel/audit-logs",
+				Component: AuditLogs,
+				handle: {
+					icon: "HistoryOutlined",
+					title: $t("common.menu.auditLogs"),
 					accessDomain: "contracts",
 					accessAction: "view",
 				},
