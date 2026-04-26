@@ -70,7 +70,7 @@ function DeputyCard({ deputy }: { deputy: AdminUserSummaryDeputyDto }) {
 
 	return (
 		<div className="rounded-xl border border-[var(--ant-color-border-secondary)] p-4">
-			<Space direction="vertical" size={12} style={{ width: "100%" }}>
+			<Space direction="vertical" size={12} className="w-full">
 				<div>
 					<Typography.Text strong>{deputy.username}</Typography.Text>
 					<Typography.Text type="secondary">
@@ -84,7 +84,7 @@ function DeputyCard({ deputy }: { deputy: AdminUserSummaryDeputyDto }) {
 
 				<div>
 					<Typography.Text type="secondary">دسترسی‌ها:</Typography.Text>
-					<div style={{ marginTop: 8 }}>
+					<div className="mt-2">
 						<Space size={[4, 4]} wrap>
 							{enabledPermissions.length > 0
 								? enabledPermissions.map(permission => <Tag key={permission}>{permission}</Tag>)
@@ -95,7 +95,7 @@ function DeputyCard({ deputy }: { deputy: AdminUserSummaryDeputyDto }) {
 
 				<div>
 					<Typography.Text type="secondary">کاربران ایجادشده:</Typography.Text>
-					<div style={{ marginTop: 8 }}>
+					<div className="mt-2">
 						<Space size={[4, 4]} wrap>
 							{deputy.created_user_ids.length > 0
 								? deputy.created_user_ids.map(userId => <Tag key={userId}>{userId}</Tag>)
@@ -106,7 +106,7 @@ function DeputyCard({ deputy }: { deputy: AdminUserSummaryDeputyDto }) {
 
 				<div>
 					<Typography.Text type="secondary">نقش‌های تحت مالکیت</Typography.Text>
-					<div style={{ marginTop: 8 }}>
+					<div className="mt-2">
 						<RoleTable roles={deputy.owned_roles} />
 					</div>
 				</div>
@@ -123,7 +123,7 @@ function SummaryContent({
 	summary: AdminUserServiceAdminSummaryDto
 }) {
 	return (
-		<Space direction="vertical" size={16} style={{ width: "100%" }}>
+		<Space direction="vertical" size={16} className="w-full">
 			<Descriptions bordered size="small" column={2}>
 				<Descriptions.Item label="کاربر">{renderUserName(user)}</Descriptions.Item>
 				<Descriptions.Item label="نام کاربری">{user.username}</Descriptions.Item>
@@ -174,7 +174,7 @@ function SummaryContent({
 
 			<div>
 				<Typography.Title level={5}>Deputies</Typography.Title>
-				<Space direction="vertical" size={12} style={{ width: "100%" }}>
+				<Space direction="vertical" size={12} className="w-full">
 					{summary.deputies.length > 0
 						? summary.deputies.map(deputy => (
 							<DeputyCard key={deputy.deputy_user_id} deputy={deputy} />

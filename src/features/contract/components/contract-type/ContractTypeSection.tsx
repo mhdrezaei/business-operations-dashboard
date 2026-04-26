@@ -122,14 +122,9 @@ export function ContractTypeSection({ title, name, topAside }: Props) {
 
 		return (
 			<div
-				style={{
-					display: "flex",
-					flexWrap: "wrap",
-					gap: 12,
-					alignItems: "flex-start",
-				}}
+				className="flex flex-wrap gap-3 items-start"
 			>
-				<div style={{ flex: "1 1 320px", minWidth: 0 }}>
+				<div className="min-w-0 flex-[1_1_320px]">
 					<RHFSelect
 						name={`${name}.type` as any}
 						label="نوع قرارداد"
@@ -138,7 +133,7 @@ export function ContractTypeSection({ title, name, topAside }: Props) {
 					/>
 				</div>
 
-				<div style={{ flex: "1 1 320px", minWidth: 0 }}>
+				<div className="min-w-0 flex-[1_1_320px]">
 					{topAside}
 				</div>
 			</div>
@@ -146,16 +141,16 @@ export function ContractTypeSection({ title, name, topAside }: Props) {
 	}
 
 	return (
-		<ProCard bordered style={{ borderRadius: 6 }} bodyStyle={{ padding: 16 }}>
-			<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-				<div style={{ fontWeight: 700 }}>{title}</div>
+		<ProCard bordered className="rounded-md [&_.ant-pro-card-body]:p-4">
+			<div className="flex justify-between items-center mb-3">
+				<div className="font-bold">{title}</div>
 			</div>
 
 			{renderTopRow()}
 
 			{type === "fixed"
 				? (
-					<div style={{ marginTop: 12 }}>
+					<div className="mt-3">
 						<ProFormGroup>
 							<RHFProNumber
 								name={`${name}.fixedAmount` as any}
@@ -171,7 +166,7 @@ export function ContractTypeSection({ title, name, topAside }: Props) {
 
 			{type === "tier_fixed" || type === "tier_variable"
 				? (
-					<div style={{ marginTop: 12 }}>
+					<div className="mt-3">
 						<ContractTierTable name={`${name}.rows`} />
 					</div>
 				)
@@ -179,23 +174,17 @@ export function ContractTypeSection({ title, name, topAside }: Props) {
 
 			{type === "tier_blended"
 				? (
-					<div style={{ marginTop: 12 }}>
-						<div style={{ fontWeight: 600, marginBottom: 12 }}>بخش‌های پلکانی تلفیقی</div>
+					<div className="mt-3">
+						<div className="font-semibold mb-3">بخش‌های پلکانی تلفیقی</div>
 
 						{sectionsFa.fields.map((sectionField, sectionIndex) => (
 							<ProCard
 								key={sectionField.id}
 								bordered
-								style={{ borderRadius: 12, marginBottom: 12, width: "100%" }}
-								bodyStyle={{ padding: 12 }}
+								className="rounded-xl mb-3 w-full [&_.ant-pro-card-body]:p-3"
 								title={(
 									<div
-										style={{
-											display: "flex",
-											justifyContent: "space-between",
-											alignItems: "center",
-											width: "100%",
-										}}
+										className="flex justify-between items-center w-full"
 									>
 										<span>{`بخش ${sectionIndex + 1}`}</span>
 
@@ -219,7 +208,7 @@ export function ContractTypeSection({ title, name, topAside }: Props) {
 									label=""
 									options={BLENDED_MODE_OPTIONS}
 									selectProps={{ placeholder: "انتخاب کنید", allowClear: true }}
-									formItemProps={{ style: { marginBottom: 12 } }}
+									formItemProps={{ className: "mb-3" }}
 								/>
 
 								<ContractTierTable name={`${name}.sections.${sectionIndex}.rows`} />

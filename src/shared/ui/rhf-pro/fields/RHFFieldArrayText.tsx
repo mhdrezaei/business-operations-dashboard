@@ -17,7 +17,7 @@ export default function RHFFieldArrayText({ name, label, disabled }: Props) {
 	return (
 		<Form.Item label={label} validateStatus={error ? "error" : ""} help={error?.message}>
 			{fields.map((f, idx) => (
-				<div key={f.id} style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+				<div key={f.id} className="flex gap-2 mb-2">
 					<Input disabled={disabled} {...register(`${name}.${idx}` as const)} />
 					<Button danger type="text" disabled={disabled} onClick={() => remove(idx)}>
 						حذف

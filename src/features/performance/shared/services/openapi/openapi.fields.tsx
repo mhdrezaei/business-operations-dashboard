@@ -22,8 +22,8 @@ const OPENAPI_PACKAGE_LABELS = [
 function FieldGrid({ children }: { children: React.ReactNode }) {
 	return (
 		<div
-			className="contract-form-aligned-grid contract-form-aligned-grid--two"
-			style={{ gap: 12 }}
+			className="contract-form-aligned-grid contract-form-aligned-grid--two gap-3"
+
 		>
 			{children}
 		</div>
@@ -46,8 +46,8 @@ export function OpenApiPerformanceFields() {
 
 	if (!contractModel) {
 		return (
-			<ProCard bordered headerBordered style={{ borderRadius: 8 }}>
-				<div style={{ opacity: 0.8 }}>
+			<ProCard bordered headerBordered className="rounded-lg">
+				<div className="opacity-80">
 					{t("performance.messages.noActiveContractForMonth")}
 				</div>
 			</ProCard>
@@ -58,9 +58,9 @@ export function OpenApiPerformanceFields() {
 		<ProCard
 			bordered
 			headerBordered
-			style={{ borderRadius: 8 }}
+			className="rounded-lg"
 			title={(
-				<div style={{ display: "flex", gap: 8 }}>
+				<div className="flex gap-2">
 					<span>{t("performance.labels.openapiContractModel")}</span>
 					<strong>{modelLabel}</strong>
 				</div>

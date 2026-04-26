@@ -22,7 +22,7 @@ export function FixedEndSection() {
 				<ContractAlignedField label="توضیحات" labelId="contract-form-label-description" align="start">
 					<RHFProTextArea<ContractFormValues, "description">
 						name="description"
-						formItemProps={{ style: { marginBottom: 0 } }}
+						formItemProps={{ className: "mb-0" }}
 						textAreaProps={{
 							"rows": 4,
 							"placeholder": "توضیحات قرارداد را وارد کنید...",
@@ -37,7 +37,7 @@ export function FixedEndSection() {
 					<RHFProUploadButton<ContractFormValues, "documents">
 						name="documents"
 						buttonText="آپلود مدارک (PDF)"
-						itemProps={{ style: { marginBottom: 0 } }}
+						itemProps={{ className: "mb-0" }}
 						uploadProps={uploadProps}
 					/>
 				</ContractAlignedField>

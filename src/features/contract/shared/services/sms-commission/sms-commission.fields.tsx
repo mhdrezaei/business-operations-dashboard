@@ -244,19 +244,15 @@ export function SmsCommissionFields() {
 
 		return (
 			<div
-				style={{
-					display: "grid",
-					gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-					gap: 12,
-					...alignedLabelStyle,
-				}}
+				className="grid grid-cols-2 gap-3"
+				style={alignedLabelStyle}
 			>
 				<ContractAlignedField label="کارمزد دریافت اولیه">
 					<RHFProNumber<ContractFormValues, any>
 						name={nameOf("initialCommission") as any}
 						label=""
 						inputProps={{ placeholder: "مثلاً 110" }}
-						formItemProps={{ style: { marginBottom: 0 } }}
+						formItemProps={{ className: "mb-0" }}
 					/>
 				</ContractAlignedField>
 
@@ -265,7 +261,7 @@ export function SmsCommissionFields() {
 						name={nameOf("finalCommission") as any}
 						label=""
 						inputProps={{ placeholder: "مثلاً 150" }}
-						formItemProps={{ style: { marginBottom: 0 } }}
+						formItemProps={{ className: "mb-0" }}
 					/>
 				</ContractAlignedField>
 
@@ -275,7 +271,7 @@ export function SmsCommissionFields() {
 						label=""
 						inputProps={{ placeholder: "مثلاً 20" }}
 						enableGrouping={false}
-						formItemProps={{ style: { marginBottom: 0 } }}
+						formItemProps={{ className: "mb-0" }}
 					/>
 				</ContractAlignedField>
 
@@ -285,7 +281,7 @@ export function SmsCommissionFields() {
 						label=""
 						inputProps={{ placeholder: "مثلاً 80" }}
 						enableGrouping={false}
-						formItemProps={{ style: { marginBottom: 0 } }}
+						formItemProps={{ className: "mb-0" }}
 					/>
 				</ContractAlignedField>
 
@@ -295,7 +291,7 @@ export function SmsCommissionFields() {
 						label=""
 						inputProps={{ placeholder: "مثلاً 20" }}
 						enableGrouping={false}
-						formItemProps={{ style: { marginBottom: 0 } }}
+						formItemProps={{ className: "mb-0" }}
 					/>
 				</ContractAlignedField>
 
@@ -305,18 +301,18 @@ export function SmsCommissionFields() {
 						label=""
 						inputProps={{ placeholder: "مثلاً 30" }}
 						enableGrouping={false}
-						formItemProps={{ style: { marginBottom: 0 } }}
+						formItemProps={{ className: "mb-0" }}
 					/>
 				</ContractAlignedField>
 
-				<div style={{ gridColumn: "1 / -1" }}>
+				<div className="col-span-full">
 					<ContractAlignedField label="درصد سهم نماینده فروش">
 						<RHFProNumber<ContractFormValues, any>
 							name={nameOf("salesAgentSharePercent") as any}
 							label=""
 							inputProps={{ placeholder: "مثلاً 50" }}
 							enableGrouping={false}
-							formItemProps={{ style: { marginBottom: 0 } }}
+							formItemProps={{ className: "mb-0" }}
 						/>
 					</ContractAlignedField>
 				</div>
@@ -326,13 +322,13 @@ export function SmsCommissionFields() {
 
 	return (
 		<>
-			<ProCard bordered headerBordered style={{ borderRadius: 6 }} bodyStyle={{ padding: 16 }}>
+			<ProCard bordered headerBordered className="rounded-md [&_.ant-pro-card-body]:p-4">
 				{renderCommissionGrid()}
 			</ProCard>
 
 			{showAddenda
 				? (
-					<div style={{ marginTop: 12 }}>
+					<div className="mt-3">
 						<ContractAddendaSection<ContractFormValues>
 							title="الحاقیه‌های قرارداد (اختیاری)"
 							name={sf("addenda") as ArrayPath<ContractFormValues>}

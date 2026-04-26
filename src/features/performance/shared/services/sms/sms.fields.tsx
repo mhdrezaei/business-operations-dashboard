@@ -16,7 +16,7 @@ export function SmsPerformanceFields() {
 	const alignedLabelStyle = useContractAlignedLabelWidth(SMS_LABELS);
 
 	return (
-		<ProCard bordered headerBordered style={{ borderRadius: 8 }}>
+		<ProCard bordered headerBordered className="rounded-lg">
 			<div
 				className="contract-form-aligned-grid contract-form-aligned-grid--two"
 				style={{ gap: 12, ...alignedLabelStyle }}

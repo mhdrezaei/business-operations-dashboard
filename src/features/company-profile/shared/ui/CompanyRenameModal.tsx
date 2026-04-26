@@ -136,15 +136,12 @@ export default function CompanyRenameModal({
 			<Form layout="vertical">
 				<FormProvider {...methods}>
 					{/* نمایش شرکت انتخاب شده */}
-					<div style={{ marginBottom: 12, opacity: 0.85 }}>
-						<div style={{ marginBottom: 6 }}>شرکت انتخاب‌شده</div>
+					<div className="mb-3 opacity-85">
+						<div className="mb-1.5">شرکت انتخاب‌شده</div>
 						<div
-							style={{
-								border: "1px solid rgba(255,255,255,0.08)",
-								borderRadius: 10,
-								padding: "10px 12px",
-								opacity: isDisabled ? 0.7 : 1,
-							}}
+							className={isDisabled
+								? "rounded-[10px] border border-[rgba(255,255,255,0.08)] px-3 py-2.5 opacity-70"
+								: "rounded-[10px] border border-[rgba(255,255,255,0.08)] px-3 py-2.5"}
 						>
 							{companyName ?? "-"}
 						</div>
@@ -156,8 +153,8 @@ export default function CompanyRenameModal({
 						inputProps={{ placeholder: "نام شرکت", disabled: isDisabled || saving || deleting }}
 					/>
 
-					<div style={{ display: "flex", justifyContent: "space-between", marginTop: 16 }}>
-						<div style={{ display: "flex", gap: 12 }}>
+					<div className="flex justify-between mt-4">
+						<div className="flex gap-3">
 							<Button
 								type="primary"
 								loading={saving}

@@ -101,17 +101,10 @@ function SegmentedNumericInput({
 	};
 
 	return (
-		<div style={{ direction: "ltr", width: "100%", display: "flex", justifyContent: "flex-start" }}>
+		<div className="[direction:ltr] w-full flex justify-start">
 			<div
 				dir="ltr"
-				style={{
-					width: "100%",
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "flex-start",
-					flexDirection: "row",
-					gap: 8,
-				}}
+				className="w-full flex items-center justify-start flex-row gap-2"
 			>
 				{prefix}
 				{segments.map((segmentLength, index) => (
@@ -127,13 +120,9 @@ function SegmentedNumericInput({
 							maxLength={segmentLength}
 							placeholder={"•".repeat(segmentLength)}
 							dir="ltr"
-							style={{
-								width: segmentLength === 2 ? 56 : 84,
-								textAlign: "center",
-								direction: "ltr",
-								fontWeight: 600,
-								fontVariantNumeric: "tabular-nums",
-							}}
+							className={segmentLength === 2
+								? "w-14 text-center font-semibold tabular-nums [direction:ltr]"
+								: "w-[84px] text-center font-semibold tabular-nums [direction:ltr]"}
 							onChange={(event) => {
 								distributeFromIndex(index, event.target.value);
 							}}
@@ -159,7 +148,7 @@ function SegmentedNumericInput({
 							onBlur={onBlur}
 						/>
 						{showSeparators && index < segments.length - 1 && (
-							<span style={{ color: "var(--ant-colorTextDescription)", userSelect: "none" }}>-</span>
+							<span className="text-colorTextDescription select-none">-</span>
 						)}
 					</React.Fragment>
 				))}
@@ -233,7 +222,7 @@ export default function BankAccountForm({ disabled, defaultValues, onSubmit }: P
 									placeholder="نام بانک"
 									disabled
 									readOnly
-									style={{ textAlign: "right" }}
+									className="text-right"
 								/>
 							</Form.Item>
 						)}
@@ -250,7 +239,7 @@ export default function BankAccountForm({ disabled, defaultValues, onSubmit }: P
 						inputProps={{ placeholder: "شماره حساب", disabled }}
 					/>
 
-					<div style={{ gridColumn: "1 / -1" }}>
+					<div className="col-span-full">
 						<Controller
 							name="iban"
 							control={control}
@@ -272,13 +261,7 @@ export default function BankAccountForm({ disabled, defaultValues, onSubmit }: P
 												value="IR"
 												readOnly
 												disabled
-												style={{
-													width: 56,
-													direction: "ltr",
-													textAlign: "center",
-													fontWeight: 600,
-													fontVariantNumeric: "tabular-nums",
-												}}
+												className="w-14 [direction:ltr] text-center font-semibold tabular-nums"
 											/>
 										)}
 									/>
@@ -288,7 +271,7 @@ export default function BankAccountForm({ disabled, defaultValues, onSubmit }: P
 					</div>
 				</div>
 
-				<div style={{ display: "flex", justifyContent: "space-between", marginTop: 16 }}>
+				<div className="flex justify-between mt-4">
 					<Button onClick={() => reset(defaultValues)} disabled={disabled || !isDirty || isSubmitting}>
 						پاکسازی فرم
 					</Button>

@@ -19,18 +19,11 @@ export function ActionSection({
 }: Props) {
 	return (
 		<div
-			style={{
-				width: "100%",
-				display: "flex",
-				justifyContent: "space-between",
-				alignItems: "center",
-				gap: 12,
-				flexWrap: "wrap",
-			}}
+			className="w-full flex justify-between items-center gap-3 flex-wrap"
 		>
 			<Button onClick={onReset}>پاکسازی فرم</Button>
 
-			<div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+			<div className="flex gap-2 flex-wrap">
 				<Button loading={!!submitting} onClick={onSubmit}>
 					{submitText}
 				</Button>

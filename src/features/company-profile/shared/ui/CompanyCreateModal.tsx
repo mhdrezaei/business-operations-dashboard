@@ -126,7 +126,7 @@ export default function CompanyCreateModal({
 						inputProps={{ placeholder: "نام شرکت", disabled: !!disabled || saving }}
 					/>
 
-					<div style={{ display: "flex", justifyContent: "space-between", marginTop: 16 }}>
+					<div className="flex justify-between mt-4">
 						<Button
 							type="primary"
 							loading={saving}

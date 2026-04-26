@@ -9,7 +9,7 @@ import {
 
 import { ProCard } from "@ant-design/pro-components";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Form, theme } from "antd";
+import { Button, Form } from "antd";
 import React, { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 
@@ -23,9 +23,6 @@ interface Props {
 }
 
 export default function LegalProfileForm({ defaultValues, onSubmit }: Props) {
-	const { useToken } = theme;
-	const { token } = useToken();
-
 	const methods = useForm<LegalProfileFormValues>({
 		defaultValues,
 		resolver: zodResolver(legalProfileSchema as any) as unknown as Resolver<LegalProfileFormValues>,
@@ -46,7 +43,7 @@ export default function LegalProfileForm({ defaultValues, onSubmit }: Props) {
 	return (
 		<Form layout="vertical" className="space-y-4">
 			<FormProvider {...methods}>
-				<ProCard bordered title="اطلاعات ثبتی و حقوقی" style={{ backgroundColor: token.colorBgMask }}>
+				<ProCard bordered title="اطلاعات ثبتی و حقوقی" className="bg-bgMask">
 					<div className="grid grid-cols-2 gap-x-4">
 						<RHFProText name="national_id" label="شناسه ملی" inputProps={{ placeholder: "شناسه ملی" }} />
 						<RHFProText name="tax_national_id" label="شناسه مالیاتی" inputProps={{ placeholder: "شناسه مالیاتی" }} />

@@ -653,7 +653,7 @@ export function FixedStartSection() {
 							{usesMonthlyStatus && year != null && month != null && monthlyStatus.data
 								? (
 									<Col span={24}>
-										<div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+										<div className="flex gap-2 flex-wrap">
 											{monthlyStatus.data.used_addendum
 												? <Tag color="gold">{t("performance.badges.usedAddendum")}</Tag>
 												: null}

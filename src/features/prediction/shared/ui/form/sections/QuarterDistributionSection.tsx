@@ -85,7 +85,7 @@ export function QuarterDistributionSection() {
 		<ProCard
 			bordered
 			headerBordered
-			style={{ borderRadius: 16 }}
+			className="rounded-2xl"
 			title={t("prediction.sections.quarters")}
 		>
 			<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -123,7 +123,7 @@ export function QuarterDistributionSection() {
 				? (
 					<Typography.Text
 						type="danger"
-						style={{ display: "block", marginTop: 8 }}
+						className="block mt-2"
 					>
 						{quarterError}
 					</Typography.Text>

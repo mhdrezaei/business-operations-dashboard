@@ -459,7 +459,7 @@ export function FixedStartSection() {
 
 	const canQueryDateGaps = !!serviceId && !!companyId;
 	const isDateOptionsLoading = canQueryDateGaps && (contractGaps.isLoading || contractGaps.isFetching);
-	const compactFormItemStyle = { style: { marginBottom: 0 } };
+	const compactFormItemStyle = { className: "mb-0" };
 
 	return (
 		<ProCard>

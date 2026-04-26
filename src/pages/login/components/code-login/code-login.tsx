@@ -115,8 +115,8 @@ export function CodeLogin() {
 
 	return (
 		<>
-			<Space direction="vertical" style={{ width: "100%" }} size={4}>
-				<Title level={3} style={{ marginBottom: 0 }}>
+			<Space direction="vertical" className="w-full" size={4}>
+				<Title level={3} className="mb-0">
 					{t("authority.codeLogin")}
 				</Title>
 
@@ -148,7 +148,7 @@ export function CodeLogin() {
 						return sendCode();
 					return verify();
 				}}
-				style={{ marginTop: 16 }}
+				className="mt-4"
 			>
 				{step === "mobile" && (
 					<>
@@ -174,7 +174,7 @@ export function CodeLogin() {
 								inputMode="numeric"
 								autoComplete="tel"
 								placeholder="09xxxxxxxxx"
-								style={{ direction: "ltr" }}
+								className="[direction:ltr]"
 								size="large"
 							/>
 						</Form.Item>
@@ -212,7 +212,7 @@ export function CodeLogin() {
 							<OtpInput length={6} autoFocus disabled={verifying} />
 						</Form.Item>
 
-						<Space direction="vertical" style={{ width: "100%" }} size={8}>
+						<Space direction="vertical" className="w-full" size={8}>
 							<Button
 								block
 								type="primary"
@@ -240,7 +240,7 @@ export function CodeLogin() {
 					</>
 				)}
 
-				<div className="text-sm text-center" style={{ marginTop: 12 }}>
+				<div className="text-sm text-center mt-3">
 					<BasicButton
 						type="link"
 						icon={<LeftOutlined />}

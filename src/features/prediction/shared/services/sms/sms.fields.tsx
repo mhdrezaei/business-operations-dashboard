@@ -105,9 +105,8 @@ function SmsShareEditor({
 	return (
 		<ProCard
 			bordered
-			style={{ borderRadius: 12 }}
+			className="rounded-xl [&_.ant-pro-card-body]:flex [&_.ant-pro-card-body]:flex-col [&_.ant-pro-card-body]:gap-4"
 			title={title}
-			bodyStyle={{ display: "flex", flexDirection: "column", gap: 16 }}
 		>
 			<Segmented
 				block
@@ -121,17 +120,17 @@ function SmsShareEditor({
 
 			{shareState.mode === "auto"
 				? (
-					<Typography.Paragraph style={{ marginBottom: 0, opacity: 0.78 }}>
+					<Typography.Paragraph className="mb-0 opacity-[0.78]">
 						{t("prediction.messages.autoShareDescription")}
 					</Typography.Paragraph>
 				)
 				: (
-					<div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+					<div className="flex flex-col gap-4">
 						<Form.Item
 							label={t("prediction.labels.companySelect")}
 							validateStatus={shareError ? "error" : undefined}
 							help={shareError}
-							style={{ marginBottom: 0 }}
+							className="mb-0"
 						>
 							<Select<number[]>
 								mode="multiple"
@@ -147,12 +146,7 @@ function SmsShareEditor({
 						{selectedCompanies.map(company => (
 							<div
 								key={company.value}
-								style={{
-									display: "grid",
-									gridTemplateColumns: "auto minmax(0, 1fr)",
-									gap: 12,
-									alignItems: "end",
-								}}
+								className="grid grid-cols-[auto_minmax(0,1fr)] gap-3 items-end"
 							>
 								<Button
 									aria-label={t("prediction.actions.removeCompanyShare")}
@@ -200,13 +194,13 @@ export function SmsPredictionFields() {
 	);
 
 	return (
-		<div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+		<div className="flex flex-col gap-4">
 			<QuarterDistributionSection />
 
 			<ProCard
 				bordered
 				headerBordered
-				style={{ borderRadius: 16 }}
+				className="rounded-2xl"
 				title={t("prediction.operations.sms")}
 			>
 				<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -251,11 +245,11 @@ export function SmsPredictionFields() {
 			<ProCard
 				bordered
 				headerBordered
-				style={{ borderRadius: 16 }}
+				className="rounded-2xl"
 				title={t("prediction.sections.companyShares")}
 			>
-				<div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-					<Typography.Paragraph style={{ marginBottom: 0, opacity: 0.8 }}>
+				<div className="flex flex-col gap-4">
+					<Typography.Paragraph className="mb-0 opacity-80">
 						{t("prediction.messages.companySharesDescription")}
 					</Typography.Paragraph>
 
@@ -279,9 +273,8 @@ export function SmsPredictionFields() {
 
 					<ProCard
 						bordered
-						style={{ borderRadius: 12 }}
+						className="rounded-xl [&_.ant-pro-card-body]:flex [&_.ant-pro-card-body]:flex-col [&_.ant-pro-card-body]:gap-4"
 						title={t("prediction.sections.channels", { defaultValue: "کانال‌ها" })}
-						bodyStyle={{ display: "flex", flexDirection: "column", gap: 16 }}
 					>
 						<div className="grid gap-4 xl:grid-cols-3">
 							{SMS_CHANNEL_OPTIONS.map(channel => (

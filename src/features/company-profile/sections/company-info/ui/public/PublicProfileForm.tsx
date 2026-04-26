@@ -8,7 +8,7 @@ import {
 import RHFFieldArrayText from "#src/shared/ui/rhf-pro/fields/RHFFieldArrayText.js";
 import { ProCard } from "@ant-design/pro-components";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Form, theme } from "antd";
+import { Button, Form } from "antd";
 import React, { useEffect } from "react";
 
 import { FormProvider, useForm } from "react-hook-form";
@@ -24,9 +24,6 @@ interface Props {
 }
 
 export default function PublicProfileForm({ defaultValues, onSubmit }: Props) {
-	const { useToken } = theme;
-	const { token } = useToken();
-
 	const methods = useForm<PublicProfileFormValues>({
 		defaultValues,
 		resolver: zodResolver(publicProfileSchema as any) as unknown as Resolver<PublicProfileFormValues>,
@@ -48,7 +45,7 @@ export default function PublicProfileForm({ defaultValues, onSubmit }: Props) {
 	return (
 		<Form layout="vertical" className="space-y-4">
 			<FormProvider {...methods}>
-				<ProCard bordered title="اطلاعات عمومی شرکت" style={{ backgroundColor: token.colorBgMask }}>
+				<ProCard bordered title="اطلاعات عمومی شرکت" className="bg-bgMask">
 					<div className="grid grid-cols-2 gap-x-4">
 						<RHFProText
 							name="legal_name"
@@ -63,7 +60,7 @@ export default function PublicProfileForm({ defaultValues, onSubmit }: Props) {
 					</div>
 				</ProCard>
 
-				<ProCard bordered title="آدرس و نقشه" style={{ backgroundColor: token.colorBgMask }}>
+				<ProCard bordered title="آدرس و نقشه" className="bg-bgMask">
 					<div className="grid grid-cols-2 gap-x-4">
 						<RHFProText
 							name="postal_code"
@@ -89,7 +86,7 @@ export default function PublicProfileForm({ defaultValues, onSubmit }: Props) {
 					</div>
 				</ProCard>
 
-				<ProCard bordered title="راه‌های ارتباطی" style={{ backgroundColor: token.colorBgMask }}>
+				<ProCard bordered title="راه‌های ارتباطی" className="bg-bgMask">
 					<div className="grid grid-cols-2 gap-x-4">
 						<RHFFieldArrayText name="phone" label="تلفن" />
 						<RHFFieldArrayText name="mobile" label="موبایل" />
@@ -109,7 +106,7 @@ export default function PublicProfileForm({ defaultValues, onSubmit }: Props) {
 					</div>
 				</ProCard>
 
-				<ProCard bordered title="شبکه‌های اجتماعی" style={{ backgroundColor: token.colorBgMask }}>
+				<ProCard bordered title="شبکه‌های اجتماعی" className="bg-bgMask">
 					<div className="mt-6">
 						<CompanyInfoSocialLinksField />
 					</div>

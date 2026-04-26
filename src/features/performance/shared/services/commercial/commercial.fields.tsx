@@ -28,7 +28,7 @@ function UploadCard({
 			name={name as any}
 			control={control}
 			render={({ field, fieldState, formState }) => (
-				<ProCard bordered headerBordered title={title} style={{ borderRadius: 8 }}>
+				<ProCard bordered headerBordered title={title} className="rounded-lg">
 					<Form.Item
 						help={(formState.isSubmitted || fieldState.isTouched)
 							? fieldState.error?.message
@@ -36,15 +36,15 @@ function UploadCard({
 						validateStatus={(formState.isSubmitted || fieldState.isTouched) && fieldState.error?.message
 							? "error"
 							: undefined}
-						style={{ marginBottom: 0 }}
+						className="mb-0"
 					>
 						<Upload.Dragger
 							{...uploadProps}
 							fileList={field.value ?? []}
 							onChange={info => field.onChange(info.fileList.slice(-1))}
 						>
-							<p style={{ margin: 0, fontSize: 18 }}>{t("performance.labels.selectExcelFile")}</p>
-							<p style={{ margin: 0, marginTop: 8 }}>{t("performance.labels.allowedFormatsXls")}</p>
+							<p className="m-0 text-lg">{t("performance.labels.selectExcelFile")}</p>
+							<p className="m-0 mt-2">{t("performance.labels.allowedFormatsXls")}</p>
 						</Upload.Dragger>
 					</Form.Item>
 				</ProCard>
@@ -60,19 +60,15 @@ export function CommercialPerformanceFields() {
 		<ProCard
 			bordered
 			headerBordered
-			style={{ borderRadius: 8 }}
+			className="rounded-lg"
 			title={t("performance.commercial.title")}
 		>
-			<div style={{ marginBottom: 12, opacity: 0.8 }}>
+			<div className="mb-3 opacity-80">
 				{t("performance.commercial.uploadOnlyDescription")}
 			</div>
 
 			<div
-				style={{
-					display: "grid",
-					gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-					gap: 12,
-				}}
+				className="grid grid-cols-[repeat(3,minmax(0,1fr))] gap-3"
 			>
 				<UploadCard title={t("performance.commercial.servicesFile")} name={sf("servicesFile")} />
 				<UploadCard title={t("performance.commercial.provinceCodeFile")} name={sf("provinceCodeFile")} />

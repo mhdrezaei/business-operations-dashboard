@@ -10,7 +10,7 @@ export default function BankAccountsPanel() {
 	if (!serviceId || !companyId) {
 		return (
 			<ProCard>
-				<div style={{ opacity: 0.8 }}>ابتدا سرویس و سپس شرکت را انتخاب کنید.</div>
+				<div className="opacity-80">ابتدا سرویس و سپس شرکت را انتخاب کنید.</div>
 			</ProCard>
 		);
 	}

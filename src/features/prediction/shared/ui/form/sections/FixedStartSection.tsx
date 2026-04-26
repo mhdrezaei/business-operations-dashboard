@@ -183,11 +183,11 @@ export function FixedStartSection({
 	}, [existingYearRecords]);
 
 	return (
-		<div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+		<div className="flex flex-col gap-4">
 			<ProCard
 				bordered
 				headerBordered
-				style={{ borderRadius: 16 }}
+				className="rounded-2xl"
 				title={t(titleKey)}
 			>
 				<div className="grid gap-3 md:grid-cols-2">

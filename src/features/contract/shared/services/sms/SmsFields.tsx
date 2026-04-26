@@ -42,7 +42,7 @@ export function SmsFields() {
 
 	return (
 		<>
-			<ProCard bordered headerBordered style={{ borderRadius: 6, marginBottom: 12 }} bodyStyle={{ padding: 16 }}>
+			<ProCard bordered headerBordered className="rounded-md mb-3 [&_.ant-pro-card-body]:p-4">
 				<RHFProCheckbox<ContractFormValues, any>
 					name={sf("isOfficial") as any}
 					label=""
@@ -51,7 +51,7 @@ export function SmsFields() {
 				/>
 			</ProCard>
 
-			<ProCard bordered headerBordered style={{ borderRadius: 6 }} title="درآمد اپراتورها" bodyStyle={{ padding: 16 }}>
+			<ProCard bordered headerBordered className="rounded-md [&_.ant-pro-card-body]:p-4" title="درآمد اپراتورها">
 				<div className="sms-operator-grid">
 					<ContractTypeSection title="ایرانسل - فارسی" name={sf("operatorRevenue.irancellFa")} />
 					<ContractTypeSection title="ایرانسل - انگلیسی" name={sf("operatorRevenue.irancellEn")} />
@@ -65,10 +65,10 @@ export function SmsFields() {
 			{isPartners
 				? (
 					<>
-						<ProCard bordered headerBordered style={{ borderRadius: 6 }} title="درآمد دولت" bodyStyle={{ padding: 16 }}>
+						<ProCard bordered headerBordered className="rounded-md [&_.ant-pro-card-body]:p-4" title="درآمد دولت">
 							<ContractTypeSection title="درآمد دولت" name={sf("governmentRevenue")} />
 						</ProCard>
-						<div style={{ marginTop: 12 }}>
+						<div className="mt-3">
 							<ContractTypeSection
 								title="سود"
 								name={sf("profit.pricing")}
@@ -81,7 +81,7 @@ export function SmsFields() {
 
 			{isGovOps
 				? (
-					<ProCard bordered headerBordered style={{ borderRadius: 6, marginTop: 12 }} title="نرخ دولت" bodyStyle={{ padding: 16 }}>
+					<ProCard bordered headerBordered className="rounded-md mt-3 [&_.ant-pro-card-body]:p-4" title="نرخ دولت">
 						<ContractTypeSection title="نرخ دولت" name={sf("governmentRate")} />
 					</ProCard>
 				)
@@ -89,7 +89,7 @@ export function SmsFields() {
 
 			{showAddenda
 				? (
-					<div style={{ marginTop: 12 }}>
+					<div className="mt-3">
 						<ContractAddendaSection<ContractFormValues>
 							title="الحاقیه‌های قرارداد (اختیاری)"
 							name={sf("addenda") as ArrayPath<ContractFormValues>}
@@ -97,7 +97,7 @@ export function SmsFields() {
 							contractTypeFieldKey="contractPricing"
 							renderAddendumFields={base => (
 								<>
-									<ProCard bordered headerBordered style={{ borderRadius: 6 }} title="درآمد اپراتورها" bodyStyle={{ padding: 16 }}>
+									<ProCard bordered headerBordered className="rounded-md [&_.ant-pro-card-body]:p-4" title="درآمد اپراتورها">
 										<div className="sms-operator-grid">
 											<ContractTypeSection title="ایرانسل - فارسی" name={`${base}.operatorRevenue.irancellFa` as any} />
 											<ContractTypeSection title="ایرانسل - انگلیسی" name={`${base}.operatorRevenue.irancellEn` as any} />
@@ -111,10 +111,10 @@ export function SmsFields() {
 									{isPartners
 										? (
 											<>
-												<ProCard bordered headerBordered style={{ borderRadius: 6, marginTop: 12 }} title="درآمد دولت" bodyStyle={{ padding: 16 }}>
+												<ProCard bordered headerBordered className="rounded-md mt-3 [&_.ant-pro-card-body]:p-4" title="درآمد دولت">
 													<ContractTypeSection title="درآمد دولت" name={`${base}.governmentRevenue` as any} />
 												</ProCard>
-												<div style={{ marginTop: 12 }}>
+												<div className="mt-3">
 													<ContractTypeSection
 														title="سود"
 														name={`${base}.profit.pricing` as any}
@@ -127,7 +127,7 @@ export function SmsFields() {
 
 									{isGovOps
 										? (
-											<ProCard bordered headerBordered style={{ borderRadius: 6, marginTop: 12 }} title="نرخ دولت" bodyStyle={{ padding: 16 }}>
+											<ProCard bordered headerBordered className="rounded-md mt-3 [&_.ant-pro-card-body]:p-4" title="نرخ دولت">
 												<ContractTypeSection title="نرخ دولت" name={`${base}.governmentRate` as any} />
 											</ProCard>
 										)

@@ -37,7 +37,7 @@ export default function CompanyProfileAccordionPanel({
 	}
 
 	if (!items.length) {
-		return <div style={{ opacity: 0.8 }}>هیچ کارت اطلاعات شرکتی مجازی فعال نیست.</div>;
+		return <div className="opacity-80">هیچ کارت اطلاعات شرکتی مجازی فعال نیست.</div>;
 	}
 
 	return (

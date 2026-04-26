@@ -83,7 +83,7 @@ export function Preferences({ ...restProps }: ButtonProps) {
 					}}
 					extra={(
 						<Badge
-							style={{ width: 8, height: 8 }}
+							className="w-2 h-2"
 							dot={!isDefault}
 							color="blue"
 							offset={[-5, 5]}

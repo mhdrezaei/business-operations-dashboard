@@ -5,7 +5,7 @@ import { RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { ProCard } from "@ant-design/pro-components";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Form, theme } from "antd";
+import { Button, Form } from "antd";
 import React, { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 
@@ -19,9 +19,6 @@ interface Props {
 }
 
 export default function FinanceProfileForm({ defaultValues, onSubmit }: Props) {
-	const { useToken } = theme;
-	const { token } = useToken();
-
 	const methods = useForm<FinanceProfileFormValues>({
 		defaultValues,
 		resolver: zodResolver(financeProfileSchema as any) as unknown as Resolver<FinanceProfileFormValues>,
@@ -41,7 +38,7 @@ export default function FinanceProfileForm({ defaultValues, onSubmit }: Props) {
 	return (
 		<Form layout="vertical" className="space-y-4">
 			<FormProvider {...methods}>
-				<ProCard bordered title="اطلاعات مالی" style={{ backgroundColor: token.colorBgMask }}>
+				<ProCard bordered title="اطلاعات مالی" className="bg-bgMask">
 					<div className="grid grid-cols-2 gap-x-4">
 						<RHFProText name="economic_code" label="کد اقتصادی" inputProps={{ placeholder: "کد اقتصادی" }} />
 						<RHFProText name="tax_file_number" label="شماره پرونده مالیاتی" inputProps={{ placeholder: "شماره پرونده مالیاتی" }} />

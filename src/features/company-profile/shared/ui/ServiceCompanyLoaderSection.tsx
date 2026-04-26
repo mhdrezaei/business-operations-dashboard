@@ -151,7 +151,7 @@ export function ServiceCompanyLoaderSection() {
 					</Col>
 				</Row>
 
-				<div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 12 }}>
+				<div className="flex justify-end gap-3 mt-3">
 					<Button
 						type="default"
 						disabled={!serviceId || !canCreateCompany}
@@ -171,7 +171,7 @@ export function ServiceCompanyLoaderSection() {
 
 				{companyId
 					? (
-						<div style={{ marginTop: 8, opacity: 0.8 }}>
+						<div className="mt-2 opacity-80">
 							{profiles.isLoading ? "در حال بارگذاری پروفایل شرکت..." : null}
 						</div>
 					)

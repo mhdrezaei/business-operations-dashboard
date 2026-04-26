@@ -61,7 +61,7 @@ export default function CompanyProfileAccordion() {
 	}
 
 	if (!items.length) {
-		return <div style={{ opacity: 0.8 }}>هیچ کارت مجازی برای این کاربر فعال نیست.</div>;
+		return <div className="opacity-80">هیچ کارت مجازی برای این کاربر فعال نیست.</div>;
 	}
 
 	return (

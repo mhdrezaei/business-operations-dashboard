@@ -49,9 +49,9 @@ export function AdminRoleDetailsModal({ open, role, serviceNameById, onClose }: 
 			{!role
 				? <Empty description="نقشی برای نمایش انتخاب نشده است." />
 				: (
-					<Space direction="vertical" size={16} style={{ width: "100%" }}>
+					<Space direction="vertical" size={16} className="w-full">
 						<div>
-							<Typography.Title level={4} style={{ marginBottom: 8 }}>
+							<Typography.Title level={4} className="mb-2">
 								{role.name}
 							</Typography.Title>
 							<Typography.Text type="secondary">

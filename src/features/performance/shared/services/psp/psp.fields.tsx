@@ -9,13 +9,9 @@ export function PspPerformanceFields() {
 	const { t } = useTranslation();
 
 	return (
-		<ProCard bordered headerBordered style={{ borderRadius: 8 }}>
+		<ProCard bordered headerBordered className="rounded-lg">
 			<div
-				style={{
-					display: "grid",
-					gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-					gap: 12,
-				}}
+				className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3"
 			>
 				<RHFProNumber<PerformanceFormValues, any>
 					name={sf("performanceValue") as any}

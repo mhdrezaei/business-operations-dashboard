@@ -253,7 +253,7 @@ function ProseNote() {
 	return (
 		<ProCard
 			bordered
-			style={{ borderRadius: 12 }}
+			className="rounded-xl"
 		>
 			<div>
 				<RHFProTextArea<PredictionFormValues, "note">

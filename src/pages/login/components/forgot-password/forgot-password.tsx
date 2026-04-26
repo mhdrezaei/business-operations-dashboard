@@ -156,7 +156,7 @@ export function ForgotPassword() {
 								inputMode="numeric"
 								autoComplete="tel"
 								placeholder="09xxxxxxxxx"
-								style={{ direction: "ltr" }}
+								className="[direction:ltr]"
 								size="large"
 							/>
 						</Form.Item>
@@ -177,11 +177,11 @@ export function ForgotPassword() {
 
 				{step === "confirm" && (
 					<>
-						<div style={{ marginBottom: 12 }}>
+						<div className="mb-3">
 							<Text type="secondary">
 								{t("authority.codeSentTo", { mobile })}
 								{" "}
-								<Text strong style={{ direction: "ltr", unicodeBidi: "plaintext" }}>
+								<Text strong className="[direction:ltr] [unicode-bidi:plaintext]">
 									{cleanedMobile}
 								</Text>
 								{" "}
@@ -241,14 +241,14 @@ export function ForgotPassword() {
 							<Input.Password placeholder={t("form.password.required")} size="large" />
 						</Form.Item>
 
-						<div className="flex items-center justify-between text-xs opacity-80" style={{ marginBottom: 12 }}>
+						<div className="flex items-center justify-between text-xs opacity-80 mb-3">
 							<span>{t("authority.remainingTime")}</span>
-							<span style={{ direction: "ltr" }}>
+							<span className="[direction:ltr]">
 								{targetDate ? new Date(countdown).toISOString().slice(14, 19) : "00:00"}
 							</span>
 						</div>
 
-						<Space direction="vertical" style={{ width: "100%" }} size={8}>
+						<Space direction="vertical" className="w-full" size={8}>
 							<Button
 								block
 								type="primary"
@@ -274,7 +274,7 @@ export function ForgotPassword() {
 					</>
 				)}
 
-				<div className="text-sm text-center" style={{ marginTop: 12 }}>
+				<div className="text-sm text-center mt-3">
 					<BasicButton
 						type="link"
 						icon={<LeftOutlined />}
