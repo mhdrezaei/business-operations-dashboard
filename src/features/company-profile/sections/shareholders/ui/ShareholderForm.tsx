@@ -19,7 +19,7 @@ export default function ShareholderForm({ disabled, defaultValues, onSubmit, sub
 	const methods = useForm<ShareholderFormValues>({
 		defaultValues,
 		resolver: zodResolver(shareholderSchema) as any,
-		mode: "onChange",
+		mode: "onTouched",
 	});
 
 	const { handleSubmit, reset, formState: { isDirty, isSubmitting } } = methods;
