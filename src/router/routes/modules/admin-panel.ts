@@ -4,11 +4,13 @@ import { ContainerLayout } from "#src/layout";
 import { $t } from "#src/locales";
 
 import { userManagement } from "#src/router/extra-info";
-import { lazy } from "react";
+import { BellOutlined } from "@ant-design/icons";
+import { createElement, lazy } from "react";
 
 const ListUsers = lazy(() => import("#src/pages/user-management/UsersList"));
 const ListRoles = lazy(() => import("#src/pages/user-management/RolesList"));
 const AuditLogs = lazy(() => import("#src/pages/user-management/AuditLogsList"));
+const NotificationRules = lazy(() => import("#src/pages/user-management/NotificationRules"));
 // const EditContractPage = lazy(() => import("#src/pages/user-management/edit"));
 
 const routes: AppRouteRecordRaw[] = [
@@ -56,6 +58,16 @@ const routes: AppRouteRecordRaw[] = [
 				handle: {
 					icon: "HistoryOutlined",
 					title: $t("common.menu.auditLogs"),
+					accessDomain: "contracts",
+					accessAction: "view",
+				},
+			},
+			{
+				path: "/admin-panel/notification-rules",
+				Component: NotificationRules,
+				handle: {
+					icon: createElement(BellOutlined),
+					title: $t("common.menu.notificationRules"),
 					accessDomain: "contracts",
 					accessAction: "view",
 				},
