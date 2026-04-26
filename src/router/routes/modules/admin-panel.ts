@@ -7,6 +7,7 @@ import { userManagement } from "#src/router/extra-info";
 import { lazy } from "react";
 
 const ListUsers = lazy(() => import("#src/pages/user-management/UsersList"));
+const ListRoles = lazy(() => import("#src/pages/user-management/RolesList"));
 // const EditContractPage = lazy(() => import("#src/pages/user-management/edit"));
 
 const routes: AppRouteRecordRaw[] = [
@@ -36,6 +37,16 @@ const routes: AppRouteRecordRaw[] = [
 					// 	accessControlCodes.update,
 					// 	accessControlCodes.update,
 					// ],
+				},
+			},
+			{
+				path: "/admin-panel/roles",
+				Component: ListRoles,
+				handle: {
+					icon: "TeamOutlined",
+					title: $t("common.menu.role"),
+					accessDomain: "contracts",
+					accessAction: "view",
 				},
 			},
 			// {
