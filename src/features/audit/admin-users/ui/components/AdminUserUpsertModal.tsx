@@ -4,9 +4,11 @@ import { BasicButton } from "#src/components";
 import { RHFProText } from "#src/shared/ui/rhf-pro"; // اگر کامپوننت‌های RHF شما متفاوت است جایگزین کن
 
 import { ProCard } from "@ant-design/pro-components";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Modal } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
+import { adminUserUpsertSchema } from "../../model/admin-user-upsert.schema";
 import "./admin-user-upsert-modal.css";
 
 interface Props {
@@ -51,8 +53,11 @@ export function AdminUserUpsertModal({ open, mode, loading, initial, onClose, on
 		};
 	}, [initial]);
 
-	const form = useForm<AdminUserUpsertPayload>({ defaultValues });
-
+	const form = useForm<AdminUserUpsertPayload>({
+		defaultValues,
+		resolver: zodResolver(adminUserUpsertSchema(mode)) as any,
+		mode: "onTouched",
+	});
 	useEffect(() => {
 		if (!open)
 			return;
@@ -61,7 +66,9 @@ export function AdminUserUpsertModal({ open, mode, loading, initial, onClose, on
 
 	const title = mode === "create" ? "ایجاد کاربر" : "ویرایش کاربر";
 	const fieldClassName = "admin-user-upsert-field";
-
+	const {
+		formState: { isDirty, isValid },
+	} = form;
 	return (
 		<Modal
 			open={open}
@@ -121,16 +128,12 @@ export function AdminUserUpsertModal({ open, mode, loading, initial, onClose, on
 												<input type="checkbox" {...form.register("is_staff")} />
 												Staff
 											</label>
-											<label className="flex items-center gap-2">
-												<input type="checkbox" {...form.register("is_superuser")} />
-												Superuser
-											</label>
 										</div>
 									</div>
 								</ProCard>
 								<div className="col-span-2 flex justify-end gap-2 mt-3">
 									<BasicButton onClick={onClose}>انصراف</BasicButton>
-									<BasicButton htmlType="submit" type="primary" loading={saving}>
+									<BasicButton htmlType="submit" disabled={saving || !isDirty || !isValid} type="primary" loading={saving}>
 										ذخیره
 									</BasicButton>
 								</div>
