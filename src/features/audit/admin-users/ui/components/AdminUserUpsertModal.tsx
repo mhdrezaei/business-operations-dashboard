@@ -3,9 +3,9 @@ import type { AdminUserDto, AdminUserUpsertPayload } from "../../model/admin-use
 import { BasicButton } from "#src/components";
 import { RHFProText } from "#src/shared/ui/rhf-pro"; // اگر کامپوننت‌های RHF شما متفاوت است جایگزین کن
 
-import { ProCard } from "@ant-design/pro-components";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Modal } from "antd";
+import { Card, Modal } from "antd";
+
 import React, { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { adminUserUpsertSchema } from "../../model/admin-user-upsert.schema";
@@ -101,7 +101,7 @@ export function AdminUserUpsertModal({ open, mode, loading, initial, onClose, on
 								})}
 
 							>
-								<ProCard>
+								<Card>
 									<div className="grid grid-cols-2 gap-3">
 										<RHFProText name="username" label="نام کاربری" formItemProps={{ className: fieldClassName }} />
 										<RHFProText name="email" label="ایمیل" formItemProps={{ className: fieldClassName }} />
@@ -130,7 +130,7 @@ export function AdminUserUpsertModal({ open, mode, loading, initial, onClose, on
 											</label>
 										</div>
 									</div>
-								</ProCard>
+								</Card>
 								<div className="col-span-2 flex justify-end gap-2 mt-3">
 									<BasicButton onClick={onClose}>انصراف</BasicButton>
 									<BasicButton htmlType="submit" disabled={saving || !isDirty || !isValid} type="primary" loading={saving}>

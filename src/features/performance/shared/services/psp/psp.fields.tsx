@@ -1,6 +1,6 @@
 import type { PerformanceFormValues } from "../../model/performance.form.types";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
-import { ProCard } from "@ant-design/pro-components";
+import { Card } from "antd";
 import { useTranslation } from "react-i18next";
 
 const sf = (path: string) => `serviceFields.${path}` as const;
@@ -9,13 +9,9 @@ export function PspPerformanceFields() {
 	const { t } = useTranslation();
 
 	return (
-		<ProCard bordered headerBordered style={{ borderRadius: 8 }}>
+		<Card bordered className="rounded-lg">
 			<div
-				style={{
-					display: "grid",
-					gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-					gap: 12,
-				}}
+				className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3"
 			>
 				<RHFProNumber<PerformanceFormValues, any>
 					name={sf("performanceValue") as any}
@@ -33,6 +29,6 @@ export function PspPerformanceFields() {
 					enableWordsTooltip
 				/>
 			</div>
-		</ProCard>
+		</Card>
 	);
 }

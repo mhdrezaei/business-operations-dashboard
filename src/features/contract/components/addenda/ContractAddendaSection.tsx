@@ -2,8 +2,7 @@ import type { ArrayPath, FieldValues, Path, PathValue } from "react-hook-form";
 import { RHFProText, RHFProTextArea, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { message } from "#src/utils";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import { ProCard } from "@ant-design/pro-components";
-import { Button, Collapse } from "antd";
+import { Button, Card, Collapse } from "antd";
 import React, { useMemo, useState } from "react";
 
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
@@ -239,11 +238,11 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 			return {
 				key: String(idx),
 				label: (
-					<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", gap: 12 }}>
-						<div style={{ fontWeight: 700 }}>
+					<div className="flex justify-between items-center w-full gap-3">
+						<div className="font-bold">
 							{`الحاقیه ${idx + 1}`}
 							{" "}
-							<span style={{ opacity: 0.75, fontWeight: 500 }}>{headerHint}</span>
+							<span className="opacity-75 font-medium">{headerHint}</span>
 						</div>
 
 						<Button
@@ -260,8 +259,8 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 					</div>
 				),
 				children: (
-					<ProCard ghost bodyStyle={{ padding: 0 }}>
-						<div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 12, marginTop: 8 }}>
+					<Card className="[&_.ant-pro-card-body]:p-0">
+						<div className="grid grid-cols-4 gap-3 mt-2">
 							<RHFSelect
 								name={p(base, "startYear")}
 								label="سال شروع الحاقیه"
@@ -336,7 +335,7 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 							/>
 						</div>
 
-						<div style={{ marginTop: 12 }}>
+						<div className="mt-3">
 							<RHFProText
 								name={p(base, "contractNumber")}
 								label="شماره قرارداد الحاقیه"
@@ -344,20 +343,20 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 							/>
 						</div>
 
-						<div style={{ marginTop: 12 }}>
+						<div className="mt-3">
 							{renderAddendumFields
 								? renderAddendumFields(base, idx)
 								: <ContractTypeSection title={contractTypeTitle} name={p(base, contractTypeFieldKey)} />}
 						</div>
 
-						<div style={{ marginTop: 12 }}>
+						<div className="mt-3">
 							<RHFProTextArea
 								name={p(base, "description")}
 								label="توضیح الحاقیه"
 								textAreaProps={{ placeholder: "توضیح اختیاری برای این الحاقیه" }}
 							/>
 						</div>
-					</ProCard>
+					</Card>
 				),
 			};
 		});
@@ -379,26 +378,24 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 	]);
 
 	return (
-		<ProCard
+		<Card
 			bordered
-			headerBordered
-			style={{ borderRadius: 6, marginTop: 12 }}
+			className="rounded-md mt-3"
 			title={title}
 			extra={(
 				<Button icon={<PlusOutlined />} onClick={addAddendum} disabled={!contractRangeReady || !canAddAddendum}>
 					افزودن الحاقیه
 				</Button>
 			)}
-			bodyStyle={{ padding: 16 }}
 		>
 			{!contractRangeReady
 				? (
-					<div style={{ opacity: 0.75 }}>برای افزودن الحاقیه، ابتدا تاریخ شروع و پایان قرارداد را انتخاب کنید.</div>
+					<div className="opacity-75">برای افزودن الحاقیه، ابتدا تاریخ شروع و پایان قرارداد را انتخاب کنید.</div>
 				)
 				: null}
 			{contractRangeReady && !canAddAddendum && addendumAddBlockedMessage
 				? (
-					<div style={{ opacity: 0.75, marginTop: 8 }}>{addendumAddBlockedMessage}</div>
+					<div className="opacity-75 mt-2">{addendumAddBlockedMessage}</div>
 				)
 				: null}
 
@@ -412,6 +409,6 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 						items={collapseItems as any}
 					/>
 				)}
-		</ProCard>
+		</Card>
 	);
 }

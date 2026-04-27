@@ -1,5 +1,5 @@
 import type { CompanyProfileFormValues } from "#src/features/company-profile/model/company-profile.form.types.js";
-import { ProCard } from "@ant-design/pro-components";
+import { Card } from "antd";
 import React from "react";
 import { useWatch } from "react-hook-form";
 import BankAccountsTable from "./BankAccountsTable";
@@ -9,15 +9,15 @@ export default function BankAccountsPanel() {
 	const serviceId = useWatch<CompanyProfileFormValues, "serviceId">({ name: "serviceId" });
 	if (!serviceId || !companyId) {
 		return (
-			<ProCard>
-				<div style={{ opacity: 0.8 }}>ابتدا سرویس و سپس شرکت را انتخاب کنید.</div>
-			</ProCard>
+			<Card>
+				<div className="opacity-80">ابتدا سرویس و سپس شرکت را انتخاب کنید.</div>
+			</Card>
 		);
 	}
 
 	return (
-		<ProCard>
+		<Card>
 			<BankAccountsTable serviceId={serviceId} companyId={companyId} />
-		</ProCard>
+		</Card>
 	);
 }

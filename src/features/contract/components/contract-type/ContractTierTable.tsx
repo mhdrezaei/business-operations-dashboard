@@ -1,7 +1,6 @@
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import { ProCard } from "@ant-design/pro-components";
-import { Button, Tooltip } from "antd";
+import { Button, Card, Tooltip } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 
@@ -35,16 +34,7 @@ function TierToField({ name, showHint }: TierToFieldProps): React.JSX.Element {
 				<button
 					type="button"
 					onClick={handleCloseHint}
-					style={{
-						border: 0,
-						background: "transparent",
-						color: "inherit",
-						padding: 0,
-						font: "inherit",
-						cursor: "pointer",
-						textAlign: "right",
-						lineHeight: 1.6,
-					}}
+					className="cursor-pointer border-0 bg-transparent p-0 text-right font-inherit leading-[1.6] text-inherit"
 				>
 					در صورت خالی بودن محدودیتی وجود ندارد.
 				</button>
@@ -57,7 +47,7 @@ function TierToField({ name, showHint }: TierToFieldProps): React.JSX.Element {
 					enableGrouping
 					enableWordsTooltip
 					inputProps={{ placeholder: "تا", inputMode: "numeric" } as any}
-					formItemProps={{ style: { marginBottom: 0 } }}
+					formItemProps={{ className: "mb-0" }}
 				/>
 			</div>
 		</Tooltip>
@@ -111,13 +101,13 @@ export function ContractTierTable({ name }: Props) {
 	}
 
 	return (
-		<ProCard bordered style={{ borderRadius: 12 }} bodyStyle={{ padding: 12 }}>
-			<div style={{ fontWeight: 600, marginBottom: 12 }}>تعریف بازه‌ها و نرخ</div>
+		<Card bordered className="rounded-xl [&_.ant-pro-card-body]:p-3">
+			<div className="font-semibold mb-3">تعریف بازه‌ها و نرخ</div>
 
-			<div style={{ overflow: "hidden" }}>
-				<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 64px" }}>
+			<div className="overflow-hidden">
+				<div className="grid grid-cols-[1fr_1fr_1fr_64px]">
 					{header.map(item => (
-						<div key={item.key} style={{ padding: 12, textAlign: "center", fontWeight: 600 }}>
+						<div key={item.key} className="p-3 text-center font-semibold">
 							{item.title}
 						</div>
 					))}
@@ -127,13 +117,9 @@ export function ContractTierTable({ name }: Props) {
 				{fields.map((field, index) => (
 					<div
 						key={field.id}
-						style={{
-							display: "grid",
-							gridTemplateColumns: "1fr 1fr 1fr 64px",
-							borderTop: "1px solid rgba(255,255,255,0.08)",
-						}}
+						className="grid grid-cols-[1fr_1fr_1fr_64px] border-t border-t-[rgba(255,255,255,0.08)]"
 					>
-						<div style={{ padding: 12 }}>
+						<div className="p-3">
 							<RHFProNumber
 								name={`${name}.${index}.from` as any}
 								label=""
@@ -144,29 +130,29 @@ export function ContractTierTable({ name }: Props) {
 									inputMode: "numeric",
 									disabled: index > 0,
 								} as any}
-								formItemProps={{ style: { marginBottom: 0 } }}
+								formItemProps={{ className: "mb-0" }}
 							/>
 						</div>
 
-						<div style={{ padding: 12 }}>
+						<div className="p-3">
 							<TierToField
 								name={`${name}.${index}.to`}
 								showHint={index === fields.length - 1}
 							/>
 						</div>
 
-						<div style={{ padding: 12 }}>
+						<div className="p-3">
 							<RHFProNumber
 								name={`${name}.${index}.fee` as any}
 								label=""
 								enableGrouping
 								enableWordsTooltip
 								inputProps={{ placeholder: "فی", inputMode: "numeric" } as any}
-								formItemProps={{ style: { marginBottom: 0 } }}
+								formItemProps={{ className: "mb-0" }}
 							/>
 						</div>
 
-						<div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 12 }}>
+						<div className="flex items-center justify-center p-3">
 							<Button
 								type="text"
 								danger
@@ -177,12 +163,12 @@ export function ContractTierTable({ name }: Props) {
 					</div>
 				))}
 
-				<div style={{ padding: 12 }}>
+				<div className="p-3">
 					<Button icon={<PlusOutlined />} onClick={handleAddRow}>
 						افزودن ردیف
 					</Button>
 				</div>
 			</div>
-		</ProCard>
+		</Card>
 	);
 }

@@ -1,13 +1,12 @@
 import { clsx } from "clsx";
 
 interface Props {
-	style?: React.CSSProperties
 	className?: string
 	children: React.ReactNode
 }
 
 export function BasicContent(props: Props) {
-	const { children, className, style } = props;
+	const { children, className } = props;
 
 	return (
 		<div
@@ -20,7 +19,6 @@ export function BasicContent(props: Props) {
 			 * لطفا src/pages/system/role/index.tsx را ببينيد
 			 */
 			className={clsx("p-4 px-2 overflow-y-hidden box-border", className)}
-			style={{ ...style }}
 		>
 			{
 				children

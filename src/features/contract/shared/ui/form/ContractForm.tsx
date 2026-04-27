@@ -1,12 +1,13 @@
 import type { Resolver, UseFormReturn } from "react-hook-form";
 import type { ContractFormValues, ContractServiceCode } from "../../model/contract.form.types";
+import { BasicContent } from "#src/components/index.js";
 import { notification } from "#src/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "antd";
+import { Button, Card } from "antd";
 import { AnimatePresence, motion } from "framer-motion";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
-import { FormProvider, useForm, useWatch } from "react-hook-form";
 
+import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { buildContractSchema } from "../../model/contract.schema";
 import { serviceRegistry } from "../../services/registry";
 import { findFirstError } from "../../utils";
@@ -145,48 +146,52 @@ export function ContractForm({
 
 	return (
 		<FormProvider {...form}>
-			<div className="w-full flex flex-col justify-center items-center gap-2">
-				<input type="hidden" {...form.register("serviceCode")} />
-				<FixedStartSection />
+			<BasicContent>
+				<Card>
+					<div className="w-full flex flex-col justify-center items-center gap-2">
+						<input type="hidden" {...form.register("serviceCode")} />
+						<FixedStartSection />
 
-				<AnimatePresence mode="wait">
-					{module?.Fields
-						? (
-							<motion.div
-								key={module.code}
-								initial={{ opacity: 0, y: 8 }}
-								animate={{ opacity: 1, y: 0 }}
-								exit={{ opacity: 0, y: -8 }}
-								transition={{ duration: 0.2 }}
-								className="w-full"
-							>
-								<module.Fields />
-							</motion.div>
-						)
-						: null}
-				</AnimatePresence>
+						<AnimatePresence mode="wait">
+							{module?.Fields
+								? (
+									<motion.div
+										key={module.code}
+										initial={{ opacity: 0, y: 8 }}
+										animate={{ opacity: 1, y: 0 }}
+										exit={{ opacity: 0, y: -8 }}
+										transition={{ duration: 0.2 }}
+										className="w-full"
+									>
+										<module.Fields />
+									</motion.div>
+								)
+								: null}
+						</AnimatePresence>
 
-				<FixedEndSection />
+						<FixedEndSection />
 
-				<div style={{ marginTop: 16, width: "100%" }}>
-					{showExtendedActions
-						? (
-							<ActionSection
-								submitting={submitting}
-								submitText={submitText}
-								onSubmit={() => triggerSubmit("submit")}
-								onSubmitAndCreateAnother={() => triggerSubmit("submit_and_create_another")}
-								onSubmitAndEdit={() => triggerSubmit("submit_and_edit")}
-								onReset={resetForm}
-							/>
-						)
-						: (
-							<Button type="primary" onClick={() => triggerSubmit("submit")} loading={!!submitting}>
-								{submitText}
-							</Button>
-						)}
-				</div>
-			</div>
+						<div className="mt-4 w-full">
+							{showExtendedActions
+								? (
+									<ActionSection
+										submitting={submitting}
+										submitText={submitText}
+										onSubmit={() => triggerSubmit("submit")}
+										onSubmitAndCreateAnother={() => triggerSubmit("submit_and_create_another")}
+										onSubmitAndEdit={() => triggerSubmit("submit_and_edit")}
+										onReset={resetForm}
+									/>
+								)
+								: (
+									<Button type="primary" onClick={() => triggerSubmit("submit")} loading={!!submitting}>
+										{submitText}
+									</Button>
+								)}
+						</div>
+					</div>
+				</Card>
+			</BasicContent>
 		</FormProvider>
 	);
 }

@@ -1,10 +1,9 @@
 import { GlobalSpin, Scrollbar } from "#src/components";
 import { useLayoutContentStyle } from "#src/hooks";
 import { LayoutFooter } from "#src/layout";
-import { CSS_VARIABLE_LAYOUT_CONTENT_HEIGHT, ELEMENT_ID_MAIN_CONTENT } from "#src/layout/constants";
+import { ELEMENT_ID_MAIN_CONTENT } from "#src/layout/constants";
 import { useAccessStore, usePreferencesStore, useTabsStore } from "#src/store";
 
-import { theme } from "antd";
 import KeepAlive, { useKeepAliveRef } from "keepalive-for-react";
 import { useEffect, useMemo } from "react";
 
@@ -13,9 +12,6 @@ import { useLocation, useOutlet } from "react-router";
 export interface LayoutContentProps { }
 
 export default function LayoutContent() {
-	const {
-		token: { colorBgLayout },
-	} = theme.useToken();
 	const { pathname, search } = useLocation();
 	const outlet = useOutlet();
 	const { contentElement } = useLayoutContentStyle();
@@ -93,23 +89,14 @@ export default function LayoutContent() {
 		<main
 			id={ELEMENT_ID_MAIN_CONTENT}
 			ref={contentElement}
-			className="relative overflow-y-auto overflow-x-hidden flex-grow ml-4 mr-6 rounded-md"
-			style={
-				{
-					backgroundColor: colorBgLayout,
-				}
-			}
+			className="relative ml-4 mr-6 flex-grow overflow-y-auto overflow-x-hidden rounded-md bg-bgLayout"
 		>
 			<Scrollbar>
 				<GlobalSpin>
 					<div
 						className="flex flex-col h-full"
 					>
-						<div
-							style={{
-								height: `var(${CSS_VARIABLE_LAYOUT_CONTENT_HEIGHT})`,
-							}}
-						>
+						<div className="h-[var(--react-antd-admin-content-height)]">
 							<KeepAlive
 								max={20}
 								transition

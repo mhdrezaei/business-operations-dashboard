@@ -65,9 +65,9 @@ export default function CompanyPeopleForm({ disabled, defaultValues, onSubmit, o
 					<RHFProText name="email" label="ایمیل" inputProps={{ placeholder: "ایمیل", disabled }} />
 
 				</div>
-				<div style={{ gridColumn: "1 / -1" }}>
+				<div className="col-span-full">
 					{/* صاحب امضا */}
-					<label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+					<label className="flex gap-2 items-center">
 						<input type="checkbox" disabled={disabled} {...methods.register("is_signatory")} />
 						صاحب امضا
 					</label>

@@ -5,8 +5,7 @@ import { TopRightAlert } from "#src/components";
 import { downloadPerformanceTemplate, uploadTrafficExcelImport } from "#src/features/performance/api/performances.api";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
 import { CloudUploadOutlined, DeleteOutlined, DownloadOutlined, InfoCircleOutlined } from "@ant-design/icons";
-import { ProCard } from "@ant-design/pro-components";
-import { Button, Col, Form, Modal, Row, Tag, theme, Upload } from "antd";
+import { Button, Card, Col, Form, Modal, Row, Tag, theme, Upload } from "antd";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -25,26 +24,16 @@ function downloadBlob(blob: Blob, filename: string) {
 function UploadStatCard({
 	label,
 	value,
-	accent,
+	danger,
 }: {
 	label: string
 	value: number
-	accent?: string
+	danger?: boolean
 }) {
 	return (
-		<div
-			style={{
-				border: "1px solid rgba(255,255,255,0.12)",
-				borderRadius: 14,
-				padding: "12px 16px",
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "space-between",
-				gap: 16,
-			}}
-		>
-			<span style={{ opacity: 0.88 }}>{label}</span>
-			<strong style={{ color: accent }}>{value.toLocaleString("fa-IR")}</strong>
+		<div className="flex items-center justify-between gap-4 rounded-[14px] border border-[rgba(255,255,255,0.12)] px-4 py-3">
+			<span className="opacity-[0.88]">{label}</span>
+			<strong className={danger ? "text-[#ff7875]" : undefined}>{value.toLocaleString("fa-IR")}</strong>
 		</div>
 	);
 }
@@ -58,18 +47,13 @@ function UploadRejectedRow({
 }) {
 	return (
 		<div
-			style={{
-				display: "grid",
-				gridTemplateColumns: "140px minmax(0, 1fr) minmax(220px, 1.2fr)",
-				gap: 12,
-				padding: "14px 18px",
-				borderTop: index === 0 ? "none" : "1px solid rgba(255,255,255,0.08)",
-				alignItems: "center",
-			}}
+			className={index === 0
+				? "grid grid-cols-[140px_minmax(0,1fr)_minmax(220px,1.2fr)] items-center gap-3 px-[18px] py-[14px]"
+				: "grid grid-cols-[140px_minmax(0,1fr)_minmax(220px,1.2fr)] items-center gap-3 border-t border-t-[rgba(255,255,255,0.08)] px-[18px] py-[14px]"}
 		>
 			<div>{item.row_no}</div>
 			<div>{item.company_name || "-"}</div>
-			<div style={{ color: "#ff7875" }}>{item.reason}</div>
+			<div className="text-[#ff7875]">{item.reason}</div>
 		</div>
 	);
 }
@@ -163,13 +147,12 @@ export function TrafficPerformanceFields() {
 
 	return (
 		<>
-			<ProCard
+			<Card
 				bordered
-				headerBordered
-				style={{ borderRadius: 8 }}
+				className="rounded-lg"
 				title={cardTitle}
 			>
-				<div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+				<div className="flex gap-2 flex-wrap mb-3">
 					<Tag color="blue">{`${t("performance.columns.companyType")}: ${companyType ?? "-"}`}</Tag>
 					<Tag color="blue">{`${t("performance.columns.year")}: ${year ?? "-"}`}</Tag>
 					<Tag color="blue">{`${t("performance.columns.month")}: ${month ?? "-"}`}</Tag>
@@ -178,14 +161,9 @@ export function TrafficPerformanceFields() {
 				{(submitMode ?? "template") === "template"
 					? (
 						<div
-							style={{
-								display: "grid",
-								gridTemplateColumns: "320px 1fr",
-								gap: 12,
-								alignItems: "start",
-							}}
+							className="grid grid-cols-[320px_1fr] gap-3 items-start"
 						>
-							<div style={{ display: "grid", gap: 10 }}>
+							<div className="grid gap-2.5">
 								<Button
 									icon={<DownloadOutlined />}
 									disabled={!canDownloadTemplate}
@@ -221,7 +199,7 @@ export function TrafficPerformanceFields() {
 									{t("performance.traffic.templateUpload")}
 								</Button>
 
-								<div style={{ opacity: 0.8, fontSize: 12, lineHeight: 1.8 }}>
+								<div className="opacity-80 text-xs leading-[1.8]">
 									{t("performance.traffic.preUploadHint")}
 								</div>
 							</div>
@@ -243,8 +221,8 @@ export function TrafficPerformanceFields() {
 											fileList={field.value ?? []}
 											onChange={info => field.onChange(info.fileList.slice(-1))}
 										>
-											<p style={{ margin: 0, fontSize: 18 }}>{t("performance.labels.selectOrDropExcel")}</p>
-											<p style={{ margin: 0, marginTop: 8 }}>{t("performance.labels.allowedFormatsXls")}</p>
+											<p className="m-0 text-lg">{t("performance.labels.selectOrDropExcel")}</p>
+											<p className="m-0 mt-2">{t("performance.labels.allowedFormatsXls")}</p>
 										</Upload.Dragger>
 									</Form.Item>
 								)}
@@ -252,14 +230,14 @@ export function TrafficPerformanceFields() {
 						</div>
 					)
 					: (
-						<div style={{ display: "grid", gap: 12 }}>
+						<div className="grid gap-3">
 							<TopRightAlert
 								alertKey="traffic-performance-unit-price-hint"
 								type="info"
 								message={t("performance.traffic.unitPriceHint")}
 							/>
 
-							<ProCard bordered title={t("performance.traffic.tehranPerformance")} style={{ borderRadius: 10 }}>
+							<Card bordered title={t("performance.traffic.tehranPerformance")} className="rounded-[10px]">
 								<Row gutter={16}>
 									<Col span={12}>
 										<RHFProNumber
@@ -276,14 +254,14 @@ export function TrafficPerformanceFields() {
 										/>
 									</Col>
 								</Row>
-							</ProCard>
+							</Card>
 
 							{countyEnabled
 								? (
-									<ProCard
+									<Card
 										bordered
 										title={t("performance.traffic.countyPerformance")}
-										style={{ borderRadius: 10 }}
+										className="rounded-[10px]"
 										extra={(
 											<Button
 												size="small"
@@ -315,12 +293,12 @@ export function TrafficPerformanceFields() {
 												/>
 											</Col>
 										</Row>
-									</ProCard>
+									</Card>
 								)
 								: null}
 						</div>
 					)}
-			</ProCard>
+			</Card>
 			<Modal
 				open={!!uploadResult}
 				onCancel={handleCloseUploadResult}
@@ -345,55 +323,35 @@ export function TrafficPerformanceFields() {
 			>
 				{uploadResult
 					? (
-						<div style={{ display: "grid", gap: 20 }}>
-							<div style={{ display: "grid", justifyItems: "center", gap: 12 }}>
+						<div className="grid gap-5">
+							<div className="grid justify-items-center gap-3">
 								<div
-									style={{
-										width: 84,
-										height: 84,
-										borderRadius: "50%",
-										display: "grid",
-										placeItems: "center",
-										border: "4px solid #40c4ff",
-										color: "#40c4ff",
-										fontSize: 40,
-									}}
+									className="grid h-[84px] w-[84px] place-items-center rounded-full border-4 border-[#40c4ff] text-[40px] text-[#40c4ff]"
 								>
 									<InfoCircleOutlined />
 								</div>
-								<div style={{ textAlign: "center" }}>
-									<div style={{ fontSize: 34, fontWeight: 800 }}>نتیجه آپلود فایل ترافیک</div>
+								<div className="text-center">
+									<div className="text-[34px] font-extrabold">نتیجه آپلود فایل ترافیک</div>
 								</div>
 							</div>
 
 							<div
-								style={{
-									display: "grid",
-									gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-									gap: 10,
-								}}
+								className="grid grid-cols-4 gap-2.5"
 							>
 								<UploadStatCard label="کل ردیف‌ها" value={uploadResult.total_rows_in_file} />
 								<UploadStatCard label="ردیف‌های پر شده" value={uploadResult.filled_rows} />
 								<UploadStatCard label="ایجاد شده" value={uploadResult.created} />
-								<UploadStatCard label="رد شده" value={uploadResult.rejected} accent="#ff7875" />
+								<UploadStatCard label="رد شده" value={uploadResult.rejected} danger />
 							</div>
 
-							<div style={{ display: "grid", gap: 10 }}>
-								<div style={{ fontWeight: 700 }}>دلایل رد</div>
-								<div style={{ display: "grid", gap: 8 }}>
+							<div className="grid gap-2.5">
+								<div className="font-bold">دلایل رد</div>
+								<div className="grid gap-2">
 									{rejectionReasons.length > 0
 										? rejectionReasons.map(([reason, count]) => (
 											<div
 												key={reason}
-												style={{
-													border: "1px solid rgba(255,255,255,0.12)",
-													borderRadius: 12,
-													padding: "12px 16px",
-													display: "flex",
-													justifyContent: "space-between",
-													gap: 16,
-												}}
+												className="flex justify-between gap-4 rounded-xl border border-[rgba(255,255,255,0.12)] px-4 py-3"
 											>
 												<span>{reason}</span>
 												<strong>{count.toLocaleString("fa-IR")}</strong>
@@ -401,11 +359,7 @@ export function TrafficPerformanceFields() {
 										))
 										: (
 											<div
-												style={{
-													border: "1px solid rgba(255,255,255,0.12)",
-													borderRadius: 12,
-													padding: "12px 16px",
-												}}
+												className="rounded-xl border border-[rgba(255,255,255,0.12)] px-4 py-3"
 											>
 												موردی برای نمایش وجود ندارد.
 											</div>
@@ -413,24 +367,13 @@ export function TrafficPerformanceFields() {
 								</div>
 							</div>
 
-							<div style={{ display: "grid", gap: 10 }}>
-								<div style={{ fontWeight: 700 }}>ردیف‌های رد شده</div>
+							<div className="grid gap-2.5">
+								<div className="font-bold">ردیف‌های رد شده</div>
 								<div
-									style={{
-										border: "1px solid rgba(255,255,255,0.12)",
-										borderRadius: 16,
-										overflow: "hidden",
-									}}
+									className="overflow-hidden rounded-2xl border border-[rgba(255,255,255,0.12)]"
 								>
 									<div
-										style={{
-											display: "grid",
-											gridTemplateColumns: "140px minmax(0, 1fr) minmax(220px, 1.2fr)",
-											gap: 12,
-											padding: "16px 18px",
-											background: "rgba(255,255,255,0.06)",
-											fontWeight: 700,
-										}}
+										className="grid grid-cols-[140px_minmax(0,1fr)_minmax(220px,1.2fr)] gap-3 bg-[rgba(255,255,255,0.06)] px-[18px] py-4 font-bold"
 									>
 										<div>ردیف</div>
 										<div>نام شرکت</div>
@@ -443,14 +386,14 @@ export function TrafficPerformanceFields() {
 											<UploadRejectedRow key={`${item.row_no}-${index}`} item={item} index={index} />
 										))
 										: (
-											<div style={{ padding: "18px", opacity: 0.8 }}>
+											<div className="p-[18px] opacity-80">
 												ردیفی رد نشده است.
 											</div>
 										)}
 								</div>
 							</div>
 
-							<div style={{ display: "flex", justifyContent: "center" }}>
+							<div className="flex justify-center">
 								<Button type="primary" size="large" onClick={handleCloseUploadResult}>
 									باشه
 								</Button>

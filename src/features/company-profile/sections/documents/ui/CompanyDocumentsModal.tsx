@@ -3,9 +3,8 @@ import type { Resolver } from "react-hook-form";
 import type { CompanyDocumentFormValues } from "../model/company-documents.types";
 import { RHFProDate, RHFProUploadButton, RHFSelect } from "#src/shared/ui/rhf-pro";
 
-import { ProCard } from "@ant-design/pro-components";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Form, Modal } from "antd";
+import { Button, Card, Form, Modal } from "antd";
 import React, { useEffect, useMemo } from "react";
 
 import { FormProvider, useForm } from "react-hook-form";
@@ -76,7 +75,7 @@ export default function CompanyDocumentsModal({
 		>
 			<Form layout="vertical" className="space-y-3">
 				<FormProvider {...methods}>
-					<ProCard bordered>
+					<Card bordered>
 						<div className="grid grid-cols-2 gap-x-4 gap-y-4">
 							<RHFSelect
 								name="doc_type"
@@ -135,7 +134,7 @@ export default function CompanyDocumentsModal({
 								<div className="col-span-2 text-xs opacity-70">در حال بارگذاری...</div>
 							)}
 						</div>
-					</ProCard>
+					</Card>
 				</FormProvider>
 			</Form>
 		</Modal>

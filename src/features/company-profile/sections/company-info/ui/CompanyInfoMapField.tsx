@@ -4,22 +4,13 @@ import React from "react";
 export default function CompanyInfoMapField() {
 	return (
 		<div>
-			<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+			<div className="grid grid-cols-2 gap-4">
 				<RHFProText name="map_latitude" label="Latitude" />
 				<RHFProText name="map_longitude" label="Longitude" />
 			</div>
 
 			<div
-				style={{
-					marginTop: 12,
-					height: 240,
-					borderRadius: 12,
-					border: "1px solid rgba(255,255,255,0.08)",
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "center",
-					opacity: 0.75,
-				}}
+				className="mt-3 flex h-[240px] items-center justify-center rounded-xl border border-[rgba(255,255,255,0.08)] opacity-75"
 				onClick={() => {
 					// setValue("map_latitude", "35.7"); setValue("map_longitude","51.4");
 				}}

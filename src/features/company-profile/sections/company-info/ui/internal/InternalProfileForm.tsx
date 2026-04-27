@@ -7,9 +7,8 @@ import {
 	RHFSelect,
 } from "#src/shared/ui/rhf-pro";
 
-import { ProCard } from "@ant-design/pro-components";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Form, theme } from "antd";
+import { Button, Card, Form } from "antd";
 import React, { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 
@@ -23,9 +22,6 @@ interface Props {
 }
 
 export default function InternalProfileForm({ defaultValues, onSubmit }: Props) {
-	const { useToken } = theme;
-	const { token } = useToken();
-
 	const methods = useForm<InternalProfileFormValues>({
 		defaultValues,
 		resolver: zodResolver(internalProfileSchema as any) as unknown as Resolver<InternalProfileFormValues>,
@@ -46,7 +42,7 @@ export default function InternalProfileForm({ defaultValues, onSubmit }: Props) 
 	return (
 		<Form layout="vertical" className="space-y-4">
 			<FormProvider {...methods}>
-				<ProCard bordered title="اطلاعات داخلی" style={{ backgroundColor: token.colorBgMask }}>
+				<Card bordered title="اطلاعات داخلی" className="bg-bgMask">
 					<div className="grid grid-cols-2 gap-x-4">
 						<RHFProText name="internal_code" label="کد داخلی" inputProps={{ placeholder: "کد داخلی" }} />
 
@@ -61,7 +57,7 @@ export default function InternalProfileForm({ defaultValues, onSubmit }: Props) 
 							<RHFProTextArea name="internal_note" label="یادداشت داخلی" textAreaProps={{ rows: 4 }} />
 						</div>
 					</div>
-				</ProCard>
+				</Card>
 
 				<Button
 					type="primary"

@@ -51,10 +51,10 @@ export function OtpInput(props: OtpInputProps) {
 
 	return (
 		<Space
-			className="flex-row-reverse"
+			className="flex-row-reverse justify-center w-full"
 			dir="rtl"
 			size={8}
-			style={{ justifyContent: "center", width: "100%" }}
+
 		>
 			{keys.map((k, idx) => (
 				<Input
@@ -68,13 +68,7 @@ export function OtpInput(props: OtpInputProps) {
 					autoComplete="one-time-code"
 					maxLength={1}
 					placeholder="*"
-					style={{
-						width: 44,
-						height: 44,
-						textAlign: "center",
-						fontSize: 18,
-						fontWeight: 600,
-					}}
+					className="h-11 w-11 text-center text-lg font-semibold"
 					onChange={(e) => {
 						const v = normalizeDigits(e.target.value).replace(/\D/g, "");
 						if (!v) {

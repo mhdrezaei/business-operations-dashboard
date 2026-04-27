@@ -2,8 +2,8 @@ import type { ArrayPath, Path } from "react-hook-form";
 import type { ContractFormValues } from "../../../shared/model/contract.form.types";
 import { ContractAddendaSection } from "#src/features/contract/components/addenda/ContractAddendaSection";
 import { ContractTypeSection } from "#src/features/contract/components/contract-type/ContractTypeSection";
-import { ProCard } from "@ant-design/pro-components";
 
+import { Card } from "antd";
 import React, { useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
@@ -25,22 +25,20 @@ export function ShahkarFields() {
 
 	return (
 		<>
-			<ProCard
+			<Card
 				bordered
-				headerBordered
-				style={{ borderRadius: 6 }}
-				bodyStyle={{ padding: 16 }}
+				className="rounded-md [&_.ant-pro-card-body]:p-4"
 			>
 				<ContractTypeSection
 					title="بهای هر واحد"
 					name={sf("contractPricing") as any}
 				/>
-			</ProCard>
+			</Card>
 
 			{showAddenda
 				// eslint-disable-next-line style/multiline-ternary
 				? (
-					<div style={{ marginTop: 12 }}>
+					<div className="mt-3">
 						<ContractAddendaSection<ContractFormValues>
 							title="الحاقیه‌های قرارداد (اختیاری)"
 							name={sf("addenda") as ArrayPath<ContractFormValues>}

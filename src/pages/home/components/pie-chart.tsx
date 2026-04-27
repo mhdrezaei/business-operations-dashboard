@@ -43,13 +43,27 @@ export default function PieChart() {
 				radius: "55%",
 				center: ["50%", "60%"],
 				data,
-				// emphasis: {
-				// 	itemStyle: {
-				// 		shadowBlur: 10,
-				// 		shadowOffsetX: 0,
-				// 		shadowColor: "rgba(0, 0, 0, 0.5)",
-				// 	},
-				// },
+				emphasis: {
+					itemStyle: {
+						shadowBlur: 10,
+						shadowOffsetX: 0,
+						shadowColor: "rgba(0, 0, 0, 0.5)",
+					},
+				},
+			},
+			{
+				name: t("home.salesCategoryProportions"),
+				type: "pie",
+				radius: "55%",
+				center: ["50%", "60%"],
+				data,
+				emphasis: {
+					itemStyle: {
+						shadowBlur: 10,
+						shadowOffsetX: 0,
+						shadowColor: "rgba(0,55, 0, 0.5)",
+					},
+				},
 			},
 		],
 	};

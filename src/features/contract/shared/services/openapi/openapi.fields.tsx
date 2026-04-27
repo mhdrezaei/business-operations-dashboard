@@ -5,8 +5,7 @@ import { ContractAddendaSection } from "#src/features/contract/components/addend
 import { RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro/fields/RHFProNumber.js";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import { ProCard } from "@ant-design/pro-components";
-import { Button, Col, Collapse, Row } from "antd";
+import { Button, Card, Col, Collapse, Row } from "antd";
 import React, { useMemo, useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { ContractTypeSection } from "../../../components/contract-type/ContractTypeSection";
@@ -41,16 +40,14 @@ function OpenApiPackagePlanPanel({ idx }: { idx: number }) {
 		"نرخ استعلام قبض",
 	]);
 	const trafficLabelStyle = useContractAlignedLabelWidth(["درصد سود ترافیک", "درصد سهم شریک ترافیک"]);
-	const compactFormItemStyle = { style: { marginBottom: 0 } };
+	const compactFormItemStyle = { className: "mb-0" };
 
 	return (
 		<div className="openapi-plan-grid">
-			<ProCard
+			<Card
 				title="بخش پیامک"
 				bordered
-				headerBordered
-				className="openapi-plan-card"
-				bodyStyle={{ padding: 12 }}
+				className="openapi-plan-card [&_.ant-pro-card-body]:p-3"
 			>
 				<div className="openapi-plan-fields" style={smsLabelStyle}>
 					<ContractAlignedField label="حداقل پیامک" labelId={`openapi-plan-${idx}-sms-min`}>
@@ -94,14 +91,12 @@ function OpenApiPackagePlanPanel({ idx }: { idx: number }) {
 						/>
 					</ContractAlignedField>
 				</div>
-			</ProCard>
+			</Card>
 
-			<ProCard
+			<Card
 				title="بخش استعلام قبض"
 				bordered
-				headerBordered
-				className="openapi-plan-card"
-				bodyStyle={{ padding: 12 }}
+				className="openapi-plan-card [&_.ant-pro-card-body]:p-3"
 			>
 				<div className="openapi-plan-fields" style={billLabelStyle}>
 					<ContractAlignedField label="سهم شریک" labelId={`openapi-plan-${idx}-bill-partner-share`}>
@@ -170,14 +165,12 @@ function OpenApiPackagePlanPanel({ idx }: { idx: number }) {
 						/>
 					</ContractAlignedField>
 				</div>
-			</ProCard>
+			</Card>
 
-			<ProCard
+			<Card
 				title="سهم ترافیک"
 				bordered
-				headerBordered
-				className="openapi-plan-card"
-				bodyStyle={{ padding: 12 }}
+				className="openapi-plan-card [&_.ant-pro-card-body]:p-3"
 			>
 				<div className="openapi-plan-fields" style={trafficLabelStyle}>
 					<ContractAlignedField label="درصد سود ترافیک" labelId={`openapi-plan-${idx}-traffic-profit`}>
@@ -204,7 +197,7 @@ function OpenApiPackagePlanPanel({ idx }: { idx: number }) {
 						/>
 					</ContractAlignedField>
 				</div>
-			</ProCard>
+			</Card>
 		</div>
 	);
 }
@@ -510,13 +503,7 @@ export function OpenApiFields() {
 		key: String(idx),
 		label: (
 			<div
-				style={{
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "space-between",
-					width: "100%",
-					gap: 12,
-				}}
+				className="flex items-center justify-between w-full gap-3"
 			>
 				<span>{`پلن بسته ${idx + 1}`}</span>
 
@@ -538,11 +525,10 @@ export function OpenApiFields() {
 	}));
 
 	return (
-		<ProCard
+		<Card
 			bordered
-			headerBordered
 			title="مدل قرارداد OpenAPI"
-			bodyStyle={{ padding: 16 }}
+			className="[&_.ant-pro-card-body]:p-4"
 		>
 			<Row gutter={24} justify="space-between">
 				<Col span={12}>
@@ -592,17 +578,16 @@ export function OpenApiFields() {
 
 				{contractModel === "package"
 					? (
-						<ProCard
+						<Card
 							bordered
-							headerBordered
-							style={{ marginTop: 12, borderRadius: 16 }}
+
+							className="mt-3 rounded-2xl"
 							title="پلن‌ها"
 							extra={(
 								<Button icon={<PlusOutlined />} onClick={addPlan}>
 									افزودن پلن جدید
 								</Button>
 							)}
-							bodyStyle={{ padding: 12 }}
 						>
 							<Collapse
 								accordion
@@ -611,14 +596,14 @@ export function OpenApiFields() {
 									setActiveKey(Array.isArray(k) ? String(k[0] ?? "0") : String(k ?? "0"))}
 								items={collapseItems as any}
 							/>
-						</ProCard>
+						</Card>
 					)
 					: null}
 			</Row>
 
 			{showAddenda
 				? (
-					<div style={{ marginTop: 12 }}>
+					<div className="mt-3">
 						<ContractAddendaSection<ContractFormValues>
 							title="الحاقیه‌های قرارداد (اختیاری)"
 							name={sf("addenda") as ArrayPath<ContractFormValues>}
@@ -653,6 +638,6 @@ export function OpenApiFields() {
 					</div>
 				)
 				: null}
-		</ProCard>
+		</Card>
 	);
 }

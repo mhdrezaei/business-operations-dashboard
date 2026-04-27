@@ -75,7 +75,7 @@ export default function LegalProfilePanel({ companyId }: { companyId: number }) 
 	}
 
 	if (loading)
-		return <div style={{ padding: 16 }}><Spin /></div>;
+		return <div className="p-4"><Spin /></div>;
 
 	return (
 		<div>

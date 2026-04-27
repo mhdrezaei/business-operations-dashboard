@@ -9,9 +9,8 @@ import type {
 } from "../../model/prediction.form.types";
 import { RHFProNumber, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined } from "@ant-design/icons";
-import { ProCard } from "@ant-design/pro-components";
 import { useQuery } from "@tanstack/react-query";
-import { Button, Form, Segmented, Select, Typography } from "antd";
+import { Button, Card, Form, Segmented, Select, Typography } from "antd";
 import { useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -137,12 +136,10 @@ function CompanyShareEditor({
 	}
 
 	return (
-		<ProCard
+		<Card
 			bordered
-			style={{ borderRadius: 12 }}
+			className="rounded-xl [&_.ant-pro-card-body]:flex [&_.ant-pro-card-body]:flex-col [&_.ant-pro-card-body]:gap-4 [&_.ant-pro-card-header]:min-h-12"
 			title={metricTitle}
-			headStyle={{ minHeight: 48 }}
-			bodyStyle={{ display: "flex", flexDirection: "column", gap: 16 }}
 		>
 			<Segmented
 				block
@@ -156,17 +153,17 @@ function CompanyShareEditor({
 
 			{shareState.mode === "auto"
 				? (
-					<Typography.Paragraph style={{ marginBottom: 0, opacity: 0.78 }}>
+					<Typography.Paragraph className="mb-0 opacity-[0.78]">
 						{t("prediction.messages.autoShareDescription")}
 					</Typography.Paragraph>
 				)
 				: (
-					<div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+					<div className="flex flex-col gap-4">
 						<Form.Item
 							label={t("prediction.labels.companySelect")}
 							validateStatus={shareError ? "error" : undefined}
 							help={shareError}
-							style={{ marginBottom: 0 }}
+							className="mb-0"
 						>
 							<Select<number[]>
 								mode="multiple"
@@ -182,12 +179,7 @@ function CompanyShareEditor({
 						{selectedCompanies.map(company => (
 							<div
 								key={company.value}
-								style={{
-									display: "grid",
-									gridTemplateColumns: "auto minmax(0, 1fr)",
-									gap: 12,
-									alignItems: "end",
-								}}
+								className="grid grid-cols-[auto_minmax(0,1fr)] gap-3 items-end"
 							>
 								<Button
 									aria-label={t("prediction.actions.removeCompanyShare")}
@@ -211,7 +203,7 @@ function CompanyShareEditor({
 						</Typography.Text>
 					</div>
 				)}
-		</ProCard>
+		</Card>
 	);
 }
 
@@ -248,11 +240,10 @@ export function OpenApiPredictionFields() {
 	);
 
 	return (
-		<div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-			<ProCard
+		<div className="flex flex-col gap-4">
+			<Card
 				bordered
-				headerBordered
-				style={{ borderRadius: 16 }}
+				className="rounded-2xl"
 			>
 				<div className="grid gap-3 md:grid-cols-2">
 					<RHFSelect<PredictionFormValues, any, OpenApiPredictionModel>
@@ -271,16 +262,15 @@ export function OpenApiPredictionFields() {
 						}}
 					/>
 				</div>
-			</ProCard>
+			</Card>
 
 			<QuarterDistributionSection />
 
 			{activeSections.map(section => (
-				<ProCard
+				<Card
 					key={section.key}
 					bordered
-					headerBordered
-					style={{ borderRadius: 16 }}
+					className="rounded-2xl"
 					title={t(section.titleKey)}
 				>
 					<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -306,27 +296,25 @@ export function OpenApiPredictionFields() {
 							enableWordsTooltip
 						/>
 					</div>
-				</ProCard>
+				</Card>
 			))}
 
-			<ProCard
+			<Card
 				bordered
-				headerBordered
-				style={{ borderRadius: 16 }}
+				className="rounded-2xl"
 				title={t("prediction.sections.companyShares")}
 			>
-				<div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-					<Typography.Paragraph style={{ marginBottom: 0, opacity: 0.8 }}>
+				<div className="flex flex-col gap-4">
+					<Typography.Paragraph className="mb-0 opacity-80">
 						{t("prediction.messages.companySharesDescription")}
 					</Typography.Paragraph>
 
 					{activeSections.map(section => (
-						<ProCard
+						<Card
 							key={`${section.key}-shares`}
 							bordered
-							style={{ borderRadius: 16 }}
+							className="rounded-2xl [&_.ant-pro-card-body]:flex [&_.ant-pro-card-body]:flex-col [&_.ant-pro-card-body]:gap-4"
 							title={t(section.titleKey)}
-							bodyStyle={{ display: "flex", flexDirection: "column", gap: 16 }}
 						>
 							<div className="prediction-share-editor-grid grid gap-4 xl:grid-cols-3">
 								{OPENAPI_METRICS.map(metric => (
@@ -340,16 +328,15 @@ export function OpenApiPredictionFields() {
 									/>
 								))}
 							</div>
-						</ProCard>
+						</Card>
 					))}
 
 					{activeModel === "PACKAGE"
 						? (
-							<ProCard
+							<Card
 								bordered
-								style={{ borderRadius: 16 }}
+								className="rounded-2xl [&_.ant-pro-card-body]:flex [&_.ant-pro-card-body]:flex-col [&_.ant-pro-card-body]:gap-4"
 								title={t("prediction.openapi.sections.channels", { defaultValue: "کانال‌ها" })}
-								bodyStyle={{ display: "flex", flexDirection: "column", gap: 16 }}
 							>
 								<div className="grid gap-4 xl:grid-cols-3">
 									{OPENAPI_CHANNEL_OPTIONS.map(channel => (
@@ -371,11 +358,11 @@ export function OpenApiPredictionFields() {
 										total: channelTotal,
 									})}
 								</Typography.Text>
-							</ProCard>
+							</Card>
 						)
 						: null}
 				</div>
-			</ProCard>
+			</Card>
 		</div>
 	);
 }

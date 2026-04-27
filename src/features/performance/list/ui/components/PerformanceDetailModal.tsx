@@ -21,8 +21,7 @@ import {
 	toNullableNumber,
 } from "#src/features/performance/shared/model/performance.helpers";
 import { RHFProNumber, RHFProText } from "#src/shared/ui/rhf-pro";
-import { ProCard } from "@ant-design/pro-components";
-import { Button, Input, Modal, Spin } from "antd";
+import { Button, Card, Input, Modal, Spin } from "antd";
 import i18next from "i18next";
 import { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
@@ -477,8 +476,8 @@ function buildOpenApiTrafficUpdatePayload(
 
 function ReadOnlyBlock({ label, value }: { label: string, value: unknown }) {
 	return (
-		<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-			<span style={{ fontWeight: 700 }}>{label}</span>
+		<div className="flex items-center gap-2">
+			<span className="font-bold">{label}</span>
 			<span>{value == null || value === "" ? "-" : String(value)}</span>
 		</div>
 	);
@@ -1275,14 +1274,10 @@ export function PerformanceDetailModal({
 				: (
 					<Spin spinning={loading}>
 						<FormProvider {...form}>
-							<ProCard>
-								<div style={{ display: "grid", gap: 12 }}>
+							<Card>
+								<div className="grid gap-3">
 									<div
-										style={{
-											display: "grid",
-											gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-											gap: 8,
-										}}
+										className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-2"
 									>
 										<ReadOnlyBlock label={`${t("performance.columns.service")}:`} value={resolveServiceDisplayName(service, mergedDetail.service_name ?? service)} />
 										<ReadOnlyBlock label={`${t("performance.columns.company")}:`} value={selectedCompany} />
@@ -1293,11 +1288,7 @@ export function PerformanceDetailModal({
 									{service === "openapi"
 										? (
 											<div
-												style={{
-													display: "grid",
-													gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-													gap: 8,
-												}}
+												className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-2"
 											>
 												{openApiSummaryFields.map(field => (
 													<ReadOnlyBlock
@@ -1313,11 +1304,7 @@ export function PerformanceDetailModal({
 									{service === "shahkar"
 										? (
 											<div
-												style={{
-													display: "grid",
-													gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-													gap: 8,
-												}}
+												className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-2"
 											>
 												{shahkarSummaryFields.map(field => (
 													<ReadOnlyBlock
@@ -1333,11 +1320,7 @@ export function PerformanceDetailModal({
 									{service === "psp"
 										? (
 											<div
-												style={{
-													display: "grid",
-													gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-													gap: 8,
-												}}
+												className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-2"
 											>
 												{pspSummaryFields.map(field => (
 													<ReadOnlyBlock
@@ -1353,11 +1336,7 @@ export function PerformanceDetailModal({
 									{!isUnregisteredMode && isSmsService && smsBreakdownCards.length > 0
 										? (
 											<div
-												style={{
-													display: "grid",
-													gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-													gap: 12,
-												}}
+												className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3"
 											>
 												{smsBreakdownCards.map(card => (
 													<div
@@ -1370,7 +1349,7 @@ export function PerformanceDetailModal({
 															gap: 6,
 														}}
 													>
-														<div style={{ fontWeight: 700 }}>{card.title}</div>
+														<div className="font-bold">{card.title}</div>
 														<ReadOnlyBlock label={`${t("performance.columns.value")}:`} value={formatNumberLike(card.value)} />
 														<ReadOnlyBlock label={`${t("performance.modal.labels.operatorIncome")}:`} value={formatNumberLike(card.incomeOperator)} />
 														<ReadOnlyBlock label={`${t("performance.modal.labels.governmentIncome")}:`} value={formatNumberLike(card.incomeGovernment)} />
@@ -1387,11 +1366,7 @@ export function PerformanceDetailModal({
 									{readonlyDetailFields.length > 0
 										? (
 											<div
-												style={{
-													display: "grid",
-													gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-													gap: 8,
-												}}
+												className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-2"
 											>
 												{readonlyDetailFields.map(field => (
 													<ReadOnlyBlock
@@ -1410,14 +1385,14 @@ export function PerformanceDetailModal({
 												? (
 													<div style={pspAlignedLabelStyle}>
 														<div
-															className="contract-form-aligned-grid contract-form-aligned-grid--two"
-															style={{ gap: 12 }}
+															className="contract-form-aligned-grid contract-form-aligned-grid--two gap-3"
+
 														>
 															<ContractAlignedField label={t("performance.fields.psp.performanceValue")}>
 																<RHFProNumber<EditFormValues, any>
 																	name={"value" as any}
 																	label=""
-																	formItemProps={{ style: { marginBottom: 0 } }}
+																	formItemProps={{ className: "mb-0" }}
 																	inputProps={{ placeholder: t("performance.modal.placeholders.enterNumber"), inputMode: "numeric" } as any}
 																	enableGrouping
 																	enableWordsTooltip
@@ -1438,8 +1413,8 @@ export function PerformanceDetailModal({
 													? (
 														<div style={isOpenApiPackageEditLayout ? openApiPackageAlignedLabelStyle : smsAlignedLabelStyle}>
 															<div
-																className="contract-form-aligned-grid contract-form-aligned-grid--two"
-																style={{ gap: 12 }}
+																className="contract-form-aligned-grid contract-form-aligned-grid--two gap-3"
+
 															>
 																{config.editableFields.map((field) => {
 																	const addonAfter = getSmsPerformanceFieldAddon(field.key);
@@ -1452,7 +1427,7 @@ export function PerformanceDetailModal({
 																			<RHFProNumber<EditFormValues, any>
 																				name={field.key as any}
 																				label=""
-																				formItemProps={{ style: { marginBottom: 0 } }}
+																				formItemProps={{ className: "mb-0" }}
 																				inputProps={{
 																					placeholder: t("performance.modal.placeholders.enterNumber"),
 																					inputMode: "numeric",
@@ -1469,11 +1444,7 @@ export function PerformanceDetailModal({
 													)
 													: (
 														<div
-															style={{
-																display: "grid",
-																gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-																gap: 12,
-															}}
+															className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3"
 														>
 															{config.editableFields.map((field) => {
 																if (field.type === "number") {
@@ -1503,14 +1474,9 @@ export function PerformanceDetailModal({
 										)
 										: null}
 								</div>
-							</ProCard>
+							</Card>
 							<div
-								style={{
-									display: "flex",
-									justifyContent: "flex-end",
-									marginTop: 8,
-									gap: 8,
-								}}
+								className="flex justify-end mt-2 gap-2"
 							>
 								<Button onClick={onClose}>{t("common.cancel")}</Button>
 								{config.editableFields.length > 0

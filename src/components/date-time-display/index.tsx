@@ -91,12 +91,10 @@ export function DateTimeDisplay({ className, sidebarCollapsed = false, onToggleC
 
 			{/* Horizontal Dashed Divider */}
 			<div
-				className="mt-3"
-				style={{
-					borderTop: `1px dashed ${isFixedDarkTheme ? "#d1d5db" : "#374151"}`,
-					borderImageSource: `url("data:image/svg+xml,%3csvg width='100' height='20' xmlns='http://www.w3.org/2000/svg'%3e%3cdefs%3e%3cpattern id='a' patternUnits='userSpaceOnUse' width='8' height='1'%3e%3crect width='4' height='1' fill='${isFixedDarkTheme ? "%23d1d5db" : "%23374151"}'/%3e%3c/pattern%3e%3c/defs%3e%3crect width='100' height='1' fill='url(%23a)'/%3e%3c/svg%3e")`,
-					borderImageSlice: 1,
-				}}
+				className={cn(
+					"mt-3 border-t border-dashed",
+					isFixedDarkTheme ? "border-t-gray-300" : "border-t-gray-700",
+				)}
 			/>
 		</div>
 	);

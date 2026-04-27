@@ -8,10 +8,10 @@ export default function CompanyInfoSocialLinksField() {
 
 	return (
 		<div>
-			<div style={{ marginBottom: 8, opacity: 0.9 }}>شبکه‌های اجتماعی</div>
+			<div className="mb-2 opacity-90">شبکه‌های اجتماعی</div>
 
 			{fields.map((f, idx) => (
-				<div key={f.id} style={{ display: "grid", gridTemplateColumns: "1fr 2fr auto", gap: 12, marginBottom: 12, alignItems: "center" }}>
+				<div key={f.id} className="grid grid-cols-[1fr_2fr_auto] gap-3 mb-3 items-center">
 					<RHFProText name={`social_links.${idx}.label`} label="عنوان" />
 					<RHFProText name={`social_links.${idx}.url`} label="لینک" />
 					<Button danger type="text" onClick={() => remove(idx)}>
@@ -20,7 +20,7 @@ export default function CompanyInfoSocialLinksField() {
 				</div>
 			))}
 
-			<div style={{ display: "flex", justifyContent: "flex-end" }}>
+			<div className="flex justify-end">
 				<Button type="dashed" onClick={() => append({ label: "", url: "" })}>
 					افزودن شبکه اجتماعی
 				</Button>

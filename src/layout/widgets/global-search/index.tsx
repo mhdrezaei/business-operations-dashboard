@@ -255,7 +255,7 @@ export function GlobalSearch() {
 								<Empty
 									className="my-8"
 									styles={{ image: { height: 40 } }}
-									image={keyword.length ? <SearchOutlined className="text-colorTextTertiary" style={{ fontSize: 40 }} /> : Empty.PRESENTED_IMAGE_SIMPLE}
+									image={keyword.length ? <SearchOutlined className="text-colorTextTertiary text-[40px]" /> : Empty.PRESENTED_IMAGE_SIMPLE}
 									description={keyword.length ? `${t("widgets.search.noResults")} ${JSON.stringify(keyword)}` : t("widgets.search.noRecent")}
 								>
 								</Empty>

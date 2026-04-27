@@ -42,12 +42,12 @@ function CompanyProfilesPageInner() {
 			{/* آکاردئون فقط وقتی company انتخاب شد */}
 			{companyId
 				? (
-					<div style={{ marginTop: 16 }}>
+					<div className="mt-4">
 						<CompanyProfileAccordion />
 					</div>
 				)
 				: (
-					<div style={{ marginTop: 16, opacity: 0.8 }}>
+					<div className="mt-4 opacity-80">
 						راهنما: ابتدا سرویس و سپس شرکت را انتخاب کنید.
 					</div>
 				)}

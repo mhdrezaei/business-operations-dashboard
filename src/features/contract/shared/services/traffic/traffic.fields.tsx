@@ -5,8 +5,7 @@ import { defaultContractTypeValue } from "#src/features/contract/components/cont
 import { ContractTypeSection } from "#src/features/contract/components/contract-type/ContractTypeSection";
 import { RHFProCheckbox, RHFProNumber, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined } from "@ant-design/icons";
-import { ProCard } from "@ant-design/pro-components";
-import { Button, Row } from "antd";
+import { Button, Card, Row } from "antd";
 import React, { useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
@@ -75,8 +74,8 @@ export function TrafficFields() {
 
 	return (
 		<>
-			<ProCard bordered headerBordered style={{ borderRadius: 6 }} bodyStyle={{ padding: 16 }}>
-				<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+			<Card bordered className="rounded-md [&_.ant-pro-card-body]:p-4">
+				<div className="flex items-center justify-between mb-2">
 					<RHFProCheckbox<ContractFormValues, any>
 						name={sf("isOfficial") as any}
 						label=""
@@ -87,12 +86,12 @@ export function TrafficFields() {
 
 				{!isOfficial
 					? (
-						<div style={{ marginBottom: 12, color: "#faad14" }}>
+						<div className="mb-3 text-[#faad14]">
 							قرارداد غیررسمی است؛ فیلدهای محاسباتی ارسال نمی‌شوند.
 						</div>
 					)
 					: (
-						<div style={{ marginBottom: 12, opacity: 0.9 }}>
+						<div className="mb-3 opacity-90">
 							توجه: هر واحد قیمت برابر با یک مگابیت بر ثانیه است.
 						</div>
 					)}
@@ -101,13 +100,9 @@ export function TrafficFields() {
 					? (
 						<>
 							<div
-								style={{
-									display: "grid",
-									gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-									gap: 12,
-								}}
+								className="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-3"
 							>
-								<ProCard bordered headerBordered style={{ borderRadius: 6, marginTop: 12 }} bodyStyle={{ padding: 16 }}>
+								<Card bordered className="rounded-md mt-3 [&_.ant-pro-card-body]:p-4">
 									<Row>
 										<Button onClick={addTehran} disabled={!!tehranPricing}>افزودن قرارداد تهران</Button>
 									</Row>
@@ -115,12 +110,10 @@ export function TrafficFields() {
 									{tehranPricing
 										? (
 											<Row>
-												<ProCard
+												<Card
 													bordered
-													headerBordered
-													style={{ width: "100%", borderRadius: 6, marginTop: 12 }}
-													bodyStyle={{ padding: 16 }}
-													title={<span style={{ fontWeight: 700 }}>قرارداد تهران</span>}
+													className="w-full rounded-md mt-3 [&_.ant-pro-card-body]:p-4"
+													title={<span className="font-bold">قرارداد تهران</span>}
 													extra={(
 														<Button danger size="small" icon={<DeleteOutlined />} onClick={removeTehran}>
 															حذف
@@ -130,7 +123,7 @@ export function TrafficFields() {
 													<ContractTypeSection title="" name={sf("tehranPricing") as any} />
 													{showPremiumRevenuePercent
 														? (
-															<div style={{ marginBottom: 12, marginTop: 12 }}>
+															<div className="mb-3 mt-3">
 																<RHFProNumber
 																	name={sf("tehranRevenuePercent") as any}
 																	label="درصد سهم درآمد (تهران)"
@@ -141,12 +134,12 @@ export function TrafficFields() {
 															</div>
 														)
 														: null}
-												</ProCard>
+												</Card>
 											</Row>
 										)
 										: null}
-								</ProCard>
-								<ProCard bordered headerBordered style={{ borderRadius: 6, marginTop: 12 }} bodyStyle={{ padding: 16 }}>
+								</Card>
+								<Card bordered className="rounded-md mt-3 [&_.ant-pro-card-body]:p-4">
 									<Row>
 										<Button onClick={addProvince} disabled={!!provincePricing}>افزودن قرارداد مراکز استانی</Button>
 									</Row>
@@ -154,12 +147,10 @@ export function TrafficFields() {
 									{provincePricing
 										? (
 											<Row>
-												<ProCard
+												<Card
 													bordered
-													headerBordered
-													style={{ borderRadius: 6, marginTop: 12 }}
-													bodyStyle={{ padding: 16 }}
-													title={<span style={{ fontWeight: 700 }}>قرارداد مراکز استانی</span>}
+													className="rounded-md mt-3 [&_.ant-pro-card-body]:p-4"
+													title={<span className="font-bold">قرارداد مراکز استانی</span>}
 													extra={(
 														<Button danger size="small" icon={<DeleteOutlined />} onClick={removeProvince}>
 															حذف
@@ -169,7 +160,7 @@ export function TrafficFields() {
 													<ContractTypeSection title="" name={sf("provincePricing") as any} />
 													{showPremiumRevenuePercent
 														? (
-															<div style={{ marginBottom: 12, marginTop: 12 }}>
+															<div className="mb-3 mt-3">
 																<RHFProNumber
 																	name={sf("provinceRevenuePercent") as any}
 																	label="درصد سهم درآمد (مراکز استانی)"
@@ -180,20 +171,20 @@ export function TrafficFields() {
 															</div>
 														)
 														: null}
-												</ProCard>
+												</Card>
 											</Row>
 										)
 										: null}
-								</ProCard>
+								</Card>
 							</div>
 						</>
 					)
 					: null}
-			</ProCard>
+			</Card>
 
 			{showPricingUi && showAddenda
 				? (
-					<div style={{ marginTop: 12 }}>
+					<div className="mt-3">
 						<ContractAddendaSection<ContractFormValues>
 							title="الحاقیه‌های قرارداد (اختیاری)"
 							name={sf("addenda") as ArrayPath<ContractFormValues>}

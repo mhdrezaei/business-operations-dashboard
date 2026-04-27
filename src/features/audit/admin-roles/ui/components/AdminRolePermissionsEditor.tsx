@@ -271,7 +271,7 @@ function ServicePermissionCard({
 				</div>
 
 				<div className="text-right [direction:rtl]">
-					<Typography.Title level={5} style={{ margin: 0 }}>
+					<Typography.Title level={5} className="m-0">
 						{service.name}
 					</Typography.Title>
 					<Typography.Text type="secondary">{service.code}</Typography.Text>
@@ -364,7 +364,7 @@ function CompanyProfileCardsPanel({
 		<section className="rounded-[28px] border border-[var(--ant-color-border-secondary)] bg-[var(--ant-color-bg-container)] p-5">
 			<header className="mb-5 flex flex-wrap items-start justify-between gap-3">
 				<div className="text-right">
-					<Typography.Title level={4} style={{ margin: 0 }}>
+					<Typography.Title level={4} className="m-0">
 						کارت‌های قابل نمایش در صفحه پروفایل شرکت
 					</Typography.Title>
 					<Typography.Text type="secondary">

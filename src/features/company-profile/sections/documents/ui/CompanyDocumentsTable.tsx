@@ -229,7 +229,7 @@ export default function CompanyDocumentsTable({ serviceId, companyId }: Props) {
 	}, [canDeleteDocument, canUpdateDocument, docTypeValueEnum, orderingValueEnum, verificationValueEnum]);
 
 	if (!canAccessDocumentsCard) {
-		return <div style={{ opacity: 0.8 }}>کارت مدارک برای این کاربر فعال نیست.</div>;
+		return <div className="opacity-80">کارت مدارک برای این کاربر فعال نیست.</div>;
 	}
 
 	return (

@@ -249,7 +249,7 @@ export function PerformanceForm({
 
 				{showActionSection
 					? (
-						<div style={{ marginTop: 16, width: "100%" }}>
+						<div className="mt-4 w-full">
 							<ActionSection
 								submitting={submitting}
 								onSubmit={() => triggerSubmit("submit")}

@@ -4,7 +4,7 @@ import {
 	useContractAlignedLabelWidth,
 } from "#src/features/contract/shared/ui/form/components/ContractAlignedField";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
-import { ProCard } from "@ant-design/pro-components";
+import { Card } from "antd";
 import { useTranslation } from "react-i18next";
 import "#src/features/contract/shared/ui/form/contract-form.css";
 
@@ -16,7 +16,7 @@ export function SmsPerformanceFields() {
 	const alignedLabelStyle = useContractAlignedLabelWidth(SMS_LABELS);
 
 	return (
-		<ProCard bordered headerBordered style={{ borderRadius: 8 }}>
+		<Card bordered className="rounded-lg">
 			<div
 				className="contract-form-aligned-grid contract-form-aligned-grid--two"
 				style={{ gap: 12, ...alignedLabelStyle }}
@@ -99,6 +99,6 @@ export function SmsPerformanceFields() {
 					/>
 				</ContractAlignedField>
 			</div>
-		</ProCard>
+		</Card>
 	);
 }

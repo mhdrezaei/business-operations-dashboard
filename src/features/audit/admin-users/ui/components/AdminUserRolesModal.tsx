@@ -68,7 +68,7 @@ export function AdminUserRolesModal({ open, user, roles, loading, onClose, onSub
 						<Select
 							mode="multiple"
 							allowClear
-							style={{ width: "100%" }}
+							className="w-full"
 							placeholder="نقش‌ها را انتخاب کنید"
 							options={options}
 							value={selectedRoleIds}
