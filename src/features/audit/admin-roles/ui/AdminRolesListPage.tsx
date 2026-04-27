@@ -16,6 +16,7 @@ import {
 	fetchCreateAdminRole,
 	fetchDeleteAdminRole,
 	fetchUpdateAdminRole,
+	fetchUpdateAdminRolePolicies,
 } from "../api/admin-roles.api";
 import { adminRoleServicesQuery } from "../queries/admin-roles.queries";
 import { AdminRoleDetailsModal } from "./components/AdminRoleDetailsModal";
@@ -204,7 +205,7 @@ export default function AdminRolesListPage() {
 						}
 
 						await fetchUpdateAdminRole(selectedRole.id, role);
-						await fetchBulkUpsertAdminRolePolicies(selectedRole.id, policies);
+						await fetchUpdateAdminRolePolicies(selectedRole.id, policies);
 						window.$message?.success("نقش با موفقیت به‌روزرسانی شد.");
 					}
 

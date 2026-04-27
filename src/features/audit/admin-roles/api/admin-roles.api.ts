@@ -50,3 +50,9 @@ export function fetchBulkUpsertAdminRolePolicies(roleId: number, payload: AdminR
 		.post(`${POLICIES_BASE}/bulk-upsert/${roleId}/`, { json: payload })
 		.json();
 }
+
+export function fetchUpdateAdminRolePolicies(roleId: number, payload: AdminRolePoliciesBulkUpsertPayload) {
+	return request
+		.put(`${POLICIES_BASE}/bulk-upsert/${roleId}/`, { json: payload })
+		.json();
+}

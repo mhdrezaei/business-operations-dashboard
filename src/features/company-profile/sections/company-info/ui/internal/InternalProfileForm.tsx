@@ -21,7 +21,7 @@ interface Props {
 	onSubmit: (values: InternalProfileFormValues) => void | Promise<void>
 }
 
-export default function InternalProfileForm({ defaultValues, onSubmit }: Props) {
+export default function InternalProfileForm({ disabled, defaultValues, onSubmit }: Props) {
 	const methods = useForm<InternalProfileFormValues>({
 		defaultValues,
 		resolver: zodResolver(internalProfileSchema as any) as unknown as Resolver<InternalProfileFormValues>,
@@ -42,19 +42,19 @@ export default function InternalProfileForm({ defaultValues, onSubmit }: Props) 
 	return (
 		<Form layout="vertical" className="space-y-4">
 			<FormProvider {...methods}>
-				<Card bordered title="اطلاعات داخلی" className="bg-bgMask">
+				<Card bordered title={"\u0627\u0637\u0644\u0627\u0639\u0627\u062A \u062F\u0627\u062E\u0644\u06CC"} className="bg-bgMask">
 					<div className="grid grid-cols-2 gap-x-4">
-						<RHFProText name="internal_code" label="کد داخلی" inputProps={{ placeholder: "کد داخلی" }} />
+						<RHFProText name="internal_code" label={"\u06A9\u062F \u062F\u0627\u062E\u0644\u06CC"} inputProps={{ placeholder: "\u06A9\u062F \u062F\u0627\u062E\u0644\u06CC", disabled }} />
 
 						<RHFSelect
 							name="info_verification_status"
-							label="وضعیت تایید اطلاعات"
-							selectProps={{ placeholder: "در انتظار", allowClear: true }}
+							label={"\u0648\u0636\u0639\u06CC\u062A \u062A\u0627\u06CC\u06CC\u062F \u0627\u0637\u0644\u0627\u0639\u0627\u062A"}
+							selectProps={{ placeholder: "\u062F\u0631 \u0627\u0646\u062A\u0638\u0627\u0631", allowClear: true, disabled }}
 							options={INFO_VERIFICATION_STATUS_OPTIONS}
 						/>
 
 						<div className="col-span-2">
-							<RHFProTextArea name="internal_note" label="یادداشت داخلی" textAreaProps={{ rows: 4 }} />
+							<RHFProTextArea name="internal_note" label={"\u06CC\u0627\u062F\u062F\u0627\u0634\u062A \u062F\u0627\u062E\u0644\u06CC"} textAreaProps={{ rows: 4, disabled }} />
 						</div>
 					</div>
 				</Card>
@@ -62,10 +62,10 @@ export default function InternalProfileForm({ defaultValues, onSubmit }: Props) 
 				<Button
 					type="primary"
 					loading={isSubmitting}
-					disabled={!isChanged || !isValid}
+					disabled={disabled || !isChanged || !isValid}
 					onClick={handleSubmit(values => onSubmit(values))}
 				>
-					ذخیره تغییرات
+					{"\u0630\u062E\u06CC\u0631\u0647 \u062A\u063A\u06CC\u06CC\u0631\u0627\u062A"}
 				</Button>
 			</FormProvider>
 		</Form>
