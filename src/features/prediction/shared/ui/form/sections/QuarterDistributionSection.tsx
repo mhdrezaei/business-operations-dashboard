@@ -1,7 +1,6 @@
 import type { PredictionFormValues } from "../../../model/prediction.form.types";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
-import { ProCard } from "@ant-design/pro-components";
-import { Typography } from "antd";
+import { Card, Typography } from "antd";
 import { useEffect } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -82,9 +81,8 @@ export function QuarterDistributionSection() {
 	}, [allInputQuarterFieldsTouched, formState.isSubmitted, q1Percent, q2Percent, q3Percent, q4Percent, trigger]);
 
 	return (
-		<ProCard
+		<Card
 			bordered
-			headerBordered
 			className="rounded-2xl"
 			title={t("prediction.sections.quarters")}
 		>
@@ -129,6 +127,6 @@ export function QuarterDistributionSection() {
 					</Typography.Text>
 				)
 				: null}
-		</ProCard>
+		</Card>
 	);
 }

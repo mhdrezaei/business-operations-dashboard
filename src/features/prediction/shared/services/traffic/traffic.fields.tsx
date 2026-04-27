@@ -8,9 +8,8 @@ import type {
 } from "../../model/prediction.form.types";
 import { RHFProNumber, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import { ProCard } from "@ant-design/pro-components";
 import { useQuery } from "@tanstack/react-query";
-import { Button, Form, Segmented, Select, Typography } from "antd";
+import { Button, Card, Form, Segmented, Select, Typography } from "antd";
 import { useEffect, useMemo, useRef } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -118,7 +117,7 @@ function TrafficShareEditor({
 	}
 
 	return (
-		<ProCard
+		<Card
 			bordered
 			className="rounded-xl [&_.ant-pro-card-body]:flex [&_.ant-pro-card-body]:flex-col [&_.ant-pro-card-body]:gap-4"
 			title={metricTitle}
@@ -185,7 +184,7 @@ function TrafficShareEditor({
 						</Typography.Text>
 					</div>
 				)}
-		</ProCard>
+		</Card>
 	);
 }
 
@@ -279,9 +278,8 @@ export function TrafficPredictionFields() {
 		<div className="flex flex-col gap-4">
 			<QuarterDistributionSection />
 
-			<ProCard
+			<Card
 				bordered
-				headerBordered
 				className="rounded-2xl"
 				title={t("prediction.operations.traffic")}
 				extra={(
@@ -314,7 +312,7 @@ export function TrafficPredictionFields() {
 							: t("prediction.labels.trafficLocation");
 
 						return (
-							<ProCard
+							<Card
 								key={field.id}
 								bordered
 								className="rounded-xl"
@@ -371,15 +369,14 @@ export function TrafficPredictionFields() {
 										enableWordsTooltip
 									/>
 								</div>
-							</ProCard>
+							</Card>
 						);
 					})}
 				</div>
-			</ProCard>
+			</Card>
 
-			<ProCard
+			<Card
 				bordered
-				headerBordered
 				className="rounded-2xl"
 				title={t("prediction.sections.companyShares")}
 			>
@@ -389,7 +386,7 @@ export function TrafficPredictionFields() {
 					</Typography.Paragraph>
 
 					{selectedLocationCodes.map(locationCode => (
-						<ProCard
+						<Card
 							key={locationCode}
 							bordered
 							className="rounded-xl [&_.ant-pro-card-body]:flex [&_.ant-pro-card-body]:flex-col [&_.ant-pro-card-body]:gap-4"
@@ -407,10 +404,10 @@ export function TrafficPredictionFields() {
 									/>
 								))}
 							</div>
-						</ProCard>
+						</Card>
 					))}
 				</div>
-			</ProCard>
+			</Card>
 		</div>
 	);
 }

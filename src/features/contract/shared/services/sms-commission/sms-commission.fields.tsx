@@ -6,7 +6,7 @@ import {
 	useContractAlignedLabelWidth,
 } from "#src/features/contract/shared/ui/form/components/ContractAlignedField";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
-import { ProCard } from "@ant-design/pro-components";
+import { Card } from "antd";
 import { useEffect, useMemo, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
@@ -322,9 +322,9 @@ export function SmsCommissionFields() {
 
 	return (
 		<>
-			<ProCard bordered headerBordered className="rounded-md [&_.ant-pro-card-body]:p-4">
+			<Card bordered className="rounded-md [&_.ant-pro-card-body]:p-4">
 				{renderCommissionGrid()}
-			</ProCard>
+			</Card>
 
 			{showAddenda
 				? (

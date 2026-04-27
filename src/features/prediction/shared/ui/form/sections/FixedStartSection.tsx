@@ -1,9 +1,8 @@
 import type { PredictionFormValues } from "../../../model/prediction.form.types";
 import { useAccess } from "#src/hooks";
 import { RHFSelect } from "#src/shared/ui/rhf-pro";
-import { ProCard } from "@ant-design/pro-components";
 import { useQuery } from "@tanstack/react-query";
-import { Alert } from "antd";
+import { Alert, Card } from "antd";
 import { useEffect, useMemo, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -184,9 +183,8 @@ export function FixedStartSection({
 
 	return (
 		<div className="flex flex-col gap-4">
-			<ProCard
+			<Card
 				bordered
-				headerBordered
 				className="rounded-2xl"
 				title={t(titleKey)}
 			>
@@ -220,7 +218,7 @@ export function FixedStartSection({
 						}}
 					/>
 				</div>
-			</ProCard>
+			</Card>
 
 			{matchedYearRecord && !hideMatchedRecordAlert
 				? (

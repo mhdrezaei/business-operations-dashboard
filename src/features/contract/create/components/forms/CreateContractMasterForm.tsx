@@ -1,6 +1,5 @@
 import { getContractTypeOptions, getMonthTypeOptions, getYearTypeOptions } from "#src/features/contract/constant";
 import {
-	ProCard,
 	ProForm,
 	ProFormDependency,
 	ProFormSelect,
@@ -9,7 +8,7 @@ import {
 	ProFormUploadButton,
 
 } from "@ant-design/pro-components";
-import { Form } from "antd";
+import { Card, Form } from "antd";
 import { useTranslation } from "react-i18next";
 
 function CreateContractMasterForm() {
@@ -20,7 +19,7 @@ function CreateContractMasterForm() {
 		window.$message?.success("به‌روزرسانی اطلاعات پایه با موفقیت انجام شد");
 	};
 	return (
-		<ProCard>
+		<Card>
 
 			<h3>ایجاد قرارداد جدید</h3>
 			<ProForm
@@ -166,7 +165,7 @@ function CreateContractMasterForm() {
 				/>
 
 			</ProForm>
-		</ProCard>
+		</Card>
 	);
 }
 

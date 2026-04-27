@@ -2,9 +2,8 @@ import type { PerformanceFormValues } from "../../../model/performance.form.type
 import { BasicContent, TopRightAlert } from "#src/components";
 import { useAccess } from "#src/hooks";
 import { RHFProRadioGroup, RHFSelect } from "#src/shared/ui/rhf-pro";
-import { ProCard } from "@ant-design/pro-components";
 import { useQuery } from "@tanstack/react-query";
-import { Col, Form, Input, Row, Tag } from "antd";
+import { Card, Col, Form, Input, Row, Tag } from "antd";
 import i18next from "i18next";
 import { useEffect, useMemo, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
@@ -519,7 +518,7 @@ export function FixedStartSection() {
 	}, [shouldShowMissingPeriodError, setValue, getValues]);
 
 	return (
-		<ProCard>
+		<Card className="w-full">
 			<BasicContent className="w-full">
 				<Row gutter={16}>
 					<Col span={12}>
@@ -681,6 +680,6 @@ export function FixedStartSection() {
 					)
 					: null}
 			</BasicContent>
-		</ProCard>
+		</Card>
 	);
 }

@@ -5,8 +5,7 @@ import { defaultContractTypeValue } from "#src/features/contract/components/cont
 import { ContractTypeSection } from "#src/features/contract/components/contract-type/ContractTypeSection";
 import { RHFProCheckbox, RHFProNumber, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined } from "@ant-design/icons";
-import { ProCard } from "@ant-design/pro-components";
-import { Button, Row } from "antd";
+import { Button, Card, Row } from "antd";
 import React, { useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
@@ -75,7 +74,7 @@ export function TrafficFields() {
 
 	return (
 		<>
-			<ProCard bordered headerBordered className="rounded-md [&_.ant-pro-card-body]:p-4">
+			<Card bordered className="rounded-md [&_.ant-pro-card-body]:p-4">
 				<div className="flex items-center justify-between mb-2">
 					<RHFProCheckbox<ContractFormValues, any>
 						name={sf("isOfficial") as any}
@@ -103,7 +102,7 @@ export function TrafficFields() {
 							<div
 								className="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-3"
 							>
-								<ProCard bordered headerBordered className="rounded-md mt-3 [&_.ant-pro-card-body]:p-4">
+								<Card bordered className="rounded-md mt-3 [&_.ant-pro-card-body]:p-4">
 									<Row>
 										<Button onClick={addTehran} disabled={!!tehranPricing}>افزودن قرارداد تهران</Button>
 									</Row>
@@ -111,9 +110,8 @@ export function TrafficFields() {
 									{tehranPricing
 										? (
 											<Row>
-												<ProCard
+												<Card
 													bordered
-													headerBordered
 													className="w-full rounded-md mt-3 [&_.ant-pro-card-body]:p-4"
 													title={<span className="font-bold">قرارداد تهران</span>}
 													extra={(
@@ -136,12 +134,12 @@ export function TrafficFields() {
 															</div>
 														)
 														: null}
-												</ProCard>
+												</Card>
 											</Row>
 										)
 										: null}
-								</ProCard>
-								<ProCard bordered headerBordered className="rounded-md mt-3 [&_.ant-pro-card-body]:p-4">
+								</Card>
+								<Card bordered className="rounded-md mt-3 [&_.ant-pro-card-body]:p-4">
 									<Row>
 										<Button onClick={addProvince} disabled={!!provincePricing}>افزودن قرارداد مراکز استانی</Button>
 									</Row>
@@ -149,9 +147,8 @@ export function TrafficFields() {
 									{provincePricing
 										? (
 											<Row>
-												<ProCard
+												<Card
 													bordered
-													headerBordered
 													className="rounded-md mt-3 [&_.ant-pro-card-body]:p-4"
 													title={<span className="font-bold">قرارداد مراکز استانی</span>}
 													extra={(
@@ -174,16 +171,16 @@ export function TrafficFields() {
 															</div>
 														)
 														: null}
-												</ProCard>
+												</Card>
 											</Row>
 										)
 										: null}
-								</ProCard>
+								</Card>
 							</div>
 						</>
 					)
 					: null}
-			</ProCard>
+			</Card>
 
 			{showPricingUi && showAddenda
 				? (

@@ -1,7 +1,6 @@
 import type { UploadProps } from "antd";
 import type { PerformanceFormValues } from "../../model/performance.form.types";
-import { ProCard } from "@ant-design/pro-components";
-import { Form, Upload } from "antd";
+import { Card, Form, Upload } from "antd";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
@@ -28,7 +27,7 @@ function UploadCard({
 			name={name as any}
 			control={control}
 			render={({ field, fieldState, formState }) => (
-				<ProCard bordered headerBordered title={title} className="rounded-lg">
+				<Card bordered title={title} className="rounded-lg">
 					<Form.Item
 						help={(formState.isSubmitted || fieldState.isTouched)
 							? fieldState.error?.message
@@ -47,7 +46,7 @@ function UploadCard({
 							<p className="m-0 mt-2">{t("performance.labels.allowedFormatsXls")}</p>
 						</Upload.Dragger>
 					</Form.Item>
-				</ProCard>
+				</Card>
 			)}
 		/>
 	);
@@ -57,9 +56,8 @@ export function CommercialPerformanceFields() {
 	const { t } = useTranslation();
 
 	return (
-		<ProCard
+		<Card
 			bordered
-			headerBordered
 			className="rounded-lg"
 			title={t("performance.commercial.title")}
 		>
@@ -74,6 +72,6 @@ export function CommercialPerformanceFields() {
 				<UploadCard title={t("performance.commercial.provinceCodeFile")} name={sf("provinceCodeFile")} />
 				<UploadCard title={t("performance.commercial.monthlyPerformanceFile")} name={sf("monthlyPerformanceFile")} />
 			</div>
-		</ProCard>
+		</Card>
 	);
 }

@@ -5,9 +5,8 @@ import type {
 } from "../../model/prediction.form.types";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined } from "@ant-design/icons";
-import { ProCard } from "@ant-design/pro-components";
 import { useQuery } from "@tanstack/react-query";
-import { Button, Form, Segmented, Select, Typography } from "antd";
+import { Button, Card, Form, Segmented, Select, Typography } from "antd";
 import { useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -102,7 +101,7 @@ function YearlyValueIncomeShareEditor({
 	}
 
 	return (
-		<ProCard
+		<Card
 			bordered
 			className="rounded-xl [&_.ant-pro-card-body]:flex [&_.ant-pro-card-body]:flex-col [&_.ant-pro-card-body]:gap-4"
 			title={title}
@@ -169,7 +168,7 @@ function YearlyValueIncomeShareEditor({
 						</Typography.Text>
 					</div>
 				)}
-		</ProCard>
+		</Card>
 	);
 }
 
@@ -195,9 +194,8 @@ export function YearlyValueIncomePredictionFields({ operationTitleKey }: YearlyV
 		<div className="flex flex-col gap-4">
 			<QuarterDistributionSection />
 
-			<ProCard
+			<Card
 				bordered
-				headerBordered
 				className="rounded-2xl"
 				title={t(operationTitleKey)}
 			>
@@ -217,11 +215,11 @@ export function YearlyValueIncomePredictionFields({ operationTitleKey }: YearlyV
 						enableWordsTooltip
 					/>
 				</div>
-			</ProCard>
+			</Card>
 
-			<ProCard
+			<Card
 				bordered
-				headerBordered
+
 				className="rounded-2xl"
 				title={t("prediction.sections.companyShares")}
 			>
@@ -243,7 +241,7 @@ export function YearlyValueIncomePredictionFields({ operationTitleKey }: YearlyV
 						/>
 					</div>
 				</div>
-			</ProCard>
+			</Card>
 		</div>
 	);
 }

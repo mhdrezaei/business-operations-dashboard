@@ -1,6 +1,6 @@
 import type { PerformanceFormValues } from "../../model/performance.form.types";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
-import { ProCard } from "@ant-design/pro-components";
+import { Card } from "antd";
 import { useTranslation } from "react-i18next";
 
 const sf = (path: string) => `serviceFields.${path}` as const;
@@ -9,7 +9,7 @@ export function ShahkarPerformanceFields() {
 	const { t } = useTranslation();
 
 	return (
-		<ProCard bordered headerBordered className="rounded-lg">
+		<Card bordered className="rounded-lg">
 			<RHFProNumber<PerformanceFormValues, any>
 				name={sf("performanceValue") as any}
 				label={t("performance.fields.shahkar.performanceValue")}
@@ -17,6 +17,6 @@ export function ShahkarPerformanceFields() {
 				enableGrouping
 				enableWordsTooltip
 			/>
-		</ProCard>
+		</Card>
 	);
 }

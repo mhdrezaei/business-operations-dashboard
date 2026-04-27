@@ -1,7 +1,7 @@
 import { RHFProNumber, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import { ProCard, ProFormGroup } from "@ant-design/pro-components";
-import { Button } from "antd";
+import { ProFormGroup } from "@ant-design/pro-components";
+import { Button, Card } from "antd";
 import React, { useEffect, useRef } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { BLENDED_MODE_OPTIONS, CONTRACT_TYPE_OPTIONS } from "./contract-type.options";
@@ -141,7 +141,7 @@ export function ContractTypeSection({ title, name, topAside }: Props) {
 	}
 
 	return (
-		<ProCard bordered className="rounded-md [&_.ant-pro-card-body]:p-4">
+		<Card bordered className="rounded-md [&_.ant-pro-card-body]:p-4">
 			<div className="flex justify-between items-center mb-3">
 				<div className="font-bold">{title}</div>
 			</div>
@@ -178,7 +178,7 @@ export function ContractTypeSection({ title, name, topAside }: Props) {
 						<div className="font-semibold mb-3">بخش‌های پلکانی تلفیقی</div>
 
 						{sectionsFa.fields.map((sectionField, sectionIndex) => (
-							<ProCard
+							<Card
 								key={sectionField.id}
 								bordered
 								className="rounded-xl mb-3 w-full [&_.ant-pro-card-body]:p-3"
@@ -212,7 +212,7 @@ export function ContractTypeSection({ title, name, topAside }: Props) {
 								/>
 
 								<ContractTierTable name={`${name}.sections.${sectionIndex}.rows`} />
-							</ProCard>
+							</Card>
 						))}
 
 						<Button icon={<PlusOutlined />} onClick={addSection}>
@@ -221,6 +221,6 @@ export function ContractTypeSection({ title, name, topAside }: Props) {
 					</div>
 				)
 				: null}
-		</ProCard>
+		</Card>
 	);
 }

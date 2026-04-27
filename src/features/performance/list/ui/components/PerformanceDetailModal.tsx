@@ -21,8 +21,7 @@ import {
 	toNullableNumber,
 } from "#src/features/performance/shared/model/performance.helpers";
 import { RHFProNumber, RHFProText } from "#src/shared/ui/rhf-pro";
-import { ProCard } from "@ant-design/pro-components";
-import { Button, Input, Modal, Spin } from "antd";
+import { Button, Card, Input, Modal, Spin } from "antd";
 import i18next from "i18next";
 import { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
@@ -1275,7 +1274,7 @@ export function PerformanceDetailModal({
 				: (
 					<Spin spinning={loading}>
 						<FormProvider {...form}>
-							<ProCard>
+							<Card>
 								<div className="grid gap-3">
 									<div
 										className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-2"
@@ -1475,7 +1474,7 @@ export function PerformanceDetailModal({
 										)
 										: null}
 								</div>
-							</ProCard>
+							</Card>
 							<div
 								className="flex justify-end mt-2 gap-2"
 							>

@@ -5,8 +5,7 @@ import { ContractAddendaSection } from "#src/features/contract/components/addend
 import { RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro/fields/RHFProNumber.js";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import { ProCard } from "@ant-design/pro-components";
-import { Button, Col, Collapse, Row } from "antd";
+import { Button, Card, Col, Collapse, Row } from "antd";
 import React, { useMemo, useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { ContractTypeSection } from "../../../components/contract-type/ContractTypeSection";
@@ -45,10 +44,9 @@ function OpenApiPackagePlanPanel({ idx }: { idx: number }) {
 
 	return (
 		<div className="openapi-plan-grid">
-			<ProCard
+			<Card
 				title="بخش پیامک"
 				bordered
-				headerBordered
 				className="openapi-plan-card [&_.ant-pro-card-body]:p-3"
 			>
 				<div className="openapi-plan-fields" style={smsLabelStyle}>
@@ -93,12 +91,11 @@ function OpenApiPackagePlanPanel({ idx }: { idx: number }) {
 						/>
 					</ContractAlignedField>
 				</div>
-			</ProCard>
+			</Card>
 
-			<ProCard
+			<Card
 				title="بخش استعلام قبض"
 				bordered
-				headerBordered
 				className="openapi-plan-card [&_.ant-pro-card-body]:p-3"
 			>
 				<div className="openapi-plan-fields" style={billLabelStyle}>
@@ -168,12 +165,11 @@ function OpenApiPackagePlanPanel({ idx }: { idx: number }) {
 						/>
 					</ContractAlignedField>
 				</div>
-			</ProCard>
+			</Card>
 
-			<ProCard
+			<Card
 				title="سهم ترافیک"
 				bordered
-				headerBordered
 				className="openapi-plan-card [&_.ant-pro-card-body]:p-3"
 			>
 				<div className="openapi-plan-fields" style={trafficLabelStyle}>
@@ -201,7 +197,7 @@ function OpenApiPackagePlanPanel({ idx }: { idx: number }) {
 						/>
 					</ContractAlignedField>
 				</div>
-			</ProCard>
+			</Card>
 		</div>
 	);
 }
@@ -529,9 +525,8 @@ export function OpenApiFields() {
 	}));
 
 	return (
-		<ProCard
+		<Card
 			bordered
-			headerBordered
 			title="مدل قرارداد OpenAPI"
 			className="[&_.ant-pro-card-body]:p-4"
 		>
@@ -583,9 +578,9 @@ export function OpenApiFields() {
 
 				{contractModel === "package"
 					? (
-						<ProCard
+						<Card
 							bordered
-							headerBordered
+
 							className="mt-3 rounded-2xl"
 							title="پلن‌ها"
 							extra={(
@@ -601,7 +596,7 @@ export function OpenApiFields() {
 									setActiveKey(Array.isArray(k) ? String(k[0] ?? "0") : String(k ?? "0"))}
 								items={collapseItems as any}
 							/>
-						</ProCard>
+						</Card>
 					)
 					: null}
 			</Row>
@@ -643,6 +638,6 @@ export function OpenApiFields() {
 					</div>
 				)
 				: null}
-		</ProCard>
+		</Card>
 	);
 }

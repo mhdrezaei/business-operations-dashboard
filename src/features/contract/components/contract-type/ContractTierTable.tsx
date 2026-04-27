@@ -1,7 +1,6 @@
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import { ProCard } from "@ant-design/pro-components";
-import { Button, Tooltip } from "antd";
+import { Button, Card, Tooltip } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 
@@ -102,7 +101,7 @@ export function ContractTierTable({ name }: Props) {
 	}
 
 	return (
-		<ProCard bordered className="rounded-xl [&_.ant-pro-card-body]:p-3">
+		<Card bordered className="rounded-xl [&_.ant-pro-card-body]:p-3">
 			<div className="font-semibold mb-3">تعریف بازه‌ها و نرخ</div>
 
 			<div className="overflow-hidden">
@@ -170,6 +169,6 @@ export function ContractTierTable({ name }: Props) {
 					</Button>
 				</div>
 			</div>
-		</ProCard>
+		</Card>
 	);
 }

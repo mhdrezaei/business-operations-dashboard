@@ -2,10 +2,8 @@ import type { Resolver } from "react-hook-form";
 import type { FinanceProfileFormValues } from "../../model/finance/company-finance.mappers";
 import { RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
 
-import { ProCard } from "@ant-design/pro-components";
-
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Form } from "antd";
+import { Button, Card, Form } from "antd";
 import React, { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 
@@ -38,7 +36,7 @@ export default function FinanceProfileForm({ defaultValues, onSubmit }: Props) {
 	return (
 		<Form layout="vertical" className="space-y-4">
 			<FormProvider {...methods}>
-				<ProCard bordered title="اطلاعات مالی" className="bg-bgMask">
+				<Card bordered title="اطلاعات مالی" className="bg-bgMask">
 					<div className="grid grid-cols-2 gap-x-4">
 						<RHFProText name="economic_code" label="کد اقتصادی" inputProps={{ placeholder: "کد اقتصادی" }} />
 						<RHFProText name="tax_file_number" label="شماره پرونده مالیاتی" inputProps={{ placeholder: "شماره پرونده مالیاتی" }} />
@@ -60,7 +58,7 @@ export default function FinanceProfileForm({ defaultValues, onSubmit }: Props) {
 							options={SETTLEMENT_TERM_OPTIONS}
 						/>
 					</div>
-				</ProCard>
+				</Card>
 				<Button
 					type="primary"
 					loading={isSubmitting}

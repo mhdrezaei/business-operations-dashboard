@@ -2,9 +2,8 @@ import type { ProfilePayload } from "./api/profile.api";
 import type { MyProfileFormValues } from "./model/profile.form.types";
 import { BasicButton, BasicContent } from "#src/components/index.js";
 import { RHFProText } from "#src/shared/ui/rhf-pro/index.js";
-import { ProCard } from "@ant-design/pro-components";
 import { useQuery } from "@tanstack/react-query";
-import { Col, Row } from "antd";
+import { Card, Col, Row } from "antd";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { updateProfile } from "./api/profile.api";
@@ -49,7 +48,7 @@ export default function MyProfileForm() {
 					}
 				})}
 			>
-				<ProCard>
+				<Card>
 					<BasicContent className="w-full">
 						<Row gutter={16}>
 							<Col span={12}>
@@ -66,7 +65,7 @@ export default function MyProfileForm() {
 							<RHFProText name="national_code" label="کد ملی" />
 
 						</div>
-						<ProCard bordered>
+						<Card bordered>
 							<div className="grid grid-cols-3 gap-3 ">
 								<RHFProText
 									name="password"
@@ -87,9 +86,9 @@ export default function MyProfileForm() {
 									inputProps={{ type: "password", defaultValue: "" }}
 								/>
 							</div>
-						</ProCard>
+						</Card>
 					</BasicContent>
-				</ProCard>
+				</Card>
 				<div className="flex justify-end gap-2 mt-2">
 					<BasicButton
 						htmlType="submit"

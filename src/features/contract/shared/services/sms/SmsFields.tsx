@@ -3,7 +3,7 @@ import type { ArrayPath, Path } from "react-hook-form";
 import { ContractAddendaSection } from "#src/features/contract/components/addenda/ContractAddendaSection";
 import { ContractTypeSection } from "#src/features/contract/components/contract-type/ContractTypeSection";
 import { RHFProCheckbox, RHFProNumber } from "#src/shared/ui/rhf-pro";
-import { ProCard } from "@ant-design/pro-components";
+import { Card } from "antd";
 import { useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import "./sms.fields.css";
@@ -42,16 +42,16 @@ export function SmsFields() {
 
 	return (
 		<>
-			<ProCard bordered headerBordered className="rounded-md mb-3 [&_.ant-pro-card-body]:p-4">
+			<Card bordered className="rounded-md mb-3 [&_.ant-pro-card-body]:p-4">
 				<RHFProCheckbox<ContractFormValues, any>
 					name={sf("isOfficial") as any}
 					label=""
 					checkboxLabel="قرارداد رسمی است"
 					checkboxProps={{}}
 				/>
-			</ProCard>
+			</Card>
 
-			<ProCard bordered headerBordered className="rounded-md [&_.ant-pro-card-body]:p-4" title="درآمد اپراتورها">
+			<Card bordered className="rounded-md [&_.ant-pro-card-body]:p-4" title="درآمد اپراتورها">
 				<div className="sms-operator-grid">
 					<ContractTypeSection title="ایرانسل - فارسی" name={sf("operatorRevenue.irancellFa")} />
 					<ContractTypeSection title="ایرانسل - انگلیسی" name={sf("operatorRevenue.irancellEn")} />
@@ -60,14 +60,14 @@ export function SmsFields() {
 					<ContractTypeSection title="سایر - فارسی" name={sf("operatorRevenue.otherFa")} />
 					<ContractTypeSection title="سایر - انگلیسی" name={sf("operatorRevenue.otherEn")} />
 				</div>
-			</ProCard>
+			</Card>
 
 			{isPartners
 				? (
 					<>
-						<ProCard bordered headerBordered className="rounded-md [&_.ant-pro-card-body]:p-4" title="درآمد دولت">
+						<Card bordered className="rounded-md [&_.ant-pro-card-body]:p-4" title="درآمد دولت">
 							<ContractTypeSection title="درآمد دولت" name={sf("governmentRevenue")} />
-						</ProCard>
+						</Card>
 						<div className="mt-3">
 							<ContractTypeSection
 								title="سود"
@@ -81,9 +81,9 @@ export function SmsFields() {
 
 			{isGovOps
 				? (
-					<ProCard bordered headerBordered className="rounded-md mt-3 [&_.ant-pro-card-body]:p-4" title="نرخ دولت">
+					<Card bordered className="rounded-md mt-3 [&_.ant-pro-card-body]:p-4" title="نرخ دولت">
 						<ContractTypeSection title="نرخ دولت" name={sf("governmentRate")} />
-					</ProCard>
+					</Card>
 				)
 				: null}
 
@@ -97,7 +97,7 @@ export function SmsFields() {
 							contractTypeFieldKey="contractPricing"
 							renderAddendumFields={base => (
 								<>
-									<ProCard bordered headerBordered className="rounded-md [&_.ant-pro-card-body]:p-4" title="درآمد اپراتورها">
+									<Card bordered className="rounded-md [&_.ant-pro-card-body]:p-4" title="درآمد اپراتورها">
 										<div className="sms-operator-grid">
 											<ContractTypeSection title="ایرانسل - فارسی" name={`${base}.operatorRevenue.irancellFa` as any} />
 											<ContractTypeSection title="ایرانسل - انگلیسی" name={`${base}.operatorRevenue.irancellEn` as any} />
@@ -106,14 +106,14 @@ export function SmsFields() {
 											<ContractTypeSection title="سایر - فارسی" name={`${base}.operatorRevenue.otherFa` as any} />
 											<ContractTypeSection title="سایر - انگلیسی" name={`${base}.operatorRevenue.otherEn` as any} />
 										</div>
-									</ProCard>
+									</Card>
 
 									{isPartners
 										? (
 											<>
-												<ProCard bordered headerBordered className="rounded-md mt-3 [&_.ant-pro-card-body]:p-4" title="درآمد دولت">
+												<Card bordered className="rounded-md mt-3 [&_.ant-pro-card-body]:p-4" title="درآمد دولت">
 													<ContractTypeSection title="درآمد دولت" name={`${base}.governmentRevenue` as any} />
-												</ProCard>
+												</Card>
 												<div className="mt-3">
 													<ContractTypeSection
 														title="سود"
@@ -127,9 +127,9 @@ export function SmsFields() {
 
 									{isGovOps
 										? (
-											<ProCard bordered headerBordered className="rounded-md mt-3 [&_.ant-pro-card-body]:p-4" title="نرخ دولت">
+											<Card bordered className="rounded-md mt-3 [&_.ant-pro-card-body]:p-4" title="نرخ دولت">
 												<ContractTypeSection title="نرخ دولت" name={`${base}.governmentRate` as any} />
-											</ProCard>
+											</Card>
 										)
 										: null}
 								</>

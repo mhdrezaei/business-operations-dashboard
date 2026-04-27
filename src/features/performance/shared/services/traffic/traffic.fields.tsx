@@ -5,8 +5,7 @@ import { TopRightAlert } from "#src/components";
 import { downloadPerformanceTemplate, uploadTrafficExcelImport } from "#src/features/performance/api/performances.api";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
 import { CloudUploadOutlined, DeleteOutlined, DownloadOutlined, InfoCircleOutlined } from "@ant-design/icons";
-import { ProCard } from "@ant-design/pro-components";
-import { Button, Col, Form, Modal, Row, Tag, theme, Upload } from "antd";
+import { Button, Card, Col, Form, Modal, Row, Tag, theme, Upload } from "antd";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -148,9 +147,8 @@ export function TrafficPerformanceFields() {
 
 	return (
 		<>
-			<ProCard
+			<Card
 				bordered
-				headerBordered
 				className="rounded-lg"
 				title={cardTitle}
 			>
@@ -239,7 +237,7 @@ export function TrafficPerformanceFields() {
 								message={t("performance.traffic.unitPriceHint")}
 							/>
 
-							<ProCard bordered title={t("performance.traffic.tehranPerformance")} className="rounded-[10px]">
+							<Card bordered title={t("performance.traffic.tehranPerformance")} className="rounded-[10px]">
 								<Row gutter={16}>
 									<Col span={12}>
 										<RHFProNumber
@@ -256,11 +254,11 @@ export function TrafficPerformanceFields() {
 										/>
 									</Col>
 								</Row>
-							</ProCard>
+							</Card>
 
 							{countyEnabled
 								? (
-									<ProCard
+									<Card
 										bordered
 										title={t("performance.traffic.countyPerformance")}
 										className="rounded-[10px]"
@@ -295,12 +293,12 @@ export function TrafficPerformanceFields() {
 												/>
 											</Col>
 										</Row>
-									</ProCard>
+									</Card>
 								)
 								: null}
 						</div>
 					)}
-			</ProCard>
+			</Card>
 			<Modal
 				open={!!uploadResult}
 				onCancel={handleCloseUploadResult}

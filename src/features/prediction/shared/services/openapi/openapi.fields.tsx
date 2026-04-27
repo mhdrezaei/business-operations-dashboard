@@ -9,9 +9,8 @@ import type {
 } from "../../model/prediction.form.types";
 import { RHFProNumber, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined } from "@ant-design/icons";
-import { ProCard } from "@ant-design/pro-components";
 import { useQuery } from "@tanstack/react-query";
-import { Button, Form, Segmented, Select, Typography } from "antd";
+import { Button, Card, Form, Segmented, Select, Typography } from "antd";
 import { useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -137,7 +136,7 @@ function CompanyShareEditor({
 	}
 
 	return (
-		<ProCard
+		<Card
 			bordered
 			className="rounded-xl [&_.ant-pro-card-body]:flex [&_.ant-pro-card-body]:flex-col [&_.ant-pro-card-body]:gap-4 [&_.ant-pro-card-header]:min-h-12"
 			title={metricTitle}
@@ -204,7 +203,7 @@ function CompanyShareEditor({
 						</Typography.Text>
 					</div>
 				)}
-		</ProCard>
+		</Card>
 	);
 }
 
@@ -242,9 +241,8 @@ export function OpenApiPredictionFields() {
 
 	return (
 		<div className="flex flex-col gap-4">
-			<ProCard
+			<Card
 				bordered
-				headerBordered
 				className="rounded-2xl"
 			>
 				<div className="grid gap-3 md:grid-cols-2">
@@ -264,15 +262,14 @@ export function OpenApiPredictionFields() {
 						}}
 					/>
 				</div>
-			</ProCard>
+			</Card>
 
 			<QuarterDistributionSection />
 
 			{activeSections.map(section => (
-				<ProCard
+				<Card
 					key={section.key}
 					bordered
-					headerBordered
 					className="rounded-2xl"
 					title={t(section.titleKey)}
 				>
@@ -299,12 +296,11 @@ export function OpenApiPredictionFields() {
 							enableWordsTooltip
 						/>
 					</div>
-				</ProCard>
+				</Card>
 			))}
 
-			<ProCard
+			<Card
 				bordered
-				headerBordered
 				className="rounded-2xl"
 				title={t("prediction.sections.companyShares")}
 			>
@@ -314,7 +310,7 @@ export function OpenApiPredictionFields() {
 					</Typography.Paragraph>
 
 					{activeSections.map(section => (
-						<ProCard
+						<Card
 							key={`${section.key}-shares`}
 							bordered
 							className="rounded-2xl [&_.ant-pro-card-body]:flex [&_.ant-pro-card-body]:flex-col [&_.ant-pro-card-body]:gap-4"
@@ -332,12 +328,12 @@ export function OpenApiPredictionFields() {
 									/>
 								))}
 							</div>
-						</ProCard>
+						</Card>
 					))}
 
 					{activeModel === "PACKAGE"
 						? (
-							<ProCard
+							<Card
 								bordered
 								className="rounded-2xl [&_.ant-pro-card-body]:flex [&_.ant-pro-card-body]:flex-col [&_.ant-pro-card-body]:gap-4"
 								title={t("prediction.openapi.sections.channels", { defaultValue: "کانال‌ها" })}
@@ -362,11 +358,11 @@ export function OpenApiPredictionFields() {
 										total: channelTotal,
 									})}
 								</Typography.Text>
-							</ProCard>
+							</Card>
 						)
 						: null}
 				</div>
-			</ProCard>
+			</Card>
 		</div>
 	);
 }

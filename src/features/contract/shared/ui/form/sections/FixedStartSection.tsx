@@ -2,8 +2,8 @@ import type { ContractFormValues } from "../../../model/contract.form.types";
 import { BasicContent } from "#src/components/";
 import { useAccess } from "#src/hooks";
 import { RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
-import { ProCard } from "@ant-design/pro-components";
 import { useQuery } from "@tanstack/react-query";
+import { Card } from "antd";
 import React, { useEffect, useMemo, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { companiesByServiceQuery, contractGapsQuery, servicesQuery, smsCommissionAgentsQuery } from "../../../queries/contract.queries";
@@ -462,7 +462,7 @@ export function FixedStartSection() {
 	const compactFormItemStyle = { className: "mb-0" };
 
 	return (
-		<ProCard>
+		<Card className="w-full">
 			<BasicContent className="w-full">
 				<div className="contract-form-aligned-grid contract-form-aligned-grid--two" style={alignedLabelStyle}>
 					<ContractAlignedField label="نوع سرویس" labelId="contract-form-label-service">
@@ -631,6 +631,6 @@ export function FixedStartSection() {
 					</ContractAlignedField>
 				</div>
 			</BasicContent>
-		</ProCard>
+		</Card>
 	);
 }

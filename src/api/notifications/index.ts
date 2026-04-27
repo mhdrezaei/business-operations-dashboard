@@ -6,7 +6,7 @@ import type {
 	NotificationMarkReadPayload,
 	NotificationMarkStatePayload,
 } from "./types";
-import { useUserStore } from "#src/store";
+import { useAuthStore, useUserStore } from "#src/store";
 import { request } from "#src/utils/request";
 
 function compactSearchParams(params: Record<string, unknown>) {
@@ -40,8 +40,40 @@ function pickBooleanFromRecord(record: Record<string, unknown>, keys: string[]) 
 	return false;
 }
 
-function getExternalUserIdHeader() {
+function decodeJwtPayload(token: string) {
+	try {
+		const [, payload = ""] = token.split(".");
+		if (!payload)
+			return null;
+
+		const normalized = payload
+			.replace(/-/g, "+")
+			.replace(/_/g, "/")
+			.padEnd(Math.ceil(payload.length / 4) * 4, "=");
+
+		const decoded = globalThis.atob(normalized);
+		return JSON.parse(decoded) as Record<string, unknown>;
+	}
+	catch {
+		return null;
+	}
+}
+
+function getExternalUserId() {
 	const userId = String(useUserStore.getState().id ?? "").trim();
+	if (userId)
+		return userId;
+
+	const accessToken = String(useAuthStore.getState().access ?? "").trim();
+	if (!accessToken)
+		return "";
+
+	const payload = decodeJwtPayload(accessToken);
+	return String(payload?.user_id ?? "").trim();
+}
+
+function getExternalUserIdHeader() {
+	const userId = getExternalUserId();
 	if (!userId)
 		return undefined;
 

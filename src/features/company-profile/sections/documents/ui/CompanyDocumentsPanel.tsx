@@ -1,6 +1,5 @@
 import type { CompanyProfileFormValues } from "../../../model/company-profile.form.types";
-import { ProCard } from "@ant-design/pro-components";
-import React from "react";
+import { Card } from "antd";
 import { useWatch } from "react-hook-form";
 import CompanyDocumentsTable from "./CompanyDocumentsTable";
 
@@ -10,15 +9,15 @@ export default function CompanyDocumentsPanel() {
 
 	if (!serviceId || !companyId) {
 		return (
-			<ProCard>
+			<Card>
 				<div className="opacity-80">ابتدا سرویس و سپس شرکت را انتخاب کنید.</div>
-			</ProCard>
+			</Card>
 		);
 	}
 
 	return (
-		<ProCard>
+		<Card>
 			<CompanyDocumentsTable serviceId={serviceId} companyId={companyId} />
-		</ProCard>
+		</Card>
 	);
 }

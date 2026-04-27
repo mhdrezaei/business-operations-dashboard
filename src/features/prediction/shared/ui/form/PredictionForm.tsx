@@ -2,8 +2,8 @@ import type { Resolver, UseFormReturn } from "react-hook-form";
 import type { PredictionFormValues } from "../../model/prediction.form.types";
 import { RHFProTextArea } from "#src/shared/ui/rhf-pro";
 import { notification } from "#src/utils";
-import { ProCard } from "@ant-design/pro-components/es";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Card } from "antd";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
@@ -251,7 +251,7 @@ function ProseNote() {
 	const { t } = useTranslation();
 
 	return (
-		<ProCard
+		<Card
 			bordered
 			className="rounded-xl"
 		>
@@ -265,6 +265,6 @@ function ProseNote() {
 					}}
 				/>
 			</div>
-		</ProCard>
+		</Card>
 	);
 }

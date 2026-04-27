@@ -8,9 +8,8 @@ import {
 } from "#src/shared/ui/rhf-pro";
 
 import RHFFieldArrayText from "#src/shared/ui/rhf-pro/fields/RHFFieldArrayText.js";
-import { ProCard } from "@ant-design/pro-components";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Form } from "antd";
+import { Button, Card, Form } from "antd";
 
 import React from "react";
 
@@ -45,7 +44,7 @@ export default function CompanyInfoForm({ defaultValues, onSubmit }: Props) {
 	return (
 		<Form layout="vertical" className="space-y-4">
 			<FormProvider {...methods}>
-				<ProCard bordered title="اطلاعات پایه" className="bg-bgMask">
+				<Card bordered title="اطلاعات پایه" className="bg-bgMask">
 					<div className="grid grid-cols-2 gap-x-4">
 						<RHFProText name="legal_name" label="نام حقوقی" inputProps={{ placeholder: "نام حقوقی" }} />
 						<RHFProText name="brand_name" label="نام برند" inputProps={{ placeholder: "نام برند" }} />
@@ -60,9 +59,9 @@ export default function CompanyInfoForm({ defaultValues, onSubmit }: Props) {
 
 						<RHFProText name="tax_national_id" label="شناسه مالیاتی" inputProps={{ placeholder: "شناسه مالیاتی" }} />
 					</div>
-				</ProCard>
+				</Card>
 
-				<ProCard bordered title="ثبت شرکت" className="bg-bgMask">
+				<Card bordered title="ثبت شرکت" className="bg-bgMask">
 					<div className=" grid grid-cols-2 gap-x-4">
 						<RHFProText name="registration_number" label="شماره ثبت" inputProps={{ placeholder: "شماره ثبت" }} />
 						<RHFProText name="tax_registration_number" label="شماره ثبت مالیاتی" inputProps={{ placeholder: "شماره ثبت مالیاتی" }} />
@@ -72,9 +71,9 @@ export default function CompanyInfoForm({ defaultValues, onSubmit }: Props) {
 
 						<RHFProText name="branch_code" label="کد شعبه" inputProps={{ placeholder: "کد شعبه" }} />
 					</div>
-				</ProCard>
+				</Card>
 
-				<ProCard bordered title="آدرس و نقشه" className="bg-bgMask">
+				<Card bordered title="آدرس و نقشه" className="bg-bgMask">
 					<div className=" grid grid-cols-2 gap-x-4">
 						<RHFProText name="postal_code" label="کد پستی" inputProps={{ placeholder: "کد پستی" }} />
 						<RHFProText name="map_address" label="آدرس روی نقشه" inputProps={{ placeholder: "آدرس روی نقشه" }} />
@@ -87,9 +86,9 @@ export default function CompanyInfoForm({ defaultValues, onSubmit }: Props) {
 							<CompanyInfoMapField />
 						</div>
 					</div>
-				</ProCard>
+				</Card>
 
-				<ProCard bordered title="راهای ارتباطی" className="bg-bgMask">
+				<Card bordered title="راهای ارتباطی" className="bg-bgMask">
 					<div className=" grid grid-cols-2 gap-x-4">
 						<RHFFieldArrayText name="phone" label="تلفن" />
 						<RHFFieldArrayText name="mobile" label="موبایل" />
@@ -97,9 +96,9 @@ export default function CompanyInfoForm({ defaultValues, onSubmit }: Props) {
 						<RHFFieldArrayText name="fax" label="فکس" />
 						<RHFProText name="website" label="وبسایت" inputProps={{ placeholder: "وبسایت" }} />
 					</div>
-				</ProCard>
+				</Card>
 
-				<ProCard bordered title="مالی و مالیات" className="bg-bgMask">
+				<Card bordered title="مالی و مالیات" className="bg-bgMask">
 					<div className=" grid grid-cols-2 gap-x-4">
 						<RHFProText name="economic_code" label="کد اقتصادی" inputProps={{ placeholder: "کد اقتصادی" }} />
 						<RHFProText name="tax_file_number" label="شماره پرونده مالیاتی" inputProps={{ placeholder: "شماره پرونده مالیاتی" }} />
@@ -112,8 +111,8 @@ export default function CompanyInfoForm({ defaultValues, onSubmit }: Props) {
 							options={VAT_STATUS_OPTIONS}
 						/>
 					</div>
-				</ProCard>
-				<ProCard bordered title="همکاری و تسویه" className="bg-bgMask">
+				</Card>
+				<Card bordered title="همکاری و تسویه" className="bg-bgMask">
 					<div className=" grid grid-cols-2 gap-x-4">
 						<RHFSelect
 							name="cooperation_status"
@@ -133,8 +132,8 @@ export default function CompanyInfoForm({ defaultValues, onSubmit }: Props) {
 
 						<RHFProText name="working_hours" label="ساعات کاری" inputProps={{ placeholder: "ساعات کاری" }} />
 					</div>
-				</ProCard>
-				<ProCard bordered title="سایر اطلاعات" className="bg-bgMask">
+				</Card>
+				<Card bordered title="سایر اطلاعات" className="bg-bgMask">
 					<div className=" grid grid-cols-2 gap-x-4">
 						<RHFProText name="internal_code" label="کد داخلی" inputProps={{ placeholder: "کد داخلی" }} />
 
@@ -149,8 +148,8 @@ export default function CompanyInfoForm({ defaultValues, onSubmit }: Props) {
 							<RHFProTextArea name="internal_note" label="یادداشت داخلی" textAreaProps={{ rows: 4 }} />
 						</div>
 					</div>
-				</ProCard>
-				<ProCard
+				</Card>
+				<Card
 					bordered
 					title="شبکه‌های اجتماعی"
 					className="bg-bgMask"
@@ -158,7 +157,7 @@ export default function CompanyInfoForm({ defaultValues, onSubmit }: Props) {
 					<div className="mt-6">
 						<CompanyInfoSocialLinksField />
 					</div>
-				</ProCard>
+				</Card>
 				<Button
 					type="primary"
 					onClick={handleSubmit(values => onSubmit(values as unknown as CompanyInfoFormValues))}

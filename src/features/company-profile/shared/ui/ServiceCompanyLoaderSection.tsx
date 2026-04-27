@@ -3,9 +3,8 @@ import type { CompanyProfileFormValues } from "../../model/company-profile.form.
 import { BasicContent } from "#src/components/";
 import { useAccess } from "#src/hooks";
 import { RHFSelect } from "#src/shared/ui/rhf-pro";
-import { ProCard } from "@ant-design/pro-components";
 import { useQuery } from "@tanstack/react-query";
-import { Button, Col, Row } from "antd";
+import { Button, Card, Col, Row } from "antd";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
@@ -121,7 +120,7 @@ export function ServiceCompanyLoaderSection() {
 				: "شرکت را انتخاب کنید";
 
 	return (
-		<ProCard>
+		<Card>
 			<BasicContent className="w-full">
 				<Row gutter={16}>
 					<Col span={12}>
@@ -207,6 +206,6 @@ export function ServiceCompanyLoaderSection() {
 					}}
 				/>
 			</BasicContent>
-		</ProCard>
+		</Card>
 	);
 }

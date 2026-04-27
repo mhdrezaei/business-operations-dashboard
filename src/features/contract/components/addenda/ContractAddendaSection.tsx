@@ -2,8 +2,7 @@ import type { ArrayPath, FieldValues, Path, PathValue } from "react-hook-form";
 import { RHFProText, RHFProTextArea, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { message } from "#src/utils";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import { ProCard } from "@ant-design/pro-components";
-import { Button, Collapse } from "antd";
+import { Button, Card, Collapse } from "antd";
 import React, { useMemo, useState } from "react";
 
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
@@ -260,7 +259,7 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 					</div>
 				),
 				children: (
-					<ProCard ghost className="[&_.ant-pro-card-body]:p-0">
+					<Card className="[&_.ant-pro-card-body]:p-0">
 						<div className="grid grid-cols-4 gap-3 mt-2">
 							<RHFSelect
 								name={p(base, "startYear")}
@@ -357,7 +356,7 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 								textAreaProps={{ placeholder: "توضیح اختیاری برای این الحاقیه" }}
 							/>
 						</div>
-					</ProCard>
+					</Card>
 				),
 			};
 		});
@@ -379,9 +378,8 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 	]);
 
 	return (
-		<ProCard
+		<Card
 			bordered
-			headerBordered
 			className="rounded-md mt-3"
 			title={title}
 			extra={(
@@ -411,6 +409,6 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 						items={collapseItems as any}
 					/>
 				)}
-		</ProCard>
+		</Card>
 	);
 }

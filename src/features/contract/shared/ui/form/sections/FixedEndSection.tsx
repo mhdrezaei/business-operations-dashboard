@@ -1,7 +1,8 @@
 import type { UploadProps } from "antd";
 import type { ContractFormValues } from "../../../model/contract.form.types";
 import { RHFProTextArea, RHFProUploadButton } from "#src/shared/ui/rhf-pro";
-import { ProCard } from "@ant-design/pro-components";
+
+import { Card } from "antd";
 import { ContractAlignedField, useContractAlignedLabelWidth } from "../components/ContractAlignedField";
 
 export function FixedEndSection() {
@@ -17,7 +18,7 @@ export function FixedEndSection() {
 	};
 
 	return (
-		<ProCard>
+		<Card className="w-full">
 			<div className="flex flex-col gap-3" style={alignedLabelStyle}>
 				<ContractAlignedField label="توضیحات" labelId="contract-form-label-description" align="start">
 					<RHFProTextArea<ContractFormValues, "description">
@@ -42,6 +43,6 @@ export function FixedEndSection() {
 					/>
 				</ContractAlignedField>
 			</div>
-		</ProCard>
+		</Card>
 	);
 }

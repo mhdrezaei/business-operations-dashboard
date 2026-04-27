@@ -4,7 +4,7 @@ import {
 	useContractAlignedLabelWidth,
 } from "#src/features/contract/shared/ui/form/components/ContractAlignedField";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
-import { ProCard } from "@ant-design/pro-components";
+import { Card } from "antd";
 import { useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -46,18 +46,17 @@ export function OpenApiPerformanceFields() {
 
 	if (!contractModel) {
 		return (
-			<ProCard bordered headerBordered className="rounded-lg">
+			<Card bordered className="rounded-lg">
 				<div className="opacity-80">
 					{t("performance.messages.noActiveContractForMonth")}
 				</div>
-			</ProCard>
+			</Card>
 		);
 	}
 
 	return (
-		<ProCard
+		<Card
 			bordered
-			headerBordered
 			className="rounded-lg"
 			title={(
 				<div className="flex gap-2">
@@ -203,6 +202,6 @@ export function OpenApiPerformanceFields() {
 					</div>
 				)
 				: null}
-		</ProCard>
+		</Card>
 	);
 }

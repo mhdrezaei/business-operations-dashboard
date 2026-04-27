@@ -7,9 +7,8 @@ import {
 	RHFSelect,
 } from "#src/shared/ui/rhf-pro";
 
-import { ProCard } from "@ant-design/pro-components";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Form } from "antd";
+import { Button, Card, Form } from "antd";
 import React, { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 
@@ -43,7 +42,7 @@ export default function LegalProfileForm({ defaultValues, onSubmit }: Props) {
 	return (
 		<Form layout="vertical" className="space-y-4">
 			<FormProvider {...methods}>
-				<ProCard bordered title="اطلاعات ثبتی و حقوقی" className="bg-bgMask">
+				<Card bordered title="اطلاعات ثبتی و حقوقی" className="bg-bgMask">
 					<div className="grid grid-cols-2 gap-x-4">
 						<RHFProText name="national_id" label="شناسه ملی" inputProps={{ placeholder: "شناسه ملی" }} />
 						<RHFProText name="tax_national_id" label="شناسه مالیاتی" inputProps={{ placeholder: "شناسه مالیاتی" }} />
@@ -63,7 +62,7 @@ export default function LegalProfileForm({ defaultValues, onSubmit }: Props) {
 
 						<RHFProText name="branch_code" label="کد شعبه" inputProps={{ placeholder: "کد شعبه" }} />
 					</div>
-				</ProCard>
+				</Card>
 
 				<Button
 					type="primary"
