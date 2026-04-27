@@ -27,7 +27,7 @@ import { getAdminUsersColumns } from "./constants/admin-users.columns";
 
 export default function AdminUsersListPage() {
 	const { t } = useTranslation();
-	const { hasDomainPermission } = useAccess();
+	const { hasAdminPanelAccess } = useAccess();
 
 	const actionRef = useRef<ActionType>(null);
 	const formRef = useRef<ProFormInstance | undefined>(undefined);
@@ -42,11 +42,13 @@ export default function AdminUsersListPage() {
 	const [openSummary, setOpenSummary] = useState(false);
 
 	// permissions
-	const canCreate = hasDomainPermission("contracts", "create");
-	const canUpdate = hasDomainPermission("contracts", "update");
-	const canDelete = hasDomainPermission("contracts", "delete");
-	const canSetRoles = hasDomainPermission("contracts", "update");
-	const canToggleActive = hasDomainPermission("contracts", "update");
+	const canManageUsers = hasAdminPanelAccess("users");
+	const canManageRoles = hasAdminPanelAccess("roles");
+	const canCreate = canManageUsers;
+	const canUpdate = canManageUsers;
+	const canDelete = canManageUsers;
+	const canSetRoles = canManageUsers || canManageRoles;
+	const canToggleActive = canManageUsers;
 
 	const rolesQuery = useQuery(adminRolesQuery());
 

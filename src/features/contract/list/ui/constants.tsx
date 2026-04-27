@@ -23,6 +23,7 @@ export interface GetContractColumnsArgs {
 
 	selectedTrafficCompanyType: TrafficCompanyType | null
 	setSelectedTrafficCompanyType: (v: TrafficCompanyType | null) => void
+	permittedTrafficCompanyTypes: TrafficCompanyType[]
 
 	serviceOptions: Array<{ label: any, value: any }>
 	companyOptions: Array<{ label: any, value: any }>
@@ -65,6 +66,7 @@ export function getContractColumns({
 	isSmsService,
 	selectedTrafficCompanyType,
 	setSelectedTrafficCompanyType,
+	permittedTrafficCompanyTypes,
 	serviceOptions,
 	companyOptions,
 	isCompanyDisabled,
@@ -124,6 +126,9 @@ export function getContractColumns({
 			hideInTable: !isTrafficService,
 			hideInSearch: !isTrafficService,
 			valueEnum: TRAFFIC_COMPANY_TYPE_OPTIONS.reduce((acc, it) => {
+				if (!permittedTrafficCompanyTypes.includes(it.value)) {
+					return acc;
+				}
 				acc[it.value] = it.label;
 				return acc;
 			}, {} as Record<string, string>),

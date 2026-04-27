@@ -1,4 +1,3 @@
-import type { DomainPermissionAction, UserInfoType } from "#src/api/user/types";
 import { fetchAsyncRoutes } from "#src/api/user";
 import { useCurrentRoute } from "#src/hooks";
 import { hideLoading, setupLoading } from "#src/plugins";
@@ -7,6 +6,7 @@ import { accessRoutes, whiteRouteNames } from "#src/router/routes";
 import { isSendRoutingRequest } from "#src/router/routes/config";
 import { generateRoutesByFrontend, generateRoutesFromBackend } from "#src/router/utils";
 import { useAccessStore, useAuthStore, usePreferencesStore, useUserStore } from "#src/store";
+import { hasAdminAccess, hasDomainPermissionForServices } from "#src/utils/access-policy";
 
 import { useEffect } from "react";
 import { matchRoutes, Navigate, useLocation, useNavigate, useSearchParams } from "react-router";
@@ -20,35 +20,12 @@ import { removeDuplicateRoutes } from "./utils";
  */
 const noLoginWhiteList = Array.from(whiteRouteNames).filter(item => item !== loginPath);
 
-function normalizeAccessKey(value?: string | null) {
-	return (value ?? "").trim().toLowerCase();
-}
-
 function isUnauthorizedReason(reason: unknown) {
 	if (!reason || typeof reason !== "object") {
 		return false;
 	}
 	const error = reason as { status?: number, response?: { status?: number } };
 	return error.status === 401 || error.response?.status === 401;
-}
-
-function hasRouteDomainPermission(
-	services: UserInfoType["services"],
-	domain: string,
-	action: DomainPermissionAction,
-) {
-	const normalizedDomain = normalizeAccessKey(domain);
-	if (!normalizedDomain || !services?.length) {
-		return false;
-	}
-	return services.some((service) => {
-		for (const [domainKey, permission] of Object.entries(service.permissions ?? {})) {
-			if (normalizeAccessKey(domainKey) === normalizedDomain) {
-				return Boolean(permission?.[action]);
-			}
-		}
-		return false;
-	});
 }
 
 interface AuthGuardProps {
@@ -69,6 +46,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
 	const getUserInfo = useUserStore(state => state.getUserInfo);
 	const userRoles = useUserStore(state => state.roles);
 	const userServices = useUserStore(state => state.services);
+	const userAccessState = useUserStore();
 	const { setAccessStore, isAccessChecked, routeList } = useAccessStore();
 	const { enableBackendAccess, enableFrontendAceess } = usePreferencesStore(state => state);
 
@@ -310,6 +288,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
 	const ignoreAccess = currentRoute?.handle?.ignoreAccess;
 	const accessDomain = currentRoute?.handle?.accessDomain;
 	const accessAction = currentRoute?.handle?.accessAction ?? "view";
+	const adminAccess = currentRoute?.handle?.adminAccess;
 
 	/**
 	 * @fa ناديده گرفتن بررسي مجوز
@@ -319,7 +298,16 @@ export function AuthGuard({ children }: AuthGuardProps) {
 		return children;
 	}
 
-	if (accessDomain && !hasRouteDomainPermission(userServices, accessDomain, accessAction)) {
+	if (adminAccess && !hasAdminAccess(userAccessState, adminAccess)) {
+		return (
+			<Navigate
+				to={exception403Path}
+				replace
+			/>
+		);
+	}
+
+	if (accessDomain && !hasDomainPermissionForServices(userServices, accessDomain, accessAction)) {
 		return (
 			<Navigate
 				to={exception403Path}

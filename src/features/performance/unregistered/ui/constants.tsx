@@ -16,6 +16,7 @@ export interface GetPerformanceColumnsArgs {
 	t: TFunction<"translation", undefined>
 	selectedServiceIds: number[]
 	selectedServiceCode: string | null
+	permittedTrafficCompanyTypes: TrafficCompanyType[]
 	setSelectedServices: (serviceIds: number[], serviceCode: string | null) => void
 	serviceOptions: Array<{ label: string, value: number, code: string }>
 	companyOptions: Array<{ label: string, value: number }>
@@ -28,10 +29,13 @@ function isSmsCommissionService(code: string | null | undefined) {
 	return code === "sms-commission" || code === "sms_commission";
 }
 
+type TrafficCompanyType = "CP" | "IXP" | "PREMIUM" | "TCI";
+
 export function getPerformanceColumns({
 	t,
 	selectedServiceIds,
 	// selectedServiceCode,
+	permittedTrafficCompanyTypes,
 	setSelectedServices,
 	serviceOptions,
 	companyOptions,
@@ -205,6 +209,9 @@ export function getPerformanceColumns({
 			hideInSearch: !showTrafficSpecificFields,
 			valueType: "select",
 			valueEnum: TRAFFIC_COMPANY_TYPE_OPTIONS.reduce((acc, option) => {
+				if (!permittedTrafficCompanyTypes.includes(option.value)) {
+					return acc;
+				}
 				acc[option.value] = option.label;
 				return acc;
 			}, {} as Record<string, string>),

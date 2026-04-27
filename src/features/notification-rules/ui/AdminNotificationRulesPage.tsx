@@ -38,7 +38,7 @@ function renderRunStatus(status?: string | null) {
 
 export default function AdminNotificationRulesPage() {
 	const { t } = useTranslation();
-	const { hasDomainPermission } = useAccess();
+	const { hasAdminPanelAccess } = useAccess();
 
 	const actionRef = useRef<ActionType>(null);
 	const formRef = useRef<ProFormInstance | undefined>(undefined);
@@ -47,9 +47,10 @@ export default function AdminNotificationRulesPage() {
 	const [upsertMode, setUpsertMode] = useState<"create" | "edit">("create");
 	const [selectedRule, setSelectedRule] = useState<NotificationRuleDto | null>(null);
 
-	const canCreate = hasDomainPermission("contracts", "create");
-	const canUpdate = hasDomainPermission("contracts", "update");
-	const canDelete = hasDomainPermission("contracts", "delete");
+	const canManagePolicies = hasAdminPanelAccess("policies");
+	const canCreate = canManagePolicies;
+	const canUpdate = canManagePolicies;
+	const canDelete = canManagePolicies;
 
 	const servicesQuery = useQuery(notificationRuleServicesQuery());
 	const usersQuery = useQuery(notificationRuleUsersQuery());

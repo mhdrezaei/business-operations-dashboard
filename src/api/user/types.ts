@@ -6,6 +6,7 @@ export interface AuthType {
 }
 
 export type DomainPermissionAction = "view" | "create" | "update" | "delete";
+export type TrafficCompanyType = "CP" | "IXP" | "PREMIUM" | "TCI";
 
 export interface DomainCrudPermission {
 	view: boolean
@@ -14,11 +15,16 @@ export interface DomainCrudPermission {
 	delete: boolean
 }
 
+export type TrafficCompanyTypePermission = Partial<
+	Record<string, Partial<Record<DomainPermissionAction, TrafficCompanyType[]>>>
+>;
+
 export interface AccessServiceType {
 	id: number
 	code: string
 	name: string
 	permissions: Record<string, DomainCrudPermission>
+	traffic_company_type_permissions?: TrafficCompanyTypePermission | null
 }
 
 export interface PortalViewerType {
@@ -32,7 +38,24 @@ export interface AuditAccessType {
 	company_visible_cards: string[]
 	services: AccessServiceType[]
 	roles: string[]
+	admin_role?: string | null
+	is_staff?: boolean
+	is_service_admin?: boolean
+	is_deputy_service_admin?: boolean
+	service_admin_service_ids?: number[]
+	deputy_service_admin_id?: number | null
+	deputy_permissions?: DeputyPermissionsType
+	can_manage_users?: boolean
+	can_manage_roles?: boolean
 	portal_viewer?: PortalViewerType | null
+}
+
+export interface DeputyPermissionsType {
+	can_create_users: boolean
+	can_create_roles: boolean
+	can_edit_users: boolean
+	can_assign_roles: boolean
+	can_manage_policies: boolean
 }
 
 export interface UserInfoType {
@@ -47,9 +70,17 @@ export interface UserInfoType {
 	phoneNumber: string
 	description: string
 	roles: Array<string>
+	admin_role?: string | null
 	domains?: string[]
 	company_visible_cards?: string[]
 	services?: AccessServiceType[]
+	is_service_admin?: boolean
+	is_deputy_service_admin?: boolean
+	service_admin_service_ids?: number[]
+	deputy_service_admin_id?: number | null
+	deputy_permissions?: DeputyPermissionsType
+	can_manage_users?: boolean
+	can_manage_roles?: boolean
 	portal_viewer?: PortalViewerType | null
 	// مسیرها می توانند اینجا به صورت پویا اضافه شوند
 	menus?: AppRouteRecordRaw[]

@@ -29,7 +29,12 @@ function parsePositiveInt(value: string | null) {
 
 export default function ContractListPage() {
 	const { t } = useTranslation();
-	const { hasDomainPermission, hasDomainPermissionByServiceId, getPermittedServiceIds } = useAccess();
+	const {
+		hasDomainPermission,
+		hasDomainPermissionByServiceId,
+		getPermittedServiceIds,
+		getPermittedTrafficCompanyTypes,
+	} = useAccess();
 
 	const actionRef = useRef<ActionType>(null);
 	const formRef = useRef<ProFormInstance | undefined>(undefined);
@@ -142,6 +147,10 @@ export default function ContractListPage() {
 
 	const isTrafficService = selectedService?.code === "traffic";
 	const isSmsService = selectedService?.code === "sms";
+	const permittedTrafficCompanyTypes = useMemo(
+		() => isTrafficService ? getPermittedTrafficCompanyTypes("contracts", "view", selectedServiceId) : [],
+		[isTrafficService, selectedServiceId, getPermittedTrafficCompanyTypes],
+	);
 
 	useEffect(() => {
 		if (!deepLinkedContractId || openDetail)
@@ -155,6 +164,21 @@ export default function ContractListPage() {
 		setSelectedServicePath(resolvedService);
 		setOpenDetail(true);
 	}, [deepLinkedContractId, deepLinkedServiceId, openDetail, serviceCodeById]);
+
+	useEffect(() => {
+		if (!isTrafficService || !selectedTrafficCompanyType) {
+			return;
+		}
+		if (permittedTrafficCompanyTypes.includes(selectedTrafficCompanyType)) {
+			return;
+		}
+
+		setSelectedTrafficCompanyType(null);
+		formRef.current?.setFieldsValue({
+			company_type: undefined,
+			company_id: undefined,
+		});
+	}, [isTrafficService, selectedTrafficCompanyType, permittedTrafficCompanyTypes.join(",")]);
 
 	const companies = useQuery(companiesByServiceQuery(selectedServiceId));
 
@@ -203,8 +227,10 @@ export default function ContractListPage() {
 
 	const refreshTable = () => actionRef.current?.reload?.();
 
-	const canUpdateRow = (row: ContractListItemType) => hasDomainPermissionByServiceId("contracts", "update", Number(row.service_id));
-	const canDeleteRow = (row: ContractListItemType) => hasDomainPermissionByServiceId("contracts", "delete", Number(row.service_id));
+	const canUpdateRow = (row: ContractListItemType) =>
+		hasDomainPermissionByServiceId("contracts", "update", Number(row.service_id), row.traffic_company_type);
+	const canDeleteRow = (row: ContractListItemType) =>
+		hasDomainPermissionByServiceId("contracts", "delete", Number(row.service_id), row.traffic_company_type);
 
 	const handleDeleteRow = async (row: ContractListItemType, action?: ProCoreActionType<object>) => {
 		if (!canDeleteRow(row)) {
@@ -253,6 +279,7 @@ export default function ContractListPage() {
 					formRef.current?.setFieldsValue({ company_id: undefined });
 					actionRef.current?.reload?.();
 				},
+				permittedTrafficCompanyTypes,
 				serviceOptions,
 				companyOptions,
 				isCompanyDisabled,
@@ -265,6 +292,7 @@ export default function ContractListPage() {
 			isTrafficService,
 			isSmsService,
 			selectedTrafficCompanyType,
+			permittedTrafficCompanyTypes,
 			serviceOptions,
 			companyOptions,
 			isCompanyDisabled,

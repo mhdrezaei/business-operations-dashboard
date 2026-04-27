@@ -18,6 +18,7 @@ export interface GetPerformanceColumnsArgs {
 	selectedServiceId: number | null
 	selectedServiceCode: string | null
 	selectedTrafficCompanyType: string | null
+	permittedTrafficCompanyTypes: TrafficCompanyType[]
 	setSelectedService: (serviceId: number | null, serviceCode: string | null) => void
 	serviceOptions: Array<{ label: string, value: number, code: string }>
 	companyOptions: Array<{ label: string, value: number }>
@@ -50,6 +51,7 @@ const TRAFFIC_COMPANY_TYPE_OPTIONS = [
 	{ label: "TCI", value: "TCI" },
 	{ label: "PREMIUM", value: "PREMIUM" },
 ] as const;
+type TrafficCompanyType = typeof TRAFFIC_COMPANY_TYPE_OPTIONS[number]["value"];
 
 function toNumber(value: unknown) {
 	if (value == null || value === "")
@@ -73,6 +75,7 @@ export function getPerformanceColumns({
 	t,
 	selectedServiceCode,
 	selectedTrafficCompanyType,
+	permittedTrafficCompanyTypes,
 	setSelectedService,
 	serviceOptions,
 	companyOptions,
@@ -171,6 +174,9 @@ export function getPerformanceColumns({
 			hideInSearch: !isTraffic,
 			valueType: "select",
 			valueEnum: TRAFFIC_COMPANY_TYPE_OPTIONS.reduce((acc, option) => {
+				if (!permittedTrafficCompanyTypes.includes(option.value)) {
+					return acc;
+				}
 				acc[option.value] = option.label;
 				return acc;
 			}, {} as Record<string, string>),

@@ -1,20 +1,28 @@
+import type { UserInfoType } from "#src/api/user/types";
 import type { MenuItemType } from "#src/layout/layout-menu/types";
 import type { AppRouteRecordRaw } from "#src/router/types";
 
 import { menuIcons } from "#src/icons/menu-icons";
 import { isString } from "#src/utils";
+import { hasRouteAccess } from "#src/utils/access-policy";
 
 import { createElement } from "react";
 import { Link } from "react-router";
 
-/**
- * توليد آرايه آيتم هاي منو بر اساس فهرست مسيرها
- *
- * @param routeList فهرست مسيرها از نوع AppRouteRecordRaw
- * @returns آرايه آيتم هاي منو از نوع MenuItemType
- */
-export function generateMenuItemsFromRoutes(routeList: AppRouteRecordRaw[]) {
+export function generateMenuItemsFromRoutes(routeList: AppRouteRecordRaw[], user?: UserInfoType) {
 	return routeList.reduce<MenuItemType[]>((acc, item) => {
+		const noIndexRoute = Array.isArray(item.children)
+			? item.children.filter(route => !route.index && !route?.handle?.hideInMenu)
+			: [];
+		const childMenuItems = noIndexRoute.length > 0
+			? generateMenuItemsFromRoutes(noIndexRoute, user)
+			: [];
+		const canShowCurrentRoute = !user || hasRouteAccess(item, user);
+
+		if (item?.handle?.hideInMenu || (!canShowCurrentRoute && childMenuItems.length === 0)) {
+			return acc;
+		}
+
 		const label = item.handle?.title;
 		const externalLink = item?.handle?.externalLink;
 		const iconName = item?.handle?.icon;
@@ -25,9 +33,8 @@ export function generateMenuItemsFromRoutes(routeList: AppRouteRecordRaw[]) {
 				? createElement(
 					Link,
 					{
-						// جلوگيري از انتشار رويداد براي پرهيز از کليک منو
-						onClick: (e) => {
-							e.stopPropagation();
+						onClick: (event) => {
+							event.stopPropagation();
 						},
 						to: externalLink,
 						target: "_blank",
@@ -35,10 +42,9 @@ export function generateMenuItemsFromRoutes(routeList: AppRouteRecordRaw[]) {
 					},
 					label,
 				)
-				: (
-					label
-				),
+				: label,
 		};
+
 		if (iconName) {
 			menuItem.icon = iconName;
 			if (isString(iconName)) {
@@ -46,22 +52,15 @@ export function generateMenuItemsFromRoutes(routeList: AppRouteRecordRaw[]) {
 					menuItem.icon = createElement(menuIcons[iconName]);
 				}
 				else {
-					console.warn(
-						`menu-icon: icon "${iconName}" not found in src/icons/menu-icons.ts file`,
-					);
+					console.warn(`menu-icon: icon "${iconName}" not found in src/icons/menu-icons.ts file`);
 				}
 			}
 		}
-		if (Array.isArray(item.children) && item.children.length > 0) {
-			// فيلتر مسيرهاي غير از صفحه اصلي و مخفي در منو
-			const noIndexRoute = item.children.filter(route => !route.index && !route?.handle?.hideInMenu);
-			if (noIndexRoute.length > 0) {
-				menuItem.children = generateMenuItemsFromRoutes(noIndexRoute);
-			}
+
+		if (childMenuItems.length > 0) {
+			menuItem.children = childMenuItems;
 		}
-		if (item?.handle?.hideInMenu) {
-			return acc;
-		}
+
 		return [...acc, menuItem];
 	}, []);
 }

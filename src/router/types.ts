@@ -1,4 +1,5 @@
 import type { DomainPermissionAction } from "#src/api/user/types";
+import type { AdminAccessTarget } from "#src/utils/access-policy";
 import type { ReactNode } from "react";
 import type { IndexRouteObject, NonIndexRouteObject, createBrowserRouter as RemixRouter } from "react-router";
 
@@ -44,6 +45,11 @@ export interface RouteMeta {
 	 * Required CRUD action in the selected accessDomain.
 	 */
 	accessAction?: DomainPermissionAction
+
+	/**
+	 * Admin-panel permission scope from /audit/access snapshot.
+	 */
+	adminAccess?: AdminAccessTarget
 
 	/**
 	 * مجوز سطح دکمه در صفحه برای نمایش/مخفی کردن دکمه ها
