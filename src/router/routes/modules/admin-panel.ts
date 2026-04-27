@@ -21,8 +21,7 @@ const routes: AppRouteRecordRaw[] = [
 			icon: "SafetyOutlined",
 			title: $t("common.menu.adminPanel"),
 			order: userManagement,
-			accessDomain: "contracts",
-			accessAction: "view",
+			adminAccess: "audit_logs",
 		},
 		children: [
 			{
@@ -31,8 +30,7 @@ const routes: AppRouteRecordRaw[] = [
 				handle: {
 					icon: "FileTextOutlined",
 					title: $t("common.menu.userManagement"),
-					accessDomain: "contracts",
-					accessAction: "create",
+					adminAccess: "users",
 					// roles: ["admin"],
 					// permissions: [
 					// 	accessControlCodes.get,
@@ -48,8 +46,7 @@ const routes: AppRouteRecordRaw[] = [
 				handle: {
 					icon: "TeamOutlined",
 					title: $t("common.menu.role"),
-					accessDomain: "contracts",
-					accessAction: "view",
+					adminAccess: "roles",
 				},
 			},
 			{
@@ -58,8 +55,7 @@ const routes: AppRouteRecordRaw[] = [
 				handle: {
 					icon: "HistoryOutlined",
 					title: $t("common.menu.auditLogs"),
-					accessDomain: "contracts",
-					accessAction: "view",
+					adminAccess: "audit_logs",
 				},
 			},
 			{
@@ -68,8 +64,7 @@ const routes: AppRouteRecordRaw[] = [
 				handle: {
 					icon: createElement(BellOutlined),
 					title: $t("common.menu.notificationRules"),
-					accessDomain: "contracts",
-					accessAction: "view",
+					adminAccess: "policies",
 				},
 			},
 			// {

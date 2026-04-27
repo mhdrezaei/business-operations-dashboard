@@ -1,31 +1,19 @@
-import type { DomainCrudPermission, DomainPermissionAction } from "#src/api/user/types";
+import type { DomainPermissionAction } from "#src/api/user/types";
 import { useUserStore } from "#src/store";
 import { isString } from "#src/utils";
+import {
+	getPermittedServiceCodesForDomain,
+	getPermittedServiceIdsForDomain,
+	getPermittedTrafficCompanyTypesForDomain,
+	hasAdminAccess,
+	hasDomainPermissionForServices,
+	normalizeAccessKey,
+} from "#src/utils/access-policy";
 
 import { useMatches } from "react-router";
 import { accessControlCodes, AccessControlRoles } from "./constants";
 
 export * from "./constants";
-
-function normalizeAccessKey(value?: string | null) {
-	return (value ?? "").trim().toLowerCase();
-}
-
-function getDomainPermission(
-	permissions: Record<string, DomainCrudPermission> | undefined,
-	domain: string,
-) {
-	const normalizedDomain = normalizeAccessKey(domain);
-	if (!normalizedDomain || !permissions) {
-		return undefined;
-	}
-	for (const [domainKey, permission] of Object.entries(permissions)) {
-		if (normalizeAccessKey(domainKey) === normalizedDomain) {
-			return permission;
-		}
-	}
-	return undefined;
-}
 
 /**
  * @fa تشخیص مجوز
@@ -38,6 +26,7 @@ export function useAccess() {
 		services: userServices = [],
 		company_visible_cards: companyVisibleCards = [],
 		portal_viewer: portalViewer,
+		...userAccessState
 	} = useUserStore();
 	const currentRoute = matches[matches.length - 1];
 
@@ -90,18 +79,11 @@ export function useAccess() {
 		domain?: string,
 		action: DomainPermissionAction = "view",
 		serviceCode?: string,
+		trafficCompanyType?: string | null,
 	) => {
-		const normalizedDomain = normalizeAccessKey(domain);
-		if (!normalizedDomain) {
-			return false;
-		}
-		const normalizedServiceCode = normalizeAccessKey(serviceCode);
-		return userServices.some((service) => {
-			if (normalizedServiceCode && normalizeAccessKey(service.code) !== normalizedServiceCode) {
-				return false;
-			}
-			const permission = getDomainPermission(service.permissions, normalizedDomain);
-			return Boolean(permission?.[action]);
+		return hasDomainPermissionForServices(userServices, domain, action, {
+			serviceCode,
+			trafficCompanyType,
 		});
 	};
 
@@ -109,20 +91,14 @@ export function useAccess() {
 		domain?: string,
 		action: DomainPermissionAction = "view",
 		serviceId?: number | null,
+		trafficCompanyType?: string | null,
 	) => {
-		const normalizedDomain = normalizeAccessKey(domain);
-		if (!normalizedDomain) {
-			return false;
-		}
 		if (serviceId == null) {
-			return hasDomainPermission(normalizedDomain, action);
+			return hasDomainPermission(domain, action, undefined, trafficCompanyType);
 		}
-		return userServices.some((service) => {
-			if (service.id !== serviceId) {
-				return false;
-			}
-			const permission = getDomainPermission(service.permissions, normalizedDomain);
-			return Boolean(permission?.[action]);
+		return hasDomainPermissionForServices(userServices, domain, action, {
+			serviceId,
+			trafficCompanyType,
 		});
 	};
 
@@ -130,34 +106,26 @@ export function useAccess() {
 		domain?: string,
 		action: DomainPermissionAction = "view",
 	) => {
-		const normalizedDomain = normalizeAccessKey(domain);
-		if (!normalizedDomain) {
-			return [];
-		}
-		return userServices
-			.filter((service) => {
-				const permission = getDomainPermission(service.permissions, normalizedDomain);
-				return Boolean(permission?.[action]);
-			})
-			.map(service => service.id);
+		return getPermittedServiceIdsForDomain(userServices, domain, action);
 	};
 
 	const getPermittedServiceCodes = (
 		domain?: string,
 		action: DomainPermissionAction = "view",
 	) => {
-		const normalizedDomain = normalizeAccessKey(domain);
-		if (!normalizedDomain) {
-			return [];
-		}
-		const codes = userServices
-			.filter((service) => {
-				const permission = getDomainPermission(service.permissions, normalizedDomain);
-				return Boolean(permission?.[action]);
-			})
-			.map(service => normalizeAccessKey(service.code))
-			.filter(Boolean);
-		return Array.from(new Set(codes));
+		return getPermittedServiceCodesForDomain(userServices, domain, action);
+	};
+
+	const getPermittedTrafficCompanyTypes = (
+		domain?: string,
+		action: DomainPermissionAction = "view",
+		serviceId?: number | null,
+	) => {
+		return getPermittedTrafficCompanyTypesForDomain(userServices, domain, action, serviceId);
+	};
+
+	const hasAdminPanelAccess = (target: Parameters<typeof hasAdminAccess>[1]) => {
+		return hasAdminAccess(userAccessState, target);
 	};
 
 	const hasCompanyCardAccess = (cardCode?: string) => {
@@ -181,7 +149,9 @@ export function useAccess() {
 		hasDomainPermissionByServiceId,
 		getPermittedServiceIds,
 		getPermittedServiceCodes,
+		getPermittedTrafficCompanyTypes,
 		hasCompanyCardAccess,
+		hasAdminPanelAccess,
 		isPortalViewer,
 	};
 }

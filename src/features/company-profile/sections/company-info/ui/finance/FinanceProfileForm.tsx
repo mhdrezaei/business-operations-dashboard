@@ -16,7 +16,7 @@ interface Props {
 	onSubmit: (values: FinanceProfileFormValues) => void | Promise<void>
 }
 
-export default function FinanceProfileForm({ defaultValues, onSubmit }: Props) {
+export default function FinanceProfileForm({ disabled, defaultValues, onSubmit }: Props) {
 	const methods = useForm<FinanceProfileFormValues>({
 		defaultValues,
 		resolver: zodResolver(financeProfileSchema as any) as unknown as Resolver<FinanceProfileFormValues>,
@@ -36,25 +36,25 @@ export default function FinanceProfileForm({ defaultValues, onSubmit }: Props) {
 	return (
 		<Form layout="vertical" className="space-y-4">
 			<FormProvider {...methods}>
-				<Card bordered title="اطلاعات مالی" className="bg-bgMask">
+				<Card bordered title={"\u0627\u0637\u0644\u0627\u0639\u0627\u062A \u0645\u0627\u0644\u06CC"} className="bg-bgMask">
 					<div className="grid grid-cols-2 gap-x-4">
-						<RHFProText name="economic_code" label="کد اقتصادی" inputProps={{ placeholder: "کد اقتصادی" }} />
-						<RHFProText name="tax_file_number" label="شماره پرونده مالیاتی" inputProps={{ placeholder: "شماره پرونده مالیاتی" }} />
-						<RHFProText name="tax_office" label="اداره مالیاتی" inputProps={{ placeholder: "اداره مالیاتی" }} />
+						<RHFProText name="economic_code" label={"\u06A9\u062F \u0627\u0642\u062A\u0635\u0627\u062F\u06CC"} inputProps={{ placeholder: "\u06A9\u062F \u0627\u0642\u062A\u0635\u0627\u062F\u06CC", disabled }} />
+						<RHFProText name="tax_file_number" label={"\u0634\u0645\u0627\u0631\u0647 \u067E\u0631\u0648\u0646\u062F\u0647 \u0645\u0627\u0644\u06CC\u0627\u062A\u06CC"} inputProps={{ placeholder: "\u0634\u0645\u0627\u0631\u0647 \u067E\u0631\u0648\u0646\u062F\u0647 \u0645\u0627\u0644\u06CC\u0627\u062A\u06CC", disabled }} />
+						<RHFProText name="tax_office" label={"\u0627\u062F\u0627\u0631\u0647 \u0645\u0627\u0644\u06CC\u0627\u062A\u06CC"} inputProps={{ placeholder: "\u0627\u062F\u0627\u0631\u0647 \u0645\u0627\u0644\u06CC\u0627\u062A\u06CC", disabled }} />
 
 						<RHFSelect
 							name="vat_status"
-							label="وضعیت ارزش افزوده"
-							selectProps={{ placeholder: "انتخاب کنید", allowClear: true }}
+							label={"\u0648\u0636\u0639\u06CC\u062A \u0627\u0631\u0632\u0634 \u0627\u0641\u0632\u0648\u062F\u0647"}
+							selectProps={{ placeholder: "\u0627\u0646\u062A\u062E\u0627\u0628 \u06A9\u0646\u06CC\u062F", allowClear: true, disabled }}
 							options={VAT_STATUS_OPTIONS}
 						/>
 
-						<RHFProText name="financial_commitment_cap" label="سقف تعهد مالی" inputProps={{ placeholder: "سقف تعهد مالی" }} />
+						<RHFProText name="financial_commitment_cap" label={"\u0633\u0642\u0641 \u062A\u0639\u0647\u062F \u0645\u0627\u0644\u06CC"} inputProps={{ placeholder: "\u0633\u0642\u0641 \u062A\u0639\u0647\u062F \u0645\u0627\u0644\u06CC", disabled }} />
 
 						<RHFSelect
 							name="settlement_term"
-							label="شرایط تسویه"
-							selectProps={{ placeholder: "انتخاب کنید", allowClear: true }}
+							label={"\u0634\u0631\u0627\u06CC\u0637 \u062A\u0633\u0648\u06CC\u0647"}
+							selectProps={{ placeholder: "\u0627\u0646\u062A\u062E\u0627\u0628 \u06A9\u0646\u06CC\u062F", allowClear: true, disabled }}
 							options={SETTLEMENT_TERM_OPTIONS}
 						/>
 					</div>
@@ -62,10 +62,10 @@ export default function FinanceProfileForm({ defaultValues, onSubmit }: Props) {
 				<Button
 					type="primary"
 					loading={isSubmitting}
-					disabled={!isDirty || !isValid}
+					disabled={disabled || !isDirty || !isValid}
 					onClick={handleSubmit(values => onSubmit(values))}
 				>
-					ذخیره تغییرات
+					{"\u0630\u062E\u06CC\u0631\u0647 \u062A\u063A\u06CC\u06CC\u0631\u0627\u062A"}
 				</Button>
 			</FormProvider>
 		</Form>

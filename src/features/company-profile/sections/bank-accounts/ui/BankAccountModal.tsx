@@ -10,11 +10,12 @@ interface Props {
 	serviceId: number
 	companyId: number
 	editing: BankAccountDto | null
+	disabled?: boolean
 	onClose: () => void
 	onSaved: () => void
 }
 
-export default function BankAccountModal({ open, serviceId, companyId, editing, onClose, onSaved }: Props) {
+export default function BankAccountModal({ open, serviceId, companyId, editing, disabled, onClose, onSaved }: Props) {
 	const [saving, setSaving] = useState(false);
 
 	const title = useMemo(() => (editing ? "ویرایش حساب" : "ثبت حساب"), [editing]);
@@ -33,9 +34,13 @@ export default function BankAccountModal({ open, serviceId, companyId, editing, 
 			destroyOnClose
 		>
 			<BankAccountForm
-				disabled={saving}
+				disabled={saving || !!disabled}
 				defaultValues={initialValues}
 				onSubmit={async (values) => {
+					if (disabled) {
+						window.$message?.warning("دسترسی ثبت یا ویرایش حساب بانکی را ندارید.");
+						return;
+					}
 					setSaving(true);
 					try {
 						const payload = bankAccountFormToPayload(values, { serviceId, companyId });

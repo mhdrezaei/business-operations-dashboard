@@ -18,7 +18,7 @@ const routes: AppRouteRecordRaw[] = [
 			icon: createElement(IssuesCloseOutlined),
 			title: $t("common.menu.performanceManagement"),
 			order: performance,
-			accessDomain: "contracts",
+			accessDomain: "performances",
 			accessAction: "view",
 		},
 		children: [
@@ -28,7 +28,7 @@ const routes: AppRouteRecordRaw[] = [
 				handle: {
 					icon: "FileTextOutlined",
 					title: $t("common.menu.newPerformance"),
-					accessDomain: "contracts",
+					accessDomain: "performances",
 					accessAction: "create",
 				},
 			},
@@ -38,7 +38,7 @@ const routes: AppRouteRecordRaw[] = [
 				handle: {
 					icon: "FileTextOutlined",
 					title: $t("common.menu.editPerformance"),
-					accessDomain: "contracts",
+					accessDomain: "performances",
 					accessAction: "view",
 				},
 			},
@@ -48,7 +48,7 @@ const routes: AppRouteRecordRaw[] = [
 				handle: {
 					icon: "FileTextOutlined",
 					title: $t("common.menu.unregisteredPerformances"),
-					accessDomain: "contracts",
+					accessDomain: "performances",
 					accessAction: "view",
 				},
 			},
@@ -58,7 +58,7 @@ const routes: AppRouteRecordRaw[] = [
 				handle: {
 					icon: "FileTextOutlined",
 					title: $t("common.menu.performanceReports"),
-					accessDomain: "contracts",
+					accessDomain: "performances",
 					accessAction: "view",
 				},
 			},

@@ -6,7 +6,7 @@ import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import {
 	fetchUnregisteredPerformanceList,
 } from "#src/features/performance/api/performances.api";
-import { resolvePerformanceServicePath } from "#src/features/performance/shared/model/performance.helpers";
+import { normalizePerformanceRecord, resolvePerformanceServicePath } from "#src/features/performance/shared/model/performance.helpers";
 import {
 	companiesByServiceQuery,
 	servicesQuery,
@@ -43,7 +43,7 @@ function normalizeNumberList(values: unknown) {
 export default function UnregisteredPerformanceList() {
 	const { t } = useTranslation();
 	const navigate = useNavigate();
-	const { hasDomainPermissionByServiceId, getPermittedServiceIds } = useAccess();
+	const { hasDomainPermissionByServiceId, getPermittedServiceIds, getPermittedTrafficCompanyTypes } = useAccess();
 
 	const actionRef = useRef<ActionType>(null);
 	const formRef = useRef<ProFormInstance | undefined>(undefined);
@@ -84,6 +84,12 @@ export default function UnregisteredPerformanceList() {
 
 	const isSmsCommission = isSmsCommissionServicePath(selectedServicePath);
 	const smsCommissionAgents = useQuery(smsCommissionAgentsQuery(isSmsCommission));
+	const permittedTrafficCompanyTypes = useMemo(
+		() => selectedServiceCode === "traffic" && selectedServiceId
+			? getPermittedTrafficCompanyTypes("performances", "view", selectedServiceId)
+			: [],
+		[selectedServiceCode, selectedServiceId, getPermittedTrafficCompanyTypes],
+	);
 
 	const serviceOptions = useMemo(() => {
 		return (services.data?.results ?? [])
@@ -189,6 +195,7 @@ export default function UnregisteredPerformanceList() {
 				t,
 				selectedServiceIds,
 				selectedServiceCode,
+				permittedTrafficCompanyTypes,
 				setSelectedServices,
 				serviceOptions,
 				companyOptions,
@@ -200,6 +207,7 @@ export default function UnregisteredPerformanceList() {
 			t,
 			selectedServiceIds,
 			selectedServiceCode,
+			permittedTrafficCompanyTypes,
 			serviceOptions,
 			companyOptions,
 			companiesLoading,
@@ -221,8 +229,8 @@ export default function UnregisteredPerformanceList() {
 					const actions: React.ReactNode[] = [];
 					const rowServiceId = Number((record as any).service ?? (record as any).service_id);
 					const canCreateRow = Number.isInteger(rowServiceId) && (
-						hasDomainPermissionByServiceId("performances", "create", rowServiceId)
-						|| hasDomainPermissionByServiceId("contracts", "create", rowServiceId)
+						hasDomainPermissionByServiceId("performances", "create", rowServiceId, normalizePerformanceRecord(record).companyType)
+						|| hasDomainPermissionByServiceId("contracts", "create", rowServiceId, normalizePerformanceRecord(record).companyType)
 					);
 
 					if (canCreateRow) {

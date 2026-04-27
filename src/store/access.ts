@@ -5,6 +5,7 @@ import { rootRoute, router } from "#src/router";
 import { ROOT_ROUTE_ID } from "#src/router/constants";
 import { baseRoutes } from "#src/router/routes";
 import { ascending, flattenRoutes, generateMenuItemsFromRoutes } from "#src/router/utils";
+import { useUserStore } from "#src/store/user";
 
 import { create } from "zustand";
 
@@ -39,7 +40,7 @@ export const useAccessStore = create<AccessState & AccessAction>(set => ({
 		/* افزودن مسيرهاي جديد به ريشه */
 		router.patchRoutes(ROOT_ROUTE_ID, routes);
 		const flatRouteList = flattenRoutes(newRoutes);
-		const wholeMenus = generateMenuItemsFromRoutes(newRoutes);
+		const wholeMenus = generateMenuItemsFromRoutes(newRoutes, useUserStore.getState());
 		const newState = {
 			wholeMenus,
 			routeList: newRoutes,

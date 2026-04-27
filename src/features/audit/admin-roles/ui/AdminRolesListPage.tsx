@@ -16,6 +16,7 @@ import {
 	fetchCreateAdminRole,
 	fetchDeleteAdminRole,
 	fetchUpdateAdminRole,
+	fetchUpdateAdminRolePolicies,
 } from "../api/admin-roles.api";
 import { adminRoleServicesQuery } from "../queries/admin-roles.queries";
 import { AdminRoleDetailsModal } from "./components/AdminRoleDetailsModal";
@@ -24,7 +25,7 @@ import { getAdminRolesColumns } from "./constants/admin-roles.columns";
 
 export default function AdminRolesListPage() {
 	const { t } = useTranslation();
-	const { hasDomainPermission } = useAccess();
+	const { hasAdminPanelAccess } = useAccess();
 
 	const actionRef = useRef<ActionType>(null);
 	const formRef = useRef<ProFormInstance | undefined>(undefined);
@@ -34,9 +35,11 @@ export default function AdminRolesListPage() {
 	const [upsertMode, setUpsertMode] = useState<"create" | "edit">("create");
 	const [selectedRole, setSelectedRole] = useState<AdminRoleDto | null>(null);
 
-	const canCreate = hasDomainPermission("contracts", "create");
-	const canUpdate = hasDomainPermission("contracts", "update");
-	const canDelete = hasDomainPermission("contracts", "delete");
+	const canManageRoles = hasAdminPanelAccess("roles");
+	const canManagePolicies = hasAdminPanelAccess("policies");
+	const canCreate = canManageRoles;
+	const canUpdate = canManageRoles || canManagePolicies;
+	const canDelete = canManageRoles;
 
 	const servicesQuery = useQuery(adminRoleServicesQuery());
 
@@ -202,7 +205,7 @@ export default function AdminRolesListPage() {
 						}
 
 						await fetchUpdateAdminRole(selectedRole.id, role);
-						await fetchBulkUpsertAdminRolePolicies(selectedRole.id, policies);
+						await fetchUpdateAdminRolePolicies(selectedRole.id, policies);
 						window.$message?.success("نقش با موفقیت به‌روزرسانی شد.");
 					}
 
