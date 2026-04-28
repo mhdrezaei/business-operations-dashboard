@@ -196,7 +196,7 @@ function ManagementActionCard({
 }) {
 	return (
 		<Card>
-			<button type="button" className="group w-full bg-transparent rounded-lg  px-5 py-6 text-right hover:shadow-[var(--ant-boxShadowTertiary)]" onClick={onClick}>
+			<button type="button" className="group w-full bg-transparent rounded-lg   text-right hover:shadow-[var(--ant-boxShadowTertiary)]" onClick={onClick}>
 				<div dir="ltr" className="mb-3 flex items-center justify-between gap-3">
 					<span className={getStatusPillClassName(state)}>{status}</span>
 					<div dir="rtl" className="flex flex-1 items-center justify-start gap-3 text-right">
@@ -368,13 +368,13 @@ function DeputyServiceAdminPanel({
 		const payload: AdminUserAssignDeputyServiceAdminPayload = isDeputyServiceAdmin
 			? {
 				is_deputy_service_admin: true,
-				deputy_service_admin_id: parentServiceAdminId ?? null,
-				deputy_permissions: permissions,
+				...permissions,
+				service_admin_user_id: parentServiceAdminId ?? null,
 			}
 			: {
 				is_deputy_service_admin: false,
-				deputy_service_admin_id: null,
-				deputy_permissions: null,
+				...EMPTY_DEPUTY_PERMISSIONS,
+				service_admin_user_id: null,
 			};
 
 		setSaving(true);

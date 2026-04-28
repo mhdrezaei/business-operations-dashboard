@@ -87,10 +87,9 @@ export interface AdminUserAssignServiceAdminPayload {
 	is_service_admin: boolean
 }
 
-export interface AdminUserAssignDeputyServiceAdminPayload {
+export interface AdminUserAssignDeputyServiceAdminPayload extends AdminUserDeputyPermissionsDto {
 	is_deputy_service_admin: boolean
-	deputy_service_admin_id?: number | null
-	deputy_permissions?: AdminUserDeputyPermissionsDto | null
+	service_admin_user_id?: number | null
 }
 
 export interface AdminUserAttachManagedUserPayload {
