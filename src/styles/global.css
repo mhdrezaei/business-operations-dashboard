@@ -30,13 +30,27 @@
 
 /* Default font family for body */
 body {
-	font-family: var(--font-family-english);
+	font-family: var(--font-family-persian);
 }
 
 /* Persian language specific styling */
 html[lang="fa-IR"] *,
 html[lang="fa"] * {
 	font-family: var(--font-family-persian) !important;
+}
+
+.ant-app,
+.ant-modal,
+.ant-modal-root,
+.ant-message,
+.ant-notification,
+.ant-popover,
+.ant-popconfirm,
+.ant-select-dropdown,
+.ant-picker-dropdown,
+.ant-dropdown,
+.ant-tooltip {
+	font-family: var(--font-family-persian);
 }
 
 /* simplebar */

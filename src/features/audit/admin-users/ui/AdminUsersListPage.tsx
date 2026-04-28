@@ -3,7 +3,7 @@ import type { AdminRoleDto, AdminUserDto } from "../model/admin-users.types";
 
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import { useAccess } from "#src/hooks";
-import { DeleteOutlined, EditOutlined, EyeOutlined, PlusCircleOutlined, SafetyOutlined, StopOutlined, TeamOutlined } from "@ant-design/icons";
+import { CrownOutlined, DeleteOutlined, EditOutlined, EyeOutlined, PlusCircleOutlined, SafetyOutlined, StopOutlined, TeamOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Popconfirm } from "antd";
 import React, { useMemo, useRef, useState } from "react";
@@ -21,6 +21,7 @@ import {
 } from "../api/admin-users.api";
 import { adminRolesQuery } from "../queries/admin-users.queries";
 import { AdminUserRolesModal } from "./components/AdminUserRolesModal";
+import { AdminUserServiceAdminModal } from "./components/AdminUserServiceAdminModal";
 import { AdminUserSummaryModal } from "./components/AdminUserSummaryModal";
 import { AdminUserUpsertModal } from "./components/AdminUserUpsertModal";
 import { getAdminUsersColumns } from "./constants/admin-users.columns";
@@ -40,6 +41,8 @@ export default function AdminUsersListPage() {
 
 	const [openRoles, setOpenRoles] = useState(false);
 	const [openSummary, setOpenSummary] = useState(false);
+	const [openServiceAdmin, setOpenServiceAdmin] = useState(false);
+	const [loadingServiceAdminDetail, setLoadingServiceAdminDetail] = useState(false);
 
 	// permissions
 	const canManageUsers = hasAdminPanelAccess("users");
@@ -137,6 +140,25 @@ export default function AdminUsersListPage() {
 		setOpenSummary(true);
 	};
 
+	const handleOpenServiceAdmin = async (row: AdminUserDto) => {
+		if (!canManageUsers) {
+			window.$message?.warning("دسترسی تغییر وضعیت ادمین سرویس ندارید.");
+			return;
+		}
+
+		setSelectedUser(row);
+		setOpenServiceAdmin(true);
+		setLoadingServiceAdminDetail(true);
+
+		try {
+			const dto = await fetchAdminUserDetail(row.id);
+			setSelectedUser(dto);
+		}
+		finally {
+			setLoadingServiceAdminDetail(false);
+		}
+	};
+
 	const columns: ProColumns<AdminUserDto>[] = useMemo(() => {
 		return [
 			...baseColumns,
@@ -144,7 +166,7 @@ export default function AdminUsersListPage() {
 				title: t("common.action"),
 				valueType: "option",
 				key: "option",
-				width: 180,
+				width: 240,
 				fixed: "right",
 				align: "center",
 				render: (_, record, __, action) => {
@@ -172,6 +194,19 @@ export default function AdminUsersListPage() {
 								title="نقش‌ها"
 								icon={<TeamOutlined />}
 								onClick={() => handleOpenRoles(record)}
+							/>,
+						);
+					}
+
+					if (canManageUsers) {
+						actions.push(
+							<BasicButton
+								key="service-admin"
+								type="link"
+								size="large"
+								title="وضعیت ادمین سرویس"
+								icon={<CrownOutlined />}
+								onClick={() => handleOpenServiceAdmin(record)}
 							/>,
 						);
 					}
@@ -225,7 +260,7 @@ export default function AdminUsersListPage() {
 				},
 			},
 		];
-	}, [baseColumns, canDelete, canSetRoles, canToggleActive, canUpdate, t]);
+	}, [baseColumns, canDelete, canManageUsers, canSetRoles, canToggleActive, canUpdate, t]);
 
 	return (
 		<BasicContent className="h-full">
@@ -314,6 +349,21 @@ export default function AdminUsersListPage() {
 				user={selectedUser}
 				onClose={() => {
 					setOpenSummary(false);
+					setSelectedUser(null);
+				}}
+			/>
+
+			<AdminUserServiceAdminModal
+				open={openServiceAdmin}
+				user={selectedUser}
+				loading={loadingServiceAdminDetail}
+				onUpdated={() => {
+					setOpenServiceAdmin(false);
+					setSelectedUser(null);
+					refreshTable();
+				}}
+				onClose={() => {
+					setOpenServiceAdmin(false);
 					setSelectedUser(null);
 				}}
 			/>

@@ -1,5 +1,8 @@
 import type {
 	AdminRoleDto,
+	AdminUserAssignDeputyServiceAdminPayload,
+	AdminUserAssignServiceAdminPayload,
+	AdminUserAttachManagedUserPayload,
 	AdminUserDto,
 	AdminUserServiceAdminSummaryDto,
 	AdminUserSetRolesPayload,
@@ -49,7 +52,7 @@ export async function fetchDisableAdminUser(id: number) {
 	return request.post(`${BASE}/users/${id}/disable/`);
 }
 
-export async function fetchAdminRolesList(query?: { page?: number, search?: string, ordering?: string }) {
+export async function fetchAdminRolesList(query?: { page?: number, page_size?: number, search?: string, ordering?: string }) {
 	return request
 		.get(`${BASE}/roles/`, { searchParams: query as any })
 		.json<PaginatedResponse<AdminRoleDto>>();
@@ -59,6 +62,30 @@ export async function fetchSetAdminUserRoles(id: number, payload: AdminUserSetRo
 	return request
 		.post(`${BASE}/users/${id}/set-roles/`, { json: payload })
 		.json<any>();
+}
+
+export async function fetchAssignServiceAdmin(id: number, payload: AdminUserAssignServiceAdminPayload) {
+	return request
+		.post(`${BASE}/users/${id}/assign-service-admin/`, { json: payload })
+		.json<AdminUserDto>();
+}
+
+export async function fetchAssignDeputyServiceAdmin(id: number, payload: AdminUserAssignDeputyServiceAdminPayload) {
+	return request
+		.post(`${BASE}/users/${id}/assign-deputy-service-admin/`, { json: payload })
+		.json<AdminUserDto>();
+}
+
+export async function fetchAttachManagedUser(id: number, payload: AdminUserAttachManagedUserPayload) {
+	return request
+		.post(`${BASE}/users/${id}/attach-managed-user/`, { json: payload })
+		.json<AdminUserDto>();
+}
+
+export async function fetchDetachManagedUser(id: number) {
+	return request
+		.post(`${BASE}/users/${id}/detach-managed-user/`)
+		.json<AdminUserDto>();
 }
 
 export async function fetchAdminUserServiceAdminSummary(id: number) {
