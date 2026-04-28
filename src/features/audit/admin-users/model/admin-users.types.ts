@@ -10,7 +10,25 @@ export interface AdminRoleDto {
 	name: string
 	description: string
 	is_system: boolean
+	scope?: string
+	allowed_service_ids?: number[]
+	assigned_user_count?: number
 	created_at: string
+}
+
+export interface AdminUserAssignedRoleDetailDto {
+	id: number
+	name: string
+	scope: string
+	owner_admin_id: number | null
+}
+
+export interface AdminUserDeputyPermissionsDto {
+	can_create_users: boolean
+	can_create_roles: boolean
+	can_edit_users: boolean
+	can_assign_roles: boolean
+	can_manage_policies: boolean
 }
 
 export interface AdminUserDto {
@@ -18,15 +36,27 @@ export interface AdminUserDto {
 	username: string
 	first_name: string
 	last_name: string
-	email: string
-	mobile: string
-	national_code: string
+	email: string | null
+	mobile: string | null
+	national_code: string | null
 	is_active: boolean
 	is_staff: boolean
 	is_superuser: boolean
 	last_login: string | null
 	date_joined: string
 	roles: any // چون API گفته "string"؛ اگر بعداً آرایه شد اینجا اصلاح کن
+	assigned_role_details?: AdminUserAssignedRoleDetailDto[]
+	managed_by_admin_ids?: number[]
+	created_by_service_admin_id?: number | null
+	admin_role?: string | null
+	is_service_admin?: boolean
+	service_admin_service_ids?: number[]
+	is_deputy_service_admin?: boolean
+	deputy_service_admin_id?: number | null
+	deputy_permissions?: AdminUserDeputyPermissionsDto | null
+	manageable_by_current_user?: boolean
+	managed_users_count?: number
+	owned_roles_count?: number
 }
 
 export interface AdminUsersListQuery {
@@ -51,6 +81,20 @@ export interface AdminUserUpsertPayload {
 
 export interface AdminUserSetRolesPayload {
 	role_ids: number[]
+}
+
+export interface AdminUserAssignServiceAdminPayload {
+	is_service_admin: boolean
+}
+
+export interface AdminUserAssignDeputyServiceAdminPayload {
+	is_deputy_service_admin: boolean
+	deputy_service_admin_id?: number | null
+	deputy_permissions?: AdminUserDeputyPermissionsDto | null
+}
+
+export interface AdminUserAttachManagedUserPayload {
+	admin_user_id: number
 }
 
 export interface AdminUserSummaryManagedUserDto {

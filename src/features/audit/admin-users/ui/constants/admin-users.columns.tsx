@@ -113,6 +113,8 @@ export function getAdminUsersColumns({
 			dataIndex: "id",
 			width: 90,
 			search: false,
+			ellipsis: false,
+			hideInTable: true,
 		},
 		{
 			title: "نام کاربری",
@@ -164,6 +166,27 @@ export function getAdminUsersColumns({
 						<span>{text}</span>
 					</Tooltip>
 				);
+			},
+		},
+		{
+			title: "سطح ادمین",
+			dataIndex: "admin_role",
+			ellipsis: true,
+			width: 150,
+			search: false,
+			render: (_, r) => {
+				const isServiceAdmin = r.is_service_admin === true || r.admin_role === "service_admin";
+				const isDeputyServiceAdmin = r.is_deputy_service_admin === true || r.admin_role === "deputy_service_admin";
+
+				if (isServiceAdmin) {
+					return <Tag color="green">ادمین سرویس</Tag>;
+				}
+
+				if (isDeputyServiceAdmin) {
+					return <Tag color="cyan">معاون سرویس</Tag>;
+				}
+
+				return <Tag>کاربر عادی</Tag>;
 			},
 		},
 		{
