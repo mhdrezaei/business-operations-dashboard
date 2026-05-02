@@ -1,6 +1,6 @@
 import type { Resolver } from "react-hook-form";
 import type { CompanyPersonFormValues } from "../model/company-people.types";
-import { RHFProCheckbox, RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
+import { RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { PlusOutlined } from "@ant-design/icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -142,12 +142,13 @@ export default function CompanyPeopleForm({ disabled, defaultValues, onSubmit, o
 					</Form.Item>
 				</div>
 
-				<RHFProCheckbox
-					name="is_signatory"
-					checkboxLabel="صاحب امضا"
-					checkboxProps={{ disabled }}
-					itemProps={{ style: { gridColumn: "1 / -1", marginTop: 16, marginBottom: 0 } }}
-				/>
+				<div className="col-span-full">
+					{/* صاحب امضا */}
+					<label className="flex gap-2 items-center">
+						<input type="checkbox" disabled={disabled} {...methods.register("is_signatory")} />
+						صاحب امضا
+					</label>
+				</div>
 				<div className="flex justify-end gap-2 mt-4">
 					<Button onClick={onClose}>انصراف</Button>
 					<Button type="primary" onClick={handleSubmit(onSubmit)} loading={!!submitting} disabled={disabled || !isDirty || isSubmitting}>
