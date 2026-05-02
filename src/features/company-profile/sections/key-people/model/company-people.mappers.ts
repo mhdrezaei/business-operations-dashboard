@@ -1,4 +1,24 @@
-import type { CompanyPersonDto, CompanyPersonFormValues } from "./company-people.types";
+import type { CompanyPersonContactItem, CompanyPersonDto, CompanyPersonFormValues, CompanyPersonPayload } from "./company-people.types";
+
+function normalizeMultiValue(value: string[] | string | null | undefined): CompanyPersonContactItem[] {
+	if (Array.isArray(value)) {
+		return value
+			.map(item => item?.trim() ?? "")
+			.filter(Boolean)
+			.map(item => ({ value: item }));
+	}
+
+	if (typeof value === "string") {
+		const trimmed = value.trim();
+		return trimmed ? [{ value: trimmed }] : [];
+	}
+
+	return [];
+}
+
+function cleanMultiValue(values: CompanyPersonContactItem[]): string[] {
+	return values.map(({ value }) => value.trim()).filter(Boolean);
+}
 
 export function dtoToCompanyPersonForm(dto: CompanyPersonDto): CompanyPersonFormValues {
 	return {
@@ -7,8 +27,8 @@ export function dtoToCompanyPersonForm(dto: CompanyPersonDto): CompanyPersonForm
 		is_signatory: !!dto.is_signatory,
 		national_id: dto.national_id ?? "",
 		title: dto.title ?? "",
-		phone: dto.phone ?? "",
-		email: dto.email ?? "",
+		phone: normalizeMultiValue(dto.phone),
+		email: normalizeMultiValue(dto.email),
 	};
 }
 
@@ -16,7 +36,7 @@ export function companyPersonFormToPayload(
 	companyId: number,
 	serviceId: number,
 	values: CompanyPersonFormValues,
-): Partial<CompanyPersonDto> {
+): CompanyPersonPayload {
 	return {
 		company: companyId,
 		service: serviceId,
@@ -25,7 +45,7 @@ export function companyPersonFormToPayload(
 		is_signatory: !!values.is_signatory,
 		national_id: values.national_id.trim() || null,
 		title: values.title.trim() || null,
-		phone: values.phone.trim() || null,
-		email: values.email.trim() || null,
+		phone: cleanMultiValue(values.phone),
+		email: cleanMultiValue(values.email),
 	};
 }
