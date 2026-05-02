@@ -14,11 +14,27 @@ export interface CompanyPersonDto {
 	full_name: string
 	national_id: string | null
 	title: string | null
-	phone: string | null
-	email: string | null
+	phone: string[] | null
+	email: string[] | null
 	is_signatory: boolean
 	created_at: string
 	updated_at: string
+}
+
+export interface CompanyPersonContactItem {
+	value: string
+}
+
+export interface CompanyPersonPayload {
+	company: number
+	service: number
+	role: CompanyPersonRole
+	full_name: string
+	national_id: string | null
+	title: string | null
+	phone: string[]
+	email: string[]
+	is_signatory: boolean
 }
 
 export interface ListCompanyPeopleParams {
@@ -36,8 +52,8 @@ export interface CompanyPersonFormValues {
 	is_signatory: boolean
 	national_id: string
 	title: string
-	phone: string
-	email: string
+	phone: CompanyPersonContactItem[]
+	email: CompanyPersonContactItem[]
 }
 
 export interface Paginated<T> {

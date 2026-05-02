@@ -1,5 +1,5 @@
 import type { Paginated } from "#src/features/company-profile/shared/types";
-import type { CompanyPersonDto, ListCompanyPeopleParams } from "../sections/key-people/model/company-people.types";
+import type { CompanyPersonDto, CompanyPersonPayload, ListCompanyPeopleParams } from "../sections/key-people/model/company-people.types";
 import { request } from "#src/utils/request/";
 
 function toSearchParams(params: ListCompanyPeopleParams) {
@@ -18,13 +18,13 @@ export async function getCompanyPerson(id: number) {
 		.json<CompanyPersonDto>();
 }
 
-export async function createCompanyPerson(payload: Partial<CompanyPersonDto>) {
+export async function createCompanyPerson(payload: CompanyPersonPayload) {
 	return request
 		.post("contracts/company/people/", { json: payload })
 		.json<CompanyPersonDto>();
 }
 
-export async function updateCompanyPerson(id: number, payload: Partial<CompanyPersonDto>) {
+export async function updateCompanyPerson(id: number, payload: CompanyPersonPayload) {
 	return request
 		.put(`contracts/company/people/${id}/`, { json: payload })
 		.json<CompanyPersonDto>();

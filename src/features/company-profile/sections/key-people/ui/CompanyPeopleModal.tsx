@@ -1,4 +1,4 @@
-import type { CompanyPersonFormValues } from "../model/company-people.types";
+import type { CompanyPersonContactItem, CompanyPersonFormValues } from "../model/company-people.types";
 import { useQuery } from "@tanstack/react-query";
 
 import { Modal } from "antd";
@@ -17,6 +17,10 @@ interface Props {
 	onUpdated?: () => void
 }
 
+function ensureVisibleField(values: CompanyPersonContactItem[]) {
+	return values.length ? values : [{ value: "" }];
+}
+
 export default function CompanyPeopleModal({ open, companyId, serviceId, personId, onClose, onUpdated }: Props) {
 	const [saving, setSaving] = useState(false);
 
@@ -32,8 +36,8 @@ export default function CompanyPeopleModal({ open, companyId, serviceId, personI
 				is_signatory: false,
 				national_id: "",
 				title: "",
-				phone: "",
-				email: "",
+				phone: [{ value: "" }],
+				email: [{ value: "" }],
 			};
 		}
 		if (!detail.data)
@@ -42,8 +46,8 @@ export default function CompanyPeopleModal({ open, companyId, serviceId, personI
 		const base = dtoToCompanyPersonForm(detail.data);
 		return {
 			...base,
-			phone: base.phone.length ? base.phone : "",
-			email: base.email.length ? base.email : "",
+			phone: ensureVisibleField(base.phone),
+			email: ensureVisibleField(base.email),
 		};
 	}, [personId, detail.data]);
 
@@ -56,8 +60,6 @@ export default function CompanyPeopleModal({ open, companyId, serviceId, personI
 			width={800}
 			destroyOnClose
 		>
-			{personId && detail.isLoading ? null : null}
-
 			{!initialValues
 				? null
 				: (
