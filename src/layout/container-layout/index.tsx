@@ -117,19 +117,20 @@ export default function ContainerLayout() {
 			<LayoutHeader>
 				<Logo sidebarCollapsed={sidebarCollapsed} width={computedSidebarWidth} />
 
-				{isTopNav || isMixedNav
-					? (
-						<>
-							{/* {isTopNav ? <Logo sidebarCollapsed={false} className="mr-8" /> : null} */}
+				<div className="flex justify-center min-w-16">
+					{isTopNav || isMixedNav
+						? (
 							<LayoutMenu
 								mode="horizontal"
 								menus={topNavItems}
 								handleMenuSelect={handleMenuSelect}
 								headerBackgroundColor={getMenuBackgroundColor()}
 							/>
-						</>
-					)
-					: <BreadcrumbViews />}
+						)
+						: (
+							<BreadcrumbViews />
+						)}
+				</div>
 			</LayoutHeader>
 			<section
 				style={{
