@@ -1,12 +1,9 @@
-import logo from "#src/assets/svg/logo.svg?url";
-
-import { Typography } from "antd";
+import DarkLogo from "#src/assets/svg/dark-logo";
+import LightLogo from "#src/assets/svg/light-logo";
+import { usePreferences } from "#src/hooks";
 import { clsx } from "clsx";
 import { useNavigate } from "react-router";
-
 import { headerHeight } from "../../constants";
-
-const { Title } = Typography;
 
 export interface LogoProps {
 	sidebarCollapsed: boolean
@@ -18,30 +15,25 @@ export interface LogoProps {
  * @fa ارتفاع 48px
  * @en The height is 48px
  */
-export function Logo({ sidebarCollapsed, className, width }: LogoProps) {
+export function Logo({ className, width, sidebarCollapsed }: LogoProps) {
 	const navigate = useNavigate();
-
+	const { isDark } = usePreferences();
+	const logoWidth = sidebarCollapsed ? 40 : 90;
 	return (
 		<div
-			style={{ height: headerHeight, width: width ? `${width}px` : "100%" }}
-			className={clsx("flex items-center justify-start gap-2 cursor-pointer", className)}
+			style={{
+				height: headerHeight,
+				width: width ? `${width}px` : "100%",
+			}}
+			className={clsx(
+				"flex items-center justify-start gap-2 cursor-pointer max-w-80",
+				className,
+			)}
 			onClick={() => navigate(import.meta.env.VITE_BASE_HOME_PATH)}
 		>
-			<img
-				src={logo}
-				alt="logo"
-				width={32}
-				height={32}
-			/>
-
-			<Title
-				level={1}
-				className={clsx("!text-sm !m-0", { hidden: sidebarCollapsed })}
-				ellipsis
-			>
-				{import.meta.env.VITE_GLOB_APP_TITLE}
-			</Title>
-
+			{isDark
+				? <DarkLogo width={logoWidth} height={48} />
+				: <LightLogo width={logoWidth} height={48} />}
 		</div>
 	);
 }
