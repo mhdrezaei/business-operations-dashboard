@@ -1,8 +1,8 @@
 import type { FormComponentMapType } from "./form-mode-context";
+import DarkLogo from "#src/assets/svg/dark-logo";
+import LightLogo from "#src/assets/svg/light-logo";
 // import hero from "#src/assets/svg/hero.svg?url";
-import Banner from "#src/assets/svg/banner.svg?react";
-import logo from "#src/assets/svg/logo.svg?url";
-import { useLayoutMenu } from "#src/hooks";
+import { useLayoutMenu, usePreferences } from "#src/hooks";
 import { LayoutFooter } from "#src/layout";
 import { LanguageButton } from "#src/layout/layout-header/components/language-button";
 import { ThemeButton } from "#src/layout/layout-header/components/theme-button";
@@ -27,7 +27,7 @@ export default function Login() {
 	const { pageLayout, layoutButtonTrigger } = useLayoutMenu();
 	const isALignLeft = useMemo(() => pageLayout === "layout-left", [pageLayout]);
 	const isAlignCenter = useMemo(() => pageLayout === "layout-center", [pageLayout]);
-
+	const { isDark } = usePreferences();
 	const providedValue = useMemo(() => ({ formMode, setFormMode }), [formMode, setFormMode]);
 	return (
 		<div
@@ -39,10 +39,11 @@ export default function Login() {
 				<div
 					className="text-colorText flex flex-1 items-center"
 				>
-					<img alt="App Logo" src={logo} className="mr-2 w-11" />
-					<h1 className="m-0 text-xl font-medium">
-						{import.meta.env.VITE_GLOB_APP_TITLE}
-					</h1>
+					<div className="flex items-center justify-start gap-2 cursor-pointer max-w-80">
+						{isDark
+							? <DarkLogo width={90} height={48} />
+							: <LightLogo width={90} height={48} />}
+					</div>
 				</div>
 				<div className="flex items-center">
 					{layoutButtonTrigger}
@@ -67,9 +68,11 @@ export default function Login() {
 						className={clsx({ hidden: isAlignCenter })}
 					>
 						<div className="flex flex-col items-center justify-center h-full gap-3">
-							<Banner
-								className="h-64 motion-safe:animate-bounceInDownOutUp"
-							/>
+							<div className="motion-safe:animate-bounceInDownOutUp flex justify-center">
+								{isDark
+									? <DarkLogo width={220} height={120} />
+									: <LightLogo width={220} height={120} />}
+							</div>
 							<div className="text-xl text-colorTextSecondary mt-6 font-sans lg:text-2xl">
 								{t("authority.pageTitle")}
 							</div>
