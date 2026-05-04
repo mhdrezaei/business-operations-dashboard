@@ -117,7 +117,7 @@ export default function ContainerLayout() {
 			<LayoutHeader>
 				<Logo sidebarCollapsed={sidebarCollapsed} width={computedSidebarWidth} />
 
-				<div className="flex justify-center min-w-16">
+				<div className="flex justify-center">
 					{isTopNav || isMixedNav
 						? (
 							<LayoutMenu

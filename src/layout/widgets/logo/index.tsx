@@ -15,19 +15,25 @@ export interface LogoProps {
  * @fa ارتفاع 48px
  * @en The height is 48px
  */
-export function Logo({ className, width }: LogoProps) {
+export function Logo({ className, width, sidebarCollapsed }: LogoProps) {
 	const navigate = useNavigate();
 	const { isDark } = usePreferences();
-
+	const logoWidth = sidebarCollapsed ? 40 : 90;
 	return (
 		<div
-			style={{ height: headerHeight, width: width ? `${width}px` : "100%" }}
-			className={clsx("flex items-center justify-center gap-2 cursor-pointer", className)}
+			style={{
+				height: headerHeight,
+				width: width ? `${width}px` : "100%",
+			}}
+			className={clsx(
+				"flex items-center justify-start gap-2 cursor-pointer max-w-80",
+				className,
+			)}
 			onClick={() => navigate(import.meta.env.VITE_BASE_HOME_PATH)}
 		>
 			{isDark
-				? <DarkLogo width={90} height={56} />
-				: <LightLogo width={90} height={56} />}
+				? <DarkLogo width={logoWidth} height={48} />
+				: <LightLogo width={logoWidth} height={48} />}
 		</div>
 	);
 }
