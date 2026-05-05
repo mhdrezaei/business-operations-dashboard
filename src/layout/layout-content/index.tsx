@@ -9,8 +9,6 @@ import { useEffect, useMemo } from "react";
 
 import { useLocation, useOutlet } from "react-router";
 
-export interface LayoutContentProps { }
-
 export default function LayoutContent() {
 	const { pathname, search } = useLocation();
 	const outlet = useOutlet();
@@ -93,10 +91,8 @@ export default function LayoutContent() {
 		>
 			<Scrollbar>
 				<GlobalSpin>
-					<div
-						className="flex flex-col h-full"
-					>
-						<div className="h-[var(--react-antd-admin-content-height)]">
+					<div className="flex flex-col min-h-full">
+						<div className="flex-1">
 							<KeepAlive
 								max={20}
 								transition
