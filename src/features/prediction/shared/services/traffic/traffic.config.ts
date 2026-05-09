@@ -8,6 +8,7 @@ import type {
 } from "../../model/prediction.form.types";
 
 export const TRAFFIC_COMPANY_TYPE_OPTIONS: Array<{ label: TrafficCompanyType, value: TrafficCompanyType }> = [
+	{ label: "COLLOCATION", value: "COLLOCATION" },
 	{ label: "CP", value: "CP" },
 	{ label: "IXP", value: "IXP" },
 	{ label: "TCI", value: "TCI" },

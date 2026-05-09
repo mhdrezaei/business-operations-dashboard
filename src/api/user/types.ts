@@ -6,7 +6,7 @@ export interface AuthType {
 }
 
 export type DomainPermissionAction = "view" | "create" | "update" | "delete";
-export type TrafficCompanyType = "CP" | "IXP" | "PREMIUM" | "TCI";
+export type TrafficCompanyType = string;
 
 export interface DomainCrudPermission {
 	view: boolean
@@ -15,16 +15,28 @@ export interface DomainCrudPermission {
 	delete: boolean
 }
 
+export type DomainCrudPermissionResponse = DomainCrudPermission | DomainPermissionAction[];
+export interface CompanyTypeOption {
+	key: string
+	value: string
+}
+
 export type TrafficCompanyTypePermission = Partial<
 	Record<string, Partial<Record<DomainPermissionAction, TrafficCompanyType[]>>>
+>;
+
+export type CompanyTypePermissionResponseItem = Record<string, string>;
+export type CompanyTypePermission = Partial<
+	Record<string, Partial<Record<DomainPermissionAction, CompanyTypePermissionResponseItem[]>>>
 >;
 
 export interface AccessServiceType {
 	id: number
 	code: string
 	name: string
-	permissions: Record<string, DomainCrudPermission>
+	permissions: Record<string, DomainCrudPermissionResponse>
 	traffic_company_type_permissions?: TrafficCompanyTypePermission | null
+	company_type_permissions?: CompanyTypePermission | null
 }
 
 export interface PortalViewerType {
@@ -38,11 +50,14 @@ export interface AuditAccessType {
 	company_visible_cards: string[]
 	services: AccessServiceType[]
 	roles: string[]
+	role?: string | null
 	admin_role?: string | null
 	is_staff?: boolean
 	is_service_admin?: boolean
 	is_deputy_service_admin?: boolean
 	service_admin_service_ids?: number[]
+	admin_sections?: string[]
+	admin_section_actions?: Record<string, DomainPermissionAction[]>
 	deputy_service_admin_id?: number | null
 	deputy_permissions?: DeputyPermissionsType
 	can_manage_users?: boolean
@@ -70,6 +85,7 @@ export interface UserInfoType {
 	phoneNumber: string
 	description: string
 	roles: Array<string>
+	role?: string | null
 	admin_role?: string | null
 	domains?: string[]
 	company_visible_cards?: string[]
@@ -77,6 +93,8 @@ export interface UserInfoType {
 	is_service_admin?: boolean
 	is_deputy_service_admin?: boolean
 	service_admin_service_ids?: number[]
+	admin_sections?: string[]
+	admin_section_actions?: Record<string, DomainPermissionAction[]>
 	deputy_service_admin_id?: number | null
 	deputy_permissions?: DeputyPermissionsType
 	can_manage_users?: boolean

@@ -8,7 +8,6 @@ import { z } from "zod";
 import {
 	createEmptyTrafficManualShares,
 	isTrafficLocationCode,
-	TRAFFIC_COMPANY_TYPE_OPTIONS,
 	TRAFFIC_LOCATION_OPTIONS,
 	TRAFFIC_METRICS,
 } from "./traffic.config";
@@ -51,7 +50,10 @@ function getShareTotal(section: PredictionShareSectionValue) {
 }
 
 export const trafficPredictionSchema = z.object({
-	companyType: z.enum(TRAFFIC_COMPANY_TYPE_OPTIONS.map(option => option.value) as ["CP", "IXP", "TCI", "PREMIUM"]).nullable(),
+	companyType: z.preprocess(
+		value => value == null || value === "" ? null : String(value).trim().toUpperCase(),
+		z.string().nullable(),
+	),
 	q1Percent: quarterPercentSchema,
 	q2Percent: quarterPercentSchema,
 	q3Percent: quarterPercentSchema,

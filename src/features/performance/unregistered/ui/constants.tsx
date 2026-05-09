@@ -1,3 +1,4 @@
+import type { CompanyTypeOption } from "#src/api/user/types";
 import type { ProColumns } from "@ant-design/pro-components";
 import type { TFunction } from "i18next";
 import type { PerformanceListRow } from "../model/performance.list.types";
@@ -16,7 +17,7 @@ export interface GetPerformanceColumnsArgs {
 	t: TFunction<"translation", undefined>
 	selectedServiceIds: number[]
 	selectedServiceCode: string | null
-	permittedTrafficCompanyTypes: TrafficCompanyType[]
+	permittedTrafficCompanyTypeOptions: CompanyTypeOption[]
 	setSelectedServices: (serviceIds: number[], serviceCode: string | null) => void
 	serviceOptions: Array<{ label: string, value: number, code: string }>
 	companyOptions: Array<{ label: string, value: number }>
@@ -29,13 +30,11 @@ function isSmsCommissionService(code: string | null | undefined) {
 	return code === "sms-commission" || code === "sms_commission";
 }
 
-type TrafficCompanyType = "CP" | "IXP" | "PREMIUM" | "TCI";
-
 export function getPerformanceColumns({
 	t,
 	selectedServiceIds,
 	// selectedServiceCode,
-	permittedTrafficCompanyTypes,
+	permittedTrafficCompanyTypeOptions,
 	setSelectedServices,
 	serviceOptions,
 	companyOptions,
@@ -49,6 +48,10 @@ export function getPerformanceColumns({
 	}, {} as Record<string, string>);
 	const companyNameById = companyOptions.reduce((acc, it) => {
 		acc[String(it.value)] = String(it.label);
+		return acc;
+	}, {} as Record<string, string>);
+	const companyTypeLabelByKey = permittedTrafficCompanyTypeOptions.reduce((acc, item) => {
+		acc[item.key] = item.value;
 		return acc;
 	}, {} as Record<string, string>);
 
@@ -71,13 +74,6 @@ export function getPerformanceColumns({
 		{ label: t("performance.ordering.monthAsc"), value: "sh_month" },
 		{ label: t("performance.ordering.valueDesc"), value: "-value" },
 		{ label: t("performance.ordering.valueAsc"), value: "value" },
-	] as const;
-
-	const TRAFFIC_COMPANY_TYPE_OPTIONS = [
-		{ label: "CP", value: "CP" },
-		{ label: "IXP", value: "IXP" },
-		{ label: "TCI", value: "TCI" },
-		{ label: "PREMIUM", value: "PREMIUM" },
 	] as const;
 
 	const hasSelectedService = selectedServiceIds.length > 0;
@@ -208,14 +204,11 @@ export function getPerformanceColumns({
 			hideInTable: !showTrafficSpecificFields,
 			hideInSearch: !showTrafficSpecificFields,
 			valueType: "select",
-			valueEnum: TRAFFIC_COMPANY_TYPE_OPTIONS.reduce((acc, option) => {
-				if (!permittedTrafficCompanyTypes.includes(option.value)) {
-					return acc;
-				}
-				acc[option.value] = option.label;
+			valueEnum: permittedTrafficCompanyTypeOptions.reduce((acc, option) => {
+				acc[option.key] = option.value;
 				return acc;
 			}, {} as Record<string, string>),
-			render: (_, row) => row.company_type ?? "-",
+			render: (_, row) => row.company_type ? (companyTypeLabelByKey[String(row.company_type)] ?? row.company_type) : "-",
 		},
 
 	];

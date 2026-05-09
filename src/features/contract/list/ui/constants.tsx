@@ -1,16 +1,8 @@
+import type { CompanyTypeOption } from "#src/api/user/types";
 import type { ProColumns } from "@ant-design/pro-components";
 import type { TFunction } from "i18next";
 import type { ContractListItemType } from "../model/contracts.list.types";
 import { Tag } from "antd";
-
-const TRAFFIC_COMPANY_TYPE_OPTIONS = [
-	{ label: "CP", value: "CP" },
-	{ label: "IXP", value: "IXP" },
-	{ label: "TCI", value: "TCI" },
-	{ label: "PREMIUM", value: "PREMIUM" },
-] as const;
-
-type TrafficCompanyType = typeof TRAFFIC_COMPANY_TYPE_OPTIONS[number]["value"];
 
 export interface GetContractColumnsArgs {
 	t: TFunction<"translation", undefined>
@@ -21,9 +13,9 @@ export interface GetContractColumnsArgs {
 	isTrafficService: boolean
 	isSmsService: boolean
 
-	selectedTrafficCompanyType: TrafficCompanyType | null
-	setSelectedTrafficCompanyType: (v: TrafficCompanyType | null) => void
-	permittedTrafficCompanyTypes: TrafficCompanyType[]
+	selectedTrafficCompanyType: string | null
+	setSelectedTrafficCompanyType: (v: string | null) => void
+	permittedTrafficCompanyTypeOptions: CompanyTypeOption[]
 
 	serviceOptions: Array<{ label: any, value: any }>
 	companyOptions: Array<{ label: any, value: any }>
@@ -66,7 +58,7 @@ export function getContractColumns({
 	isSmsService,
 	selectedTrafficCompanyType,
 	setSelectedTrafficCompanyType,
-	permittedTrafficCompanyTypes,
+	permittedTrafficCompanyTypeOptions,
 	serviceOptions,
 	companyOptions,
 	isCompanyDisabled,
@@ -75,6 +67,10 @@ export function getContractColumns({
 }: GetContractColumnsArgs): ProColumns<ContractListItemType>[] {
 	const serviceNameById = serviceOptions.reduce((acc, it) => {
 		acc[String(it.value)] = String(it.label);
+		return acc;
+	}, {} as Record<string, string>);
+	const companyTypeLabelByKey = permittedTrafficCompanyTypeOptions.reduce((acc, item) => {
+		acc[item.key] = item.value;
 		return acc;
 	}, {} as Record<string, string>);
 
@@ -125,14 +121,17 @@ export function getContractColumns({
 			width: 150,
 			hideInTable: !isTrafficService,
 			hideInSearch: !isTrafficService,
-			valueEnum: TRAFFIC_COMPANY_TYPE_OPTIONS.reduce((acc, it) => {
-				if (!permittedTrafficCompanyTypes.includes(it.value)) {
-					return acc;
-				}
-				acc[it.value] = it.label;
+			valueEnum: permittedTrafficCompanyTypeOptions.reduce((acc, item) => {
+				acc[item.key] = item.value;
 				return acc;
 			}, {} as Record<string, string>),
-			render: (_, r) => (r as any).traffic_company_type ?? (r as any).company_type ?? "-",
+			render: (_, r) => {
+				const companyType = (r as any).traffic_company_type ?? (r as any).company_type ?? null;
+				if (!companyType) {
+					return "-";
+				}
+				return companyTypeLabelByKey[String(companyType)] ?? companyType;
+			},
 			fieldProps: {
 				allowClear: true,
 				placeholder: "نوع شرکت ترافیک را انتخاب کنید",

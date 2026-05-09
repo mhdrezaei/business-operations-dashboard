@@ -4,8 +4,6 @@ import { z } from "zod";
 import { performanceServiceRegistry } from "../services/registry";
 import { isSmsCommissionCode } from "./performance.helpers";
 
-const TRAFFIC_COMPANY_TYPE_VALUES = ["CP", "IXP", "TCI", "PREMIUM"] as const;
-
 const baseSchema = z.object({
 	serviceId: z.number().int().positive().nullable(),
 	serviceCode: z.preprocess(v => (v === undefined ? null : v), z.string().nullable()),
@@ -81,7 +79,7 @@ export function buildPerformanceSchema(
 			}
 
 			if (normalizedCode === "traffic") {
-				if (value.trafficCompanyType == null || !TRAFFIC_COMPANY_TYPE_VALUES.includes(value.trafficCompanyType as typeof TRAFFIC_COMPANY_TYPE_VALUES[number])) {
+				if (value.trafficCompanyType == null || !String(value.trafficCompanyType).trim()) {
 					ctx.addIssue({
 						code: "custom",
 						path: ["trafficCompanyType"],
