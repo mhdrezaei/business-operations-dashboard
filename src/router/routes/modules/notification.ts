@@ -18,12 +18,12 @@ const routes: AppRouteRecordRaw[] = [
 		},
 		children: [
 			{
-				path: "/notifications/inbox",
+				index: true,
 				Component: NotificationInboxPage,
 				handle: {
 					icon: createElement(BellOutlined),
 					title: $t("widgets.notifications"),
-					hideInMenu: false,
+					hideInMenu: true,
 					ignoreAccess: true,
 				},
 			},
