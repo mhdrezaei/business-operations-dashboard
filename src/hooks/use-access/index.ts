@@ -1,7 +1,8 @@
-import type { DomainPermissionAction } from "#src/api/user/types";
+import type { CompanyTypeOption, DomainPermissionAction } from "#src/api/user/types";
 import { useUserStore } from "#src/store";
 import { isString } from "#src/utils";
 import {
+	getPermittedCompanyTypesForDomain,
 	getPermittedServiceCodesForDomain,
 	getPermittedServiceIdsForDomain,
 	getPermittedTrafficCompanyTypesForDomain,
@@ -124,6 +125,14 @@ export function useAccess() {
 		return getPermittedTrafficCompanyTypesForDomain(userServices, domain, action, serviceId);
 	};
 
+	const getPermittedCompanyTypes = (
+		domain?: string,
+		action: DomainPermissionAction = "view",
+		serviceId?: number | null,
+	): CompanyTypeOption[] => {
+		return getPermittedCompanyTypesForDomain(userServices, domain, action, serviceId);
+	};
+
 	const hasAdminPanelAccess = (target: Parameters<typeof hasAdminAccess>[1]) => {
 		return hasAdminAccess(userAccessState, target);
 	};
@@ -149,6 +158,7 @@ export function useAccess() {
 		hasDomainPermissionByServiceId,
 		getPermittedServiceIds,
 		getPermittedServiceCodes,
+		getPermittedCompanyTypes,
 		getPermittedTrafficCompanyTypes,
 		hasCompanyCardAccess,
 		hasAdminPanelAccess,

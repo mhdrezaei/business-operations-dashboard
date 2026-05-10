@@ -15,13 +15,6 @@ const COUNTERPARTY_OPTIONS = [
 	{ label: "دولت و اپراتورها", value: "gov_ops" },
 ];
 
-const TRAFFIC_COMPANY_TYPE_OPTIONS = [
-	{ label: "CP", value: "CP" },
-	{ label: "IXP", value: "IXP" },
-	{ label: "TCI", value: "TCI" },
-	{ label: "PREMIUM", value: "PREMIUM" },
-];
-
 function isSmsCommissionCode(code: string | null | undefined) {
 	const normalized = typeof code === "string" ? code.trim().toLowerCase() : "";
 	return normalized === "sms-commission" || normalized === "sms_commission";
@@ -103,7 +96,7 @@ function withSelectedOption(options: YearMonthOption[], selected: number | null)
 
 export function FixedStartSection() {
 	const { setValue, control, trigger, formState, resetField } = useFormContext<ContractFormValues>();
-	const { getPermittedServiceIds } = useAccess();
+	const { getPermittedCompanyTypes, getPermittedServiceIds } = useAccess();
 
 	const services = useQuery(servicesQuery());
 
@@ -295,6 +288,12 @@ export function FixedStartSection() {
 				.filter(service => permittedCreateServiceIds.has(service.id))
 				.map(service => ({ label: service.name, value: service.id })),
 		[services.data, permittedCreateServiceIdList.join(",")],
+	);
+	const trafficCompanyTypeOptions = useMemo(
+		() => serviceCode === "traffic" && serviceId
+			? getPermittedCompanyTypes("contracts", "create", serviceId).map(item => ({ label: item.value, value: item.key }))
+			: [],
+		[serviceCode, serviceId, getPermittedCompanyTypes],
 	);
 
 	const companyOptionsDefault = useMemo(
@@ -502,7 +501,7 @@ export function FixedStartSection() {
 								<RHFSelect<ContractFormValues, "trafficCompanyType", any>
 									name="trafficCompanyType"
 									formItemProps={compactFormItemStyle}
-									options={TRAFFIC_COMPANY_TYPE_OPTIONS}
+									options={trafficCompanyTypeOptions}
 									selectProps={{
 										"allowClear": true,
 										"placeholder": "انتخاب کنید",

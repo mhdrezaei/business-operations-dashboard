@@ -1,6 +1,6 @@
 import type { ServiceDto } from "#src/api/common/common.types";
 
-export type TrafficCompanyType = "CP" | "IXP" | "TCI" | "PREMIUM";
+export type TrafficCompanyType = string;
 export type OpenApiContractModel = "legacy" | "package";
 
 export type PerformanceServiceCode = ServiceDto["code"] | "sms-commission" | "sms_commission";

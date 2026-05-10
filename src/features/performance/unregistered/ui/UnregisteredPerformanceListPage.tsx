@@ -43,7 +43,7 @@ function normalizeNumberList(values: unknown) {
 export default function UnregisteredPerformanceList() {
 	const { t } = useTranslation();
 	const navigate = useNavigate();
-	const { hasDomainPermissionByServiceId, getPermittedServiceIds, getPermittedTrafficCompanyTypes } = useAccess();
+	const { hasDomainPermissionByServiceId, getPermittedCompanyTypes, getPermittedServiceIds } = useAccess();
 
 	const actionRef = useRef<ActionType>(null);
 	const formRef = useRef<ProFormInstance | undefined>(undefined);
@@ -84,11 +84,11 @@ export default function UnregisteredPerformanceList() {
 
 	const isSmsCommission = isSmsCommissionServicePath(selectedServicePath);
 	const smsCommissionAgents = useQuery(smsCommissionAgentsQuery(isSmsCommission));
-	const permittedTrafficCompanyTypes = useMemo(
+	const permittedTrafficCompanyTypeOptions = useMemo(
 		() => selectedServiceCode === "traffic" && selectedServiceId
-			? getPermittedTrafficCompanyTypes("performances", "view", selectedServiceId)
+			? getPermittedCompanyTypes("performances", "view", selectedServiceId)
 			: [],
-		[selectedServiceCode, selectedServiceId, getPermittedTrafficCompanyTypes],
+		[selectedServiceCode, selectedServiceId, getPermittedCompanyTypes],
 	);
 
 	const serviceOptions = useMemo(() => {
@@ -195,7 +195,7 @@ export default function UnregisteredPerformanceList() {
 				t,
 				selectedServiceIds,
 				selectedServiceCode,
-				permittedTrafficCompanyTypes,
+				permittedTrafficCompanyTypeOptions,
 				setSelectedServices,
 				serviceOptions,
 				companyOptions,
@@ -207,7 +207,7 @@ export default function UnregisteredPerformanceList() {
 			t,
 			selectedServiceIds,
 			selectedServiceCode,
-			permittedTrafficCompanyTypes,
+			permittedTrafficCompanyTypeOptions,
 			serviceOptions,
 			companyOptions,
 			companiesLoading,

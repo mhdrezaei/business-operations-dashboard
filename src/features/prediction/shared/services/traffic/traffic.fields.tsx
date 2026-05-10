@@ -6,6 +6,7 @@ import type {
 	TrafficPredictionLocationFormValue,
 	TrafficPredictionMetricCode,
 } from "../../model/prediction.form.types";
+import { useAccess } from "#src/hooks";
 import { RHFProNumber, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
@@ -207,10 +208,17 @@ function normalizeLocations(value: unknown): TrafficPredictionLocationFormValue[
 export function TrafficPredictionFields() {
 	const { t } = useTranslation();
 	const { control, setValue } = useFormContext<PredictionFormValues>();
+	const { getPermittedCompanyTypes } = useAccess();
 	const serviceId = useWatch({ control, name: "serviceId" });
 	const companyType = useWatch({ control, name: sf("companyType") as any });
 	const locations = normalizeLocations(useWatch({ control, name: sf("locations") as any }));
 	const companies = useQuery(predictionCompaniesByServiceQuery(serviceId));
+	const trafficCompanyTypeOptions = useMemo(
+		() => serviceId
+			? getPermittedCompanyTypes("predictions", "create", serviceId).map(item => ({ label: item.value, value: item.key }))
+			: TRAFFIC_COMPANY_TYPE_OPTIONS,
+		[serviceId, getPermittedCompanyTypes],
+	);
 	const { fields, append, remove } = useFieldArray({
 		control: control as any,
 		name: sf("locations") as never,
@@ -297,7 +305,7 @@ export function TrafficPredictionFields() {
 						<RHFSelect<PredictionFormValues, any, any>
 							name={sf("companyType") as any}
 							label={t("prediction.labels.trafficCompanyType")}
-							options={TRAFFIC_COMPANY_TYPE_OPTIONS}
+							options={trafficCompanyTypeOptions}
 							selectProps={{
 								allowClear: true,
 								placeholder: t("prediction.placeholders.selectTrafficCompanyType"),

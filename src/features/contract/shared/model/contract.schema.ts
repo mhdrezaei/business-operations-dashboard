@@ -11,7 +11,10 @@ const fixedStartSchema = z.object({
 		v => (v === "" || v == null ? null : v),
 		z.enum(["partners", "gov_ops"]).nullable().catch(null),
 	),
-	trafficCompanyType: z.enum(["CP", "IXP", "TCI", "PREMIUM"]).nullable().optional(),
+	trafficCompanyType: z.preprocess(
+		value => value == null || value === "" ? null : String(value).trim().toUpperCase(),
+		z.string().nullable(),
+	).optional(),
 	startYear: z.number().int().min(1401).max(1410).nullable(),
 	startMonth: z.number().int().min(1).max(12).nullable(),
 	endYear: z.number().int().min(1401).max(1410).nullable(),

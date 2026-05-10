@@ -1,6 +1,8 @@
 import type {
 	AccessServiceType,
+	CompanyTypeOption,
 	DomainCrudPermission,
+	DomainCrudPermissionResponse,
 	DomainPermissionAction,
 	TrafficCompanyType,
 	UserInfoType,
@@ -8,7 +10,13 @@ import type {
 import type { AppRouteRecordRaw } from "#src/router/types";
 
 const TRAFFIC_SERVICE_CODE = "traffic";
-const ALL_TRAFFIC_COMPANY_TYPES: TrafficCompanyType[] = ["CP", "IXP", "PREMIUM", "TCI"];
+const ALL_TRAFFIC_COMPANY_TYPES: CompanyTypeOption[] = [
+	{ key: "COLLOCATION", value: "COLLOCATION" },
+	{ key: "CP", value: "CP" },
+	{ key: "IXP", value: "IXP" },
+	{ key: "PREMIUM", value: "PREMIUM" },
+	{ key: "TCI", value: "TCI" },
+];
 
 export type AdminAccessTarget = "users" | "roles" | "policies" | "audit_logs";
 
@@ -18,14 +26,29 @@ export function normalizeAccessKey(value?: string | null): string {
 
 function normalizeTrafficCompanyType(value?: string | null): TrafficCompanyType | null {
 	const normalized = (value ?? "").trim().toUpperCase();
-	if (ALL_TRAFFIC_COMPANY_TYPES.includes(normalized as TrafficCompanyType)) {
-		return normalized as TrafficCompanyType;
+	return normalized || null;
+}
+
+function toDomainCrudPermission(permission?: DomainCrudPermissionResponse): DomainCrudPermission | undefined {
+	if (!permission) {
+		return undefined;
 	}
-	return null;
+
+	if (Array.isArray(permission)) {
+		const actions = permission.map(action => normalizeAccessKey(action));
+		return {
+			view: actions.includes("view"),
+			create: actions.includes("create"),
+			update: actions.includes("update"),
+			delete: actions.includes("delete"),
+		};
+	}
+
+	return permission;
 }
 
 export function getDomainPermission(
-	permissions: Record<string, DomainCrudPermission> | undefined,
+	permissions: Record<string, DomainCrudPermissionResponse> | undefined,
 	domain: string,
 ): DomainCrudPermission | undefined {
 	const normalizedDomain = normalizeAccessKey(domain);
@@ -35,23 +58,51 @@ export function getDomainPermission(
 
 	for (const [domainKey, permission] of Object.entries(permissions)) {
 		if (normalizeAccessKey(domainKey) === normalizedDomain) {
-			return permission;
+			return toDomainCrudPermission(permission);
 		}
 	}
 	return undefined;
 }
 
-function getTrafficCompanyTypePermissions(
+function getConfiguredCompanyTypePermissions(
 	service: AccessServiceType,
 	domain: string,
 	action: DomainPermissionAction,
-): TrafficCompanyType[] | null {
+): CompanyTypeOption[] | null {
+	const normalizedDomain = normalizeAccessKey(domain);
+	const companyTypePermissions = service.company_type_permissions;
+	if (companyTypePermissions) {
+		for (const [domainKey, actionMap] of Object.entries(companyTypePermissions)) {
+			if (normalizeAccessKey(domainKey) !== normalizedDomain) {
+				continue;
+			}
+
+			const values = actionMap?.[action];
+			if (!Array.isArray(values)) {
+				return null;
+			}
+
+			return values
+				.flatMap((item) => {
+					const [key, value] = Object.entries(item ?? {})[0] ?? [];
+					const normalizedKey = normalizeTrafficCompanyType(key);
+					if (!normalizedKey) {
+						return [];
+					}
+
+					return [{
+						key: normalizedKey,
+						value: typeof value === "string" && value.trim() ? value : normalizedKey,
+					} satisfies CompanyTypeOption];
+				});
+		}
+	}
+
 	const permissions = service.traffic_company_type_permissions;
 	if (!permissions) {
 		return null;
 	}
 
-	const normalizedDomain = normalizeAccessKey(domain);
 	for (const [domainKey, actionMap] of Object.entries(permissions)) {
 		if (normalizeAccessKey(domainKey) !== normalizedDomain) {
 			continue;
@@ -63,24 +114,47 @@ function getTrafficCompanyTypePermissions(
 		}
 
 		return values
-			.map(item => normalizeTrafficCompanyType(item))
-			.filter((item): item is TrafficCompanyType => Boolean(item));
+			.map((item) => {
+				const normalizedKey = normalizeTrafficCompanyType(item);
+				if (!normalizedKey) {
+					return null;
+				}
+
+				return {
+					key: normalizedKey,
+					value: normalizedKey,
+				} satisfies CompanyTypeOption;
+			})
+			.filter((item): item is CompanyTypeOption => Boolean(item));
 	}
 
 	return null;
 }
 
-function hasTrafficCompanyTypePermission(
+function getCompanyTypePermissions(
+	service: AccessServiceType,
+	domain: string,
+	action: DomainPermissionAction,
+): CompanyTypeOption[] | null {
+	const configuredTypes = getConfiguredCompanyTypePermissions(service, domain, action);
+	if (configuredTypes) {
+		return configuredTypes;
+	}
+
+	if (normalizeAccessKey(service.code) === TRAFFIC_SERVICE_CODE) {
+		return ALL_TRAFFIC_COMPANY_TYPES;
+	}
+
+	return null;
+}
+
+function hasCompanyTypePermission(
 	service: AccessServiceType,
 	domain: string,
 	action: DomainPermissionAction,
 	trafficCompanyType?: string | null,
 ): boolean {
-	if (normalizeAccessKey(service.code) !== TRAFFIC_SERVICE_CODE) {
-		return true;
-	}
-
-	const permittedTypes = getTrafficCompanyTypePermissions(service, domain, action);
+	const permittedTypes = getCompanyTypePermissions(service, domain, action);
 	if (!permittedTypes) {
 		return true;
 	}
@@ -90,7 +164,7 @@ function hasTrafficCompanyTypePermission(
 	}
 
 	const normalizedType = normalizeTrafficCompanyType(trafficCompanyType);
-	return Boolean(normalizedType && permittedTypes.includes(normalizedType));
+	return Boolean(normalizedType && permittedTypes.some(item => item.key === normalizedType));
 }
 
 export function hasDomainPermissionForServices(
@@ -123,7 +197,7 @@ export function hasDomainPermissionForServices(
 			return false;
 		}
 
-		return hasTrafficCompanyTypePermission(service, normalizedDomain, action, options.trafficCompanyType);
+		return hasCompanyTypePermission(service, normalizedDomain, action, options.trafficCompanyType);
 	});
 }
 
@@ -160,43 +234,81 @@ export function getPermittedServiceCodesForDomain(
 	return Array.from(new Set(codes));
 }
 
+export function getPermittedCompanyTypesForDomain(
+	services: UserInfoType["services"],
+	domain: string | undefined,
+	action: DomainPermissionAction = "view",
+	serviceId?: number | null,
+): CompanyTypeOption[] {
+	const targetServices = (services ?? []).filter(service =>
+		(serviceId == null || service.id === serviceId)
+		&& Boolean(getDomainPermission(service.permissions, domain ?? "")?.[action]),
+	);
+
+	if (!targetServices.length) {
+		return [];
+	}
+
+	const permittedTypes = new Map<string, CompanyTypeOption>();
+	for (const service of targetServices) {
+		const types = getCompanyTypePermissions(service, domain ?? "", action) ?? [];
+		types.forEach((type) => {
+			if (!permittedTypes.has(type.key)) {
+				permittedTypes.set(type.key, type);
+			}
+		});
+	}
+
+	return [...permittedTypes.values()];
+}
+
 export function getPermittedTrafficCompanyTypesForDomain(
 	services: UserInfoType["services"],
 	domain: string | undefined,
 	action: DomainPermissionAction = "view",
 	serviceId?: number | null,
 ): TrafficCompanyType[] {
-	const trafficServices = (services ?? []).filter(service =>
-		normalizeAccessKey(service.code) === TRAFFIC_SERVICE_CODE
-		&& (serviceId == null || service.id === serviceId)
-		&& Boolean(getDomainPermission(service.permissions, domain ?? "")?.[action]),
-	);
-
-	if (!trafficServices.length) {
-		return [];
-	}
-
-	const permittedTypes = new Set<TrafficCompanyType>();
-	for (const service of trafficServices) {
-		const configuredTypes = getTrafficCompanyTypePermissions(service, domain ?? "", action);
-		const types = configuredTypes ?? ALL_TRAFFIC_COMPANY_TYPES;
-		types.forEach(type => permittedTypes.add(type));
-	}
-
-	return ALL_TRAFFIC_COMPANY_TYPES.filter(type => permittedTypes.has(type));
+	return getPermittedCompanyTypesForDomain(
+		(services ?? []).filter(service => normalizeAccessKey(service.code) === TRAFFIC_SERVICE_CODE),
+		domain,
+		action,
+		serviceId,
+	).map(item => item.key);
 }
 
 export function hasAdminAccess(user: Pick<
 	UserInfoType,
+	| "role"
 	| "admin_role"
+	| "admin_sections"
+	| "admin_section_actions"
 	| "is_superuser"
 	| "is_staff"
 	| "can_manage_users"
 	| "can_manage_roles"
 	| "deputy_permissions"
 >, target: AdminAccessTarget): boolean {
-	const isSuperAdmin = user.is_superuser || normalizeAccessKey(user.admin_role) === "superuser";
+	const normalizedRole = normalizeAccessKey(user.role ?? user.admin_role);
+	const isSuperAdmin = user.is_superuser || normalizedRole === "superuser";
 	if (isSuperAdmin) {
+		return true;
+	}
+
+	const sectionByTarget: Record<AdminAccessTarget, string> = {
+		users: "users",
+		roles: "roles",
+		policies: "notification_rules",
+		audit_logs: "logs",
+	};
+	const section = sectionByTarget[target];
+	const normalizedSections = (user.admin_sections ?? []).map(normalizeAccessKey);
+	const sectionActions = user.admin_section_actions ?? {};
+	for (const [sectionKey, actions] of Object.entries(sectionActions)) {
+		if (normalizeAccessKey(sectionKey) === section && Array.isArray(actions) && actions.length > 0) {
+			return true;
+		}
+	}
+	if (normalizedSections.includes(section)) {
 		return true;
 	}
 

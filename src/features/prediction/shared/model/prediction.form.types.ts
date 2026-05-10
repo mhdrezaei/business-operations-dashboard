@@ -13,7 +13,7 @@ export type OpenApiChannelCode	= | "SMS_MCI_FA"
   | "SMS_OTHER_EN";
 export type SmsChannelCode
 	= | "MCI_FA"	| "MCI_EN" | "IRANCELL_FA" | "IRANCELL_EN" | "OTHER_FA" | "OTHER_EN";
-export type TrafficCompanyType = "CP" | "IXP" | "TCI" | "PREMIUM";
+export type TrafficCompanyType = string;
 export type TrafficLocationCode = "TEHRAN" | "COUNTY";
 export type TrafficPredictionMetricCode = "value" | "valueReceive" | "income" | "expense";
 

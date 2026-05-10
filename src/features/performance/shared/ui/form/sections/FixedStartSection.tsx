@@ -27,13 +27,6 @@ import {
 
 interface YearMonthOption { label: string, value: number }
 
-const TRAFFIC_COMPANY_TYPE_OPTIONS = [
-	{ label: "CP", value: "CP" },
-	{ label: "IXP", value: "IXP" },
-	{ label: "TCI", value: "TCI" },
-	{ label: "PREMIUM", value: "PREMIUM" },
-];
-
 const TRAFFIC_SUBMIT_MODE_OPTIONS = [
 	{ label: i18next.t("performance.traffic.singleEntry"), value: "single" },
 	{ label: i18next.t("performance.traffic.templateUpload"), value: "template" },
@@ -74,7 +67,7 @@ function withSelectedOption(
 export function FixedStartSection() {
 	const { t } = useTranslation();
 	const { control, setValue, getValues } = useFormContext<PerformanceFormValues>();
-	const { getPermittedServiceIds } = useAccess();
+	const { getPermittedCompanyTypes, getPermittedServiceIds } = useAccess();
 
 	const services = useQuery(servicesQuery());
 
@@ -272,6 +265,12 @@ export function FixedStartSection() {
 				.filter(service => permittedCreateServiceIds.has(service.id))
 				.map(service => ({ label: service.name, value: service.id })),
 		[services.data, permittedCreateServiceIdList.join(",")],
+	);
+	const trafficCompanyTypeOptions = useMemo(
+		() => serviceCode === "traffic" && serviceId
+			? getPermittedCompanyTypes("performances", "create", serviceId).map(item => ({ label: item.value, value: item.key }))
+			: [],
+		[serviceCode, serviceId, getPermittedCompanyTypes],
 	);
 
 	const companyOptionsDefault = useMemo(
@@ -542,7 +541,7 @@ export function FixedStartSection() {
 								<RHFSelect<PerformanceFormValues, "trafficCompanyType", any>
 									name="trafficCompanyType"
 									label={t("performance.labels.trafficCompanyType")}
-									options={TRAFFIC_COMPANY_TYPE_OPTIONS}
+									options={trafficCompanyTypeOptions}
 									selectProps={{
 										allowClear: true,
 										placeholder: t("performance.placeholders.select"),

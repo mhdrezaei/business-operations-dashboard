@@ -40,7 +40,7 @@ function isCompositeDeleteService(service: PerformanceServicePath | null) {
 export default function PerformanceListPage() {
 	const { t } = useTranslation();
 	const navigate = useNavigate();
-	const { hasDomainPermissionByServiceId, getPermittedServiceIds, getPermittedTrafficCompanyTypes } = useAccess();
+	const { hasDomainPermissionByServiceId, getPermittedCompanyTypes, getPermittedServiceIds } = useAccess();
 
 	const actionRef = useRef<ActionType>(null);
 	const formRef = useRef<ProFormInstance | undefined>(undefined);
@@ -77,11 +77,11 @@ export default function PerformanceListPage() {
 
 	const isSmsCommission = isSmsCommissionServicePath(selectedServicePath);
 	const smsCommissionAgents = useQuery(smsCommissionAgentsQuery(isSmsCommission));
-	const permittedTrafficCompanyTypes = useMemo(
+	const permittedTrafficCompanyTypeOptions = useMemo(
 		() => selectedServiceCode === "traffic"
-			? getPermittedTrafficCompanyTypes("performances", "view", selectedServiceId)
+			? getPermittedCompanyTypes("performances", "view", selectedServiceId)
 			: [],
-		[selectedServiceCode, selectedServiceId, getPermittedTrafficCompanyTypes],
+		[selectedServiceCode, selectedServiceId, getPermittedCompanyTypes],
 	);
 
 	const serviceOptions = useMemo(() => {
@@ -112,7 +112,7 @@ export default function PerformanceListPage() {
 		if (selectedServiceCode !== "traffic" || !selectedTrafficCompanyType) {
 			return;
 		}
-		if (permittedTrafficCompanyTypes.includes(selectedTrafficCompanyType as any)) {
+		if (permittedTrafficCompanyTypeOptions.some(item => item.key === selectedTrafficCompanyType)) {
 			return;
 		}
 
@@ -121,7 +121,7 @@ export default function PerformanceListPage() {
 			company_type: undefined,
 			company: undefined,
 		});
-	}, [selectedServiceCode, selectedTrafficCompanyType, permittedTrafficCompanyTypes.join(",")]);
+	}, [selectedServiceCode, selectedTrafficCompanyType, permittedTrafficCompanyTypeOptions]);
 
 	const companyOptions = useMemo(
 		() => {
@@ -287,7 +287,7 @@ export default function PerformanceListPage() {
 				selectedServiceId,
 				selectedServiceCode,
 				selectedTrafficCompanyType,
-				permittedTrafficCompanyTypes,
+				permittedTrafficCompanyTypeOptions,
 				setSelectedService,
 				serviceOptions,
 				companyOptions,
@@ -304,7 +304,7 @@ export default function PerformanceListPage() {
 			selectedServiceId,
 			selectedServiceCode,
 			selectedTrafficCompanyType,
-			permittedTrafficCompanyTypes,
+			permittedTrafficCompanyTypeOptions,
 			serviceOptions,
 			companyOptions,
 			companies.isLoading,

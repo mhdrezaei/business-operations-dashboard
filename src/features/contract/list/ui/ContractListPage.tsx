@@ -18,8 +18,6 @@ import { ContractDetailModal } from "./components/ContractDetailModal";
 import { getContractColumns } from "./constants";
 import { openContractPdfPrint } from "./utils/contract-pdf";
 
-type TrafficCompanyType = "CP" | "IXP" | "TCI" | "PREMIUM";
-
 function parsePositiveInt(value: string | null) {
 	if (!value)
 		return null;
@@ -32,8 +30,8 @@ export default function ContractListPage() {
 	const {
 		hasDomainPermission,
 		hasDomainPermissionByServiceId,
+		getPermittedCompanyTypes,
 		getPermittedServiceIds,
-		getPermittedTrafficCompanyTypes,
 	} = useAccess();
 
 	const actionRef = useRef<ActionType>(null);
@@ -43,7 +41,7 @@ export default function ContractListPage() {
 	const [selectedId, setSelectedId] = useState<number | null>(null);
 	const [selectedServicePath, setSelectedServicePath] = useState<ContractServicePath | null>(null);
 	const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
-	const [selectedTrafficCompanyType, setSelectedTrafficCompanyType] = useState<TrafficCompanyType | null>(null);
+	const [selectedTrafficCompanyType, setSelectedTrafficCompanyType] = useState<string | null>(null);
 	const [downloadingPdfId, setDownloadingPdfId] = useState<number | null>(null);
 	const [searchParams, setSearchParams] = useSearchParams();
 
@@ -147,9 +145,9 @@ export default function ContractListPage() {
 
 	const isTrafficService = selectedService?.code === "traffic";
 	const isSmsService = selectedService?.code === "sms";
-	const permittedTrafficCompanyTypes = useMemo(
-		() => isTrafficService ? getPermittedTrafficCompanyTypes("contracts", "view", selectedServiceId) : [],
-		[isTrafficService, selectedServiceId, getPermittedTrafficCompanyTypes],
+	const permittedTrafficCompanyTypeOptions = useMemo(
+		() => isTrafficService ? getPermittedCompanyTypes("contracts", "view", selectedServiceId) : [],
+		[isTrafficService, selectedServiceId, getPermittedCompanyTypes],
 	);
 
 	useEffect(() => {
@@ -169,7 +167,7 @@ export default function ContractListPage() {
 		if (!isTrafficService || !selectedTrafficCompanyType) {
 			return;
 		}
-		if (permittedTrafficCompanyTypes.includes(selectedTrafficCompanyType)) {
+		if (permittedTrafficCompanyTypeOptions.some(item => item.key === selectedTrafficCompanyType)) {
 			return;
 		}
 
@@ -178,7 +176,7 @@ export default function ContractListPage() {
 			company_type: undefined,
 			company_id: undefined,
 		});
-	}, [isTrafficService, selectedTrafficCompanyType, permittedTrafficCompanyTypes.join(",")]);
+	}, [isTrafficService, selectedTrafficCompanyType, permittedTrafficCompanyTypeOptions]);
 
 	const companies = useQuery(companiesByServiceQuery(selectedServiceId));
 
@@ -279,7 +277,7 @@ export default function ContractListPage() {
 					formRef.current?.setFieldsValue({ company_id: undefined });
 					actionRef.current?.reload?.();
 				},
-				permittedTrafficCompanyTypes,
+				permittedTrafficCompanyTypeOptions,
 				serviceOptions,
 				companyOptions,
 				isCompanyDisabled,
@@ -292,7 +290,7 @@ export default function ContractListPage() {
 			isTrafficService,
 			isSmsService,
 			selectedTrafficCompanyType,
-			permittedTrafficCompanyTypes,
+			permittedTrafficCompanyTypeOptions,
 			serviceOptions,
 			companyOptions,
 			isCompanyDisabled,
