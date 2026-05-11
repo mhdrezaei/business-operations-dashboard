@@ -229,7 +229,10 @@ export default function NotificationInboxPage() {
 	return (
 		<BasicContent className="h-full !overflow-y-auto !overflow-x-hidden">
 			<div className="mx-auto flex w-full max-w-[1240px] flex-col gap-4 pb-14">
-				<div className="relative overflow-hidden rounded-3xl border border-[var(--ant-colorPrimaryBorder)] bg-[var(--ant-colorBgContainer)] p-5 shadow-[0_16px_40px_rgba(15,23,42,0.2)]">
+				<div className="relative overflow-hidden rounded-3xl border border-gray-400 border-[var(--ant-colorPrimaryBorder)] bg-[var(--ant-colorBgContainer)] p-5 shadow-[0_16px_40px_rgba(15,23,42,0.2)]
+				dark:border-gray-600
+                        dark:shadow-lg dark:shadow-gray-800"
+				>
 					<div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500" />
 					<div className="relative flex flex-wrap items-start justify-between gap-3">
 						<div className="flex flex-col gap-1">
@@ -277,7 +280,7 @@ export default function NotificationInboxPage() {
 					))}
 				</div>
 
-				<div className="rounded-3xl border border-[var(--ant-colorPrimaryBorder)] bg-[var(--ant-colorBgContainer)] p-4 shadow-[0_18px_42px_rgba(15,23,42,0.16)]">
+				<div className="rounded-3xl border border-gray-400 dark:border-gray-600 border-[var(--ant-colorPrimaryBorder)] bg-[var(--ant-colorBgContainer)] p-4 shadow-[0_18px_42px_rgba(15,23,42,0.16)]">
 					<div className="mb-4 flex items-center justify-between">
 						<Typography.Title level={4} className="!mb-0 !text-base">
 							{t("widgets.notificationUnreadCount", { count: unreadCount })}
@@ -298,7 +301,9 @@ export default function NotificationInboxPage() {
 												key={item.id}
 												ref={item.id === highlightId ? highlightRef : null}
 												className={`relative overflow-hidden rounded-2xl p-4 shadow-[0_14px_32px_rgba(15,23,42,0.2)]
-												border-[var(--ant-colorPrimaryBorder)]
+												border border-[var(–ant-colorPrimaryBorder)]
+												dark:border-gray-600
+                        dark:shadow-lg dark:shadow-gray-800
 												${item.id === highlightId ? "border-2 border-red-500" : ""}`}
 											>
 												<div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500" />
