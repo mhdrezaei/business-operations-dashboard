@@ -43,7 +43,7 @@ export default function LayoutRoot() {
 			const documentTitle = currentRoute.handle?.title as React.ReactElement | string;
 			const rawTitle = isString(documentTitle) ? documentTitle : documentTitle?.props?.children;
 			const baseTitle = t(rawTitle) || document.title;
-			const unreadCount = unreadCountQuery.data ?? 0;
+			const unreadCount = isLogin ? unreadCountQuery.data ?? 0 : 0;
 			document.title = unreadCount > 0 ? `(${unreadCount}) ${baseTitle}` : baseTitle;
 		}
 	}, [enableDynamicTitle, language, location, matches, isLogin, isAuthorized, t, unreadCountQuery.data]);

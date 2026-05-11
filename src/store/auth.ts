@@ -1,6 +1,7 @@
 import type { AuthType } from "#src/api/user/types";
 import type { PasswordLoginFormType } from "#src/pages/login/components/password-login";
 import { fetchLogin, fetchOtpLogin } from "#src/api/user";
+import { queryClient } from "#src/shared/lib/query-client";
 import { useAccessStore, useTabsStore, useUserStore } from "#src/store";
 import { getAppNamespace } from "#src/utils";
 
@@ -56,6 +57,7 @@ export const useAuthStore = create<AuthState & AuthAction>()(
 			},
 
 			reset: () => {
+				queryClient.removeQueries();
 				set({ ...initialState });
 				useUserStore.getState().reset();
 				useAccessStore.getState().reset();

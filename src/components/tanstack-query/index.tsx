@@ -1,20 +1,9 @@
 import type { ReactNode } from "react";
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { queryClient } from "#src/shared/lib/query-client";
 
-const queryClient = new QueryClient({
-	defaultOptions: {
-		queries: {
-			refetchOnWindowFocus: false, // آيا هنگام فوکوس پنجره داده ها دوباره دريافت شوند
-			refetchOnReconnect: false, // آيا هنگام بازگشت شبکه داده ها دوباره دريافت شوند
-			retry: 0, // تعداد تلاش مجدد
-		},
-		mutations: {
-			retry: 0, // تعداد تلاش مجدد
-		},
-	},
-});
+import { QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
 export interface TanstackQueryProps {
 	children: ReactNode
