@@ -22,6 +22,7 @@ export const defaultContractFormValues: ContractFormValues = {
 	serviceId: null,
 	serviceCode: null,
 	companyId: null,
+	companyType: null,
 	startYear: null,
 	startMonth: null,
 	counterpartyType: null,

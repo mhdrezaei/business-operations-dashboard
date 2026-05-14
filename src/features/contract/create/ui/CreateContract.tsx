@@ -260,8 +260,8 @@ function formValuesToApiPayload(values: ContractFormValues) {
 		addenda,
 	};
 
-	if (values.trafficCompanyType != null)
-		payload.company_type = values.trafficCompanyType;
+	if (values.companyType != null)
+		payload.company_type = values.companyType;
 	if (values.counterpartyType != null)
 		payload.sms_party = values.counterpartyType;
 

@@ -16,7 +16,7 @@ export interface CompanyDto {
 	id: number
 	name: string
 	service: number
-	company_type: string | null
+	company_type: string | Record<string, string> | null
 	created_by_id: number | null
 	updated_by_id: number | null
 	created_at: string

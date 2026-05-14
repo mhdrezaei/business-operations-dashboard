@@ -20,7 +20,7 @@ export function TrafficFields() {
 
 	const isOfficial = useWatch({ control, name: sf("isOfficial") as any }) as boolean | undefined;
 
-	const trafficCompanyType = useWatch({ control, name: "trafficCompanyType" });
+	const companyType = useWatch({ control, name: "companyType" });
 
 	const tehranPricing = useWatch({ control, name: sf("tehranPricing") as any });
 	const provincePricing = useWatch({ control, name: sf("provincePricing") as any });
@@ -36,7 +36,7 @@ export function TrafficFields() {
 	);
 
 	const showPricingUi = !!isOfficial;
-	const showPremiumRevenuePercent = showPricingUi && trafficCompanyType === "PREMIUM";
+	const showPremiumRevenuePercent = showPricingUi && companyType === "PREMIUM";
 
 	const addTehran = () => {
 		if (!tehranPricing) {

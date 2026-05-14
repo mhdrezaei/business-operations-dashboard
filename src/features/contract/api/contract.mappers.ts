@@ -29,6 +29,7 @@ export function fromApiContract(dto: ApiContractDto): ContractFormValues {
 		serviceId: dto.service ?? null,
 		serviceCode: "",
 		companyId: dto.company ?? null,
+		companyType: null,
 
 		counterpartyType: null,
 

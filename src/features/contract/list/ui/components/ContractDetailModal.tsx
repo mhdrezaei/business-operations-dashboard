@@ -335,7 +335,7 @@ function dtoToFormValues(dto: any, service: ContractServicePath): ContractFormVa
 
 	const description = dto?.note ?? dto?.description ?? "";
 
-	const trafficCompanyType = dto?.company_type ?? dto?.traffic_company_type ?? null;
+	const companyType = dto?.company_type ?? dto?.traffic_company_type ?? null;
 	const counterpartyType = dto?.sms_party ?? null;
 
 	const serviceCodeRaw = dto?.service_code ?? dto?.service?.code ?? servicePathToServiceCode(service);
@@ -391,7 +391,7 @@ function dtoToFormValues(dto: any, service: ContractServicePath): ContractFormVa
 		serviceId,
 		serviceCode: serviceCode as any,
 		companyId,
-		trafficCompanyType,
+		companyType,
 		counterpartyType,
 
 		startYear: toNumberOrNull(dto?.start_jy),
@@ -424,8 +424,8 @@ function formValuesToApiPayload(values: ContractFormValues) {
 		addenda,
 	};
 
-	if (values.trafficCompanyType != null)
-		payload.company_type = values.trafficCompanyType;
+	if (values.companyType != null)
+		payload.company_type = values.companyType;
 	if (values.counterpartyType != null)
 		payload.sms_party = values.counterpartyType;
 

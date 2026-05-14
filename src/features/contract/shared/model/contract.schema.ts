@@ -11,7 +11,7 @@ const fixedStartSchema = z.object({
 		v => (v === "" || v == null ? null : v),
 		z.enum(["partners", "gov_ops"]).nullable().catch(null),
 	),
-	trafficCompanyType: z.preprocess(
+	companyType: z.preprocess(
 		value => value == null || value === "" ? null : String(value).trim().toUpperCase(),
 		z.string().nullable(),
 	).optional(),
@@ -123,75 +123,86 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 					ctx.addIssue({ code: "custom", path: ["counterpartyType"], message: "طرف قرارداد الزامی است" });
 				}
 
-				// if business partners => company required
+				// if business partners => company type and company required
 				if (val.counterpartyType === "partners") {
+					if (val.companyType == null) {
+						ctx.addIssue({ code: "custom", path: ["companyType"], message: "نوع شرکت الزامی است" });
+					}
 					if (val.companyId == null) {
 						ctx.addIssue({ code: "custom", path: ["companyId"], message: "شرکت الزامی است" });
 					}
 				}
 
-				// If state/operators => company not required (and better null)
+				// If state/operators => company and company type are not needed
 				if (val.counterpartyType === "gov_ops") {
 					if (val.companyId != null)
 						ctx.addIssue({ code: "custom", path: ["companyId"], message: "در این حالت نیازی به انتخاب شرکت نیست" });
+					if (val.companyType != null)
+						ctx.addIssue({ code: "custom", path: ["companyType"], message: "در این حالت نیازی به انتخاب نوع شرکت نیست" });
 				}
 			}
-			else if (val.serviceCode === "traffic") {
-				if (val.trafficCompanyType == null) {
-					ctx.addIssue({ code: "custom", path: ["trafficCompanyType"], message: "نوع شرکت (ترافیک) الزامی است" });
+			else if (val.serviceCode === "traffic" || val.serviceCode === "psp") {
+				if (val.companyType == null) {
+					ctx.addIssue({
+						code: "custom",
+						path: ["companyType"],
+						message: val.serviceCode === "traffic" ? "نوع شرکت (ترافیک) الزامی است" : "نوع شرکت الزامی است",
+					});
 				}
 
 				// When company type is selected → companyId required
-				if (val.trafficCompanyType != null && val.companyId == null) {
+				if (val.companyType != null && val.companyId == null) {
 					ctx.addIssue({ code: "custom", path: ["companyId"], message: "شرکت الزامی است" });
 				}
 
-				// ✅ New: Validate only if the contract is official
-				const isOfficial = (val.serviceFields as any)?.isOfficial === true;
+				if (val.serviceCode === "traffic") {
+					// ✅ New: Validate only if the contract is official
+					const isOfficial = (val.serviceFields as any)?.isOfficial === true;
 
-				if (isOfficial && val.trafficCompanyType === "PREMIUM") {
-					const tehranPricing = (val.serviceFields as any)?.tehranPricing;
-					const provincePricing = (val.serviceFields as any)?.provincePricing;
+					if (isOfficial && val.companyType === "PREMIUM") {
+						const tehranPricing = (val.serviceFields as any)?.tehranPricing;
+						const provincePricing = (val.serviceFields as any)?.provincePricing;
 
-					if (tehranPricing != null) {
-						const p = (val.serviceFields as any)?.tehranRevenuePercent;
+						if (tehranPricing != null) {
+							const p = (val.serviceFields as any)?.tehranRevenuePercent;
+							if (p == null) {
+								ctx.addIssue({
+									code: "custom",
+									path: ["serviceFields", "tehranRevenuePercent"],
+									message: "درصد سهم درآمد (تهران) الزامی است",
+								});
+							}
+						}
+						if (provincePricing != null) {
+							const p = (val.serviceFields as any)?.provinceRevenuePercent;
+							if (p == null) {
+								ctx.addIssue({
+									code: "custom",
+									path: ["serviceFields", "provinceRevenuePercent"],
+									message: "درصد سهم درآمد (مراکز استانی) الزامی است",
+								});
+							}
+						}
+					}
+
+					// ✅ PREMIUM: Revenue share percentage only when official + PREMIUM
+					if (isOfficial && val.companyType === "PREMIUM") {
+						const p = (val.serviceFields as any)?.premiumRevenuePercent;
+
 						if (p == null) {
 							ctx.addIssue({
 								code: "custom",
-								path: ["serviceFields", "tehranRevenuePercent"],
-								message: "درصد سهم درآمد (تهران) الزامی است",
+								path: ["serviceFields", "premiumRevenuePercent"],
+								message: "درصد سهم درآمد الزامی است",
 							});
 						}
-					}
-					if (provincePricing != null) {
-						const p = (val.serviceFields as any)?.provinceRevenuePercent;
-						if (p == null) {
+						else if (typeof p !== "number" || !Number.isFinite(p) || p < 0 || p > 100) {
 							ctx.addIssue({
 								code: "custom",
-								path: ["serviceFields", "provinceRevenuePercent"],
-								message: "درصد سهم درآمد (مراکز استانی) الزامی است",
+								path: ["serviceFields", "premiumRevenuePercent"],
+								message: "درصد باید بین 0 تا 100 باشد",
 							});
 						}
-					}
-				}
-
-				// ✅ PREMIUM: Revenue share percentage only when official + PREMIUM
-				if (isOfficial && val.trafficCompanyType === "PREMIUM") {
-					const p = (val.serviceFields as any)?.premiumRevenuePercent;
-
-					if (p == null) {
-						ctx.addIssue({
-							code: "custom",
-							path: ["serviceFields", "premiumRevenuePercent"],
-							message: "درصد سهم درآمد الزامی است",
-						});
-					}
-					else if (typeof p !== "number" || !Number.isFinite(p) || p < 0 || p > 100) {
-						ctx.addIssue({
-							code: "custom",
-							path: ["serviceFields", "premiumRevenuePercent"],
-							message: "درصد باید بین 0 تا 100 باشد",
-						});
 					}
 				}
 			}

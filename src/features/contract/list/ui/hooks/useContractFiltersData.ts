@@ -1,4 +1,5 @@
 import { companiesByServiceQuery, servicesQuery } from "#src/features/contract/create/queries/contract.queries";
+import { companyTypeMatches } from "#src/features/contract/shared/utils";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 
@@ -12,8 +13,10 @@ export function useContractFiltersData(selectedServiceId: number | null, selecte
 		return services.data?.results?.find(s => s.id === selectedServiceId);
 	}, [services.data, selectedServiceId]);
 
-	const isTrafficService = selectedService?.code === "traffic";
-	const isSmsService = selectedService?.code === "sms";
+	const selectedServiceCode = typeof selectedService?.code === "string" ? selectedService.code.trim().toLowerCase() : null;
+	const isTrafficService = selectedServiceCode === "traffic";
+	const isSmsService = selectedServiceCode === "sms";
+	const isCompanyTypeService = selectedServiceCode === "traffic" || selectedServiceCode === "sms" || selectedServiceCode === "psp";
 
 	const serviceOptions = useMemo(() => {
 		return (services.data?.results ?? []).map(s => ({ label: s.name, value: s.id }));
@@ -28,21 +31,21 @@ export function useContractFiltersData(selectedServiceId: number | null, selecte
 		if (!selectedTrafficCompanyType)
 			return [];
 		return list
-			.filter((c: any) => c.company_type === selectedTrafficCompanyType)
+			.filter((c: any) => companyTypeMatches(c.company_type, selectedTrafficCompanyType))
 			.map((c: any) => ({ label: c.name, value: c.id }));
 	}, [companies.data, selectedTrafficCompanyType]);
 
-	const companyOptions = isTrafficService ? companyOptionsTraffic : companyOptionsDefault;
+	const companyOptions = isCompanyTypeService ? companyOptionsTraffic : companyOptionsDefault;
 
-	const isCompanyDisabled = !selectedServiceId || companies.isLoading || (isTrafficService && !selectedTrafficCompanyType);
+	const isCompanyDisabled = !selectedServiceId || companies.isLoading || (isCompanyTypeService && !selectedTrafficCompanyType);
 
 	const companyPlaceholder
 		= !selectedServiceId
 			? "ابتدا سرویس را انتخاب کنید"
 			: companies.isLoading
 				? "در حال دریافت لیست شرکت‌ها..."
-				: isTrafficService && !selectedTrafficCompanyType
-					? "ابتدا نوع شرکت (ترافیک) را انتخاب کنید"
+				: isCompanyTypeService && !selectedTrafficCompanyType
+					? "ابتدا نوع شرکت را انتخاب کنید"
 					: "شرکت را انتخاب کنید";
 
 	return {

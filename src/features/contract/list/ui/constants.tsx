@@ -11,6 +11,7 @@ export interface GetContractColumnsArgs {
 	setSelectedServiceId: (v: number | null) => void
 
 	isTrafficService: boolean
+	isCompanyTypeService: boolean
 	isSmsService: boolean
 
 	selectedTrafficCompanyType: string | null
@@ -55,6 +56,7 @@ export function getContractColumns({
 	// selectedServiceId,
 	setSelectedServiceId,
 	isTrafficService,
+	isCompanyTypeService,
 	isSmsService,
 	selectedTrafficCompanyType,
 	setSelectedTrafficCompanyType,
@@ -115,12 +117,12 @@ export function getContractColumns({
 		},
 
 		{
-			title: t("contract.tableTitle.trafficCompanyType"),
-			dataIndex: "traffic_company_type",
+			title: isTrafficService ? t("contract.tableTitle.trafficCompanyType") : "نوع شرکت",
+			dataIndex: "company_type",
 			valueType: "select",
 			width: 150,
 			hideInTable: !isTrafficService,
-			hideInSearch: !isTrafficService,
+			hideInSearch: !isCompanyTypeService,
 			valueEnum: permittedTrafficCompanyTypeOptions.reduce((acc, item) => {
 				acc[item.key] = item.value;
 				return acc;
@@ -134,7 +136,7 @@ export function getContractColumns({
 			},
 			fieldProps: {
 				allowClear: true,
-				placeholder: "نوع شرکت ترافیک را انتخاب کنید",
+				placeholder: "نوع شرکت را انتخاب کنید",
 				onChange: (v: any) => setSelectedTrafficCompanyType((v ?? null) as any),
 			},
 		},
@@ -153,7 +155,7 @@ export function getContractColumns({
 			dataIndex: "company_id",
 			valueType: "select",
 			hideInTable: true,
-			hideInSearch: isTrafficService ? !selectedTrafficCompanyType : false,
+			hideInSearch: isCompanyTypeService ? !selectedTrafficCompanyType : false,
 			valueEnum: companyOptions.reduce((acc, it) => {
 				acc[String(it.value)] = it.label;
 				return acc;
