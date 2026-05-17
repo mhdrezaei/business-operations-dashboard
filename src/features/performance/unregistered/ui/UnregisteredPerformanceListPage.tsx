@@ -239,7 +239,7 @@ export default function UnregisteredPerformanceList() {
 								key="add"
 								type="link"
 								size="large"
-								title={t("performance.actions.editPerformance")}
+								title={t("performance.actions.submitPerformance")}
 								icon={<FileAddOutlined />}
 								onClick={() => {
 									setSelectedRow(record);
