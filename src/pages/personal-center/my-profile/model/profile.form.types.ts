@@ -6,4 +6,7 @@ export interface MyProfileFormValues {
 	email: string
 	mobile: string
 	national_code: string
+	password?: string
+	newPassword?: string
+	ConfirmNewPassword?: string
 }
