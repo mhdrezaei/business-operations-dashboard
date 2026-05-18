@@ -3,11 +3,31 @@ import type { MyProfileFormValues } from "./model/profile.form.types";
 import { BasicButton, BasicContent } from "#src/components/index.js";
 import { RHFProText } from "#src/shared/ui/rhf-pro/index.js";
 import { useQuery } from "@tanstack/react-query";
-import { Card, Col, Row } from "antd";
+import { Card, Col, Form, Input, Row } from "antd";
 import { useEffect, useMemo, useState } from "react";
-import { FormProvider, useForm } from "react-hook-form";
+import { Controller, FormProvider, useForm } from "react-hook-form";
 import { updateProfile } from "./api/profile.api";
 import { userProfileQuery } from "./queries/profile.queries";
+
+type TextFieldName = "first_name" | "last_name";
+type DigitFieldName = "mobile" | "national_code";
+
+const lettersOnlyPattern = /^[\p{L}\s]+$/u;
+const emailPattern = /^[^\s@]+@[^\s@][^\s.@]*\.[^\s@]+$/;
+
+function normalizeDigits(value: string) {
+	return value
+		.replace(/[\u06F0-\u06F9]/g, digit => String(digit.charCodeAt(0) - 1776))
+		.replace(/[\u0660-\u0669]/g, digit => String(digit.charCodeAt(0) - 1632));
+}
+
+function keepLettersOnly(value: string) {
+	return Array.from(value).filter(char => /[\p{L}\s]/u.test(char)).join("");
+}
+
+function keepDigitsOnly(value: string, maxLength: number) {
+	return normalizeDigits(value).replace(/\D/g, "").slice(0, maxLength);
+}
 
 export default function MyProfileForm() {
 	const [saving, setSaving] = useState(false);
@@ -25,22 +45,179 @@ export default function MyProfileForm() {
 		ConfirmNewPassword: "",
 	}), [userDetail]);
 
-	// const dynamicResolver: Resolver<MyProfileFormValues> = useCallback(
-	// 	async (values, context, options) => {
-	// 		const schema = baseSchema;
-	// 		const resolver = zodResolver(schema) as unknown as Resolver<MyProfileFormValues>;
-	// 		return resolver(values, context, options);
-	// 	},
-	// 	[],
-	// );
-
-	const form = useForm<MyProfileFormValues>({ defaultValues });
+	const form = useForm<MyProfileFormValues>({
+		defaultValues,
+		mode: "onBlur",
+	});
 	const { isDirty } = form.formState;
 
 	useEffect(() => {
 		form.reset(defaultValues);
 	}, [defaultValues, form]);
 
+	function renderEmailField() {
+		const message = "ساختار ایمیل درست نیست";
+
+		return (
+			<Controller
+				name="email"
+				control={form.control}
+				rules={{
+					validate: value => !value || emailPattern.test(value) || message,
+				}}
+				render={({ field, fieldState }) => (
+					<Form.Item
+						label="ایمیل"
+						help={fieldState.error?.message}
+						validateStatus={fieldState.error ? "error" : undefined}
+					>
+						<Input
+							value={field.value ?? ""}
+							onChange={(event) => {
+								field.onChange(event.target.value);
+								form.clearErrors("email");
+							}}
+							onBlur={() => {
+								field.onBlur();
+								void form.trigger("email");
+							}}
+							ref={field.ref}
+							status={fieldState.error ? "error" : undefined}
+							autoComplete="email"
+						/>
+					</Form.Item>
+				)}
+			/>
+		);
+	}
+
+	function renderLettersField(name: TextFieldName, label: string) {
+		const message = `${label} فقط باید شامل حروف باشد`;
+
+		return (
+			<Controller
+				name={name}
+				control={form.control}
+				rules={{
+					validate: value => !value || lettersOnlyPattern.test(value) || message,
+				}}
+				render={({ field, fieldState }) => (
+					<Form.Item
+						label={label}
+						help={fieldState.error?.message}
+						validateStatus={fieldState.error ? "error" : undefined}
+					>
+						<Input
+							value={field.value ?? ""}
+							onBeforeInput={(event) => {
+								const data = (event as any).data as string | undefined;
+								if (!data || keepLettersOnly(data) === data)
+									return;
+
+								event.preventDefault();
+								form.setError(name, { type: "pattern", message });
+							}}
+							onPaste={(event) => {
+								event.preventDefault();
+								const text = event.clipboardData.getData("text") ?? "";
+								const cleaned = keepLettersOnly(text);
+
+								if (cleaned !== text)
+									form.setError(name, { type: "pattern", message });
+								else
+									form.clearErrors(name);
+
+								const target = event.currentTarget;
+								const start = target.selectionStart ?? target.value.length;
+								const end = target.selectionEnd ?? target.value.length;
+								field.onChange(target.value.slice(0, start) + cleaned + target.value.slice(end));
+							}}
+							onChange={(event) => {
+								const nextValue = event.target.value;
+								const cleaned = keepLettersOnly(nextValue);
+
+								if (cleaned !== nextValue)
+									form.setError(name, { type: "pattern", message });
+								else
+									form.clearErrors(name);
+
+								field.onChange(cleaned);
+							}}
+							onBlur={() => {
+								field.onBlur();
+								void form.trigger(name);
+							}}
+							ref={field.ref}
+							status={fieldState.error ? "error" : undefined}
+							autoComplete="off"
+						/>
+					</Form.Item>
+				)}
+			/>
+		);
+	}
+
+	function renderDigitField(name: DigitFieldName, label: string, length: number, message: string) {
+		return (
+			<Controller
+				name={name}
+				control={form.control}
+				rules={{
+					validate: value => String(value ?? "").length === length || message,
+				}}
+				render={({ field, fieldState }) => (
+					<Form.Item
+						label={label}
+						help={fieldState.error?.message}
+						validateStatus={fieldState.error ? "error" : undefined}
+					>
+						<Input
+							value={field.value ?? ""}
+							inputMode="numeric"
+							maxLength={length}
+							onBeforeInput={(event) => {
+								const data = (event as any).data as string | undefined;
+								if (!data)
+									return;
+
+								const target = event.currentTarget;
+								const start = target.selectionStart ?? target.value.length;
+								const end = target.selectionEnd ?? target.value.length;
+								const cleaned = keepDigitsOnly(data, length);
+								const nextLength = target.value.length - (end - start) + cleaned.length;
+
+								if (cleaned !== normalizeDigits(data) || nextLength > length)
+									event.preventDefault();
+							}}
+							onPaste={(event) => {
+								event.preventDefault();
+								const text = event.clipboardData.getData("text") ?? "";
+								const target = event.currentTarget;
+								const start = target.selectionStart ?? target.value.length;
+								const end = target.selectionEnd ?? target.value.length;
+								const merged = target.value.slice(0, start) + text + target.value.slice(end);
+
+								field.onChange(keepDigitsOnly(merged, length));
+								form.clearErrors(name);
+							}}
+							onChange={(event) => {
+								field.onChange(keepDigitsOnly(event.target.value, length));
+								form.clearErrors(name);
+							}}
+							onBlur={(event) => {
+								field.onBlur();
+								if (event.target.value.length !== length)
+									void form.trigger(name);
+							}}
+							ref={field.ref}
+							status={fieldState.error ? "error" : undefined}
+							autoComplete="off"
+						/>
+					</Form.Item>
+				)}
+			/>
+		);
+	}
 	return (
 		<FormProvider {...form}>
 			<form
@@ -65,13 +242,13 @@ export default function MyProfileForm() {
 						</Row>
 						<div className="grid grid-cols-2 gap-3">
 							<RHFProText name="username" label="نام کاربری" />
-							<RHFProText name="email" label="ایمیل" />
+							{renderEmailField()}
 
-							<RHFProText name="first_name" label="نام" />
-							<RHFProText name="last_name" label="نام خانوادگی" />
+							{renderLettersField("first_name", "نام")}
+							{renderLettersField("last_name", "نام خانوادگی")}
 
-							<RHFProText name="mobile" label="موبایل" />
-							<RHFProText name="national_code" label="کد ملی" />
+							{renderDigitField("mobile", "موبایل", 11, "شماره موبایل باید 11 رقم باشد")}
+							{renderDigitField("national_code", "کد ملی", 10, "کد ملی باید 10 رقم باشد")}
 
 						</div>
 						<Card bordered>
