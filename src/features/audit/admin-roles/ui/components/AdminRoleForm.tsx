@@ -44,6 +44,7 @@ export function AdminRoleForm({
 		defaultValues,
 		resolver: zodResolver(adminRoleUpsertSchema) as any,
 	});
+	const { isDirty } = form.formState;
 
 	useEffect(() => {
 		form.reset(defaultValues);
@@ -114,7 +115,12 @@ export function AdminRoleForm({
 					<BasicButton onClick={onClose} disabled={submitting}>
 						انصراف
 					</BasicButton>
-					<BasicButton htmlType="submit" type="primary" loading={submitting}>
+					<BasicButton
+						htmlType="submit"
+						type="primary"
+						loading={submitting}
+						disabled={!isDirty || submitting}
+					>
 						{submitText}
 					</BasicButton>
 				</div>
