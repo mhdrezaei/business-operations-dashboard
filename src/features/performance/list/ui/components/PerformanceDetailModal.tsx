@@ -1482,7 +1482,7 @@ export function PerformanceDetailModal({
 								{config.editableFields.length > 0
 									? (
 										<Button type="primary" loading={saving} onClick={() => void handleSubmit()}>
-											{t("performance.actions.editPerformance")}
+											{t("performance.actions.submit")}
 										</Button>
 									)
 									: null}
