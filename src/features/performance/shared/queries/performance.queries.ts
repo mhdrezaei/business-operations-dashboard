@@ -105,9 +105,11 @@ export function smsCommissionAgentsQuery(enabled: boolean) {
 export function performanceReportAvailabilityQuery({
 	serviceId,
 	shPeriods,
+	companyType,
 }: {
 	serviceId: number | null | undefined
 	shPeriods?: string[]
+	companyType?: string | null | undefined
 }) {
 	const periodsKey = (shPeriods ?? [])
 		.map(item => String(item ?? "").trim())
@@ -115,9 +117,9 @@ export function performanceReportAvailabilityQuery({
 		.join(",");
 
 	return queryOptions({
-		queryKey: ["performances", "report", "availability", { serviceId, periods: periodsKey }],
+		queryKey: ["performances", "report", "availability", { serviceId, periods: periodsKey, companyType }],
 		enabled: !!serviceId,
-		queryFn: () => fetchPerformanceReportAvailability(serviceId!, shPeriods),
+		queryFn: () => fetchPerformanceReportAvailability(serviceId!, shPeriods, companyType),
 		staleTime: 30 * 1000,
 	});
 }

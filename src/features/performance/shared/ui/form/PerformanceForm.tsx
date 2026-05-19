@@ -27,7 +27,7 @@ const defaultValues: PerformanceFormValues = {
 	serviceId: null,
 	serviceCode: null,
 	companyId: null,
-	trafficCompanyType: null,
+	companyType: null,
 	salesAgentId: null,
 	year: null,
 	month: null,

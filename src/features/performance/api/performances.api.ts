@@ -521,7 +521,7 @@ export function fetchUnregisteredPerformanceList(params: UnregisterdPerformanceL
 		.json<Paginated<PerformanceListItem>>();
 }
 
-export function fetchPerformanceReportAvailability(serviceId: number, shPeriods?: string[]) {
+export function fetchPerformanceReportAvailability(serviceId: number, shPeriods?: string[], companyType?: string | null) {
 	const periods = (shPeriods ?? [])
 		.map(item => String(item ?? "").trim())
 		.filter(Boolean)
@@ -532,6 +532,7 @@ export function fetchPerformanceReportAvailability(serviceId: number, shPeriods?
 			searchParams: compactSearchParams({
 				service_id: serviceId,
 				sh_periods: periods,
+				company_type: companyType,
 			}),
 		})
 		.json<PerformanceReportAvailability>();

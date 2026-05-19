@@ -18,8 +18,8 @@ export interface GetPerformanceColumnsArgs {
 	t: TFunction<"translation", undefined>
 	selectedServiceId: number | null
 	selectedServiceCode: string | null
-	selectedTrafficCompanyType: string | null
-	permittedTrafficCompanyTypeOptions: CompanyTypeOption[]
+	selectedCompanyType: string | null
+	permittedCompanyTypeOptions: CompanyTypeOption[]
 	setSelectedService: (serviceId: number | null, serviceCode: string | null) => void
 	serviceOptions: Array<{ label: string, value: number, code: string }>
 	companyOptions: Array<{ label: string, value: number }>
@@ -67,8 +67,8 @@ function isSmsCommissionService(code: string | null | undefined) {
 export function getPerformanceColumns({
 	t,
 	selectedServiceCode,
-	selectedTrafficCompanyType,
-	permittedTrafficCompanyTypeOptions,
+	selectedCompanyType,
+	permittedCompanyTypeOptions,
 	setSelectedService,
 	serviceOptions,
 	companyOptions,
@@ -84,7 +84,7 @@ export function getPerformanceColumns({
 		acc[String(it.value)] = String(it.label);
 		return acc;
 	}, {} as Record<string, string>);
-	const companyTypeLabelByKey = permittedTrafficCompanyTypeOptions.reduce((acc, item) => {
+	const companyTypeLabelByKey = permittedCompanyTypeOptions.reduce((acc, item) => {
 		acc[item.key] = item.value;
 		return acc;
 	}, {} as Record<string, string>);
@@ -117,6 +117,7 @@ export function getPerformanceColumns({
 	const isPsp = serviceCode === "psp";
 	const isTraffic = serviceCode === "traffic";
 	const isSms = serviceCode === "sms";
+	const requiresCompanyType = isSms || isPsp || isTraffic;
 	const isSmsCommission = isSmsCommissionService(serviceCode);
 	const isCommercial = serviceCode === "commercial";
 	const isMonthlyAggregatedService = isOpenApi || isSms || isSmsCommission;
@@ -168,9 +169,9 @@ export function getPerformanceColumns({
 			title: t("performance.columns.companyType"),
 			dataIndex: "company_type",
 			hideInTable: true,
-			hideInSearch: !isTraffic,
+			hideInSearch: !requiresCompanyType,
 			valueType: "select",
-			valueEnum: permittedTrafficCompanyTypeOptions.reduce((acc, option) => {
+			valueEnum: permittedCompanyTypeOptions.reduce((acc, option) => {
 				acc[option.key] = option.value;
 				return acc;
 			}, {} as Record<string, string>),
@@ -186,7 +187,7 @@ export function getPerformanceColumns({
 			}, {} as Record<string, string>),
 			fieldProps: {
 				allowClear: true,
-				disabled: isCompanyDisabled || (isTraffic && !selectedTrafficCompanyType),
+				disabled: isCompanyDisabled || (requiresCompanyType && !selectedCompanyType),
 				placeholder: companyPlaceholder,
 			},
 		},
@@ -358,7 +359,7 @@ export function getPerformanceColumns({
 			title: t("performance.columns.companyType"),
 			dataIndex: "company_type",
 			width: 120,
-			hideInTable: hideNonMatchingServiceColumn(isTraffic),
+			hideInTable: hideNonMatchingServiceColumn(requiresCompanyType),
 			hideInSearch: true,
 			render: (_, row) => row.company_type ? (companyTypeLabelByKey[String(row.company_type)] ?? row.company_type) : "-",
 		},

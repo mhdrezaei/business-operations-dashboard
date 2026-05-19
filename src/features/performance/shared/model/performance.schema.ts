@@ -8,7 +8,7 @@ const baseSchema = z.object({
 	serviceId: z.number().int().positive().nullable(),
 	serviceCode: z.preprocess(v => (v === undefined ? null : v), z.string().nullable()),
 	companyId: z.number().int().positive().nullable(),
-	trafficCompanyType: z.preprocess((value) => {
+	companyType: z.preprocess((value) => {
 		if (value == null || value === "")
 			return null;
 
@@ -64,6 +64,7 @@ export function buildPerformanceSchema(
 			const trafficSubmitMode = normalizedCode === "traffic"
 				? String(serviceFields.submitMode ?? "").trim().toLowerCase()
 				: "";
+			const requiresCompanyType = normalizedCode === "traffic" || normalizedCode === "psp" || normalizedCode === "sms";
 
 			requireNotNull(value.serviceId, ["serviceId"], i18next.t("performance.validation.base.serviceRequired"), ctx);
 			requireNotNull(value.serviceCode, ["serviceCode"], i18next.t("performance.validation.base.serviceCodeRequired"), ctx);
@@ -78,12 +79,12 @@ export function buildPerformanceSchema(
 				requireNotNull(value.contractId, ["contractId"], i18next.t("performance.validation.base.contractForMonthNotFound"), ctx);
 			}
 
-			if (normalizedCode === "traffic") {
-				if (value.trafficCompanyType == null || !String(value.trafficCompanyType).trim()) {
+			if (requiresCompanyType) {
+				if (value.companyType == null || !String(value.companyType).trim()) {
 					ctx.addIssue({
 						code: "custom",
-						path: ["trafficCompanyType"],
-						message: i18next.t("performance.validation.base.trafficCompanyTypeRequired"),
+						path: ["companyType"],
+						message: i18next.t("performance.validation.base.companyTypeRequired"),
 					});
 				}
 			}

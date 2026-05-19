@@ -17,7 +17,7 @@ export interface GetPerformanceColumnsArgs {
 	t: TFunction<"translation", undefined>
 	selectedServiceIds: number[]
 	selectedServiceCode: string | null
-	permittedTrafficCompanyTypeOptions: CompanyTypeOption[]
+	permittedCompanyTypeOptions: CompanyTypeOption[]
 	setSelectedServices: (serviceIds: number[], serviceCode: string | null) => void
 	serviceOptions: Array<{ label: string, value: number, code: string }>
 	companyOptions: Array<{ label: string, value: number }>
@@ -30,11 +30,16 @@ function isSmsCommissionService(code: string | null | undefined) {
 	return code === "sms-commission" || code === "sms_commission";
 }
 
+function serviceRequiresCompanyType(code: string | null | undefined) {
+	const normalized = String(code ?? "").trim().toLowerCase();
+	return normalized === "sms" || normalized === "psp" || normalized === "traffic";
+}
+
 export function getPerformanceColumns({
 	t,
 	selectedServiceIds,
 	// selectedServiceCode,
-	permittedTrafficCompanyTypeOptions,
+	permittedCompanyTypeOptions,
 	setSelectedServices,
 	serviceOptions,
 	companyOptions,
@@ -50,7 +55,7 @@ export function getPerformanceColumns({
 		acc[String(it.value)] = String(it.label);
 		return acc;
 	}, {} as Record<string, string>);
-	const companyTypeLabelByKey = permittedTrafficCompanyTypeOptions.reduce((acc, item) => {
+	const companyTypeLabelByKey = permittedCompanyTypeOptions.reduce((acc, item) => {
 		acc[item.key] = item.value;
 		return acc;
 	}, {} as Record<string, string>);
@@ -77,7 +82,7 @@ export function getPerformanceColumns({
 	] as const;
 
 	const hasSelectedService = selectedServiceIds.length > 0;
-	const showTrafficSpecificFields = selectedServiceCodes.length > 0 && selectedServiceCodes.every(code => code === "traffic");
+	const showCompanyTypeSpecificFields = selectedServiceCodes.length > 0 && selectedServiceCodes.every(code => serviceRequiresCompanyType(code));
 	const showSmsCommissionSpecificFields = selectedServiceCodes.length > 0 && selectedServiceCodes.every(code => isSmsCommissionService(code));
 
 	return [
@@ -201,10 +206,10 @@ export function getPerformanceColumns({
 			title: t("performance.columns.companyType"),
 			dataIndex: "company_type",
 			width: 120,
-			hideInTable: !showTrafficSpecificFields,
-			hideInSearch: !showTrafficSpecificFields,
+			hideInTable: !showCompanyTypeSpecificFields,
+			hideInSearch: !showCompanyTypeSpecificFields,
 			valueType: "select",
-			valueEnum: permittedTrafficCompanyTypeOptions.reduce((acc, option) => {
+			valueEnum: permittedCompanyTypeOptions.reduce((acc, option) => {
 				acc[option.key] = option.value;
 				return acc;
 			}, {} as Record<string, string>),

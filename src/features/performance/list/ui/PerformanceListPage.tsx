@@ -10,6 +10,7 @@ import {
 } from "#src/features/performance/api/performances.api";
 import {
 	aggregatePerformanceRows,
+	companyTypeMatches,
 	normalizePerformanceRecord,
 	resolvePerformanceServicePath,
 	shouldAggregatePerformanceRows,
@@ -37,6 +38,11 @@ function isCompositeDeleteService(service: PerformanceServicePath | null) {
 	return service === "openapi" || service === "sms";
 }
 
+function serviceRequiresCompanyType(serviceCode: string | null | undefined) {
+	const normalized = String(serviceCode ?? "").trim().toLowerCase();
+	return normalized === "sms" || normalized === "psp" || normalized === "traffic";
+}
+
 export default function PerformanceListPage() {
 	const { t } = useTranslation();
 	const navigate = useNavigate();
@@ -47,14 +53,14 @@ export default function PerformanceListPage() {
 
 	const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
 	const [selectedServiceCode, setSelectedServiceCode] = useState<string | null>(null);
-	const [selectedTrafficCompanyType, setSelectedTrafficCompanyType] = useState<string | null>(null);
+	const [selectedCompanyType, setSelectedCompanyType] = useState<string | null>(null);
 	const [openDetail, setOpenDetail] = useState(false);
 	const [selectedRow, setSelectedRow] = useState<PerformanceListRow | null>(null);
 	const [deletingRowId, setDeletingRowId] = useState<number | null>(null);
 	const resetInvalidSelectedService = useCallback(() => {
 		setSelectedServiceId(null);
 		setSelectedServiceCode(null);
-		setSelectedTrafficCompanyType(null);
+		setSelectedCompanyType(null);
 	}, []);
 
 	const permittedViewIdsFromPerformances = getPermittedServiceIds("performances", "view");
@@ -74,14 +80,15 @@ export default function PerformanceListPage() {
 		() => resolvePerformanceServicePath(selectedServiceCode as any),
 		[selectedServiceCode],
 	);
+	const requiresCompanyType = serviceRequiresCompanyType(selectedServiceCode);
 
 	const isSmsCommission = isSmsCommissionServicePath(selectedServicePath);
 	const smsCommissionAgents = useQuery(smsCommissionAgentsQuery(isSmsCommission));
-	const permittedTrafficCompanyTypeOptions = useMemo(
-		() => selectedServiceCode === "traffic"
+	const permittedCompanyTypeOptions = useMemo(
+		() => requiresCompanyType
 			? getPermittedCompanyTypes("performances", "view", selectedServiceId)
 			: [],
-		[selectedServiceCode, selectedServiceId, getPermittedCompanyTypes],
+		[requiresCompanyType, selectedServiceId, getPermittedCompanyTypes],
 	);
 
 	const serviceOptions = useMemo(() => {
@@ -109,26 +116,26 @@ export default function PerformanceListPage() {
 	}, [selectedServiceId, permittedViewServiceIdsList.join(","), resetInvalidSelectedService]);
 
 	useEffect(() => {
-		if (selectedServiceCode !== "traffic" || !selectedTrafficCompanyType) {
+		if (!requiresCompanyType || !selectedCompanyType) {
 			return;
 		}
-		if (permittedTrafficCompanyTypeOptions.some(item => item.key === selectedTrafficCompanyType)) {
+		if (permittedCompanyTypeOptions.some(item => item.key === selectedCompanyType)) {
 			return;
 		}
 
-		setSelectedTrafficCompanyType(null);
+		setSelectedCompanyType(null);
 		formRef.current?.setFieldsValue({
 			company_type: undefined,
 			company: undefined,
 		});
-	}, [selectedServiceCode, selectedTrafficCompanyType, permittedTrafficCompanyTypeOptions]);
+	}, [requiresCompanyType, selectedCompanyType, permittedCompanyTypeOptions]);
 
 	const companyOptions = useMemo(
 		() => {
 			const allCompanies = companies.data?.results ?? [];
-			const filteredCompanies = selectedServiceCode === "traffic"
-				? selectedTrafficCompanyType
-					? allCompanies.filter(company => company.company_type === selectedTrafficCompanyType)
+			const filteredCompanies = requiresCompanyType
+				? selectedCompanyType
+					? allCompanies.filter(company => companyTypeMatches(company.company_type, selectedCompanyType))
 					: []
 				: allCompanies;
 
@@ -137,7 +144,7 @@ export default function PerformanceListPage() {
 				value: company.id,
 			}));
 		},
-		[companies.data, selectedServiceCode, selectedTrafficCompanyType],
+		[companies.data, requiresCompanyType, selectedCompanyType],
 	);
 
 	const salesAgentOptions = useMemo(() => {
@@ -175,22 +182,22 @@ export default function PerformanceListPage() {
 	const setSelectedService = (serviceId: number | null, serviceCode: string | null) => {
 		setSelectedServiceId(serviceId);
 		setSelectedServiceCode(serviceCode);
-		setSelectedTrafficCompanyType(null);
+		setSelectedCompanyType(null);
 		clearDependentFilters();
 	};
 
 	const canCreatePerformance = useMemo(() => {
 		if (!selectedServiceId)
 			return false;
-		return hasDomainPermissionByServiceId("performances", "create", selectedServiceId, selectedTrafficCompanyType) || hasDomainPermissionByServiceId("contracts", "create", selectedServiceId, selectedTrafficCompanyType);
-	}, [selectedServiceId, selectedTrafficCompanyType, hasDomainPermissionByServiceId]);
+		return hasDomainPermissionByServiceId("performances", "create", selectedServiceId, selectedCompanyType) || hasDomainPermissionByServiceId("contracts", "create", selectedServiceId, selectedCompanyType);
+	}, [selectedServiceId, selectedCompanyType, hasDomainPermissionByServiceId]);
 
 	const canUpdateRow = (row: PerformanceListRow) => {
 		const normalized = normalizePerformanceRecord(row);
 		const serviceId = normalized.serviceId ?? selectedServiceId;
 		if (!serviceId)
 			return false;
-		const companyType = normalized.companyType ?? selectedTrafficCompanyType;
+		const companyType = normalized.companyType ?? selectedCompanyType;
 		return hasDomainPermissionByServiceId("performances", "update", serviceId, companyType) || hasDomainPermissionByServiceId("contracts", "update", serviceId, companyType);
 	};
 
@@ -199,7 +206,7 @@ export default function PerformanceListPage() {
 		const serviceId = normalized.serviceId ?? selectedServiceId;
 		if (!serviceId)
 			return false;
-		const companyType = normalized.companyType ?? selectedTrafficCompanyType;
+		const companyType = normalized.companyType ?? selectedCompanyType;
 		return hasDomainPermissionByServiceId("performances", "delete", serviceId, companyType) || hasDomainPermissionByServiceId("contracts", "delete", serviceId, companyType);
 	};
 
@@ -286,16 +293,16 @@ export default function PerformanceListPage() {
 				t,
 				selectedServiceId,
 				selectedServiceCode,
-				selectedTrafficCompanyType,
-				permittedTrafficCompanyTypeOptions,
+				selectedCompanyType,
+				permittedCompanyTypeOptions,
 				setSelectedService,
 				serviceOptions,
 				companyOptions,
-				isCompanyDisabled: !selectedServiceId || companies.isLoading || (selectedServiceCode === "traffic" && !selectedTrafficCompanyType),
+				isCompanyDisabled: !selectedServiceId || companies.isLoading || (requiresCompanyType && !selectedCompanyType),
 				companyPlaceholder: !selectedServiceId
 					? t("performance.placeholders.selectServiceFirst")
-					: selectedServiceCode === "traffic" && !selectedTrafficCompanyType
-						? t("performance.placeholders.selectTrafficCompanyTypeFirst")
+					: requiresCompanyType && !selectedCompanyType
+						? t("performance.placeholders.selectCompanyTypeFirst")
 						: t("performance.placeholders.selectCompany"),
 				salesAgentOptions,
 			}),
@@ -303,12 +310,13 @@ export default function PerformanceListPage() {
 			t,
 			selectedServiceId,
 			selectedServiceCode,
-			selectedTrafficCompanyType,
-			permittedTrafficCompanyTypeOptions,
+			selectedCompanyType,
+			permittedCompanyTypeOptions,
 			serviceOptions,
 			companyOptions,
 			companies.isLoading,
 			salesAgentOptions,
+			requiresCompanyType,
 		],
 	);
 
@@ -379,7 +387,7 @@ export default function PerformanceListPage() {
 					onValuesChange: (changedValues) => {
 						if (Object.prototype.hasOwnProperty.call(changedValues, "company_type")) {
 							const nextCompanyType = changedValues.company_type == null ? null : String(changedValues.company_type);
-							setSelectedTrafficCompanyType(nextCompanyType);
+							setSelectedCompanyType(nextCompanyType);
 							formRef.current?.setFieldsValue({ company: undefined });
 						}
 					},

@@ -26,6 +26,11 @@ function isSmsCommissionServicePath(service: PerformanceServicePath | null) {
 	return service === "sms-commission";
 }
 
+function serviceRequiresCompanyType(serviceCode: string | null | undefined) {
+	const normalized = String(serviceCode ?? "").trim().toLowerCase();
+	return normalized === "sms" || normalized === "psp" || normalized === "traffic";
+}
+
 function normalizeNumberList(values: unknown) {
 	if (!Array.isArray(values))
 		return [];
@@ -84,8 +89,8 @@ export default function UnregisteredPerformanceList() {
 
 	const isSmsCommission = isSmsCommissionServicePath(selectedServicePath);
 	const smsCommissionAgents = useQuery(smsCommissionAgentsQuery(isSmsCommission));
-	const permittedTrafficCompanyTypeOptions = useMemo(
-		() => selectedServiceCode === "traffic" && selectedServiceId
+	const permittedCompanyTypeOptions = useMemo(
+		() => serviceRequiresCompanyType(selectedServiceCode) && selectedServiceId
 			? getPermittedCompanyTypes("performances", "view", selectedServiceId)
 			: [],
 		[selectedServiceCode, selectedServiceId, getPermittedCompanyTypes],
@@ -195,7 +200,7 @@ export default function UnregisteredPerformanceList() {
 				t,
 				selectedServiceIds,
 				selectedServiceCode,
-				permittedTrafficCompanyTypeOptions,
+				permittedCompanyTypeOptions,
 				setSelectedServices,
 				serviceOptions,
 				companyOptions,
@@ -207,7 +212,7 @@ export default function UnregisteredPerformanceList() {
 			t,
 			selectedServiceIds,
 			selectedServiceCode,
-			permittedTrafficCompanyTypeOptions,
+			permittedCompanyTypeOptions,
 			serviceOptions,
 			companyOptions,
 			companiesLoading,

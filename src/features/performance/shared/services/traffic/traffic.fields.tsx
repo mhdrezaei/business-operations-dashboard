@@ -68,7 +68,7 @@ export function TrafficPerformanceFields() {
 
 	const year = useWatch({ control, name: "year" });
 	const month = useWatch({ control, name: "month" });
-	const companyType = useWatch({ control, name: "trafficCompanyType" });
+	const companyType = useWatch({ control, name: "companyType" });
 	const submitMode = useWatch({ control, name: sf("submitMode") as any }) as "template" | "single" | undefined;
 	const countyEnabled = useWatch({ control, name: sf("countyEnabled") as any }) as boolean | undefined;
 	const monthlyPerformanceFile = useWatch({ control, name: sf("monthlyPerformanceFile") as any }) as UploadProps["fileList"] | undefined;
@@ -98,7 +98,7 @@ export function TrafficPerformanceFields() {
 
 	async function handleTemplateUpload() {
 		const isValid = await trigger([
-			"trafficCompanyType",
+			"companyType",
 			"year",
 			"month",
 			sf("monthlyPerformanceFile") as any,
@@ -135,7 +135,7 @@ export function TrafficPerformanceFields() {
 			serviceId: null,
 			serviceCode: null,
 			companyId: null,
-			trafficCompanyType: null,
+			companyType: null,
 			salesAgentId: null,
 			year: null,
 			month: null,

@@ -10,6 +10,49 @@ export function normalizeServiceCode(code: string | null | undefined) {
 	return typeof code === "string" ? code.trim().toLowerCase() : "";
 }
 
+function normalizeCompanyTypeToken(value: unknown): string | null {
+	if (typeof value !== "string")
+		return null;
+	const normalized = value.trim().toUpperCase();
+	return normalized || null;
+}
+
+function toCompanyTypeTokens(value: unknown): string[] {
+	if (value == null)
+		return [];
+
+	if (typeof value === "string") {
+		const normalized = normalizeCompanyTypeToken(value);
+		return normalized ? [normalized] : [];
+	}
+
+	if (typeof value === "object" && !Array.isArray(value)) {
+		const obj = value as Record<string, unknown>;
+		const keyTokens = Object.keys(obj)
+			.map(token => normalizeCompanyTypeToken(token))
+			.filter((token): token is string => Boolean(token));
+		const valueTokens = Object.values(obj)
+			.map(token => normalizeCompanyTypeToken(token))
+			.filter((token): token is string => Boolean(token));
+		return Array.from(new Set([...keyTokens, ...valueTokens]));
+	}
+
+	return [];
+}
+
+export function companyTypeMatches(companyType: unknown, selectedType: string | null | undefined): boolean {
+	const selectedToken = normalizeCompanyTypeToken(selectedType);
+	if (!selectedToken)
+		return false;
+
+	return toCompanyTypeTokens(companyType).includes(selectedToken);
+}
+
+export function pickCompanyTypeToken(companyType: unknown): string | null {
+	const [first] = toCompanyTypeTokens(companyType);
+	return first ?? null;
+}
+
 export function isSmsCommissionCode(code: string | null | undefined) {
 	const normalized = normalizeServiceCode(code);
 	return normalized === "sms-commission" || normalized === "sms_commission";
@@ -185,7 +228,7 @@ export function normalizePerformanceRecord(record: PerformanceListItem | Record<
 		year: pickNumberFromRecord(raw, ["sh_year", "year", "start_jy"]),
 		month: pickNumberFromRecord(raw, ["sh_month", "month", "start_jm"]),
 		salesAgentId: pickNumberFromRecord(raw, ["sales_agent", "sales_agent_id", "agent"]),
-		companyType: pickStringFromRecord(raw, ["company_type"]),
+		companyType: pickCompanyTypeToken(raw.company_type),
 		location: pickStringFromRecord(raw, ["location"]),
 		operator: pickStringFromRecord(raw, ["operator"]),
 		language: pickStringFromRecord(raw, ["language"]),
