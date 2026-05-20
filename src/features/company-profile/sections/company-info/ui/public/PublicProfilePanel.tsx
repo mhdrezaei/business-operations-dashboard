@@ -26,8 +26,9 @@ export default function PublicProfilePanel({ companyId }: { companyId: number })
 	const [editMode, setEditMode] = useState(false);
 
 	const serviceId = useWatch<CompanyProfileFormValues, "serviceId">({ name: "serviceId" }) || 0;
+	const companyType = useWatch<CompanyProfileFormValues, "companyType">({ name: "companyType" });
 	const { hasDomainPermissionByServiceId } = useAccess();
-	const canUpdateProfile = hasDomainPermissionByServiceId("company_profile", "update", serviceId);
+	const canUpdateProfile = hasDomainPermissionByServiceId("company_profile", "update", serviceId, companyType);
 	const [profile, setProfile] = useState<PublicProfileDto | null>(null);
 
 	const defaultValues = useMemo<PublicProfileFormValues>(() => {
@@ -38,13 +39,13 @@ export default function PublicProfilePanel({ companyId }: { companyId: number })
 
 	useEffect(() => {
 		setLoading(true);
-		getPublicProfile({ company: companyId, service: serviceId })
+		getPublicProfile({ company: companyId, service: serviceId, company_type: companyType })
 			.then(res => setProfile(res))
 			.finally(() => {
 				setLoading(false);
 				setEditMode(false);
 			});
-	}, [companyId, serviceId]);
+	}, [companyId, serviceId, companyType]);
 
 	async function onSubmit(values: PublicProfileFormValues) {
 		if (!canUpdateProfile) {

@@ -11,15 +11,17 @@ import { useFormContext, useWatch } from "react-hook-form";
 
 import { companiesByServiceQuery, companyProfilesByCompanyQuery, servicesQuery } from "../../queries/company-profile.queries";
 import { dtoToCompanyInfoForm } from "../../sections/company-info/model/company-info.mappers";
+import { companyTypeMatches } from "../utils";
 
 import CompanyCreateModal from "./CompanyCreateModal";
 import CompanyRenameModal from "./CompanyRenameModal";
 
 export function ServiceCompanyLoaderSection() {
 	const { setValue, control } = useFormContext<CompanyProfileFormValues>();
-	const { getPermittedServiceIds, hasDomainPermissionByServiceId } = useAccess();
+	const { getPermittedCompanyTypes, getPermittedServiceIds, hasDomainPermissionByServiceId } = useAccess();
 
 	const serviceId = useWatch({ control, name: "serviceId" }) || 0;
+	const companyType = useWatch({ control, name: "companyType" });
 	const companyId = useWatch({ control, name: "companyId" });
 
 	const services = useQuery(servicesQuery());
@@ -32,13 +34,21 @@ export function ServiceCompanyLoaderSection() {
 		[permittedServiceIdList.join(",")],
 	);
 
-	const canCreateCompany = hasDomainPermissionByServiceId("company_profile", "create", serviceId || null);
-	const canUpdateCompany = hasDomainPermissionByServiceId("company_profile", "update", serviceId || null);
+	const selectedServiceCode = useMemo(() => {
+		if (!serviceId)
+			return "";
+		return String((services.data?.results ?? []).find(item => item.id === serviceId)?.code ?? "").trim().toLowerCase();
+	}, [serviceId, services.data]);
+	const requiresCompanyType = selectedServiceCode === "traffic" || selectedServiceCode === "psp" || selectedServiceCode === "sms";
+
+	const canCreateCompany = hasDomainPermissionByServiceId("company_profile", "create", serviceId || null, companyType);
+	const canUpdateCompany = hasDomainPermissionByServiceId("company_profile", "update", serviceId || null, companyType);
 
 	const [createOpen, setCreateOpen] = useState(false);
 	const [renameOpen, setRenameOpen] = useState(false);
 
 	const prevServiceIdRef = useRef<typeof serviceId>(undefined);
+	const prevCompanyTypeRef = useRef<typeof companyType>(undefined);
 	const prevCompanyIdRef = useRef<typeof companyId>(undefined);
 
 	useEffect(() => {
@@ -49,6 +59,7 @@ export function ServiceCompanyLoaderSection() {
 			return;
 
 		if (prev !== serviceId) {
+			setValue("companyType", null, { shouldDirty: true, shouldValidate: true });
 			setValue("companyId", null, { shouldDirty: true, shouldValidate: true });
 			setValue("companyProfile", null as any, { shouldDirty: true, shouldValidate: true });
 		}
@@ -60,10 +71,24 @@ export function ServiceCompanyLoaderSection() {
 		}
 		if (!permittedServiceIds.has(serviceId)) {
 			setValue("serviceId", null, { shouldDirty: true, shouldValidate: true });
+			setValue("companyType", null, { shouldDirty: true, shouldValidate: true });
 			setValue("companyId", null, { shouldDirty: true, shouldValidate: true });
 			setValue("companyProfile", null as any, { shouldDirty: true, shouldValidate: true });
 		}
 	}, [serviceId, setValue, permittedServiceIdList.join(",")]);
+
+	useEffect(() => {
+		const prev = prevCompanyTypeRef.current;
+		prevCompanyTypeRef.current = companyType;
+
+		if (prev === undefined)
+			return;
+
+		if (prev !== companyType) {
+			setValue("companyId", null, { shouldDirty: true, shouldValidate: true });
+			setValue("companyProfile", null as any, { shouldDirty: true, shouldValidate: true });
+		}
+	}, [companyType, setValue]);
 
 	useEffect(() => {
 		const prev = prevCompanyIdRef.current;
@@ -99,9 +124,18 @@ export function ServiceCompanyLoaderSection() {
 		[services.data, permittedServiceIdList.join(",")],
 	);
 
+	const companyTypeOptions = useMemo(
+		() => requiresCompanyType && serviceId
+			? getPermittedCompanyTypes("company_profile", "view", serviceId).map(item => ({ label: item.value, value: item.key }))
+			: [],
+		[requiresCompanyType, serviceId, getPermittedCompanyTypes],
+	);
+
 	const companyOptions = useMemo(
-		() => (companies.data?.results ?? []).map(c => ({ label: c.name, value: c.id })),
-		[companies.data],
+		() => (companies.data?.results ?? [])
+			.filter(c => !requiresCompanyType || !companyType || companyTypeMatches(c.company_type, companyType))
+			.map(c => ({ label: c.name, value: c.id })),
+		[companies.data, requiresCompanyType, companyType],
 	);
 
 	const selectedCompanyName = useMemo(() => {
@@ -110,7 +144,7 @@ export function ServiceCompanyLoaderSection() {
 		return (companies.data?.results ?? []).find(c => c.id === companyId)?.name ?? null;
 	}, [companies.data, companyId]);
 
-	const isCompanyDisabled = !serviceId || companies.isLoading;
+	const isCompanyDisabled = !serviceId || companies.isLoading || (requiresCompanyType && !companyType);
 
 	const companyPlaceholder
 		= !serviceId
@@ -123,7 +157,7 @@ export function ServiceCompanyLoaderSection() {
 		<Card>
 			<BasicContent className="w-full">
 				<Row gutter={16}>
-					<Col span={12}>
+					<Col span={8}>
 						<RHFSelect<CompanyProfileFormValues, "serviceId", number | null>
 							name="serviceId"
 							label="سرویس"
@@ -133,7 +167,25 @@ export function ServiceCompanyLoaderSection() {
 						/>
 					</Col>
 
-					<Col span={12}>
+					{requiresCompanyType
+						? (
+							<Col span={8}>
+								<RHFSelect<CompanyProfileFormValues, "companyType", string | null>
+									name="companyType"
+									label="نوع شرکت"
+									loading={false}
+									options={companyTypeOptions as any}
+									selectProps={{
+										allowClear: true,
+										disabled: !serviceId,
+										placeholder: "نوع شرکت را انتخاب کنید",
+									}}
+								/>
+							</Col>
+						)
+						: null}
+
+					<Col span={8}>
 						<RHFSelect<CompanyProfileFormValues, "companyId", number | null>
 							name="companyId"
 							label="شرکت"
@@ -153,7 +205,7 @@ export function ServiceCompanyLoaderSection() {
 				<div className="flex justify-end gap-3 mt-3">
 					<Button
 						type="default"
-						disabled={!serviceId || !canCreateCompany}
+						disabled={!serviceId || !canCreateCompany || (requiresCompanyType && !companyType)}
 						onClick={() => setCreateOpen(true)}
 					>
 						ایجاد شرکت جدید
@@ -161,7 +213,7 @@ export function ServiceCompanyLoaderSection() {
 
 					<Button
 						type="primary"
-						disabled={!companyId || !canUpdateCompany}
+						disabled={!companyId || !canUpdateCompany || (requiresCompanyType && !companyType)}
 						onClick={() => setRenameOpen(true)}
 					>
 						ویرایش نام شرکت
@@ -179,8 +231,10 @@ export function ServiceCompanyLoaderSection() {
 				<CompanyCreateModal
 					open={createOpen}
 					serviceId={serviceId}
+					companyType={companyType}
+					requiresCompanyType={requiresCompanyType}
 					serviceOptions={serviceOptions}
-					disabled={!serviceId || !canCreateCompany}
+					disabled={!serviceId || !canCreateCompany || (requiresCompanyType && !companyType)}
 					onClose={() => setCreateOpen(false)}
 					onCreated={(createdCompanyId) => {
 						setValue("companyId", createdCompanyId, { shouldDirty: true, shouldValidate: true });
@@ -191,9 +245,11 @@ export function ServiceCompanyLoaderSection() {
 				<CompanyRenameModal
 					open={renameOpen}
 					serviceId={serviceId}
+					companyType={companyType}
+					requiresCompanyType={requiresCompanyType}
 					companyId={companyId ?? null}
 					companyName={selectedCompanyName}
-					disabled={!companyId || !canUpdateCompany}
+					disabled={!companyId || !canUpdateCompany || (requiresCompanyType && !companyType)}
 					onClose={() => setRenameOpen(false)}
 					onRenamed={(newName) => {
 						void newName;

@@ -80,8 +80,12 @@ export interface UpsertPublicProfilePayload {
 	social_links: string | null
 }
 
-export async function getPublicProfile(params: { company: number, service: number }) {
-	const searchParams = { company: params.company, service: params.service };
+export async function getPublicProfile(params: { company: number, service: number, company_type?: string | null }) {
+	const searchParams: Record<string, string | number | boolean | undefined> = {
+		company: params.company,
+		service: params.service,
+		company_type: params.company_type ?? undefined,
+	};
 	const data = await request.get("contracts/company/public-profiles/", { searchParams }).json<unknown>();
 	return pickFirst<PublicProfileDto>(data);
 }
@@ -127,8 +131,12 @@ export interface UpsertLegalProfilePayload {
 	branch_code: string | null
 }
 
-export async function getLegalProfile(params: { company: number, service: number }) {
-	const searchParams = { company: params.company, service: params.service };
+export async function getLegalProfile(params: { company: number, service: number, company_type?: string | null }) {
+	const searchParams: Record<string, string | number | boolean | undefined> = {
+		company: params.company,
+		service: params.service,
+		company_type: params.company_type ?? undefined,
+	};
 	const data = await request.get("contracts/company/legal-profiles/", { searchParams }).json<unknown>();
 	return pickFirst<LegalProfileDto>(data);
 }
@@ -170,8 +178,12 @@ export interface UpsertFinanceProfilePayload {
 	settlement_term: string | null
 }
 
-export async function getFinanceProfile(params: { company: number, service: number }) {
-	const searchParams = { company: params.company, service: params.service };
+export async function getFinanceProfile(params: { company: number, service: number, company_type?: string | null }) {
+	const searchParams: Record<string, string | number | boolean | undefined> = {
+		company: params.company,
+		service: params.service,
+		company_type: params.company_type ?? undefined,
+	};
 	const data = await request.get("contracts/company/finance-profiles/", { searchParams }).json<unknown>();
 	return pickFirst<FinanceProfileDto>(data);
 }
@@ -207,8 +219,12 @@ export interface UpsertInternalProfilePayload {
 	info_verification_status: string | null
 }
 
-export async function getInternalProfile(params: { company: number, service: number }) {
-	const searchParams = { company: params.company, service: params.service };
+export async function getInternalProfile(params: { company: number, service: number, company_type?: string | null }) {
+	const searchParams: Record<string, string | number | boolean | undefined> = {
+		company: params.company,
+		service: params.service,
+		company_type: params.company_type ?? undefined,
+	};
 	const data = await request.get("contracts/company/internal-profiles/", { searchParams }).json<unknown>();
 	return pickFirst<InternalProfileDto>(data);
 }

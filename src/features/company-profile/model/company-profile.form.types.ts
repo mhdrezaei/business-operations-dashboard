@@ -2,6 +2,7 @@ import type { CompanyInfoFormValues } from "../sections/company-info/model/compa
 
 export interface CompanyProfileFormValues {
 	serviceId: number | null
+	companyType: string | null
 	companyId: number | null
 
 	companyProfile: CompanyInfoFormValues | null
