@@ -10,7 +10,7 @@ import type {
 } from "../../model/notification-rules.types";
 import { BasicButton } from "#src/components";
 import { Button, Checkbox, Form, Input, Modal, Segmented, Select, Space, Switch, Typography } from "antd";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	defaultInAppPayloadTemplate,
 	defaultNotificationRuleDays,
@@ -196,6 +196,8 @@ export function NotificationRuleUpsertModal({
 	const [form] = Form.useForm<NotificationRuleFormValues>();
 	const [saving, setSaving] = useState(false);
 	const [payloadMode, setPayloadMode] = useState<PayloadMode>("simple");
+	const [isDirty, setIsDirty] = useState(false);
+	const initialValuesRef = useRef<NotificationRuleFormValues | null>(null);
 
 	const defaultValues = useMemo(() => buildDefaultValues(initial), [initial]);
 	const selectedCode = Form.useWatch("code", form) ?? defaultValues.code;
@@ -221,12 +223,24 @@ export function NotificationRuleUpsertModal({
 		}
 
 		form.setFieldsValue(defaultValues);
+		initialValuesRef.current = defaultValues;
+		setIsDirty(false);
 		setPayloadMode(defaultValues.code === "CONTRACT_EXPIRY_SMS" ? "json" : "simple");
 	}, [defaultValues, form, open]);
+
+	const handleValuesChange = () => {
+		const currentValues = form.getFieldsValue();
+		const initialValues = initialValuesRef.current;
+		if (!initialValues)
+			return;
+		const changed = JSON.stringify(currentValues) !== JSON.stringify(initialValues);
+		setIsDirty(changed);
+	};
 
 	function handleCodeChange(code: NotificationRuleCode) {
 		form.setFieldValue("payload_template", buildPayloadFormValue(code, code === "CONTRACT_EXPIRY" ? defaultInAppPayloadTemplate : {}));
 		setPayloadMode(code === "CONTRACT_EXPIRY_SMS" ? "json" : "simple");
+		handleValuesChange();
 	}
 
 	function handlePayloadModeChange(nextMode: PayloadMode) {
@@ -235,6 +249,7 @@ export function NotificationRuleUpsertModal({
 		if (nextMode === "json") {
 			form.setFieldValue(["payload_template", "json"], safeJsonStringify(buildInAppPayload(currentPayload)));
 			setPayloadMode("json");
+			handleValuesChange();
 			return;
 		}
 
@@ -242,6 +257,7 @@ export function NotificationRuleUpsertModal({
 			const parsedPayload = parsePayloadJson(currentPayload.json ?? "{}");
 			form.setFieldValue("payload_template", buildPayloadFormValue("CONTRACT_EXPIRY", parsedPayload));
 			setPayloadMode("simple");
+			handleValuesChange();
 		}
 		catch {
 			window.$message?.error("JSON وارد شده معتبر نیست.");
@@ -264,6 +280,7 @@ export function NotificationRuleUpsertModal({
 	}
 
 	const title = mode === "create" ? "ایجاد Rule نوتیفیکیشن" : "ویرایش Rule نوتیفیکیشن";
+	const disabled = saving || !isDirty;
 
 	return (
 		<Modal
@@ -279,6 +296,7 @@ export function NotificationRuleUpsertModal({
 				layout="vertical"
 				onFinish={handleFinish}
 				initialValues={defaultValues}
+				onValuesChange={handleValuesChange}
 			>
 				<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 					<Form.Item
@@ -427,6 +445,7 @@ export function NotificationRuleUpsertModal({
 												]}
 												onChange={() => {
 													form.setFieldValue(["recipients", field.name, "target_id"], undefined);
+													handleValuesChange();
 												}}
 											/>
 										</Form.Item>
@@ -447,6 +466,7 @@ export function NotificationRuleUpsertModal({
 															options={options}
 															optionFilterProp="label"
 															placeholder={targetType === "ROLE" ? "نقش" : "کاربر"}
+															onChange={() => handleValuesChange()}
 														/>
 													</Form.Item>
 												);
@@ -475,7 +495,7 @@ export function NotificationRuleUpsertModal({
 						<BasicButton onClick={onClose} disabled={saving}>
 							انصراف
 						</BasicButton>
-						<BasicButton htmlType="submit" type="primary" loading={saving}>
+						<BasicButton htmlType="submit" type="primary" loading={saving} disabled={disabled}>
 							ذخیره Rule
 						</BasicButton>
 					</Space>
