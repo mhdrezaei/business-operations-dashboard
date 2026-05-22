@@ -84,7 +84,7 @@ export function ContractForm({
 		shouldUnregister: true,
 		resolver: dynamicResolver,
 	});
-
+	const { isDirty } = form.formState;
 	useEffect(() => {
 		// serviceCode has no direct input; keep it registered so submit/validate cycles do not drop it.
 		form.register("serviceCode");
@@ -184,7 +184,7 @@ export function ContractForm({
 									/>
 								)
 								: (
-									<Button type="primary" onClick={() => triggerSubmit("submit")} loading={!!submitting}>
+									<Button type="primary" onClick={() => triggerSubmit("submit")} loading={!!submitting} disabled={!isDirty || submitting}>
 										{submitText}
 									</Button>
 								)}
