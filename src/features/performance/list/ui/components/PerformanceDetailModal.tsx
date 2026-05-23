@@ -904,6 +904,7 @@ export function PerformanceDetailModal({
 		mode: "all",
 		shouldUnregister: true,
 	});
+	const { isDirty } = form.formState;
 
 	useEffect(() => {
 		if (!open || !service || !record)
@@ -1481,8 +1482,13 @@ export function PerformanceDetailModal({
 								<Button onClick={onClose}>{t("common.cancel")}</Button>
 								{config.editableFields.length > 0
 									? (
-										<Button type="primary" loading={saving} onClick={() => void handleSubmit()}>
-											{t("performance.actions.submit")}
+										<Button
+											type="primary"
+											loading={saving}
+											disabled={!isDirty || saving}
+											onClick={() => void handleSubmit()}
+										>
+											{t("performance.actions.editPerformance")}
 										</Button>
 									)
 									: null}
