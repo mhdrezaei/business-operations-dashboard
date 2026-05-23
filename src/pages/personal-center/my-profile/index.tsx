@@ -4,7 +4,7 @@ import { BasicButton, BasicContent } from "#src/components/index.js";
 import { RHFProText } from "#src/shared/ui/rhf-pro/index.js";
 import { useQuery } from "@tanstack/react-query";
 import { Card, Col, Row } from "antd";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { updateProfile } from "./api/profile.api";
 import { userProfileQuery } from "./queries/profile.queries";
@@ -13,15 +13,17 @@ export default function MyProfileForm() {
 	const [saving, setSaving] = useState(false);
 
 	const userDetail = useQuery(userProfileQuery()).data;
-	const defaultValues: MyProfileFormValues = {
+	const defaultValues = useMemo<MyProfileFormValues>(() => ({
 		username: userDetail?.username ?? "",
 		first_name: userDetail?.first_name ?? "",
 		last_name: userDetail?.last_name ?? "",
 		email: userDetail?.email ?? "",
 		mobile: userDetail?.mobile ?? "",
 		national_code: userDetail?.national_code ?? "",
-
-	};
+		password: "",
+		newPassword: "",
+		ConfirmNewPassword: "",
+	}), [userDetail]);
 
 	// const dynamicResolver: Resolver<MyProfileFormValues> = useCallback(
 	// 	async (values, context, options) => {
@@ -33,6 +35,12 @@ export default function MyProfileForm() {
 	// );
 
 	const form = useForm<MyProfileFormValues>({ defaultValues });
+	const { isDirty } = form.formState;
+
+	useEffect(() => {
+		form.reset(defaultValues);
+	}, [defaultValues, form]);
+
 	return (
 		<FormProvider {...form}>
 			<form
@@ -42,6 +50,7 @@ export default function MyProfileForm() {
 						const payload: ProfilePayload = { ...values };
 
 						await updateProfile(payload);
+						form.reset(values);
 					}
 					finally {
 						setSaving(false);
@@ -94,6 +103,7 @@ export default function MyProfileForm() {
 						htmlType="submit"
 						type="primary"
 						loading={saving}
+						disabled={!isDirty || saving}
 					>
 						ذخیره
 					</BasicButton>

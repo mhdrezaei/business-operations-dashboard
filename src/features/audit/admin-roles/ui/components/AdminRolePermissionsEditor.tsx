@@ -482,7 +482,9 @@ export function AdminRolePermissionsEditor({
 	}, [initialEditorState]);
 
 	useEffect(() => {
-		onChange?.(buildPoliciesPayload(servicesByDomain, permissionMatrix, selectedCompanyCards));
+		const currentPayload = buildPoliciesPayload(servicesByDomain, permissionMatrix, selectedCompanyCards);
+
+		onChange?.(currentPayload);
 	}, [onChange, permissionMatrix, selectedCompanyCards, servicesByDomain]);
 
 	function handleTabChange(key: string) {
