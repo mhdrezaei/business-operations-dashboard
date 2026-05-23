@@ -54,6 +54,7 @@ interface NotificationRuleFormValues {
 }
 
 type PayloadMode = "simple" | "json";
+type ComparableValue = string | number | boolean | null | ComparableValue[] | { [key: string]: ComparableValue };
 
 interface Props {
 	open: boolean
@@ -149,6 +150,65 @@ function buildInAppPayload(payload: PayloadFormValue): NotificationRulePayloadTe
 	};
 }
 
+function stableComparable(value: unknown): ComparableValue {
+	if (value === undefined || value === null) {
+		return null;
+	}
+
+	if (typeof value === "string") {
+		return value.trim();
+	}
+
+	if (typeof value === "number" || typeof value === "boolean") {
+		return value;
+	}
+
+	if (Array.isArray(value)) {
+		return value.map(item => stableComparable(item));
+	}
+
+	if (typeof value === "object") {
+		return Object.keys(value as Record<string, unknown>)
+			.sort()
+			.reduce<{ [key: string]: ComparableValue }>((result, key) => {
+				result[key] = stableComparable((value as Record<string, unknown>)[key]);
+				return result;
+			}, {});
+	}
+
+	return String(value).trim();
+}
+
+function comparablePayloadTemplate(code: NotificationRuleCode, payloadMode: PayloadMode, payload?: PayloadFormValue): ComparableValue {
+	if (code === "CONTRACT_EXPIRY_SMS" || payloadMode === "json") {
+		try {
+			return stableComparable(parsePayloadJson(payload?.json ?? "{}"));
+		}
+		catch {
+			return (payload?.json ?? "").trim();
+		}
+	}
+
+	return stableComparable(buildInAppPayload(payload ?? {}));
+}
+
+function comparableRuleFormValues(values: NotificationRuleFormValues, payloadMode: PayloadMode): ComparableValue {
+	return {
+		code: values.code,
+		name: values.name.trim(),
+		is_active: values.is_active,
+		service_names: [...(values.service_names ?? [])].map(value => value.trim()).sort(),
+		days_before_end: parseDaysBeforeEnd(values.days_before_end ?? "").sort((left, right) => left - right),
+		payload_template: comparablePayloadTemplate(values.code, payloadMode, values.payload_template),
+		recipients: (values.recipients ?? [])
+			.map(recipient => ({
+				target_type: recipient.target_type,
+				target_id: recipient.target_id ?? null,
+			}))
+			.sort((left, right) => `${left.target_type}:${left.target_id ?? ""}`.localeCompare(`${right.target_type}:${right.target_id ?? ""}`)),
+	};
+}
+
 function toRulePayload(values: NotificationRuleFormValues, payloadMode: PayloadMode): NotificationRuleUpsertPayload {
 	const channel = resolveRuleChannel(values.code);
 	const days = parseDaysBeforeEnd(values.days_before_end);
@@ -198,6 +258,7 @@ export function NotificationRuleUpsertModal({
 	const [payloadMode, setPayloadMode] = useState<PayloadMode>("simple");
 	const [isDirty, setIsDirty] = useState(false);
 	const initialValuesRef = useRef<NotificationRuleFormValues | null>(null);
+	const initialPayloadModeRef = useRef<PayloadMode>("simple");
 
 	const defaultValues = useMemo(() => buildDefaultValues(initial), [initial]);
 	const selectedCode = Form.useWatch("code", form) ?? defaultValues.code;
@@ -224,23 +285,25 @@ export function NotificationRuleUpsertModal({
 
 		form.setFieldsValue(defaultValues);
 		initialValuesRef.current = defaultValues;
+		initialPayloadModeRef.current = defaultValues.code === "CONTRACT_EXPIRY_SMS" ? "json" : "simple";
 		setIsDirty(false);
-		setPayloadMode(defaultValues.code === "CONTRACT_EXPIRY_SMS" ? "json" : "simple");
+		setPayloadMode(initialPayloadModeRef.current);
 	}, [defaultValues, form, open]);
 
-	const handleValuesChange = () => {
-		const currentValues = form.getFieldsValue();
+	const handleValuesChange = (nextPayloadMode = payloadMode) => {
+		const currentValues = form.getFieldsValue(true);
 		const initialValues = initialValuesRef.current;
 		if (!initialValues)
 			return;
-		const changed = JSON.stringify(currentValues) !== JSON.stringify(initialValues);
+		const changed = JSON.stringify(comparableRuleFormValues(currentValues, nextPayloadMode)) !== JSON.stringify(comparableRuleFormValues(initialValues, initialPayloadModeRef.current));
 		setIsDirty(changed);
 	};
 
 	function handleCodeChange(code: NotificationRuleCode) {
 		form.setFieldValue("payload_template", buildPayloadFormValue(code, code === "CONTRACT_EXPIRY" ? defaultInAppPayloadTemplate : {}));
-		setPayloadMode(code === "CONTRACT_EXPIRY_SMS" ? "json" : "simple");
-		handleValuesChange();
+		const nextPayloadMode = code === "CONTRACT_EXPIRY_SMS" ? "json" : "simple";
+		setPayloadMode(nextPayloadMode);
+		handleValuesChange(nextPayloadMode);
 	}
 
 	function handlePayloadModeChange(nextMode: PayloadMode) {
@@ -249,7 +312,7 @@ export function NotificationRuleUpsertModal({
 		if (nextMode === "json") {
 			form.setFieldValue(["payload_template", "json"], safeJsonStringify(buildInAppPayload(currentPayload)));
 			setPayloadMode("json");
-			handleValuesChange();
+			handleValuesChange("json");
 			return;
 		}
 
@@ -257,7 +320,7 @@ export function NotificationRuleUpsertModal({
 			const parsedPayload = parsePayloadJson(currentPayload.json ?? "{}");
 			form.setFieldValue("payload_template", buildPayloadFormValue("CONTRACT_EXPIRY", parsedPayload));
 			setPayloadMode("simple");
-			handleValuesChange();
+			handleValuesChange("simple");
 		}
 		catch {
 			window.$message?.error("JSON وارد شده معتبر نیست.");
@@ -296,7 +359,7 @@ export function NotificationRuleUpsertModal({
 				layout="vertical"
 				onFinish={handleFinish}
 				initialValues={defaultValues}
-				onValuesChange={handleValuesChange}
+				onValuesChange={() => handleValuesChange()}
 			>
 				<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 					<Form.Item
