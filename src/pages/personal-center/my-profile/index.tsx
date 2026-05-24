@@ -1,38 +1,32 @@
 import type { ProfilePayload } from "./api/profile.api";
-import type { MyProfileFormValues } from "./model/profile.form.types";
+import type { MyProfileFormValues } from "./model/profile.schema";
+
 import { BasicButton, BasicContent } from "#src/components/index.js";
 import { RHFProText } from "#src/shared/ui/rhf-pro/index.js";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
-import { Card, Col, Form, Input, Row } from "antd";
+import { Card, Form, Input } from "antd";
 import { useEffect, useMemo, useState } from "react";
-import { Controller, FormProvider, useForm } from "react-hook-form";
+import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
+
 import { updateProfile } from "./api/profile.api";
+import {
+	getComparableProfileString,
+	keepDigitsOnly,
+	keepLettersOnly,
+	mergeProfileValues,
+	myProfileUpsertSchema,
+} from "./model/profile.schema";
 import { userProfileQuery } from "./queries/profile.queries";
 
 type TextFieldName = "first_name" | "last_name";
 type DigitFieldName = "mobile" | "national_code";
 
-const lettersOnlyPattern = /^[\p{L}\s]+$/u;
-const emailPattern = /^[^\s@]+@[^\s@][^\s.@]*\.[^\s@]+$/;
-
-function normalizeDigits(value: string) {
-	return value
-		.replace(/[\u06F0-\u06F9]/g, digit => String(digit.charCodeAt(0) - 1776))
-		.replace(/[\u0660-\u0669]/g, digit => String(digit.charCodeAt(0) - 1632));
-}
-
-function keepLettersOnly(value: string) {
-	return Array.from(value).filter(char => /[\p{L}\s]/u.test(char)).join("");
-}
-
-function keepDigitsOnly(value: string, maxLength: number) {
-	return normalizeDigits(value).replace(/\D/g, "").slice(0, maxLength);
-}
-
 export default function MyProfileForm() {
 	const [saving, setSaving] = useState(false);
 
 	const userDetail = useQuery(userProfileQuery()).data;
+
 	const defaultValues = useMemo<MyProfileFormValues>(() => ({
 		username: userDetail?.username ?? "",
 		first_name: userDetail?.first_name ?? "",
@@ -45,26 +39,30 @@ export default function MyProfileForm() {
 		ConfirmNewPassword: "",
 	}), [userDetail]);
 
+	const mergedDefaultValues = useMemo(() => defaultValues, [defaultValues]);
+
 	const form = useForm<MyProfileFormValues>({
-		defaultValues,
+		defaultValues: mergedDefaultValues,
 		mode: "onBlur",
+		resolver: zodResolver(myProfileUpsertSchema),
 	});
-	const { isDirty } = form.formState;
+
+	const watchedValues = useWatch({ control: form.control });
+
+	const isDirty = useMemo(() => {
+		const currentMerged = mergeProfileValues(mergedDefaultValues, watchedValues as Partial<MyProfileFormValues>);
+		return getComparableProfileString(currentMerged) !== getComparableProfileString(mergedDefaultValues);
+	}, [mergedDefaultValues, watchedValues]);
 
 	useEffect(() => {
-		form.reset(defaultValues);
-	}, [defaultValues, form]);
+		form.reset(mergedDefaultValues);
+	}, [mergedDefaultValues, form]);
 
 	function renderEmailField() {
-		const message = "ساختار ایمیل درست نیست";
-
 		return (
 			<Controller
 				name="email"
 				control={form.control}
-				rules={{
-					validate: value => !value || emailPattern.test(value) || message,
-				}}
 				render={({ field, fieldState }) => (
 					<Form.Item
 						label="ایمیل"
@@ -72,16 +70,8 @@ export default function MyProfileForm() {
 						validateStatus={fieldState.error ? "error" : undefined}
 					>
 						<Input
+							{...field}
 							value={field.value ?? ""}
-							onChange={(event) => {
-								field.onChange(event.target.value);
-								form.clearErrors("email");
-							}}
-							onBlur={() => {
-								field.onBlur();
-								void form.trigger("email");
-							}}
-							ref={field.ref}
 							status={fieldState.error ? "error" : undefined}
 							autoComplete="email"
 						/>
@@ -92,15 +82,10 @@ export default function MyProfileForm() {
 	}
 
 	function renderLettersField(name: TextFieldName, label: string) {
-		const message = `${label} فقط باید شامل حروف باشد`;
-
 		return (
 			<Controller
 				name={name}
 				control={form.control}
-				rules={{
-					validate: value => !value || lettersOnlyPattern.test(value) || message,
-				}}
 				render={({ field, fieldState }) => (
 					<Form.Item
 						label={label}
@@ -108,46 +93,9 @@ export default function MyProfileForm() {
 						validateStatus={fieldState.error ? "error" : undefined}
 					>
 						<Input
+							{...field}
 							value={field.value ?? ""}
-							onBeforeInput={(event) => {
-								const data = (event as any).data as string | undefined;
-								if (!data || keepLettersOnly(data) === data)
-									return;
-
-								event.preventDefault();
-								form.setError(name, { type: "pattern", message });
-							}}
-							onPaste={(event) => {
-								event.preventDefault();
-								const text = event.clipboardData.getData("text") ?? "";
-								const cleaned = keepLettersOnly(text);
-
-								if (cleaned !== text)
-									form.setError(name, { type: "pattern", message });
-								else
-									form.clearErrors(name);
-
-								const target = event.currentTarget;
-								const start = target.selectionStart ?? target.value.length;
-								const end = target.selectionEnd ?? target.value.length;
-								field.onChange(target.value.slice(0, start) + cleaned + target.value.slice(end));
-							}}
-							onChange={(event) => {
-								const nextValue = event.target.value;
-								const cleaned = keepLettersOnly(nextValue);
-
-								if (cleaned !== nextValue)
-									form.setError(name, { type: "pattern", message });
-								else
-									form.clearErrors(name);
-
-								field.onChange(cleaned);
-							}}
-							onBlur={() => {
-								field.onBlur();
-								void form.trigger(name);
-							}}
-							ref={field.ref}
+							onChange={e => field.onChange(keepLettersOnly(e.target.value))}
 							status={fieldState.error ? "error" : undefined}
 							autoComplete="off"
 						/>
@@ -157,14 +105,11 @@ export default function MyProfileForm() {
 		);
 	}
 
-	function renderDigitField(name: DigitFieldName, label: string, length: number, message: string) {
+	function renderDigitField(name: DigitFieldName, label: string, length: number) {
 		return (
 			<Controller
 				name={name}
 				control={form.control}
-				rules={{
-					validate: value => String(value ?? "").length === length || message,
-				}}
 				render={({ field, fieldState }) => (
 					<Form.Item
 						label={label}
@@ -172,44 +117,11 @@ export default function MyProfileForm() {
 						validateStatus={fieldState.error ? "error" : undefined}
 					>
 						<Input
+							{...field}
 							value={field.value ?? ""}
 							inputMode="numeric"
 							maxLength={length}
-							onBeforeInput={(event) => {
-								const data = (event as any).data as string | undefined;
-								if (!data)
-									return;
-
-								const target = event.currentTarget;
-								const start = target.selectionStart ?? target.value.length;
-								const end = target.selectionEnd ?? target.value.length;
-								const cleaned = keepDigitsOnly(data, length);
-								const nextLength = target.value.length - (end - start) + cleaned.length;
-
-								if (cleaned !== normalizeDigits(data) || nextLength > length)
-									event.preventDefault();
-							}}
-							onPaste={(event) => {
-								event.preventDefault();
-								const text = event.clipboardData.getData("text") ?? "";
-								const target = event.currentTarget;
-								const start = target.selectionStart ?? target.value.length;
-								const end = target.selectionEnd ?? target.value.length;
-								const merged = target.value.slice(0, start) + text + target.value.slice(end);
-
-								field.onChange(keepDigitsOnly(merged, length));
-								form.clearErrors(name);
-							}}
-							onChange={(event) => {
-								field.onChange(keepDigitsOnly(event.target.value, length));
-								form.clearErrors(name);
-							}}
-							onBlur={(event) => {
-								field.onBlur();
-								if (event.target.value.length !== length)
-									void form.trigger(name);
-							}}
-							ref={field.ref}
+							onChange={e => field.onChange(keepDigitsOnly(e.target.value, length))}
 							status={fieldState.error ? "error" : undefined}
 							autoComplete="off"
 						/>
@@ -224,9 +136,7 @@ export default function MyProfileForm() {
 				onSubmit={form.handleSubmit(async (values) => {
 					setSaving(true);
 					try {
-						const payload: ProfilePayload = { ...values };
-
-						await updateProfile(payload);
+						await updateProfile({ ...values } as ProfilePayload);
 						form.reset(values);
 					}
 					finally {
@@ -236,46 +146,30 @@ export default function MyProfileForm() {
 			>
 				<Card>
 					<BasicContent className="w-full">
-						<Row gutter={16}>
-							<Col span={12}>
-							</Col>
-						</Row>
 						<div className="grid grid-cols-2 gap-3">
 							<RHFProText name="username" label="نام کاربری" />
 							{renderEmailField()}
 
 							{renderLettersField("first_name", "نام")}
 							{renderLettersField("last_name", "نام خانوادگی")}
-
-							{renderDigitField("mobile", "موبایل", 11, "شماره موبایل باید 11 رقم باشد")}
-							{renderDigitField("national_code", "کد ملی", 10, "کد ملی باید 10 رقم باشد")}
-
+							{renderDigitField("mobile", "موبایل", 11)}
+							{renderDigitField("national_code", "کد ملی", 10)}
 						</div>
-						<Card bordered>
-							<div className="grid grid-cols-3 gap-3 ">
-								<RHFProText
-									name="password"
 
-									label="رمز فعلی"
-									inputProps={{ type: "password", defaultValue: "" }}
-								/>
-
-								<RHFProText
-									name="newPassword"
-									label="رمز جدید"
-									inputProps={{ type: "password", defaultValue: "" }}
-								/>
-
-								<RHFProText
-									name="ConfirmNewPassword"
-									label="تکرار رمز جدید"
-									inputProps={{ type: "password", defaultValue: "" }}
-								/>
+						<Card bordered className="mt-6">
+							<div className="grid grid-cols-3 gap-3">
+								<RHFProText name="password" label="رمز فعلی" inputProps={{ type: "password" }} />
+								<RHFProText name="newPassword" label="رمز جدید" inputProps={{ type: "password" }} />
+								<RHFProText name="ConfirmNewPassword" label="تکرار رمز جدید" inputProps={{ type: "password" }} />
 							</div>
 						</Card>
 					</BasicContent>
 				</Card>
-				<div className="flex justify-end gap-2 mt-2">
+
+				<div className="flex justify-end gap-2 mt-6">
+					<BasicButton htmlType="button" onClick={() => form.reset(mergedDefaultValues)}>
+						انصراف
+					</BasicButton>
 					<BasicButton
 						htmlType="submit"
 						type="primary"
@@ -284,7 +178,6 @@ export default function MyProfileForm() {
 					>
 						ذخیره
 					</BasicButton>
-					<BasicButton>انصراف</BasicButton>
 				</div>
 			</form>
 		</FormProvider>
