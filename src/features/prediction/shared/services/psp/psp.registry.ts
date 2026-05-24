@@ -17,21 +17,21 @@ export const pspPredictionService = {
 	code: "psp",
 	schema: validatedPspPredictionSchema,
 	Fields: PspPredictionFields,
-	createEmptyServiceFields: () => createEmptyPspFields() as unknown as Record<string, unknown>,
+	createEmptyServiceFields: (previous?: Record<string, unknown>) => createEmptyPspFields(previous) as unknown as Record<string, unknown>,
 	toFormValues: (record: unknown) => dtoToPspPredictionForm(record as any),
-	findRecordBySelection: (records: unknown[], selection: { fiscalYear: number | null | undefined }) =>
-		findPspPredictionByFiscalYear(records as any[], selection.fiscalYear),
-	fetchYears: (serviceId: number) => fetchPspPredictionYears(serviceId) as Promise<any>,
+	findRecordBySelection: (records: unknown[], selection: { fiscalYear: number | null | undefined, serviceFields: Record<string, unknown> }) =>
+		findPspPredictionByFiscalYear(records as any[], selection.fiscalYear, selection.serviceFields),
+	fetchYears: (serviceId: number, companyType?: string | null) => fetchPspPredictionYears(serviceId, companyType) as Promise<any>,
 	fetchList: (params: PredictionListParams) => listPspPredictions(params) as Promise<any>,
 	fetchDetail: (id: number) => fetchPspPredictionDetail(id) as Promise<any>,
-	getYearsQueryKey: (serviceId: number | null | undefined) =>
-		pspPredictionYearsQuery(serviceId).queryKey,
+	getYearsQueryKey: (serviceId: number | null | undefined, companyType?: string | null) =>
+		pspPredictionYearsQuery(serviceId, companyType).queryKey,
 	createRecord: (payload: Record<string, unknown>) => createPspPrediction(payload as any),
 	updateRecord: (id: number, payload: Record<string, unknown>) => updatePspPrediction(id, payload as any),
 	toListRow: (
 		record: unknown,
 		context: { serviceId: number, serviceCode: PredictionListRow["serviceCode"], serviceLabel: string },
 	) => yearlyValueIncomePredictionToListRow(record as any, context),
-	toPayload: (values: PredictionFormValues, context: { companyIds: number[] }) =>
-		pspPredictionFormToPayload(values, context.companyIds) as unknown as Record<string, unknown>,
+	toPayload: (values: PredictionFormValues, context: { companies: any[] }) =>
+		pspPredictionFormToPayload(values, context.companies) as unknown as Record<string, unknown>,
 } as const;

@@ -6,6 +6,7 @@ import type {
 	TrafficPredictionMetricCode,
 	TrafficPredictionServiceFields,
 } from "../../model/prediction.form.types";
+import { getCompanyTypeToken } from "../../model/company-type.helpers";
 
 export const TRAFFIC_COMPANY_TYPE_OPTIONS: Array<{ label: TrafficCompanyType, value: TrafficCompanyType }> = [
 	{ label: "COLLOCATION", value: "COLLOCATION" },
@@ -84,9 +85,7 @@ export function createEmptyTrafficManualShares(): TrafficManualSharesValue {
 export function createEmptyTrafficFields(
 	previous?: Record<string, unknown>,
 ): TrafficPredictionServiceFields {
-	const previousCompanyType = isTrafficCompanyType(previous?.companyType)
-		? previous.companyType
-		: null;
+	const previousCompanyType = getCompanyTypeToken(previous?.companyType);
 
 	return {
 		companyType: previousCompanyType,

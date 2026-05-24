@@ -31,6 +31,10 @@ function getShareTotal(section: PredictionShareSectionValue) {
 }
 
 export const smsPredictionSchema = z.object({
+	companyType: z.preprocess(
+		value => value == null || value === "" ? null : String(value).trim().toUpperCase(),
+		z.string().nullable(),
+	),
 	q1Percent: quarterPercentSchema,
 	q2Percent: quarterPercentSchema,
 	q3Percent: quarterPercentSchema,
@@ -55,6 +59,14 @@ export const smsPredictionSchema = z.object({
 }) satisfies z.ZodType<SmsPredictionServiceFields>;
 
 export const validatedSmsPredictionSchema = smsPredictionSchema.superRefine((value, ctx) => {
+	if (value.companyType == null) {
+		ctx.addIssue({
+			code: "custom",
+			path: ["companyType"],
+			message: i18next.t("prediction.validation.traffic.companyTypeRequired"),
+		});
+	}
+
 	const quarterValues = [value.q1Percent, value.q2Percent, value.q3Percent, value.q4Percent];
 	if (quarterValues.some(item => item == null)) {
 		ctx.addIssue({

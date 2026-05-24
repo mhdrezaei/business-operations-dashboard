@@ -26,6 +26,7 @@
 		"smsAnnualValue": "Annual SMS Count",
 		"smsPriceBuy": "SMS Buy Price",
 		"smsPriceSell": "SMS Sell Price",
+		"companyType": "Company Type",
 		"trafficCompanyType": "Traffic Company Type",
 		"trafficLocation": "Location",
 		"trafficAnnualValueReceive": "Annual Received Value",

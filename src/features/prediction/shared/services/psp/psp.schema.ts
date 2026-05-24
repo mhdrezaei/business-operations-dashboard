@@ -31,6 +31,10 @@ function getShareTotal(section: PredictionShareSectionValue) {
 }
 
 export const pspPredictionSchema = z.object({
+	companyType: z.preprocess(
+		value => value == null || value === "" ? null : String(value).trim().toUpperCase(),
+		z.string().nullable(),
+	).optional(),
 	q1Percent: quarterPercentSchema,
 	q2Percent: quarterPercentSchema,
 	q3Percent: quarterPercentSchema,
@@ -43,8 +47,16 @@ export const pspPredictionSchema = z.object({
 	}).default(createEmptyPspManualShares()),
 }) satisfies z.ZodType<PspPredictionServiceFields>;
 
-export function createValidatedYearlyValueIncomePredictionSchema(valueMessage: string, incomeMessage: string) {
+export function createValidatedYearlyValueIncomePredictionSchema(
+	valueMessage: string,
+	incomeMessage: string,
+	options: { requireCompanyType?: boolean } = {},
+) {
 	return z.object({
+		companyType: z.preprocess(
+			value => value == null || value === "" ? null : String(value).trim().toUpperCase(),
+			z.string().nullable(),
+		).optional(),
 		q1Percent: quarterPercentSchema,
 		q2Percent: quarterPercentSchema,
 		q3Percent: quarterPercentSchema,
@@ -56,6 +68,14 @@ export function createValidatedYearlyValueIncomePredictionSchema(valueMessage: s
 			income: shareSectionSchema,
 		}).default(createEmptyPspManualShares()),
 	}).superRefine((value, ctx) => {
+		if (options.requireCompanyType && value.companyType == null) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["companyType"],
+				message: i18next.t("prediction.validation.traffic.companyTypeRequired"),
+			});
+		}
+
 		const quarterValues = [value.q1Percent, value.q2Percent, value.q3Percent, value.q4Percent];
 		if (quarterValues.some(item => item == null)) {
 			ctx.addIssue({
@@ -103,4 +123,5 @@ export function createValidatedYearlyValueIncomePredictionSchema(valueMessage: s
 export const validatedPspPredictionSchema = createValidatedYearlyValueIncomePredictionSchema(
 	i18next.t("prediction.validation.psp.valueRequired"),
 	i18next.t("prediction.validation.psp.incomeRequired"),
+	{ requireCompanyType: true },
 );

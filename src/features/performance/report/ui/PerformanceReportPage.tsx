@@ -122,7 +122,7 @@ function getSmsFinancialDefaults(reportType: SmsReportType) {
 	return SMS_NORMAL_FINANCIAL_COLUMNS;
 }
 
-export default function PerformanceReportPage() {
+export function PerformanceReportPage() {
 	const { t } = useTranslation();
 	const { getPermittedCompanyTypes, getPermittedServiceIds } = useAccess();
 

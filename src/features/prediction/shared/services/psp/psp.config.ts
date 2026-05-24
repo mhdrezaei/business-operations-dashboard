@@ -4,6 +4,7 @@ import type {
 	PspPredictionServiceFields,
 	YearlyValueIncomeManualSharesValue,
 } from "../../model/prediction.form.types";
+import { getCompanyTypeToken } from "../../model/company-type.helpers";
 
 function createEmptyShareSection(): PredictionShareSectionValue {
 	return {
@@ -20,8 +21,11 @@ export function createEmptyYearlyValueIncomeManualShares(): YearlyValueIncomeMan
 	};
 }
 
-export function createEmptyYearlyValueIncomeFields(): PspPredictionServiceFields {
+export function createEmptyYearlyValueIncomeFields(
+	previous?: Record<string, unknown>,
+): PspPredictionServiceFields {
 	return {
+		companyType: getCompanyTypeToken(previous?.companyType),
 		q1Percent: null,
 		q2Percent: null,
 		q3Percent: null,
@@ -36,6 +40,8 @@ export function createEmptyPspManualShares(): PspManualSharesValue {
 	return createEmptyYearlyValueIncomeManualShares();
 }
 
-export function createEmptyPspFields(): PspPredictionServiceFields {
-	return createEmptyYearlyValueIncomeFields();
+export function createEmptyPspFields(
+	previous?: Record<string, unknown>,
+): PspPredictionServiceFields {
+	return createEmptyYearlyValueIncomeFields(previous);
 }

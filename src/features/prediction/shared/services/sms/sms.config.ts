@@ -5,6 +5,7 @@ import type {
 	SmsManualSharesValue,
 	SmsPredictionServiceFields,
 } from "../../model/prediction.form.types";
+import { getCompanyTypeToken } from "../../model/company-type.helpers";
 
 export const SMS_CHANNEL_OPTIONS = [
 	{ key: "IRANCELL_FA", title: "ایرانسل - فارسی" },
@@ -42,8 +43,11 @@ export function createEmptySmsChannelShares(): SmsChannelSharesValue {
 	};
 }
 
-export function createEmptySmsFields(): SmsPredictionServiceFields {
+export function createEmptySmsFields(
+	previous?: Record<string, unknown>,
+): SmsPredictionServiceFields {
 	return {
+		companyType: getCompanyTypeToken(previous?.companyType),
 		q1Percent: null,
 		q2Percent: null,
 		q3Percent: null,

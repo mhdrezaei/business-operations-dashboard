@@ -34,11 +34,15 @@ export function openApiPredictionYearsQuery(serviceId: number | null | undefined
 	});
 }
 
-export function pspPredictionYearsQuery(serviceId: number | null | undefined, enabled = true) {
+export function pspPredictionYearsQuery(
+	serviceId: number | null | undefined,
+	companyType?: string | null,
+	enabled = true,
+) {
 	return queryOptions({
-		queryKey: ["predictions", "psp", "years", { serviceId }],
+		queryKey: ["predictions", "psp", "years", { serviceId, companyType: companyType ?? null }],
 		enabled: enabled && !!serviceId,
-		queryFn: () => fetchPspPredictionYears(serviceId!),
+		queryFn: () => fetchPspPredictionYears(serviceId!, companyType),
 		staleTime: 30 * 1000,
 	});
 }
@@ -52,20 +56,28 @@ export function shahkarPredictionYearsQuery(serviceId: number | null | undefined
 	});
 }
 
-export function smsPredictionYearsQuery(serviceId: number | null | undefined, enabled = true) {
+export function smsPredictionYearsQuery(
+	serviceId: number | null | undefined,
+	companyType?: string | null,
+	enabled = true,
+) {
 	return queryOptions({
-		queryKey: ["predictions", "sms", "years", { serviceId }],
+		queryKey: ["predictions", "sms", "years", { serviceId, companyType: companyType ?? null }],
 		enabled: enabled && !!serviceId,
-		queryFn: () => fetchSmsPredictionYears(serviceId!),
+		queryFn: () => fetchSmsPredictionYears(serviceId!, companyType),
 		staleTime: 30 * 1000,
 	});
 }
 
-export function trafficPredictionYearsQuery(serviceId: number | null | undefined, enabled = true) {
+export function trafficPredictionYearsQuery(
+	serviceId: number | null | undefined,
+	companyType?: string | null,
+	enabled = true,
+) {
 	return queryOptions({
-		queryKey: ["predictions", "traffic", "years", { serviceId }],
+		queryKey: ["predictions", "traffic", "years", { serviceId, companyType: companyType ?? null }],
 		enabled: enabled && !!serviceId,
-		queryFn: () => fetchTrafficPredictionYears(serviceId!),
+		queryFn: () => fetchTrafficPredictionYears(serviceId!, companyType),
 		staleTime: 30 * 1000,
 	});
 }

@@ -7,12 +7,13 @@ import { RHFProNumber } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Card, Form, Segmented, Select, Typography } from "antd";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { companyTypeMatches } from "../../model/company-type.helpers";
 import { predictionCompaniesByServiceQuery } from "../../queries/prediction.queries";
 import { QuarterDistributionSection } from "../../ui/form/sections/QuarterDistributionSection";
-import { SMS_CHANNEL_OPTIONS } from "./sms.config";
+import { createEmptySmsManualShares, SMS_CHANNEL_OPTIONS } from "./sms.config";
 
 const sf = (path: string) => `serviceFields.${path}` as const;
 
@@ -175,17 +176,34 @@ function SmsShareEditor({
 
 export function SmsPredictionFields() {
 	const { t } = useTranslation();
-	const { control } = useFormContext<PredictionFormValues>();
+	const { control, setValue } = useFormContext<PredictionFormValues>();
 	const serviceId = useWatch({ control, name: "serviceId" });
+	const companyType = useWatch({ control, name: sf("companyType") as any });
 	const companies = useQuery(predictionCompaniesByServiceQuery(serviceId));
 	const channelValues = useWatch({ control, name: "serviceFields.channels.value" as any }) as Record<string, number | null> | undefined;
+	const previousCompanyTypeRef = useRef(companyType);
+
+	useEffect(() => {
+		const previousCompanyType = previousCompanyTypeRef.current;
+		previousCompanyTypeRef.current = companyType;
+
+		if (previousCompanyType === undefined || previousCompanyType === companyType)
+			return;
+
+		setValue(sf("manualShares") as any, createEmptySmsManualShares(), {
+			shouldDirty: true,
+			shouldValidate: true,
+		});
+	}, [companyType, setValue]);
 
 	const companyOptions = useMemo(
-		() => (companies.data?.results ?? []).map(company => ({
-			label: company.name,
-			value: company.id,
-		})),
-		[companies.data],
+		() => (companies.data?.results ?? [])
+			.filter(company => companyTypeMatches(company.company_type, companyType))
+			.map(company => ({
+				label: company.name,
+				value: company.id,
+			})),
+		[companies.data, companyType],
 	);
 	const channelTotal = useMemo(
 		() => SMS_CHANNEL_OPTIONS.reduce((total, channel) => total + Number(channelValues?.[channel.key] ?? 0), 0),

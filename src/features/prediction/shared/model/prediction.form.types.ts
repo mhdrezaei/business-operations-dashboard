@@ -13,7 +13,8 @@ export type OpenApiChannelCode	= | "SMS_MCI_FA"
   | "SMS_OTHER_EN";
 export type SmsChannelCode
 	= | "MCI_FA"	| "MCI_EN" | "IRANCELL_FA" | "IRANCELL_EN" | "OTHER_FA" | "OTHER_EN";
-export type TrafficCompanyType = string;
+export type CompanyType = string;
+export type TrafficCompanyType = CompanyType;
 export type TrafficLocationCode = "TEHRAN" | "COUNTY";
 export type TrafficPredictionMetricCode = "value" | "valueReceive" | "income" | "expense";
 
@@ -75,6 +76,7 @@ export interface OpenApiPredictionServiceFields {
 }
 
 export interface PspPredictionServiceFields {
+	companyType?: CompanyType | null
 	q1Percent: number | null
 	q2Percent: number | null
 	q3Percent: number | null
@@ -87,6 +89,7 @@ export interface PspPredictionServiceFields {
 export type ShahkarPredictionServiceFields = PspPredictionServiceFields;
 
 export interface SmsPredictionServiceFields {
+	companyType: CompanyType | null
 	q1Percent: number | null
 	q2Percent: number | null
 	q3Percent: number | null

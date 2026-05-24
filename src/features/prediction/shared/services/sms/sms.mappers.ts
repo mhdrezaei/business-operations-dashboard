@@ -1,3 +1,4 @@
+import type { CompanyDto } from "#src/api/common/common.types";
 import type { SmsPredictionPayload, SmsPredictionYearDto } from "../../../api/predictions.api";
 import type {
 	PredictionFormValues,
@@ -11,6 +12,7 @@ import type {
 } from "../../model/prediction.form.types";
 import type { PredictionListRow } from "../../model/prediction.list.types";
 import i18next from "i18next";
+import { companyTypeMatches, getCompanyTypeToken } from "../../model/company-type.helpers";
 import { formatPredictionNumber, toNullableNumber, toNumberOrZero } from "../../model/prediction.helpers";
 import {
 	createEmptySmsChannelShares,
@@ -92,9 +94,14 @@ function normalizeChannelShares(value: unknown): SmsChannelSharesValue {
 
 function buildSharePayload(
 	manualShares: SmsManualSharesValue,
-	allCompanyIds: number[],
+	companies: CompanyDto[],
+	companyType: string | null | undefined,
 ) {
-	const normalizedCompanyIds = Array.from(new Set(allCompanyIds))
+	const normalizedCompanyIds = Array.from(new Set(
+		companies
+			.filter(company => companyTypeMatches(company.company_type, companyType))
+			.map(company => company.id),
+	))
 		.filter(companyId => Number.isInteger(companyId) && companyId > 0);
 
 	return Object.fromEntries(
@@ -143,6 +150,7 @@ export function dtoToSmsPredictionForm(record: SmsPredictionYearDto): Partial<Pr
 		note: record.note ?? "",
 		serviceFields: {
 			...empty,
+			companyType: getCompanyTypeToken(record.company_type),
 			q1Percent: toNullableNumber(record.q1_percent),
 			q2Percent: toNullableNumber(record.q2_percent),
 			q3Percent: toNullableNumber(record.q3_percent),
@@ -160,7 +168,7 @@ export function dtoToSmsPredictionForm(record: SmsPredictionYearDto): Partial<Pr
 
 export function smsPredictionFormToPayload(
 	values: PredictionFormValues,
-	allCompanyIds: number[],
+	companies: CompanyDto[],
 ): SmsPredictionPayload {
 	const fields = {
 		...createEmptySmsFields(),
@@ -171,6 +179,7 @@ export function smsPredictionFormToPayload(
 	return {
 		service: Number(values.serviceId),
 		fiscal_year: Number(values.fiscalYear),
+		company_type: String(fields.companyType ?? ""),
 		value_year: toNumberOrZero(fields.valueYear),
 		income_year: toNumberOrZero(fields.incomeYear),
 		expense_year: toNumberOrZero(fields.expenseYear),
@@ -181,7 +190,7 @@ export function smsPredictionFormToPayload(
 		q3_percent: Number(fields.q3Percent ?? 0),
 		q4_percent: Number(fields.q4Percent ?? 0),
 		manual_shares: {
-			...buildSharePayload(fields.manualShares, allCompanyIds),
+			...buildSharePayload(fields.manualShares, companies, fields.companyType),
 			...(channelPayload ? { channels: channelPayload } : {}),
 		},
 		note: String(values.note ?? ""),
@@ -191,11 +200,16 @@ export function smsPredictionFormToPayload(
 export function findSmsPredictionByFiscalYear(
 	records: SmsPredictionYearDto[],
 	fiscalYear: number | null | undefined,
+	serviceFields?: Record<string, unknown>,
 ) {
-	if (!fiscalYear)
+	const companyType = getCompanyTypeToken(serviceFields?.companyType);
+	if (!fiscalYear || !companyType)
 		return null;
 
-	return records.find(record => Number(record.fiscal_year) === Number(fiscalYear)) ?? null;
+	return records.find(record =>
+		Number(record.fiscal_year) === Number(fiscalYear)
+		&& companyTypeMatches(record.company_type, companyType),
+	) ?? null;
 }
 
 export function smsPredictionToListRow(
@@ -208,7 +222,7 @@ export function smsPredictionToListRow(
 		serviceCode: context.serviceCode,
 		serviceLabel: context.serviceLabel,
 		fiscalYear: toNullableNumber(record.fiscal_year),
-		preview: `${i18next.t("prediction.list.preview.value")}: ${formatPredictionNumber(record.value_year)} | ${i18next.t("prediction.list.preview.price")}: ${formatPredictionNumber(record.price_sell)}`,
+		preview: `${i18next.t("prediction.list.preview.companyType")}: ${getCompanyTypeToken(record.company_type) ?? "-"} | ${i18next.t("prediction.list.preview.value")}: ${formatPredictionNumber(record.value_year)} | ${i18next.t("prediction.list.preview.price")}: ${formatPredictionNumber(record.price_sell)}`,
 		note: String(record.note ?? ""),
 		createdAt: record.created_at ?? null,
 		updatedAt: record.updated_at ?? null,

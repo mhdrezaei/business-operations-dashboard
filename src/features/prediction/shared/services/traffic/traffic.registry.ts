@@ -26,11 +26,11 @@ export const trafficPredictionService = {
 		selection: { fiscalYear: number | null | undefined, serviceFields: PredictionFormValues["serviceFields"] },
 	) =>
 		findTrafficPredictionBySelection(records as any[], selection.fiscalYear, selection.serviceFields as Record<string, unknown>),
-	fetchYears: (serviceId: number) => fetchTrafficPredictionYears(serviceId) as Promise<any>,
+	fetchYears: (serviceId: number, companyType?: string | null) => fetchTrafficPredictionYears(serviceId, companyType) as Promise<any>,
 	fetchList: (params: PredictionListParams) => listTrafficPredictions(params) as Promise<any>,
 	fetchDetail: (id: number) => fetchTrafficPredictionDetail(id) as Promise<any>,
-	getYearsQueryKey: (serviceId: number | null | undefined) =>
-		trafficPredictionYearsQuery(serviceId).queryKey,
+	getYearsQueryKey: (serviceId: number | null | undefined, companyType?: string | null) =>
+		trafficPredictionYearsQuery(serviceId, companyType).queryKey,
 	createRecord: (payload: Record<string, unknown>) => createTrafficPrediction(payload as any),
 	updateRecord: (id: number, payload: Record<string, unknown>) => updateTrafficPrediction(id, payload as any),
 	toListRow: (
