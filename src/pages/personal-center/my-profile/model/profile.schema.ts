@@ -1,6 +1,8 @@
 import { z } from "zod";
 
 const lettersOnlyPattern = /^[\p{L}\s]+$/u;
+const letterInputPattern = /^[\p{L}\s]$/u;
+const digitInputPattern = /^[0-9\u06F0-\u06F9\u0660-\u0669]$/;
 const emailPattern = /^[^\s@]+@[^\s@][^\s.@]*\.[^\s@]+$/;
 const phoneNumberPattern = /^09(?:1\d|3\d|2\d|9\d)\d{7}$/;
 
@@ -20,6 +22,57 @@ export function keepDigitsOnly(value: string, maxLength: number): string {
 	return normalizeDigits(value).replace(/\D/g, "").slice(0, maxLength);
 }
 
+type ProfileInputKind = "letters" | "digits";
+
+interface ProfileInputKeyGuardOptions {
+	key: string
+	value?: string
+	selectionStart?: number | null
+	selectionEnd?: number | null
+	maxLength?: number
+	ctrlKey?: boolean
+	metaKey?: boolean
+	altKey?: boolean
+}
+
+export function shouldPreventProfileInputKey(
+	kind: ProfileInputKind,
+	options: ProfileInputKeyGuardOptions,
+): boolean {
+	if (options.ctrlKey || options.metaKey || options.altKey)
+		return false;
+	if (options.key.length !== 1)
+		return false;
+
+	if (kind === "letters")
+		return !letterInputPattern.test(options.key);
+
+	if (!digitInputPattern.test(options.key))
+		return true;
+
+	if (options.maxLength == null)
+		return false;
+
+	const value = options.value ?? "";
+	const selectionStart = options.selectionStart ?? value.length;
+	const selectionEnd = options.selectionEnd ?? selectionStart;
+	const selectedLength = Math.max(selectionEnd - selectionStart, 0);
+	const nextLength = normalizeDigits(value).length - selectedLength + normalizeDigits(options.key).length;
+
+	return nextLength > options.maxLength;
+}
+
+export function sanitizeProfileInputValue(
+	kind: ProfileInputKind,
+	value: string,
+	maxLength?: number,
+): string {
+	if (kind === "letters")
+		return keepLettersOnly(value);
+
+	return keepDigitsOnly(value, maxLength ?? value.length);
+}
+
 export function sanitizeProfileFormValues(
 	values: Partial<MyProfileFormValues> | undefined,
 ): Partial<MyProfileFormValues> {
@@ -29,11 +82,11 @@ export function sanitizeProfileFormValues(
 	return {
 		...values,
 		username: values.username == null ? values.username : values.username.trim(),
-		first_name: values.first_name == null ? values.first_name : keepLettersOnly(values.first_name),
-		last_name: values.last_name == null ? values.last_name : keepLettersOnly(values.last_name),
+		first_name: values.first_name == null ? values.first_name : sanitizeProfileInputValue("letters", values.first_name),
+		last_name: values.last_name == null ? values.last_name : sanitizeProfileInputValue("letters", values.last_name),
 		email: values.email == null ? values.email : values.email.trim(),
-		mobile: values.mobile == null ? values.mobile : keepDigitsOnly(values.mobile, 11),
-		national_code: values.national_code == null ? values.national_code : keepDigitsOnly(values.national_code, 10),
+		mobile: values.mobile == null ? values.mobile : sanitizeProfileInputValue("digits", values.mobile, 11),
+		national_code: values.national_code == null ? values.national_code : sanitizeProfileInputValue("digits", values.national_code, 10),
 	};
 }
 
@@ -88,6 +141,10 @@ export function getComparableProfileString(values: MyProfileFormValues): string 
 	return JSON.stringify(normalizeProfileValue(sanitizeProfileFormValues(values)));
 }
 
+function isRepeatedDigits(value: string): boolean {
+	return /^(\d)\1+$/.test(value);
+}
+
 // ====================== SCHEMA WITH FULL VALIDATION ======================
 
 export const myProfileUpsertSchema = z.object({
@@ -122,6 +179,9 @@ export const myProfileUpsertSchema = z.object({
 	national_code: z.string()
 		.transform(val => keepDigitsOnly(val ?? "", 10))
 		.refine(val => val.length === 0 || val.length === 10, profileErrorMessages.nationalCodeLength)
+		.refine(val => val.length === 0 || !isRepeatedDigits(val), {
+			message: "کد ملی وارد شده معتبر نیست",
+		})
 		.nullable(),
 
 	password: z.string().optional(),

@@ -14,6 +14,8 @@ import {
 	getComparableProfileString,
 	mergeProfileValues,
 	myProfileUpsertSchema,
+	sanitizeProfileInputValue,
+	shouldPreventProfileInputKey,
 } from "./model/profile.schema";
 import { userProfileQuery } from "./queries/profile.queries";
 
@@ -74,10 +76,96 @@ export default function MyProfileForm() {
 							<RHFProText name="username" label="نام کاربری" />
 							<RHFProText name="email" label="ایمیل" />
 
-							<RHFProText name="first_name" label="نام" />
-							<RHFProText name="last_name" label="نام خانوادگی" />
-							<RHFProText name="mobile" label="موبایل" enableNumericGuard={false} inputProps={{ inputMode: "numeric", maxLength: 11 }} />
-							<RHFProText name="national_code" label="کد ملی" enableNumericGuard={false} inputProps={{ inputMode: "numeric", maxLength: 10 }} />
+							<RHFProText
+								name="first_name"
+								label="نام"
+								inputProps={{
+									onInput: (event) => {
+										event.currentTarget.value = sanitizeProfileInputValue("letters", event.currentTarget.value);
+									},
+									onKeyDown: (event) => {
+										if (shouldPreventProfileInputKey("letters", {
+											key: event.key,
+											ctrlKey: event.ctrlKey,
+											metaKey: event.metaKey,
+											altKey: event.altKey,
+										})) {
+											event.preventDefault();
+										}
+									},
+								}}
+							/>
+							<RHFProText
+								name="last_name"
+								label="نام خانوادگی"
+								inputProps={{
+									onInput: (event) => {
+										event.currentTarget.value = sanitizeProfileInputValue("letters", event.currentTarget.value);
+									},
+									onKeyDown: (event) => {
+										if (shouldPreventProfileInputKey("letters", {
+											key: event.key,
+											ctrlKey: event.ctrlKey,
+											metaKey: event.metaKey,
+											altKey: event.altKey,
+										})) {
+											event.preventDefault();
+										}
+									},
+								}}
+							/>
+							<RHFProText
+								name="mobile"
+								label="موبایل"
+								enableNumericGuard={false}
+								inputProps={{
+									inputMode: "numeric",
+									maxLength: 11,
+									onInput: (event) => {
+										event.currentTarget.value = sanitizeProfileInputValue("digits", event.currentTarget.value, 11);
+									},
+									onKeyDown: (event) => {
+										if (shouldPreventProfileInputKey("digits", {
+											key: event.key,
+											value: event.currentTarget.value,
+											selectionStart: event.currentTarget.selectionStart,
+											selectionEnd: event.currentTarget.selectionEnd,
+											maxLength: 11,
+											ctrlKey: event.ctrlKey,
+											metaKey: event.metaKey,
+											altKey: event.altKey,
+										})) {
+											event.preventDefault();
+										}
+									},
+								}}
+							/>
+							<RHFProText
+								name="national_code"
+								label="کد ملی"
+								enableNumericGuard={false}
+								inputProps={{
+									inputMode: "numeric",
+									maxLength: 10,
+									onInput: (event) => {
+										event.currentTarget.value = sanitizeProfileInputValue("digits", event.currentTarget.value, 10);
+									},
+									onKeyDown: (event) => {
+										if (shouldPreventProfileInputKey("digits", {
+											key: event.key,
+											value: event.currentTarget.value,
+											selectionStart: event.currentTarget.selectionStart,
+											selectionEnd: event.currentTarget.selectionEnd,
+											maxLength: 10,
+											ctrlKey: event.ctrlKey,
+											metaKey: event.metaKey,
+											altKey: event.altKey,
+										})) {
+											event.preventDefault();
+										}
+									},
+								}}
+							/>
 						</div>
 
 						<Card bordered className="mt-6">
