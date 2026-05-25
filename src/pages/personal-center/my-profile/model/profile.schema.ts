@@ -20,6 +20,23 @@ export function keepDigitsOnly(value: string, maxLength: number): string {
 	return normalizeDigits(value).replace(/\D/g, "").slice(0, maxLength);
 }
 
+export function sanitizeProfileFormValues(
+	values: Partial<MyProfileFormValues> | undefined,
+): Partial<MyProfileFormValues> {
+	if (!values)
+		return {};
+
+	return {
+		...values,
+		username: values.username == null ? values.username : values.username.trim(),
+		first_name: values.first_name == null ? values.first_name : keepLettersOnly(values.first_name),
+		last_name: values.last_name == null ? values.last_name : keepLettersOnly(values.last_name),
+		email: values.email == null ? values.email : values.email.trim(),
+		mobile: values.mobile == null ? values.mobile : keepDigitsOnly(values.mobile, 11),
+		national_code: values.national_code == null ? values.national_code : keepDigitsOnly(values.national_code, 10),
+	};
+}
+
 // ====================== ERROR MESSAGES ======================
 
 export const profileErrorMessages = {
@@ -64,11 +81,11 @@ export function mergeProfileValues(
 		Object.entries(current ?? {}).filter(([, v]) => v !== undefined),
 	) as Partial<MyProfileFormValues>;
 
-	return { ...initial, ...definedCurrentValues };
+	return sanitizeProfileFormValues({ ...initial, ...definedCurrentValues }) as MyProfileFormValues;
 }
 
 export function getComparableProfileString(values: MyProfileFormValues): string {
-	return JSON.stringify(normalizeProfileValue(values));
+	return JSON.stringify(normalizeProfileValue(sanitizeProfileFormValues(values)));
 }
 
 // ====================== SCHEMA WITH FULL VALIDATION ======================

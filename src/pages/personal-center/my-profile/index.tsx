@@ -5,22 +5,17 @@ import { BasicButton, BasicContent } from "#src/components/index.js";
 import { RHFProText } from "#src/shared/ui/rhf-pro/index.js";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
-import { Card, Form, Input } from "antd";
+import { Card } from "antd";
 import { useEffect, useMemo, useState } from "react";
-import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
+import { FormProvider, useForm, useWatch } from "react-hook-form";
 
 import { updateProfile } from "./api/profile.api";
 import {
 	getComparableProfileString,
-	keepDigitsOnly,
-	keepLettersOnly,
 	mergeProfileValues,
 	myProfileUpsertSchema,
 } from "./model/profile.schema";
 import { userProfileQuery } from "./queries/profile.queries";
-
-type TextFieldName = "first_name" | "last_name";
-type DigitFieldName = "mobile" | "national_code";
 
 export default function MyProfileForm() {
 	const [saving, setSaving] = useState(false);
@@ -58,86 +53,15 @@ export default function MyProfileForm() {
 		form.reset(mergedDefaultValues);
 	}, [mergedDefaultValues, form]);
 
-	function renderEmailField() {
-		return (
-			<Controller
-				name="email"
-				control={form.control}
-				render={({ field, fieldState }) => (
-					<Form.Item
-						label="ایمیل"
-						help={fieldState.error?.message}
-						validateStatus={fieldState.error ? "error" : undefined}
-					>
-						<Input
-							{...field}
-							value={field.value ?? ""}
-							status={fieldState.error ? "error" : undefined}
-							autoComplete="email"
-						/>
-					</Form.Item>
-				)}
-			/>
-		);
-	}
-
-	function renderLettersField(name: TextFieldName, label: string) {
-		return (
-			<Controller
-				name={name}
-				control={form.control}
-				render={({ field, fieldState }) => (
-					<Form.Item
-						label={label}
-						help={fieldState.error?.message}
-						validateStatus={fieldState.error ? "error" : undefined}
-					>
-						<Input
-							{...field}
-							value={field.value ?? ""}
-							onChange={e => field.onChange(keepLettersOnly(e.target.value))}
-							status={fieldState.error ? "error" : undefined}
-							autoComplete="off"
-						/>
-					</Form.Item>
-				)}
-			/>
-		);
-	}
-
-	function renderDigitField(name: DigitFieldName, label: string, length: number) {
-		return (
-			<Controller
-				name={name}
-				control={form.control}
-				render={({ field, fieldState }) => (
-					<Form.Item
-						label={label}
-						help={fieldState.error?.message}
-						validateStatus={fieldState.error ? "error" : undefined}
-					>
-						<Input
-							{...field}
-							value={field.value ?? ""}
-							inputMode="numeric"
-							maxLength={length}
-							onChange={e => field.onChange(keepDigitsOnly(e.target.value, length))}
-							status={fieldState.error ? "error" : undefined}
-							autoComplete="off"
-						/>
-					</Form.Item>
-				)}
-			/>
-		);
-	}
 	return (
 		<FormProvider {...form}>
 			<form
 				onSubmit={form.handleSubmit(async (values) => {
 					setSaving(true);
 					try {
-						await updateProfile({ ...values } as ProfilePayload);
-						form.reset(values);
+						const profile = myProfileUpsertSchema.parse(values);
+						await updateProfile({ ...profile } as ProfilePayload);
+						form.reset(profile);
 					}
 					finally {
 						setSaving(false);
@@ -148,12 +72,12 @@ export default function MyProfileForm() {
 					<BasicContent className="w-full">
 						<div className="grid grid-cols-2 gap-3">
 							<RHFProText name="username" label="نام کاربری" />
-							{renderEmailField()}
+							<RHFProText name="email" label="ایمیل" />
 
-							{renderLettersField("first_name", "نام")}
-							{renderLettersField("last_name", "نام خانوادگی")}
-							{renderDigitField("mobile", "موبایل", 11)}
-							{renderDigitField("national_code", "کد ملی", 10)}
+							<RHFProText name="first_name" label="نام" />
+							<RHFProText name="last_name" label="نام خانوادگی" />
+							<RHFProText name="mobile" label="موبایل" enableNumericGuard={false} inputProps={{ inputMode: "numeric", maxLength: 11 }} />
+							<RHFProText name="national_code" label="کد ملی" enableNumericGuard={false} inputProps={{ inputMode: "numeric", maxLength: 10 }} />
 						</div>
 
 						<Card bordered className="mt-6">
