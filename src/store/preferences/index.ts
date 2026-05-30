@@ -24,12 +24,12 @@ export const DEFAULT_PREFERENCES = {
 	checkUpdatesInterval: 1,
 
 	/* ================== Theme ================== */
-	theme: "auto",
+	theme: "dark",
 	colorBlindMode: false,
 	colorGrayMode: false,
-	themeRadius: 6,
+	themeRadius: 9,
 	builtinTheme: "blue",
-	themeColorPrimary: "#1677ff",
+	themeColorPrimary: "#1754E1",
 
 	/* ================== Animation ================== */
 	transitionProgress: true,
