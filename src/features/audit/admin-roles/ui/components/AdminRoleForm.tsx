@@ -10,10 +10,14 @@ import { BasicButton } from "#src/components";
 import { RHFProText, RHFProTextArea } from "#src/shared/ui/rhf-pro";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Tooltip } from "antd";
-import React, { useEffect } from "react";
-import { FormProvider, useForm } from "react-hook-form";
+import React, { useEffect, useMemo } from "react";
+import { FormProvider, useForm, useWatch } from "react-hook-form";
 
-import { adminRoleUpsertSchema } from "../../model/admin-roles.schema";
+import {
+	adminRoleUpsertSchema,
+	getComparableAdminRoleString,
+	mergeAdminRoleValues,
+} from "../../model/admin-roles.schema";
 import { AdminRolePermissionsEditor } from "./AdminRolePermissionsEditor";
 
 interface Props {
@@ -40,15 +44,23 @@ export function AdminRoleForm({
 	const permissionHelpText = "در این بخش می‌توانید سطح دسترسی این نقش را برای هر دامنه و هر سرویس مشخص کنید. ابتدا دامنه موردنظر را انتخاب کنید. سپس برای هر سرویس، مجوزهای مشاهده، ایجاد، ویرایش و حذف را به‌صورت جداگانه فعال یا غیرفعال کنید. اگر سرویسی نیاز به تنظیمات تکمیلی داشته باشد، گزینه‌های مربوط به همان سرویس در ادامه نمایش داده می‌شود. این بخش برای نگهداری و توسعه ساده‌تر، به‌صورت دامنه‌ای و ماژولار طراحی شده است.";
 	const [policiesPayload, setPoliciesPayload] = React.useState<AdminRolePoliciesBulkUpsertPayload>({ items: [] });
 
+	const mergedDefaultValues = useMemo(() => defaultValues, [defaultValues]);
+
 	const form = useForm<AdminRoleFormValues>({
-		defaultValues,
+		defaultValues: mergedDefaultValues,
 		resolver: zodResolver(adminRoleUpsertSchema) as any,
 	});
-	const { isDirty } = form.formState;
+
+	const watchedValues = useWatch({ control: form.control });
+
+	const isDirty = useMemo(() => {
+		const currentMerged = mergeAdminRoleValues(mergedDefaultValues, watchedValues as Partial<AdminRoleFormValues>);
+		return getComparableAdminRoleString(currentMerged) !== getComparableAdminRoleString(mergedDefaultValues);
+	}, [mergedDefaultValues, watchedValues]);
 
 	useEffect(() => {
-		form.reset(defaultValues);
-	}, [defaultValues, form]);
+		form.reset(mergedDefaultValues);
+	}, [mergedDefaultValues, form]);
 
 	async function handleSubmit(values: AdminRoleFormValues) {
 		const role = adminRoleUpsertSchema.parse(values);
