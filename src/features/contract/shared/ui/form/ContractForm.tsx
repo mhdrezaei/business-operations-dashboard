@@ -8,7 +8,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { FormProvider, useForm, useWatch } from "react-hook-form";
-import { buildContractSchema } from "../../model/contract.schema";
+import { buildContractSchema, getComparableContractString, mergeContractValues } from "../../model/contract.schema";
 import { serviceRegistry } from "../../services/registry";
 import { findFirstError } from "../../utils";
 import { ActionSection } from "./sections/ActionSection";
@@ -17,7 +17,6 @@ import { FixedStartSection } from "./sections/FixedStartSection";
 import "./contract-form.css";
 
 export type ContractSubmitIntent = "submit" | "submit_and_create_another" | "submit_and_edit";
-type ComparableValue = string | number | boolean | null | ComparableValue[] | { [key: string]: ComparableValue };
 
 export const defaultContractFormValues: ContractFormValues = {
 	serviceId: null,
@@ -33,60 +32,6 @@ export const defaultContractFormValues: ContractFormValues = {
 	documents: [],
 	serviceFields: {},
 };
-
-function stableComparable(value: unknown): ComparableValue {
-	if (value === undefined || value === null) {
-		return null;
-	}
-
-	if (typeof value === "string") {
-		return value.trim();
-	}
-
-	if (typeof value === "number" || typeof value === "boolean") {
-		return value;
-	}
-
-	if (Array.isArray(value)) {
-		return value.map(item => stableComparable(item));
-	}
-
-	if (value instanceof Date) {
-		return value.toISOString();
-	}
-
-	if (typeof value === "object") {
-		return Object.keys(value as Record<string, unknown>)
-			.sort()
-			.reduce<{ [key: string]: ComparableValue }>((result, key) => {
-				result[key] = stableComparable((value as Record<string, unknown>)[key]);
-				return result;
-			}, {});
-	}
-
-	return String(value).trim();
-}
-
-function mergeWithInitialValues(
-	initial: ContractFormValues,
-	current: Partial<ContractFormValues> | undefined,
-): ContractFormValues {
-	const definedCurrentValues = Object.fromEntries(
-		Object.entries(current ?? {}).filter(([, value]) => value !== undefined),
-	) as Partial<ContractFormValues>;
-	const definedServiceFields = Object.fromEntries(
-		Object.entries((current?.serviceFields as Record<string, unknown> | undefined) ?? {}).filter(([, value]) => value !== undefined),
-	);
-
-	return {
-		...initial,
-		...definedCurrentValues,
-		serviceFields: {
-			...(initial.serviceFields ?? {}),
-			...definedServiceFields,
-		},
-	};
-}
 
 interface Props {
 	initialValues?: Partial<ContractFormValues> | null
@@ -121,15 +66,7 @@ export function ContractForm({
 	const mergedInitialValues = useMemo<ContractFormValues>(() => {
 		if (!initialValues)
 			return defaultContractFormValues;
-
-		return {
-			...defaultContractFormValues,
-			...initialValues,
-			serviceFields: {
-				...(defaultContractFormValues.serviceFields ?? {}),
-				...(initialValues.serviceFields ?? {}),
-			},
-		} as ContractFormValues;
+		return mergeContractValues(defaultContractFormValues, initialValues);
 	}, [initialValues]);
 
 	const form = useForm<ContractFormValues>({
@@ -140,9 +77,9 @@ export function ContractForm({
 		resolver: dynamicResolver,
 	});
 	const watchedValues = useWatch({ control: form.control, defaultValue: mergedInitialValues as any });
-	const isMeaningfullyDirty = useMemo(() => {
-		const currentValues = mergeWithInitialValues(mergedInitialValues, watchedValues as Partial<ContractFormValues>);
-		return JSON.stringify(stableComparable(currentValues)) !== JSON.stringify(stableComparable(mergedInitialValues));
+	const isDirty = useMemo(() => {
+		const currentMerged = mergeContractValues(mergedInitialValues, watchedValues as Partial<ContractFormValues>);
+		return getComparableContractString(currentMerged) !== getComparableContractString(mergedInitialValues);
 	}, [mergedInitialValues, watchedValues]);
 	useEffect(() => {
 		// serviceCode has no direct input; keep it registered so submit/validate cycles do not drop it.
@@ -202,7 +139,7 @@ export function ContractForm({
 	const resetForm = () => {
 		form.reset(defaultContractFormValues);
 	};
-	const submitDisabled = !isMeaningfullyDirty || submitting;
+	const submitDisabled = !isDirty || submitting;
 
 	return (
 		<FormProvider {...form}>
