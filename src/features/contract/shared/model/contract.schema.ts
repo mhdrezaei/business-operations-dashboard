@@ -1,7 +1,56 @@
-import type { ContractServiceCode } from "./contract.form.types";
+import type { ContractFormValues, ContractServiceCode } from "./contract.form.types";
 import { z } from "zod";
 import { addendaRefineNoOverlapAndInsideContract } from "../../components/addenda/addenda.schema";
 import { serviceRegistry } from "../services/registry";
+
+export function normalizeContractValue(value: unknown): any {
+	if (value === undefined || value === null)
+		return null;
+	if (typeof value === "string")
+		return value.trim();
+	if (typeof value === "number" || typeof value === "boolean")
+		return value;
+	if (Array.isArray(value))
+		return value.map(normalizeContractValue);
+	if (value instanceof Date)
+		return value.toISOString();
+	if (typeof value === "object") {
+		return Object.keys(value as Record<string, unknown>)
+			.sort()
+			.reduce<Record<string, any>>((result, key) => {
+				result[key] = normalizeContractValue((value as Record<string, unknown>)[key]);
+				return result;
+			}, {});
+	}
+	return String(value).trim();
+}
+
+export function mergeContractValues(
+	initial: ContractFormValues,
+	current: Partial<ContractFormValues> | undefined,
+): ContractFormValues {
+	const definedCurrentValues = Object.fromEntries(
+		Object.entries(current ?? {}).filter(([, value]) => value !== undefined),
+	) as Partial<ContractFormValues>;
+
+	const definedServiceFields = Object.fromEntries(
+		Object.entries((current?.serviceFields as Record<string, unknown> | undefined) ?? {})
+			.filter(([, value]) => value !== undefined),
+	);
+
+	return {
+		...initial,
+		...definedCurrentValues,
+		serviceFields: {
+			...(initial.serviceFields ?? {}),
+			...definedServiceFields,
+		},
+	};
+}
+
+export function getComparableContractString(values: ContractFormValues): string {
+	return JSON.stringify(normalizeContractValue(values));
+}
 
 const fixedStartSchema = z.object({
 	serviceId: z.number().int().positive().nullable(),
@@ -132,8 +181,9 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 
 				// If state/operators => company not required (and better null)
 				if (val.counterpartyType === "gov_ops") {
-					if (val.companyId != null)
+					if (val.companyId != null) {
 						ctx.addIssue({ code: "custom", path: ["companyId"], message: "در این حالت نیازی به انتخاب شرکت نیست" });
+					}
 				}
 			}
 			else if (val.serviceCode === "traffic") {

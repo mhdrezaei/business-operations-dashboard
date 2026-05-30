@@ -36,6 +36,46 @@ export const companyProfileCardOptions = [
 
 export const trafficCompanyTypes = ["CP", "IXP", "TCI", "PREMIUM"] as const;
 
+export function normalizeAdminRoleValue(value: unknown): any {
+	if (value === undefined || value === null)
+		return null;
+	if (typeof value === "string")
+		return value.trim();
+	if (typeof value === "number" || typeof value === "boolean")
+		return value;
+	if (Array.isArray(value))
+		return value.map(normalizeAdminRoleValue);
+	if (value instanceof Date)
+		return value.toISOString();
+	if (typeof value === "object") {
+		return Object.keys(value as Record<string, unknown>)
+			.sort()
+			.reduce<Record<string, any>>((result, key) => {
+				result[key] = normalizeAdminRoleValue((value as Record<string, unknown>)[key]);
+				return result;
+			}, {});
+	}
+	return String(value).trim();
+}
+
+export function mergeAdminRoleValues(
+	initial: AdminRoleFormValues,
+	current: Partial<AdminRoleFormValues> | undefined,
+): AdminRoleFormValues {
+	const definedCurrentValues = Object.fromEntries(
+		Object.entries(current ?? {}).filter(([, value]) => value !== undefined),
+	) as Partial<AdminRoleFormValues>;
+
+	return {
+		...initial,
+		...definedCurrentValues,
+	};
+}
+
+export function getComparableAdminRoleString(values: AdminRoleFormValues): string {
+	return JSON.stringify(normalizeAdminRoleValue(values));
+}
+
 export const adminRoleUpsertSchema = z.object({
 	name: z
 		.string()
