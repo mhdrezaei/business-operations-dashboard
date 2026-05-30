@@ -12,7 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button, Popconfirm } from "antd";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSearchParams } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { fetchContractDetail, fetchContractsList, fetchDeleteContract } from "../../api/contracts.api";
 import { ContractDetailModal } from "./components/ContractDetailModal";
 import { getContractColumns } from "./constants";
@@ -33,7 +33,7 @@ export default function ContractListPage() {
 		getPermittedCompanyTypes,
 		getPermittedServiceIds,
 	} = useAccess();
-
+	const navigate = useNavigate();
 	const actionRef = useRef<ActionType>(null);
 	const formRef = useRef<ProFormInstance | undefined>(undefined);
 
@@ -403,6 +403,7 @@ export default function ContractListPage() {
 							key="add"
 							icon={<PlusCircleOutlined />}
 							type="primary"
+							onClick={() => navigate("/contracts/new")}
 						>
 							{t("common.add")}
 						</Button>,
