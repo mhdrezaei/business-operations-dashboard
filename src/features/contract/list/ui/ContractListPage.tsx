@@ -14,7 +14,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router";
 import { fetchContractDetail, fetchContractsList, fetchDeleteContract } from "../../api/contracts.api";
-import { companyTypeMatches } from "../../shared/utils";
+import { companyTypeMatches, pickCompanyTypeToken } from "../../shared/utils";
 import { ContractDetailModal } from "./components/ContractDetailModal";
 import { getContractColumns } from "./constants";
 import { openContractPdfPrint } from "./utils/contract-pdf";
@@ -228,10 +228,13 @@ export default function ContractListPage() {
 
 	const refreshTable = () => actionRef.current?.reload?.();
 
+	const getRowCompanyType = (row: ContractListItemType) =>
+		pickCompanyTypeToken((row as any).traffic_company_type ?? (row as any).company_type);
+
 	const canUpdateRow = (row: ContractListItemType) =>
-		hasDomainPermissionByServiceId("contracts", "update", Number(row.service_id), row.traffic_company_type);
+		hasDomainPermissionByServiceId("contracts", "update", Number(row.service_id), getRowCompanyType(row));
 	const canDeleteRow = (row: ContractListItemType) =>
-		hasDomainPermissionByServiceId("contracts", "delete", Number(row.service_id), row.traffic_company_type);
+		hasDomainPermissionByServiceId("contracts", "delete", Number(row.service_id), getRowCompanyType(row));
 
 	const handleDeleteRow = async (row: ContractListItemType, action?: ProCoreActionType<object>) => {
 		if (!canDeleteRow(row)) {

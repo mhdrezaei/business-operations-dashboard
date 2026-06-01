@@ -2,6 +2,7 @@ import type { ContractFormValues } from "#src/features/contract/shared/model/con
 import type { ContractServicePath } from "../../../api/contracts.api";
 import { apiPricingToContractType, contractTypeToApiPricing } from "#src/features/contract/api/pricing.mapper";
 import { ContractForm } from "#src/features/contract/shared/ui/form/ContractForm";
+import { pickCompanyTypeToken } from "#src/features/contract/shared/utils";
 import { Empty, Modal, Spin } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
 import { fetchContractDetail, fetchUpdateContract } from "../../../api/contracts.api";
@@ -17,6 +18,14 @@ interface Props {
 function servicePathToServiceCode(service: ContractServicePath): string {
 	const raw = service.startsWith("sms/") ? "sms" : service;
 	return raw.trim().toLowerCase();
+}
+
+function normalizeSmsCounterpartyType(value: unknown): "partners" | "gov_ops" | null {
+	if (value === "partners" || value === "client")
+		return "partners";
+	if (value === "gov_ops" || value === "vendor")
+		return "gov_ops";
+	return null;
 }
 
 function toNumberOrNull(value: unknown): number | null {
@@ -335,8 +344,8 @@ function dtoToFormValues(dto: any, service: ContractServicePath): ContractFormVa
 
 	const description = dto?.note ?? dto?.description ?? "";
 
-	const companyType = dto?.company_type ?? dto?.traffic_company_type ?? null;
-	const counterpartyType = dto?.sms_party ?? null;
+	const companyType = pickCompanyTypeToken(dto?.company_type ?? dto?.traffic_company_type);
+	const counterpartyType = normalizeSmsCounterpartyType(dto?.sms_party);
 
 	const serviceCodeRaw = dto?.service_code ?? dto?.service?.code ?? servicePathToServiceCode(service);
 	const serviceCode = typeof serviceCodeRaw === "string" ? serviceCodeRaw.trim().toLowerCase() : null;
@@ -364,17 +373,26 @@ function dtoToFormValues(dto: any, service: ContractServicePath): ContractFormVa
 			id,
 			company,
 			company_id,
+			company_type,
+			traffic_company_type,
 			service: _service,
 			service_id,
+			sms_party,
+			is_official,
+			is_signed,
 			start_jy,
 			start_jm,
 			end_jy,
 			end_jm,
+			contract_number,
 			start_date,
 			end_date_exclusive,
+			end_date,
 			active_period,
 			created_at,
+			created_by_user,
 			updated_at,
+			updated_by_user,
 			note,
 			description: _desc,
 			addenda,
@@ -383,6 +401,7 @@ function dtoToFormValues(dto: any, service: ContractServicePath): ContractFormVa
 
 		serviceFields = {
 			...(rest ?? {}),
+			...(typeof dto?.is_official === "boolean" ? { isOfficial: dto.is_official } : {}),
 			addenda: dto?.addenda ?? [],
 		};
 	}
@@ -577,6 +596,7 @@ export function ContractDetailModal({ open, contractId, service, onClose, onUpda
 						: (
 							<ContractForm
 								key={`${resolvedService}-${contractId}`}
+								mode="edit"
 								initialValues={initialValues}
 								submitText="ذخیره تغییرات"
 								submitting={saving}

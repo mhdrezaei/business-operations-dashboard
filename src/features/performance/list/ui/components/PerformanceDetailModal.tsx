@@ -11,6 +11,7 @@ import {
 	fetchPerformanceContracts,
 	fetchPerformanceDetail,
 	fetchPerformanceList,
+	updatePerformanceByComposite,
 	updatePerformanceById,
 	updateSmsCommissionPerformanceByComposite,
 	upsertPerformance,
@@ -18,10 +19,11 @@ import {
 import {
 	normalizePerformanceRecord,
 	pickActiveContract,
+	pickCompanyTypeToken,
 	toNullableNumber,
 } from "#src/features/performance/shared/model/performance.helpers";
 import { RHFProNumber, RHFProText } from "#src/shared/ui/rhf-pro";
-import { Button, Card, Input, Modal, Spin } from "antd";
+import { Button, Card, Modal, Spin } from "antd";
 import i18next from "i18next";
 import { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
@@ -571,8 +573,9 @@ export function PerformanceDetailModal({
 				readonlyKeys: [],
 				editableFields: [
 					{ key: "value", label: t("performance.fields.psp.performanceValue"), type: "number", required: true },
+					{ key: "income", label: t("performance.fields.psp.monthlyRevenue"), type: "number", required: true },
 				],
-				payloadKeys: ["value"],
+				payloadKeys: ["value", "income"],
 			};
 		}
 
@@ -599,7 +602,7 @@ export function PerformanceDetailModal({
 					{ key: "otherFa", label: t("performance.fields.sms.otherFa"), type: "number", required: true },
 					{ key: "otherEn", label: t("performance.fields.sms.otherEn"), type: "number", required: true },
 				],
-				payloadKeys: ["irancellFa", "irancellEn", "mciFa", "mciEn", "otherFa", "otherEn"],
+				payloadKeys: ["company_type", "irancellFa", "irancellEn", "mciFa", "mciEn", "otherFa", "otherEn"],
 			};
 		}
 
@@ -708,6 +711,21 @@ export function PerformanceDetailModal({
 		const found = companies?.find(company => company.id === companyId);
 		return found?.name ?? String(mergedDetail.company_name ?? "-");
 	}, [companies, mergedDetail, record]);
+	const selectedCompanyType = useMemo(() => {
+		const direct = pickCompanyTypeToken(
+			mergedDetail.company_type
+			?? mergedDetail.companyType
+			?? normalizedRecord.companyType,
+		);
+		if (direct)
+			return direct;
+
+		const companyId = Number(mergedDetail.company ?? mergedDetail.company_id ?? record?.company ?? record?.company_id);
+		if (!Number.isFinite(companyId))
+			return null;
+		const found = companies?.find(company => company.id === companyId) as Record<string, unknown> | undefined;
+		return pickCompanyTypeToken(found?.company_type);
+	}, [companies, mergedDetail, normalizedRecord.companyType, record]);
 	const openApiSummaryFields = useMemo(() => {
 		if (service !== "openapi")
 			return [];
@@ -1163,6 +1181,10 @@ export function PerformanceDetailModal({
 			delete payload.language;
 		}
 
+		if (service === "sms") {
+			payload.company_type = pickCompanyTypeToken(payload.company_type) ?? selectedCompanyType;
+		}
+
 		setSaving(true);
 		try {
 			if (isUnregisteredMode) {
@@ -1182,13 +1204,7 @@ export function PerformanceDetailModal({
 				await updateSmsCommissionPerformanceByComposite(companyId, salesAgentId, year, month, payload);
 			}
 			else if (service === "sms") {
-				await upsertPerformance({
-					service,
-					companyId,
-					year,
-					month,
-					payload,
-				});
+				await updatePerformanceByComposite(service, companyId, year, month, payload);
 			}
 			else if (service === "openapi" && openApiPerformances.length > 0) {
 				const operationFields = openApiContractModel === "package"
@@ -1281,6 +1297,9 @@ export function PerformanceDetailModal({
 									>
 										<ReadOnlyBlock label={`${t("performance.columns.service")}:`} value={resolveServiceDisplayName(service, mergedDetail.service_name ?? service)} />
 										<ReadOnlyBlock label={`${t("performance.columns.company")}:`} value={selectedCompany} />
+										{service === "sms"
+											? <ReadOnlyBlock label={`${t("performance.columns.companyType")}:`} value={selectedCompanyType ?? "-"} />
+											: null}
 										<ReadOnlyBlock label={`${t("performance.columns.year")}:`} value={mergedDetail.sh_year ?? "-"} />
 										<ReadOnlyBlock label={`${t("performance.columns.month")}:`} value={resolveMonthLabel(mergedDetail.sh_month)} />
 									</div>
@@ -1400,10 +1419,13 @@ export function PerformanceDetailModal({
 															</ContractAlignedField>
 
 															<ContractAlignedField label={t("performance.fields.psp.monthlyRevenue")}>
-																<Input
-																	readOnly
-																	value={formatNumberLike(mergedDetail.income)}
-																	inputMode="numeric"
+																<RHFProNumber<EditFormValues, any>
+																	name={"income" as any}
+																	label=""
+																	formItemProps={{ className: "mb-0" }}
+																	inputProps={{ placeholder: t("performance.modal.placeholders.enterNumber"), inputMode: "numeric" } as any}
+																	enableGrouping
+																	enableWordsTooltip
 																/>
 															</ContractAlignedField>
 														</div>

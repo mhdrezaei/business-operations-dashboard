@@ -6,6 +6,7 @@ export interface ContractListItemType {
 
 	service_name: string
 	company_name: string
+	company_type?: string | Record<string, string> | null
 
 	addenda_count: number
 

@@ -3,6 +3,7 @@ import type { ProColumns } from "@ant-design/pro-components";
 import type { TFunction } from "i18next";
 import type { ContractListItemType } from "../model/contracts.list.types";
 import { Tag } from "antd";
+import { pickCompanyTypeToken } from "../../shared/utils";
 
 export interface GetContractColumnsArgs {
 	t: TFunction<"translation", undefined>
@@ -121,14 +122,14 @@ export function getContractColumns({
 			dataIndex: "company_type",
 			valueType: "select",
 			width: 150,
-			hideInTable: !isTrafficService,
+			hideInTable: !isCompanyTypeService,
 			hideInSearch: !isCompanyTypeService,
 			valueEnum: permittedTrafficCompanyTypeOptions.reduce((acc, item) => {
 				acc[item.key] = item.value;
 				return acc;
 			}, {} as Record<string, string>),
 			render: (_, r) => {
-				const companyType = (r as any).traffic_company_type ?? (r as any).company_type ?? null;
+				const companyType = pickCompanyTypeToken((r as any).traffic_company_type ?? (r as any).company_type);
 				if (!companyType) {
 					return "-";
 				}

@@ -2,6 +2,7 @@ import type { CompanyTypeOption } from "#src/api/user/types";
 import type { ProColumns } from "@ant-design/pro-components";
 import type { TFunction } from "i18next";
 import type { PerformanceListRow } from "../model/performance.list.types";
+import { pickCompanyTypeToken } from "#src/features/performance/shared/model/performance.helpers";
 import { MONTH_OPTIONS } from "#src/features/performance/shared/ui/form/constants/jalali-date-options";
 import { Tag } from "antd";
 
@@ -361,7 +362,12 @@ export function getPerformanceColumns({
 			width: 120,
 			hideInTable: hideNonMatchingServiceColumn(requiresCompanyType),
 			hideInSearch: true,
-			render: (_, row) => row.company_type ? (companyTypeLabelByKey[String(row.company_type)] ?? row.company_type) : "-",
+			render: (_, row) => {
+				const companyType = pickCompanyTypeToken(row.company_type);
+				if (!companyType)
+					return "-";
+				return companyTypeLabelByKey[companyType] ?? companyType;
+			},
 		},
 		{
 			title: t("performance.columns.location"),

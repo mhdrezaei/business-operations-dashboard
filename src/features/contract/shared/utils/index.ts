@@ -44,6 +44,11 @@ function toCompanyTypeTokens(value: unknown): string[] {
 	return [];
 }
 
+export function pickCompanyTypeToken(companyType: unknown): string | null {
+	const [first] = toCompanyTypeTokens(companyType);
+	return first ?? null;
+}
+
 export function companyTypeMatches(companyType: unknown, selectedType: string | null | undefined): boolean {
 	const selectedToken = normalizeCompanyTypeToken(selectedType);
 	if (!selectedToken)

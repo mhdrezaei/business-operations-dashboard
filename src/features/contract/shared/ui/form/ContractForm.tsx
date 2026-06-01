@@ -35,6 +35,7 @@ export const defaultContractFormValues: ContractFormValues = {
 };
 
 interface Props {
+	mode?: "create" | "edit"
 	initialValues?: Partial<ContractFormValues> | null
 	onSubmit?: (
 		values: ContractFormValues,
@@ -47,6 +48,7 @@ interface Props {
 }
 
 export function ContractForm({
+	mode = "create",
 	initialValues,
 	onSubmit: onSubmitProp,
 	submitText = "ثبت قرارداد",
@@ -151,7 +153,7 @@ export function ContractForm({
 				<Card>
 					<div className="w-full flex flex-col justify-center items-center gap-2">
 						<input type="hidden" {...form.register("serviceCode")} />
-						<FixedStartSection />
+						<FixedStartSection mode={mode} />
 
 						<AnimatePresence mode="wait">
 							{module?.Fields

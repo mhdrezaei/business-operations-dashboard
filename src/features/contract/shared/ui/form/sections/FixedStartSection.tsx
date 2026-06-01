@@ -95,9 +95,14 @@ function withSelectedOption(options: YearMonthOption[], selected: number | null)
 	return [...options, { label: String(selected), value: selected }].sort((a, b) => a.value - b.value);
 }
 
-export function FixedStartSection() {
+interface FixedStartSectionProps {
+	mode?: "create" | "edit"
+}
+
+export function FixedStartSection({ mode = "create" }: FixedStartSectionProps) {
 	const { setValue, control, trigger, formState, resetField } = useFormContext<ContractFormValues>();
 	const { getPermittedCompanyTypes, getPermittedServiceIds } = useAccess();
+	const permissionAction = mode === "edit" ? "update" : "create";
 
 	const services = useQuery(servicesQuery());
 
@@ -113,7 +118,7 @@ export function FixedStartSection() {
 	const selectedAgentId = useWatch({ control, name: "serviceFields.agent" as any });
 	const serviceIsOfficial = useWatch({ control, name: "serviceFields.isOfficial" as any }) as boolean | null | undefined;
 
-	const permittedCreateServiceIdList = getPermittedServiceIds("contracts", "create");
+	const permittedCreateServiceIdList = getPermittedServiceIds("contracts", permissionAction);
 	const permittedCreateServiceIds = useMemo(
 		() => new Set(permittedCreateServiceIdList),
 		[permittedCreateServiceIdList.join(",")],
@@ -298,9 +303,9 @@ export function FixedStartSection() {
 	);
 	const companyTypeOptions = useMemo(
 		() => requiresCompanyType && shouldSelectCompany && serviceId
-			? getPermittedCompanyTypes("contracts", "create", serviceId).map(item => ({ label: item.value, value: item.key }))
+			? getPermittedCompanyTypes("contracts", permissionAction, serviceId).map(item => ({ label: item.value, value: item.key }))
 			: [],
-		[requiresCompanyType, shouldSelectCompany, serviceId, getPermittedCompanyTypes],
+		[requiresCompanyType, shouldSelectCompany, serviceId, permissionAction, getPermittedCompanyTypes],
 	);
 
 	const companyOptionsDefault = useMemo(

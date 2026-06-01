@@ -114,6 +114,10 @@ export function getPerformanceColumns({
 				mode: "multiple",
 				maxTagCount: "responsive",
 				allowClear: true,
+				options: serviceOptions.map(option => ({
+					label: option.label,
+					value: String(option.value),
+				})),
 				placeholder: t("performance.placeholders.selectService"),
 				onChange: (value: Array<string | number> | string | number | null) => {
 					const rawValues = Array.isArray(value)
@@ -124,6 +128,17 @@ export function getPerformanceColumns({
 					const serviceIds = rawValues
 						.map(item => Number(item))
 						.filter(item => Number.isInteger(item) && item > 0);
+					const selected = serviceIds.length === 1
+						? serviceOptions.find(option => option.value === serviceIds[0])
+						: null;
+					setSelectedServices(serviceIds, selected?.code ?? null);
+				},
+				onClear: () => {
+					setSelectedServices([], null);
+				},
+				onDeselect: (value: string | number) => {
+					const removedServiceId = Number(value);
+					const serviceIds = selectedServiceIds.filter(serviceId => serviceId !== removedServiceId);
 					const selected = serviceIds.length === 1
 						? serviceOptions.find(option => option.value === serviceIds[0])
 						: null;
@@ -152,6 +167,10 @@ export function getPerformanceColumns({
 				mode: "multiple",
 				maxTagCount: "responsive",
 				allowClear: true,
+				options: companyOptions.map(option => ({
+					label: option.label,
+					value: String(option.value),
+				})),
 				disabled: isCompanyDisabled,
 				placeholder: companyPlaceholder,
 			},

@@ -294,6 +294,8 @@ export function aggregatePerformanceRows(
 			existing.sales_agent_name = row.sales_agent_name;
 		if (existing.is_official == null && row.is_official != null)
 			existing.is_official = row.is_official as boolean;
+		if (existing.company_type == null && row.company_type != null)
+			existing.company_type = row.company_type;
 	});
 
 	return Array.from(grouped.values());
