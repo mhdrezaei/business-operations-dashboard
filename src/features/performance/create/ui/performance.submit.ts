@@ -202,24 +202,18 @@ async function submitTrafficSingle(values: PerformanceFormValues): Promise<Recor
 		throw new Error(i18next.t("performance.errors.trafficTehranRequired"));
 	}
 
-	const locations: Array<Record<string, unknown>> = [
-		{
-			location: "TEHRAN",
-			value: tehranValue,
-			value_receive: tehranValueReceive,
-		},
-	];
+	const trafficPayload: Record<string, unknown> = {
+		tehran_value: tehranValue,
+		tehran_value_receive: tehranValueReceive,
+	};
 
 	if (countyEnabled) {
 		if (countyValue == null || countyValueReceive == null) {
 			throw new Error(i18next.t("performance.errors.trafficCountyRequiredWhenEnabled"));
 		}
 
-		locations.push({
-			location: "COUNTY",
-			value: countyValue,
-			value_receive: countyValueReceive,
-		});
+		trafficPayload.county_value = countyValue;
+		trafficPayload.county_value_receive = countyValueReceive;
 	}
 
 	return await upsertPerformance({
@@ -230,7 +224,7 @@ async function submitTrafficSingle(values: PerformanceFormValues): Promise<Recor
 		payload: {
 			...buildBasePayload(values),
 			company_type: values.companyType,
-			locations,
+			...trafficPayload,
 		},
 		suppressErrorNotification: true,
 	});

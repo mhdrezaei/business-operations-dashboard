@@ -156,6 +156,48 @@ function mapSmsCommissionAddenda(addenda: unknown) {
 	});
 }
 
+function normalizeTrafficLocation(location: unknown) {
+	const normalized = String(location ?? "").trim().toUpperCase();
+	if (normalized === "PROVINCE" || normalized === "COUNTY")
+		return "COUNTY";
+	if (normalized === "TEHRAN")
+		return "TEHRAN";
+	return null;
+}
+
+function mapTrafficLocationPayload(location: "TEHRAN" | "COUNTY", pricingValue: unknown) {
+	const pricing = contractTypeToApiPricing((pricingValue ?? null) as any);
+	if (!pricing)
+		return null;
+
+	return {
+		location,
+		unit: "GB/month",
+		calculation_type: pricing.calculation_type,
+		tiers: pricing.tiers ?? [],
+	};
+}
+
+function mapTrafficAddenda(addenda: unknown) {
+	const list = Array.isArray(addenda) ? addenda : [];
+
+	return list.map((item) => {
+		const row = (item ?? {}) as Record<string, any>;
+		const location = normalizeTrafficLocation(row.location);
+		const pricing = location ? mapTrafficLocationPayload(location, row.contractPricing) : null;
+
+		return {
+			start_jy: toNumberOrNull(row.startYear),
+			start_jm: toNumberOrNull(row.startMonth),
+			end_jy: toNumberOrNull(row.endYear),
+			end_jm: toNumberOrNull(row.endMonth),
+			contract_number: row.contractNumber ?? "",
+			note: row.description ?? "",
+			...(pricing ?? {}),
+		};
+	});
+}
+
 function normalizeCommercialAddendaFromDto(addenda: unknown) {
 	const list = Array.isArray(addenda) ? addenda : [];
 
@@ -338,6 +380,52 @@ function normalizeSmsCommissionServiceFields(dto: any) {
 	};
 }
 
+function normalizeTrafficAddendaFromDto(addenda: unknown) {
+	const list = Array.isArray(addenda) ? addenda : [];
+
+	return list.map((item) => {
+		const row = (item ?? {}) as Record<string, any>;
+		const location = normalizeTrafficLocation(row.location);
+
+		return {
+			startYear: toNumberOrNull(row.start_jy ?? row.startYear),
+			startMonth: toNumberOrNull(row.start_jm ?? row.startMonth),
+			endYear: toNumberOrNull(row.end_jy ?? row.endYear),
+			endMonth: toNumberOrNull(row.end_jm ?? row.endMonth),
+			description: row.note ?? row.description ?? "",
+			contractNumber: row.contract_number ?? row.contractNumber ?? "",
+			location: location === "COUNTY" ? "PROVINCE" : location,
+			contractPricing: apiPricingToContractType({
+				calculation_type: row.calculation_type ?? row.calculationType ?? null,
+				tiers: row.tiers ?? null,
+			} as any),
+		};
+	});
+}
+
+function normalizeTrafficServiceFields(dto: any) {
+	const locations = Array.isArray(dto?.locations) ? dto.locations : [];
+	const tehranLocation = locations.find((item: any) => normalizeTrafficLocation(item?.location) === "TEHRAN");
+	const countyLocation = locations.find((item: any) => normalizeTrafficLocation(item?.location) === "COUNTY");
+
+	return {
+		isOfficial: dto?.is_official ?? dto?.isOfficial ?? dto?.is_signed ?? true,
+		tehranPricing: tehranLocation
+			? apiPricingToContractType({
+				calculation_type: tehranLocation.calculation_type ?? tehranLocation.calculationType ?? null,
+				tiers: tehranLocation.tiers ?? null,
+			} as any)
+			: undefined,
+		provincePricing: countyLocation
+			? apiPricingToContractType({
+				calculation_type: countyLocation.calculation_type ?? countyLocation.calculationType ?? null,
+				tiers: countyLocation.tiers ?? null,
+			} as any)
+			: undefined,
+		addenda: normalizeTrafficAddendaFromDto(dto?.addenda),
+	};
+}
+
 function dtoToFormValues(dto: any, service: ContractServicePath): ContractFormValues {
 	const serviceId = toNumberOrNull(dto?.service_id ?? dto?.service?.id ?? dto?.service);
 	const companyId = toNumberOrNull(dto?.company_id ?? dto?.company?.id ?? dto?.company);
@@ -366,6 +454,9 @@ function dtoToFormValues(dto: any, service: ContractServicePath): ContractFormVa
 	}
 	else if (serviceCode === "commercial") {
 		serviceFields = normalizeCommercialServiceFields(dto);
+	}
+	else if (serviceCode === "traffic") {
+		serviceFields = normalizeTrafficServiceFields(dto);
 	}
 	else {
 		// ✅ سایر سرویس‌ها: هر فیلدی غیر از پایه‌ها => serviceFields
@@ -471,6 +562,20 @@ function formValuesToApiPayload(values: ContractFormValues) {
 	if (serviceCode === "commercial") {
 		payload.contract_openapi_details = mapOpenApiLegacyDetails(serviceFields.contractPricing);
 		payload.addenda = mapCommercialAddenda(addenda);
+		return payload;
+	}
+
+	if (serviceCode === "traffic") {
+		const isOfficial = serviceFields.isOfficial ?? true;
+		const locations = [
+			mapTrafficLocationPayload("TEHRAN", serviceFields.tehranPricing),
+			mapTrafficLocationPayload("COUNTY", serviceFields.provincePricing),
+		].filter(Boolean);
+
+		payload.is_signed = isOfficial;
+		payload.is_official = isOfficial;
+		payload.locations = locations;
+		payload.addenda = mapTrafficAddenda(addenda);
 		return payload;
 	}
 

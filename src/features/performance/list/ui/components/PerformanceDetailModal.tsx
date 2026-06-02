@@ -480,6 +480,72 @@ function buildOpenApiTrafficUpdatePayload(
 	};
 }
 
+function getTrafficLocationKey(value: unknown) {
+	return String(value ?? "").trim().toUpperCase();
+}
+
+function getTrafficLocationRow(rows: PerformanceListItem[], location: "TEHRAN" | "COUNTY") {
+	return rows.find(row => getTrafficLocationKey((row as Record<string, unknown>).location) === location) ?? null;
+}
+
+function getTrafficRowsFromSources(
+	detail: Record<string, unknown>,
+	recordFallback: Record<string, unknown>,
+	rows: PerformanceListItem[],
+) {
+	const fromDetail = Array.isArray(detail.traffic_locations) ? detail.traffic_locations as PerformanceListItem[] : [];
+	const fromRecord = Array.isArray(recordFallback.traffic_locations) ? recordFallback.traffic_locations as PerformanceListItem[] : [];
+	const directRows = [detail, recordFallback]
+		.filter(source => getTrafficLocationKey(source.location) === "TEHRAN" || getTrafficLocationKey(source.location) === "COUNTY") as PerformanceListItem[];
+	return [...rows, ...fromDetail, ...fromRecord, ...directRows];
+}
+
+function applyTrafficInitialValues(
+	initialValues: EditFormValues,
+	detail: Record<string, unknown>,
+	recordFallback: Record<string, unknown>,
+	rows: PerformanceListItem[],
+) {
+	const trafficRows = getTrafficRowsFromSources(detail, recordFallback, rows);
+	const tehran = getTrafficLocationRow(trafficRows, "TEHRAN");
+	const county = getTrafficLocationRow(trafficRows, "COUNTY");
+
+	initialValues.tehranValue = tehran?.value ?? null;
+	initialValues.tehranValueReceive = tehran?.value_receive ?? null;
+	initialValues.countyValue = county?.value ?? null;
+	initialValues.countyValueReceive = county?.value_receive ?? null;
+}
+
+function buildTrafficPayloadFields(values: EditFormValues, locations: Set<"TEHRAN" | "COUNTY">) {
+	const payload: Record<string, unknown> = {};
+
+	if (locations.has("TEHRAN")) {
+		payload.tehran_value = toPayloadValue(values.tehranValue);
+		payload.tehran_value_receive = toPayloadValue(values.tehranValueReceive);
+		payload.tehran_conversion_ratio = null;
+	}
+
+	if (locations.has("COUNTY")) {
+		const countyValue = toPayloadValue(values.countyValue);
+		const countyValueReceive = toPayloadValue(values.countyValueReceive);
+		if (countyValue != null || countyValueReceive != null) {
+			payload.county_value = countyValue;
+			payload.county_value_receive = countyValueReceive;
+			payload.county_conversion_ratio = null;
+		}
+	}
+
+	return payload;
+}
+
+function getTrafficFieldLocation(fieldKey: string): "TEHRAN" | "COUNTY" | null {
+	if (fieldKey === "tehranValue" || fieldKey === "tehranValueReceive")
+		return "TEHRAN";
+	if (fieldKey === "countyValue" || fieldKey === "countyValueReceive")
+		return "COUNTY";
+	return null;
+}
+
 function ReadOnlyBlock({ label, value }: { label: string, value: unknown }) {
 	return (
 		<div className="flex items-center gap-2">
@@ -505,6 +571,7 @@ export function PerformanceDetailModal({
 	const [detail, setDetail] = useState<Record<string, unknown> | null>(null);
 	const [smsContract, setSmsContract] = useState<Record<string, unknown> | null>(null);
 	const [smsPerformances, setSmsPerformances] = useState<PerformanceListItem[]>([]);
+	const [trafficPerformances, setTrafficPerformances] = useState<PerformanceListItem[]>([]);
 	const [openApiPerformances, setOpenApiPerformances] = useState<PerformanceListItem[]>([]);
 
 	const normalizedRecord = useMemo(
@@ -627,14 +694,17 @@ export function PerformanceDetailModal({
 		}
 
 		if (service === "traffic") {
+			const countyRequired = !isUnregisteredMode;
 			return {
 				title: t("performance.modal.titles.traffic"),
-				readonlyKeys: ["location", "company_type"],
+				readonlyKeys: ["company_type"],
 				editableFields: [
-					{ key: "value", label: t("performance.columns.value"), type: "number", required: true },
-					{ key: "value_receive", label: t("performance.columns.valueReceive"), type: "number" },
+					{ key: "tehranValue", label: t("performance.fields.traffic.tehranValue"), type: "number", required: true },
+					{ key: "tehranValueReceive", label: t("performance.fields.traffic.tehranValueReceive"), type: "number", required: true },
+					{ key: "countyValue", label: t("performance.fields.traffic.countyValue"), type: "number", required: countyRequired },
+					{ key: "countyValueReceive", label: t("performance.fields.traffic.countyValueReceive"), type: "number", required: countyRequired },
 				],
-				payloadKeys: ["location", "company_type", "value", "value_receive"],
+				payloadKeys: ["company_type", "tehranValue", "tehranValueReceive", "countyValue", "countyValueReceive"],
 			};
 		}
 
@@ -646,7 +716,7 @@ export function PerformanceDetailModal({
 			],
 			payloadKeys: ["customer_name", "customer_nic", "province_code", "service_type", "value"],
 		};
-	}, [service, openApiContractModel, t]);
+	}, [service, openApiContractModel, isUnregisteredMode, t]);
 	const isOpenApiPackageEditLayout = service === "openapi" && openApiContractModel === "package";
 	const isSmsEditAlignedLayout = service === "sms" || service === "sms-commission";
 	const isPspEditLayout = service === "psp";
@@ -730,6 +800,37 @@ export function PerformanceDetailModal({
 		const found = companies?.find(company => company.id === companyId) as Record<string, unknown> | undefined;
 		return pickCompanyTypeToken(found?.company_type);
 	}, [companies, mergedDetail, normalizedRecord.companyType, record]);
+	const visibleTrafficLocations = useMemo(() => {
+		if (service !== "traffic")
+			return new Set<"TEHRAN" | "COUNTY">();
+		if (isUnregisteredMode)
+			return new Set<"TEHRAN" | "COUNTY">(["TEHRAN", "COUNTY"]);
+
+		const trafficRows = getTrafficRowsFromSources(
+			mergedDetail,
+			record as Record<string, unknown> ?? {},
+			trafficPerformances,
+		);
+		const locations = new Set<"TEHRAN" | "COUNTY">();
+		trafficRows.forEach((row) => {
+			const location = getTrafficLocationKey((row as Record<string, unknown>).location);
+			if (location === "TEHRAN" || location === "COUNTY")
+				locations.add(location);
+		});
+
+		return locations.size > 0 ? locations : new Set<"TEHRAN" | "COUNTY">(["TEHRAN", "COUNTY"]);
+	}, [service, isUnregisteredMode, mergedDetail, record, trafficPerformances]);
+	const visibleEditableFields = useMemo(() => {
+		if (!config)
+			return [];
+		if (service !== "traffic")
+			return config.editableFields;
+
+		return config.editableFields.filter((field) => {
+			const location = getTrafficFieldLocation(field.key);
+			return !location || visibleTrafficLocations.has(location);
+		});
+	}, [config, service, visibleTrafficLocations]);
 	const openApiSummaryFields = useMemo(() => {
 		if (service !== "openapi")
 			return [];
@@ -938,6 +1039,13 @@ export function PerformanceDetailModal({
 			return;
 		}
 
+		if (service === "traffic") {
+			// eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
+			setLoading(false);
+			setDetail(record as Record<string, unknown>);
+			return;
+		}
+
 		let cancelled = false;
 		setLoading(true);
 
@@ -1045,6 +1153,47 @@ export function PerformanceDetailModal({
 	}, [open, service, normalizedRecord.companyId, normalizedRecord.serviceId, normalizedRecord.year, normalizedRecord.month, isUnregisteredMode]);
 
 	useEffect(() => {
+		if (!open || service !== "traffic") {
+			setTrafficPerformances([]);
+			return;
+		}
+
+		const serviceId = normalizedRecord.serviceId;
+		const companyId = normalizedRecord.companyId;
+		const year = normalizedRecord.year;
+		const month = normalizedRecord.month;
+		if (serviceId == null || companyId == null || year == null || month == null) {
+			setTrafficPerformances([]);
+			return;
+		}
+
+		let cancelled = false;
+		(async () => {
+			try {
+				const response = await fetchPerformanceList("traffic", {
+					page: 1,
+					page_size: 250,
+					service: serviceId,
+					company: companyId,
+					sh_year: year,
+					sh_month: month,
+					company_type: selectedCompanyType ?? undefined,
+				});
+				if (!cancelled)
+					setTrafficPerformances(response?.results ?? []);
+			}
+			catch {
+				if (!cancelled)
+					setTrafficPerformances([]);
+			}
+		})();
+
+		return () => {
+			cancelled = true;
+		};
+	}, [open, service, normalizedRecord.companyId, normalizedRecord.serviceId, normalizedRecord.year, normalizedRecord.month, selectedCompanyType]);
+
+	useEffect(() => {
 		if (!open || service !== "openapi" || isUnregisteredMode) {
 			setOpenApiPerformances([]);
 			return;
@@ -1091,6 +1240,8 @@ export function PerformanceDetailModal({
 		const initialValues = buildInitialValues(config, service, detail, record as Record<string, unknown>);
 		if (service === "openapi")
 			applyOpenApiInitialValues(initialValues, detail, record as Record<string, unknown>, openApiPerformances);
+		if (service === "traffic")
+			applyTrafficInitialValues(initialValues, detail, record as Record<string, unknown>, trafficPerformances);
 		if (service === "sms" || service === "sms-commission") {
 			const lookup = new Map<string, unknown>();
 			smsBreakdownCards.forEach((card) => {
@@ -1122,7 +1273,7 @@ export function PerformanceDetailModal({
 			}
 		}
 		form.reset(initialValues);
-	}, [service, record, detail, config, form, smsBreakdownCards, openApiPerformances, isUnregisteredMode]);
+	}, [service, record, detail, config, form, smsBreakdownCards, openApiPerformances, trafficPerformances, isUnregisteredMode]);
 
 	const handleSubmit = form.handleSubmit(async (values) => {
 		if (!service || !config)
@@ -1131,7 +1282,7 @@ export function PerformanceDetailModal({
 		form.clearErrors();
 
 		let hasError = false;
-		config.editableFields.forEach((field) => {
+		visibleEditableFields.forEach((field) => {
 			if (!field.required)
 				return;
 			if (!isEmptyValue(values[field.key]))
@@ -1189,6 +1340,14 @@ export function PerformanceDetailModal({
 			payload.company_type = pickCompanyTypeToken(payload.company_type) ?? selectedCompanyType;
 		}
 
+		if (service === "traffic") {
+			Object.assign(payload, buildTrafficPayloadFields(values, visibleTrafficLocations));
+			delete payload.tehranValue;
+			delete payload.tehranValueReceive;
+			delete payload.countyValue;
+			delete payload.countyValueReceive;
+		}
+
 		setSaving(true);
 		try {
 			if (isUnregisteredMode) {
@@ -1208,6 +1367,9 @@ export function PerformanceDetailModal({
 				await updateSmsCommissionPerformanceByComposite(companyId, salesAgentId, year, month, payload);
 			}
 			else if (service === "sms") {
+				await updatePerformanceByComposite(service, companyId, year, month, payload);
+			}
+			else if (service === "traffic") {
 				await updatePerformanceByComposite(service, companyId, year, month, payload);
 			}
 			else if (service === "openapi" && openApiPerformances.length > 0) {
@@ -1402,7 +1564,7 @@ export function PerformanceDetailModal({
 										)
 										: null}
 
-									{config.editableFields.length > 0
+									{visibleEditableFields.length > 0
 										? (
 											isPspEditLayout
 												? (
@@ -1442,7 +1604,7 @@ export function PerformanceDetailModal({
 																className="contract-form-aligned-grid contract-form-aligned-grid--two gap-3"
 
 															>
-																{config.editableFields.map((field) => {
+																{visibleEditableFields.map((field) => {
 																	const addonAfter = getSmsPerformanceFieldAddon(field.key);
 																	const alignedLabel = addonAfter
 																		? OPENAPI_PACKAGE_PERFORMANCE_LABEL
@@ -1472,7 +1634,7 @@ export function PerformanceDetailModal({
 														<div
 															className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3"
 														>
-															{config.editableFields.map((field) => {
+															{visibleEditableFields.map((field) => {
 																if (field.type === "number") {
 																	return (
 																		<RHFProNumber<EditFormValues, any>
@@ -1505,7 +1667,7 @@ export function PerformanceDetailModal({
 								className="flex justify-end mt-2 gap-2"
 							>
 								<Button onClick={onClose}>{t("common.cancel")}</Button>
-								{config.editableFields.length > 0
+								{visibleEditableFields.length > 0
 									? (
 										<Button type="primary" loading={saving} onClick={() => void handleSubmit()}>
 											{t("performance.actions.editPerformance")}

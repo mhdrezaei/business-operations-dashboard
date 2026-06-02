@@ -59,7 +59,7 @@ export function isSmsCommissionCode(code: string | null | undefined) {
 }
 
 export function shouldAggregatePerformanceRows(service: PerformanceServicePath | null | undefined) {
-	return service === "openapi" || service === "sms" || service === "sms-commission";
+	return service === "openapi" || service === "sms" || service === "sms-commission" || service === "traffic";
 }
 
 export function resolveContractServicePath(serviceCode: PerformanceServiceCode | null): PerformanceContractServicePath | null {
@@ -248,6 +248,8 @@ function buildAggregatedPerformanceRowKey(service: PerformanceServicePath, recor
 
 	if (service === "sms-commission")
 		base.push(normalized.salesAgentId ?? "sales-agent");
+	if (service === "traffic")
+		base.push(normalized.companyType ?? "company-type");
 
 	return base.join(":");
 }
@@ -276,8 +278,17 @@ export function aggregatePerformanceRows(
 				operation_type: null,
 				operator: null,
 				language: null,
+				location: service === "traffic" ? null : row.location,
+				traffic_locations: service === "traffic" ? [row] : undefined,
 			});
 			return;
+		}
+
+		if (service === "traffic") {
+			const trafficLocations = Array.isArray((existing as Record<string, unknown>).traffic_locations)
+				? (existing as Record<string, unknown>).traffic_locations as PerformanceListItem[]
+				: [];
+			(existing as Record<string, unknown>).traffic_locations = [...trafficLocations, row];
 		}
 
 		existing.value = sumPerformanceField(existing.value, row.value);
@@ -298,5 +309,24 @@ export function aggregatePerformanceRows(
 			existing.company_type = row.company_type;
 	});
 
-	return Array.from(grouped.values());
+	return Array.from(grouped.values()).map((row) => {
+		if (service !== "traffic")
+			return row;
+
+		const trafficLocations = Array.isArray((row as Record<string, unknown>).traffic_locations)
+			? (row as Record<string, unknown>).traffic_locations as PerformanceListItem[]
+			: [];
+		const locationLabel = Array.from(
+			new Set(
+				trafficLocations
+					.map(item => String(item.location ?? "").trim().toUpperCase())
+					.filter(Boolean),
+			),
+		).join(" / ");
+
+		return {
+			...row,
+			location: locationLabel || null,
+		};
+	});
 }
