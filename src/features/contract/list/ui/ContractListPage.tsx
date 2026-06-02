@@ -14,6 +14,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router";
 import { fetchContractDetail, fetchContractsList, fetchDeleteContract } from "../../api/contracts.api";
+import { companyTypeMatches, pickCompanyTypeToken } from "../../shared/utils";
 import { ContractDetailModal } from "./components/ContractDetailModal";
 import { getContractColumns } from "./constants";
 import { openContractPdfPrint } from "./utils/contract-pdf";
@@ -143,11 +144,13 @@ export default function ContractListPage() {
 		return services.data?.results?.find((x: any) => x.id === selectedServiceId) ?? null;
 	}, [selectedServiceId, services.data]);
 
-	const isTrafficService = selectedService?.code === "traffic";
-	const isSmsService = selectedService?.code === "sms";
+	const selectedServiceCode = typeof selectedService?.code === "string" ? selectedService.code.trim().toLowerCase() : null;
+	const isTrafficService = selectedServiceCode === "traffic";
+	const isSmsService = selectedServiceCode === "sms";
+	const isCompanyTypeService = selectedServiceCode === "traffic" || selectedServiceCode === "sms" || selectedServiceCode === "psp";
 	const permittedTrafficCompanyTypeOptions = useMemo(
-		() => isTrafficService ? getPermittedCompanyTypes("contracts", "view", selectedServiceId) : [],
-		[isTrafficService, selectedServiceId, getPermittedCompanyTypes],
+		() => isCompanyTypeService ? getPermittedCompanyTypes("contracts", "view", selectedServiceId) : [],
+		[isCompanyTypeService, selectedServiceId, getPermittedCompanyTypes],
 	);
 
 	useEffect(() => {
@@ -164,7 +167,7 @@ export default function ContractListPage() {
 	}, [deepLinkedContractId, deepLinkedServiceId, openDetail, serviceCodeById]);
 
 	useEffect(() => {
-		if (!isTrafficService || !selectedTrafficCompanyType) {
+		if (!isCompanyTypeService || !selectedTrafficCompanyType) {
 			return;
 		}
 		if (permittedTrafficCompanyTypeOptions.some(item => item.key === selectedTrafficCompanyType)) {
@@ -176,7 +179,7 @@ export default function ContractListPage() {
 			company_type: undefined,
 			company_id: undefined,
 		});
-	}, [isTrafficService, selectedTrafficCompanyType, permittedTrafficCompanyTypeOptions]);
+	}, [isCompanyTypeService, selectedTrafficCompanyType, permittedTrafficCompanyTypeOptions]);
 
 	const companies = useQuery(companiesByServiceQuery(selectedServiceId));
 
@@ -191,27 +194,27 @@ export default function ContractListPage() {
 	const companyOptions = useMemo(() => {
 		const list = companies.data?.results ?? [];
 
-		if (isTrafficService) {
+		if (isCompanyTypeService) {
 			if (!selectedTrafficCompanyType)
 				return [];
 			return list
-				.filter((c: any) => c.company_type === selectedTrafficCompanyType)
+				.filter((c: any) => companyTypeMatches(c.company_type, selectedTrafficCompanyType))
 				.map((c: any) => ({ label: c.name, value: c.id }));
 		}
 
 		return list.map((c: any) => ({ label: c.name, value: c.id }));
-	}, [companies.data, isTrafficService, selectedTrafficCompanyType]);
+	}, [companies.data, isCompanyTypeService, selectedTrafficCompanyType]);
 
 	const isCompanyDisabled
-		= !selectedServiceId || companies.isLoading || (isTrafficService && !selectedTrafficCompanyType);
+		= !selectedServiceId || companies.isLoading || (isCompanyTypeService && !selectedTrafficCompanyType);
 
 	const companyPlaceholder
 		= !selectedServiceId
 			? "ابتدا سرویس را انتخاب کنید"
 			: companies.isLoading
 				? "در حال دریافت لیست شرکت‌ها..."
-				: isTrafficService && !selectedTrafficCompanyType
-					? "ابتدا نوع شرکت (ترافیک) را انتخاب کنید"
+				: isCompanyTypeService && !selectedTrafficCompanyType
+					? "ابتدا نوع شرکت را انتخاب کنید"
 					: "شرکت را انتخاب کنید";
 
 	const clearDependentFilters = () => {
@@ -225,10 +228,13 @@ export default function ContractListPage() {
 
 	const refreshTable = () => actionRef.current?.reload?.();
 
+	const getRowCompanyType = (row: ContractListItemType) =>
+		pickCompanyTypeToken((row as any).traffic_company_type ?? (row as any).company_type);
+
 	const canUpdateRow = (row: ContractListItemType) =>
-		hasDomainPermissionByServiceId("contracts", "update", Number(row.service_id), row.traffic_company_type);
+		hasDomainPermissionByServiceId("contracts", "update", Number(row.service_id), getRowCompanyType(row));
 	const canDeleteRow = (row: ContractListItemType) =>
-		hasDomainPermissionByServiceId("contracts", "delete", Number(row.service_id), row.traffic_company_type);
+		hasDomainPermissionByServiceId("contracts", "delete", Number(row.service_id), getRowCompanyType(row));
 
 	const handleDeleteRow = async (row: ContractListItemType, action?: ProCoreActionType<object>) => {
 		if (!canDeleteRow(row)) {
@@ -270,6 +276,7 @@ export default function ContractListPage() {
 					actionRef.current?.reload?.();
 				},
 				isTrafficService: !!isTrafficService,
+				isCompanyTypeService: !!isCompanyTypeService,
 				isSmsService: !!isSmsService,
 				selectedTrafficCompanyType,
 				setSelectedTrafficCompanyType: (v) => {
@@ -288,6 +295,7 @@ export default function ContractListPage() {
 			t,
 			selectedServiceId,
 			isTrafficService,
+			isCompanyTypeService,
 			isSmsService,
 			selectedTrafficCompanyType,
 			permittedTrafficCompanyTypeOptions,

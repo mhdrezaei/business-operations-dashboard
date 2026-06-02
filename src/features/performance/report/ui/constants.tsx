@@ -17,14 +17,7 @@ export interface ReportServiceOption extends ReportSelectOption {
 
 export type SmsReportType = "normal" | "finance" | "summary";
 export type SmsContractTypeFilter = "all" | "official" | "unofficial";
-export type TrafficCompanyType = "CP" | "IXP" | "TCI" | "PREMIUM";
-
-export const TRAFFIC_COMPANY_TYPE_OPTIONS: Array<{ label: TrafficCompanyType, value: TrafficCompanyType }> = [
-	{ label: "CP", value: "CP" },
-	{ label: "IXP", value: "IXP" },
-	{ label: "TCI", value: "TCI" },
-	{ label: "PREMIUM", value: "PREMIUM" },
-];
+export type CompanyType = string;
 
 export interface GetPerformanceReportColumnsArgs {
 	t: TFunction<"translation", undefined>
@@ -32,7 +25,7 @@ export interface GetPerformanceReportColumnsArgs {
 	yearOptions: ReportSelectOption[]
 	periodOptions: ReportSelectOption[]
 	companyOptions: ReportSelectOption[]
-	trafficCompanyTypeOptions: ReportSelectOption[]
+	companyTypeOptions: ReportSelectOption[]
 	contractTypeOptions: ReportSelectOption[]
 	smsReportTypeOptions: ReportSelectOption[]
 	financialColumnOptions: ReportSelectOption[]
@@ -43,13 +36,14 @@ export interface GetPerformanceReportColumnsArgs {
 	isSmsService: boolean
 	isSmsCommissionService: boolean
 	isTrafficService: boolean
+	requiresCompanyType: boolean
 	isPeriodDisabled: boolean
 	isCompanyDisabled: boolean
 	onServiceChange: (serviceId: number | null, serviceCode: string | null) => void
 	onYearChange: (year: number | null) => void
 	onPeriodsChange: (periods: string[]) => void
 	onCompanyIdsChange: (companyIds: number[]) => void
-	onTrafficCompanyTypeChange: (value: TrafficCompanyType | null) => void
+	onCompanyTypeChange: (value: CompanyType | null) => void
 	onContractTypeChange: (value: SmsContractTypeFilter) => void
 	onSmsReportTypeChange: (value: SmsReportType) => void
 	onFinancialColumnsChange: (columns: ReportFinancialColumnKey[]) => void
@@ -158,7 +152,7 @@ export function getPerformanceReportColumns({
 	yearOptions,
 	periodOptions,
 	companyOptions,
-	trafficCompanyTypeOptions,
+	companyTypeOptions,
 	contractTypeOptions,
 	smsReportTypeOptions,
 	financialColumnOptions,
@@ -169,13 +163,14 @@ export function getPerformanceReportColumns({
 	isSmsService,
 	isSmsCommissionService,
 	isTrafficService,
+	requiresCompanyType,
 	isPeriodDisabled,
 	isCompanyDisabled,
 	onServiceChange,
 	onYearChange,
 	onPeriodsChange,
 	onCompanyIdsChange,
-	onTrafficCompanyTypeChange,
+	onCompanyTypeChange,
 	onContractTypeChange,
 	onSmsReportTypeChange,
 	onFinancialColumnsChange,
@@ -408,18 +403,18 @@ export function getPerformanceReportColumns({
 			),
 		},
 		{
-			title: t("performance.labels.trafficCompanyType"),
+			title: t("performance.labels.companyType"),
 			dataIndex: "company_type",
 			hideInTable: true,
-			hideInSearch: !isTrafficService,
+			hideInSearch: !requiresCompanyType,
 			valueType: "select",
-			valueEnum: createValueEnum(trafficCompanyTypeOptions),
+			valueEnum: createValueEnum(companyTypeOptions),
 			fieldProps: {
 				allowClear: true,
 				placeholder: t("performance.placeholders.select"),
 				onChange: (value: string | number | null) => {
-					const nextValue = value == null || value === "" ? null : String(value) as TrafficCompanyType;
-					onTrafficCompanyTypeChange(nextValue);
+					const nextValue = value == null || value === "" ? null : String(value) as CompanyType;
+					onCompanyTypeChange(nextValue);
 				},
 			},
 		},

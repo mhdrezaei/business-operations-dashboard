@@ -1,7 +1,7 @@
 import type { ServiceDto } from "#src/api/common/common.types.js";
 
 export type SmsCounterpartyType = "partners" | "gov_ops";
-export type TrafficCompanyType = string;
+export type CompanyType = string;
 
 export type ContractServiceCode = ServiceDto["code"];
 export interface FormTierRow {
@@ -35,7 +35,7 @@ export interface ContractFormValues {
 	serviceId: number | null
 	serviceCode: ContractServiceCode | null
 	companyId: number | null
-	trafficCompanyType?: TrafficCompanyType | null
+	companyType?: CompanyType | null
 	counterpartyType: SmsCounterpartyType | null
 	startYear: number | null
 	startMonth: number | null

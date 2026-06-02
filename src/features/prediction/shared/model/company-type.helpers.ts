@@ -1,22 +1,7 @@
-export function findFirstError(errs: any, path: string[] = []): { message: string, path: string[] } | null {
-	if (!errs)
-		return null;
-	if (errs.message)
-		return { path, message: errs.message as string };
-
-	for (const key of Object.keys(errs)) {
-		const child = errs[key];
-		const res = findFirstError(child, [...path, key]);
-		console.warn(res, "aaaaaaaaaa");
-		if (res)
-			return res;
-	}
-	return null;
-}
-
-function normalizeCompanyTypeToken(value: unknown): string | null {
+export function normalizeCompanyTypeToken(value: unknown): string | null {
 	if (typeof value !== "string")
 		return null;
+
 	const normalized = value.trim().toUpperCase();
 	return normalized || null;
 }
@@ -31,22 +16,22 @@ function toCompanyTypeTokens(value: unknown): string[] {
 	}
 
 	if (typeof value === "object" && !Array.isArray(value)) {
-		const obj = value as Record<string, unknown>;
-		const keyTokens = Object.keys(obj)
+		const raw = value as Record<string, unknown>;
+		const keyTokens = Object.keys(raw)
 			.map(token => normalizeCompanyTypeToken(token))
 			.filter((token): token is string => Boolean(token));
-		const valueTokens = Object.values(obj)
+		const valueTokens = Object.values(raw)
 			.map(token => normalizeCompanyTypeToken(token))
 			.filter((token): token is string => Boolean(token));
+
 		return Array.from(new Set([...keyTokens, ...valueTokens]));
 	}
 
 	return [];
 }
 
-export function pickCompanyTypeToken(companyType: unknown): string | null {
-	const [first] = toCompanyTypeTokens(companyType);
-	return first ?? null;
+export function getCompanyTypeToken(value: unknown): string | null {
+	return toCompanyTypeTokens(value)[0] ?? null;
 }
 
 export function companyTypeMatches(companyType: unknown, selectedType: string | null | undefined): boolean {

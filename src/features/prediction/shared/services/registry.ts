@@ -34,10 +34,13 @@ export interface PredictionServiceModule {
 	) => PredictionFormValues["serviceFields"]
 	toFormValues: (record: unknown) => Partial<PredictionFormValues>
 	findRecordBySelection: (records: unknown[], selection: PredictionRecordSelection) => unknown | null
-	fetchYears: (serviceId: number) => Promise<Paginated<unknown>>
+	fetchYears: (serviceId: number, companyType?: string | null) => Promise<Paginated<unknown>>
 	fetchList: (params: PredictionListParams) => Promise<Paginated<unknown>>
 	fetchDetail: (id: number) => Promise<unknown>
-	getYearsQueryKey: (serviceId: number | null | undefined) => readonly unknown[]
+	getYearsQueryKey: (
+		serviceId: number | null | undefined,
+		companyType?: string | null,
+	) => readonly unknown[]
 	createRecord: (payload: Record<string, unknown>) => Promise<unknown>
 	updateRecord: (id: number, payload: Record<string, unknown>) => Promise<unknown>
 	toListRow: (record: unknown, context: PredictionListRowContext) => PredictionListRow

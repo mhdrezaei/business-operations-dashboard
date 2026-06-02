@@ -3,6 +3,7 @@ import type { ProColumns } from "@ant-design/pro-components";
 import type { TFunction } from "i18next";
 import type { ContractListItemType } from "../model/contracts.list.types";
 import { Tag } from "antd";
+import { pickCompanyTypeToken } from "../../shared/utils";
 
 export interface GetContractColumnsArgs {
 	t: TFunction<"translation", undefined>
@@ -11,6 +12,7 @@ export interface GetContractColumnsArgs {
 	setSelectedServiceId: (v: number | null) => void
 
 	isTrafficService: boolean
+	isCompanyTypeService: boolean
 	isSmsService: boolean
 
 	selectedTrafficCompanyType: string | null
@@ -55,6 +57,7 @@ export function getContractColumns({
 	// selectedServiceId,
 	setSelectedServiceId,
 	isTrafficService,
+	isCompanyTypeService,
 	isSmsService,
 	selectedTrafficCompanyType,
 	setSelectedTrafficCompanyType,
@@ -115,18 +118,18 @@ export function getContractColumns({
 		},
 
 		{
-			title: t("contract.tableTitle.trafficCompanyType"),
-			dataIndex: "traffic_company_type",
+			title: isTrafficService ? t("contract.tableTitle.trafficCompanyType") : "نوع شرکت",
+			dataIndex: "company_type",
 			valueType: "select",
 			width: 150,
-			hideInTable: !isTrafficService,
-			hideInSearch: !isTrafficService,
+			hideInTable: !isCompanyTypeService,
+			hideInSearch: !isCompanyTypeService,
 			valueEnum: permittedTrafficCompanyTypeOptions.reduce((acc, item) => {
 				acc[item.key] = item.value;
 				return acc;
 			}, {} as Record<string, string>),
 			render: (_, r) => {
-				const companyType = (r as any).traffic_company_type ?? (r as any).company_type ?? null;
+				const companyType = pickCompanyTypeToken((r as any).traffic_company_type ?? (r as any).company_type);
 				if (!companyType) {
 					return "-";
 				}
@@ -134,7 +137,7 @@ export function getContractColumns({
 			},
 			fieldProps: {
 				allowClear: true,
-				placeholder: "نوع شرکت ترافیک را انتخاب کنید",
+				placeholder: "نوع شرکت را انتخاب کنید",
 				onChange: (v: any) => setSelectedTrafficCompanyType((v ?? null) as any),
 			},
 		},
@@ -153,7 +156,7 @@ export function getContractColumns({
 			dataIndex: "company_id",
 			valueType: "select",
 			hideInTable: true,
-			hideInSearch: isTrafficService ? !selectedTrafficCompanyType : false,
+			hideInSearch: isCompanyTypeService ? !selectedTrafficCompanyType : false,
 			valueEnum: companyOptions.reduce((acc, it) => {
 				acc[String(it.value)] = it.label;
 				return acc;

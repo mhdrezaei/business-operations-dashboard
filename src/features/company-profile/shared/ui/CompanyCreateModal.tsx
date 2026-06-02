@@ -16,6 +16,8 @@ interface Props {
 	open: boolean
 	disabled?: boolean
 	serviceId: number
+	companyType: string | null
+	requiresCompanyType: boolean
 	serviceOptions: ServiceOption[]
 	onClose: () => void
 	onCreated: (companyId: number) => void
@@ -41,6 +43,8 @@ interface CreatedCompanyDto {
 export default function CompanyCreateModal({
 	open,
 	serviceId,
+	companyType,
+	requiresCompanyType,
 	serviceOptions,
 	disabled,
 	onClose,
@@ -69,13 +73,17 @@ export default function CompanyCreateModal({
 	async function submit(values: CreateCompanyFormValues) {
 		if (!values.service)
 			return;
+		if (requiresCompanyType && !companyType) {
+			window.$message?.warning("نوع شرکت را انتخاب کنید");
+			return;
+		}
 
 		setSaving(true);
 		try {
 			const payload = {
 				name: values.name.trim(),
 				service: values.service,
-				company_type: "TCI",
+				company_type: requiresCompanyType ? companyType : undefined,
 			};
 
 			const created = await request

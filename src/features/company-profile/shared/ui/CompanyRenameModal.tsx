@@ -14,6 +14,8 @@ interface Props {
 	open: boolean
 	disabled?: boolean
 	serviceId: number
+	companyType: string | null
+	requiresCompanyType: boolean
 	companyId: number | null
 	companyName: string | null
 	onClose: () => void
@@ -33,6 +35,8 @@ export default function CompanyRenameModal({
 	open,
 	disabled,
 	serviceId,
+	companyType,
+	requiresCompanyType,
 	companyId,
 	companyName,
 	onClose,
@@ -64,13 +68,17 @@ export default function CompanyRenameModal({
 	async function submit(values: RenameCompanyFormValues) {
 		if (!companyId)
 			return;
+		if (requiresCompanyType && !companyType) {
+			window.$message?.warning("نوع شرکت را انتخاب کنید");
+			return;
+		}
 
 		setSaving(true);
 		try {
 			const payload = {
 				name: values.name.trim(),
 				service: serviceId,
-				company_type: "TCI",
+				company_type: requiresCompanyType ? companyType : undefined,
 			};
 
 			await request.put(`common/companies/${companyId}/`, { json: payload }).json<any>();

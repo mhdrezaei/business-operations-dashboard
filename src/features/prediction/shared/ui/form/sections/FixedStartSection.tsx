@@ -6,8 +6,9 @@ import { Alert, Card } from "antd";
 import { useEffect, useMemo, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { getCompanyTypeToken } from "../../../model/company-type.helpers";
 import { buildFiscalYearOptions } from "../../../model/prediction.helpers";
-import { predictionServicesQuery } from "../../../queries/prediction.queries";
+import { predictionCompaniesByServiceQuery, predictionServicesQuery } from "../../../queries/prediction.queries";
 import { predictionServiceRegistry } from "../../../services/registry";
 
 interface Props {
@@ -24,35 +25,41 @@ export function FixedStartSection({
 	hideMatchedRecordAlert = false,
 }: Props) {
 	const { t } = useTranslation();
-	const { getPermittedServiceIds } = useAccess();
+	const { getPermittedCompanyTypes, getPermittedServiceIds } = useAccess();
 	const { control, getValues, setValue } = useFormContext<PredictionFormValues>();
 
-	const services = useQuery(predictionServicesQuery());
 	const serviceId = useWatch({ control, name: "serviceId" });
 	const serviceCode = useWatch({ control, name: "serviceCode" });
 	const fiscalYear = useWatch({ control, name: "fiscalYear" });
-	const trafficCompanyType = useWatch({ control, name: "serviceFields.companyType" as any });
+	const companyType = useWatch({ control, name: "serviceFields.companyType" as any });
+	const services = useQuery(predictionServicesQuery());
+	const companies = useQuery(predictionCompaniesByServiceQuery(serviceId));
 	const module = serviceCode ? predictionServiceRegistry[serviceCode] : undefined;
+	const requiresCompanyType = serviceCode === "sms" || serviceCode === "psp" || serviceCode === "traffic";
+	const permissionAction = disabled ? "update" : "create";
 
-	const permittedCreateIds = getPermittedServiceIds("predictions", "create");
+	const permittedServiceIds = getPermittedServiceIds("predictions", permissionAction);
 	const serviceOptions = useMemo(() => {
 		return (services.data?.results ?? [])
 			.filter((service) => {
-				if (permittedCreateIds.length > 0)
-					return permittedCreateIds.includes(service.id);
-				return service.permissions?.create ?? true;
+				if (permittedServiceIds.length > 0)
+					return permittedServiceIds.includes(service.id);
+				return permissionAction === "update"
+					? (service.permissions?.update ?? true)
+					: (service.permissions?.create ?? true);
 			})
 			.map(service => ({
 				label: service.name,
 				value: service.id,
 				code: String(service.code ?? "").trim().toLowerCase(),
 			}));
-	}, [services.data, permittedCreateIds.join(",")]);
+	}, [permissionAction, services.data, permittedServiceIds.join(",")]);
 
+	const shouldLoadYears = !requiresCompanyType || !!companyType;
 	const yearRecordsQuery = useQuery({
-		queryKey: module?.getYearsQueryKey(serviceId) ?? ["predictions", "years", { serviceId, serviceCode }],
-		enabled: autoHydrateBySelection && !!module && !!serviceId,
-		queryFn: () => module!.fetchYears(serviceId!),
+		queryKey: module?.getYearsQueryKey(serviceId, companyType) ?? ["predictions", "years", { serviceId, serviceCode, companyType }],
+		enabled: autoHydrateBySelection && !!module && !!serviceId && shouldLoadYears,
+		queryFn: () => module!.fetchYears(serviceId!, companyType),
 		staleTime: 30 * 1000,
 	});
 
@@ -99,19 +106,45 @@ export function FixedStartSection({
 	}, [getValues, serviceId, serviceOptions, setValue]);
 
 	const existingYearRecords = yearRecordsQuery.data?.results ?? [];
+	const companyTypeOptions = useMemo(
+		() => {
+			if (!requiresCompanyType || !serviceId)
+				return [];
+
+			const permissionOptions = getPermittedCompanyTypes("predictions", permissionAction, serviceId)
+				.map(item => ({ label: item.value, value: item.key }));
+			if (permissionOptions.length > 0)
+				return permissionOptions;
+
+			return Array.from(
+				new Set(
+					(companies.data?.results ?? [])
+						.map(company => getCompanyTypeToken(company.company_type))
+						.filter((type): type is string => Boolean(type)),
+				),
+			).map(type => ({
+				label: type,
+				value: type,
+			}));
+		},
+		[companies.data, permissionAction, requiresCompanyType, serviceId, getPermittedCompanyTypes],
+	);
+	const companyTypeLabel = serviceCode === "traffic"
+		? t("prediction.labels.trafficCompanyType")
+		: t("prediction.labels.companyType", { defaultValue: "نوع شرکت" });
 	const matchedYearRecord = useMemo(
 		() => {
-			if (!autoHydrateBySelection)
+			if (!autoHydrateBySelection || !shouldLoadYears)
 				return null;
 
 			return module?.findRecordBySelection(existingYearRecords, {
 				fiscalYear,
 				serviceFields: {
-					companyType: trafficCompanyType ?? null,
+					companyType: companyType ?? null,
 				},
 			}) ?? null;
 		},
-		[autoHydrateBySelection, existingYearRecords, fiscalYear, module, trafficCompanyType],
+		[autoHydrateBySelection, existingYearRecords, fiscalYear, module, companyType, shouldLoadYears],
 	);
 
 	useEffect(() => {
@@ -119,7 +152,7 @@ export function FixedStartSection({
 			return;
 		}
 
-		if (yearRecordsQuery.isLoading) {
+		if (!shouldLoadYears || yearRecordsQuery.isLoading) {
 			return;
 		}
 
@@ -127,7 +160,7 @@ export function FixedStartSection({
 			moduleCode: module?.code ?? null,
 			fiscalYear: fiscalYear ?? null,
 			recordId: Number((matchedYearRecord as { id?: unknown } | null)?.id ?? 0) || null,
-			trafficCompanyType: trafficCompanyType ?? null,
+			companyType: companyType ?? null,
 		});
 
 		if (stateKey === lastHydratedStateKeyRef.current) {
@@ -174,12 +207,14 @@ export function FixedStartSection({
 			shouldValidate: false,
 		});
 		lastHydratedStateKeyRef.current = stateKey;
-	}, [autoHydrateBySelection, fiscalYear, getValues, matchedYearRecord, module, setValue, trafficCompanyType, yearRecordsQuery.isLoading]);
+	}, [autoHydrateBySelection, fiscalYear, getValues, matchedYearRecord, module, setValue, companyType, shouldLoadYears, yearRecordsQuery.isLoading]);
 
 	const fiscalYearOptions = useMemo(() => {
 		const existingYears = existingYearRecords.map(record => Number((record as any).fiscal_year));
 		return buildFiscalYearOptions(existingYears);
 	}, [existingYearRecords]);
+	const companyTypePlaceholder = t("prediction.placeholders.selectTrafficCompanyType");
+	const selectCompanyTypeFirstText = "ابتدا نوع شرکت را انتخاب کنید";
 
 	return (
 		<div className="flex flex-col gap-4">
@@ -205,14 +240,33 @@ export function FixedStartSection({
 						}}
 					/>
 
+					{requiresCompanyType
+						? (
+							<RHFSelect<PredictionFormValues, any, string | null>
+								name={"serviceFields.companyType" as any}
+								label={companyTypeLabel}
+								options={companyTypeOptions}
+								selectProps={{
+									disabled,
+									allowClear: true,
+									placeholder: companyTypePlaceholder,
+									showSearch: true,
+									optionFilterProp: "label",
+								}}
+							/>
+						)
+						: null}
+
 					<RHFSelect<PredictionFormValues, "fiscalYear", number | null>
 						name="fiscalYear"
 						label={t("prediction.labels.fiscalYear")}
 						options={fiscalYearOptions}
 						loading={yearRecordsQuery.isLoading}
 						selectProps={{
-							disabled,
-							placeholder: t("prediction.placeholders.selectFiscalYear"),
+							disabled: disabled || (requiresCompanyType && !companyType),
+							placeholder: requiresCompanyType && !companyType
+								? selectCompanyTypeFirstText
+								: t("prediction.placeholders.selectFiscalYear"),
 							showSearch: true,
 							optionFilterProp: "label",
 						}}

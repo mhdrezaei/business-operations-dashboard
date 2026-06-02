@@ -1,3 +1,4 @@
+import type { CompanyDto } from "#src/api/common/common.types";
 import type { PspPredictionPayload, PspPredictionYearDto } from "../../../api/predictions.api";
 import type {
 	PredictionFormValues,
@@ -9,6 +10,7 @@ import type {
 } from "../../model/prediction.form.types";
 import type { PredictionListRow } from "../../model/prediction.list.types";
 import i18next from "i18next";
+import { companyTypeMatches, getCompanyTypeToken } from "../../model/company-type.helpers";
 import { formatPredictionNumber, toNullableNumber, toNumberOrZero } from "../../model/prediction.helpers";
 import {
 	createEmptyYearlyValueIncomeFields,
@@ -93,6 +95,16 @@ export function buildYearlyValueIncomeSharePayload(
 	);
 }
 
+function getCompanyIdsForType(companies: CompanyDto[], companyType: string | null | undefined) {
+	if (!companyType)
+		return [];
+
+	return companies
+		.filter(company => companyTypeMatches(company.company_type, companyType))
+		.map(company => company.id)
+		.filter(companyId => Number.isInteger(companyId) && companyId > 0);
+}
+
 export function dtoToYearlyValueIncomePredictionForm(record: PspPredictionYearDto): Partial<PredictionFormValues> {
 	const empty = createEmptyYearlyValueIncomeFields();
 
@@ -102,6 +114,7 @@ export function dtoToYearlyValueIncomePredictionForm(record: PspPredictionYearDt
 		note: record.note ?? "",
 		serviceFields: {
 			...empty,
+			companyType: getCompanyTypeToken(record.company_type),
 			q1Percent: toNullableNumber(record.q1_percent),
 			q2Percent: toNullableNumber(record.q2_percent),
 			q3Percent: toNullableNumber(record.q3_percent),
@@ -115,16 +128,21 @@ export function dtoToYearlyValueIncomePredictionForm(record: PspPredictionYearDt
 
 export function yearlyValueIncomePredictionFormToPayload(
 	values: PredictionFormValues,
-	allCompanyIds: number[],
+	companies: CompanyDto[] | number[],
+	options: { includeCompanyType?: boolean } = {},
 ): PspPredictionPayload {
 	const fields = {
 		...createEmptyYearlyValueIncomeFields(),
 		...(values.serviceFields as Partial<PspPredictionServiceFields>),
 	};
+	const allCompanyIds = Array.isArray(companies) && typeof companies[0] === "object"
+		? getCompanyIdsForType(companies as CompanyDto[], fields.companyType)
+		: companies as number[];
 
 	return {
 		service: Number(values.serviceId),
 		fiscal_year: Number(values.fiscalYear),
+		...(options.includeCompanyType ? { company_type: String(fields.companyType ?? "") } : {}),
 		value_year: toNumberOrZero(fields.valueYear),
 		income_year: toNumberOrZero(fields.incomeYear),
 		q1_percent: Number(fields.q1Percent ?? 0),
@@ -139,11 +157,15 @@ export function yearlyValueIncomePredictionFormToPayload(
 export function findYearlyValueIncomePredictionByFiscalYear(
 	records: PspPredictionYearDto[],
 	fiscalYear: number | null | undefined,
+	companyType?: string | null | undefined,
 ) {
 	if (!fiscalYear)
 		return null;
 
-	return records.find(record => Number(record.fiscal_year) === Number(fiscalYear)) ?? null;
+	return records.find(record =>
+		Number(record.fiscal_year) === Number(fiscalYear)
+		&& (companyType ? companyTypeMatches(record.company_type, companyType) : true),
+	) ?? null;
 }
 
 export function dtoToPspPredictionForm(record: PspPredictionYearDto): Partial<PredictionFormValues> {
@@ -152,29 +174,39 @@ export function dtoToPspPredictionForm(record: PspPredictionYearDto): Partial<Pr
 
 export function pspPredictionFormToPayload(
 	values: PredictionFormValues,
-	allCompanyIds: number[],
+	companies: CompanyDto[],
 ): PspPredictionPayload {
-	return yearlyValueIncomePredictionFormToPayload(values, allCompanyIds);
+	return yearlyValueIncomePredictionFormToPayload(values, companies, { includeCompanyType: true });
 }
 
 export function findPspPredictionByFiscalYear(
 	records: PspPredictionYearDto[],
 	fiscalYear: number | null | undefined,
+	serviceFields?: Record<string, unknown>,
 ) {
-	return findYearlyValueIncomePredictionByFiscalYear(records, fiscalYear);
+	const companyType = getCompanyTypeToken(serviceFields?.companyType);
+	if (!companyType)
+		return null;
+
+	return findYearlyValueIncomePredictionByFiscalYear(records, fiscalYear, companyType);
 }
 
 export function yearlyValueIncomePredictionToListRow(
 	record: PspPredictionYearDto,
 	context: { serviceId: number, serviceCode: PredictionServiceCode, serviceLabel: string },
 ): PredictionListRow {
+	const metricPreview = `${i18next.t("prediction.list.preview.value")}: ${formatPredictionNumber(record.value_year)} | ${i18next.t("prediction.list.preview.income")}: ${formatPredictionNumber(record.income_year)}`;
+	const preview = context.serviceCode === "psp"
+		? `${i18next.t("prediction.list.preview.companyType")}: ${getCompanyTypeToken(record.company_type) ?? "-"} | ${metricPreview}`
+		: metricPreview;
+
 	return {
 		id: record.id,
 		serviceId: context.serviceId,
 		serviceCode: context.serviceCode,
 		serviceLabel: context.serviceLabel,
 		fiscalYear: toNullableNumber(record.fiscal_year),
-		preview: `${i18next.t("prediction.list.preview.value")}: ${formatPredictionNumber(record.value_year)} | ${i18next.t("prediction.list.preview.income")}: ${formatPredictionNumber(record.income_year)}`,
+		preview,
 		note: String(record.note ?? ""),
 		createdAt: record.created_at ?? null,
 		updatedAt: record.updated_at ?? null,

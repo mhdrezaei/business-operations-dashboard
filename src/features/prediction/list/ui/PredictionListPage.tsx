@@ -34,7 +34,7 @@ function formatDateTime(value: string | null) {
 export default function PredictionListPage() {
 	const { t } = useTranslation();
 	const navigate = useNavigate();
-	const { getPermittedServiceIds, hasDomainPermissionByServiceId } = useAccess();
+	const { getPermittedCompanyTypes, getPermittedServiceIds, hasDomainPermissionByServiceId } = useAccess();
 
 	const actionRef = useRef<ActionType>(null);
 	const formRef = useRef<ProFormInstance | undefined>(undefined);
@@ -67,6 +67,13 @@ export default function PredictionListPage() {
 		() => serviceOptions.find(option => option.value === selectedServiceId) ?? null,
 		[selectedServiceId, serviceOptions],
 	);
+	const selectedServiceRequiresCompanyType = selectedServiceCode === "sms" || selectedServiceCode === "psp" || selectedServiceCode === "traffic";
+	const companyTypeOptions = useMemo(
+		() => selectedServiceRequiresCompanyType && selectedServiceId
+			? getPermittedCompanyTypes("predictions", "view", selectedServiceId).map(item => ({ label: item.value, value: item.key }))
+			: [],
+		[selectedServiceRequiresCompanyType, selectedServiceId, getPermittedCompanyTypes],
+	);
 
 	useEffect(() => {
 		if (!selectedServiceId)
@@ -78,6 +85,7 @@ export default function PredictionListPage() {
 		setSelectedServiceCode(null);
 		formRef.current?.setFieldsValue({
 			service: undefined,
+			company_type: undefined,
 			fiscal_year: undefined,
 			ordering: undefined,
 		});
@@ -125,6 +133,23 @@ export default function PredictionListPage() {
 					showSearch: true,
 					optionFilterProp: "label",
 					placeholder: t("prediction.placeholders.selectService"),
+				},
+			},
+			{
+				title: t("prediction.labels.companyType"),
+				dataIndex: "company_type",
+				hideInTable: true,
+				valueType: "select",
+				hideInSearch: !selectedServiceRequiresCompanyType,
+				fieldProps: {
+					options: companyTypeOptions,
+					disabled: !selectedServiceId,
+					allowClear: true,
+					showSearch: true,
+					optionFilterProp: "label",
+					placeholder: !selectedServiceId
+						? t("prediction.placeholders.selectService")
+						: t("prediction.placeholders.selectTrafficCompanyType"),
 				},
 			},
 			{
@@ -207,7 +232,7 @@ export default function PredictionListPage() {
 				},
 			},
 		];
-	}, [fiscalYearOptions, hasDomainPermissionByServiceId, serviceOptions, t]);
+	}, [companyTypeOptions, fiscalYearOptions, hasDomainPermissionByServiceId, selectedServiceRequiresCompanyType, serviceOptions, t]);
 
 	return (
 		<BasicContent className="h-full">
@@ -226,6 +251,7 @@ export default function PredictionListPage() {
 						const nextService = serviceOptions.find(option => option.value === nextServiceId) ?? null;
 						setSelectedServiceId(nextServiceId);
 						setSelectedServiceCode(nextService?.code ?? null);
+						formRef.current?.setFieldsValue({ company_type: undefined });
 					},
 				}}
 				request={async (params) => {
@@ -251,6 +277,7 @@ export default function PredictionListPage() {
 						page_size: params.pageSize ?? 20,
 						service: selectedServiceId,
 						fiscal_year: (params as any).fiscal_year,
+						company_type: (params as any).company_type,
 						ordering: (params as any).ordering,
 					});
 

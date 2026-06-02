@@ -6,7 +6,6 @@ import type {
 	TrafficPredictionLocationFormValue,
 	TrafficPredictionMetricCode,
 } from "../../model/prediction.form.types";
-import { useAccess } from "#src/hooks";
 import { RHFProNumber, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
@@ -14,6 +13,7 @@ import { Button, Card, Form, Segmented, Select, Typography } from "antd";
 import { useEffect, useMemo, useRef } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { companyTypeMatches } from "../../model/company-type.helpers";
 import { predictionCompaniesByServiceQuery } from "../../queries/prediction.queries";
 import { QuarterDistributionSection } from "../../ui/form/sections/QuarterDistributionSection";
 import {
@@ -21,7 +21,6 @@ import {
 	createEmptyTrafficManualShares,
 	isTrafficLocationCode,
 	normalizeTrafficLocationCode,
-	TRAFFIC_COMPANY_TYPE_OPTIONS,
 	TRAFFIC_LOCATION_OPTIONS,
 	TRAFFIC_METRICS,
 } from "./traffic.config";
@@ -208,17 +207,10 @@ function normalizeLocations(value: unknown): TrafficPredictionLocationFormValue[
 export function TrafficPredictionFields() {
 	const { t } = useTranslation();
 	const { control, setValue } = useFormContext<PredictionFormValues>();
-	const { getPermittedCompanyTypes } = useAccess();
 	const serviceId = useWatch({ control, name: "serviceId" });
 	const companyType = useWatch({ control, name: sf("companyType") as any });
 	const locations = normalizeLocations(useWatch({ control, name: sf("locations") as any }));
 	const companies = useQuery(predictionCompaniesByServiceQuery(serviceId));
-	const trafficCompanyTypeOptions = useMemo(
-		() => serviceId
-			? getPermittedCompanyTypes("predictions", "create", serviceId).map(item => ({ label: item.value, value: item.key }))
-			: TRAFFIC_COMPANY_TYPE_OPTIONS,
-		[serviceId, getPermittedCompanyTypes],
-	);
 	const { fields, append, remove } = useFieldArray({
 		control: control as any,
 		name: sf("locations") as never,
@@ -240,7 +232,7 @@ export function TrafficPredictionFields() {
 	}, [companyType, setValue]);
 
 	const filteredCompanies = useMemo(
-		() => (companies.data?.results ?? []).filter(company => !companyType || company.company_type === companyType),
+		() => (companies.data?.results ?? []).filter(company => companyTypeMatches(company.company_type, companyType)),
 		[companies.data, companyType],
 	);
 
@@ -301,18 +293,6 @@ export function TrafficPredictionFields() {
 				)}
 			>
 				<div className="flex flex-col gap-4">
-					<div className="grid gap-3 md:grid-cols-2">
-						<RHFSelect<PredictionFormValues, any, any>
-							name={sf("companyType") as any}
-							label={t("prediction.labels.trafficCompanyType")}
-							options={trafficCompanyTypeOptions}
-							selectProps={{
-								allowClear: true,
-								placeholder: t("prediction.placeholders.selectTrafficCompanyType"),
-							}}
-						/>
-					</div>
-
 					{fields.map((field, index) => {
 						const locationCode = locations[index]?.location;
 						const title = locationCode

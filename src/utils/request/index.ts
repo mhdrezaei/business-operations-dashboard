@@ -30,20 +30,37 @@ function normalizePrefixUrl(baseUrl: string) {
 	return normalized.endsWith("/") ? normalized : `${normalized}/`;
 }
 
+type FetchInitWithRequestOptions = RequestInit & {
+	ignoreLoading?: boolean
+};
+
+async function fetchWithGlobalProgress(input: RequestInfo | URL, init?: RequestInit) {
+	const ignoreLoading = (init as FetchInitWithRequestOptions | undefined)?.ignoreLoading;
+	if (!ignoreLoading) {
+		globalProgress.start();
+	}
+
+	try {
+		return await globalThis.fetch(input, init);
+	}
+	finally {
+		if (!ignoreLoading) {
+			globalProgress.done();
+		}
+	}
+}
+
 const defaultConfig: Options = {
 	prefixUrl: normalizePrefixUrl(RAW_API_BASE_URL),
 	timeout: API_TIMEOUT,
+	fetch: fetchWithGlobalProgress,
 	retry: {
 		// حداکثر تعداد تلاش مجدد هنگام شکست درخواست
 		limit: 3,
 	},
 	hooks: {
 		beforeRequest: [
-			(request, options) => {
-				const ignoreLoading = options.ignoreLoading;
-				if (!ignoreLoading) {
-					globalProgress.start();
-				}
+			(request) => {
 				// درخواستي که نيازي به token ندارد
 				const isWhiteRequest = requestWhiteList.some(url => request.url.endsWith(url));
 				if (!isWhiteRequest) {
@@ -56,10 +73,6 @@ const defaultConfig: Options = {
 		],
 		afterResponse: [
 			async (request, options, response) => {
-				const ignoreLoading = options.ignoreLoading;
-				if (!ignoreLoading) {
-					globalProgress.done();
-				}
 				// request error
 				if (!response.ok) {
 					if (response.status === 401) {

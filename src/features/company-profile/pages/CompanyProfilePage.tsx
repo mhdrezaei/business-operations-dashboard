@@ -7,6 +7,7 @@ import { ServiceCompanyLoaderSection } from "../shared/ui/ServiceCompanyLoaderSe
 
 const defaultValues: CompanyProfileFormValues = {
 	serviceId: null,
+	companyType: null,
 	companyId: null,
 	companyProfile: null,
 };

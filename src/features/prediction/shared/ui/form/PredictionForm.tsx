@@ -152,8 +152,13 @@ export function PredictionForm({
 		control: form.control,
 		name: "fiscalYear",
 	});
+	const companyType = useWatch({
+		control: form.control,
+		name: "serviceFields.companyType" as any,
+	});
 	const module = serviceCode ? predictionServiceRegistry[serviceCode] : undefined;
-	const canShowServiceForm = !!serviceCode && fiscalYear != null;
+	const requiresCompanyType = serviceCode === "sms" || serviceCode === "psp" || serviceCode === "traffic";
+	const canShowServiceForm = !!serviceCode && fiscalYear != null && (!requiresCompanyType || !!companyType);
 	const submitIntentRef = useRef<PredictionSubmitIntent>("submit");
 
 	const submit = form.handleSubmit(

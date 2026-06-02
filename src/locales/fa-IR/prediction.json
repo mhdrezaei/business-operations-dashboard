@@ -25,6 +25,7 @@
 		"smsAnnualValue": "تعداد پیامک سالانه",
 		"smsPriceBuy": "قیمت خرید هر پیامک",
 		"smsPriceSell": "قیمت فروش هر پیامک",
+		"companyType": "نوع شرکت",
 		"trafficCompanyType": "نوع شرکت (ترافیک)",
 		"trafficLocation": "موقعیت",
 		"trafficAnnualValueReceive": "مقدار دریافتی سالانه",

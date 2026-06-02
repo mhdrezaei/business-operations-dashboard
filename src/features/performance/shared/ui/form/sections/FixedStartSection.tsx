@@ -9,6 +9,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import {
+	companyTypeMatches,
 	extractOpenApiContractModel,
 	extractSalesAgentId,
 	isSmsCommissionCode,
@@ -74,7 +75,7 @@ export function FixedStartSection() {
 	const serviceId = useWatch({ control, name: "serviceId" });
 	const serviceCode = useWatch({ control, name: "serviceCode" });
 	const companyId = useWatch({ control, name: "companyId" });
-	const trafficCompanyType = useWatch({ control, name: "trafficCompanyType" });
+	const companyType = useWatch({ control, name: "companyType" });
 	const year = useWatch({ control, name: "year" });
 	const month = useWatch({ control, name: "month" });
 	const salesAgentId = useWatch({ control, name: "salesAgentId" });
@@ -82,6 +83,9 @@ export function FixedStartSection() {
 
 	const servicePath = useMemo(() => resolveContractServicePath(serviceCode), [serviceCode]);
 	const isTraffic = serviceCode === "traffic";
+	const isPsp = serviceCode === "psp";
+	const isSms = serviceCode === "sms";
+	const requiresCompanyType = isSms || isPsp || isTraffic;
 	const isSmsCommission = isSmsCommissionCode(serviceCode);
 	const isTrafficTemplateMode = isTraffic && trafficSubmitMode === "template";
 	const isTrafficSingleMode = isTraffic && trafficSubmitMode === "single";
@@ -108,12 +112,12 @@ export function FixedStartSection() {
 	const gaps = useQuery(performanceGapsQuery({
 		serviceId,
 		companyId: isTrafficTemplateMode ? null : companyId,
-		companyType: isTrafficTemplateMode ? trafficCompanyType : null,
+		companyType: isTrafficTemplateMode ? companyType : null,
 	}));
 	const monthlyStatus = useQuery(monthlyContractStatusQuery({
 		serviceId: usesMonthlyStatus ? serviceId : null,
 		companyId: usesMonthlyStatus ? companyId : null,
-		companyType: isTrafficSingleMode ? trafficCompanyType : null,
+		companyType: isTrafficSingleMode ? companyType : null,
 		year: usesMonthlyStatus ? year : null,
 		month: usesMonthlyStatus ? month : null,
 	}));
@@ -127,7 +131,7 @@ export function FixedStartSection() {
 	const prevServiceIdRef = useRef<typeof serviceId>(undefined);
 	const prevCompanyIdRef = useRef<typeof companyId>(undefined);
 	const prevYearRef = useRef<typeof year>(undefined);
-	const prevTrafficCompanyTypeRef = useRef<typeof trafficCompanyType>(undefined);
+	const prevCompanyTypeRef = useRef<typeof companyType>(undefined);
 
 	useEffect(() => {
 		const prevServiceId = prevServiceIdRef.current;
@@ -139,7 +143,7 @@ export function FixedStartSection() {
 			return;
 
 		setValue("companyId", null, { shouldDirty: true, shouldValidate: false });
-		setValue("trafficCompanyType", null, { shouldDirty: true, shouldValidate: false });
+		setValue("companyType", null, { shouldDirty: true, shouldValidate: false });
 		setValue("year", null, { shouldDirty: true, shouldValidate: false });
 		setValue("month", null, { shouldDirty: true, shouldValidate: false });
 		setValue("contractId", null, { shouldDirty: true, shouldValidate: false });
@@ -186,18 +190,18 @@ export function FixedStartSection() {
 	}, [year, setValue, preservedServiceFields]);
 
 	useEffect(() => {
-		const prevTrafficCompanyType = prevTrafficCompanyTypeRef.current;
-		prevTrafficCompanyTypeRef.current = trafficCompanyType;
+		const prevCompanyType = prevCompanyTypeRef.current;
+		prevCompanyTypeRef.current = companyType;
 
-		if (prevTrafficCompanyType === undefined)
+		if (prevCompanyType === undefined)
 			return;
-		if (prevTrafficCompanyType === trafficCompanyType)
+		if (prevCompanyType === companyType)
 			return;
 
-		if (isTraffic) {
+		if (requiresCompanyType) {
 			setValue("companyId", null, { shouldDirty: true, shouldValidate: false });
 		}
-	}, [isTraffic, trafficCompanyType, setValue]);
+	}, [requiresCompanyType, companyType, setValue]);
 
 	useEffect(() => {
 		if (!isTraffic) {
@@ -207,7 +211,7 @@ export function FixedStartSection() {
 			return;
 		}
 
-		if (!trafficCompanyType)
+		if (!companyType)
 			return;
 
 		if (!trafficSubmitMode) {
@@ -216,7 +220,7 @@ export function FixedStartSection() {
 				shouldValidate: false,
 			});
 		}
-	}, [isTraffic, trafficCompanyType, trafficSubmitMode, setValue, getValues]);
+	}, [isTraffic, companyType, trafficSubmitMode, setValue, getValues]);
 
 	useEffect(() => {
 		if (!serviceId) {
@@ -266,11 +270,11 @@ export function FixedStartSection() {
 				.map(service => ({ label: service.name, value: service.id })),
 		[services.data, permittedCreateServiceIdList.join(",")],
 	);
-	const trafficCompanyTypeOptions = useMemo(
-		() => serviceCode === "traffic" && serviceId
+	const companyTypeOptions = useMemo(
+		() => requiresCompanyType && serviceId
 			? getPermittedCompanyTypes("performances", "create", serviceId).map(item => ({ label: item.value, value: item.key }))
 			: [],
-		[serviceCode, serviceId, getPermittedCompanyTypes],
+		[requiresCompanyType, serviceId, getPermittedCompanyTypes],
 	);
 
 	const companyOptionsDefault = useMemo(
@@ -282,24 +286,24 @@ export function FixedStartSection() {
 		[companies.data],
 	);
 
-	const companyOptionsTraffic = useMemo(() => {
-		if (!trafficCompanyType)
+	const companyOptionsByType = useMemo(() => {
+		if (!companyType)
 			return [];
 		return (companies.data?.results ?? [])
-			.filter(company => company.company_type === trafficCompanyType)
+			.filter(company => companyTypeMatches(company.company_type, companyType))
 			.map(company => ({ label: company.name, value: company.id }));
-	}, [companies.data, trafficCompanyType]);
+	}, [companies.data, companyType]);
 
-	const companyOptions = isTraffic ? companyOptionsTraffic : companyOptionsDefault;
-	const isCompanyDisabled = !serviceId || companies.isLoading || (isTraffic && (!trafficCompanyType || !isTrafficSingleMode));
+	const companyOptions = requiresCompanyType ? companyOptionsByType : companyOptionsDefault;
+	const isCompanyDisabled = !serviceId || companies.isLoading || (requiresCompanyType && !companyType) || (isTraffic && !isTrafficSingleMode);
 
 	const companyPlaceholder
 		= !serviceId
 			? t("performance.placeholders.selectServiceFirst")
 			: companies.isLoading
 				? t("performance.placeholders.loadingCompanies")
-				: isTraffic && !trafficCompanyType
-					? t("performance.placeholders.selectTrafficCompanyTypeFirst")
+				: requiresCompanyType && !companyType
+					? t("performance.placeholders.selectCompanyTypeFirst")
 					: isTraffic && !isTrafficSingleMode
 						? t("performance.traffic.singleEntry")
 						: t("performance.placeholders.selectCompany");
@@ -487,13 +491,13 @@ export function FixedStartSection() {
 	}, [isSmsCommission, companyId, smsCommissionAgentOptions, salesAgentId, activeContract, setValue]);
 
 	const isDateOptionsLoading = isTrafficTemplateMode
-		? !!serviceId && !!trafficCompanyType && (gaps.isLoading || gaps.isFetching)
+		? !!serviceId && !!companyType && (gaps.isLoading || gaps.isFetching)
 		: !!serviceId && !!companyId && (gaps.isLoading || gaps.isFetching);
 	const hasCompanySelection = !!serviceId && !!companyId;
 	const hasNoContractsForCompany = hasCompanySelection && contracts.isSuccess && (contracts.data?.results?.length ?? 0) < 1;
 	const hasAnyYearMonthOption = Array.from(missingMonthsByYear.values()).some(months => months.length > 0);
 	const isPeriodStateLoading = !isTrafficTemplateMode && hasCompanySelection && (gaps.isLoading || gaps.isFetching || contracts.isLoading || contracts.isFetching);
-	const shouldShowTrafficTemplatePeriodSelectors = isTrafficTemplateMode && !!serviceId && !!trafficCompanyType && hasAnyYearMonthOption;
+	const shouldShowTrafficTemplatePeriodSelectors = isTrafficTemplateMode && !!serviceId && !!companyType && hasAnyYearMonthOption;
 	const shouldShowPeriodSelectors = shouldShowTrafficTemplatePeriodSelectors || (hasCompanySelection && !isPeriodStateLoading && !hasNoContractsForCompany && hasAnyYearMonthOption);
 	const shouldShowMissingPeriodError = !isTrafficTemplateMode && hasCompanySelection && !isPeriodStateLoading && !shouldShowPeriodSelectors;
 	const shouldShowNoMonthlyContractAlert = usesMonthlyStatus	&& year != null	&& month != null && monthlyStatus.isSuccess && !monthlyStatus.data?.has_contract;
@@ -535,13 +539,13 @@ export function FixedStartSection() {
 						/>
 					</Col>
 
-					{isTraffic
+					{requiresCompanyType
 						? (
 							<Col span={12}>
-								<RHFSelect<PerformanceFormValues, "trafficCompanyType", any>
-									name="trafficCompanyType"
-									label={t("performance.labels.trafficCompanyType")}
-									options={trafficCompanyTypeOptions}
+								<RHFSelect<PerformanceFormValues, "companyType", any>
+									name="companyType"
+									label={t("performance.labels.companyType")}
+									options={companyTypeOptions}
 									selectProps={{
 										allowClear: true,
 										placeholder: t("performance.placeholders.select"),
@@ -553,7 +557,7 @@ export function FixedStartSection() {
 						)
 						: null}
 
-					{isTraffic && trafficCompanyType
+					{isTraffic && companyType
 						? (
 							<Col span={12}>
 								<RHFProRadioGroup<PerformanceFormValues, "serviceFields.submitMode">

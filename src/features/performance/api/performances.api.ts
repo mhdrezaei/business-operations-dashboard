@@ -385,6 +385,18 @@ export function updatePerformanceById(service: PerformanceServicePath, id: numbe
 		.json<Record<string, unknown>>();
 }
 
+export function updatePerformanceByComposite(
+	service: PerformanceServicePath,
+	companyId: number,
+	year: number,
+	month: number,
+	payload: Record<string, unknown>,
+) {
+	return request
+		.put(buildPerformancePath(service, companyId, year, month), { json: payload })
+		.json<Record<string, unknown>>();
+}
+
 export function updateSmsCommissionPerformanceByComposite(
 	companyId: number,
 	salesAgentId: number,
@@ -521,7 +533,7 @@ export function fetchUnregisteredPerformanceList(params: UnregisterdPerformanceL
 		.json<Paginated<PerformanceListItem>>();
 }
 
-export function fetchPerformanceReportAvailability(serviceId: number, shPeriods?: string[]) {
+export function fetchPerformanceReportAvailability(serviceId: number, shPeriods?: string[], companyType?: string | null) {
 	const periods = (shPeriods ?? [])
 		.map(item => String(item ?? "").trim())
 		.filter(Boolean)
@@ -532,6 +544,7 @@ export function fetchPerformanceReportAvailability(serviceId: number, shPeriods?
 			searchParams: compactSearchParams({
 				service_id: serviceId,
 				sh_periods: periods,
+				company_type: companyType,
 			}),
 		})
 		.json<PerformanceReportAvailability>();

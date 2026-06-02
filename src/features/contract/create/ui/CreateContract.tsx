@@ -124,6 +124,48 @@ function mapSmsPricingPayload(pricingValue: unknown) {
 	};
 }
 
+function normalizeTrafficLocation(location: unknown) {
+	const normalized = String(location ?? "").trim().toUpperCase();
+	if (normalized === "PROVINCE" || normalized === "COUNTY")
+		return "COUNTY";
+	if (normalized === "TEHRAN")
+		return "TEHRAN";
+	return null;
+}
+
+function mapTrafficLocationPayload(location: "TEHRAN" | "COUNTY", pricingValue: unknown) {
+	const pricing = contractTypeToApiPricing((pricingValue ?? null) as any);
+	if (!pricing)
+		return null;
+
+	return {
+		location,
+		unit: "GB/month",
+		calculation_type: pricing.calculation_type,
+		tiers: pricing.tiers ?? [],
+	};
+}
+
+function mapTrafficAddenda(addenda: unknown) {
+	const list = Array.isArray(addenda) ? addenda : [];
+
+	return list.map((item) => {
+		const row = (item ?? {}) as Record<string, any>;
+		const location = normalizeTrafficLocation(row.location);
+		const pricing = location ? mapTrafficLocationPayload(location, row.contractPricing) : null;
+
+		return {
+			start_jy: toNumberOrNull(row.startYear),
+			start_jm: toNumberOrNull(row.startMonth),
+			end_jy: toNumberOrNull(row.endYear),
+			end_jm: toNumberOrNull(row.endMonth),
+			contract_number: row.contractNumber ?? "",
+			note: row.description ?? "",
+			...(pricing ?? {}),
+		};
+	});
+}
+
 function mapSmsOperatorRevenuePayload(operatorRevenueValue: unknown) {
 	const operatorRevenue = (operatorRevenueValue ?? {}) as Record<string, unknown>;
 	const mciEnSource = operatorRevenue.hamrahAvalEn ?? operatorRevenue.hamrahAvalFa;
@@ -260,8 +302,8 @@ function formValuesToApiPayload(values: ContractFormValues) {
 		addenda,
 	};
 
-	if (values.trafficCompanyType != null)
-		payload.company_type = values.trafficCompanyType;
+	if (values.companyType != null)
+		payload.company_type = values.companyType;
 	if (values.counterpartyType != null)
 		payload.sms_party = values.counterpartyType;
 
@@ -300,6 +342,20 @@ function formValuesToApiPayload(values: ContractFormValues) {
 	if (serviceCode === "commercial") {
 		payload.contract_openapi_details = mapOpenApiLegacyDetails(serviceFields.contractPricing);
 		payload.addenda = mapCommercialAddenda(addenda);
+		return payload;
+	}
+
+	if (serviceCode === "traffic") {
+		const isOfficial = serviceFields.isOfficial ?? true;
+		const locations = [
+			mapTrafficLocationPayload("TEHRAN", serviceFields.tehranPricing),
+			mapTrafficLocationPayload("COUNTY", serviceFields.provincePricing),
+		].filter(Boolean);
+
+		payload.is_signed = isOfficial;
+		payload.is_official = isOfficial;
+		payload.locations = locations;
+		payload.addenda = mapTrafficAddenda(addenda);
 		return payload;
 	}
 

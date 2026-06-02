@@ -82,6 +82,7 @@
 		"selectServiceFirst": "Select service first",
 		"selectCompany": "Select company",
 		"selectCompanyFirst": "Select company first",
+		"selectCompanyTypeFirst": "Select company type first",
 		"selectTrafficCompanyTypeFirst": "Select traffic company type first",
 		"loadingCompanies": "Loading companies...",
 		"loadingSalesAgent": "Loading sales agent...",
@@ -107,6 +108,7 @@
 	"labels": {
 		"serviceName": "Service Name",
 		"companyName": "Company Name",
+		"companyType": "Company Type",
 		"trafficCompanyType": "Traffic Company Type",
 		"financialColumns": "Financial Columns",
 		"selectAll": "Select All",
@@ -270,6 +272,7 @@
 			"yearRequired": "Year is required",
 			"monthRequired": "Month is required",
 			"contractForMonthNotFound": "No active contract found for selected month",
+			"companyTypeRequired": "Company type is required",
 			"trafficCompanyTypeRequired": "Traffic company type is required",
 			"salesAgentRequired": "Sales agent is required",
 			"openapiContractModelUnknown": "OpenAPI contract model is not specified"

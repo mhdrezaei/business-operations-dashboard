@@ -57,6 +57,7 @@ export interface PspPredictionYearDto {
 	id: number
 	service: number
 	fiscal_year: number
+	company_type?: string | Record<string, string> | null
 	value_year: string | number | null
 	income_year: string | number | null
 	q1_percent: number | null
@@ -72,6 +73,7 @@ export interface PspPredictionYearDto {
 export interface PspPredictionPayload {
 	service: number
 	fiscal_year: number
+	company_type?: string
 	value_year: number
 	income_year: number
 	q1_percent: number
@@ -89,6 +91,7 @@ export interface SmsPredictionYearDto {
 	id: number
 	service: number
 	fiscal_year: number
+	company_type?: string | Record<string, string> | null
 	value_year: string | number | null
 	income_year: string | number | null
 	expense_year: string | number | null
@@ -107,6 +110,7 @@ export interface SmsPredictionYearDto {
 export interface SmsPredictionPayload {
 	service: number
 	fiscal_year: number
+	company_type: string
 	value_year: number
 	income_year: number
 	expense_year: number
@@ -132,7 +136,7 @@ export interface TrafficPredictionYearDto {
 	id: number
 	service: number
 	fiscal_year: number
-	company_type: string | null
+	company_type: string | Record<string, string> | null
 	locations: TrafficPredictionLocationDto[] | null
 	q1_percent: number | null
 	q2_percent: number | null
@@ -209,17 +213,20 @@ export function updateOpenApiPrediction(id: number, payload: OpenApiPredictionPa
 		.json<OpenApiPredictionYearDto>();
 }
 
-export function fetchPspPredictionYears(serviceId: number) {
+export function fetchPspPredictionYears(serviceId: number, companyType?: string | null) {
 	return request
-		.get("prediction/psp/year/", {
-			searchParams: { service: serviceId },
+		.get("predictions/psp/years/", {
+			searchParams: buildPredictionListSearchParams({
+				service: serviceId,
+				company_type: companyType ?? undefined,
+			}),
 		})
 		.json<Paginated<PspPredictionYearDto>>();
 }
 
 export function listPspPredictions(params: PredictionListParams) {
 	return request
-		.get("prediction/psp/year/", {
+		.get("predictions/psp/years/", {
 			searchParams: buildPredictionListSearchParams(params),
 		})
 		.json<Paginated<PspPredictionYearDto>>();
@@ -233,7 +240,7 @@ export function fetchPspPredictionDetail(id: number) {
 
 export function createPspPrediction(payload: PspPredictionPayload) {
 	return request
-		.post("prediction/psp/year/", {
+		.post("predictions/psp/years/", {
 			json: payload,
 		})
 		.json<PspPredictionYearDto>();
@@ -241,7 +248,7 @@ export function createPspPrediction(payload: PspPredictionPayload) {
 
 export function updatePspPrediction(id: number, payload: PspPredictionPayload) {
 	return request
-		.put(`prediction/psp/year/${id}/`, {
+		.put(`predictions/psp/years/${id}/`, {
 			json: payload,
 		})
 		.json<PspPredictionYearDto>();
@@ -249,7 +256,7 @@ export function updatePspPrediction(id: number, payload: PspPredictionPayload) {
 
 export function fetchShahkarPredictionYears(serviceId: number) {
 	return request
-		.get("prediction/shahkar/year/", {
+		.get("predictions/shahkar/years/", {
 			searchParams: { service: serviceId },
 		})
 		.json<Paginated<ShahkarPredictionYearDto>>();
@@ -257,7 +264,7 @@ export function fetchShahkarPredictionYears(serviceId: number) {
 
 export function listShahkarPredictions(params: PredictionListParams) {
 	return request
-		.get("prediction/shahkar/year/", {
+		.get("predictions/shahkar/years/", {
 			searchParams: buildPredictionListSearchParams(params),
 		})
 		.json<Paginated<ShahkarPredictionYearDto>>();
@@ -271,7 +278,7 @@ export function fetchShahkarPredictionDetail(id: number) {
 
 export function createShahkarPrediction(payload: ShahkarPredictionPayload) {
 	return request
-		.post("prediction/shahkar/year/", {
+		.post("predictions/shahkar/years/", {
 			json: payload,
 		})
 		.json<ShahkarPredictionYearDto>();
@@ -279,23 +286,26 @@ export function createShahkarPrediction(payload: ShahkarPredictionPayload) {
 
 export function updateShahkarPrediction(id: number, payload: ShahkarPredictionPayload) {
 	return request
-		.put(`prediction/shahkar/year/${id}/`, {
+		.put(`predictions/shahkar/years/${id}/`, {
 			json: payload,
 		})
 		.json<ShahkarPredictionYearDto>();
 }
 
-export function fetchSmsPredictionYears(serviceId: number) {
+export function fetchSmsPredictionYears(serviceId: number, companyType?: string | null) {
 	return request
-		.get("prediction/sms/year/", {
-			searchParams: { service: serviceId },
+		.get("predictions/sms/years/", {
+			searchParams: buildPredictionListSearchParams({
+				service: serviceId,
+				company_type: companyType ?? undefined,
+			}),
 		})
 		.json<Paginated<SmsPredictionYearDto>>();
 }
 
 export function listSmsPredictions(params: PredictionListParams) {
 	return request
-		.get("prediction/sms/year/", {
+		.get("predictions/sms/years/", {
 			searchParams: buildPredictionListSearchParams(params),
 		})
 		.json<Paginated<SmsPredictionYearDto>>();
@@ -309,7 +319,7 @@ export function fetchSmsPredictionDetail(id: number) {
 
 export function createSmsPrediction(payload: SmsPredictionPayload) {
 	return request
-		.post("prediction/sms/year/", {
+		.post("predictions/sms/years/", {
 			json: payload,
 		})
 		.json<SmsPredictionYearDto>();
@@ -323,17 +333,20 @@ export function updateSmsPrediction(id: number, payload: SmsPredictionPayload) {
 		.json<SmsPredictionYearDto>();
 }
 
-export function fetchTrafficPredictionYears(serviceId: number) {
+export function fetchTrafficPredictionYears(serviceId: number, companyType?: string | null) {
 	return request
-		.get("prediction/traffic/year/", {
-			searchParams: { service: serviceId },
+		.get("predictions/traffic/years/", {
+			searchParams: buildPredictionListSearchParams({
+				service: serviceId,
+				company_type: companyType ?? undefined,
+			}),
 		})
 		.json<Paginated<TrafficPredictionYearDto>>();
 }
 
 export function listTrafficPredictions(params: PredictionListParams) {
 	return request
-		.get("prediction/traffic/year/", {
+		.get("predictions/traffic/years/", {
 			searchParams: buildPredictionListSearchParams(params),
 		})
 		.json<Paginated<TrafficPredictionYearDto>>();
@@ -347,7 +360,7 @@ export function fetchTrafficPredictionDetail(id: number) {
 
 export function createTrafficPrediction(payload: TrafficPredictionPayload) {
 	return request
-		.post("prediction/traffic/year/", {
+		.post("predictions/traffic/years/", {
 			json: payload,
 		})
 		.json<TrafficPredictionYearDto>();
@@ -355,7 +368,7 @@ export function createTrafficPrediction(payload: TrafficPredictionPayload) {
 
 export function updateTrafficPrediction(id: number, payload: TrafficPredictionPayload) {
 	return request
-		.put(`prediction/traffic/year/${id}/`, {
+		.put(`predictions/traffic/years/${id}/`, {
 			json: payload,
 		})
 		.json<TrafficPredictionYearDto>();

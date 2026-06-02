@@ -7,6 +7,7 @@ import { Card } from "antd";
 import React, { useEffect, useMemo, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { companiesByServiceQuery, contractGapsQuery, servicesQuery, smsCommissionAgentsQuery } from "../../../queries/contract.queries";
+import { companyTypeMatches } from "../../../utils";
 import { ContractAlignedField, useContractAlignedLabelWidth } from "../components/ContractAlignedField";
 import { MONTH_OPTIONS } from "../constants/jalali-date-options";
 
@@ -94,9 +95,14 @@ function withSelectedOption(options: YearMonthOption[], selected: number | null)
 	return [...options, { label: String(selected), value: selected }].sort((a, b) => a.value - b.value);
 }
 
-export function FixedStartSection() {
+interface FixedStartSectionProps {
+	mode?: "create" | "edit"
+}
+
+export function FixedStartSection({ mode = "create" }: FixedStartSectionProps) {
 	const { setValue, control, trigger, formState, resetField } = useFormContext<ContractFormValues>();
 	const { getPermittedCompanyTypes, getPermittedServiceIds } = useAccess();
+	const permissionAction = mode === "edit" ? "update" : "create";
 
 	const services = useQuery(servicesQuery());
 
@@ -104,7 +110,7 @@ export function FixedStartSection() {
 	const serviceCode = useWatch({ control, name: "serviceCode" });
 	const companyId = useWatch({ control, name: "companyId" });
 	const counterpartyType = useWatch({ control, name: "counterpartyType" });
-	const trafficCompanyType = useWatch({ control, name: "trafficCompanyType" });
+	const companyType = useWatch({ control, name: "companyType" });
 	const startYear = useWatch({ control, name: "startYear" });
 	const startMonth = useWatch({ control, name: "startMonth" });
 	const endYear = useWatch({ control, name: "endYear" });
@@ -112,7 +118,7 @@ export function FixedStartSection() {
 	const selectedAgentId = useWatch({ control, name: "serviceFields.agent" as any });
 	const serviceIsOfficial = useWatch({ control, name: "serviceFields.isOfficial" as any }) as boolean | null | undefined;
 
-	const permittedCreateServiceIdList = getPermittedServiceIds("contracts", "create");
+	const permittedCreateServiceIdList = getPermittedServiceIds("contracts", permissionAction);
 	const permittedCreateServiceIds = useMemo(
 		() => new Set(permittedCreateServiceIdList),
 		[permittedCreateServiceIdList.join(",")],
@@ -122,7 +128,12 @@ export function FixedStartSection() {
 	const contractGaps = useQuery(contractGapsQuery({ serviceId, companyId }));
 
 	const isSms = serviceCode === "sms";
+	const isPsp = serviceCode === "psp";
 	const isTraffic = serviceCode === "traffic";
+	const requiresCompanyType = isSms || isPsp || isTraffic;
+	const isSmsPartnersFlow = isSms && counterpartyType === "partners";
+	const shouldSelectCompany = !isSms || isSmsPartnersFlow;
+	const showCompanyTypeSelect = requiresCompanyType && shouldSelectCompany;
 	const isSmsCommission = isSmsCommissionCode(serviceCode);
 	const smsCommissionAgents = useQuery(smsCommissionAgentsQuery(isSmsCommission && !!companyId));
 
@@ -140,7 +151,7 @@ export function FixedStartSection() {
 
 	const prevServiceIdRef = useRef<typeof serviceId>(undefined);
 	const prevCompanyIdRef = useRef<typeof companyId>(undefined);
-	const prevTrafficCompanyTypeRef = useRef<typeof trafficCompanyType>(undefined);
+	const prevCompanyTypeRef = useRef<typeof companyType>(undefined);
 	const prevCounterpartyTypeRef = useRef<typeof counterpartyType>(undefined);
 	const prevStartYearRef = useRef<typeof startYear>(undefined);
 	const prevEndYearRef = useRef<typeof endYear>(undefined);
@@ -156,7 +167,7 @@ export function FixedStartSection() {
 		if (prev !== serviceId) {
 			resetField("companyId", { defaultValue: null });
 			resetField("counterpartyType", { defaultValue: null });
-			resetField("trafficCompanyType" as any, { defaultValue: null });
+			resetField("companyType" as any, { defaultValue: null });
 			resetField("startYear", { defaultValue: null });
 			resetField("startMonth", { defaultValue: null });
 			resetField("endYear", { defaultValue: null });
@@ -200,20 +211,21 @@ export function FixedStartSection() {
 
 		if (isSms && counterpartyType === "gov_ops" && prev !== counterpartyType) {
 			setValue("companyId", null, { shouldDirty: true, shouldValidate: false });
+			setValue("companyType", null, { shouldDirty: true, shouldValidate: false });
 		}
 	}, [isSms, counterpartyType, setValue]);
 
 	useEffect(() => {
-		const prev = prevTrafficCompanyTypeRef.current;
-		prevTrafficCompanyTypeRef.current = trafficCompanyType;
+		const prev = prevCompanyTypeRef.current;
+		prevCompanyTypeRef.current = companyType;
 
 		if (prev === undefined)
 			return;
 
-		if (isTraffic && prev !== trafficCompanyType) {
+		if (requiresCompanyType && prev !== companyType) {
 			setValue("companyId", null, { shouldDirty: true, shouldValidate: false });
 		}
-	}, [isTraffic, trafficCompanyType, setValue]);
+	}, [requiresCompanyType, companyType, setValue]);
 
 	useEffect(() => {
 		const prev = prevCompanyIdRef.current;
@@ -289,11 +301,11 @@ export function FixedStartSection() {
 				.map(service => ({ label: service.name, value: service.id })),
 		[services.data, permittedCreateServiceIdList.join(",")],
 	);
-	const trafficCompanyTypeOptions = useMemo(
-		() => serviceCode === "traffic" && serviceId
-			? getPermittedCompanyTypes("contracts", "create", serviceId).map(item => ({ label: item.value, value: item.key }))
+	const companyTypeOptions = useMemo(
+		() => requiresCompanyType && shouldSelectCompany && serviceId
+			? getPermittedCompanyTypes("contracts", permissionAction, serviceId).map(item => ({ label: item.value, value: item.key }))
 			: [],
-		[serviceCode, serviceId, getPermittedCompanyTypes],
+		[requiresCompanyType, shouldSelectCompany, serviceId, permissionAction, getPermittedCompanyTypes],
 	);
 
 	const companyOptionsDefault = useMemo(
@@ -305,14 +317,14 @@ export function FixedStartSection() {
 		[companies.data],
 	);
 
-	const companyOptionsTraffic = useMemo(() => {
+	const companyOptionsByType = useMemo(() => {
 		const list = companies.data?.results ?? [];
-		if (!trafficCompanyType)
+		if (!companyType)
 			return [];
 		return list
-			.filter((c: any) => c.company_type === trafficCompanyType)
+			.filter((c: any) => companyTypeMatches(c.company_type, companyType))
 			.map((c: any) => ({ label: c.name, value: c.id }));
-	}, [companies.data, trafficCompanyType]);
+	}, [companies.data, companyType]);
 
 	const smsCommissionAgentOptions = useMemo(() => {
 		if (!companyId)
@@ -353,8 +365,8 @@ export function FixedStartSection() {
 		}
 	}, [isSmsCommission, companyId, smsCommissionAgentOptions, selectedAgentId, setValue]);
 
-	const showCompanySelect
-		= (!isSms && !isTraffic) || (isSms && counterpartyType === "partners") || (isTraffic && !!trafficCompanyType);
+	const showCompanySelect = shouldSelectCompany && (!requiresCompanyType || !!companyType);
+	const companyTypeLabel = isTraffic ? "نوع شرکت (ترافیک)" : "نوع شرکت";
 	const visibleLabels = useMemo(() => {
 		const labels = [
 			"نوع سرویس",
@@ -366,27 +378,27 @@ export function FixedStartSection() {
 		];
 		if (isSms)
 			labels.push("طرف قرارداد");
-		if (isTraffic)
-			labels.push("نوع شرکت (ترافیک)");
+		if (showCompanyTypeSelect)
+			labels.push(companyTypeLabel);
 		if (showCompanySelect)
 			labels.push("شرکت");
 		if (isSmsCommission)
 			labels.push("نماینده فروش");
 		return labels;
-	}, [isSms, isTraffic, showCompanySelect, isSmsCommission]);
+	}, [isSms, showCompanyTypeSelect, companyTypeLabel, showCompanySelect, isSmsCommission]);
 	const alignedLabelStyle = useContractAlignedLabelWidth(visibleLabels);
 
-	const companyOptions = isTraffic ? companyOptionsTraffic : companyOptionsDefault;
+	const companyOptions = requiresCompanyType ? companyOptionsByType : companyOptionsDefault;
 
-	const isCompanyDisabled = !serviceId || companies.isLoading || (isTraffic && !trafficCompanyType);
+	const isCompanyDisabled = !serviceId || companies.isLoading || (requiresCompanyType && shouldSelectCompany && !companyType);
 
 	const companyPlaceholder
 		= !serviceId
 			? "ابتدا سرویس را انتخاب کنید"
 			: companies.isLoading
 				? "در حال دریافت لیست شرکت‌ها..."
-				: isTraffic && !trafficCompanyType
-					? "ابتدا نوع شرکت (ترافیک) را انتخاب کنید"
+				: requiresCompanyType && shouldSelectCompany && !companyType
+					? `ابتدا ${companyTypeLabel} را انتخاب کنید`
 					: "شرکت را انتخاب کنید";
 
 	const missingMonthsByYear = useMemo(() => {
@@ -495,17 +507,17 @@ export function FixedStartSection() {
 						)
 						: null}
 
-					{isTraffic
+					{showCompanyTypeSelect
 						? (
-							<ContractAlignedField label="نوع شرکت (ترافیک)" labelId="contract-form-label-traffic-company-type">
-								<RHFSelect<ContractFormValues, "trafficCompanyType", any>
-									name="trafficCompanyType"
+							<ContractAlignedField label={companyTypeLabel} labelId="contract-form-label-company-type">
+								<RHFSelect<ContractFormValues, "companyType", any>
+									name="companyType"
 									formItemProps={compactFormItemStyle}
-									options={trafficCompanyTypeOptions}
+									options={companyTypeOptions}
 									selectProps={{
 										"allowClear": true,
 										"placeholder": "انتخاب کنید",
-										"aria-labelledby": "contract-form-label-traffic-company-type",
+										"aria-labelledby": "contract-form-label-company-type",
 									} as any}
 								/>
 							</ContractAlignedField>

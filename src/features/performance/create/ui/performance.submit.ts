@@ -80,6 +80,7 @@ function buildManualOperations(values: PerformanceFormValues): PerformanceOperat
 			{
 				payload: {
 					...buildBasePayload(values),
+					company_type: values.companyType,
 					value: fields.performanceValue,
 					income: fields.monthlyRevenue,
 				},
@@ -103,6 +104,7 @@ function buildManualOperations(values: PerformanceFormValues): PerformanceOperat
 			{
 				payload: {
 					...buildBasePayload(values),
+					company_type: values.companyType,
 					items: [
 						{ operator: "IRANCELL", language: "FA", value: String(fields.irancellFa ?? "") },
 						{ operator: "IRANCELL", language: "EN", value: String(fields.irancellEn ?? "") },
@@ -161,7 +163,7 @@ async function submitManualPerformance(values: PerformanceFormValues, servicePat
 }
 
 async function submitTrafficFiles(values: PerformanceFormValues): Promise<Record<string, unknown> | null> {
-	if (!values.year || !values.month || !values.trafficCompanyType) {
+	if (!values.year || !values.month || !values.companyType) {
 		throw new Error(i18next.t("performance.errors.baseFormIncomplete"));
 	}
 
@@ -176,7 +178,7 @@ async function submitTrafficFiles(values: PerformanceFormValues): Promise<Record
 			file: monthlyPerformanceFile,
 		},
 		extraFields: {
-			company_type: values.trafficCompanyType,
+			company_type: values.companyType,
 			sh_year: values.year,
 			sh_month: values.month,
 		},
@@ -185,7 +187,7 @@ async function submitTrafficFiles(values: PerformanceFormValues): Promise<Record
 }
 
 async function submitTrafficSingle(values: PerformanceFormValues): Promise<Record<string, unknown> | null> {
-	if (!values.companyId || !values.year || !values.month || !values.trafficCompanyType) {
+	if (!values.companyId || !values.year || !values.month || !values.companyType) {
 		throw new Error(i18next.t("performance.errors.baseFormIncomplete"));
 	}
 
@@ -200,24 +202,18 @@ async function submitTrafficSingle(values: PerformanceFormValues): Promise<Recor
 		throw new Error(i18next.t("performance.errors.trafficTehranRequired"));
 	}
 
-	const locations: Array<Record<string, unknown>> = [
-		{
-			location: "TEHRAN",
-			value: tehranValue,
-			value_receive: tehranValueReceive,
-		},
-	];
+	const trafficPayload: Record<string, unknown> = {
+		tehran_value: tehranValue,
+		tehran_value_receive: tehranValueReceive,
+	};
 
 	if (countyEnabled) {
 		if (countyValue == null || countyValueReceive == null) {
 			throw new Error(i18next.t("performance.errors.trafficCountyRequiredWhenEnabled"));
 		}
 
-		locations.push({
-			location: "COUNTY",
-			value: countyValue,
-			value_receive: countyValueReceive,
-		});
+		trafficPayload.county_value = countyValue;
+		trafficPayload.county_value_receive = countyValueReceive;
 	}
 
 	return await upsertPerformance({
@@ -227,8 +223,8 @@ async function submitTrafficSingle(values: PerformanceFormValues): Promise<Recor
 		month: values.month,
 		payload: {
 			...buildBasePayload(values),
-			company_type: values.trafficCompanyType,
-			locations,
+			company_type: values.companyType,
+			...trafficPayload,
 		},
 		suppressErrorNotification: true,
 	});

@@ -59,7 +59,7 @@ function buildCreatedPerformanceRecord(
 		sh_month: values.month,
 		sales_agent: responseRecord?.sales_agent as number | null | undefined ?? values.salesAgentId,
 		sales_agent_id: responseRecord?.sales_agent_id as number | null | undefined ?? values.salesAgentId,
-		company_type: typeof companyType === "string" ? companyType : (values.trafficCompanyType ?? null),
+		company_type: typeof companyType === "string" ? companyType : (values.companyType ?? null),
 	};
 }
 

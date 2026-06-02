@@ -26,6 +26,11 @@ function isSmsCommissionServicePath(service: PerformanceServicePath | null) {
 	return service === "sms-commission";
 }
 
+function serviceRequiresCompanyType(serviceCode: string | null | undefined) {
+	const normalized = String(serviceCode ?? "").trim().toLowerCase();
+	return normalized === "sms" || normalized === "psp" || normalized === "traffic";
+}
+
 function normalizeNumberList(values: unknown) {
 	if (!Array.isArray(values))
 		return [];
@@ -38,6 +43,34 @@ function normalizeNumberList(values: unknown) {
 	});
 
 	return Array.from(dedup);
+}
+
+function getRowValue(record: PerformanceListRow, keys: string[]) {
+	for (const key of keys) {
+		const value = (record as Record<string, unknown>)[key];
+		if (value != null && value !== "")
+			return value;
+	}
+	return "";
+}
+
+function getUnregisteredPerformanceRowKey(record: PerformanceListRow) {
+	const id = getRowValue(record, ["id"]);
+	if (id !== "")
+		return String(id);
+
+	return [
+		getRowValue(record, ["service", "service_id", "service_code", "service_name"]),
+		getRowValue(record, ["company", "company_id", "company_name"]),
+		getRowValue(record, ["sh_year"]),
+		getRowValue(record, ["sh_month"]),
+		getRowValue(record, ["operation_type"]),
+		getRowValue(record, ["operator"]),
+		getRowValue(record, ["language"]),
+		getRowValue(record, ["sales_agent", "sales_agent_id", "sales_agent_name"]),
+		getRowValue(record, ["location"]),
+		getRowValue(record, ["customer_nic", "customer_name"]),
+	].map(value => String(value)).join("-");
 }
 
 export default function UnregisteredPerformanceList() {
@@ -84,8 +117,8 @@ export default function UnregisteredPerformanceList() {
 
 	const isSmsCommission = isSmsCommissionServicePath(selectedServicePath);
 	const smsCommissionAgents = useQuery(smsCommissionAgentsQuery(isSmsCommission));
-	const permittedTrafficCompanyTypeOptions = useMemo(
-		() => selectedServiceCode === "traffic" && selectedServiceId
+	const permittedCompanyTypeOptions = useMemo(
+		() => serviceRequiresCompanyType(selectedServiceCode) && selectedServiceId
 			? getPermittedCompanyTypes("performances", "view", selectedServiceId)
 			: [],
 		[selectedServiceCode, selectedServiceId, getPermittedCompanyTypes],
@@ -195,7 +228,7 @@ export default function UnregisteredPerformanceList() {
 				t,
 				selectedServiceIds,
 				selectedServiceCode,
-				permittedTrafficCompanyTypeOptions,
+				permittedCompanyTypeOptions,
 				setSelectedServices,
 				serviceOptions,
 				companyOptions,
@@ -207,7 +240,7 @@ export default function UnregisteredPerformanceList() {
 			t,
 			selectedServiceIds,
 			selectedServiceCode,
-			permittedTrafficCompanyTypeOptions,
+			permittedCompanyTypeOptions,
 			serviceOptions,
 			companyOptions,
 			companiesLoading,
@@ -259,12 +292,15 @@ export default function UnregisteredPerformanceList() {
 		<BasicContent className="h-full">
 			<BasicTable<PerformanceListRow>
 				adaptive
-				rowKey={record => String(record.id ?? `${record.company}-${record.sh_year}-${record.sh_month}-${record.operation_type ?? ""}-${record.operator ?? ""}-${record.language ?? ""}`)}
+				rowKey={getUnregisteredPerformanceRowKey}
 				columns={columns}
 				actionRef={actionRef}
 				formRef={formRef}
 				request={async (params) => {
-					if (selectedServiceIds.length === 0) {
+					const serviceIds = normalizeNumberList((params as any).service_ids);
+					const effectiveServiceIds = serviceIds.length > 0 ? serviceIds : selectedServiceIds;
+
+					if (effectiveServiceIds.length === 0) {
 						return {
 							data: [],
 							total: 0,
@@ -275,9 +311,9 @@ export default function UnregisteredPerformanceList() {
 					const companyIds = normalizeNumberList((params as any).company_ids);
 					const query = {
 						page: params.current ?? 1,
-						page_size: params.pageSize ?? 20,
+						page_size: params.pageSize ?? 10,
 						search: (params as any).search,
-						service_ids: selectedServiceIds.join(","),
+						service_ids: effectiveServiceIds.join(","),
 						company_ids: companyIds.length > 0 ? companyIds.join(",") : undefined,
 						sh_year: (params as any).sh_year,
 						sh_month: (params as any).sh_month,

@@ -2,6 +2,7 @@ import type { ContractFormValues } from "#src/features/contract/shared/model/con
 import type { ContractServicePath } from "../../../api/contracts.api";
 import { apiPricingToContractType, contractTypeToApiPricing } from "#src/features/contract/api/pricing.mapper";
 import { ContractForm } from "#src/features/contract/shared/ui/form/ContractForm";
+import { pickCompanyTypeToken } from "#src/features/contract/shared/utils";
 import { Empty, Modal, Spin } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
 import { fetchContractDetail, fetchUpdateContract } from "../../../api/contracts.api";
@@ -17,6 +18,14 @@ interface Props {
 function servicePathToServiceCode(service: ContractServicePath): string {
 	const raw = service.startsWith("sms/") ? "sms" : service;
 	return raw.trim().toLowerCase();
+}
+
+function normalizeSmsCounterpartyType(value: unknown): "partners" | "gov_ops" | null {
+	if (value === "partners" || value === "client")
+		return "partners";
+	if (value === "gov_ops" || value === "vendor")
+		return "gov_ops";
+	return null;
 }
 
 function toNumberOrNull(value: unknown): number | null {
@@ -143,6 +152,48 @@ function mapSmsCommissionAddenda(addenda: unknown) {
 			first_side_percent: toStringOrNull(row.firstPartySharePercent),
 			area_percent: toStringOrNull(row.regionSharePercent),
 			sales_agent_percent: toStringOrNull(row.salesAgentSharePercent),
+		};
+	});
+}
+
+function normalizeTrafficLocation(location: unknown) {
+	const normalized = String(location ?? "").trim().toUpperCase();
+	if (normalized === "PROVINCE" || normalized === "COUNTY")
+		return "COUNTY";
+	if (normalized === "TEHRAN")
+		return "TEHRAN";
+	return null;
+}
+
+function mapTrafficLocationPayload(location: "TEHRAN" | "COUNTY", pricingValue: unknown) {
+	const pricing = contractTypeToApiPricing((pricingValue ?? null) as any);
+	if (!pricing)
+		return null;
+
+	return {
+		location,
+		unit: "GB/month",
+		calculation_type: pricing.calculation_type,
+		tiers: pricing.tiers ?? [],
+	};
+}
+
+function mapTrafficAddenda(addenda: unknown) {
+	const list = Array.isArray(addenda) ? addenda : [];
+
+	return list.map((item) => {
+		const row = (item ?? {}) as Record<string, any>;
+		const location = normalizeTrafficLocation(row.location);
+		const pricing = location ? mapTrafficLocationPayload(location, row.contractPricing) : null;
+
+		return {
+			start_jy: toNumberOrNull(row.startYear),
+			start_jm: toNumberOrNull(row.startMonth),
+			end_jy: toNumberOrNull(row.endYear),
+			end_jm: toNumberOrNull(row.endMonth),
+			contract_number: row.contractNumber ?? "",
+			note: row.description ?? "",
+			...(pricing ?? {}),
 		};
 	});
 }
@@ -329,14 +380,60 @@ function normalizeSmsCommissionServiceFields(dto: any) {
 	};
 }
 
+function normalizeTrafficAddendaFromDto(addenda: unknown) {
+	const list = Array.isArray(addenda) ? addenda : [];
+
+	return list.map((item) => {
+		const row = (item ?? {}) as Record<string, any>;
+		const location = normalizeTrafficLocation(row.location);
+
+		return {
+			startYear: toNumberOrNull(row.start_jy ?? row.startYear),
+			startMonth: toNumberOrNull(row.start_jm ?? row.startMonth),
+			endYear: toNumberOrNull(row.end_jy ?? row.endYear),
+			endMonth: toNumberOrNull(row.end_jm ?? row.endMonth),
+			description: row.note ?? row.description ?? "",
+			contractNumber: row.contract_number ?? row.contractNumber ?? "",
+			location: location === "COUNTY" ? "PROVINCE" : location,
+			contractPricing: apiPricingToContractType({
+				calculation_type: row.calculation_type ?? row.calculationType ?? null,
+				tiers: row.tiers ?? null,
+			} as any),
+		};
+	});
+}
+
+function normalizeTrafficServiceFields(dto: any) {
+	const locations = Array.isArray(dto?.locations) ? dto.locations : [];
+	const tehranLocation = locations.find((item: any) => normalizeTrafficLocation(item?.location) === "TEHRAN");
+	const countyLocation = locations.find((item: any) => normalizeTrafficLocation(item?.location) === "COUNTY");
+
+	return {
+		isOfficial: dto?.is_official ?? dto?.isOfficial ?? dto?.is_signed ?? true,
+		tehranPricing: tehranLocation
+			? apiPricingToContractType({
+				calculation_type: tehranLocation.calculation_type ?? tehranLocation.calculationType ?? null,
+				tiers: tehranLocation.tiers ?? null,
+			} as any)
+			: undefined,
+		provincePricing: countyLocation
+			? apiPricingToContractType({
+				calculation_type: countyLocation.calculation_type ?? countyLocation.calculationType ?? null,
+				tiers: countyLocation.tiers ?? null,
+			} as any)
+			: undefined,
+		addenda: normalizeTrafficAddendaFromDto(dto?.addenda),
+	};
+}
+
 function dtoToFormValues(dto: any, service: ContractServicePath): ContractFormValues {
 	const serviceId = toNumberOrNull(dto?.service_id ?? dto?.service?.id ?? dto?.service);
 	const companyId = toNumberOrNull(dto?.company_id ?? dto?.company?.id ?? dto?.company);
 
 	const description = dto?.note ?? dto?.description ?? "";
 
-	const trafficCompanyType = dto?.company_type ?? dto?.traffic_company_type ?? null;
-	const counterpartyType = dto?.sms_party ?? null;
+	const companyType = pickCompanyTypeToken(dto?.company_type ?? dto?.traffic_company_type);
+	const counterpartyType = normalizeSmsCounterpartyType(dto?.sms_party);
 
 	const serviceCodeRaw = dto?.service_code ?? dto?.service?.code ?? servicePathToServiceCode(service);
 	const serviceCode = typeof serviceCodeRaw === "string" ? serviceCodeRaw.trim().toLowerCase() : null;
@@ -358,23 +455,35 @@ function dtoToFormValues(dto: any, service: ContractServicePath): ContractFormVa
 	else if (serviceCode === "commercial") {
 		serviceFields = normalizeCommercialServiceFields(dto);
 	}
+	else if (serviceCode === "traffic") {
+		serviceFields = normalizeTrafficServiceFields(dto);
+	}
 	else {
 		// ✅ سایر سرویس‌ها: هر فیلدی غیر از پایه‌ها => serviceFields
 		const {
 			id,
 			company,
 			company_id,
+			company_type,
+			traffic_company_type,
 			service: _service,
 			service_id,
+			sms_party,
+			is_official,
+			is_signed,
 			start_jy,
 			start_jm,
 			end_jy,
 			end_jm,
+			contract_number,
 			start_date,
 			end_date_exclusive,
+			end_date,
 			active_period,
 			created_at,
+			created_by_user,
 			updated_at,
+			updated_by_user,
 			note,
 			description: _desc,
 			addenda,
@@ -383,6 +492,7 @@ function dtoToFormValues(dto: any, service: ContractServicePath): ContractFormVa
 
 		serviceFields = {
 			...(rest ?? {}),
+			...(typeof dto?.is_official === "boolean" ? { isOfficial: dto.is_official } : {}),
 			addenda: dto?.addenda ?? [],
 		};
 	}
@@ -391,7 +501,7 @@ function dtoToFormValues(dto: any, service: ContractServicePath): ContractFormVa
 		serviceId,
 		serviceCode: serviceCode as any,
 		companyId,
-		trafficCompanyType,
+		companyType,
 		counterpartyType,
 
 		startYear: toNumberOrNull(dto?.start_jy),
@@ -424,8 +534,8 @@ function formValuesToApiPayload(values: ContractFormValues) {
 		addenda,
 	};
 
-	if (values.trafficCompanyType != null)
-		payload.company_type = values.trafficCompanyType;
+	if (values.companyType != null)
+		payload.company_type = values.companyType;
 	if (values.counterpartyType != null)
 		payload.sms_party = values.counterpartyType;
 
@@ -452,6 +562,20 @@ function formValuesToApiPayload(values: ContractFormValues) {
 	if (serviceCode === "commercial") {
 		payload.contract_openapi_details = mapOpenApiLegacyDetails(serviceFields.contractPricing);
 		payload.addenda = mapCommercialAddenda(addenda);
+		return payload;
+	}
+
+	if (serviceCode === "traffic") {
+		const isOfficial = serviceFields.isOfficial ?? true;
+		const locations = [
+			mapTrafficLocationPayload("TEHRAN", serviceFields.tehranPricing),
+			mapTrafficLocationPayload("COUNTY", serviceFields.provincePricing),
+		].filter(Boolean);
+
+		payload.is_signed = isOfficial;
+		payload.is_official = isOfficial;
+		payload.locations = locations;
+		payload.addenda = mapTrafficAddenda(addenda);
 		return payload;
 	}
 
@@ -577,6 +701,7 @@ export function ContractDetailModal({ open, contractId, service, onClose, onUpda
 						: (
 							<ContractForm
 								key={`${resolvedService}-${contractId}`}
+								mode="edit"
 								initialValues={initialValues}
 								submitText="ذخیره تغییرات"
 								submitting={saving}
