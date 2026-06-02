@@ -225,6 +225,10 @@ function resolveServiceDisplayName(service: PerformanceServicePath | null, value
 	return text || "-";
 }
 
+function serviceRequiresCompanyType(service: PerformanceServicePath | null | undefined) {
+	return service === "sms" || service === "psp" || service === "traffic";
+}
+
 function toUpperText(value: unknown) {
 	return String(value ?? "").trim().toUpperCase();
 }
@@ -1181,7 +1185,7 @@ export function PerformanceDetailModal({
 			delete payload.language;
 		}
 
-		if (service === "sms") {
+		if (serviceRequiresCompanyType(service)) {
 			payload.company_type = pickCompanyTypeToken(payload.company_type) ?? selectedCompanyType;
 		}
 

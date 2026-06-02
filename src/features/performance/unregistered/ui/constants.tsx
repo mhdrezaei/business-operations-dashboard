@@ -2,6 +2,7 @@ import type { CompanyTypeOption } from "#src/api/user/types";
 import type { ProColumns } from "@ant-design/pro-components";
 import type { TFunction } from "i18next";
 import type { PerformanceListRow } from "../model/performance.list.types";
+import { pickCompanyTypeToken } from "#src/features/performance/shared/model/performance.helpers";
 import { MONTH_OPTIONS } from "#src/features/performance/shared/ui/form/constants/jalali-date-options";
 
 type ServiceCode = | "openapi"
@@ -33,6 +34,21 @@ function isSmsCommissionService(code: string | null | undefined) {
 function serviceRequiresCompanyType(code: string | null | undefined) {
 	const normalized = String(code ?? "").trim().toLowerCase();
 	return normalized === "sms" || normalized === "psp" || normalized === "traffic";
+}
+
+function getCompanyTypeDisplay(companyType: unknown, companyTypeLabelByKey: Record<string, string>) {
+	if (companyType && typeof companyType === "object" && !Array.isArray(companyType)) {
+		const [firstValue] = Object.values(companyType as Record<string, unknown>)
+			.map(value => String(value ?? "").trim())
+			.filter(Boolean);
+		if (firstValue)
+			return firstValue;
+	}
+
+	const companyTypeKey = pickCompanyTypeToken(companyType);
+	if (!companyTypeKey)
+		return "-";
+	return companyTypeLabelByKey[companyTypeKey] ?? companyTypeKey;
 }
 
 export function getPerformanceColumns({
@@ -232,7 +248,7 @@ export function getPerformanceColumns({
 				acc[option.key] = option.value;
 				return acc;
 			}, {} as Record<string, string>),
-			render: (_, row) => row.company_type ? (companyTypeLabelByKey[String(row.company_type)] ?? row.company_type) : "-",
+			render: (_, row) => getCompanyTypeDisplay(row.company_type, companyTypeLabelByKey),
 		},
 
 	];
