@@ -62,6 +62,10 @@ interface SmsBreakdownCard {
 	profit: unknown
 	expenseOperator: unknown
 	expenseGovernment: unknown
+	incomeTci: unknown
+	incomeFirstSide: unknown
+	incomeArea: unknown
+	incomeSalesAgent: unknown
 }
 
 const SERVICE_DETAIL_KEYS: Record<PerformanceServicePath, string[]> = {
@@ -81,6 +85,7 @@ const HIDDEN_DETAIL_KEYS = new Set([
 	"service",
 	"service_id",
 	"service_code",
+	"sales_agent_id",
 	"created_at",
 	"updated_at",
 	"gr_month_start",
@@ -546,6 +551,24 @@ function getTrafficFieldLocation(fieldKey: string): "TEHRAN" | "COUNTY" | null {
 	return null;
 }
 
+function getTrafficHasCountyContract(
+	detail: Record<string, unknown>,
+	recordFallback: Record<string, unknown>,
+) {
+	const sources = [detail, recordFallback];
+	for (const source of sources) {
+		const direct = source.traffic_has_county_contract;
+		if (typeof direct === "boolean")
+			return direct;
+
+		const traffic = source.traffic as Record<string, unknown> | null | undefined;
+		if (typeof traffic?.has_county_contract === "boolean")
+			return traffic.has_county_contract;
+	}
+
+	return null;
+}
+
 function ReadOnlyBlock({ label, value }: { label: string, value: unknown }) {
 	return (
 		<div className="flex items-center gap-2">
@@ -773,7 +796,8 @@ export function PerformanceDetailModal({
 		OTHER_FA: t("performance.fields.sms.otherFa"),
 		OTHER_EN: t("performance.fields.sms.otherEn"),
 	}), [t]);
-	const isSmsService = service === "sms";
+	// const isSmsService = service === "sms";
+	const isSmsLikeService = service === "sms" || service === "sms-commission";
 	const mergedDetail = useMemo(
 		() => ({ ...(record as Record<string, unknown> ?? {}), ...(detail ?? {}) }),
 		[record, detail],
@@ -803,8 +827,15 @@ export function PerformanceDetailModal({
 	const visibleTrafficLocations = useMemo(() => {
 		if (service !== "traffic")
 			return new Set<"TEHRAN" | "COUNTY">();
-		if (isUnregisteredMode)
+		if (isUnregisteredMode) {
+			const hasCountyContract = getTrafficHasCountyContract(
+				mergedDetail,
+				record as Record<string, unknown> ?? {},
+			);
+			if (hasCountyContract === false)
+				return new Set<"TEHRAN" | "COUNTY">(["TEHRAN"]);
 			return new Set<"TEHRAN" | "COUNTY">(["TEHRAN", "COUNTY"]);
+		}
 
 		const trafficRows = getTrafficRowsFromSources(
 			mergedDetail,
@@ -941,7 +972,7 @@ export function PerformanceDetailModal({
 	}, [service, config, mergedDetail, isUnregisteredMode, record, fieldLabels, operationTypeLabels, t]);
 
 	const smsBreakdownCards = useMemo<SmsBreakdownCard[]>(() => {
-		if (!isSmsService)
+		if (!isSmsLikeService)
 			return [];
 
 		const contractOperatorRevenue = Array.isArray((smsContract as any)?.operator_revenue) ? (smsContract as any).operator_revenue : [];
@@ -978,6 +1009,10 @@ export function PerformanceDetailModal({
 				profit: perf?.profit ?? null,
 				expenseOperator: perf?.expense_operator ?? perf?.expense ?? null,
 				expenseGovernment: perf?.expense_government ?? contractGovernmentRate,
+				incomeTci: perf?.income_tci ?? null,
+				incomeFirstSide: perf?.income_first_side ?? null,
+				incomeArea: perf?.income_area ?? null,
+				incomeSalesAgent: perf?.income_sales_agent ?? null,
 			};
 		});
 
@@ -997,6 +1032,10 @@ export function PerformanceDetailModal({
 				profit: item?.profit ?? null,
 				expenseOperator: item?.expense_operator ?? item?.expense ?? null,
 				expenseGovernment: item?.expense_government ?? null,
+				incomeTci: item?.income_tci ?? null,
+				incomeFirstSide: item?.income_first_side ?? null,
+				incomeArea: item?.income_area ?? null,
+				incomeSalesAgent: item?.income_sales_agent ?? null,
 			});
 		});
 
@@ -1016,11 +1055,27 @@ export function PerformanceDetailModal({
 				profit: item?.profit ?? null,
 				expenseOperator: item?.expense_operator ?? item?.expense ?? null,
 				expenseGovernment: item?.expense_government ?? contractGovernmentRate,
+				incomeTci: item?.income_tci ?? null,
+				incomeFirstSide: item?.income_first_side ?? null,
+				incomeArea: item?.income_area ?? null,
+				incomeSalesAgent: item?.income_sales_agent ?? null,
 			});
 		});
 
 		return cards;
-	}, [isSmsService, mergedDetail.items, smsContract, smsPerformances, t]);
+	}, [isSmsLikeService, mergedDetail.items, smsContract, smsPerformances, t]);
+
+	const smsCommissionSummaryLabels = useMemo(() => ({
+		value: "مقدار عملکرد",
+		price: "قیمت واحد",
+		income: "درآمد کاراشاب",
+		profit: "سود کاراشاب",
+		expense: "هزینه کاراشاب",
+		incomeTci: "درآمد مخابرات",
+		incomeFirstSide: "درآمد طرف اول",
+		incomeArea: "درآمد منطقه",
+		incomeSalesAgent: "درآمد نماینده فروش",
+	}), []);
 
 	const form = useForm<EditFormValues>({
 		defaultValues: {},
@@ -1114,7 +1169,7 @@ export function PerformanceDetailModal({
 	}, [open, service, normalizedRecord.companyId, normalizedRecord.serviceId, normalizedRecord.year, normalizedRecord.month, isUnregisteredMode]);
 
 	useEffect(() => {
-		if (!open || service !== "sms" || isUnregisteredMode) {
+		if (!open || !isSmsLikeService || isUnregisteredMode) {
 			setSmsPerformances([]);
 			return;
 		}
@@ -1131,13 +1186,14 @@ export function PerformanceDetailModal({
 		let cancelled = false;
 		(async () => {
 			try {
-				const response = await fetchPerformanceList("sms", {
+				const response = await fetchPerformanceList(service, {
 					page: 1,
 					page_size: 250,
 					service: serviceId,
 					company: companyId,
 					sh_year: year,
 					sh_month: month,
+					sales_agent: normalizedRecord.salesAgentId ?? undefined,
 				});
 				if (!cancelled)
 					setSmsPerformances(response?.results ?? []);
@@ -1151,7 +1207,17 @@ export function PerformanceDetailModal({
 		return () => {
 			cancelled = true;
 		};
-	}, [open, service, normalizedRecord.companyId, normalizedRecord.serviceId, normalizedRecord.year, normalizedRecord.month, isUnregisteredMode]);
+	}, [
+		open,
+		service,
+		isSmsLikeService,
+		normalizedRecord.companyId,
+		normalizedRecord.serviceId,
+		normalizedRecord.year,
+		normalizedRecord.month,
+		normalizedRecord.salesAgentId,
+		isUnregisteredMode,
+	]);
 
 	useEffect(() => {
 		if (!open || service !== "traffic") {
@@ -1519,7 +1585,7 @@ export function PerformanceDetailModal({
 										)
 										: null}
 
-									{!isUnregisteredMode && isSmsService && smsBreakdownCards.length > 0
+									{!isUnregisteredMode && isSmsLikeService && smsBreakdownCards.length > 0
 										? (
 											<div
 												className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3"
@@ -1536,13 +1602,31 @@ export function PerformanceDetailModal({
 														}}
 													>
 														<div className="font-bold">{card.title}</div>
-														<ReadOnlyBlock label={`${t("performance.columns.value")}:`} value={formatNumberLike(card.value)} />
-														<ReadOnlyBlock label={`${t("performance.modal.labels.operatorIncome")}:`} value={formatNumberLike(card.incomeOperator)} />
-														<ReadOnlyBlock label={`${t("performance.modal.labels.governmentIncome")}:`} value={formatNumberLike(card.incomeGovernment)} />
-														<ReadOnlyBlock label={`${t("performance.modal.labels.unitPrice")}:`} value={formatNumberLike(card.price)} />
-														<ReadOnlyBlock label={`${t("performance.columns.profit")}:`} value={formatNumberLike(card.profit)} />
-														<ReadOnlyBlock label={`${t("performance.modal.labels.operatorExpense")}:`} value={formatNumberLike(card.expenseOperator)} />
-														<ReadOnlyBlock label={`${t("performance.modal.labels.governmentExpense")}:`} value={formatNumberLike(card.expenseGovernment)} />
+														{service === "sms-commission"
+															? (
+																<>
+																	<ReadOnlyBlock label={`${smsCommissionSummaryLabels.value}:`} value={formatNumberLike(card.value)} />
+																	<ReadOnlyBlock label={`${smsCommissionSummaryLabels.price}:`} value={formatNumberLike(card.price)} />
+																	<ReadOnlyBlock label={`${smsCommissionSummaryLabels.income}:`} value={formatNumberLike(card.incomeOperator)} />
+																	<ReadOnlyBlock label={`${smsCommissionSummaryLabels.profit}:`} value={formatNumberLike(card.profit)} />
+																	<ReadOnlyBlock label={`${smsCommissionSummaryLabels.expense}:`} value={formatNumberLike(card.expenseOperator)} />
+																	<ReadOnlyBlock label={`${smsCommissionSummaryLabels.incomeTci}:`} value={formatNumberLike(card.incomeTci)} />
+																	<ReadOnlyBlock label={`${smsCommissionSummaryLabels.incomeFirstSide}:`} value={formatNumberLike(card.incomeFirstSide)} />
+																	<ReadOnlyBlock label={`${smsCommissionSummaryLabels.incomeArea}:`} value={formatNumberLike(card.incomeArea)} />
+																	<ReadOnlyBlock label={`${smsCommissionSummaryLabels.incomeSalesAgent}:`} value={formatNumberLike(card.incomeSalesAgent)} />
+																</>
+															)
+															: (
+																<>
+																	<ReadOnlyBlock label={`${t("performance.columns.value")}:`} value={formatNumberLike(card.value)} />
+																	<ReadOnlyBlock label={`${t("performance.modal.labels.operatorIncome")}:`} value={formatNumberLike(card.incomeOperator)} />
+																	<ReadOnlyBlock label={`${t("performance.modal.labels.governmentIncome")}:`} value={formatNumberLike(card.incomeGovernment)} />
+																	<ReadOnlyBlock label={`${t("performance.modal.labels.unitPrice")}:`} value={formatNumberLike(card.price)} />
+																	<ReadOnlyBlock label={`${t("performance.columns.profit")}:`} value={formatNumberLike(card.profit)} />
+																	<ReadOnlyBlock label={`${t("performance.modal.labels.operatorExpense")}:`} value={formatNumberLike(card.expenseOperator)} />
+																	<ReadOnlyBlock label={`${t("performance.modal.labels.governmentExpense")}:`} value={formatNumberLike(card.expenseGovernment)} />
+																</>
+															)}
 													</div>
 												))}
 											</div>

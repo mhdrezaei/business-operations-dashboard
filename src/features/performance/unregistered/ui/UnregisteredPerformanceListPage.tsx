@@ -4,6 +4,8 @@ import type { ActionType, ProColumns, ProFormInstance } from "@ant-design/pro-co
 import type { PerformanceListRow } from "../model/performance.list.types";
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import {
+	fetchMonthlyContractStatus,
+	fetchSmsCommissionAgents,
 	fetchUnregisteredPerformanceList,
 } from "#src/features/performance/api/performances.api";
 import { normalizePerformanceRecord, resolvePerformanceServicePath } from "#src/features/performance/shared/model/performance.helpers";
@@ -85,6 +87,7 @@ export default function UnregisteredPerformanceList() {
 	const [selectedServiceCode, setSelectedServiceCode] = useState<string | null>(null);
 	const [openDetail, setOpenDetail] = useState(false);
 	const [selectedRow, setSelectedRow] = useState<PerformanceListRow | null>(null);
+	const [openingRowKey, setOpeningRowKey] = useState<string | null>(null);
 	const applySelectedServicesState = useCallback((serviceIds: number[], serviceCode: string | null) => {
 		setSelectedServiceIds(serviceIds);
 		setSelectedServiceCode(serviceCode);
@@ -222,6 +225,89 @@ export default function UnregisteredPerformanceList() {
 		actionRef.current?.reload?.();
 	};
 
+	const openPerformanceDetail = useCallback(async (record: PerformanceListRow) => {
+		const rowServiceCode = String((record as any).service_code ?? selectedServiceCode ?? "").trim().toLowerCase();
+		const rowServicePath = resolvePerformanceServicePath(rowServiceCode as any);
+		const rowKey = getUnregisteredPerformanceRowKey(record);
+
+		if (rowServicePath !== "traffic") {
+			if (rowServicePath === "sms-commission") {
+				const normalized = normalizePerformanceRecord(record);
+				if (normalized.companyId == null) {
+					window.$message?.error(t("performance.errors.baseFormIncomplete"));
+					return;
+				}
+
+				setOpeningRowKey(rowKey);
+				try {
+					const agents = await fetchSmsCommissionAgents();
+					const selectedAgent = (agents.results ?? [])
+						.find(agent => Number(agent.company) === Number(normalized.companyId));
+
+					if (!selectedAgent) {
+						window.$message?.error(t("performance.messages.salesAgentNotFound"));
+						return;
+					}
+
+					setSelectedRow({
+						...record,
+						sales_agent: selectedAgent.id,
+						sales_agent_id: selectedAgent.id,
+						sales_agent_name: selectedAgent.name,
+					});
+					setOpenDetail(true);
+				}
+				catch {
+					window.$message?.error(t("performance.messages.unknownError"));
+				}
+				finally {
+					setOpeningRowKey(null);
+				}
+				return;
+			}
+
+			setSelectedRow(record);
+			setOpenDetail(true);
+			return;
+		}
+
+		const normalized = normalizePerformanceRecord(record);
+		if (
+			normalized.serviceId == null
+			|| normalized.companyId == null
+			|| normalized.year == null
+			|| normalized.month == null
+		) {
+			window.$message?.error(t("performance.errors.baseFormIncomplete"));
+			return;
+		}
+
+		setOpeningRowKey(rowKey);
+		try {
+			const status = await fetchMonthlyContractStatus({
+				serviceId: normalized.serviceId,
+				companyId: normalized.companyId,
+				year: normalized.year,
+				month: normalized.month,
+				companyType: normalized.companyType,
+			});
+
+			setSelectedRow({
+				...record,
+				traffic: status.traffic ?? null,
+				traffic_has_county_contract: status.traffic?.has_county_contract ?? null,
+				traffic_location_units: status.traffic?.location_units ?? null,
+			});
+			setOpenDetail(true);
+		}
+		catch {
+			window.$message?.error(t("performance.messages.unknownError"));
+		}
+		finally {
+			setOpeningRowKey(null);
+		}
+	}, [selectedServiceCode, t]);
+
 	const baseColumns = useMemo(
 		() =>
 			getPerformanceColumns({
@@ -267,17 +353,16 @@ export default function UnregisteredPerformanceList() {
 					);
 
 					if (canCreateRow) {
+						const rowKey = getUnregisteredPerformanceRowKey(record);
 						actions.push(
 							<BasicButton
 								key="add"
 								type="link"
 								size="large"
+								loading={openingRowKey === rowKey}
 								title={t("performance.actions.submitPerformance")}
 								icon={<EditOutlined />}
-								onClick={() => {
-									setSelectedRow(record);
-									setOpenDetail(true);
-								}}
+								onClick={() => void openPerformanceDetail(record)}
 							/>,
 						);
 					}
@@ -286,7 +371,7 @@ export default function UnregisteredPerformanceList() {
 				},
 			},
 		];
-	}, [baseColumns, t]);
+	}, [baseColumns, t, openingRowKey, openPerformanceDetail]);
 
 	return (
 		<BasicContent className="h-full">

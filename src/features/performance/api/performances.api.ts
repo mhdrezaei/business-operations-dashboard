@@ -228,6 +228,7 @@ export interface MonthlyContractStatusResponse {
 	} | null
 	traffic?: {
 		has_county_contract: boolean
+		location_units?: Record<string, string>
 	} | null
 }
 
