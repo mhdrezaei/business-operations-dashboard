@@ -92,7 +92,7 @@ export function TrafficFields() {
 					)
 					: (
 						<div className="mb-3 opacity-90">
-							توجه: هر واحد قیمت برابر با یک مگابیت بر ثانیه است.
+							توجه: مبنای محاسبه قیمت در این سرویس، هر مگابیت بر ثانیه است.
 						</div>
 					)}
 
@@ -113,7 +113,7 @@ export function TrafficFields() {
 												<Card
 													bordered
 													className="w-full rounded-md mt-3 [&_.ant-pro-card-body]:p-4"
-													title={<span className="font-bold">قرارداد تهران</span>}
+													title={<span className="font-bold">قرارداد ترافیک تهران</span>}
 													extra={(
 														<Button danger size="small" icon={<DeleteOutlined />} onClick={removeTehran}>
 															حذف
@@ -150,7 +150,7 @@ export function TrafficFields() {
 												<Card
 													bordered
 													className="rounded-md mt-3 [&_.ant-pro-card-body]:p-4"
-													title={<span className="font-bold">قرارداد مراکز استانی</span>}
+													title={<span className="font-bold">قرارداد ترافیک مراکز استان‌ها</span>}
 													extra={(
 														<Button danger size="small" icon={<DeleteOutlined />} onClick={removeProvince}>
 															حذف
@@ -185,6 +185,11 @@ export function TrafficFields() {
 			{showPricingUi && showAddenda
 				? (
 					<div className="mt-3">
+						<div className="mb-2 text-gray-600 text-sm">
+							برای ثبت تغییرات مرتبط با قرارداد اصلی می‌توانید الحاقیه اضافه کنید.
+							موارد داخل الحاقیه مشابه فرم اصلی ایجاد قرارداد هستند.
+						</div>
+
 						<ContractAddendaSection<ContractFormValues>
 							title="الحاقیه‌های قرارداد (اختیاری)"
 							name={sf("addenda") as ArrayPath<ContractFormValues>}
@@ -196,9 +201,12 @@ export function TrafficFields() {
 										name={`${base}.location` as any}
 										label="موقعیت"
 										options={ADDENDA_LOCATION_OPTIONS}
-										selectProps={{ placeholder: "انتخاب کنید", allowClear: true }}
+										selectProps={{ placeholder: "انتخاب نوع محاسبه", allowClear: true }}
 									/>
-									<ContractTypeSection title="نوع قرارداد" name={`${base}.contractPricing` as any} />
+									<ContractTypeSection
+										title="روش محاسبه قیمت"
+										name={`${base}.contractPricing` as any}
+									/>
 								</>
 							)}
 							contractStartYearPath={"startYear" as Path<ContractFormValues>}

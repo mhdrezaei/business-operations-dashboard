@@ -40,13 +40,13 @@ export const contractTypeSchema: z.ZodType<ContractTypeValue> = z
 	})
 	.superRefine((val, ctx) => {
 		if (val.type == null) {
-			ctx.addIssue({ code: "custom", path: ["type"], message: "نوع قرارداد الزامی است" });
+			ctx.addIssue({ code: "custom", path: ["type"], message: "روش محاسبه قیمت الزامی است" });
 			return;
 		}
 
 		if (val.type === "fixed") {
 			if (val.fixedAmount == null) {
-				ctx.addIssue({ code: "custom", path: ["fixedAmount"], message: "مبلغ ثابت الزامی است" });
+				ctx.addIssue({ code: "custom", path: ["fixedAmount"], message: "مبلغ الزامی است" });
 			}
 			return;
 		}
@@ -60,11 +60,11 @@ export const contractTypeSchema: z.ZodType<ContractTypeValue> = z
 			val.rows.forEach((r, i) => {
 				const isLastRow = i === val.rows.length - 1;
 				if (r.from == null)
-					ctx.addIssue({ code: "custom", path: ["rows", i, "from"], message: "از الزامی است" });
+					ctx.addIssue({ code: "custom", path: ["rows", i, "from"], message: "مقدار شروع الزامی است" });
 				if (!isLastRow && r.to == null)
 					ctx.addIssue({ code: "custom", path: ["rows", i, "to"], message: "تا الزامی است" });
 				if (r.fee == null)
-					ctx.addIssue({ code: "custom", path: ["rows", i, "fee"], message: "مقدار فی الزامی است" });
+					ctx.addIssue({ code: "custom", path: ["rows", i, "fee"], message: "مبلغ الزامی است" });
 				if (r.from != null && r.to != null && r.from > r.to) {
 					ctx.addIssue({ code: "custom", path: ["rows", i, "to"], message: "مقدار «تا» باید بزرگتر از «از» باشد" });
 				}
@@ -91,18 +91,18 @@ export const contractTypeSchema: z.ZodType<ContractTypeValue> = z
 
 			val.sections.forEach((s, si) => {
 				if (s.mode == null)
-					ctx.addIssue({ code: "custom", path: ["sections", si, "mode"], message: "نوع این بخش الزامی است" });
+					ctx.addIssue({ code: "custom", path: ["sections", si, "mode"], message: "نوع محاسبه الزامی است" });
 				if (!s.rows.length)
 					ctx.addIssue({ code: "custom", path: ["sections", si, "rows"], message: "حداقل یک ردیف برای این بخش لازم است" });
 
 				s.rows.forEach((r, ri) => {
 					const isLastRow = ri === s.rows.length - 1;
 					if (r.from == null)
-						ctx.addIssue({ code: "custom", path: ["sections", si, "rows", ri, "from"], message: "از الزامی است" });
+						ctx.addIssue({ code: "custom", path: ["sections", si, "rows", ri, "from"], message: "مقدار شروع الزامی است" });
 					if (!isLastRow && r.to == null)
 						ctx.addIssue({ code: "custom", path: ["sections", si, "rows", ri, "to"], message: "تا الزامی است" });
 					if (r.fee == null)
-						ctx.addIssue({ code: "custom", path: ["sections", si, "rows", ri, "fee"], message: "مقدار فی الزامی است" });
+						ctx.addIssue({ code: "custom", path: ["sections", si, "rows", ri, "fee"], message: "مبلغ الزامی است" });
 					if (r.from != null && r.to != null && r.from > r.to) {
 						ctx.addIssue({ code: "custom", path: ["sections", si, "rows", ri, "to"], message: "مقدار «تا» باید بزرگتر از «از» باشد" });
 					}

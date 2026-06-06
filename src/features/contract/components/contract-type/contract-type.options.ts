@@ -8,6 +8,6 @@ export const CONTRACT_TYPE_OPTIONS: { label: string, value: ContractType }[] = [
 ];
 
 export const BLENDED_MODE_OPTIONS: { label: string, value: BlendedSectionMode }[] = [
-	{ label: "پلکانی ثابت در این بخش", value: "fixed" },
-	{ label: "پلکانی متغیر در این بخش", value: "variable" },
+	{ label: "محاسبه به روش پلکانی ثابت", value: "fixed" },
+	{ label: "محاسبه به روش پلکانی متغیر", value: "variable" },
 ];

@@ -14,8 +14,11 @@ function renderMinProfitField(name: string) {
 	return (
 		<RHFProNumber
 			name={name as any}
-			label="حداقل سود (تومان)"
-			inputProps={{ placeholder: "اختیاری" }}
+			label="حداقل کارمزد"
+			inputProps={{
+				placeholder: "اختیاری",
+				addonAfter: "تومان",
+			}}
 			enableGrouping
 			enableWordsTooltip
 		/>
@@ -51,7 +54,7 @@ export function SmsFields() {
 				/>
 			</Card>
 
-			<Card bordered className="rounded-md [&_.ant-pro-card-body]:p-4" title="درآمد اپراتورها">
+			<Card bordered className="rounded-md [&_.ant-pro-card-body]:p-4" title="سهم اپراتورها">
 				<div className="sms-operator-grid">
 					<ContractTypeSection title="ایرانسل - فارسی" name={sf("operatorRevenue.irancellFa")} />
 					<ContractTypeSection title="ایرانسل - انگلیسی" name={sf("operatorRevenue.irancellEn")} />
@@ -65,12 +68,12 @@ export function SmsFields() {
 			{isPartners
 				? (
 					<>
-						<Card bordered className="rounded-md [&_.ant-pro-card-body]:p-4" title="درآمد دولت">
-							<ContractTypeSection title="درآمد دولت" name={sf("governmentRevenue")} />
+						<Card bordered className="rounded-md [&_.ant-pro-card-body]:p-4" title="سهم دولت">
+							<ContractTypeSection title="سهم دولت" name={sf("governmentRevenue")} />
 						</Card>
 						<div className="mt-3">
 							<ContractTypeSection
-								title="سود"
+								title="تعیین کارمزد و سهم"
 								name={sf("profit.pricing")}
 								topAside={renderMinProfitField(sf("profit.minProfit"))}
 							/>
@@ -81,8 +84,8 @@ export function SmsFields() {
 
 			{isGovOps
 				? (
-					<Card bordered className="rounded-md mt-3 [&_.ant-pro-card-body]:p-4" title="نرخ دولت">
-						<ContractTypeSection title="نرخ دولت" name={sf("governmentRate")} />
+					<Card bordered className="rounded-md mt-3 [&_.ant-pro-card-body]:p-4" title="سهم دولت">
+						<ContractTypeSection title="سهم دولت" name={sf("governmentRate")} />
 					</Card>
 				)
 				: null}
@@ -111,12 +114,12 @@ export function SmsFields() {
 									{isPartners
 										? (
 											<>
-												<Card bordered className="rounded-md mt-3 [&_.ant-pro-card-body]:p-4" title="درآمد دولت">
-													<ContractTypeSection title="درآمد دولت" name={`${base}.governmentRevenue` as any} />
+												<Card bordered className="rounded-md mt-3 [&_.ant-pro-card-body]:p-4" title="سهم دولت">
+													<ContractTypeSection title="سهم دولت" name={`${base}.governmentRevenue` as any} />
 												</Card>
 												<div className="mt-3">
 													<ContractTypeSection
-														title="سود"
+														title="تعیین کارمزد و سهم"
 														name={`${base}.profit.pricing` as any}
 														topAside={renderMinProfitField(`${base}.profit.minProfit`)}
 													/>
@@ -127,8 +130,8 @@ export function SmsFields() {
 
 									{isGovOps
 										? (
-											<Card bordered className="rounded-md mt-3 [&_.ant-pro-card-body]:p-4" title="نرخ دولت">
-												<ContractTypeSection title="نرخ دولت" name={`${base}.governmentRate` as any} />
+											<Card bordered className="rounded-md mt-3 [&_.ant-pro-card-body]:p-4" title="سهم دولت">
+												<ContractTypeSection title="سهم دولت" name={`${base}.governmentRate` as any} />
 											</Card>
 										)
 										: null}

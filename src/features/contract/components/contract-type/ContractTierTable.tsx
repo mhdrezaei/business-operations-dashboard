@@ -36,7 +36,7 @@ function TierToField({ name, showHint }: TierToFieldProps): React.JSX.Element {
 					onClick={handleCloseHint}
 					className="cursor-pointer border-0 bg-transparent p-0 text-right font-inherit leading-[1.6] text-inherit"
 				>
-					در صورت خالی بودن محدودیتی وجود ندارد.
+					اگر این فیلد خالی بماند، بازه بدون محدودیت در نظر گرفته می‌شود.
 				</button>
 			)}
 		>
@@ -62,9 +62,9 @@ export function ContractTierTable({ name }: Props) {
 
 	const header = useMemo(
 		() => [
-			{ key: "from", title: "بازه اول" },
-			{ key: "to", title: "بازه دوم" },
-			{ key: "fee", title: "مقدار فی" },
+			{ key: "from", title: "شروع بازه" },
+			{ key: "to", title: "پایان بازه" },
+			{ key: "fee", title: "مبلغ" },
 		],
 		[],
 	);
@@ -147,26 +147,30 @@ export function ContractTierTable({ name }: Props) {
 								label=""
 								enableGrouping
 								enableWordsTooltip
-								inputProps={{ placeholder: "فی", inputMode: "numeric" } as any}
+								inputProps={{ placeholder: "مبلغ (تومان)", inputMode: "numeric" } as any}
 								formItemProps={{ className: "mb-0" }}
 							/>
 						</div>
 
 						<div className="flex items-center justify-center p-3">
-							<Button
-								type="text"
-								danger
-								icon={<DeleteOutlined />}
-								onClick={() => handleRemoveRow(index)}
-							/>
+							<Tooltip title="حذف بازه">
+								<Button
+									type="text"
+									danger
+									icon={<DeleteOutlined />}
+									onClick={() => handleRemoveRow(index)}
+								/>
+							</Tooltip>
 						</div>
 					</div>
 				))}
 
 				<div className="p-3">
-					<Button icon={<PlusOutlined />} onClick={handleAddRow}>
-						افزودن ردیف
-					</Button>
+					<Tooltip title="مقدار شروع بازه جدید به‌طور خودکار تنظیم می‌شود.">
+						<Button icon={<PlusOutlined />} onClick={handleAddRow}>
+							افزودن بازه
+						</Button>
+					</Tooltip>
 				</div>
 			</div>
 		</Card>

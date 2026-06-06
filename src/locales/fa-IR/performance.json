@@ -204,7 +204,7 @@
 		"singleEntry": "ثبت تکی",
 		"downloadTemplate": "دانلود فایل تمپلیت",
 		"preUploadHint": "قبل از دانلود/آپلود، نوع شرکت، سال و ماه را انتخاب کنید.",
-		"unitPriceHint": "توجه: هر واحد قیمت برابر با یک گیگابایت است.",
+		"unitPriceHint": "مبنای محاسبه قیمت در این سرویس، هر مگابیت بر ثانیه است.",
 		"tehranPerformance": "عملکرد تهران",
 		"countyPerformance": "عملکرد مراکز استان",
 		"addCountyPerformance": "افزودن عملکرد مراکز استان"

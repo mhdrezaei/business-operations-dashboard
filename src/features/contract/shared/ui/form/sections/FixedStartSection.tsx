@@ -394,7 +394,7 @@ export function FixedStartSection({ mode = "create" }: FixedStartSectionProps) {
 
 	const companyPlaceholder
 		= !serviceId
-			? "ابتدا سرویس را انتخاب کنید"
+			? "ابتدا نوع سرویس را انتخاب کنید"
 			: companies.isLoading
 				? "در حال دریافت لیست شرکت‌ها..."
 				: requiresCompanyType && shouldSelectCompany && !companyType
@@ -578,7 +578,7 @@ export function FixedStartSection({ mode = "create" }: FixedStartSectionProps) {
 							options={startYearOptions}
 							selectProps={{
 								"allowClear": true,
-								"placeholder": "سال",
+								"placeholder": "انتخاب سال",
 								"aria-labelledby": "contract-form-label-start-year",
 							} as any}
 						/>
@@ -592,7 +592,7 @@ export function FixedStartSection({ mode = "create" }: FixedStartSectionProps) {
 							options={startMonthOptions}
 							selectProps={{
 								"allowClear": true,
-								"placeholder": "ماه",
+								"placeholder": "انتخاب ماه",
 								"aria-labelledby": "contract-form-label-start-month",
 							} as any}
 						/>
@@ -606,7 +606,7 @@ export function FixedStartSection({ mode = "create" }: FixedStartSectionProps) {
 							options={endYearOptions}
 							selectProps={{
 								"allowClear": true,
-								"placeholder": "سال",
+								"placeholder": "انتخاب سال",
 								"aria-labelledby": "contract-form-label-end-year",
 							} as any}
 						/>
@@ -620,7 +620,7 @@ export function FixedStartSection({ mode = "create" }: FixedStartSectionProps) {
 							options={endMonthOptions}
 							selectProps={{
 								"allowClear": true,
-								"placeholder": "ماه",
+								"placeholder": "انتخاب ماه",
 								"aria-labelledby": "contract-form-label-end-month",
 							} as any}
 						/>
@@ -631,15 +631,24 @@ export function FixedStartSection({ mode = "create" }: FixedStartSectionProps) {
 					className="contract-form-aligned-grid contract-form-aligned-grid--two"
 					style={{ ...alignedLabelStyle, marginTop: 12 }}
 				>
-					<ContractAlignedField label="شماره قرارداد" labelId="contract-form-label-contract-number">
-						<RHFProText<ContractFormValues, "contractNumber">
-							name="contractNumber"
-							formItemProps={compactFormItemStyle}
-							inputProps={{
-								"aria-labelledby": "contract-form-label-contract-number",
-							} as any}
-						/>
-					</ContractAlignedField>
+					<div
+						className="contract-form-aligned-grid contract-form-aligned-grid--two"
+						style={{ ...alignedLabelStyle, marginTop: 12 }}
+					>
+						<ContractAlignedField
+							label="شماره قرارداد"
+							labelId="contract-form-label-contract-number"
+						>
+							<RHFProText<ContractFormValues, "contractNumber">
+								name="contractNumber"
+								formItemProps={compactFormItemStyle}
+								inputProps={{
+									"placeholder": "مثلا CN-1404-001",
+									"aria-labelledby": "contract-form-label-contract-number",
+								}}
+							/>
+						</ContractAlignedField>
+					</div>
 				</div>
 			</BasicContent>
 		</Card>

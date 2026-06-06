@@ -113,9 +113,9 @@ export function ContractTypeSection({ title, name, topAside }: Props) {
 			return (
 				<RHFSelect
 					name={`${name}.type` as any}
-					label="نوع قرارداد"
+					label="روش محاسبه قیمت"
 					options={CONTRACT_TYPE_OPTIONS}
-					selectProps={{ placeholder: "انتخاب کنید", allowClear: true }}
+					selectProps={{ placeholder: "انتخاب نوع محاسبه", allowClear: true }}
 				/>
 			);
 		}
@@ -127,9 +127,9 @@ export function ContractTypeSection({ title, name, topAside }: Props) {
 				<div className="min-w-0 flex-[1_1_320px]">
 					<RHFSelect
 						name={`${name}.type` as any}
-						label="نوع قرارداد"
+						label="روش محاسبه قیمت"
 						options={CONTRACT_TYPE_OPTIONS}
-						selectProps={{ placeholder: "انتخاب کنید", allowClear: true }}
+						selectProps={{ placeholder: "انتخاب نوع محاسبه", allowClear: true }}
 					/>
 				</div>
 
@@ -154,7 +154,7 @@ export function ContractTypeSection({ title, name, topAside }: Props) {
 						<ProFormGroup>
 							<RHFProNumber
 								name={`${name}.fixedAmount` as any}
-								label="مبلغ ثابت (تومان)"
+								label="مبلغ (تومان)"
 								enableGrouping
 								enableWordsTooltip
 								inputProps={{ placeholder: "مثلاً 120", inputMode: "numeric" } as any}
@@ -175,7 +175,7 @@ export function ContractTypeSection({ title, name, topAside }: Props) {
 			{type === "tier_blended"
 				? (
 					<div className="mt-3">
-						<div className="font-semibold mb-3">بخش‌های پلکانی تلفیقی</div>
+						<div className="font-semibold mb-3">بخش‌های محاسبه قیمتی</div>
 
 						{sectionsFa.fields.map((sectionField, sectionIndex) => (
 							<Card
@@ -186,7 +186,7 @@ export function ContractTypeSection({ title, name, topAside }: Props) {
 									<div
 										className="flex justify-between items-center w-full"
 									>
-										<span>{`بخش ${sectionIndex + 1}`}</span>
+										<span>{`نوع محاسبه بخش ${sectionIndex + 1}`}</span>
 
 										<Button
 											danger
@@ -207,7 +207,7 @@ export function ContractTypeSection({ title, name, topAside }: Props) {
 									name={`${name}.sections.${sectionIndex}.mode` as any}
 									label=""
 									options={BLENDED_MODE_OPTIONS}
-									selectProps={{ placeholder: "انتخاب کنید", allowClear: true }}
+									selectProps={{ placeholder: "انتخاب نوع محاسبه", allowClear: true }}
 									formItemProps={{ className: "mb-3" }}
 								/>
 
@@ -216,7 +216,7 @@ export function ContractTypeSection({ title, name, topAside }: Props) {
 						))}
 
 						<Button icon={<PlusOutlined />} onClick={addSection}>
-							افزودن بخش جدید
+							افزودن بخش
 						</Button>
 					</div>
 				)
