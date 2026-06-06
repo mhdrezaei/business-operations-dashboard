@@ -29,6 +29,9 @@ export type RHFProTextProps<
 
 	/** جداکننده هزارگان (کاما) - فقط وقتی numericGuard فعال باشد معنی دارد */
 	enableGrouping?: boolean
+
+	/** نمایش tooltip تبدیل عدد به حروف */
+	showNumericTooltip?: boolean
 };
 
 export function RHFProText<
@@ -60,7 +63,9 @@ export function RHFProText<
 					? numberToWordsByLanguage(stripGroupingSeparators(rawValue), language)
 					: "";
 
-				const tooltipTitle = words || undefined;
+				const tooltipTitle = numericGuardEnabled && (props.showNumericTooltip ?? true)
+					? words || undefined
+					: undefined;
 
 				return (
 					<Form.Item

@@ -22,6 +22,19 @@ export function keepDigitsOnly(value: string, maxLength: number): string {
 	return normalizeDigits(value).replace(/\D/g, "").slice(0, maxLength);
 }
 
+export function normalizeIranMobile(value: string): string {
+	const digits = normalizeDigits(value).replace(/\D/g, "");
+
+	if (digits.startsWith("0098"))
+		return `0${digits.slice(4)}`;
+	if (digits.startsWith("98"))
+		return `0${digits.slice(2)}`;
+	if (digits.startsWith("9") && digits.length === 10)
+		return `0${digits}`;
+
+	return digits;
+}
+
 type ProfileInputKind = "letters" | "digits";
 
 interface ProfileInputKeyGuardOptions {
@@ -85,7 +98,7 @@ export function sanitizeProfileFormValues(
 		first_name: values.first_name == null ? values.first_name : sanitizeProfileInputValue("letters", values.first_name),
 		last_name: values.last_name == null ? values.last_name : sanitizeProfileInputValue("letters", values.last_name),
 		email: values.email == null ? values.email : values.email.trim(),
-		mobile: values.mobile == null ? values.mobile : sanitizeProfileInputValue("digits", values.mobile, 11),
+		mobile: values.mobile == null ? values.mobile : normalizeIranMobile(values.mobile).slice(0, 11),
 		national_code: values.national_code == null ? values.national_code : sanitizeProfileInputValue("digits", values.national_code, 10),
 	};
 }
@@ -169,7 +182,7 @@ export const myProfileUpsertSchema = z.object({
 		.nullable(),
 
 	mobile: z.string()
-		.transform(val => keepDigitsOnly(val ?? "", 11))
+		.transform(val => normalizeIranMobile(val ?? "").slice(0, 11))
 		.refine(val => val.length === 0 || val.length === 11, profileErrorMessages.mobileLength)
 		.refine(val => val.length === 0 || phoneNumberPattern.test(val), {
 			message: "شماره موبایل وارد شده معتبر نیست",

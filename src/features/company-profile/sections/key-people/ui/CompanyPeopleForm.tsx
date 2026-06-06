@@ -1,13 +1,13 @@
 import type { Resolver } from "react-hook-form";
 import type { CompanyPersonFormValues } from "../model/company-people.types";
-import { RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
+import { RHFProCheckbox, RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { PlusOutlined } from "@ant-design/icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button, Form } from "antd";
 
 import { useEffect } from "react";
-import { FormProvider, useFieldArray, useForm } from "react-hook-form";
+import { FormProvider, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { COMPANY_PERSON_ROLE_OPTIONS } from "../model/company-people.constants";
 import { companyPersonSchema } from "../model/company-people.schema";
 
@@ -41,6 +41,30 @@ function FieldArrayLabel({
 	);
 }
 
+function getArrayFieldMessage(error: unknown): string | undefined {
+	if (!error || typeof error !== "object")
+		return undefined;
+
+	const message = "message" in error ? error.message : undefined;
+	if (typeof message === "string" && message)
+		return message;
+
+	const root = "root" in error ? error.root : undefined;
+	if (!root || typeof root !== "object")
+		return undefined;
+
+	const rootMessage = "message" in root ? root.message : undefined;
+	return typeof rootMessage === "string" && rootMessage ? rootMessage : undefined;
+}
+
+function hasAnyValue(items: Array<{ value: string }> | undefined) {
+	return !!items?.some(item => item.value.trim() !== "");
+}
+
+function isTouchedArrayField(items: Array<{ value?: boolean }> | undefined) {
+	return !!items?.some(item => !!item?.value);
+}
+
 export default function CompanyPeopleForm({ disabled, defaultValues, onSubmit, onClose, submitText, submitting }: Props) {
 	const methods = useForm<CompanyPersonFormValues>({
 		defaultValues,
@@ -48,7 +72,9 @@ export default function CompanyPeopleForm({ disabled, defaultValues, onSubmit, o
 		mode: "onTouched",
 	});
 
-	const { control, handleSubmit, reset, formState: { isDirty, isSubmitting } } = methods;
+	const { control, handleSubmit, reset, formState: { errors, isDirty, isSubmitting, submitCount, touchedFields } } = methods;
+	const phoneValues = useWatch({ control, name: "phone" });
+	const emailValues = useWatch({ control, name: "email" });
 
 	const {
 		fields: phoneFields,
@@ -72,6 +98,16 @@ export default function CompanyPeopleForm({ disabled, defaultValues, onSubmit, o
 		reset(defaultValues);
 	}, [defaultValues, reset]);
 
+	const shouldShowPhoneRequiredError
+		= ((submitCount > 0) || isTouchedArrayField(touchedFields.phone)) && !hasAnyValue(phoneValues);
+
+	const shouldShowEmailRequiredError
+		= ((submitCount > 0) || isTouchedArrayField(touchedFields.email)) && !hasAnyValue(emailValues);
+
+	const phoneError = getArrayFieldMessage(errors.phone) ?? (shouldShowPhoneRequiredError ? "شماره تلفن را وارد کنید" : undefined);
+
+	const emailError = getArrayFieldMessage(errors.email) ?? (shouldShowEmailRequiredError ? "ایمیل را وارد کنید" : undefined);
+
 	return (
 		<Form layout="vertical">
 			<FormProvider {...methods}>
@@ -93,6 +129,7 @@ export default function CompanyPeopleForm({ disabled, defaultValues, onSubmit, o
 						name="national_id"
 						label="شناسه ملی"
 						inputProps={{ placeholder: "شناسه ملی", disabled, inputMode: "numeric" }}
+						showNumericTooltip={false}
 					/>
 
 					<RHFProText
@@ -104,6 +141,8 @@ export default function CompanyPeopleForm({ disabled, defaultValues, onSubmit, o
 					<Form.Item
 						label={<FieldArrayLabel label="تلفن" disabled={disabled} onAdd={() => appendPhone({ value: "" })} />}
 						style={{ marginBottom: 0 }}
+						validateStatus={phoneError ? "error" : undefined}
+						help={phoneError}
 					>
 						{phoneFields.map((field, index) => (
 							<div key={field.id} style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "flex-start" }}>
@@ -111,6 +150,7 @@ export default function CompanyPeopleForm({ disabled, defaultValues, onSubmit, o
 									name={`phone.${index}.value`}
 									inputProps={{ placeholder: "تلفن", disabled, inputMode: "numeric" }}
 									formItemProps={{ style: { flex: 1, marginBottom: 0 } }}
+									showNumericTooltip={false}
 								/>
 								{!disabled && phoneFields.length > 1 && (
 									<Button danger type="text" onClick={() => removePhone(index)}>
@@ -124,6 +164,8 @@ export default function CompanyPeopleForm({ disabled, defaultValues, onSubmit, o
 					<Form.Item
 						label={<FieldArrayLabel label="ایمیل" disabled={disabled} onAdd={() => appendEmail({ value: "" })} />}
 						style={{ marginBottom: 0 }}
+						validateStatus={emailError ? "error" : undefined}
+						help={emailError}
 					>
 						{emailFields.map((field, index) => (
 							<div key={field.id} style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "flex-start" }}>
@@ -142,13 +184,12 @@ export default function CompanyPeopleForm({ disabled, defaultValues, onSubmit, o
 					</Form.Item>
 				</div>
 
-				<div className="col-span-full">
-					{/* صاحب امضا */}
-					<label className="flex gap-2 items-center">
-						<input type="checkbox" disabled={disabled} {...methods.register("is_signatory")} />
-						صاحب امضا
-					</label>
-				</div>
+				<RHFProCheckbox
+					name="is_signatory"
+					checkboxLabel="صاحب امضا"
+					checkboxProps={{ disabled }}
+					itemProps={{ style: { gridColumn: "1 / -1", marginTop: 16, marginBottom: 0 } }}
+				/>
 				<div className="flex justify-end gap-2 mt-4">
 					<Button onClick={onClose}>انصراف</Button>
 					<Button type="primary" onClick={handleSubmit(onSubmit)} loading={!!submitting} disabled={disabled || !isDirty || isSubmitting}>

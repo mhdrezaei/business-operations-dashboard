@@ -1,35 +1,41 @@
-import type { ProfilePayload } from "./api/profile.api";
 import type { MyProfileFormValues } from "./model/profile.schema";
 
 import { BasicButton, BasicContent } from "#src/components/index.js";
 import { RHFProText } from "#src/shared/ui/rhf-pro/index.js";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card } from "antd";
 import { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 
 import { updateProfile } from "./api/profile.api";
+import { useMobileChangeOtp } from "./hooks/use-mobile-change-otp";
 import {
 	getComparableProfileString,
 	mergeProfileValues,
 	myProfileUpsertSchema,
+	normalizeDigits,
+	normalizeIranMobile,
+	sanitizeProfileFormValues,
 	sanitizeProfileInputValue,
 	shouldPreventProfileInputKey,
 } from "./model/profile.schema";
 import { userProfileQuery } from "./queries/profile.queries";
+import { MobileChangeOtpModal } from "./ui/MobileChangeOtpModal";
 
 export default function MyProfileForm() {
 	const [saving, setSaving] = useState(false);
 
-	const userDetail = useQuery(userProfileQuery()).data;
+	const queryClient = useQueryClient();
+	const profileQuery = userProfileQuery();
+	const userDetail = useQuery(profileQuery).data;
 
 	const defaultValues = useMemo<MyProfileFormValues>(() => ({
 		username: userDetail?.username ?? "",
 		first_name: userDetail?.first_name ?? "",
 		last_name: userDetail?.last_name ?? "",
 		email: userDetail?.email ?? "",
-		mobile: userDetail?.mobile ?? "",
+		mobile: normalizeIranMobile(userDetail?.mobile ?? ""),
 		national_code: userDetail?.national_code ?? "",
 		password: "",
 		newPassword: "",
@@ -55,19 +61,46 @@ export default function MyProfileForm() {
 		form.reset(mergedDefaultValues);
 	}, [mergedDefaultValues, form]);
 
+	const normalizeProfileForForm = (profile: MyProfileFormValues): MyProfileFormValues => ({
+		...profile,
+		...(sanitizeProfileFormValues(profile) as MyProfileFormValues),
+	});
+
+	const finishProfileUpdate = async (profile: MyProfileFormValues) => {
+		const normalizedProfile = normalizeProfileForForm(profile);
+		form.reset(normalizedProfile);
+		queryClient.setQueryData(profileQuery.queryKey, normalizedProfile);
+		await queryClient.invalidateQueries({ queryKey: profileQuery.queryKey });
+	};
+
+	const saveProfile = async (profile: MyProfileFormValues) => {
+		setSaving(true);
+		try {
+			const result = await updateProfile({ ...profile });
+			await finishProfileUpdate(result.data ?? profile);
+			window.$message?.success("اطلاعات پروفایل با موفقیت ذخیره شد");
+		}
+		finally {
+			setSaving(false);
+		}
+	};
+
+	const mobileChangeOtp = useMobileChangeOtp({ finishProfileUpdate, setSaving });
+
 	return (
 		<FormProvider {...form}>
 			<form
 				onSubmit={form.handleSubmit(async (values) => {
-					setSaving(true);
-					try {
-						const profile = myProfileUpsertSchema.parse(values);
-						await updateProfile({ ...profile } as ProfilePayload);
-						form.reset(profile);
+					const profile = myProfileUpsertSchema.parse(values);
+					const currentMobile = normalizeDigits(profile.mobile ?? "").replace(/\D/g, "");
+					const initialMobile = normalizeDigits(mergedDefaultValues.mobile ?? "").replace(/\D/g, "");
+
+					if (currentMobile !== initialMobile) {
+						await mobileChangeOtp.requestMobileOtp(profile);
+						return;
 					}
-					finally {
-						setSaving(false);
-					}
+
+					await saveProfile(profile);
 				})}
 			>
 				<Card>
@@ -122,7 +155,7 @@ export default function MyProfileForm() {
 									inputMode: "numeric",
 									maxLength: 11,
 									onInput: (event) => {
-										event.currentTarget.value = sanitizeProfileInputValue("digits", event.currentTarget.value, 11);
+										event.currentTarget.value = normalizeIranMobile(event.currentTarget.value).slice(0, 11);
 									},
 									onKeyDown: (event) => {
 										if (shouldPreventProfileInputKey("digits", {
@@ -192,101 +225,8 @@ export default function MyProfileForm() {
 					</BasicButton>
 				</div>
 			</form>
+
+			<MobileChangeOtpModal {...mobileChangeOtp.modalProps} />
 		</FormProvider>
 	);
 }
-
-// import { BasicContent, FormAvatarItem } from "#src/components";
-// import { useUserStore } from "#src/store";
-
-// import {
-// 	ProForm,
-// 	ProFormDigit,
-// 	ProFormText,
-// 	ProFormTextArea,
-// } from "@ant-design/pro-components";
-// import { Form, Input } from "antd";
-
-// export default function Profile() {
-// 	const currentUser = useUserStore();
-// 	const getAvatarURL = () => {
-// 		if (currentUser) {
-// 			if (currentUser.avatar) {
-// 				return currentUser.avatar;
-// 			}
-// 			const url = "https://avatar.vercel.sh/blur.svg?text=2";
-// 			return url;
-// 		}
-// 		return "";
-// 	};
-
-// 	const handleFinish = async () => {
-// 		window.$message?.success("به‌روزرسانی اطلاعات پایه با موفقیت انجام شد");
-// 	};
-
-// 	return (
-// 		<BasicContent className="max-w-md ml-10">
-// 			<h3>اطلاعات من</h3>
-// 			<ProForm
-// 				layout="vertical"
-// 				onFinish={handleFinish}
-// 				initialValues={{
-// 					...currentUser,
-// 					avatar: getAvatarURL(),
-// 				}}
-// 				requiredMark
-// 			>
-// 				<Form.Item
-// 					name="avatar"
-// 					label="آواتار"
-// 					rules={[
-// 						{
-// 							required: true,
-// 							message: "لطفاً نام نمایشی خود را وارد کنید!",
-// 						},
-// 					]}
-// 				>
-// 					<FormAvatarItem />
-// 				</Form.Item>
-// 				<ProFormText
-// 					name="username"
-// 					label="نام کاربری"
-// 					rules={[
-// 						{
-// 							required: true,
-// 							message: "لطفاً نام کاربری خود را وارد کنید!",
-// 						},
-// 					]}
-// 				/>
-// 				<ProFormText
-// 					name="email"
-// 					label="ایمیل"
-// 					rules={[
-// 						{
-// 							required: true,
-// 							message: "لطفاً ایمیل خود را وارد کنید!",
-// 						},
-// 					]}
-// 				/>
-// 				<ProFormDigit
-// 					name="phoneNumber"
-// 					label="شماره تماس"
-// 					rules={[
-// 						{
-// 							required: true,
-// 							message: "لطفاً شماره تماس خود را وارد کنید!",
-// 						},
-// 					]}
-// 				>
-// 					<Input type="tel" allowClear />
-// 				</ProFormDigit>
-// 				<ProFormTextArea
-// 					allowClear
-// 					name="description"
-// 					label="معرفی شخصی"
-// 					placeholder="معرفی شخصی"
-// 				/>
-// 			</ProForm>
-// 		</BasicContent>
-// 	);
-// };

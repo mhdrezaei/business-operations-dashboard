@@ -12,11 +12,6 @@ const nationalIdSchema = z.string().trim().min(1, "شناسه ملی را وار
 
 const titleSchema = z.string().trim().min(1, "عنوان را وارد کنید");
 
-const roleSchema = z.preprocess(
-	value => value ?? "",
-	z.string().trim().min(1, "نقش را انتخاب کنید"),
-);
-
 const optionalPhoneSchema = z.string().trim().refine(value => value === "" || /^09\d{9}$/.test(value), {
 	message: "شماره تلفن باید با 09 شروع شود و 11 رقم باشد",
 });
@@ -36,14 +31,13 @@ function requiredMultiField(itemSchema: z.ZodType<string>, requiredMessage: stri
 				ctx.addIssue({
 					code: "custom",
 					message: requiredMessage,
-					path: [0, "value"],
 				});
 			}
 		});
 }
 
 export const companyPersonSchema = z.object({
-	role: roleSchema,
+	role: z.string().nullable(),
 	full_name: fullNameSchema,
 	is_signatory: z.boolean(),
 	national_id: nationalIdSchema,
