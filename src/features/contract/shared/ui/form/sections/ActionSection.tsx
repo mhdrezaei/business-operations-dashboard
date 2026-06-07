@@ -30,7 +30,7 @@ export function ActionSection({
 					{submitText}
 				</Button>
 				<Button loading={!!submitting} disabled={disabled || submitting} onClick={onSubmitAndCreateAnother}>
-					ثبت و ایجاد یکی دیگر
+					ثبت و ایجاد قرارداد جدید
 				</Button>
 				<Button loading={!!submitting} disabled={disabled || submitting} type="primary" onClick={onSubmitAndEdit}>
 					ثبت و ویرایش

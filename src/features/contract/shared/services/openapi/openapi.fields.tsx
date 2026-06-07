@@ -527,7 +527,7 @@ export function OpenApiFields() {
 	return (
 		<Card
 			bordered
-			title="مدل قرارداد OpenAPI"
+			title="بهای هر واحد"
 			className="[&_.ant-pro-card-body]:p-4"
 		>
 			<Row gutter={24} justify="space-between">
@@ -536,7 +536,7 @@ export function OpenApiFields() {
 						name={sf("contractModel")}
 						label="مدل قرارداد OpenAPI"
 						options={CONTRACT_MODEL_OPTIONS}
-						selectProps={{ placeholder: "انتخاب کنید" }}
+						selectProps={{ placeholder: "انتخاب نوع محاسبه" }}
 					/>
 				</Col>
 

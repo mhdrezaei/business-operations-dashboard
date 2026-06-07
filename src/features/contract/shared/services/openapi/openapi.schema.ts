@@ -93,7 +93,7 @@ export const openApiServiceFieldsSchema = z
 			ctx.addIssue({
 				code: "custom",
 				path: ["contractModel"],
-				message: "مدل قرارداد الزامی است",
+				message: "روش محاسبه قیمت الزامی است",
 			});
 			return;
 		}
