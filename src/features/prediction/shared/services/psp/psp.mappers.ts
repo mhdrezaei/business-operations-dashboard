@@ -32,6 +32,24 @@ function normalizeShareSection(value: unknown): PredictionShareSectionValue {
 		return fallback;
 
 	const raw = value as Record<string, unknown>;
+	const directShares = Object.entries(raw)
+		.filter(([, amount]) => amount != null && amount !== "")
+		.map(([key, amount]) => [key, toNullableNumber(amount)] as const)
+		.filter(([, amount]) => amount != null);
+
+	if (directShares.length > 0 && !("shares" in raw) && !("selectedCompanyIds" in raw)) {
+		const shares = Object.fromEntries(directShares);
+		const selectedCompanyIds = Object.keys(shares)
+			.map(Number)
+			.filter(companyId => Number.isInteger(companyId) && companyId > 0);
+
+		return {
+			mode: selectedCompanyIds.length > 0 ? "manual" : "auto",
+			selectedCompanyIds,
+			shares,
+		};
+	}
+
 	const selectedCompanyIds = Array.isArray(raw.selectedCompanyIds)
 		? raw.selectedCompanyIds
 			.map(item => Number(item))
@@ -67,31 +85,31 @@ export function buildYearlyValueIncomeSharePayload(
 	manualShares: YearlyValueIncomeManualSharesValue,
 	allCompanyIds: number[],
 ) {
-	const normalizedCompanyIds = Array.from(new Set(allCompanyIds))
-		.filter(companyId => Number.isInteger(companyId) && companyId > 0);
+	const allowedCompanyIds = new Set(
+		Array.from(new Set(allCompanyIds))
+			.filter(companyId => Number.isInteger(companyId) && companyId > 0),
+	);
 
 	return Object.fromEntries(
 		(["value", "income"] as const).map((metric) => {
 			const state = manualShares[metric];
-			const selected = new Set(state.selectedCompanyIds.map(String));
+
+			if (state.mode !== "manual")
+				return [metric, null] as const;
+
 			const shares = Object.fromEntries(
-				normalizedCompanyIds.map((companyId) => {
-					const companyKey = String(companyId);
-					const amount = selected.has(companyKey)
-						? toNumberOrZero(state.shares[companyKey])
-						: 0;
-					return [companyKey, amount];
-				}),
+				state.selectedCompanyIds
+					.filter(companyId => allowedCompanyIds.has(companyId))
+					.map((companyId) => {
+						const companyKey = String(companyId);
+						return [companyKey, toNumberOrZero(state.shares[companyKey])] as const;
+					})
+					.filter(([, amount]) => amount > 0),
 			);
 
-			return [
-				metric,
-				{
-					mode: state.mode,
-					shares,
-				},
-			];
-		}),
+			return [metric, Object.keys(shares).length > 0 ? shares : null] as const;
+		})
+			.filter(([, shares]) => shares != null),
 	);
 }
 
