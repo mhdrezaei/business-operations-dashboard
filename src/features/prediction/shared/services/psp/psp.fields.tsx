@@ -58,7 +58,7 @@ function YearlyValueIncomeShareEditor({
 	title: string
 }) {
 	const { t } = useTranslation();
-	const { control, formState, getFieldState, setValue } = useFormContext<PredictionFormValues>();
+	const { control, formState, getFieldState, register, setValue } = useFormContext<PredictionFormValues>();
 	const fieldPath = `serviceFields.manualShares.${fieldName}` as const;
 	const shareState = normalizeShareValue(useWatch({ control, name: fieldPath as any }));
 	const shareError = getFieldState(fieldPath as any, formState).error?.message;
@@ -70,6 +70,11 @@ function YearlyValueIncomeShareEditor({
 		const amount = Number(shareState.shares[String(companyId)] ?? 0);
 		return total + amount;
 	}, 0);
+
+	useEffect(() => {
+		register(`${fieldPath}.mode` as any);
+		register(`${fieldPath}.selectedCompanyIds` as any);
+	}, [fieldPath, register]);
 
 	function updateShareState(nextState: PredictionShareSectionValue) {
 		setValue(fieldPath as any, nextState as any, {

@@ -11,7 +11,7 @@ import { RHFProNumber, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Card, Form, Segmented, Select, Typography } from "antd";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { predictionCompaniesByServiceQuery } from "../../queries/prediction.queries";
@@ -82,6 +82,7 @@ function CompanyShareEditor({
 		control,
 		formState,
 		getFieldState,
+		register,
 		setValue,
 	} = useFormContext<PredictionFormValues>();
 
@@ -96,6 +97,11 @@ function CompanyShareEditor({
 		const amount = Number(shareState.shares[String(companyId)] ?? 0);
 		return total + amount;
 	}, 0);
+
+	useEffect(() => {
+		register(`${fieldPath}.mode` as any);
+		register(`${fieldPath}.selectedCompanyIds` as any);
+	}, [fieldPath, register]);
 
 	function updateShareState(nextState: PredictionShareSectionValue) {
 		setValue(fieldPath as any, nextState as any, {

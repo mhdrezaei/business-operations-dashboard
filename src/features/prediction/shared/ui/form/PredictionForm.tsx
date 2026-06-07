@@ -70,6 +70,23 @@ function extractFirstErrorMessage(value: unknown): string | null {
 	return null;
 }
 
+function extractFirstFormErrorMessage(value: unknown): string | null {
+	if (!value || typeof value !== "object")
+		return null;
+
+	const record = value as Record<string, unknown>;
+	if (typeof record.message === "string" && record.message.trim())
+		return record.message;
+
+	for (const key of Object.keys(record)) {
+		const message = extractFirstFormErrorMessage(record[key]);
+		if (message)
+			return message;
+	}
+
+	return null;
+}
+
 export function PredictionForm({
 	initialValues,
 	mode = "create",
@@ -126,7 +143,7 @@ export function PredictionForm({
 	const form = useForm<PredictionFormValues>({
 		defaultValues: mergedInitialValues,
 		mode: "all",
-		shouldUnregister: true,
+		shouldUnregister: false,
 		resolver: dynamicResolver,
 	});
 
@@ -180,12 +197,10 @@ export function PredictionForm({
 			}
 		},
 		(errors) => {
-			const firstPath = Object.keys(errors ?? {})[0];
+			const message = extractFirstFormErrorMessage(errors);
 			notification.error({
 				message: t("prediction.messages.fixFormErrors"),
-				description: firstPath
-					? String((errors as any)[firstPath]?.message ?? t("prediction.messages.invalidFormInputs"))
-					: t("prediction.messages.invalidFormInputs"),
+				description: message ?? t("prediction.messages.invalidFormInputs"),
 				placement: "topRight",
 				className: "prediction-submit-notification",
 			});
