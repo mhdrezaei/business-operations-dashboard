@@ -215,10 +215,18 @@ function CompanyShareEditor({
 
 export function OpenApiPredictionFields() {
 	const { t } = useTranslation();
-	const { control } = useFormContext<PredictionFormValues>();
+	const { control, register, setValue } = useFormContext<PredictionFormValues>();
 	const serviceId = useWatch({ control, name: "serviceId" });
-	const openapiModel = useWatch({ control, name: sf("openapiModel") as any }) as OpenApiPredictionModel | null;
-	const activeModel = openapiModel === "PACKAGE" ? "PACKAGE" : "LEGACY";
+	const activeModel = "LEGACY" as OpenApiPredictionModel;
+
+	useEffect(() => {
+		register(sf("openapiModel") as any);
+		setValue(sf("openapiModel") as any, "LEGACY", {
+			shouldDirty: false,
+			shouldTouch: false,
+			shouldValidate: false,
+		});
+	}, [register, setValue]);
 
 	const companies = useQuery(predictionCompaniesByServiceQuery(serviceId));
 	const companyOptions = useMemo(
@@ -247,28 +255,32 @@ export function OpenApiPredictionFields() {
 
 	return (
 		<div className="flex flex-col gap-4">
-			<Card
-				bordered
-				className="rounded-2xl"
-			>
-				<div className="grid gap-3 md:grid-cols-2">
-					<RHFSelect<PredictionFormValues, any, OpenApiPredictionModel>
-						name={sf("openapiModel") as any}
-						label={t("prediction.labels.openapiModel", { defaultValue: "مدل OpenAPI" })}
-						options={OPENAPI_MODEL_OPTIONS.map(option => ({
-							label: t(option.labelKey, {
-								defaultValue: option.value === "PACKAGE" ? "بسته‌ای (Package)" : "قدیمی (Legacy)",
-							}),
-							value: option.value,
-						}))}
-						selectProps={{
-							placeholder: t("prediction.placeholders.selectOpenapiModel", {
-								defaultValue: "مدل OpenAPI را انتخاب کنید",
-							}),
-						}}
-					/>
-				</div>
-			</Card>
+			{false
+				? (
+					<Card
+						bordered
+						className="rounded-2xl"
+					>
+						<div className="grid gap-3 md:grid-cols-2">
+							<RHFSelect<PredictionFormValues, any, OpenApiPredictionModel>
+								name={sf("openapiModel") as any}
+								label={t("prediction.labels.openapiModel", { defaultValue: "مدل OpenAPI" })}
+								options={OPENAPI_MODEL_OPTIONS.map(option => ({
+									label: t(option.labelKey, {
+										defaultValue: option.value === "PACKAGE" ? "بسته‌ای (Package)" : "قدیمی (Legacy)",
+									}),
+									value: option.value,
+								}))}
+								selectProps={{
+									placeholder: t("prediction.placeholders.selectOpenapiModel", {
+										defaultValue: "مدل OpenAPI را انتخاب کنید",
+									}),
+								}}
+							/>
+						</div>
+					</Card>
+				)
+				: null}
 
 			<QuarterDistributionSection />
 

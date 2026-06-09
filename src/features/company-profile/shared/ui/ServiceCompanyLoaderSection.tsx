@@ -9,8 +9,7 @@ import { Button, Card, Col, Row } from "antd";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
-import { companiesByServiceQuery, companyProfilesByCompanyQuery, servicesQuery } from "../../queries/company-profile.queries";
-import { dtoToCompanyInfoForm } from "../../sections/company-info/model/company-info.mappers";
+import { companiesByServiceQuery, servicesQuery } from "../../queries/company-profile.queries";
 import { companyTypeMatches } from "../utils";
 
 import CompanyCreateModal from "./CompanyCreateModal";
@@ -26,7 +25,6 @@ export function ServiceCompanyLoaderSection() {
 
 	const services = useQuery(servicesQuery());
 	const companies = useQuery(companiesByServiceQuery(serviceId));
-	const profiles = useQuery(companyProfilesByCompanyQuery(companyId));
 
 	const permittedServiceIdList = getPermittedServiceIds("company_profile", "view");
 	const permittedServiceIds = useMemo(
@@ -66,9 +64,9 @@ export function ServiceCompanyLoaderSection() {
 	}, [serviceId, setValue]);
 
 	useEffect(() => {
-		if (!serviceId) {
+		if (!serviceId)
 			return;
-		}
+
 		if (!permittedServiceIds.has(serviceId)) {
 			setValue("serviceId", null, { shouldDirty: true, shouldValidate: true });
 			setValue("companyType", null, { shouldDirty: true, shouldValidate: true });
@@ -97,24 +95,9 @@ export function ServiceCompanyLoaderSection() {
 		if (prev === undefined)
 			return;
 
-		if (prev !== companyId) {
+		if (prev !== companyId)
 			setValue("companyProfile", null as any, { shouldDirty: true, shouldValidate: true });
-		}
 	}, [companyId, setValue]);
-
-	useEffect(() => {
-		if (!companyId)
-			return;
-
-		const dto = profiles.data?.results?.[0];
-		if (!dto)
-			return;
-
-		setValue("companyProfile", dtoToCompanyInfoForm(dto, { serviceId, companyId }), {
-			shouldDirty: false,
-			shouldValidate: false,
-		});
-	}, [companyId, profiles.data, setValue, serviceId]);
 
 	const serviceOptions = useMemo(
 		() =>
@@ -146,12 +129,11 @@ export function ServiceCompanyLoaderSection() {
 
 	const isCompanyDisabled = !serviceId || companies.isLoading || (requiresCompanyType && !companyType);
 
-	const companyPlaceholder
-		= !serviceId
-			? "ابتدا سرویس را انتخاب کنید"
-			: companies.isLoading
-				? "در حال دریافت لیست شرکت‌ها..."
-				: "شرکت را انتخاب کنید";
+	const companyPlaceholder = !serviceId
+		? "ابتدا سرویس را انتخاب کنید"
+		: companies.isLoading
+			? "در حال دریافت لیست شرکت‌ها..."
+			: "شرکت را انتخاب کنید";
 
 	return (
 		<Card>
@@ -219,14 +201,6 @@ export function ServiceCompanyLoaderSection() {
 						ویرایش نام شرکت
 					</Button>
 				</div>
-
-				{companyId
-					? (
-						<div className="mt-2 opacity-80">
-							{profiles.isLoading ? "در حال بارگذاری پروفایل شرکت..." : null}
-						</div>
-					)
-					: null}
 
 				<CompanyCreateModal
 					open={createOpen}

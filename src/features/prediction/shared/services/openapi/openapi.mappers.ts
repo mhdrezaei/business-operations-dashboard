@@ -23,9 +23,9 @@ import {
 	OPENAPI_METRICS,
 } from "./openapi.config";
 
-function normalizeOpenApiModel(value: unknown): OpenApiPredictionModel {
-	return value === "PACKAGE" ? "PACKAGE" : "LEGACY";
-}
+// function normalizeOpenApiModel(value: unknown): OpenApiPredictionModel {
+// 	return value === "PACKAGE" ? "PACKAGE" : "LEGACY";
+// }
 
 function isShareMode(value: unknown): value is PredictionShareMode {
 	return value === "auto" || value === "manual";
@@ -139,7 +139,6 @@ function normalizeChannelShares(value: unknown): OpenApiChannelSharesValue {
 
 export function dtoToOpenApiPredictionForm(record: OpenApiPredictionYearDto): Partial<PredictionFormValues> {
 	const empty = createEmptyOpenApiFields();
-	const openapiModel = normalizeOpenApiModel(record.openapi_model);
 
 	return {
 		recordId: record.id,
@@ -147,7 +146,7 @@ export function dtoToOpenApiPredictionForm(record: OpenApiPredictionYearDto): Pa
 		note: record.note ?? "",
 		serviceFields: {
 			...empty,
-			openapiModel,
+			openapiModel: "LEGACY",
 			q1Percent: toNullableNumber(record.q1_percent),
 			q2Percent: toNullableNumber(record.q2_percent),
 			q3Percent: toNullableNumber(record.q3_percent),
@@ -229,10 +228,7 @@ export function openApiPredictionFormToPayload(
 		...createEmptyOpenApiFields(),
 		...(values.serviceFields as Partial<OpenApiPredictionServiceFields>),
 	};
-	const openapiModel = normalizeOpenApiModel(fields.openapiModel);
-	const activeSections = getOpenApiOperationSections(openapiModel);
-	void activeSections;
-
+	const openapiModel = "LEGACY" as OpenApiPredictionModel;
 	return {
 		service: Number(values.serviceId),
 		fiscal_year: Number(values.fiscalYear),
@@ -240,15 +236,15 @@ export function openApiPredictionFormToPayload(
 		bill_inquiry_value_year: toNumberOrZero(fields.billInquiryValueYear),
 		bill_inquiry_income_year: toNumberOrZero(fields.billInquiryIncomeYear),
 		bill_inquiry_expense_year: toNumberOrZero(fields.billInquiryExpenseYear),
-		receipt_register_value_year: openapiModel === "LEGACY" ? toNumberOrZero(fields.receiptRegisterValueYear) : 0,
-		receipt_register_income_year: openapiModel === "LEGACY" ? toNumberOrZero(fields.receiptRegisterIncomeYear) : 0,
-		receipt_register_expense_year: openapiModel === "LEGACY" ? toNumberOrZero(fields.receiptRegisterExpenseYear) : 0,
-		sms_total_value_year: openapiModel === "PACKAGE" ? toNumberOrZero(fields.smsTotalValueYear) : 0,
-		sms_total_income_year: openapiModel === "PACKAGE" ? toNumberOrZero(fields.smsTotalIncomeYear) : 0,
-		sms_total_expense_year: openapiModel === "PACKAGE" ? toNumberOrZero(fields.smsTotalExpenseYear) : 0,
-		traffic_total_value_year: openapiModel === "PACKAGE" ? toNumberOrZero(fields.trafficTotalValueYear) : 0,
-		traffic_total_income_year: openapiModel === "PACKAGE" ? toNumberOrZero(fields.trafficTotalIncomeYear) : 0,
-		traffic_total_expense_year: openapiModel === "PACKAGE" ? toNumberOrZero(fields.trafficTotalExpenseYear) : 0,
+		receipt_register_value_year: toNumberOrZero(fields.receiptRegisterValueYear),
+		receipt_register_income_year: toNumberOrZero(fields.receiptRegisterIncomeYear),
+		receipt_register_expense_year: toNumberOrZero(fields.receiptRegisterExpenseYear),
+		sms_total_value_year: 0,
+		sms_total_income_year: 0,
+		sms_total_expense_year: 0,
+		traffic_total_value_year: 0,
+		traffic_total_income_year: 0,
+		traffic_total_expense_year: 0,
 		q1_percent: Number(fields.q1Percent ?? 0),
 		q2_percent: Number(fields.q2Percent ?? 0),
 		q3_percent: Number(fields.q3Percent ?? 0),

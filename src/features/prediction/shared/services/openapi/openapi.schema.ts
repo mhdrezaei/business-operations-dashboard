@@ -68,7 +68,7 @@ function addManualShareIssue(
 }
 
 export const openApiPredictionSchema = z.object({
-	openapiModel: z.enum(["LEGACY", "PACKAGE"]),
+	openapiModel: z.enum(["LEGACY", "PACKAGE"]).default("LEGACY"),
 	q1Percent: quarterPercentSchema,
 	q2Percent: quarterPercentSchema,
 	q3Percent: quarterPercentSchema,
