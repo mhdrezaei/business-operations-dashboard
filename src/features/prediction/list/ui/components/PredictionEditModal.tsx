@@ -1,5 +1,4 @@
 import type { PredictionListRow } from "../../../shared/model/prediction.list.types";
-import { useQuery } from "@tanstack/react-query";
 import { Modal, Result, Spin } from "antd";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -25,18 +24,20 @@ export function PredictionEditModal({
 	const [submitting, setSubmitting] = useState(false);
 	const module = row ? predictionServiceRegistry[row.serviceCode] : undefined;
 
-	const detailQuery = useQuery({
-		queryKey: ["predictions", "detail", row?.serviceCode ?? null, row?.id ?? null],
-		enabled: open && !!row && !!module,
-		queryFn: () => module!.fetchDetail(row!.id),
-		staleTime: 30 * 1000,
-	});
+	// TODO: Detail endpoint returns 404 for some prediction services (for example shahkar).
+	// Keep the edit modal hydrated from the list row until the detail API is ready.
+	// const detailQuery = useQuery({
+	// 	queryKey: ["predictions", "detail", row?.serviceCode ?? null, row?.id ?? null],
+	// 	enabled: open && !!row && !!module,
+	// 	queryFn: () => module!.fetchDetail(row!.id),
+	// 	staleTime: 30 * 1000,
+	// });
 
 	const initialValues = useMemo(() => {
 		if (!row || !module)
 			return null;
 
-		const source = detailQuery.data ?? row.raw;
+		const source = row.raw;
 		const mapped = module.toFormValues(source);
 
 		return {
@@ -46,7 +47,7 @@ export function PredictionEditModal({
 			serviceCode: row.serviceCode,
 			fiscalYear: mapped.fiscalYear ?? row.fiscalYear,
 		};
-	}, [detailQuery.data, module, row]);
+	}, [module, row]);
 
 	const modalTitle = row
 		? t("prediction.titles.editModal", {
@@ -68,7 +69,7 @@ export function PredictionEditModal({
 			{!row || !module
 				? null
 				: (
-					<Spin spinning={detailQuery.isLoading}>
+					<Spin spinning={false}>
 						{initialValues
 							? (
 								<PredictionForm

@@ -151,10 +151,10 @@ export function createEmptyOpenApiChannelShares(): OpenApiChannelSharesValue {
 export function createEmptyOpenApiFields(
 	previous?: Partial<OpenApiPredictionServiceFields> | Record<string, unknown>,
 ): OpenApiPredictionServiceFields {
-	const previousFields = (previous ?? {}) as Partial<OpenApiPredictionServiceFields>;
+	void previous;
 
 	return {
-		openapiModel: previousFields.openapiModel === "PACKAGE" ? "PACKAGE" : "LEGACY",
+		openapiModel: "LEGACY",
 		q1Percent: null,
 		q2Percent: null,
 		q3Percent: null,

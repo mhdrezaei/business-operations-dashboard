@@ -29,9 +29,13 @@ const quarterPercentSchema = z.number()
 	.nullable();
 
 const shareSectionSchema = z.object({
-	mode: z.enum(["auto", "manual"]),
-	selectedCompanyIds: z.array(z.number().int().positive()),
-	shares: z.record(z.string(), z.number().nullable()),
+	mode: z.enum(["auto", "manual"]).default("auto"),
+	selectedCompanyIds: z.array(z.number().int().positive()).default([]),
+	shares: z.record(z.string(), z.number().nullable()).default({}),
+}).default({
+	mode: "auto",
+	selectedCompanyIds: [],
+	shares: {},
 });
 
 const trafficLocationSchema = z.object({

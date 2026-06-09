@@ -8,7 +8,7 @@ import {
 } from "#src/features/company-profile/api/company-profile.api";
 import { useAccess } from "#src/hooks";
 
-import { Spin } from "antd";
+import { Button, Spin } from "antd";
 
 import React, { useEffect, useMemo, useState } from "react";
 
@@ -79,6 +79,15 @@ export default function PublicProfilePanel({ companyId }: { companyId: number })
 
 	return (
 		<div>
+			<div className="mb-3 flex justify-end">
+				<Button
+					type="primary"
+					disabled={!canUpdateProfile}
+					onClick={() => setEditMode(true)}
+				>
+					ویرایش
+				</Button>
+			</div>
 
 			<PublicProfileForm
 				key={profile?.id ?? "new"}
