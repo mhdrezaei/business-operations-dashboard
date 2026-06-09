@@ -2,7 +2,7 @@ import type { CompanyTypeOption } from "#src/api/user/types";
 import type { ProColumns } from "@ant-design/pro-components";
 import type { TFunction } from "i18next";
 import type { ContractListItemType } from "../model/contracts.list.types";
-import { Tag } from "antd";
+import { Checkbox, Form, Tag } from "antd";
 import { pickCompanyTypeToken } from "../../shared/utils";
 
 export interface GetContractColumnsArgs {
@@ -105,7 +105,7 @@ export function getContractColumns({
 			}, {} as Record<string, any>),
 			fieldProps: {
 				allowClear: true,
-				placeholder: "سرویس را انتخاب کنید",
+				placeholder: "نوع سرویس را انتخاب کنید",
 				onChange: (v: any) => {
 					const nv = v == null ? null : Number(v);
 					setSelectedServiceId(nv);
@@ -195,10 +195,10 @@ export function getContractColumns({
 			hideInTable: true,
 			hideInSearch: !isSmsService,
 			valueEnum: {
-				vendor: { text: "vendor" },
-				client: { text: "client" },
+				vendor: { text: "دولت و اپراتورها" },
+				client: { text: "شرکای تجاری" },
 			},
-			fieldProps: { allowClear: true, placeholder: "sms_party" },
+			fieldProps: { allowClear: true, placeholder: "طرف قرارداد" },
 		},
 
 		{
@@ -215,15 +215,39 @@ export function getContractColumns({
 			width: 130,
 			hideInTable: !isTrafficService,
 			hideInSearch: !isTrafficService,
+
 			valueEnum: {
 				true: { text: t("common.yes") },
 				false: { text: t("common.no") },
 			},
+
 			render: (_, r) => {
 				const v = (r as any).traffic_is_official ?? (r as any).is_official;
 				if (v == null)
 					return "-";
 				return <Tag>{v ? t("common.yes") : t("common.no")}</Tag>;
+			},
+
+			formItemProps: { label: " " },
+
+			renderFormItem: () => {
+				if (!isTrafficService)
+					return null;
+
+				return (
+					<Form.Item
+						name="is_official"
+						valuePropName="checked"
+						style={{ marginBottom: 0 }}
+						initialValue={undefined}
+					>
+						<Checkbox>فقط قراردادهای رسمی</Checkbox>
+					</Form.Item>
+				);
+			},
+
+			fieldProps: {
+				allowClear: true,
 			},
 		},
 

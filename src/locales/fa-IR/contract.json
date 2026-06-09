@@ -8,13 +8,13 @@
 
 	},
 	"tableTitle": {
-		"listTitle": "لیست قرارداد ها",
-		"servicetype": "سرویس ",
+		"listTitle": "لیست قراردادها",
+		"servicetype": "نوع سرویس ",
 		"serviceId": "شناسه سرویس",
 		"companyId": "شناسه شرکت",
 		"addendaCount": "الحاقیه ها",
 		"trafficCompanyType": "نوع شرکت ترافیک",
-		"isOfficial": "رسمی؟",
+		"isOfficial": "آیا قرارداد رسمی است؟",
 		"startDate": "تاریخ شروع",
 		"endDate": "تاریخ پایان",
 		"sort": "مرتب سازی",
@@ -24,7 +24,7 @@
 	},
 	"formLabel": {
 		"contractType": "نوع قرارداد ",
-		"companyName": "نام شرکت",
+		"companyName": "شرکت",
 		"startYear": "سال شروع",
 		"startMonth": "ماه شروع",
 		"endYear": "سال پایان ",

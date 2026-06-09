@@ -15,7 +15,6 @@ import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router";
 import { fetchContractDetail, fetchContractsList, fetchDeleteContract } from "../../api/contracts.api";
 import { companyTypeMatches, pickCompanyTypeToken } from "../../shared/utils";
-import { ContractDetailModal } from "./components/ContractDetailModal";
 import { getContractColumns } from "./constants";
 import { openContractPdfPrint } from "./utils/contract-pdf";
 
@@ -39,12 +38,12 @@ export default function ContractListPage() {
 	const formRef = useRef<ProFormInstance | undefined>(undefined);
 
 	const [openDetail, setOpenDetail] = useState(false);
-	const [selectedId, setSelectedId] = useState<number | null>(null);
-	const [selectedServicePath, setSelectedServicePath] = useState<ContractServicePath | null>(null);
+	const [, setSelectedId] = useState<number | null>(null);
+	const [, setSelectedServicePath] = useState<ContractServicePath | null>(null);
 	const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
 	const [selectedTrafficCompanyType, setSelectedTrafficCompanyType] = useState<string | null>(null);
 	const [downloadingPdfId, setDownloadingPdfId] = useState<number | null>(null);
-	const [searchParams, setSearchParams] = useSearchParams();
+	const [searchParams] = useSearchParams();
 
 	const deepLinkedContractId = parsePositiveInt(searchParams.get("contract_id"));
 	const deepLinkedServiceId = parsePositiveInt(searchParams.get("service_id"));
@@ -210,7 +209,7 @@ export default function ContractListPage() {
 
 	const companyPlaceholder
 		= !selectedServiceId
-			? "ابتدا سرویس را انتخاب کنید"
+			? "ابتدا نوع سرویس را انتخاب کنید"
 			: companies.isLoading
 				? "در حال دریافت لیست شرکت‌ها..."
 				: isCompanyTypeService && !selectedTrafficCompanyType
@@ -225,9 +224,6 @@ export default function ContractListPage() {
 			sms_party: undefined,
 		});
 	};
-
-	const refreshTable = () => actionRef.current?.reload?.();
-
 	const getRowCompanyType = (row: ContractListItemType) =>
 		pickCompanyTypeToken((row as any).traffic_company_type ?? (row as any).company_type);
 
@@ -380,6 +376,15 @@ export default function ContractListPage() {
 				columns={columns}
 				actionRef={actionRef}
 				formRef={formRef}
+
+				onReset={() => {
+					formRef.current?.resetFields();
+					setSelectedServiceId(null);
+					setSelectedTrafficCompanyType(null);
+					clearDependentFilters();
+					actionRef.current?.reload?.();
+				}}
+
 				request={async (params) => {
 					const query = {
 						page: params.current ?? 1,
@@ -408,35 +413,35 @@ export default function ContractListPage() {
 					}
 					return [
 						<Button
-							key="add"
+							key="addNewContract"
 							icon={<PlusCircleOutlined />}
 							type="primary"
 							onClick={() => navigate("/contracts/new")}
 						>
-							{t("common.add")}
+							{t("common.addNewContract")}
 						</Button>,
 					];
 				}}
 			/>
 
-			<ContractDetailModal
-				open={openDetail}
-				contractId={selectedId}
-				service={selectedServicePath}
-				onClose={() => {
-					setOpenDetail(false);
-					setSelectedId(null);
-					setSelectedServicePath(null);
+			{/* <ContractDetailModal */}
+			{/*	open={openDetail} */}
+			{/*	contractId={selectedId} */}
+			{/*	service={selectedServicePath} */}
+			{/*	onClose={() => { */}
+			{/*		setOpenDetail(false); */}
+			{/*		setSelectedId(null); */}
+			{/*		setSelectedServicePath(null); */}
 
-					if (searchParams.has("contract_id")) {
-						const nextSearch = new URLSearchParams(searchParams);
-						nextSearch.delete("contract_id");
-						nextSearch.delete("service_id");
-						setSearchParams(nextSearch, { replace: true });
-					}
-				}}
-				onUpdated={refreshTable}
-			/>
+			{/*		if (searchParams.has("contract_id")) { */}
+			{/*			const nextSearch = new URLSearchParams(searchParams); */}
+			{/*			nextSearch.delete("contract_id"); */}
+			{/*			nextSearch.delete("service_id"); */}
+			{/*			setSearchParams(nextSearch, { replace: true }); */}
+			{/*		} */}
+			{/*	}} */}
+			{/*	onUpdated={refreshTable} */}
+			{/* /> */}
 		</BasicContent>
 	);
 }
