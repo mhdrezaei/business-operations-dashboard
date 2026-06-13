@@ -5,6 +5,7 @@ import type { ContractListItemType } from "../model/contracts.list.types";
 
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import { companiesByServiceQuery, servicesQuery } from "#src/features/contract/create/queries/contract.queries";
+import { ContractDetailModal } from "#src/features/contract/list/ui/components/ContractDetailModal";
 import { useAccess } from "#src/hooks";
 import { DeleteOutlined, EditOutlined, FilePdfOutlined, PlusCircleOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
@@ -38,8 +39,9 @@ export default function ContractListPage() {
 	const formRef = useRef<ProFormInstance | undefined>(undefined);
 
 	const [openDetail, setOpenDetail] = useState(false);
-	const [, setSelectedId] = useState<number | null>(null);
-	const [, setSelectedServicePath] = useState<ContractServicePath | null>(null);
+	const [selectedId, setSelectedId] = useState<number | null>(null);
+	const [selectedServicePath, setSelectedServicePath]
+		= useState<ContractServicePath | null>(null);
 	const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
 	const [selectedTrafficCompanyType, setSelectedTrafficCompanyType] = useState<string | null>(null);
 	const [downloadingPdfId, setDownloadingPdfId] = useState<number | null>(null);
@@ -424,24 +426,19 @@ export default function ContractListPage() {
 				}}
 			/>
 
-			{/* <ContractDetailModal */}
-			{/*	open={openDetail} */}
-			{/*	contractId={selectedId} */}
-			{/*	service={selectedServicePath} */}
-			{/*	onClose={() => { */}
-			{/*		setOpenDetail(false); */}
-			{/*		setSelectedId(null); */}
-			{/*		setSelectedServicePath(null); */}
-
-			{/*		if (searchParams.has("contract_id")) { */}
-			{/*			const nextSearch = new URLSearchParams(searchParams); */}
-			{/*			nextSearch.delete("contract_id"); */}
-			{/*			nextSearch.delete("service_id"); */}
-			{/*			setSearchParams(nextSearch, { replace: true }); */}
-			{/*		} */}
-			{/*	}} */}
-			{/*	onUpdated={refreshTable} */}
-			{/* /> */}
+			<ContractDetailModal
+				open={openDetail}
+				contractId={selectedId}
+				service={selectedServicePath}
+				onClose={() => {
+					setOpenDetail(false);
+					setSelectedId(null);
+					setSelectedServicePath(null);
+				}}
+				onUpdated={() => {
+					actionRef.current?.reload?.();
+				}}
+			/>
 		</BasicContent>
 	);
 }
