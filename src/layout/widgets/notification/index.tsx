@@ -23,12 +23,25 @@ const useStyles = createUseStyles(({ token }) => (
 				borderTop: `1px solid ${token.colorBorder}`,
 			},
 			"& .ant-list-items": {
-				maxHeight: 420,
-				overflowY: "auto",
+				"maxHeight": 420,
+				"overflowY": "auto",
+
+				"&::-webkit-scrollbar": {
+					width: 8,
+				},
+				"&::-webkit-scrollbar-track": {
+					background: "transparent",
+				},
+				"&::-webkit-scrollbar-thumb": {
+					backgroundColor: token.colorBorder,
+					borderRadius: 8,
+				},
+				"&::-webkit-scrollbar-thumb:hover": {
+					backgroundColor: token.colorPrimary,
+				},
 			},
 		},
-	}
-));
+	}));
 
 type NotificationEventType = "viewAll" | "markAllRead" | "refresh" | "read";
 
