@@ -1,7 +1,7 @@
 {
 	"name": "data-processor-panel",
 	"type": "module",
-	"version": "0.19.3",
+	"version": "0.19.4",
 	"private": true,
 	"packageManager": "pnpm@10.6.4",
 	"description": "React Hooks + TypeScript + Ant Design = react-antd-admin",
