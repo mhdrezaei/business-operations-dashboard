@@ -16,7 +16,7 @@ import { useNavigate, useSearchParams } from "react-router";
 import { FormModeContext } from "../form-mode-context";
 
 const FORM_INITIAL_VALUES = {
-	username: "admin",
+	username: "",
 	password: "",
 };
 export type PasswordLoginFormType = typeof FORM_INITIAL_VALUES;
