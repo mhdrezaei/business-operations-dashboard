@@ -38,7 +38,7 @@ export function RegisterPassword() {
 		<>
 			<Space direction="vertical">
 				<Title level={3}>
-					Hello, Welcome to
+					ثبت نام
 				</Title>
 				<Title className="mt-0" level={5}>
 					{import.meta.env.VITE_GLOB_APP_TITLE}
@@ -103,7 +103,7 @@ export function RegisterPassword() {
 					valuePropName="checked"
 				>
 					<Checkbox>
-						<div className="flex flex-wrap text-xs">
+						<div className="text-xs">
 							<Trans
 								i18nKey="authority.agree"
 								components={[
