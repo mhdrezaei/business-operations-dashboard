@@ -14,8 +14,22 @@ function applySubmitIntent(
 	t: (key: string) => string,
 ) {
 	if (intent === "submit") {
-		window.$message?.success(t(wasUpdate ? "prediction.messages.updateSuccess" : "prediction.messages.createSuccess"));
-		form.reset();
+		window.$message?.success(t(wasUpdate ? "prediction.messages.updateSuccess" : "prediction.messages.createSuccess"),
+		);
+
+		if (savedRecordId) {
+			form.setValue("recordId", savedRecordId, {
+				shouldDirty: false,
+				shouldTouch: false,
+				shouldValidate: false,
+			});
+		}
+
+		form.reset({
+			...values,
+			recordId: savedRecordId,
+		});
+
 		return;
 	}
 
