@@ -141,7 +141,7 @@ export function ContractTypeSection({ title, name, topAside }: Props) {
 	}
 
 	return (
-		<Card bordered className="rounded-md [&_.ant-pro-card-body]:p-4">
+		<Card variant="outlined" className="rounded-md [&_.ant-pro-card-body]:p-4">
 			<div className="flex justify-between items-center mb-3">
 				<div className="font-bold">{title}</div>
 			</div>

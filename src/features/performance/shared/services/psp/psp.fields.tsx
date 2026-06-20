@@ -9,7 +9,7 @@ export function PspPerformanceFields() {
 	const { t } = useTranslation();
 
 	return (
-		<Card bordered className="rounded-lg">
+		<Card variant="outlined" className="rounded-lg">
 			<div
 				className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3"
 			>

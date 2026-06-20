@@ -16,7 +16,7 @@ export function SmsPerformanceFields() {
 	const alignedLabelStyle = useContractAlignedLabelWidth(SMS_LABELS);
 
 	return (
-		<Card bordered className="rounded-lg">
+		<Card variant="outlined" className="rounded-lg">
 			<div
 				className="contract-form-aligned-grid contract-form-aligned-grid--two"
 				style={{ gap: 12, ...alignedLabelStyle }}

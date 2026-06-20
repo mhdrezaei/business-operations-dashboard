@@ -114,7 +114,7 @@ export default function CompanyCreateModal({
 			}}
 			title="ایجاد شرکت جدید"
 			footer={null}
-			destroyOnClose
+			destroyOnHidden
 		>
 			<Form layout="vertical">
 				<FormProvider {...methods}>

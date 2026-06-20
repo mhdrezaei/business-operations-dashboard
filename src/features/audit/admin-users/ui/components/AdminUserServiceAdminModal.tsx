@@ -624,7 +624,7 @@ function ServiceAdminModalFlow({
 			open
 			className=""
 			closeIcon={<CloseOutlined />}
-			destroyOnClose
+			destroyOnHidden
 			footer={null}
 			maskClosable={false}
 			title={title}

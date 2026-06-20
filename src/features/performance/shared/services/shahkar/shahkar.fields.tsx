@@ -9,7 +9,7 @@ export function ShahkarPerformanceFields() {
 	const { t } = useTranslation();
 
 	return (
-		<Card bordered className="rounded-lg">
+		<Card variant="outlined" className="rounded-lg">
 			<RHFProNumber<PerformanceFormValues, any>
 				name={sf("performanceValue") as any}
 				label={t("performance.fields.shahkar.performanceValue")}

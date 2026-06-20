@@ -866,7 +866,7 @@ export function PerformanceDetailModal({
 		if (service !== "openapi")
 			return [];
 
-		const billInquiryIncome = getOpenApiOperationRowValue(openApiPerformances, "BILL_INQUIRY", ["income"])	?? mergedDetail.income;
+		const billInquiryIncome = getOpenApiOperationRowValue(openApiPerformances, "BILL_INQUIRY", ["income"]) ?? mergedDetail.income;
 		const billInquiryExpense = getOpenApiOperationRowValue(openApiPerformances, "BILL_INQUIRY", ["expense"]) ?? mergedDetail.expense;
 		const packageTrafficIncome = getOpenApiOperationRowValue(openApiPerformances, "TRAFFIC", ["traffic_income", "income"]);
 		const receiptRegisterIncome = getOpenApiOperationRowValue(openApiPerformances, "RECEIPT_REGISTER", ["profit", "income"]) ?? getOpenApiOperationRowValue(
@@ -1516,7 +1516,7 @@ export function PerformanceDetailModal({
 			onCancel={onClose}
 			footer={null}
 			width={920}
-			destroyOnClose
+			destroyOnHidden
 		>
 			{!service || !record || !config
 				? null
