@@ -48,13 +48,14 @@ export const defaultOpenApiPlan: OpenApiPlan = {
 	trafficPartnerSharePercent: null,
 };
 
-export const defaultOpenApiServiceFields: OpenApiServiceFields = {
-	contractModel: "package",
-	packageMode: "OR",
-	plans: [defaultOpenApiPlan],
-};
-
 export const defaultLegacyPricing = {
 	paymentRegistration: structuredClone(defaultContractTypeValue),
 	billInquiry: structuredClone(defaultContractTypeValue),
+};
+
+export const defaultOpenApiServiceFields: OpenApiServiceFields = {
+	contractModel: "legacy",
+	packageMode: null,
+	plans: [],
+	legacyPricing: structuredClone(defaultLegacyPricing),
 };
