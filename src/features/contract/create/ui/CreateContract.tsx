@@ -24,6 +24,7 @@ function mapOpenApiLegacyDetails(pricingValue: unknown) {
 	const pricing = contractTypeToApiPricing((pricingValue ?? null) as any);
 
 	return {
+		openapi_model: "LEGACY",
 		contract_model: "LEGACY",
 		bill_inquiry: pricing,
 		receipt_register: pricing,
@@ -360,17 +361,17 @@ function formValuesToApiPayload(values: ContractFormValues) {
 	}
 
 	if (serviceCode === "openapi") {
-		const contractModel = typeof serviceFields.contractModel === "string"
-			? serviceFields.contractModel.trim().toLowerCase()
-			: null;
+		const contractModel = "legacy" as "package" | "legacy";
 
 		let openApiDetails: Record<string, any> | null = null;
+		payload.openapi_model = "LEGACY";
 
 		if (contractModel === "package") {
 			openApiDetails = mapOpenApiPackageDetails(serviceFields);
 		}
 		else if (contractModel === "legacy") {
 			openApiDetails = {
+				openapi_model: "LEGACY",
 				contract_model: "LEGACY",
 				receipt_register: contractTypeToApiPricing(serviceFields.legacyPricing?.paymentRegistration ?? null),
 				bill_inquiry: contractTypeToApiPricing(serviceFields.legacyPricing?.billInquiry ?? null),
