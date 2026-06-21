@@ -45,7 +45,7 @@ export function SmsFields() {
 
 	return (
 		<>
-			<Card bordered className="rounded-md mb-3 [&_.ant-pro-card-body]:p-4">
+			<Card variant="outlined" className="rounded-md mb-3 [&_.ant-pro-card-body]:p-4">
 				<RHFProCheckbox<ContractFormValues, any>
 					name={sf("isOfficial") as any}
 					label=""
@@ -54,7 +54,7 @@ export function SmsFields() {
 				/>
 			</Card>
 
-			<Card bordered className="rounded-md [&_.ant-pro-card-body]:p-4" title="سهم اپراتورها">
+			<Card variant="outlined" className="rounded-md [&_.ant-pro-card-body]:p-4" title="سهم اپراتورها">
 				<div className="sms-operator-grid">
 					<ContractTypeSection title="ایرانسل - فارسی" name={sf("operatorRevenue.irancellFa")} />
 					<ContractTypeSection title="ایرانسل - انگلیسی" name={sf("operatorRevenue.irancellEn")} />
@@ -68,7 +68,7 @@ export function SmsFields() {
 			{isPartners
 				? (
 					<>
-						<Card bordered className="rounded-md [&_.ant-pro-card-body]:p-4" title="سهم دولت">
+						<Card variant="outlined" className="rounded-md [&_.ant-pro-card-body]:p-4" title="سهم دولت">
 							<ContractTypeSection title="سهم دولت" name={sf("governmentRevenue")} />
 						</Card>
 						<div className="mt-3">
@@ -84,7 +84,7 @@ export function SmsFields() {
 
 			{isGovOps
 				? (
-					<Card bordered className="rounded-md mt-3 [&_.ant-pro-card-body]:p-4" title="سهم دولت">
+					<Card variant="outlined" className="rounded-md mt-3 [&_.ant-pro-card-body]:p-4" title="سهم دولت">
 						<ContractTypeSection title="سهم دولت" name={sf("governmentRate")} />
 					</Card>
 				)
@@ -100,7 +100,7 @@ export function SmsFields() {
 							contractTypeFieldKey="contractPricing"
 							renderAddendumFields={base => (
 								<>
-									<Card bordered className="rounded-md [&_.ant-pro-card-body]:p-4" title="درآمد اپراتورها">
+									<Card variant="outlined" className="rounded-md [&_.ant-pro-card-body]:p-4" title="درآمد اپراتورها">
 										<div className="sms-operator-grid">
 											<ContractTypeSection title="ایرانسل - فارسی" name={`${base}.operatorRevenue.irancellFa` as any} />
 											<ContractTypeSection title="ایرانسل - انگلیسی" name={`${base}.operatorRevenue.irancellEn` as any} />
@@ -114,7 +114,7 @@ export function SmsFields() {
 									{isPartners
 										? (
 											<>
-												<Card bordered className="rounded-md mt-3 [&_.ant-pro-card-body]:p-4" title="سهم دولت">
+												<Card variant="outlined" className="rounded-md mt-3 [&_.ant-pro-card-body]:p-4" title="سهم دولت">
 													<ContractTypeSection title="سهم دولت" name={`${base}.governmentRevenue` as any} />
 												</Card>
 												<div className="mt-3">
@@ -130,7 +130,7 @@ export function SmsFields() {
 
 									{isGovOps
 										? (
-											<Card bordered className="rounded-md mt-3 [&_.ant-pro-card-body]:p-4" title="سهم دولت">
+											<Card variant="outlined" className="rounded-md mt-3 [&_.ant-pro-card-body]:p-4" title="سهم دولت">
 												<ContractTypeSection title="سهم دولت" name={`${base}.governmentRate` as any} />
 											</Card>
 										)

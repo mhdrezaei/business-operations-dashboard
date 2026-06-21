@@ -31,7 +31,7 @@ export default function BankAccountModal({ open, serviceId, companyId, editing, 
 			title={title}
 			footer={null}
 			width={760}
-			destroyOnClose
+			destroyOnHidden
 		>
 			<BankAccountForm
 				disabled={saving || !!disabled}

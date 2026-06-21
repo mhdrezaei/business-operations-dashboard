@@ -53,7 +53,7 @@ export function AdminUserRolesModal({ open, user, roles, loading, onClose, onSub
 			title="تغییر نقش‌های کاربر"
 			footer={null}
 			width={560}
-			destroyOnClose
+			destroyOnHidden
 		>
 			{loading || !user
 				? null

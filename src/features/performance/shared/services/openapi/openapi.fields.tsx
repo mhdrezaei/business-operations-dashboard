@@ -46,7 +46,7 @@ export function OpenApiPerformanceFields() {
 
 	if (!contractModel) {
 		return (
-			<Card bordered className="rounded-lg">
+			<Card variant="outlined" className="rounded-lg">
 				<div className="opacity-80">
 					{t("performance.messages.noActiveContractForMonth")}
 				</div>

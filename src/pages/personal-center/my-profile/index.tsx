@@ -201,7 +201,7 @@ export default function MyProfileForm() {
 							/>
 						</div>
 
-						<Card bordered className="mt-6">
+						<Card variant="outlined" className="mt-6">
 							<div className="grid grid-cols-3 gap-3">
 								<RHFProText name="password" label="رمز فعلی" inputProps={{ type: "password" }} />
 								<RHFProText name="newPassword" label="رمز جدید" inputProps={{ type: "password" }} />

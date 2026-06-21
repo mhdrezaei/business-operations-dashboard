@@ -352,7 +352,7 @@ export function NotificationRuleUpsertModal({
 			title={title}
 			footer={null}
 			width={980}
-			destroyOnClose
+			destroyOnHidden
 		>
 			<Form<NotificationRuleFormValues>
 				form={form}

@@ -684,7 +684,7 @@ export function ContractDetailModal({ open, contractId, service, onClose, onUpda
 			title={modalTitle}
 			footer={null}
 			width={1100}
-			destroyOnClose
+			destroyOnHidden
 		>
 			{!contractId || !resolvedService
 				? null

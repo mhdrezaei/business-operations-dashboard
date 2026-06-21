@@ -74,7 +74,7 @@ export function TrafficFields() {
 
 	return (
 		<>
-			<Card bordered className="rounded-md [&_.ant-pro-card-body]:p-4">
+			<Card variant="outlined" className="rounded-md [&_.ant-pro-card-body]:p-4">
 				<div className="flex items-center justify-between mb-2">
 					<RHFProCheckbox<ContractFormValues, any>
 						name={sf("isOfficial") as any}
@@ -102,7 +102,7 @@ export function TrafficFields() {
 							<div
 								className="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-3"
 							>
-								<Card bordered className="rounded-md mt-3 [&_.ant-pro-card-body]:p-4">
+								<Card variant="outlined" className="rounded-md mt-3 [&_.ant-pro-card-body]:p-4">
 									<Row>
 										<Button onClick={addTehran} disabled={!!tehranPricing}>افزودن قرارداد تهران</Button>
 									</Row>
@@ -139,7 +139,7 @@ export function TrafficFields() {
 										)
 										: null}
 								</Card>
-								<Card bordered className="rounded-md mt-3 [&_.ant-pro-card-body]:p-4">
+								<Card variant="outlined" className="rounded-md mt-3 [&_.ant-pro-card-body]:p-4">
 									<Row>
 										<Button onClick={addProvince} disabled={!!provincePricing}>افزودن قرارداد مراکز استانی</Button>
 									</Row>

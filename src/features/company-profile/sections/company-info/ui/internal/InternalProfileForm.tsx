@@ -42,7 +42,7 @@ export default function InternalProfileForm({ disabled, defaultValues, onSubmit 
 	return (
 		<Form layout="vertical" className="space-y-4">
 			<FormProvider {...methods}>
-				<Card bordered title={"\u0627\u0637\u0644\u0627\u0639\u0627\u062A \u062F\u0627\u062E\u0644\u06CC"} className="bg-bgMask">
+				<Card variant="outlined" title={"\u0627\u0637\u0644\u0627\u0639\u0627\u062A \u062F\u0627\u062E\u0644\u06CC"} className="bg-bgMask">
 					<div className="grid grid-cols-2 gap-x-4">
 						<RHFProText name="internal_code" label={"\u06A9\u062F \u062F\u0627\u062E\u0644\u06CC"} inputProps={{ placeholder: "\u06A9\u062F \u062F\u0627\u062E\u0644\u06CC", disabled }} />
 

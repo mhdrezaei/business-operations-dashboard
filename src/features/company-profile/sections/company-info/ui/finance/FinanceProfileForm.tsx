@@ -36,7 +36,7 @@ export default function FinanceProfileForm({ disabled, defaultValues, onSubmit }
 	return (
 		<Form layout="vertical" className="space-y-4">
 			<FormProvider {...methods}>
-				<Card bordered title={"\u0627\u0637\u0644\u0627\u0639\u0627\u062A \u0645\u0627\u0644\u06CC"} className="bg-bgMask">
+				<Card variant="outlined" title={"\u0627\u0637\u0644\u0627\u0639\u0627\u062A \u0645\u0627\u0644\u06CC"} className="bg-bgMask">
 					<div className="grid grid-cols-2 gap-x-4">
 						<RHFProText name="economic_code" label={"\u06A9\u062F \u0627\u0642\u062A\u0635\u0627\u062F\u06CC"} inputProps={{ placeholder: "\u06A9\u062F \u0627\u0642\u062A\u0635\u0627\u062F\u06CC", disabled }} />
 						<RHFProText name="tax_file_number" label={"\u0634\u0645\u0627\u0631\u0647 \u067E\u0631\u0648\u0646\u062F\u0647 \u0645\u0627\u0644\u06CC\u0627\u062A\u06CC"} inputProps={{ placeholder: "\u0634\u0645\u0627\u0631\u0647 \u067E\u0631\u0648\u0646\u062F\u0647 \u0645\u0627\u0644\u06CC\u0627\u062A\u06CC", disabled }} />

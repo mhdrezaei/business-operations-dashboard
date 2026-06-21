@@ -76,7 +76,7 @@ export function AdminUserUpsertModal({ open, mode, loading, initial, onClose, on
 			title={title}
 			footer={null}
 			width={720}
-			destroyOnClose
+			destroyOnHidden
 		>
 			{
 				loading

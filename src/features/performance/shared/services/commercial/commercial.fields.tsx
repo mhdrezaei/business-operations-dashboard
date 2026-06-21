@@ -27,7 +27,7 @@ function UploadCard({
 			name={name as any}
 			control={control}
 			render={({ field, fieldState, formState }) => (
-				<Card bordered title={title} className="rounded-lg">
+				<Card variant="outlined" title={title} className="rounded-lg">
 					<Form.Item
 						help={(formState.isSubmitted || fieldState.isTouched)
 							? fieldState.error?.message

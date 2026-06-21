@@ -37,7 +37,7 @@ export function AdminLogDetailsModal({ open, log, onClose }: Props) {
 			width={980}
 			footer={null}
 			onCancel={onClose}
-			destroyOnClose
+			destroyOnHidden
 		>
 			{log
 				? (

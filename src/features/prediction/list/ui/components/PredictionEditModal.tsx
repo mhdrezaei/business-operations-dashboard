@@ -62,7 +62,7 @@ export function PredictionEditModal({
 			title={modalTitle}
 			onCancel={onClose}
 			footer={null}
-			destroyOnClose
+			destroyOnHidden
 			width={1120}
 			className="prediction-edit-modal"
 		>
