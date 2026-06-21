@@ -73,7 +73,7 @@ export function AdminRoleUpsertModal({ open, mode, initial, onClose, onSubmit }:
 			title={title}
 			footer={null}
 			width={1180}
-			destroyOnClose
+			destroyOnHidden
 		>
 			<AdminRoleForm
 				defaultValues={defaultValues}

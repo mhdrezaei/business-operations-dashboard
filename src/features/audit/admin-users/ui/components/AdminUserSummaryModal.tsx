@@ -201,7 +201,7 @@ export function AdminUserSummaryModal({ open, user, onClose }: Props) {
 			title="خلاصه دسترسی و مدیریت"
 			footer={null}
 			width={980}
-			destroyOnClose
+			destroyOnHidden
 		>
 			<Spin spinning={summaryQuery.isLoading}>
 				{user && summaryQuery.data

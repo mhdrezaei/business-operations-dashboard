@@ -237,7 +237,7 @@ export function TrafficPerformanceFields() {
 								message={t("performance.traffic.unitPriceHint")}
 							/>
 
-							<Card bordered title={t("performance.traffic.tehranPerformance")} className="rounded-[10px]">
+							<Card variant="outlined" title={t("performance.traffic.tehranPerformance")} className="rounded-[10px]">
 								<Row gutter={16}>
 									<Col span={12}>
 										<RHFProNumber
@@ -305,7 +305,7 @@ export function TrafficPerformanceFields() {
 				footer={null}
 				centered
 				width={980}
-				destroyOnClose
+				destroyOnHidden
 				styles={{
 					content: {
 						background: token.colorBgContainer,

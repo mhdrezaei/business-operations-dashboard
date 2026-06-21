@@ -139,7 +139,7 @@ export default function CompanyRenameModal({
 			}}
 			title="ویرایش نام شرکت"
 			footer={null}
-			destroyOnClose
+			destroyOnHidden
 		>
 			<Form layout="vertical">
 				<FormProvider {...methods}>

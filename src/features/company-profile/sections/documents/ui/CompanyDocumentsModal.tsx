@@ -71,11 +71,11 @@ export default function CompanyDocumentsModal({
 			title={title}
 			footer={footer}
 			width={720}
-			destroyOnClose
+			destroyOnHidden
 		>
 			<Form layout="vertical" className="space-y-3">
 				<FormProvider {...methods}>
-					<Card bordered>
+					<Card variant="outlined">
 						<div className="grid grid-cols-2 gap-x-4 gap-y-4">
 							<RHFSelect
 								name="doc_type"
