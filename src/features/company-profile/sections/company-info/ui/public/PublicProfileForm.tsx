@@ -45,7 +45,7 @@ export default function PublicProfileForm({ disabled, defaultValues, onSubmit }:
 	return (
 		<Form layout="vertical" className="space-y-4">
 			<FormProvider {...methods}>
-				<Card bordered title={"\u0627\u0637\u0644\u0627\u0639\u0627\u062A \u0639\u0645\u0648\u0645\u06CC \u0634\u0631\u06A9\u062A"} className="bg-bgMask">
+				<Card variant="outlined" title={"\u0627\u0637\u0644\u0627\u0639\u0627\u062A \u0639\u0645\u0648\u0645\u06CC \u0634\u0631\u06A9\u062A"} className="bg-bgMask">
 					<div className="grid grid-cols-2 gap-x-4">
 						<RHFProText
 							name="legal_name"
@@ -60,7 +60,7 @@ export default function PublicProfileForm({ disabled, defaultValues, onSubmit }:
 					</div>
 				</Card>
 
-				<Card bordered title={"\u0622\u062F\u0631\u0633 \u0648 \u0646\u0642\u0634\u0647"} className="bg-bgMask">
+				<Card variant="outlined" title={"\u0622\u062F\u0631\u0633 \u0648 \u0646\u0642\u0634\u0647"} className="bg-bgMask">
 					<div className="grid grid-cols-2 gap-x-4">
 						<RHFProText
 							name="postal_code"
@@ -87,7 +87,7 @@ export default function PublicProfileForm({ disabled, defaultValues, onSubmit }:
 					</div>
 				</Card>
 
-				<Card bordered title={"\u0631\u0627\u0647\u200C\u0647\u0627\u06CC \u0627\u0631\u062A\u0628\u0627\u0637\u06CC"} className="bg-bgMask">
+				<Card variant="outlined" title={"\u0631\u0627\u0647\u200C\u0647\u0627\u06CC \u0627\u0631\u062A\u0628\u0627\u0637\u06CC"} className="bg-bgMask">
 					<div className="grid grid-cols-2 gap-x-4">
 						<RHFFieldArrayText name="phone" label={"\u062A\u0644\u0641\u0646"} disabled={disabled} />
 						<RHFFieldArrayText name="mobile" label={"\u0645\u0648\u0628\u0627\u06CC\u0644"} disabled={disabled} />
@@ -107,7 +107,7 @@ export default function PublicProfileForm({ disabled, defaultValues, onSubmit }:
 					</div>
 				</Card>
 
-				<Card bordered title={"\u0634\u0628\u06A9\u0647\u200C\u0647\u0627\u06CC \u0627\u062C\u062A\u0645\u0627\u0639\u06CC"} className="bg-bgMask">
+				<Card variant="outlined" title={"\u0634\u0628\u06A9\u0647\u200C\u0647\u0627\u06CC \u0627\u062C\u062A\u0645\u0627\u0639\u06CC"} className="bg-bgMask">
 					<div className="mt-6">
 						<CompanyInfoSocialLinksField disabled={disabled} />
 					</div>

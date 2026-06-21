@@ -33,7 +33,7 @@ export default function ShareholderUpsertModal({ open, mode, serviceId, companyI
 			onCancel={onClose}
 			title={title}
 			footer={null}
-			destroyOnClose
+			destroyOnHidden
 			width={720}
 		>
 			<ShareholderForm

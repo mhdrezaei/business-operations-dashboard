@@ -58,7 +58,7 @@ export default function CompanyPeopleModal({ open, companyId, serviceId, personI
 			title={title}
 			footer={null}
 			width={800}
-			destroyOnClose
+			destroyOnHidden
 		>
 			{!initialValues
 				? null

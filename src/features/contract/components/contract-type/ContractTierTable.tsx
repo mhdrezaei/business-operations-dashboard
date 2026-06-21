@@ -101,7 +101,7 @@ export function ContractTierTable({ name }: Props) {
 	}
 
 	return (
-		<Card bordered className="rounded-xl [&_.ant-pro-card-body]:p-3">
+		<Card variant="outlined" className="rounded-xl [&_.ant-pro-card-body]:p-3">
 			<div className="font-semibold mb-3">تعریف بازه‌ها و نرخ</div>
 
 			<div className="overflow-hidden">

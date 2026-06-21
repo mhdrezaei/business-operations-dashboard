@@ -203,7 +203,7 @@ function OpenApiPackagePlanPanel({ idx }: { idx: number }) {
 }
 
 export function OpenApiFields() {
-	const { control, setValue, getValues } = useFormContext<ContractFormValues>();
+	const { control, setValue, getValues, register } = useFormContext<ContractFormValues>();
 	const startYear = useWatch({ control, name: "startYear" });
 	const startMonth = useWatch({ control, name: "startMonth" });
 	const endYear = useWatch({ control, name: "endYear" });
@@ -237,9 +237,23 @@ export function OpenApiFields() {
 	}>>([]);
 	const [activeKey, setActiveKey] = useState<string>("0");
 
-	const contractModel = useWatch({ control, name: sf("contractModel") }) as "package" | "legacy" | null;
+	const contractModel = "legacy" as "package" | "legacy" | null;
 	const serviceCode = useWatch({ control, name: "serviceCode" }) as string | null;
 	const isOpenApiService = serviceCode === "openapi";
+
+	React.useEffect(() => {
+		register(sf("contractModel"));
+		setValue(sf("contractModel"), "legacy" as any, {
+			shouldDirty: false,
+			shouldTouch: false,
+			shouldValidate: false,
+		});
+		setValue(sf("packageMode"), null as any, {
+			shouldDirty: false,
+			shouldTouch: false,
+			shouldValidate: false,
+		});
+	}, [register, setValue]);
 
 	React.useEffect(() => {
 		if (contractModel === "legacy") {
@@ -530,7 +544,7 @@ export function OpenApiFields() {
 			title="بهای هر واحد"
 			className="[&_.ant-pro-card-body]:p-4"
 		>
-			<Row gutter={24} justify="space-between">
+			<Row gutter={24} justify="space-between" style={{ display: "none" }}>
 				<Col span={12}>
 					<RHFSelect
 						name={sf("contractModel")}

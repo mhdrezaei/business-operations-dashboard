@@ -52,7 +52,7 @@ export function NotificationContainer({ ...restProps }: ButtonProps) {
 	const handleRead = async (id: number, isRead: boolean) => {
 		try {
 			await markReadMutation.mutateAsync({ ids: [id], isRead: !isRead });
-			navigate(`/notifications/inbox?highlightId=${id}`);
+			navigate(`/notifications?highlightId=${id}`);
 		}
 		catch {
 			window.$message?.error(t("common.error"));
@@ -84,7 +84,7 @@ export function NotificationContainer({ ...restProps }: ButtonProps) {
 			onEventChange={(event, item) => {
 				switch (event) {
 					case "viewAll": {
-						navigate("/notifications/inbox");
+						navigate("/notifications");
 						break;
 					}
 					case "refresh": {

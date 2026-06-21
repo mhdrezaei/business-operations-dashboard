@@ -322,7 +322,7 @@ export function SmsCommissionFields() {
 
 	return (
 		<>
-			<Card bordered className="rounded-md [&_.ant-pro-card-body]:p-4">
+			<Card variant="outlined" className="rounded-md [&_.ant-pro-card-body]:p-4">
 				{renderCommissionGrid()}
 			</Card>
 

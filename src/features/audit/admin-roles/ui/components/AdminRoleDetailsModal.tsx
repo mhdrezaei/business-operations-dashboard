@@ -44,7 +44,7 @@ export function AdminRoleDetailsModal({ open, role, serviceNameById, onClose }: 
 			title="جزئیات نقش"
 			footer={null}
 			width={840}
-			destroyOnClose
+			destroyOnHidden
 		>
 			{!role
 				? <Empty description="نقشی برای نمایش انتخاب نشده است." />
