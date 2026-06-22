@@ -1,6 +1,7 @@
 import type { ContractServicePath } from "#src/features/contract/api/contracts.api";
 import type { ContractFormValues } from "#src/features/contract/shared/model/contract.form.types";
 import type { ContractSubmitIntent } from "#src/features/contract/shared/ui/form/ContractForm";
+import type { UseFormReturn } from "react-hook-form";
 import { contractTypeToApiPricing } from "#src/features/contract/api/pricing.mapper";
 import { defaultContractFormValues } from "#src/features/contract/shared/ui/form/ContractForm";
 import React, { useState } from "react";
@@ -392,13 +393,38 @@ function formValuesToApiPayload(values: ContractFormValues) {
 	};
 }
 
-function applySubmitIntent(intent: ContractSubmitIntent, form: any) {
+function applySubmitIntent(
+	intent: ContractSubmitIntent,
+	form: UseFormReturn<ContractFormValues>,
+) {
 	window.$message?.success("قرارداد با موفقیت ثبت شد");
 
-	if (intent === "submit_and_edit")
-		return;
+	switch (intent) {
+		case "submit":
+			form.reset(defaultContractFormValues);
+			break;
 
-	form.reset(defaultContractFormValues);
+		case "submit_and_create_another": {
+			const {
+				serviceId,
+				serviceCode,
+				companyId,
+				companyType,
+			} = form.getValues();
+
+			form.reset({
+				...defaultContractFormValues,
+				serviceId,
+				serviceCode,
+				companyId,
+				companyType,
+			});
+			break;
+		}
+
+		case "submit_and_edit":
+			break;
+	}
 }
 
 function CreateContract() {
