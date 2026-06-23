@@ -1,12 +1,16 @@
 import type { UploadProps } from "antd";
 import type { ContractFormValues } from "../../../model/contract.form.types";
-import { RHFProTextArea, RHFProUploadButton } from "#src/shared/ui/rhf-pro";
+import { RHFProCheckbox, RHFProTextArea, RHFProUploadButton } from "#src/shared/ui/rhf-pro";
 
 import { Card } from "antd";
 import { ContractAlignedField, useContractAlignedLabelWidth } from "../components/ContractAlignedField";
 
-export function FixedEndSection() {
-	const alignedLabelStyle = useContractAlignedLabelWidth(["توضیحات", "مدارک"]);
+interface FixedEndSectionProps {
+	showSignedCheckbox?: boolean
+}
+
+export function FixedEndSection({ showSignedCheckbox = false }: FixedEndSectionProps) {
+	const alignedLabelStyle = useContractAlignedLabelWidth(["توضیحات", "مدارک", "قرارداد امضا شده است"]);
 	const uploadProps: UploadProps = {
 		multiple: true,
 		maxCount: 10,
@@ -42,6 +46,21 @@ export function FixedEndSection() {
 						uploadProps={uploadProps}
 					/>
 				</ContractAlignedField>
+
+				{showSignedCheckbox
+					? (
+						<ContractAlignedField label="" labelId="contract-form-label-signed">
+							<RHFProCheckbox<ContractFormValues, any>
+								name={"serviceFields.isOfficial" as any}
+								label=""
+								checkboxLabel="قرارداد امضا شده است"
+								checkboxProps={{
+									"aria-labelledby": "contract-form-label-signed",
+								} as any}
+							/>
+						</ContractAlignedField>
+					)
+					: null}
 			</div>
 		</Card>
 	);

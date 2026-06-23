@@ -64,14 +64,23 @@ export function ContractAlignedField({
 	const className = align === "start"
 		? "contract-form-field contract-form-field--start"
 		: "contract-form-field";
+	const hasLabel = label.trim().length > 0;
 
 	return (
 		<div className={className}>
-			<div id={labelId} className="contract-form-field__label">
-				<span className="contract-form-field__label-text">
-					{label}
-					:
-				</span>
+			<div
+				id={hasLabel ? labelId : undefined}
+				className="contract-form-field__label"
+				aria-hidden={hasLabel ? undefined : true}
+			>
+				{hasLabel
+					? (
+						<span className="contract-form-field__label-text">
+							{label}
+							:
+						</span>
+					)
+					: null}
 			</div>
 			<div className="contract-form-field__control">
 				{children}

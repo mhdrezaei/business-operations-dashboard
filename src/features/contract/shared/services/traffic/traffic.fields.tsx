@@ -21,6 +21,7 @@ export function TrafficFields() {
 	const isOfficial = useWatch({ control, name: sf("isOfficial") as any }) as boolean | undefined;
 
 	const companyType = useWatch({ control, name: "companyType" });
+	const isCollocation = String(companyType ?? "").trim().toUpperCase() === "COLLOCATION";
 
 	const tehranPricing = useWatch({ control, name: sf("tehranPricing") as any });
 	const provincePricing = useWatch({ control, name: sf("provincePricing") as any });
@@ -71,6 +72,9 @@ export function TrafficFields() {
 			setValue(sf("provinceRevenuePercent") as any, undefined, { shouldDirty: true, shouldValidate: true });
 		}
 	}, [isOfficial, setValue]);
+
+	if (isCollocation)
+		return null;
 
 	return (
 		<>
