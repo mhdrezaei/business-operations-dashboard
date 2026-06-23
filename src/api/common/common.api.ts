@@ -7,6 +7,11 @@ interface FetchServicesOptions {
 	domain?: string
 }
 
+interface FetchCompaniesByServiceOptions {
+	companyType?: string | null
+	search?: string | null
+}
+
 function isFetchServicesOptions(value: unknown): value is FetchServicesOptions {
 	return !!value && typeof value === "object" && "domain" in value;
 }
@@ -21,10 +26,17 @@ export function fetchServices(options?: FetchServicesOptions | unknown) {
 		.json<Paginated<ServiceDto>>();
 }
 
-export function fetchCompaniesByService(serviceId: number) {
+export function fetchCompaniesByService(serviceId: number, options?: FetchCompaniesByServiceOptions) {
+	const searchParams: Record<string, string> = { service: String(serviceId) };
+
+	if (options?.companyType)
+		searchParams.company_type = options.companyType;
+	if (options?.search)
+		searchParams.search = options.search;
+
 	return request
 		.get(COMMON_API.companies, {
-			searchParams: { service: serviceId },
+			searchParams,
 		})
 		.json<Paginated<CompanyDto>>();
 }

@@ -11,6 +11,20 @@
 	grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.contract-form-date-grid .contract-form-field {
+	grid-template-columns: max-content minmax(0, 1fr);
+	align-items: center;
+	column-gap: 8px;
+}
+
+.contract-form-date-grid .contract-form-field__label {
+	justify-content: flex-start;
+}
+
+.contract-form-date-grid .contract-form-field__label-text {
+	white-space: nowrap;
+}
+
 .contract-form-field {
 	display: grid;
 	grid-template-columns: var(--contract-form-label-width, 9ch) minmax(0, 1fr);

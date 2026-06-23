@@ -1,11 +1,17 @@
 import type { ContractFormValues } from "#src/features/contract/shared/model/contract.form.types";
 import type { ContractServicePath } from "../../../api/contracts.api";
+import { fetchCompaniesByService } from "#src/api/common/common.api";
 import { apiPricingToContractType, contractTypeToApiPricing } from "#src/features/contract/api/pricing.mapper";
 import { ContractForm } from "#src/features/contract/shared/ui/form/ContractForm";
 import { pickCompanyTypeToken } from "#src/features/contract/shared/utils";
 import { Empty, Modal, Spin } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
 import { fetchContractDetail, fetchUpdateContract } from "../../../api/contracts.api";
+
+const REAL_START_TRIGGER_YEAR = 1404;
+const REAL_START_TRIGGER_MONTH = 4;
+const BEHESHTI_DATACENTER_TAG = "DEFAULT_BEHESHTI";
+const TELECOM_COLLOCATION_COMPANY_SEARCH = "TRAFFIC_COLLOCATION_COST_GLOBAL";
 
 interface Props {
 	open: boolean
@@ -43,6 +49,194 @@ function toStringOrNull(value: unknown): string | null {
 	if (value == null || value === "")
 		return null;
 	return String(value);
+}
+
+function toIdOrStringOrNull(value: unknown): number | string | null {
+	if (value == null || value === "")
+		return null;
+	const n = Number(value);
+	return Number.isInteger(n) ? n : String(value);
+}
+
+function mapCollocationMode(value: unknown) {
+	const normalized = String(value ?? "").trim().toUpperCase();
+	if (normalized === "COLLOCATION")
+		return "COLO";
+	if (normalized === "CP")
+		return "CP";
+	return null;
+}
+
+function mapRackType(value: unknown) {
+	const normalized = String(value ?? "").trim().toUpperCase();
+	if (normalized === "FULL_RACK" || normalized === "FULL")
+		return "full";
+	if (normalized === "HALF_RACK" || normalized === "HALF")
+		return "half";
+	if (normalized === "QUARTER_RACK" || normalized === "QUARTER")
+		return "quarter";
+	if (normalized === "UNIT")
+		return "unit";
+	return toStringOrNull(value);
+}
+
+function mapCollocationLocations(serviceFields: Record<string, any>) {
+	const source = Array.isArray(serviceFields.datacenters) && serviceFields.datacenters.length > 0
+		? serviceFields.datacenters
+		: serviceFields.datacenter
+			? [{
+				datacenter: serviceFields.datacenter,
+				bandwidthUnitRate: serviceFields.datacenterBandwidthUnitRate,
+				ipRate: serviceFields.datacenterIpRate,
+				portItems: serviceFields.datacenterPortItems,
+				rackItems: serviceFields.datacenterRackItems,
+				electricityAmpRate: serviceFields.datacenterElectricityAmpRate,
+				electricityExemptionThreshold: serviceFields.datacenterElectricityExemptionThreshold,
+			}]
+			: [];
+
+	const collocationMode = mapCollocationMode(serviceFields.collocationPartnerType);
+
+	return source.flatMap((datacenter: any) => {
+		const datacenterId = toIdOrStringOrNull(datacenter?.datacenter);
+		if (datacenterId == null)
+			return [];
+
+		const base = {
+			collocation_mode: collocationMode,
+			calculation_type: "FLAT",
+			datacenter: datacenterId,
+		};
+		const locations: Record<string, any>[] = [];
+
+		const ipRate = toNumberOrNull(datacenter?.ipRate);
+		if (ipRate != null) {
+			locations.push({
+				location: "GLOBAL_IP",
+				...base,
+				collocation_item: "ip",
+				tiers: { rate_per_unit: ipRate },
+			});
+		}
+
+		const portItems = (Array.isArray(datacenter?.portItems) ? datacenter.portItems : [])
+			.map((item: any) => ({
+				count: toNumberOrNull(item?.count),
+				speed: toNumberOrNull(item?.speed),
+				price: toStringOrNull(item?.unitPrice),
+			}))
+			.filter((item: any) => item.count != null || item.speed != null || item.price != null);
+		if (portItems.length > 0) {
+			locations.push({
+				location: "GLOBAL_PORT",
+				...base,
+				collocation_item: "port",
+				tiers: {},
+				port_items: portItems,
+			});
+		}
+
+		const bandwidthRate = toNumberOrNull(datacenter?.bandwidthUnitRate);
+		if (bandwidthRate != null) {
+			locations.push({
+				location: "GLOBAL_BANDWIDTH",
+				...base,
+				collocation_item: "bandwidth",
+				tiers: { rate_per_unit: bandwidthRate },
+			});
+		}
+
+		const electricityAmpRate = toNumberOrNull(datacenter?.electricityAmpRate);
+		const electricityExemptionThreshold = toNumberOrNull(datacenter?.electricityExemptionThreshold);
+		if (electricityAmpRate != null || electricityExemptionThreshold != null) {
+			locations.push({
+				location: "GLOBAL_AMPERE",
+				...base,
+				collocation_item: "ampere",
+				free_ampere_threshold: electricityExemptionThreshold,
+				tiers: { rate_per_unit: electricityAmpRate },
+			});
+		}
+
+		const rackItems = (Array.isArray(datacenter?.rackItems) ? datacenter.rackItems : [])
+			.map((item: any) => ({
+				rack_type: mapRackType(item?.rackType),
+				count: toNumberOrNull(item?.count),
+				price: toStringOrNull(item?.unitPrice),
+			}))
+			.filter((item: any) => item.rack_type != null || item.count != null || item.price != null);
+		if (rackItems.length > 0) {
+			const rackLocation: Record<string, any> = {
+				location: "GLOBAL_RACK",
+				...base,
+				collocation_item: "rack",
+				tiers: {},
+				rack_items: rackItems,
+			};
+			const rackDiscountTiers = mapRackDiscountTiers(datacenter, serviceFields);
+			if (rackDiscountTiers.length > 0) {
+				rackLocation.calculation_type = "TIER_SINGLE";
+				rackLocation.tiers = { tiers_persentage: rackDiscountTiers };
+			}
+			locations.push(rackLocation);
+		}
+
+		return locations;
+	});
+}
+
+function mapRackDiscountTiers(datacenter: Record<string, any>, serviceFields: Record<string, any>) {
+	if (serviceFields.collocationPartnerType !== "CP")
+		return [];
+	if (datacenter?.datacenterSystemTag !== BEHESHTI_DATACENTER_TAG)
+		return [];
+
+	return (Array.isArray(datacenter?.rackDiscountTiers) ? datacenter.rackDiscountTiers : [])
+		.map((row: any) => ({
+			min_inclusive: toStringOrNull(row?.from),
+			max_exclusive: toStringOrNull(row?.to),
+			persentage_per_unit: toStringOrNull(row?.discountPercent),
+		}))
+		.filter((row: any) => row.min_inclusive != null || row.max_exclusive != null || row.persentage_per_unit != null);
+}
+
+function mapCollocationRealStart(values: ContractFormValues, serviceFields: Record<string, any>) {
+	const isEligible = (
+		String(values.companyType ?? "").trim().toUpperCase() === "COLLOCATION"
+		&& values.startYear === REAL_START_TRIGGER_YEAR
+		&& values.startMonth === REAL_START_TRIGGER_MONTH
+	);
+	if (!isEligible)
+		return null;
+
+	const realStartYear = toNumberOrNull(serviceFields.realStartYear);
+	const realStartMonth = toNumberOrNull(serviceFields.realStartMonth);
+	if (realStartYear == null || realStartMonth == null)
+		return null;
+
+	return {
+		real_start_jy: realStartYear,
+		real_start_jm: realStartMonth,
+	};
+}
+
+function mapTelecomCollocationLocations(serviceFields: Record<string, any>) {
+	const rackCount = toStringOrNull(serviceFields.telecomRackCount);
+	const unitsPerRack = toNumberOrNull(serviceFields.telecomUnitsPerRack);
+	const monthlyRackRent = toStringOrNull(serviceFields.telecomMonthlyRackRent);
+
+	if (rackCount == null && unitsPerRack == null && monthlyRackRent == null)
+		return [];
+
+	return [{
+		location: "GLOBAL_COLLOCATION_COST",
+		calculation_type: "FLAT",
+		units_per_rack: unitsPerRack,
+		rack_count: rackCount,
+		tiers: {
+			cost_per_month: monthlyRackRent,
+		},
+	}];
 }
 
 function mapOpenApiLegacyDetails(pricingValue: unknown) {
@@ -408,9 +602,19 @@ function normalizeTrafficServiceFields(dto: any) {
 	const locations = Array.isArray(dto?.locations) ? dto.locations : [];
 	const tehranLocation = locations.find((item: any) => normalizeTrafficLocation(item?.location) === "TEHRAN");
 	const countyLocation = locations.find((item: any) => normalizeTrafficLocation(item?.location) === "COUNTY");
+	const telecomCollocationLocation = locations.find((item: any) => String(item?.location ?? "").trim().toUpperCase() === "GLOBAL_COLLOCATION_COST");
 
 	return {
 		isOfficial: dto?.is_official ?? dto?.isOfficial ?? dto?.is_signed ?? true,
+		collocationPartnerType: dto?.collocation_partner_type ?? dto?.collocationPartnerType ?? null,
+		realStartYear: toNumberOrNull(dto?.real_start?.real_start_jy ?? dto?.realStart?.realStartJy),
+		realStartMonth: toNumberOrNull(dto?.real_start?.real_start_jm ?? dto?.realStart?.realStartJm),
+		telecomRackCount: toNumberOrStringNumber(telecomCollocationLocation?.rack_count ?? telecomCollocationLocation?.rackCount),
+		telecomUnitsPerRack: toNumberOrStringNumber(telecomCollocationLocation?.units_per_rack ?? telecomCollocationLocation?.unitsPerRack),
+		telecomMonthlyRackRent: toNumberOrStringNumber(
+			telecomCollocationLocation?.tiers?.cost_per_month
+			?? telecomCollocationLocation?.tiers?.costPerMonth,
+		),
 		tehranPricing: tehranLocation
 			? apiPricingToContractType({
 				calculation_type: tehranLocation.calculation_type ?? tehranLocation.calculationType ?? null,
@@ -434,7 +638,7 @@ function dtoToFormValues(dto: any, service: ContractServicePath): ContractFormVa
 	const description = dto?.note ?? dto?.description ?? "";
 
 	const companyType = pickCompanyTypeToken(dto?.company_type ?? dto?.traffic_company_type);
-	const counterpartyType = normalizeSmsCounterpartyType(dto?.sms_party);
+	const counterpartyType = normalizeSmsCounterpartyType(dto?.sms_party ?? dto?.counterparty_type ?? dto?.counterpartyType);
 
 	const serviceCodeRaw = dto?.service_code ?? dto?.service?.code ?? servicePathToServiceCode(service);
 	const serviceCode = typeof serviceCodeRaw === "string" ? serviceCodeRaw.trim().toLowerCase() : null;
@@ -517,15 +721,49 @@ function dtoToFormValues(dto: any, service: ContractServicePath): ContractFormVa
 	};
 }
 
-function formValuesToApiPayload(values: ContractFormValues) {
+async function resolveTelecomCollocationCompanyId(values: ContractFormValues) {
+	if (
+		values.serviceCode !== "traffic"
+		|| String(values.companyType ?? "").trim().toUpperCase() !== "COLLOCATION"
+		|| values.counterpartyType !== "gov_ops"
+	) {
+		return values.companyId ?? null;
+	}
+
+	if (values.companyId != null) {
+		return values.companyId;
+	}
+
+	if (values.serviceId == null) {
+		return null;
+	}
+
+	const response = await fetchCompaniesByService(values.serviceId, {
+		companyType: "COLLOCATION",
+		search: TELECOM_COLLOCATION_COMPANY_SEARCH,
+	});
+	const resolvedCompanyId = response.results?.[0]?.id ?? null;
+
+	if (resolvedCompanyId == null) {
+		throw new Error("شناسه شرکت قرارداد شرکت مخابرات ایران یافت نشد.");
+	}
+
+	return resolvedCompanyId;
+}
+
+async function formValuesToApiPayload(values: ContractFormValues) {
 	const serviceCode = typeof values.serviceCode === "string" ? values.serviceCode.trim().toLowerCase() : "";
 	const serviceFields = (values.serviceFields ?? {}) as Record<string, any>;
 	const contractNumber = values.contractNumber;
 	const addenda = Array.isArray(serviceFields.addenda) ? serviceFields.addenda : [];
+	const resolvedCompanyId = await resolveTelecomCollocationCompanyId({
+		...values,
+		serviceCode,
+	});
 
 	const payload: Record<string, any> = {
 		service: values.serviceId ?? null,
-		company: values.companyId ?? null,
+		company: resolvedCompanyId,
 		start_jy: values.startYear ?? null,
 		start_jm: values.startMonth ?? null,
 		end_jy: values.endYear ?? null,
@@ -537,7 +775,7 @@ function formValuesToApiPayload(values: ContractFormValues) {
 
 	if (values.companyType != null)
 		payload.company_type = values.companyType;
-	if (values.counterpartyType != null)
+	if (values.counterpartyType != null && serviceCode === "sms")
 		payload.sms_party = values.counterpartyType;
 
 	if (serviceCode === "sms-commission" || serviceCode === "sms_commission") {
@@ -576,6 +814,14 @@ function formValuesToApiPayload(values: ContractFormValues) {
 		payload.is_signed = isOfficial;
 		payload.is_official = isOfficial;
 		payload.locations = locations;
+		if (String(values.companyType ?? "").trim().toUpperCase() === "COLLOCATION") {
+			payload.locations = values.counterpartyType === "gov_ops"
+				? mapTelecomCollocationLocations(serviceFields)
+				: mapCollocationLocations(serviceFields);
+			const realStart = mapCollocationRealStart(values, serviceFields);
+			if (realStart)
+				payload.real_start = realStart;
+		}
 		payload.addenda = mapTrafficAddenda(addenda);
 		return payload;
 	}
@@ -709,7 +955,7 @@ export function ContractDetailModal({ open, contractId, service, onClose, onUpda
 								onSubmit={async (values) => {
 									setSaving(true);
 									try {
-										await fetchUpdateContract(resolvedService, contractId, formValuesToApiPayload(values));
+										await fetchUpdateContract(resolvedService, contractId, await formValuesToApiPayload(values));
 										onUpdated?.();
 										onClose();
 									}

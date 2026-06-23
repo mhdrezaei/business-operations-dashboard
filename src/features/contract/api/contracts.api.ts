@@ -50,6 +50,14 @@ export interface SmsCommissionAgentDto {
 	updated_at: string
 }
 
+export interface TrafficDatacenterDto {
+	id: number | string
+	name?: string | null
+	title?: string | null
+	code?: string | null
+	[key: string]: unknown
+}
+
 function buildContractPath(service: ContractServicePath, id?: number) {
 	return id
 		? `contracts/${service}/${id}/`
@@ -116,13 +124,20 @@ export function fetchDeleteContract(
 		.json<any>();
 }
 
-export function fetchContractGaps(serviceId: number, companyId: number) {
+export function fetchContractGaps(serviceId: number, companyId?: number | null, companyType?: string | null) {
+	const searchParams: Record<string, string> = {
+		service_id: String(serviceId),
+	};
+
+	if (companyId != null)
+		searchParams.company_id = String(companyId);
+
+	if (companyType)
+		searchParams.company_type = companyType;
+
 	return request
 		.get("contracts/gaps/", {
-			searchParams: {
-				service_id: serviceId,
-				company_id: companyId,
-			},
+			searchParams,
 		})
 		.json<ContractGapsResponse>();
 }
@@ -135,4 +150,10 @@ export function fetchSmsCommissionAgents() {
 			},
 		})
 		.json<Paginated<SmsCommissionAgentDto>>();
+}
+
+export function fetchTrafficDatacenters() {
+	return request
+		.get("contracts/traffic/datacenters/")
+		.json<Paginated<TrafficDatacenterDto> | TrafficDatacenterDto[]>();
 }

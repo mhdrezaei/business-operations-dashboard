@@ -26,8 +26,6 @@ import {
 	smsCommissionAgentsQuery,
 } from "../../../queries/performance.queries";
 
-interface YearMonthOption { label: string, value: number }
-
 const TRAFFIC_SUBMIT_MODE_OPTIONS = [
 	{ label: i18next.t("performance.traffic.singleEntry"), value: "single" },
 	{ label: i18next.t("performance.traffic.templateUpload"), value: "template" },
@@ -51,18 +49,6 @@ function getMonthLabel(month: number) {
 
 function mapMonthsToOptions(months: number[]) {
 	return months.map(month => ({ label: getMonthLabel(month), value: month }));
-}
-
-function withSelectedOption(
-	options: YearMonthOption[],
-	selected: number | null,
-	getLabel: (value: number) => string = value => String(value),
-) {
-	if (selected == null)
-		return options;
-	if (options.some(option => option.value === selected))
-		return options;
-	return [...options, { label: getLabel(selected), value: selected }].sort((a, b) => a.value - b.value);
 }
 
 export function FixedStartSection() {
@@ -339,10 +325,10 @@ export function FixedStartSection() {
 		return [];
 	}, [missingMonthsByYear, year]);
 
-	const yearOptions = useMemo(() => withSelectedOption(baseYearOptions, year), [baseYearOptions, year]);
+	const yearOptions = useMemo(() => baseYearOptions, [baseYearOptions]);
 	const monthOptions = useMemo(
-		() => withSelectedOption(baseMonthOptions, month, getMonthLabel),
-		[baseMonthOptions, month],
+		() => baseMonthOptions,
+		[baseMonthOptions],
 	);
 
 	const activeContract = useMemo(

@@ -103,6 +103,11 @@ export function ContractForm({
 		control: form.control,
 		name: "serviceCode",
 	}) as ContractServiceCode | null;
+	const companyType = useWatch({
+		control: form.control,
+		name: "companyType",
+	}) as string | null | undefined;
+	const isCollocationFlow = serviceCode === "traffic" && String(companyType ?? "").trim().toUpperCase() === "COLLOCATION";
 	const module = serviceCode ? serviceRegistry[serviceCode] : undefined;
 	const submitIntentRef = useRef<ContractSubmitIntent>("submit");
 	const onSubmit = form.handleSubmit(
@@ -169,7 +174,7 @@ export function ContractForm({
 								: null}
 						</AnimatePresence>
 
-						<FixedEndSection />
+						{isCollocationFlow ? null : <FixedEndSection />}
 
 						<div className="mt-4 w-full">
 							{showExtendedActions

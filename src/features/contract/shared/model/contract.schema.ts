@@ -3,6 +3,10 @@ import { z } from "zod";
 import { addendaRefineNoOverlapAndInsideContract } from "../../components/addenda/addenda.schema";
 import { serviceRegistry } from "../services/registry";
 
+function isBlankContractValue(value: unknown) {
+	return value == null || (typeof value === "string" && value.trim() === "");
+}
+
 export function normalizeContractValue(value: unknown): any {
 	if (value === undefined || value === null)
 		return null;
@@ -200,12 +204,196 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 					});
 				}
 
+				const isTelecomCollocation = (
+					val.serviceCode === "traffic"
+					&& String(val.companyType ?? "").trim().toUpperCase() === "COLLOCATION"
+					&& val.counterpartyType === "gov_ops"
+				);
+
 				// When company type is selected → companyId required
-				if (val.companyType != null && val.companyId == null) {
+				if (val.companyType != null && val.companyId == null && !isTelecomCollocation) {
 					ctx.addIssue({ code: "custom", path: ["companyId"], message: "شرکت الزامی است" });
 				}
 
 				if (val.serviceCode === "traffic") {
+					const trafficCompanyType = String(val.companyType ?? "").trim().toUpperCase();
+					if (trafficCompanyType === "COLLOCATION") {
+						if (val.counterpartyType == null) {
+							ctx.addIssue({
+								code: "custom",
+								path: ["counterpartyType"],
+								message: "طرف قرارداد الزامی است",
+							});
+						}
+
+						if (val.counterpartyType !== "gov_ops" && (val.serviceFields as any)?.collocationPartnerType == null) {
+							ctx.addIssue({
+								code: "custom",
+								path: ["serviceFields", "collocationPartnerType"],
+								message: "نوع شریک الزامی است",
+							});
+						}
+
+						if (val.counterpartyType === "gov_ops") {
+							if (isBlankContractValue((val.serviceFields as any)?.telecomRackCount)) {
+								ctx.addIssue({
+									code: "custom",
+									path: ["serviceFields", "telecomRackCount"],
+									message: "تعداد رک الزامی است",
+								});
+							}
+							if (isBlankContractValue((val.serviceFields as any)?.telecomUnitsPerRack)) {
+								ctx.addIssue({
+									code: "custom",
+									path: ["serviceFields", "telecomUnitsPerRack"],
+									message: "تعداد یونیت هر رک الزامی است",
+								});
+							}
+							if (isBlankContractValue((val.serviceFields as any)?.telecomMonthlyRackRent)) {
+								ctx.addIssue({
+									code: "custom",
+									path: ["serviceFields", "telecomMonthlyRackRent"],
+									message: "اجاره ماهیانه تمامی رک‌ها الزامی است",
+								});
+							}
+						}
+						else {
+							const datacenters = Array.isArray((val.serviceFields as any)?.datacenters)
+								? (val.serviceFields as any).datacenters
+								: [];
+
+							if (datacenters.length === 0) {
+								ctx.addIssue({
+									code: "custom",
+									path: ["serviceFields", "datacenter"],
+									message: "حداقل یک دیتاسنتر باید انتخاب شود",
+								});
+							}
+
+							datacenters.forEach((datacenter: any, datacenterIndex: number) => {
+								if (isBlankContractValue(datacenter?.bandwidthUnitRate)) {
+									ctx.addIssue({
+										code: "custom",
+										path: ["serviceFields", "datacenters", datacenterIndex, "bandwidthUnitRate"],
+										message: "نرخ هر واحد پهنای باند الزامی است",
+									});
+								}
+								if (isBlankContractValue(datacenter?.ipRate)) {
+									ctx.addIssue({
+										code: "custom",
+										path: ["serviceFields", "datacenters", datacenterIndex, "ipRate"],
+										message: "نرخ هر IP الزامی است",
+									});
+								}
+								if (isBlankContractValue(datacenter?.electricityAmpRate)) {
+									ctx.addIssue({
+										code: "custom",
+										path: ["serviceFields", "datacenters", datacenterIndex, "electricityAmpRate"],
+										message: "نرخ هر آمپر الزامی است",
+									});
+								}
+								if (isBlankContractValue(datacenter?.electricityExemptionThreshold)) {
+									ctx.addIssue({
+										code: "custom",
+										path: ["serviceFields", "datacenters", datacenterIndex, "electricityExemptionThreshold"],
+										message: "آستانه معافیت آمپر الزامی است",
+									});
+								}
+
+								const portItems = Array.isArray(datacenter?.portItems) ? datacenter.portItems : [];
+								portItems.forEach((item: any, itemIndex: number) => {
+									if (isBlankContractValue(item?.count)) {
+										ctx.addIssue({
+											code: "custom",
+											path: ["serviceFields", "datacenters", datacenterIndex, "portItems", itemIndex, "count"],
+											message: "تعداد الزامی است",
+										});
+									}
+									if (isBlankContractValue(item?.speed)) {
+										ctx.addIssue({
+											code: "custom",
+											path: ["serviceFields", "datacenters", datacenterIndex, "portItems", itemIndex, "speed"],
+											message: "سرعت الزامی است",
+										});
+									}
+									if (isBlankContractValue(item?.unitPrice)) {
+										ctx.addIssue({
+											code: "custom",
+											path: ["serviceFields", "datacenters", datacenterIndex, "portItems", itemIndex, "unitPrice"],
+											message: "قیمت هر واحد الزامی است",
+										});
+									}
+								});
+
+								const rackItems = Array.isArray(datacenter?.rackItems) ? datacenter.rackItems : [];
+								rackItems.forEach((item: any, itemIndex: number) => {
+									if (isBlankContractValue(item?.rackType)) {
+										ctx.addIssue({
+											code: "custom",
+											path: ["serviceFields", "datacenters", datacenterIndex, "rackItems", itemIndex, "rackType"],
+											message: "نوع رک الزامی است",
+										});
+									}
+									if (isBlankContractValue(item?.count)) {
+										ctx.addIssue({
+											code: "custom",
+											path: ["serviceFields", "datacenters", datacenterIndex, "rackItems", itemIndex, "count"],
+											message: "تعداد الزامی است",
+										});
+									}
+									if (isBlankContractValue(item?.unitPrice)) {
+										ctx.addIssue({
+											code: "custom",
+											path: ["serviceFields", "datacenters", datacenterIndex, "rackItems", itemIndex, "unitPrice"],
+											message: "قیمت هر واحد الزامی است",
+										});
+									}
+								});
+
+								const shouldValidateRackDiscountTiers = (
+									(val.serviceFields as any)?.collocationPartnerType === "CP"
+									&& datacenter?.datacenterSystemTag === "DEFAULT_BEHESHTI"
+								);
+								if (shouldValidateRackDiscountTiers) {
+									const rackDiscountTiers = Array.isArray(datacenter?.rackDiscountTiers) ? datacenter.rackDiscountTiers : [];
+									rackDiscountTiers.forEach((tier: any, tierIndex: number) => {
+										if (isBlankContractValue(tier?.from)) {
+											ctx.addIssue({
+												code: "custom",
+												path: ["serviceFields", "datacenters", datacenterIndex, "rackDiscountTiers", tierIndex, "from"],
+												message: "از الزامی است",
+											});
+										}
+										if (tierIndex < rackDiscountTiers.length - 1 && isBlankContractValue(tier?.to)) {
+											ctx.addIssue({
+												code: "custom",
+												path: ["serviceFields", "datacenters", datacenterIndex, "rackDiscountTiers", tierIndex, "to"],
+												message: "تا الزامی است",
+											});
+										}
+										if (isBlankContractValue(tier?.discountPercent)) {
+											ctx.addIssue({
+												code: "custom",
+												path: ["serviceFields", "datacenters", datacenterIndex, "rackDiscountTiers", tierIndex, "discountPercent"],
+												message: "درصد تخفیف الزامی است",
+											});
+										}
+										else {
+											const discountPercent = Number(tier?.discountPercent);
+											if (!Number.isFinite(discountPercent) || discountPercent < 0 || discountPercent > 100) {
+												ctx.addIssue({
+													code: "custom",
+													path: ["serviceFields", "datacenters", datacenterIndex, "rackDiscountTiers", tierIndex, "discountPercent"],
+													message: "درصد تخفیف باید بین 0 تا 100 باشد",
+												});
+											}
+										}
+									});
+								}
+							});
+						}
+					}
+
 					// ✅ New: Validate only if the contract is official
 					const isOfficial = (val.serviceFields as any)?.isOfficial === true;
 
