@@ -397,6 +397,25 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 					// ✅ New: Validate only if the contract is official
 					const isOfficial = (val.serviceFields as any)?.isOfficial === true;
 
+					if (isOfficial && ["CP", "PREMIUM", "IXP", "TCI"].includes(trafficCompanyType)) {
+						const tehranPricing = (val.serviceFields as any)?.tehranPricing;
+						const provincePricing = (val.serviceFields as any)?.provincePricing;
+						if (tehranPricing != null && isBlankContractValue((val.serviceFields as any)?.tehranUnit)) {
+							ctx.addIssue({
+								code: "custom",
+								path: ["serviceFields", "tehranUnit"],
+								message: "واحد (تهران) الزامی است",
+							});
+						}
+						if (provincePricing != null && isBlankContractValue((val.serviceFields as any)?.provinceUnit)) {
+							ctx.addIssue({
+								code: "custom",
+								path: ["serviceFields", "provinceUnit"],
+								message: "واحد (مراکز استانی) الزامی است",
+							});
+						}
+					}
+
 					if (isOfficial && val.companyType === "PREMIUM") {
 						const tehranPricing = (val.serviceFields as any)?.tehranPricing;
 						const provincePricing = (val.serviceFields as any)?.provincePricing;

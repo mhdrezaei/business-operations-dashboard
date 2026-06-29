@@ -407,6 +407,8 @@ export function FixedStartSection() {
 		usesMonthlyStatus,
 	]);
 
+	const trafficLocationUnits = monthlyStatus.data?.traffic?.location_units ?? {};
+
 	useEffect(() => {
 		if (!isTrafficSingleMode)
 			return;
@@ -417,7 +419,11 @@ export function FixedStartSection() {
 			shouldDirty: false,
 			shouldValidate: false,
 		});
-	}, [isTrafficSingleMode, monthlyStatus.isSuccess, setValue, trafficHasCountyContract]);
+		setValue("serviceFields.trafficLocationUnits" as const, trafficLocationUnits, {
+			shouldDirty: false,
+			shouldValidate: false,
+		});
+	}, [isTrafficSingleMode, monthlyStatus.isSuccess, setValue, trafficHasCountyContract, trafficLocationUnits]);
 
 	const smsCommissionAgentOptions = useMemo(() => {
 		if (!companyId)

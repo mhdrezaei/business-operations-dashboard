@@ -14,6 +14,10 @@ const ADDENDA_LOCATION_OPTIONS = [
 	{ label: "تهران", value: "TEHRAN" },
 	{ label: "مراکز استانی", value: "PROVINCE" },
 ];
+const TRAFFIC_UNIT_OPTIONS = [
+	{ label: "GB/month", value: "GB/month" },
+	{ label: "Mbps", value: "Mbps" },
+];
 
 export function TrafficFields() {
 	const { control, setValue } = useFormContext<ContractFormValues>();
@@ -38,6 +42,7 @@ export function TrafficFields() {
 
 	const showPricingUi = !!isOfficial;
 	const showPremiumRevenuePercent = showPricingUi && companyType === "PREMIUM";
+	const showUnitSelector = showPricingUi && ["CP", "PREMIUM", "IXP", "TCI"].includes(String(companyType ?? "").trim().toUpperCase());
 
 	const addTehran = () => {
 		if (!tehranPricing) {
@@ -94,11 +99,7 @@ export function TrafficFields() {
 							قرارداد غیررسمی است؛ فیلدهای محاسباتی ارسال نمی‌شوند.
 						</div>
 					)
-					: (
-						<div className="mb-3 opacity-90">
-							توجه: مبنای محاسبه قیمت در این سرویس، هر مگابیت بر ثانیه است.
-						</div>
-					)}
+					: null}
 
 				{showPricingUi
 					? (
@@ -124,6 +125,16 @@ export function TrafficFields() {
 														</Button>
 													)}
 												>
+													{showUnitSelector && (
+														<div className="mb-3">
+															<RHFSelect
+																name={sf("tehranUnit") as any}
+																label="واحد"
+																options={TRAFFIC_UNIT_OPTIONS}
+																selectProps={{ placeholder: "انتخاب واحد", allowClear: false }}
+															/>
+														</div>
+													)}
 													<ContractTypeSection title="" name={sf("tehranPricing") as any} />
 													{showPremiumRevenuePercent
 														? (
@@ -161,6 +172,16 @@ export function TrafficFields() {
 														</Button>
 													)}
 												>
+													{showUnitSelector && (
+														<div className="mb-3">
+															<RHFSelect
+																name={sf("provinceUnit") as any}
+																label="واحد"
+																options={TRAFFIC_UNIT_OPTIONS}
+																selectProps={{ placeholder: "انتخاب واحد", allowClear: false }}
+															/>
+														</div>
+													)}
 													<ContractTypeSection title="" name={sf("provincePricing") as any} />
 													{showPremiumRevenuePercent
 														? (
