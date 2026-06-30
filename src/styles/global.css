@@ -163,3 +163,76 @@ html.gray-mode {
 	line-height: 2;
 	white-space: pre-wrap;
 }
+
+
+
+/* -------------------------------------------------------------------------- */
+/* Chrome / Edge Autofill Fix (Ant Design v5 + Dark/Light Theme)              */
+/* -------------------------------------------------------------------------- */
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+	-webkit-text-fill-color: var(--ant-colorText) !important;
+	caret-color: var(--ant-colorText) !important;
+
+	-webkit-box-shadow: 0 0 0 1000px var(--ant-colorBgContainer) inset !important;
+	box-shadow: 0 0 0 1000px var(--ant-colorBgContainer) inset !important;
+
+	background-color: var(--ant-colorBgContainer) !important;
+	background-clip: content-box !important;
+
+	transition: background-color 999999s ease-in-out 0s;
+}
+
+/* Ant Design Input */
+
+.ant-input:-webkit-autofill,
+.ant-input:-webkit-autofill:hover,
+.ant-input:-webkit-autofill:focus {
+	-webkit-text-fill-color: var(--ant-colorText) !important;
+	-webkit-box-shadow: 0 0 0 1000px var(--ant-colorBgContainer) inset !important;
+}
+
+
+
+/* Remove yellow/white autofill flash */
+
+input:-internal-autofill-selected {
+	background-color: var(--ant-colorBgContainer) !important;
+	color: var(--ant-colorText) !important;
+}
+/* ==========================================
+   Dark Mode - Login Input Text (Chrome Autofill)
+   ========================================== */
+
+html.dark .ant-input,
+html.dark .ant-input-password input,
+html.dark .ant-input-affix-wrapper input {
+	color: #fff !important;
+}
+
+html.dark .ant-input::placeholder,
+html.dark .ant-input-password input::placeholder,
+html.dark .ant-input-affix-wrapper input::placeholder {
+	color: rgba(255,255,255,.35) !important;
+}
+
+/* Chrome Autofill */
+html.dark input:-webkit-autofill,
+html.dark input:-webkit-autofill:hover,
+html.dark input:-webkit-autofill:focus,
+html.dark input:-webkit-autofill:active {
+	-webkit-text-fill-color: #fff !important;
+	caret-color: #fff !important;
+	transition: background-color 999999s ease-in-out 0s;
+	box-shadow: 0 0 0 1000px #0a1632 inset !important;
+	-webkit-box-shadow: 0 0 0 1000px #0a1632 inset !important;
+}
