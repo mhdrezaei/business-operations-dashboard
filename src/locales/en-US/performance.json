@@ -208,7 +208,17 @@
 		"unitPriceHint": "Note: each unit price equals one gigabyte.",
 		"tehranPerformance": "Tehran Performance",
 		"countyPerformance": "County Centers Performance",
-		"addCountyPerformance": "Add County Centers Performance"
+		"addCountyPerformance": "Add County Centers Performance",
+		"editTemplate": {
+			"title": "Edit Template",
+			"subtitle": "Download/upload the traffic performance edit Excel file",
+			"open": "Open",
+			"modalTitle": "Edit Traffic Performance Template",
+			"download": "Download Edit Template",
+			"upload": "Upload Edited File",
+			"resultTitle": "Traffic File Upload Result",
+			"hint": "Select year and month first, then download the template, edit it and upload it again."
+		}
 	},
 	"commercial": {
 		"title": "Commercial Service File Upload",

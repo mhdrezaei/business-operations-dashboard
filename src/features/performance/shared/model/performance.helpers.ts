@@ -104,6 +104,30 @@ export function resolvePerformanceServicePath(serviceCode: PerformanceServiceCod
 	return "openapi";
 }
 
+export function buildMonthsByYearMap(record: Record<string, number[]> | null | undefined): Map<number, number[]> {
+	const map = new Map<number, number[]>();
+	if (!record)
+		return map;
+
+	Object.entries(record).forEach(([yearKey, months]) => {
+		const numericYear = Number(yearKey);
+		if (!Number.isInteger(numericYear))
+			return;
+
+		const normalizedMonths = Array.from(
+			new Set(
+				(Array.isArray(months) ? months : [])
+					.map(month => Number(month))
+					.filter(month => Number.isInteger(month) && month >= 1 && month <= 12),
+			),
+		).sort((a, b) => a - b);
+
+		map.set(numericYear, normalizedMonths);
+	});
+
+	return map;
+}
+
 export function compareYearMonth(aYear: number, aMonth: number, bYear: number, bMonth: number) {
 	if (aYear !== bYear)
 		return aYear - bYear;

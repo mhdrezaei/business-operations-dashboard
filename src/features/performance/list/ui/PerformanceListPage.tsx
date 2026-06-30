@@ -10,6 +10,7 @@ import {
 } from "#src/features/performance/api/performances.api";
 import {
 	aggregatePerformanceRows,
+	buildMonthsByYearMap,
 	companyTypeMatches,
 	normalizePerformanceRecord,
 	resolvePerformanceServicePath,
@@ -17,17 +18,19 @@ import {
 } from "#src/features/performance/shared/model/performance.helpers";
 import {
 	companiesByServiceQuery,
+	performanceGapsQuery,
 	servicesQuery,
 	smsCommissionAgentsQuery,
 } from "#src/features/performance/shared/queries/performance.queries";
 import { useAccess } from "#src/hooks";
-import { DeleteOutlined, EditOutlined, PlusCircleOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, FileExcelOutlined, PlusCircleOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Popconfirm } from "antd";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { PerformanceDetailModal } from "./components/PerformanceDetailModal";
+import { TrafficUpdateTemplateModal } from "./components/TrafficUpdateTemplateModal";
 import { getPerformanceColumns } from "./constants";
 
 function isSmsCommissionServicePath(service: PerformanceServicePath | null) {
@@ -55,6 +58,8 @@ export default function PerformanceListPage() {
 	const [selectedServiceCode, setSelectedServiceCode] = useState<string | null>(null);
 	const [selectedCompanyType, setSelectedCompanyType] = useState<string | null>(null);
 	const [openDetail, setOpenDetail] = useState(false);
+	const [openUpdateTemplate, setOpenUpdateTemplate] = useState(false);
+	const [selectedYear, setSelectedYear] = useState<number | null>(null);
 	const [selectedRow, setSelectedRow] = useState<PerformanceListRow | null>(null);
 	const [deletingRowId, setDeletingRowId] = useState<number | null>(null);
 	const resetInvalidSelectedService = useCallback(() => {
@@ -81,9 +86,20 @@ export default function PerformanceListPage() {
 		[selectedServiceCode],
 	);
 	const requiresCompanyType = serviceRequiresCompanyType(selectedServiceCode);
+	const isTraffic = selectedServicePath === "traffic";
 
 	const isSmsCommission = isSmsCommissionServicePath(selectedServicePath);
 	const smsCommissionAgents = useQuery(smsCommissionAgentsQuery(isSmsCommission));
+	const gaps = useQuery(performanceGapsQuery({
+		serviceId: isTraffic ? selectedServiceId : null,
+		companyId: null,
+		companyType: isTraffic ? selectedCompanyType : null,
+	}));
+	const performanceMonthsByYear = useMemo(
+		() => buildMonthsByYearMap(gaps.data?.performance_months_by_year),
+		[gaps.data],
+	);
+	const periodOptionsLoading = isTraffic && !!selectedCompanyType && (gaps.isLoading || gaps.isFetching);
 	const permittedCompanyTypeOptions = useMemo(
 		() => requiresCompanyType
 			? getPermittedCompanyTypes("performances", "view", selectedServiceId)
@@ -147,6 +163,14 @@ export default function PerformanceListPage() {
 		[companies.data, requiresCompanyType, selectedCompanyType],
 	);
 
+	const updateTemplateCompanyTypeOptions = useMemo(
+		() => permittedCompanyTypeOptions.map(option => ({
+			label: option.value,
+			value: option.key,
+		})),
+		[permittedCompanyTypeOptions],
+	);
+
 	const salesAgentOptions = useMemo(() => {
 		const all = smsCommissionAgents.data?.results ?? [];
 		return all
@@ -183,6 +207,7 @@ export default function PerformanceListPage() {
 		setSelectedServiceId(serviceId);
 		setSelectedServiceCode(serviceCode);
 		setSelectedCompanyType(null);
+		setSelectedYear(null);
 		clearDependentFilters();
 	};
 
@@ -305,6 +330,9 @@ export default function PerformanceListPage() {
 						? t("performance.placeholders.selectCompanyTypeFirst")
 						: t("performance.placeholders.selectCompany"),
 				salesAgentOptions,
+				performanceMonthsByYear,
+				selectedYear,
+				periodOptionsLoading,
 			}),
 		[
 			t,
@@ -317,6 +345,9 @@ export default function PerformanceListPage() {
 			companies.isLoading,
 			salesAgentOptions,
 			requiresCompanyType,
+			performanceMonthsByYear,
+			selectedYear,
+			periodOptionsLoading,
 		],
 	);
 
@@ -388,7 +419,13 @@ export default function PerformanceListPage() {
 						if (Object.prototype.hasOwnProperty.call(changedValues, "company_type")) {
 							const nextCompanyType = changedValues.company_type == null ? null : String(changedValues.company_type);
 							setSelectedCompanyType(nextCompanyType);
-							formRef.current?.setFieldsValue({ company: undefined });
+							setSelectedYear(null);
+							formRef.current?.setFieldsValue({ company: undefined, sh_year: undefined, sh_month: undefined });
+						}
+						if (Object.prototype.hasOwnProperty.call(changedValues, "sh_year")) {
+							const nextYear = changedValues.sh_year == null ? null : Number(changedValues.sh_year);
+							setSelectedYear(Number.isFinite(nextYear as number) ? nextYear : null);
+							formRef.current?.setFieldsValue({ sh_month: undefined });
 						}
 					},
 				}}
@@ -464,19 +501,34 @@ export default function PerformanceListPage() {
 				}}
 				headerTitle={t("performance.titles.performanceList")}
 				toolBarRender={() => {
-					if (!canCreatePerformance) {
-						return [];
+					const buttons: React.ReactNode[] = [];
+
+					if (isTraffic) {
+						buttons.push(
+							<Button
+								key="update-template"
+								icon={<FileExcelOutlined />}
+								onClick={() => setOpenUpdateTemplate(true)}
+							>
+								{t("performance.traffic.editTemplate.title")}
+							</Button>,
+						);
 					}
-					return [
-						<Button
-							key="add"
-							icon={<PlusCircleOutlined />}
-							type="primary"
-							onClick={() => navigate("/performances/new")}
-						>
-							{t("common.add")}
-						</Button>,
-					];
+
+					if (canCreatePerformance) {
+						buttons.push(
+							<Button
+								key="add"
+								icon={<PlusCircleOutlined />}
+								type="primary"
+								onClick={() => navigate("/performances/new")}
+							>
+								{t("common.add")}
+							</Button>,
+						);
+					}
+
+					return buttons;
 				}}
 			/>
 
@@ -490,6 +542,13 @@ export default function PerformanceListPage() {
 					setSelectedRow(null);
 				}}
 				onUpdated={refreshTable}
+			/>
+
+			<TrafficUpdateTemplateModal
+				open={openUpdateTemplate}
+				serviceId={selectedServiceId}
+				companyTypeOptions={updateTemplateCompanyTypeOptions}
+				onClose={() => setOpenUpdateTemplate(false)}
 			/>
 		</BasicContent>
 	);

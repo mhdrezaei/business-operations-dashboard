@@ -27,6 +27,9 @@ export interface GetPerformanceColumnsArgs {
 	isCompanyDisabled: boolean
 	companyPlaceholder: string
 	salesAgentOptions: Array<{ label: string, value: number }>
+	performanceMonthsByYear: Map<number, number[]>
+	selectedYear: number | null
+	periodOptionsLoading: boolean
 }
 
 const YEAR_OPTIONS = Array.from({ length: 20 }, (_, index) => {
@@ -76,6 +79,9 @@ export function getPerformanceColumns({
 	isCompanyDisabled,
 	companyPlaceholder,
 	salesAgentOptions,
+	performanceMonthsByYear,
+	selectedYear,
+	periodOptionsLoading,
 }: GetPerformanceColumnsArgs): ProColumns<PerformanceListRow>[] {
 	const serviceNameById = serviceOptions.reduce((acc, it) => {
 		acc[String(it.value)] = String(it.label);
@@ -124,6 +130,35 @@ export function getPerformanceColumns({
 	const isMonthlyAggregatedService = isOpenApi || isSms || isSmsCommission;
 	const hideNonMatchingServiceColumn = (isVisibleForSelectedService: boolean) =>
 		hasSelectedService ? !isVisibleForSelectedService : true;
+
+	// For traffic, once a company type is selected, restrict the year/month
+	// filters to the periods that actually have performance data.
+	const usePeriodGaps = isTraffic && !!selectedCompanyType;
+
+	const defaultYearEnum = YEAR_OPTIONS.reduce((acc, option) => {
+		acc[String(option.value)] = option.label;
+		return acc;
+	}, {} as Record<string, string>);
+	const defaultMonthEnum = MONTH_OPTIONS.reduce((acc, option) => {
+		acc[String(option.value)] = option.label;
+		return acc;
+	}, {} as Record<string, string>);
+
+	const gapsYearEnum = Array.from(performanceMonthsByYear.keys())
+		.sort((a, b) => a - b)
+		.reduce((acc, value) => {
+			acc[String(value)] = String(value);
+			return acc;
+		}, {} as Record<string, string>);
+	const gapsMonthEnum = (selectedYear != null ? performanceMonthsByYear.get(selectedYear) ?? [] : [])
+		.reduce((acc, value) => {
+			const found = MONTH_OPTIONS.find(option => option.value === value);
+			acc[String(value)] = found?.label ?? String(value);
+			return acc;
+		}, {} as Record<string, string>);
+
+	const yearSearchEnum = usePeriodGaps ? gapsYearEnum : defaultYearEnum;
+	const monthSearchEnum = usePeriodGaps ? gapsMonthEnum : defaultMonthEnum;
 
 	return [
 		{
@@ -212,11 +247,12 @@ export function getPerformanceColumns({
 			hideInTable: true,
 			hideInSearch: !hasSelectedService,
 			valueType: "select",
-			valueEnum: YEAR_OPTIONS.reduce((acc, option) => {
-				acc[String(option.value)] = option.label;
-				return acc;
-			}, {} as Record<string, string>),
-			fieldProps: { allowClear: true, placeholder: t("performance.placeholders.year") },
+			valueEnum: yearSearchEnum,
+			fieldProps: {
+				allowClear: true,
+				placeholder: t("performance.placeholders.year"),
+				loading: usePeriodGaps && periodOptionsLoading,
+			},
 		},
 		{
 			title: t("performance.columns.month"),
@@ -235,11 +271,15 @@ export function getPerformanceColumns({
 			hideInTable: true,
 			hideInSearch: !hasSelectedService,
 			valueType: "select",
-			valueEnum: MONTH_OPTIONS.reduce((acc, option) => {
-				acc[String(option.value)] = option.label;
-				return acc;
-			}, {} as Record<string, string>),
-			fieldProps: { allowClear: true, placeholder: t("performance.placeholders.month") },
+			valueEnum: monthSearchEnum,
+			fieldProps: {
+				allowClear: true,
+				placeholder: usePeriodGaps && selectedYear == null
+					? t("performance.placeholders.selectYearFirst")
+					: t("performance.placeholders.month"),
+				disabled: usePeriodGaps && selectedYear == null,
+				loading: usePeriodGaps && periodOptionsLoading,
+			},
 		},
 		{
 			title: t("performance.columns.ordering"),

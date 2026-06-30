@@ -268,10 +268,36 @@ interface UploadTrafficExcelImportParams {
 	suppressErrorNotification?: boolean
 }
 
+interface UpdateTrafficExcelImportParams {
+	serviceId: number
+	file: File
+	searchParams: {
+		sh_year: number
+		sh_month: number
+		company_type: string
+	}
+	suppressErrorNotification?: boolean
+}
+
 export interface TrafficExcelImportResponse {
 	total_rows_in_file: number
 	filled_rows: number
 	created: number
+	skipped_empty: number
+	rejected: number
+	rejected_by_reason: Record<string, number>
+	rejected_items: Array<{
+		row_no: number
+		company_name: string
+		reason: string
+		details: Record<string, unknown>
+	}>
+}
+
+export interface TrafficExcelUpdateResponse {
+	total_rows_in_file: number
+	filled_rows: number
+	updated: number
 	skipped_empty: number
 	rejected: number
 	rejected_by_reason: Record<string, number>
@@ -497,6 +523,53 @@ export function uploadTrafficExcelImport({
 			suppressErrorNotification,
 		})
 		.json<TrafficExcelImportResponse>();
+}
+
+export function updateTrafficExcelImport({
+	serviceId,
+	file,
+	searchParams,
+	suppressErrorNotification,
+}: UpdateTrafficExcelImportParams) {
+	const body = new FormData();
+	body.append("service_id", String(serviceId));
+	body.append("file", file);
+	body.append("sh_year", String(searchParams.sh_year));
+	body.append("sh_month", String(searchParams.sh_month));
+	body.append("company_type", searchParams.company_type);
+
+	return request
+		.put("performances/traffic/excel-update-import/", {
+			body,
+			suppressErrorNotification,
+		})
+		.json<TrafficExcelUpdateResponse>();
+}
+
+export async function downloadTrafficUpdateTemplate({
+	serviceId,
+	sh_year,
+	sh_month,
+	company_type,
+}: {
+	serviceId: number
+	sh_year: number
+	sh_month: number
+	company_type: string
+}) {
+	const blob = await request
+		.put("performances/traffic/excel-update-template/", {
+			searchParams: compactSearchParams({
+				service_id: serviceId,
+				sh_year,
+				sh_month,
+				company_type,
+			}),
+			json: null,
+		})
+		.blob();
+
+	return blob;
 }
 
 export async function downloadPerformanceTemplate(
