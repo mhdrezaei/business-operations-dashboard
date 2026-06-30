@@ -146,6 +146,14 @@ export default function PerformanceListPage() {
 		});
 	}, [requiresCompanyType, selectedCompanyType, permittedCompanyTypeOptions]);
 
+	const allCompanyOptions = useMemo(
+		() => (companies.data?.results ?? []).map(company => ({
+			label: company.name,
+			value: company.id,
+		})),
+		[companies.data],
+	);
+
 	const companyOptions = useMemo(
 		() => {
 			const allCompanies = companies.data?.results ?? [];
@@ -323,6 +331,7 @@ export default function PerformanceListPage() {
 				setSelectedService,
 				serviceOptions,
 				companyOptions,
+				allCompanyOptions,
 				isCompanyDisabled: !selectedServiceId || companies.isLoading || (requiresCompanyType && !selectedCompanyType),
 				companyPlaceholder: !selectedServiceId
 					? t("performance.placeholders.selectServiceFirst")
@@ -342,6 +351,7 @@ export default function PerformanceListPage() {
 			permittedCompanyTypeOptions,
 			serviceOptions,
 			companyOptions,
+			allCompanyOptions,
 			companies.isLoading,
 			salesAgentOptions,
 			requiresCompanyType,

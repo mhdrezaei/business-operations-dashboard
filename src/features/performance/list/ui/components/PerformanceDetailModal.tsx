@@ -74,7 +74,7 @@ const SERVICE_DETAIL_KEYS: Record<PerformanceServicePath, string[]> = {
 	"shahkar": ["value", "income", "expense", "profit"],
 	"sms": [],
 	"sms-commission": [],
-	"traffic": ["location", "company_type", "is_official", "value", "value_receive", "income", "expense", "profit"],
+	"traffic": ["company_type", "is_official"],
 	"commercial": ["customer_name", "customer_nic", "province_code", "service_type", "value", "income", "expense", "profit"],
 };
 
@@ -578,7 +578,7 @@ function ReadOnlyBlock({ label, value }: { label: string, value: unknown }) {
 	return (
 		<div className="flex items-center gap-2">
 			<span className="font-bold">{label}</span>
-			<span>{value == null || value === "" ? "-" : String(value)}</span>
+			<span dir="ltr">{value == null || value === "" ? "-" : String(value)}</span>
 		</div>
 	);
 }
@@ -759,8 +759,8 @@ export function PerformanceDetailModal({
 		sh_month: t("performance.columns.month"),
 		value: t("performance.columns.value"),
 		value_receive: t("performance.columns.valueReceive"),
-		income: "درآمد استعلام قبض این ماه",
-		expense: "هزینه استعلام قبض این ماه",
+		income: service === "traffic" ? t("performance.fields.traffic.sentTraffic") : "درآمد استعلام قبض این ماه",
+		expense: service === "traffic" ? t("performance.fields.traffic.receivedTraffic") : "هزینه استعلام قبض این ماه",
 		profit: t("performance.columns.profit"),
 		bill_inquiry_value: t("performance.fields.openapi.billInquiryValue"),
 		receipt_register_value: t("performance.fields.openapi.receiptRegisterValue"),
@@ -785,7 +785,7 @@ export function PerformanceDetailModal({
 		province_code: t("performance.columns.provinceCode"),
 		service_type: t("performance.columns.commercialServiceType"),
 		items: t("performance.modal.labels.smsItems"),
-	}), [t]);
+	}), [t, service]);
 	const operationTypeLabels = useMemo<Record<string, string>>(() => ({
 		BILL_INQUIRY: t("performance.operationType.billInquiry"),
 		RECEIPT_REGISTER: t("performance.operationType.receiptRegister"),
@@ -936,6 +936,32 @@ export function PerformanceDetailModal({
 		};
 	}, [service, mergedDetail, record, trafficPerformances]);
 
+	const trafficSummaryCards = useMemo(() => {
+		if (service !== "traffic")
+			return [];
+
+		const allRows = getTrafficRowsFromSources(
+			mergedDetail,
+			record as Record<string, unknown> ?? {},
+			trafficPerformances,
+		);
+
+		return (["TEHRAN", "COUNTY"] as const)
+			.filter(location => visibleTrafficLocations.has(location))
+			.map((location) => {
+				const row = getTrafficLocationRow(allRows, location) as Record<string, unknown> | null;
+				return {
+					key: location,
+					title: location === "TEHRAN" ? t("performance.traffic.tehranPerformance") : t("performance.traffic.countyPerformance"),
+					value: formatNumberLike(row?.value),
+					valueReceive: formatNumberLike(row?.value_receive),
+					income: formatNumberLike(row?.income),
+					expense: formatNumberLike(row?.expense),
+					profit: formatNumberLike(row?.profit),
+				};
+			});
+	}, [service, mergedDetail, record, trafficPerformances, visibleTrafficLocations, t]);
+
 	const readonlyDetailFields = useMemo<DetailField[]>(() => {
 		if (!service || !config)
 			return [];
@@ -975,6 +1001,7 @@ export function PerformanceDetailModal({
 			"sh_month",
 			...config.editableFields.map(field => field.key),
 			...config.payloadKeys,
+			...(service === "traffic" ? ["value", "value_receive", "income", "expense", "profit", "location", "traffic_locations"] : []),
 		]);
 		const seenKeys = new Set<string>();
 		const result: DetailField[] = [];
@@ -1616,6 +1643,34 @@ export function PerformanceDetailModal({
 														label={`${field.label}:`}
 														value={field.value}
 													/>
+												))}
+											</div>
+										)
+										: null}
+
+									{service === "traffic" && trafficSummaryCards.length > 0
+										? (
+											<div
+												className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3"
+											>
+												{trafficSummaryCards.map(card => (
+													<div
+														key={card.key}
+														style={{
+															border: "1px solid rgba(255,255,255,0.12)",
+															borderRadius: 12,
+															padding: 12,
+															display: "grid",
+															gap: 6,
+														}}
+													>
+														<div className="font-bold">{card.title}</div>
+														<ReadOnlyBlock label={`${t("performance.fields.traffic.sentTraffic")}:`} value={card.value} />
+														<ReadOnlyBlock label={`${t("performance.fields.traffic.receivedTraffic")}:`} value={card.valueReceive} />
+														<ReadOnlyBlock label={`${t("performance.columns.income")}:`} value={card.income} />
+														<ReadOnlyBlock label={`${t("performance.columns.expense")}:`} value={card.expense} />
+														<ReadOnlyBlock label={`${t("performance.columns.profit")}:`} value={card.profit} />
+													</div>
 												))}
 											</div>
 										)

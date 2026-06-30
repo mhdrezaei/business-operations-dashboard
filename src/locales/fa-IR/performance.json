@@ -27,6 +27,7 @@
 		"fromGregorianDate": "از تاریخ میلادی",
 		"toGregorianDate": "تا تاریخ میلادی",
 		"value": "مقدار",
+		"smsValue": "تعداد پیامک ارسال‌شده",
 		"count": "تعداد",
 		"total": "جمع کل",
 		"income": "درآمد",
@@ -114,6 +115,7 @@
 		"financialColumns": "نمایش ستون های مالی",
 		"selectAll": "انتخاب همه",
 		"smsReportType": "نوع گزارش پیامک",
+		"periodType": "نوع دوره",
 		"contractYear": "سال قرارداد",
 		"contractMonth": "ماه قرارداد",
 		"openapiContractModel": "مدل قرارداد OpenAPI:",
@@ -146,6 +148,10 @@
 		"normal": "گزارش عادی",
 		"finance": "گزارش واحد مالی",
 		"summary": "گزارش تجمیعی"
+	},
+	"periodType": {
+		"sh": "سال و ماه شمسی",
+		"fiscal": "سال و ماه مالی"
 	},
 	"contractType": {
 		"all": "همه قراردادها",
@@ -256,7 +262,9 @@
 			"tehranConversionRatio": "ضریب تبدیل تهران",
 			"countyValue": "مقدار ترافیک ارسالی در مراکز استان",
 			"countyValueReceive": "مقدار ترافیک دریافتی در مراکز استان",
-			"countyConversionRatio": "ضریب تبدیل مراکز استان"
+			"countyConversionRatio": "ضریب تبدیل مراکز استان",
+			"sentTraffic": "ترافیک ارسالی",
+			"receivedTraffic": "ترافیک دریافتی"
 		}
 	},
 	"summary": {

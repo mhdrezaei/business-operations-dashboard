@@ -1,4 +1,4 @@
-import type { PerformanceContractServicePath } from "#src/features/performance/api/performances.api";
+import type { PerformanceContractServicePath, PerformanceReportPeriodType } from "#src/features/performance/api/performances.api";
 import { fetchCompaniesByService, fetchServices } from "#src/api/common/common.api";
 import {
 	fetchMonthlyContractStatus,
@@ -106,10 +106,12 @@ export function performanceReportAvailabilityQuery({
 	serviceId,
 	shPeriods,
 	companyType,
+	periodType,
 }: {
 	serviceId: number | null | undefined
 	shPeriods?: string[]
 	companyType?: string | null | undefined
+	periodType?: PerformanceReportPeriodType | null | undefined
 }) {
 	const periodsKey = (shPeriods ?? [])
 		.map(item => String(item ?? "").trim())
@@ -117,9 +119,9 @@ export function performanceReportAvailabilityQuery({
 		.join(",");
 
 	return queryOptions({
-		queryKey: ["performances", "report", "availability", { serviceId, periods: periodsKey, companyType }],
+		queryKey: ["performances", "report", "availability", { serviceId, periods: periodsKey, companyType, periodType }],
 		enabled: !!serviceId,
-		queryFn: () => fetchPerformanceReportAvailability(serviceId!, shPeriods, companyType),
+		queryFn: () => fetchPerformanceReportAvailability(serviceId!, shPeriods, companyType, periodType),
 		staleTime: 30 * 1000,
 	});
 }

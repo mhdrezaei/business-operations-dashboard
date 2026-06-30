@@ -1,6 +1,6 @@
 import type { ActionType, ProColumns, ProFormInstance } from "@ant-design/pro-components";
 import type { PerformanceReportRow, PerformanceReportSummary } from "../model/performance.report.types";
-import type { CompanyType, ReportSelectOption, ReportServiceOption, SmsContractTypeFilter, SmsReportType } from "./constants";
+import type { CompanyType, PeriodType, ReportSelectOption, ReportServiceOption, SmsContractTypeFilter, SmsReportType } from "./constants";
 import type { ReportFinancialColumnKey } from "./export";
 import { BasicContent, BasicTable } from "#src/components";
 import { fetchPerformanceReport } from "#src/features/performance/api/performances.api";
@@ -99,6 +99,15 @@ function formatSummaryNumber(value: number | null | undefined) {
 	return Number(value).toLocaleString("en-US");
 }
 
+// In the fiscal calendar the period month is 3 months ahead of the month it
+// represents to the user (fiscal month 1 = دی, 11 = آبان, 12 = آذر). Only the
+// displayed name is shifted; the underlying period value stays untouched.
+function getDisplayMonth(month: number, periodType: PeriodType) {
+	if (periodType !== "fiscal")
+		return month;
+	return ((month - 4 + 12) % 12) + 1;
+}
+
 const DEFAULT_FINANCIAL_COLUMNS: ReportFinancialColumnKey[] = ["income", "expense", "profit", "total"];
 const SMS_NORMAL_FINANCIAL_COLUMNS: ReportFinancialColumnKey[] = ["income", "expense", "contractType"];
 const SMS_FINANCE_FINANCIAL_COLUMNS: ReportFinancialColumnKey[] = ["income", "total"];
@@ -135,6 +144,7 @@ export function PerformanceReportPage() {
 	const [selectedPeriods, setSelectedPeriods] = useState<string[]>([]);
 	const [selectedCompanyIds, setSelectedCompanyIds] = useState<number[]>([]);
 	const [selectedSmsReportType, setSelectedSmsReportType] = useState<SmsReportType>("normal");
+	const [selectedPeriodType, setSelectedPeriodType] = useState<PeriodType>("sh");
 	const [selectedCompanyType, setSelectedCompanyType] = useState<CompanyType | null>(null);
 	const [selectedContractType, setSelectedContractType] = useState<SmsContractTypeFilter>("all");
 	const [selectedFinancialColumns, setSelectedFinancialColumns] = useState<ReportFinancialColumnKey[]>(DEFAULT_FINANCIAL_COLUMNS);
@@ -161,6 +171,7 @@ export function PerformanceReportPage() {
 		...performanceReportAvailabilityQuery({
 			serviceId: selectedServiceId,
 			companyType: selectedCompanyType,
+			periodType: selectedPeriodType,
 		}),
 		enabled: hasRequiredAvailabilityFilters,
 	});
@@ -169,6 +180,7 @@ export function PerformanceReportPage() {
 			serviceId: selectedServiceId,
 			shPeriods: selectedPeriods,
 			companyType: selectedCompanyType,
+			periodType: selectedPeriodType,
 		}),
 		enabled: hasRequiredAvailabilityFilters && selectedPeriods.length > 0,
 	});
@@ -198,6 +210,7 @@ export function PerformanceReportPage() {
 		setSelectedPeriods([]);
 		setSelectedCompanyIds([]);
 		setSelectedSmsReportType("normal");
+		setSelectedPeriodType("sh");
 		setSelectedCompanyType(null);
 		setSelectedContractType("all");
 		setSelectedFinancialColumns(DEFAULT_FINANCIAL_COLUMNS);
@@ -209,6 +222,7 @@ export function PerformanceReportPage() {
 			company_ids: undefined,
 			company_type: undefined,
 			sms_report_type: "normal",
+			period_type: "sh",
 			is_official: "all",
 			financial_columns: DEFAULT_FINANCIAL_COLUMNS,
 		});
@@ -260,14 +274,15 @@ export function PerformanceReportPage() {
 			if (!parsed || parsed.year !== selectedYear)
 				return acc;
 
-			const monthName = MONTH_OPTIONS.find(item => item.value === parsed.month)?.label ?? String(parsed.month);
+			const displayMonth = getDisplayMonth(parsed.month, selectedPeriodType);
+			const monthName = t(`performance.months.${displayMonth}`);
 			acc.push({
 				value: parsed.period,
 				label: `${monthName} (${parsed.year}/${parsed.month})`,
 			});
 			return acc;
 		}, []);
-	}, [availablePeriods, selectedYear]);
+	}, [availablePeriods, selectedYear, selectedPeriodType, t]);
 
 	const availableCompanyIds = useMemo(() => {
 		if (selectedPeriods.length > 0) {
@@ -340,6 +355,10 @@ export function PerformanceReportPage() {
 		{ label: t("performance.smsReportType.normal"), value: "normal" },
 		{ label: t("performance.smsReportType.finance"), value: "finance" },
 		{ label: t("performance.smsReportType.summary"), value: "summary" },
+	]), [t]);
+	const periodTypeOptions = useMemo<ReportSelectOption[]>(() => ([
+		{ label: t("performance.periodType.sh"), value: "sh" },
+		{ label: t("performance.periodType.fiscal"), value: "fiscal" },
 	]), [t]);
 	const financialColumnOptions = useMemo<ReportSelectOption[]>(() => {
 		if (isSmsCommissionService) {
@@ -488,6 +507,19 @@ export function PerformanceReportPage() {
 		setSelectedContractType(value);
 	};
 
+	const handlePeriodTypeChange = (value: PeriodType) => {
+		setSelectedPeriodType(value);
+		setSelectedYear(null);
+		setSelectedPeriods([]);
+		setSelectedCompanyIds([]);
+		setSummary(null);
+		formRef.current?.setFieldsValue({
+			sh_year: undefined,
+			sh_periods: undefined,
+			company_ids: undefined,
+		});
+	};
+
 	const handleFinancialColumnsChange = (columns: ReportFinancialColumnKey[]) => {
 		const fallback = isSmsCommissionService
 			? SMS_COMMISSION_FINANCIAL_COLUMNS
@@ -511,11 +543,13 @@ export function PerformanceReportPage() {
 			companyTypeOptions,
 			contractTypeOptions,
 			smsReportTypeOptions,
+			periodTypeOptions,
 			financialColumnOptions,
 			selectedPeriods,
 			selectedCompanyIds,
 			selectedFinancialColumns,
 			selectedSmsReportType,
+			selectedPeriodType,
 			isSmsService,
 			isSmsCommissionService,
 			isTrafficService,
@@ -529,6 +563,7 @@ export function PerformanceReportPage() {
 			onCompanyTypeChange: handleCompanyTypeChange,
 			onContractTypeChange: handleContractTypeChange,
 			onSmsReportTypeChange: handleSmsReportTypeChange,
+			onPeriodTypeChange: handlePeriodTypeChange,
 			onFinancialColumnsChange: handleFinancialColumnsChange,
 		});
 	}, [
@@ -540,11 +575,13 @@ export function PerformanceReportPage() {
 		companyTypeOptions,
 		contractTypeOptions,
 		smsReportTypeOptions,
+		periodTypeOptions,
 		financialColumnOptions,
 		selectedPeriods,
 		selectedCompanyIds,
 		selectedFinancialColumns,
 		selectedSmsReportType,
+		selectedPeriodType,
 		isSmsService,
 		isSmsCommissionService,
 		isTrafficService,
@@ -583,10 +620,12 @@ export function PerformanceReportPage() {
 		const contractType = String(formValues?.is_official ?? selectedContractType ?? "all") as SmsContractTypeFilter;
 		const isOfficial = contractType === "official" ? true : contractType === "unofficial" ? false : undefined;
 
+		const periodsKey = selectedPeriodType === "fiscal" ? "fiscal_periods" : "sh_periods";
+
 		return {
 			service_id: selectedServiceId,
 			service_code: selectedServiceCode,
-			sh_periods: periods.join(","),
+			[periodsKey]: periods.join(","),
 			company_ids: isSmsService ? undefined : companyIds.length > 0 ? companyIds.join(",") : undefined,
 			company_type: companyType,
 			is_official: supportsContractType ? isOfficial : undefined,
@@ -594,7 +633,7 @@ export function PerformanceReportPage() {
 			page_size: pageSize,
 			total,
 		};
-	}, [isSmsService, requiresCompanyType, selectedCompanyIds, selectedContractType, selectedPeriods, selectedServiceId, selectedServiceCode, supportsContractType]);
+	}, [isSmsService, requiresCompanyType, selectedCompanyIds, selectedContractType, selectedPeriods, selectedServiceId, selectedServiceCode, selectedPeriodType, supportsContractType]);
 
 	const exportColumns = useMemo(() => {
 		return createPerformanceReportExportColumns({
@@ -703,6 +742,7 @@ export function PerformanceReportPage() {
 					initialValues: {
 						financial_columns: DEFAULT_FINANCIAL_COLUMNS,
 						sms_report_type: "normal",
+						period_type: "sh",
 						company_type: undefined,
 						is_official: "all",
 					},
@@ -738,7 +778,7 @@ export function PerformanceReportPage() {
 					const response = await fetchPerformanceReport({
 						service_id: selectedServiceId,
 						service_code: selectedServiceCode,
-						sh_periods: periods.join(","),
+						[selectedPeriodType === "fiscal" ? "fiscal_periods" : "sh_periods"]: periods.join(","),
 						company_ids: isSmsService ? undefined : companyIds.length > 0 ? companyIds.join(",") : undefined,
 						company_type: companyType,
 						is_official: supportsContractType ? isOfficial : undefined,

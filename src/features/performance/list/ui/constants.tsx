@@ -24,6 +24,7 @@ export interface GetPerformanceColumnsArgs {
 	setSelectedService: (serviceId: number | null, serviceCode: string | null) => void
 	serviceOptions: Array<{ label: string, value: number, code: string }>
 	companyOptions: Array<{ label: string, value: number }>
+	allCompanyOptions: Array<{ label: string, value: number }>
 	isCompanyDisabled: boolean
 	companyPlaceholder: string
 	salesAgentOptions: Array<{ label: string, value: number }>
@@ -76,6 +77,7 @@ export function getPerformanceColumns({
 	setSelectedService,
 	serviceOptions,
 	companyOptions,
+	allCompanyOptions,
 	isCompanyDisabled,
 	companyPlaceholder,
 	salesAgentOptions,
@@ -87,7 +89,7 @@ export function getPerformanceColumns({
 		acc[String(it.value)] = String(it.label);
 		return acc;
 	}, {} as Record<string, string>);
-	const companyNameById = companyOptions.reduce((acc, it) => {
+	const companyNameById = allCompanyOptions.reduce((acc, it) => {
 		acc[String(it.value)] = String(it.label);
 		return acc;
 	}, {} as Record<string, string>);
@@ -308,9 +310,10 @@ export function getPerformanceColumns({
 		// 	valueType: "date",
 		// },
 		{
-			title: t("performance.columns.value"),
+			title: (isSms || isSmsCommission) ? t("performance.columns.smsValue") : t("performance.columns.value"),
 			dataIndex: "value",
 			width: 140,
+			hideInTable: hideNonMatchingServiceColumn(!isTraffic && !isOpenApi),
 			search: false,
 			render: (_, row) => formatNumeric(row.value),
 		},
@@ -318,7 +321,7 @@ export function getPerformanceColumns({
 			title: t("performance.columns.income"),
 			dataIndex: "income",
 			width: 140,
-			hideInTable: hideNonMatchingServiceColumn(isPsp || isTraffic || isCommercial),
+			hideInTable: true,
 			search: false,
 			render: (_, row) => formatNumeric(row.income),
 		},
@@ -454,7 +457,7 @@ export function getPerformanceColumns({
 			title: t("performance.columns.valueReceive"),
 			dataIndex: "value_receive",
 			width: 140,
-			hideInTable: hideNonMatchingServiceColumn(isTraffic),
+			hideInTable: true,
 			search: false,
 			render: (_, row) => formatNumeric(row.value_receive),
 		},
@@ -462,7 +465,7 @@ export function getPerformanceColumns({
 			title: t("performance.columns.expense"),
 			dataIndex: "expense",
 			width: 140,
-			hideInTable: hideNonMatchingServiceColumn(isTraffic || isCommercial),
+			hideInTable: true,
 			search: false,
 			render: (_, row) => formatNumeric(row.expense),
 		},
@@ -470,7 +473,7 @@ export function getPerformanceColumns({
 			title: t("performance.columns.profit"),
 			dataIndex: "profit",
 			width: 140,
-			hideInTable: hideNonMatchingServiceColumn(isTraffic),
+			hideInTable: true,
 			search: false,
 			render: (_, row) => formatNumeric(row.profit),
 		},

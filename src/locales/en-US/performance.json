@@ -26,6 +26,7 @@
 		"fromGregorianDate": "From Gregorian Date",
 		"toGregorianDate": "To Gregorian Date",
 		"value": "Value",
+		"smsValue": "SMS Sent Count",
 		"count": "Count",
 		"total": "Total",
 		"income": "Income",
@@ -113,6 +114,7 @@
 		"financialColumns": "Financial Columns",
 		"selectAll": "Select All",
 		"smsReportType": "SMS Report Type",
+		"periodType": "Period Type",
 		"contractYear": "Contract Year",
 		"contractMonth": "Contract Month",
 		"openapiContractModel": "OpenAPI Contract Model:",
@@ -124,6 +126,10 @@
 		"normal": "Normal Report",
 		"finance": "Finance Report",
 		"summary": "Summary Report"
+	},
+	"periodType": {
+		"sh": "Solar (Jalali) Year/Month",
+		"fiscal": "Fiscal Year/Month"
 	},
 	"contractType": {
 		"all": "All Contracts",
@@ -255,7 +261,9 @@
 			"tehranConversionRatio": "Tehran Conversion Ratio",
 			"countyValue": "Sent Traffic in County Centers",
 			"countyValueReceive": "Received Traffic in County Centers",
-			"countyConversionRatio": "County Centers Conversion Ratio"
+			"countyConversionRatio": "County Centers Conversion Ratio",
+			"sentTraffic": "Sent Traffic",
+			"receivedTraffic": "Received Traffic"
 		}
 	},
 	"summary": {

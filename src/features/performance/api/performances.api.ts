@@ -127,10 +127,13 @@ export interface PerformanceReportListResponse extends Paginated<PerformanceRepo
 	totals?: PerformanceReportTotals | null
 }
 
+export type PerformanceReportPeriodType = "sh" | "fiscal";
+
 export interface PerformanceReportQuery {
 	service_id: number
 	service_code: string
-	sh_periods: string
+	sh_periods?: string
+	fiscal_periods?: string
 	company_ids?: string
 	company_type?: string
 	is_official?: boolean
@@ -607,7 +610,12 @@ export function fetchUnregisteredPerformanceList(params: UnregisterdPerformanceL
 		.json<Paginated<PerformanceListItem>>();
 }
 
-export function fetchPerformanceReportAvailability(serviceId: number, shPeriods?: string[], companyType?: string | null) {
+export function fetchPerformanceReportAvailability(
+	serviceId: number,
+	shPeriods?: string[],
+	companyType?: string | null,
+	periodType?: PerformanceReportPeriodType | null,
+) {
 	const periods = (shPeriods ?? [])
 		.map(item => String(item ?? "").trim())
 		.filter(Boolean)
@@ -619,6 +627,7 @@ export function fetchPerformanceReportAvailability(serviceId: number, shPeriods?
 				service_id: serviceId,
 				sh_periods: periods,
 				company_type: companyType,
+				period_type: periodType,
 			}),
 		})
 		.json<PerformanceReportAvailability>();

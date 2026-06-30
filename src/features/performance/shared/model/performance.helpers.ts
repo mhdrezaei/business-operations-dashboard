@@ -315,11 +315,13 @@ export function aggregatePerformanceRows(
 			(existing as Record<string, unknown>).traffic_locations = [...trafficLocations, row];
 		}
 
-		existing.value = sumPerformanceField(existing.value, row.value);
 		existing.income = sumPerformanceField(existing.income, row.income);
 		existing.expense = sumPerformanceField(existing.expense, row.expense);
 		existing.profit = sumPerformanceField(existing.profit, row.profit);
-		existing.value_receive = sumPerformanceField(existing.value_receive, row.value_receive);
+		if (service !== "traffic") {
+			existing.value = sumPerformanceField(existing.value, row.value);
+			existing.value_receive = sumPerformanceField(existing.value_receive, row.value_receive);
+		}
 
 		if (existing.company_name == null && row.company_name != null)
 			existing.company_name = row.company_name;
