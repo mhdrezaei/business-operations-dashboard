@@ -13,6 +13,25 @@ export function setupAntdThemeTokensToHtml(antdTokens: GlobalToken) {
 	styleSheet.id = styleId;
 	styleSheet.textContent = `:root { ${cssVariablesString} }`;
 	document.head.appendChild(styleSheet);
+	requestAnimationFrame(() => {
+		document.querySelectorAll<HTMLInputElement>("input").forEach((input) => {
+			if (!input.value)
+				return;
+
+			const currentValue = input.value;
+
+			input.style.webkitBoxShadow = "none";
+			input.style.boxShadow = "none";
+
+			requestAnimationFrame(() => {
+				input.value = "";
+				input.value = currentValue;
+
+				input.style.webkitBoxShadow = "";
+				input.style.boxShadow = "";
+			});
+		});
+	});
 }
 
 export function setupAntdFeedbackStyles() {
