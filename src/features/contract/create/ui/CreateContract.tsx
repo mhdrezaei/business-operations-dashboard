@@ -1,13 +1,30 @@
 import type { ContractServicePath } from "#src/features/contract/api/contracts.api";
 import type { ContractFormValues } from "#src/features/contract/shared/model/contract.form.types";
 import type { ContractSubmitIntent } from "#src/features/contract/shared/ui/form/ContractForm";
+import type { UploadFile } from "antd";
 import type { UseFormReturn } from "react-hook-form";
 import { fetchCompaniesByService } from "#src/api/common/common.api";
+import { createContractDocument } from "#src/features/contract/api/contract-documents.api";
 import { contractTypeToApiPricing } from "#src/features/contract/api/pricing.mapper";
 import { defaultContractFormValues } from "#src/features/contract/shared/ui/form/ContractForm";
 import React, { useState } from "react";
 import { fetchCreateContract } from "../../api/contracts.api";
 import { ContractForm } from "../../shared/ui/form/ContractForm";
+
+async function uploadStagedDocuments(contractId: number, documents: unknown) {
+	const stagedFiles = (Array.isArray(documents) ? documents : [])
+		.map((doc: UploadFile) => doc?.originFileObj)
+		.filter((file): file is NonNullable<UploadFile["originFileObj"]> => file instanceof File);
+
+	for (const file of stagedFiles) {
+		try {
+			await createContractDocument(contractId, file);
+		}
+		catch {
+			window.$message?.error(`آپلود فایل «${file.name}» ناموفق بود`);
+		}
+	}
+}
 
 const REAL_START_TRIGGER_YEAR = 1404;
 const REAL_START_TRIGGER_MONTH = 4;
@@ -676,7 +693,9 @@ function CreateContract() {
 					setSubmitting(true);
 					try {
 						const service = resolveCreateServicePath(values);
-						await fetchCreateContract(service, await formValuesToApiPayload(values));
+						const created = await fetchCreateContract(service, await formValuesToApiPayload(values));
+						if (created?.id != null)
+							await uploadStagedDocuments(created.id, values.documents);
 						applySubmitIntent(intent, form);
 					}
 					finally {

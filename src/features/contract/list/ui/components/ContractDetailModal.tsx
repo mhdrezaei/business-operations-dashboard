@@ -1,12 +1,25 @@
 import type { ContractFormValues } from "#src/features/contract/shared/model/contract.form.types";
+import type { UploadFile } from "antd";
 import type { ContractServicePath } from "../../../api/contracts.api";
 import { fetchCompaniesByService } from "#src/api/common/common.api";
+import { listContractDocuments } from "#src/features/contract/api/contract-documents.api";
 import { apiPricingToContractType, contractTypeToApiPricing } from "#src/features/contract/api/pricing.mapper";
 import { ContractForm } from "#src/features/contract/shared/ui/form/ContractForm";
 import { pickCompanyTypeToken } from "#src/features/contract/shared/utils";
 import { Empty, Modal, Spin } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
 import { fetchContractDetail, fetchUpdateContract } from "../../../api/contracts.api";
+
+function contractDocumentToUploadFile(doc: { id: number, original_filename: string, size: number, mime_type: string }): UploadFile {
+	return {
+		uid: String(doc.id),
+		documentId: doc.id,
+		name: doc.original_filename,
+		size: doc.size,
+		type: doc.mime_type,
+		status: "done",
+	} as UploadFile;
+}
 
 const REAL_START_TRIGGER_YEAR = 1404;
 const REAL_START_TRIGGER_MONTH = 4;
@@ -902,9 +915,18 @@ export function ContractDetailModal({ open, contractId, service, onClose, onUpda
 						if (!isValidContractDetailResponse(dto, contractId))
 							continue;
 
+						const formValues = dtoToFormValues(dto, candidateService);
+						try {
+							const documentsResponse = await listContractDocuments(contractId);
+							formValues.documents = documentsResponse.results.map(contractDocumentToUploadFile);
+						}
+						catch {
+							// اگر بازیابی فهرست مدارک شکست بخورد، بقیه‌ی فرم همچنان قابل استفاده باشد
+						}
+
 						if (!cancelled) {
 							setResolvedService(candidateService);
-							setInitialValues(dtoToFormValues(dto, candidateService));
+							setInitialValues(formValues);
 						}
 						return;
 					}
@@ -949,6 +971,7 @@ export function ContractDetailModal({ open, contractId, service, onClose, onUpda
 							<ContractForm
 								key={`${resolvedService}-${contractId}`}
 								mode="edit"
+								contractId={contractId}
 								initialValues={initialValues}
 								submitText="ذخیره تغییرات"
 								submitting={saving}
