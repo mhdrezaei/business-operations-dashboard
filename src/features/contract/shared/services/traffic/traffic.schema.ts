@@ -49,6 +49,9 @@ export const trafficServiceFieldsSchema = z
 		// PREMIUM conpany type
 		tehranRevenuePercent: premiumRevenuePercentSchema,
 		provinceRevenuePercent: premiumRevenuePercentSchema,
+
+		tehranUnit: z.enum(["GB/month", "Mbps"]).nullable().optional(),
+		provinceUnit: z.enum(["GB/month", "Mbps"]).nullable().optional(),
 	})
 	.superRefine((val) => {
 		// ✅ If informal: nothing is validated

@@ -127,10 +127,13 @@ export interface PerformanceReportListResponse extends Paginated<PerformanceRepo
 	totals?: PerformanceReportTotals | null
 }
 
+export type PerformanceReportPeriodType = "sh" | "fiscal";
+
 export interface PerformanceReportQuery {
 	service_id: number
 	service_code: string
-	sh_periods: string
+	sh_periods?: string
+	fiscal_periods?: string
 	company_ids?: string
 	company_type?: string
 	is_official?: boolean
@@ -268,10 +271,36 @@ interface UploadTrafficExcelImportParams {
 	suppressErrorNotification?: boolean
 }
 
+interface UpdateTrafficExcelImportParams {
+	serviceId: number
+	file: File
+	searchParams: {
+		sh_year: number
+		sh_month: number
+		company_type: string
+	}
+	suppressErrorNotification?: boolean
+}
+
 export interface TrafficExcelImportResponse {
 	total_rows_in_file: number
 	filled_rows: number
 	created: number
+	skipped_empty: number
+	rejected: number
+	rejected_by_reason: Record<string, number>
+	rejected_items: Array<{
+		row_no: number
+		company_name: string
+		reason: string
+		details: Record<string, unknown>
+	}>
+}
+
+export interface TrafficExcelUpdateResponse {
+	total_rows_in_file: number
+	filled_rows: number
+	updated: number
 	skipped_empty: number
 	rejected: number
 	rejected_by_reason: Record<string, number>
@@ -499,6 +528,53 @@ export function uploadTrafficExcelImport({
 		.json<TrafficExcelImportResponse>();
 }
 
+export function updateTrafficExcelImport({
+	serviceId,
+	file,
+	searchParams,
+	suppressErrorNotification,
+}: UpdateTrafficExcelImportParams) {
+	const body = new FormData();
+	body.append("service_id", String(serviceId));
+	body.append("file", file);
+	body.append("sh_year", String(searchParams.sh_year));
+	body.append("sh_month", String(searchParams.sh_month));
+	body.append("company_type", searchParams.company_type);
+
+	return request
+		.put("performances/traffic/excel-update-import/", {
+			body,
+			suppressErrorNotification,
+		})
+		.json<TrafficExcelUpdateResponse>();
+}
+
+export async function downloadTrafficUpdateTemplate({
+	serviceId,
+	sh_year,
+	sh_month,
+	company_type,
+}: {
+	serviceId: number
+	sh_year: number
+	sh_month: number
+	company_type: string
+}) {
+	const blob = await request
+		.put("performances/traffic/excel-update-template/", {
+			searchParams: compactSearchParams({
+				service_id: serviceId,
+				sh_year,
+				sh_month,
+				company_type,
+			}),
+			json: null,
+		})
+		.blob();
+
+	return blob;
+}
+
 export async function downloadPerformanceTemplate(
 	service: "traffic" | "commercial",
 	params: Record<string, string | number | boolean | null | undefined>,
@@ -534,7 +610,12 @@ export function fetchUnregisteredPerformanceList(params: UnregisterdPerformanceL
 		.json<Paginated<PerformanceListItem>>();
 }
 
-export function fetchPerformanceReportAvailability(serviceId: number, shPeriods?: string[], companyType?: string | null) {
+export function fetchPerformanceReportAvailability(
+	serviceId: number,
+	shPeriods?: string[],
+	companyType?: string | null,
+	periodType?: PerformanceReportPeriodType | null,
+) {
 	const periods = (shPeriods ?? [])
 		.map(item => String(item ?? "").trim())
 		.filter(Boolean)
@@ -546,6 +627,7 @@ export function fetchPerformanceReportAvailability(serviceId: number, shPeriods?
 				service_id: serviceId,
 				sh_periods: periods,
 				company_type: companyType,
+				period_type: periodType,
 			}),
 		})
 		.json<PerformanceReportAvailability>();

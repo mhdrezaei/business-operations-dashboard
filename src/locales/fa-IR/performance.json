@@ -27,6 +27,7 @@
 		"fromGregorianDate": "از تاریخ میلادی",
 		"toGregorianDate": "تا تاریخ میلادی",
 		"value": "مقدار",
+		"smsValue": "تعداد پیامک ارسال‌شده",
 		"count": "تعداد",
 		"total": "جمع کل",
 		"income": "درآمد",
@@ -114,6 +115,7 @@
 		"financialColumns": "نمایش ستون های مالی",
 		"selectAll": "انتخاب همه",
 		"smsReportType": "نوع گزارش پیامک",
+		"periodType": "نوع دوره",
 		"contractYear": "سال قرارداد",
 		"contractMonth": "ماه قرارداد",
 		"openapiContractModel": "مدل قرارداد OpenAPI:",
@@ -146,6 +148,10 @@
 		"normal": "گزارش عادی",
 		"finance": "گزارش واحد مالی",
 		"summary": "گزارش تجمیعی"
+	},
+	"periodType": {
+		"sh": "سال و ماه شمسی",
+		"fiscal": "سال و ماه مالی"
 	},
 	"contractType": {
 		"all": "همه قراردادها",
@@ -194,8 +200,8 @@
 	},
 	"badges": {
 		"usedAddendum": "بر اساس الحاقیه",
-		"hasCountyContract": "دارای قرارداد شهرستان",
-		"noCountyContract": "فاقد قرارداد شهرستان"
+		"hasCountyContract": "دارای قرارداد مراکز استان",
+		"noCountyContract": "فاقد قرارداد مراکز استان"
 	},
 	"traffic": {
 		"excelTitle": "فایل اکسل عملکرد ترافیک",
@@ -207,7 +213,19 @@
 		"unitPriceHint": "مبنای محاسبه قیمت در این سرویس، هر مگابیت بر ثانیه است.",
 		"tehranPerformance": "عملکرد تهران",
 		"countyPerformance": "عملکرد مراکز استان",
-		"addCountyPerformance": "افزودن عملکرد مراکز استان"
+		"addCountyPerformance": "افزودن عملکرد مراکز استان",
+		"tehranContractUnit": "واحد موثر تهران در این ماه",
+		"countyContractUnit": "واحد موثر مراکز استان در این ماه",
+		"editTemplate": {
+			"title": "ویرایش تمپلیت",
+			"subtitle": "دانلود/آپلود فایل اکسل ویرایش عملکرد ترافیک",
+			"open": "باز کردن",
+			"modalTitle": "ویرایش تمپلیت عملکرد ترافیک",
+			"download": "دانلود فایل تمپلیت ویرایش",
+			"upload": "آپلود فایل ویرایش",
+			"resultTitle": "نتیجه آپلود فایل ترافیک",
+			"hint": "ابتدا سال و ماه را انتخاب کنید، سپس فایل تمپلیت را دانلود، ویرایش و دوباره آپلود کنید."
+		}
 	},
 	"commercial": {
 		"title": "آپلود فایل‌های سرویس‌های تجاری",
@@ -241,8 +259,12 @@
 		"traffic": {
 			"tehranValue": "مقدار ترافیک ارسالی در تهران",
 			"tehranValueReceive": "مقدار ترافیک دریافتی در تهران",
+			"tehranConversionRatio": "ضریب تبدیل تهران",
 			"countyValue": "مقدار ترافیک ارسالی در مراکز استان",
-			"countyValueReceive": "مقدار ترافیک دریافتی در مراکز استان"
+			"countyValueReceive": "مقدار ترافیک دریافتی در مراکز استان",
+			"countyConversionRatio": "ضریب تبدیل مراکز استان",
+			"sentTraffic": "ترافیک ارسالی",
+			"receivedTraffic": "ترافیک دریافتی"
 		}
 	},
 	"summary": {
@@ -304,7 +326,8 @@
 			"tehranValueRequired": "مقدار ترافیک ارسالی تهران الزامی است",
 			"tehranValueReceiveRequired": "مقدار ترافیک دریافتی تهران الزامی است",
 			"countyValueRequired": "مقدار ترافیک ارسالی مراکز استان الزامی است",
-			"countyValueReceiveRequired": "مقدار ترافیک دریافتی مراکز استان الزامی است"
+			"countyValueReceiveRequired": "مقدار ترافیک دریافتی مراکز استان الزامی است",
+			"conversionRatioRange": "ضریب تبدیل باید بین 0 تا 10 باشد"
 		},
 		"commercial": {
 			"servicesFileRequired": "فایل سرویس‌ها الزامی است",

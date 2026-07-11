@@ -26,6 +26,7 @@
 		"fromGregorianDate": "From Gregorian Date",
 		"toGregorianDate": "To Gregorian Date",
 		"value": "Value",
+		"smsValue": "SMS Sent Count",
 		"count": "Count",
 		"total": "Total",
 		"income": "Income",
@@ -113,6 +114,7 @@
 		"financialColumns": "Financial Columns",
 		"selectAll": "Select All",
 		"smsReportType": "SMS Report Type",
+		"periodType": "Period Type",
 		"contractYear": "Contract Year",
 		"contractMonth": "Contract Month",
 		"openapiContractModel": "OpenAPI Contract Model:",
@@ -124,6 +126,10 @@
 		"normal": "Normal Report",
 		"finance": "Finance Report",
 		"summary": "Summary Report"
+	},
+	"periodType": {
+		"sh": "Solar (Jalali) Year/Month",
+		"fiscal": "Fiscal Year/Month"
 	},
 	"contractType": {
 		"all": "All Contracts",
@@ -197,6 +203,8 @@
 		"noCountyContract": "No county contract"
 	},
 	"traffic": {
+		"tehranContractUnit": "Tehran effective unit this month",
+		"countyContractUnit": "County centers effective unit this month",
 		"excelTitle": "Traffic Performance Excel",
 		"submitMethod": "Submission Method",
 		"templateUpload": "Template Upload",
@@ -206,7 +214,17 @@
 		"unitPriceHint": "Note: each unit price equals one gigabyte.",
 		"tehranPerformance": "Tehran Performance",
 		"countyPerformance": "County Centers Performance",
-		"addCountyPerformance": "Add County Centers Performance"
+		"addCountyPerformance": "Add County Centers Performance",
+		"editTemplate": {
+			"title": "Edit Template",
+			"subtitle": "Download/upload the traffic performance edit Excel file",
+			"open": "Open",
+			"modalTitle": "Edit Traffic Performance Template",
+			"download": "Download Edit Template",
+			"upload": "Upload Edited File",
+			"resultTitle": "Traffic File Upload Result",
+			"hint": "Select year and month first, then download the template, edit it and upload it again."
+		}
 	},
 	"commercial": {
 		"title": "Commercial Service File Upload",
@@ -240,8 +258,12 @@
 		"traffic": {
 			"tehranValue": "Sent Traffic in Tehran",
 			"tehranValueReceive": "Received Traffic in Tehran",
+			"tehranConversionRatio": "Tehran Conversion Ratio",
 			"countyValue": "Sent Traffic in County Centers",
-			"countyValueReceive": "Received Traffic in County Centers"
+			"countyValueReceive": "Received Traffic in County Centers",
+			"countyConversionRatio": "County Centers Conversion Ratio",
+			"sentTraffic": "Sent Traffic",
+			"receivedTraffic": "Received Traffic"
 		}
 	},
 	"summary": {
@@ -303,7 +325,8 @@
 			"tehranValueRequired": "Tehran sent traffic value is required",
 			"tehranValueReceiveRequired": "Tehran received traffic value is required",
 			"countyValueRequired": "County sent traffic value is required",
-			"countyValueReceiveRequired": "County received traffic value is required"
+			"countyValueReceiveRequired": "County received traffic value is required",
+			"conversionRatioRange": "Conversion ratio must be between 0 and 10"
 		},
 		"commercial": {
 			"servicesFileRequired": "Services file is required",

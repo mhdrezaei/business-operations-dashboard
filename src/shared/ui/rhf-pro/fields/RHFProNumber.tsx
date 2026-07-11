@@ -6,6 +6,7 @@ import {
 	formatNumeric,
 	formatWithGrouping,
 	numberToWordsByLanguage,
+	sanitizeDecimalInput,
 	sanitizeNumericInput,
 	stripGroupingSeparators,
 } from "#src/utils";
@@ -27,6 +28,7 @@ export type RHFProNumberProps<
 
 	enableGrouping?: boolean
 	enableWordsTooltip?: boolean
+	decimal?: boolean
 };
 
 function toNumberOrNull(raw: string): number | null {
@@ -34,6 +36,16 @@ function toNumberOrNull(raw: string): number | null {
 	if (!plain)
 		return null;
 	if (!/^-?\d+$/.test(plain))
+		return null;
+	const n = Number(plain);
+	return Number.isFinite(n) ? n : null;
+}
+
+function toDecimalOrNull(raw: string): number | null {
+	const plain = raw.trim();
+	if (!plain || plain === "." || plain === "-" || plain === "-.")
+		return null;
+	if (!/^-?\d*(?:\.\d*)?$/.test(plain))
 		return null;
 	const n = Number(plain);
 	return Number.isFinite(n) ? n : null;
@@ -47,6 +59,7 @@ export function RHFProNumber<
 	const { language } = usePreferences();
 
 	const [focused, setFocused] = useState(false);
+	const [localRaw, setLocalRaw] = useState<string | null>(null);
 
 	return (
 		<Controller
@@ -59,9 +72,9 @@ export function RHFProNumber<
 				const raw = field.value == null ? "" : String(formatNumeric(field.value));
 				const groupingEnabled = !!props.enableGrouping;
 
-				const displayValue = groupingEnabled
-					? formatWithGrouping(raw, language)
-					: raw;
+				const displayValue = props.decimal
+					? (localRaw !== null ? localRaw : (field.value == null ? "" : String(field.value)))
+					: (groupingEnabled ? formatWithGrouping(raw, language) : raw);
 
 				const words = props.enableWordsTooltip
 					? numberToWordsByLanguage(stripGroupingSeparators(raw), language)
@@ -83,38 +96,63 @@ export function RHFProNumber<
 						>
 							<Input
 								{...(props.inputProps as any)}
-								inputMode="numeric"
+								inputMode={props.decimal ? "decimal" : "numeric"}
 								value={displayValue}
 								onFocus={() => setFocused(true)}
 								onBlur={() => {
+									if (props.decimal)
+										setLocalRaw(null);
 									setFocused(false);
 									field.onBlur();
 								}}
 								onChange={(e) => {
-									const cleaned = sanitizeNumericInput(e.target.value);
-									const plain = groupingEnabled
-										? stripGroupingSeparators(cleaned)
-										: cleaned;
-
-									field.onChange(toNumberOrNull(plain));
+									if (props.decimal) {
+										const cleaned = sanitizeDecimalInput(e.target.value);
+										setLocalRaw(cleaned);
+										field.onChange(toDecimalOrNull(cleaned));
+									}
+									else {
+										const cleaned = sanitizeNumericInput(e.target.value);
+										const plain = groupingEnabled
+											? stripGroupingSeparators(cleaned)
+											: cleaned;
+										field.onChange(toNumberOrNull(plain));
+									}
 								}}
 								onBeforeInput={(e) => {
 									const data = (e as any).data as string | undefined;
 									if (!data)
 										return;
-									if (sanitizeNumericInput(data) !== data) {
-										e.preventDefault();
+									if (props.decimal) {
+										if (sanitizeDecimalInput(data) !== data) {
+											e.preventDefault();
+											return;
+										}
+										if (data === "." && (localRaw ?? "").includes(".")) {
+											e.preventDefault();
+										}
+									}
+									else {
+										if (sanitizeNumericInput(data) !== data) {
+											e.preventDefault();
+										}
 									}
 								}}
 								onPaste={(e) => {
 									e.preventDefault();
 									const text = e.clipboardData.getData("text") ?? "";
-									const cleaned = sanitizeNumericInput(text);
-									const plain = groupingEnabled
-										? stripGroupingSeparators(cleaned)
-										: cleaned;
-
-									field.onChange(toNumberOrNull(plain));
+									if (props.decimal) {
+										const cleaned = sanitizeDecimalInput(text);
+										setLocalRaw(cleaned);
+										field.onChange(toDecimalOrNull(cleaned));
+									}
+									else {
+										const cleaned = sanitizeNumericInput(text);
+										const plain = groupingEnabled
+											? stripGroupingSeparators(cleaned)
+											: cleaned;
+										field.onChange(toNumberOrNull(plain));
+									}
 								}}
 								ref={field.ref}
 								status={err ? "error" : undefined}

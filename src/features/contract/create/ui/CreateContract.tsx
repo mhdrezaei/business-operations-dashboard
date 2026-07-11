@@ -329,14 +329,14 @@ function normalizeTrafficLocation(location: unknown) {
 	return null;
 }
 
-function mapTrafficLocationPayload(location: "TEHRAN" | "COUNTY", pricingValue: unknown) {
+function mapTrafficLocationPayload(location: "TEHRAN" | "COUNTY", pricingValue: unknown, unit?: string | null) {
 	const pricing = contractTypeToApiPricing((pricingValue ?? null) as any);
 	if (!pricing)
 		return null;
 
 	return {
 		location,
-		unit: "GB/month",
+		unit: unit ?? "GB/month",
 		calculation_type: pricing.calculation_type,
 		tiers: pricing.tiers ?? [],
 	};
@@ -577,9 +577,10 @@ async function formValuesToApiPayload(values: ContractFormValues) {
 
 	if (serviceCode === "traffic") {
 		const isOfficial = serviceFields.isOfficial ?? true;
+		const isUnitCompanyType = ["CP", "PREMIUM", "IXP", "TCI"].includes(String(values.companyType ?? "").trim().toUpperCase());
 		const locations = [
-			mapTrafficLocationPayload("TEHRAN", serviceFields.tehranPricing),
-			mapTrafficLocationPayload("COUNTY", serviceFields.provincePricing),
+			mapTrafficLocationPayload("TEHRAN", serviceFields.tehranPricing, isUnitCompanyType ? serviceFields.tehranUnit : null),
+			mapTrafficLocationPayload("COUNTY", serviceFields.provincePricing, isUnitCompanyType ? serviceFields.provinceUnit : null),
 		].filter(Boolean);
 
 		payload.is_signed = isOfficial;

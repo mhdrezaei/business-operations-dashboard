@@ -194,9 +194,12 @@ async function submitTrafficSingle(values: PerformanceFormValues): Promise<Recor
 	const fields = (values.serviceFields ?? {}) as Record<string, any>;
 	const tehranValue = toNullableNumber(fields.tehranValue);
 	const tehranValueReceive = toNullableNumber(fields.tehranValueReceive);
+	const tehranConversionRatio = toNullableNumber(fields.tehranConversionRatio);
 	const countyEnabled = Boolean(fields.countyEnabled);
 	const countyValue = toNullableNumber(fields.countyValue);
 	const countyValueReceive = toNullableNumber(fields.countyValueReceive);
+	const countyConversionRatio = toNullableNumber(fields.countyConversionRatio);
+	const isCp = typeof values.companyType === "string" && values.companyType.toUpperCase() === "CP";
 
 	if (tehranValue == null || tehranValueReceive == null) {
 		throw new Error(i18next.t("performance.errors.trafficTehranRequired"));
@@ -207,6 +210,10 @@ async function submitTrafficSingle(values: PerformanceFormValues): Promise<Recor
 		tehran_value_receive: tehranValueReceive,
 	};
 
+	if (isCp) {
+		trafficPayload.tehran_conversion_ratio = tehranConversionRatio;
+	}
+
 	if (countyEnabled) {
 		if (countyValue == null || countyValueReceive == null) {
 			throw new Error(i18next.t("performance.errors.trafficCountyRequiredWhenEnabled"));
@@ -214,6 +221,10 @@ async function submitTrafficSingle(values: PerformanceFormValues): Promise<Recor
 
 		trafficPayload.county_value = countyValue;
 		trafficPayload.county_value_receive = countyValueReceive;
+
+		if (isCp) {
+			trafficPayload.county_conversion_ratio = countyConversionRatio;
+		}
 	}
 
 	return await upsertPerformance({

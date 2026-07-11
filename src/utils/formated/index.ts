@@ -179,6 +179,20 @@ export function sanitizeNumericInput(raw: string) {
 	return minusFixed;
 }
 
+export function sanitizeDecimalInput(raw: string) {
+	const normalized = normalizeDigitsToLatin(raw);
+	// Allow: digits, comma, minus, and decimal point
+	let cleaned = normalized.replace(/[^\d,.\-]/g, "");
+	// Only one minus at the start
+	cleaned = cleaned.replace(/(?!^)-/g, "");
+	// Only one decimal point
+	const dotIdx = cleaned.indexOf(".");
+	if (dotIdx !== -1) {
+		cleaned = cleaned.slice(0, dotIdx + 1) + cleaned.slice(dotIdx + 1).replace(/\./g, "");
+	}
+	return cleaned;
+}
+
 export function stripGroupingSeparators(raw: unknown) {
 	// Defensive coercion: some form fields may pass numbers/null during hydration.
 	const value = raw == null ? "" : String(raw);

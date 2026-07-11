@@ -1,7 +1,6 @@
 import type { TrafficExcelImportResponse } from "#src/features/performance/api/performances.api";
 import type { UploadProps } from "antd";
 import type { PerformanceFormValues } from "../../model/performance.form.types";
-import { TopRightAlert } from "#src/components";
 import { downloadPerformanceTemplate, uploadTrafficExcelImport } from "#src/features/performance/api/performances.api";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
 import { CloudUploadOutlined, DeleteOutlined, DownloadOutlined, InfoCircleOutlined } from "@ant-design/icons";
@@ -71,6 +70,11 @@ export function TrafficPerformanceFields() {
 	const companyType = useWatch({ control, name: "companyType" });
 	const submitMode = useWatch({ control, name: sf("submitMode") as any }) as "template" | "single" | undefined;
 	const countyEnabled = useWatch({ control, name: sf("countyEnabled") as any }) as boolean | undefined;
+	const isCp = typeof companyType === "string" && companyType.toUpperCase() === "CP";
+	const trafficLocationUnits = useWatch({ control, name: sf("trafficLocationUnits") as any }) as Record<string, string> | undefined;
+	const tehranUnit = typeof trafficLocationUnits?.TEHRAN === "string" ? trafficLocationUnits.TEHRAN : null;
+	const countyUnit = typeof trafficLocationUnits?.COUNTY === "string" ? trafficLocationUnits.COUNTY : null;
+	const isUnitVisible = typeof companyType === "string" && ["CP", "PREMIUM", "IXP", "TCI"].includes(companyType.toUpperCase());
 	const monthlyPerformanceFile = useWatch({ control, name: sf("monthlyPerformanceFile") as any }) as UploadProps["fileList"] | undefined;
 
 	const canDownloadTemplate = !!companyType && !!year && !!month;
@@ -231,14 +235,17 @@ export function TrafficPerformanceFields() {
 					)
 					: (
 						<div className="grid gap-3">
-							<TopRightAlert
-								alertKey="traffic-performance-unit-price-hint"
-								type="info"
-								message={t("performance.traffic.unitPriceHint")}
-							/>
-
 							<Card variant="outlined" title={t("performance.traffic.tehranPerformance")} className="rounded-[10px]">
 								<Row gutter={16}>
+									{isUnitVisible && tehranUnit && (
+										<Col span={24}>
+											<div className="mb-3 rounded-lg border border-[rgba(255,255,255,0.15)] px-4 py-2 text-right text-sm">
+												{t("performance.traffic.tehranContractUnit")}
+												{": "}
+												<strong>{tehranUnit}</strong>
+											</div>
+										</Col>
+									)}
 									<Col span={12}>
 										<RHFProNumber
 											name={sf("tehranValue") as any}
@@ -253,6 +260,16 @@ export function TrafficPerformanceFields() {
 											inputProps={{ placeholder: t("performance.placeholders.example10000") }}
 										/>
 									</Col>
+									{isCp && (
+										<Col span={12}>
+											<RHFProNumber
+												name={sf("tehranConversionRatio") as any}
+												label={t("performance.fields.traffic.tehranConversionRatio")}
+												inputProps={{ placeholder: "مثلاً 1.5" }}
+												decimal
+											/>
+										</Col>
+									)}
 								</Row>
 							</Card>
 
@@ -278,6 +295,15 @@ export function TrafficPerformanceFields() {
 										)}
 									>
 										<Row gutter={16}>
+											{isUnitVisible && countyUnit && (
+												<Col span={24}>
+													<div className="mb-3 rounded-lg border border-[rgba(255,255,255,0.15)] px-4 py-2 text-right text-sm">
+														{t("performance.traffic.countyContractUnit")}
+														{": "}
+														<strong>{countyUnit}</strong>
+													</div>
+												</Col>
+											)}
 											<Col span={12}>
 												<RHFProNumber
 													name={sf("countyValue") as any}
@@ -292,6 +318,16 @@ export function TrafficPerformanceFields() {
 													inputProps={{ placeholder: t("performance.placeholders.example10000") }}
 												/>
 											</Col>
+											{isCp && (
+												<Col span={12}>
+													<RHFProNumber
+														name={sf("countyConversionRatio") as any}
+														label={t("performance.fields.traffic.countyConversionRatio")}
+														inputProps={{ placeholder: "مثلاً 1.5" }}
+														decimal
+													/>
+												</Col>
+											)}
 										</Row>
 									</Card>
 								)

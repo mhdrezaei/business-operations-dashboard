@@ -24,9 +24,13 @@ export interface GetPerformanceColumnsArgs {
 	setSelectedService: (serviceId: number | null, serviceCode: string | null) => void
 	serviceOptions: Array<{ label: string, value: number, code: string }>
 	companyOptions: Array<{ label: string, value: number }>
+	allCompanyOptions: Array<{ label: string, value: number }>
 	isCompanyDisabled: boolean
 	companyPlaceholder: string
 	salesAgentOptions: Array<{ label: string, value: number }>
+	performanceMonthsByYear: Map<number, number[]>
+	selectedYear: number | null
+	periodOptionsLoading: boolean
 }
 
 const YEAR_OPTIONS = Array.from({ length: 20 }, (_, index) => {
@@ -73,15 +77,19 @@ export function getPerformanceColumns({
 	setSelectedService,
 	serviceOptions,
 	companyOptions,
+	allCompanyOptions,
 	isCompanyDisabled,
 	companyPlaceholder,
 	salesAgentOptions,
+	performanceMonthsByYear,
+	selectedYear,
+	periodOptionsLoading,
 }: GetPerformanceColumnsArgs): ProColumns<PerformanceListRow>[] {
 	const serviceNameById = serviceOptions.reduce((acc, it) => {
 		acc[String(it.value)] = String(it.label);
 		return acc;
 	}, {} as Record<string, string>);
-	const companyNameById = companyOptions.reduce((acc, it) => {
+	const companyNameById = allCompanyOptions.reduce((acc, it) => {
 		acc[String(it.value)] = String(it.label);
 		return acc;
 	}, {} as Record<string, string>);
@@ -124,6 +132,35 @@ export function getPerformanceColumns({
 	const isMonthlyAggregatedService = isOpenApi || isSms || isSmsCommission;
 	const hideNonMatchingServiceColumn = (isVisibleForSelectedService: boolean) =>
 		hasSelectedService ? !isVisibleForSelectedService : true;
+
+	// For traffic, once a company type is selected, restrict the year/month
+	// filters to the periods that actually have performance data.
+	const usePeriodGaps = isTraffic && !!selectedCompanyType;
+
+	const defaultYearEnum = YEAR_OPTIONS.reduce((acc, option) => {
+		acc[String(option.value)] = option.label;
+		return acc;
+	}, {} as Record<string, string>);
+	const defaultMonthEnum = MONTH_OPTIONS.reduce((acc, option) => {
+		acc[String(option.value)] = option.label;
+		return acc;
+	}, {} as Record<string, string>);
+
+	const gapsYearEnum = Array.from(performanceMonthsByYear.keys())
+		.sort((a, b) => a - b)
+		.reduce((acc, value) => {
+			acc[String(value)] = String(value);
+			return acc;
+		}, {} as Record<string, string>);
+	const gapsMonthEnum = (selectedYear != null ? performanceMonthsByYear.get(selectedYear) ?? [] : [])
+		.reduce((acc, value) => {
+			const found = MONTH_OPTIONS.find(option => option.value === value);
+			acc[String(value)] = found?.label ?? String(value);
+			return acc;
+		}, {} as Record<string, string>);
+
+	const yearSearchEnum = usePeriodGaps ? gapsYearEnum : defaultYearEnum;
+	const monthSearchEnum = usePeriodGaps ? gapsMonthEnum : defaultMonthEnum;
 
 	return [
 		{
@@ -212,11 +249,12 @@ export function getPerformanceColumns({
 			hideInTable: true,
 			hideInSearch: !hasSelectedService,
 			valueType: "select",
-			valueEnum: YEAR_OPTIONS.reduce((acc, option) => {
-				acc[String(option.value)] = option.label;
-				return acc;
-			}, {} as Record<string, string>),
-			fieldProps: { allowClear: true, placeholder: t("performance.placeholders.year") },
+			valueEnum: yearSearchEnum,
+			fieldProps: {
+				allowClear: true,
+				placeholder: t("performance.placeholders.year"),
+				loading: usePeriodGaps && periodOptionsLoading,
+			},
 		},
 		{
 			title: t("performance.columns.month"),
@@ -235,11 +273,15 @@ export function getPerformanceColumns({
 			hideInTable: true,
 			hideInSearch: !hasSelectedService,
 			valueType: "select",
-			valueEnum: MONTH_OPTIONS.reduce((acc, option) => {
-				acc[String(option.value)] = option.label;
-				return acc;
-			}, {} as Record<string, string>),
-			fieldProps: { allowClear: true, placeholder: t("performance.placeholders.month") },
+			valueEnum: monthSearchEnum,
+			fieldProps: {
+				allowClear: true,
+				placeholder: usePeriodGaps && selectedYear == null
+					? t("performance.placeholders.selectYearFirst")
+					: t("performance.placeholders.month"),
+				disabled: usePeriodGaps && selectedYear == null,
+				loading: usePeriodGaps && periodOptionsLoading,
+			},
 		},
 		{
 			title: t("performance.columns.ordering"),
@@ -268,9 +310,10 @@ export function getPerformanceColumns({
 		// 	valueType: "date",
 		// },
 		{
-			title: t("performance.columns.value"),
+			title: (isSms || isSmsCommission) ? t("performance.columns.smsValue") : t("performance.columns.value"),
 			dataIndex: "value",
 			width: 140,
+			hideInTable: hideNonMatchingServiceColumn(!isTraffic && !isOpenApi),
 			search: false,
 			render: (_, row) => formatNumeric(row.value),
 		},
@@ -278,7 +321,7 @@ export function getPerformanceColumns({
 			title: t("performance.columns.income"),
 			dataIndex: "income",
 			width: 140,
-			hideInTable: hideNonMatchingServiceColumn(isPsp || isTraffic || isCommercial),
+			hideInTable: true,
 			search: false,
 			render: (_, row) => formatNumeric(row.income),
 		},
@@ -414,7 +457,7 @@ export function getPerformanceColumns({
 			title: t("performance.columns.valueReceive"),
 			dataIndex: "value_receive",
 			width: 140,
-			hideInTable: hideNonMatchingServiceColumn(isTraffic),
+			hideInTable: true,
 			search: false,
 			render: (_, row) => formatNumeric(row.value_receive),
 		},
@@ -422,7 +465,7 @@ export function getPerformanceColumns({
 			title: t("performance.columns.expense"),
 			dataIndex: "expense",
 			width: 140,
-			hideInTable: hideNonMatchingServiceColumn(isTraffic || isCommercial),
+			hideInTable: true,
 			search: false,
 			render: (_, row) => formatNumeric(row.expense),
 		},
@@ -430,7 +473,7 @@ export function getPerformanceColumns({
 			title: t("performance.columns.profit"),
 			dataIndex: "profit",
 			width: 140,
-			hideInTable: hideNonMatchingServiceColumn(isTraffic),
+			hideInTable: true,
 			search: false,
 			render: (_, row) => formatNumeric(row.profit),
 		},

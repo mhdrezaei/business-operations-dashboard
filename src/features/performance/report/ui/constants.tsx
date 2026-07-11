@@ -3,7 +3,7 @@ import type { TFunction } from "i18next";
 import type { PerformanceReportRow } from "../model/performance.report.types";
 import type { ReportFinancialColumnKey } from "./export";
 import { MONTH_OPTIONS } from "#src/features/performance/shared/ui/form/constants/jalali-date-options";
-import { Radio, Select } from "antd";
+import { Checkbox, Divider, Radio, Select } from "antd";
 
 export interface ReportSelectOption {
 	label: string
@@ -18,6 +18,7 @@ export interface ReportServiceOption extends ReportSelectOption {
 export type SmsReportType = "normal" | "finance" | "summary";
 export type SmsContractTypeFilter = "all" | "official" | "unofficial";
 export type CompanyType = string;
+export type PeriodType = "sh" | "fiscal";
 
 export interface GetPerformanceReportColumnsArgs {
 	t: TFunction<"translation", undefined>
@@ -28,11 +29,13 @@ export interface GetPerformanceReportColumnsArgs {
 	companyTypeOptions: ReportSelectOption[]
 	contractTypeOptions: ReportSelectOption[]
 	smsReportTypeOptions: ReportSelectOption[]
+	periodTypeOptions: ReportSelectOption[]
 	financialColumnOptions: ReportSelectOption[]
 	selectedPeriods: string[]
 	selectedCompanyIds: number[]
 	selectedFinancialColumns: ReportFinancialColumnKey[]
 	selectedSmsReportType: SmsReportType
+	selectedPeriodType: PeriodType
 	isSmsService: boolean
 	isSmsCommissionService: boolean
 	isTrafficService: boolean
@@ -46,6 +49,7 @@ export interface GetPerformanceReportColumnsArgs {
 	onCompanyTypeChange: (value: CompanyType | null) => void
 	onContractTypeChange: (value: SmsContractTypeFilter) => void
 	onSmsReportTypeChange: (value: SmsReportType) => void
+	onPeriodTypeChange: (value: PeriodType) => void
 	onFinancialColumnsChange: (columns: ReportFinancialColumnKey[]) => void
 }
 
@@ -155,11 +159,13 @@ export function getPerformanceReportColumns({
 	companyTypeOptions,
 	contractTypeOptions,
 	smsReportTypeOptions,
+	periodTypeOptions,
 	financialColumnOptions,
 	selectedPeriods,
 	selectedCompanyIds,
 	selectedFinancialColumns,
 	selectedSmsReportType,
+	selectedPeriodType,
 	isSmsService,
 	isSmsCommissionService,
 	isTrafficService,
@@ -173,6 +179,7 @@ export function getPerformanceReportColumns({
 	onCompanyTypeChange,
 	onContractTypeChange,
 	onSmsReportTypeChange,
+	onPeriodTypeChange,
 	onFinancialColumnsChange,
 }: GetPerformanceReportColumnsArgs): ProColumns<PerformanceReportRow>[] {
 	const operationTypeLabels = createOperationTypeLabels(t);
@@ -433,6 +440,21 @@ export function getPerformanceReportColumns({
 			},
 		},
 		{
+			title: t("performance.labels.periodType"),
+			dataIndex: "period_type",
+			hideInTable: true,
+			valueType: "select",
+			valueEnum: createValueEnum(periodTypeOptions),
+			fieldProps: {
+				allowClear: false,
+				value: selectedPeriodType,
+				placeholder: t("performance.placeholders.select"),
+				onChange: (value: string | number) => {
+					onPeriodTypeChange(String(value) as PeriodType);
+				},
+			},
+		},
+		{
 			title: t("performance.columns.year"),
 			dataIndex: "sh_year",
 			hideInTable: true,
@@ -451,18 +473,42 @@ export function getPerformanceReportColumns({
 			title: t("performance.columns.month"),
 			dataIndex: "sh_periods",
 			hideInTable: true,
-			valueType: "select",
-			valueEnum: createValueEnum(periodOptions),
-			fieldProps: {
-				mode: "multiple",
-				maxTagCount: "responsive",
-				allowClear: true,
-				disabled: isPeriodDisabled,
-				value: selectedPeriods,
-				placeholder: isPeriodDisabled ? t("performance.placeholders.selectYearFirst") : t("performance.placeholders.selectMonths"),
-				onChange: (values: Array<string | number>) => {
-					onPeriodsChange(normalizePeriods(values));
-				},
+			renderFormItem: (_, config) => {
+				const allValues = periodOptions.map(option => String(option.value));
+				const allSelected = allValues.length > 0 && allValues.every(value => selectedPeriods.includes(value));
+				const applyChange = (values: Array<string | number>) => {
+					const normalized = normalizePeriods(values);
+					config.onChange?.(normalized);
+					onPeriodsChange(normalized);
+				};
+				return (
+					<Select
+						mode="multiple"
+						maxTagCount="responsive"
+						allowClear
+						disabled={isPeriodDisabled}
+						value={selectedPeriods}
+						placeholder={isPeriodDisabled ? t("performance.placeholders.selectYearFirst") : t("performance.placeholders.selectMonths")}
+						options={periodOptions.map(option => ({ label: option.label, value: String(option.value) }))}
+						onChange={(values: Array<string | number>) => applyChange(values)}
+						popupRender={menu => (
+							<>
+								<div style={{ padding: "4px 12px" }}>
+									<Checkbox
+										checked={allSelected}
+										indeterminate={!allSelected && selectedPeriods.length > 0}
+										disabled={allValues.length === 0}
+										onChange={event => applyChange(event.target.checked ? allValues : [])}
+									>
+										{t("performance.labels.selectAll")}
+									</Checkbox>
+								</div>
+								<Divider style={{ margin: "4px 0" }} />
+								{menu}
+							</>
+						)}
+					/>
+				);
 			},
 		},
 		{

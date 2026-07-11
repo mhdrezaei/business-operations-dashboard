@@ -74,7 +74,7 @@ const SERVICE_DETAIL_KEYS: Record<PerformanceServicePath, string[]> = {
 	"shahkar": ["value", "income", "expense", "profit"],
 	"sms": [],
 	"sms-commission": [],
-	"traffic": ["location", "company_type", "is_official", "value", "value_receive", "income", "expense", "profit"],
+	"traffic": ["company_type", "is_official"],
 	"commercial": ["customer_name", "customer_nic", "province_code", "service_type", "value", "income", "expense", "profit"],
 };
 
@@ -97,6 +97,9 @@ const HIDDEN_DETAIL_KEYS = new Set([
 	"company_type_display",
 	"is_official_display",
 	"url",
+	"conversion_ratio",
+	"contract_unit",
+	"traffic_has_county_contract",
 ]);
 
 const OPENAPI_PACKAGE_PERFORMANCE_LABEL = "مقدار عملکرد پیامک";
@@ -517,17 +520,19 @@ function applyTrafficInitialValues(
 
 	initialValues.tehranValue = tehran?.value ?? null;
 	initialValues.tehranValueReceive = tehran?.value_receive ?? null;
+	initialValues.tehranConversionRatio = toNullableNumber((tehran as Record<string, unknown>)?.conversion_ratio) ?? null;
 	initialValues.countyValue = county?.value ?? null;
 	initialValues.countyValueReceive = county?.value_receive ?? null;
+	initialValues.countyConversionRatio = toNullableNumber((county as Record<string, unknown>)?.conversion_ratio) ?? null;
 }
 
-function buildTrafficPayloadFields(values: EditFormValues, locations: Set<"TEHRAN" | "COUNTY">) {
+function buildTrafficPayloadFields(values: EditFormValues, locations: Set<"TEHRAN" | "COUNTY">, isCp: boolean) {
 	const payload: Record<string, unknown> = {};
 
 	if (locations.has("TEHRAN")) {
 		payload.tehran_value = toPayloadValue(values.tehranValue);
 		payload.tehran_value_receive = toPayloadValue(values.tehranValueReceive);
-		payload.tehran_conversion_ratio = null;
+		payload.tehran_conversion_ratio = isCp ? toPayloadValue(values.tehranConversionRatio) : null;
 	}
 
 	if (locations.has("COUNTY")) {
@@ -536,7 +541,7 @@ function buildTrafficPayloadFields(values: EditFormValues, locations: Set<"TEHRA
 		if (countyValue != null || countyValueReceive != null) {
 			payload.county_value = countyValue;
 			payload.county_value_receive = countyValueReceive;
-			payload.county_conversion_ratio = null;
+			payload.county_conversion_ratio = isCp ? toPayloadValue(values.countyConversionRatio) : null;
 		}
 	}
 
@@ -544,9 +549,9 @@ function buildTrafficPayloadFields(values: EditFormValues, locations: Set<"TEHRA
 }
 
 function getTrafficFieldLocation(fieldKey: string): "TEHRAN" | "COUNTY" | null {
-	if (fieldKey === "tehranValue" || fieldKey === "tehranValueReceive")
+	if (fieldKey === "tehranValue" || fieldKey === "tehranValueReceive" || fieldKey === "tehranConversionRatio")
 		return "TEHRAN";
-	if (fieldKey === "countyValue" || fieldKey === "countyValueReceive")
+	if (fieldKey === "countyValue" || fieldKey === "countyValueReceive" || fieldKey === "countyConversionRatio")
 		return "COUNTY";
 	return null;
 }
@@ -573,7 +578,7 @@ function ReadOnlyBlock({ label, value }: { label: string, value: unknown }) {
 	return (
 		<div className="flex items-center gap-2">
 			<span className="font-bold">{label}</span>
-			<span>{value == null || value === "" ? "-" : String(value)}</span>
+			<span dir="ltr">{value == null || value === "" ? "-" : String(value)}</span>
 		</div>
 	);
 }
@@ -718,16 +723,19 @@ export function PerformanceDetailModal({
 
 		if (service === "traffic") {
 			const countyRequired = !isUnregisteredMode;
+			const isCpType = normalizedRecord.companyType?.toUpperCase() === "CP";
 			return {
 				title: t("performance.modal.titles.traffic"),
 				readonlyKeys: ["company_type"],
 				editableFields: [
 					{ key: "tehranValue", label: t("performance.fields.traffic.tehranValue"), type: "number", required: true },
 					{ key: "tehranValueReceive", label: t("performance.fields.traffic.tehranValueReceive"), type: "number", required: true },
+					...(isCpType ? [{ key: "tehranConversionRatio", label: t("performance.fields.traffic.tehranConversionRatio"), type: "number" as const, required: false }] : []),
 					{ key: "countyValue", label: t("performance.fields.traffic.countyValue"), type: "number", required: countyRequired },
 					{ key: "countyValueReceive", label: t("performance.fields.traffic.countyValueReceive"), type: "number", required: countyRequired },
+					...(isCpType ? [{ key: "countyConversionRatio", label: t("performance.fields.traffic.countyConversionRatio"), type: "number" as const, required: false }] : []),
 				],
-				payloadKeys: ["company_type", "tehranValue", "tehranValueReceive", "countyValue", "countyValueReceive"],
+				payloadKeys: ["company_type", "tehranValue", "tehranValueReceive", "tehranConversionRatio", "countyValue", "countyValueReceive", "countyConversionRatio"],
 			};
 		}
 
@@ -739,10 +747,11 @@ export function PerformanceDetailModal({
 			],
 			payloadKeys: ["customer_name", "customer_nic", "province_code", "service_type", "value"],
 		};
-	}, [service, openApiContractModel, isUnregisteredMode, t]);
+	}, [service, openApiContractModel, isUnregisteredMode, normalizedRecord.companyType, t]);
 	const isOpenApiPackageEditLayout = service === "openapi" && openApiContractModel === "package";
 	const isSmsEditAlignedLayout = service === "sms" || service === "sms-commission";
 	const isPspEditLayout = service === "psp";
+	const isTrafficEditLayout = service === "traffic";
 	const fieldLabels = useMemo<Record<string, string>>(() => ({
 		service_name: t("performance.columns.service"),
 		company_name: t("performance.columns.company"),
@@ -750,8 +759,8 @@ export function PerformanceDetailModal({
 		sh_month: t("performance.columns.month"),
 		value: t("performance.columns.value"),
 		value_receive: t("performance.columns.valueReceive"),
-		income: "درآمد استعلام قبض این ماه",
-		expense: "هزینه استعلام قبض این ماه",
+		income: service === "traffic" ? t("performance.fields.traffic.sentTraffic") : "درآمد استعلام قبض این ماه",
+		expense: service === "traffic" ? t("performance.fields.traffic.receivedTraffic") : "هزینه استعلام قبض این ماه",
 		profit: t("performance.columns.profit"),
 		bill_inquiry_value: t("performance.fields.openapi.billInquiryValue"),
 		receipt_register_value: t("performance.fields.openapi.receiptRegisterValue"),
@@ -776,7 +785,7 @@ export function PerformanceDetailModal({
 		province_code: t("performance.columns.provinceCode"),
 		service_type: t("performance.columns.commercialServiceType"),
 		items: t("performance.modal.labels.smsItems"),
-	}), [t]);
+	}), [t, service]);
 	const operationTypeLabels = useMemo<Record<string, string>>(() => ({
 		BILL_INQUIRY: t("performance.operationType.billInquiry"),
 		RECEIPT_REGISTER: t("performance.operationType.receiptRegister"),
@@ -824,6 +833,7 @@ export function PerformanceDetailModal({
 		const found = companies?.find(company => company.id === companyId) as Record<string, unknown> | undefined;
 		return pickCompanyTypeToken(found?.company_type);
 	}, [companies, mergedDetail, normalizedRecord.companyType, record]);
+	const isTrafficUnitVisible = typeof selectedCompanyType === "string" && ["CP", "PREMIUM", "IXP", "TCI"].includes(selectedCompanyType.toUpperCase());
 	const visibleTrafficLocations = useMemo(() => {
 		if (service !== "traffic")
 			return new Set<"TEHRAN" | "COUNTY">();
@@ -902,6 +912,55 @@ export function PerformanceDetailModal({
 			{ key: "income", label: t("performance.fields.psp.monthlyRevenue"), value: formatNumberLike(mergedDetail.income) },
 		];
 	}, [service, mergedDetail, t]);
+	const trafficContractUnits = useMemo(() => {
+		if (service !== "traffic")
+			return { tehran: null as string | null, county: null as string | null };
+
+		const allRows = getTrafficRowsFromSources(
+			mergedDetail,
+			record as Record<string, unknown> ?? {},
+			trafficPerformances,
+		);
+		const tehranRow = getTrafficLocationRow(allRows, "TEHRAN");
+		const countyRow = getTrafficLocationRow(allRows, "COUNTY");
+
+		const locationUnits = (mergedDetail.traffic_location_units ?? (record as Record<string, unknown>)?.traffic_location_units) as Record<string, string> | null | undefined;
+
+		return {
+			tehran: typeof (tehranRow as Record<string, unknown>)?.contract_unit === "string"
+				? (tehranRow as Record<string, unknown>).contract_unit as string
+				: (typeof locationUnits?.TEHRAN === "string" ? locationUnits.TEHRAN : null),
+			county: typeof (countyRow as Record<string, unknown>)?.contract_unit === "string"
+				? (countyRow as Record<string, unknown>).contract_unit as string
+				: (typeof locationUnits?.COUNTY === "string" ? locationUnits.COUNTY : null),
+		};
+	}, [service, mergedDetail, record, trafficPerformances]);
+
+	const trafficSummaryCards = useMemo(() => {
+		if (service !== "traffic")
+			return [];
+
+		const allRows = getTrafficRowsFromSources(
+			mergedDetail,
+			record as Record<string, unknown> ?? {},
+			trafficPerformances,
+		);
+
+		return (["TEHRAN", "COUNTY"] as const)
+			.filter(location => visibleTrafficLocations.has(location))
+			.map((location) => {
+				const row = getTrafficLocationRow(allRows, location) as Record<string, unknown> | null;
+				return {
+					key: location,
+					title: location === "TEHRAN" ? t("performance.traffic.tehranPerformance") : t("performance.traffic.countyPerformance"),
+					value: formatNumberLike(row?.value),
+					valueReceive: formatNumberLike(row?.value_receive),
+					income: formatNumberLike(row?.income),
+					expense: formatNumberLike(row?.expense),
+					profit: formatNumberLike(row?.profit),
+				};
+			});
+	}, [service, mergedDetail, record, trafficPerformances, visibleTrafficLocations, t]);
 
 	const readonlyDetailFields = useMemo<DetailField[]>(() => {
 		if (!service || !config)
@@ -942,6 +1001,7 @@ export function PerformanceDetailModal({
 			"sh_month",
 			...config.editableFields.map(field => field.key),
 			...config.payloadKeys,
+			...(service === "traffic" ? ["value", "value_receive", "income", "expense", "profit", "location", "traffic_locations"] : []),
 		]);
 		const seenKeys = new Set<string>();
 		const result: DetailField[] = [];
@@ -1408,11 +1468,14 @@ export function PerformanceDetailModal({
 		}
 
 		if (service === "traffic") {
-			Object.assign(payload, buildTrafficPayloadFields(values, visibleTrafficLocations));
+			const isCpEdit = typeof selectedCompanyType === "string" && selectedCompanyType.toUpperCase() === "CP";
+			Object.assign(payload, buildTrafficPayloadFields(values, visibleTrafficLocations, isCpEdit));
 			delete payload.tehranValue;
 			delete payload.tehranValueReceive;
+			delete payload.tehranConversionRatio;
 			delete payload.countyValue;
 			delete payload.countyValueReceive;
+			delete payload.countyConversionRatio;
 		}
 
 		setSaving(true);
@@ -1585,6 +1648,34 @@ export function PerformanceDetailModal({
 										)
 										: null}
 
+									{service === "traffic" && trafficSummaryCards.length > 0
+										? (
+											<div
+												className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3"
+											>
+												{trafficSummaryCards.map(card => (
+													<div
+														key={card.key}
+														style={{
+															border: "1px solid rgba(255,255,255,0.12)",
+															borderRadius: 12,
+															padding: 12,
+															display: "grid",
+															gap: 6,
+														}}
+													>
+														<div className="font-bold">{card.title}</div>
+														<ReadOnlyBlock label={`${t("performance.fields.traffic.sentTraffic")}:`} value={card.value} />
+														<ReadOnlyBlock label={`${t("performance.fields.traffic.receivedTraffic")}:`} value={card.valueReceive} />
+														<ReadOnlyBlock label={`${t("performance.columns.income")}:`} value={card.income} />
+														<ReadOnlyBlock label={`${t("performance.columns.expense")}:`} value={card.expense} />
+														<ReadOnlyBlock label={`${t("performance.columns.profit")}:`} value={card.profit} />
+													</div>
+												))}
+											</div>
+										)
+										: null}
+
 									{!isUnregisteredMode && isSmsLikeService && smsBreakdownCards.length > 0
 										? (
 											<div
@@ -1651,100 +1742,156 @@ export function PerformanceDetailModal({
 
 									{visibleEditableFields.length > 0
 										? (
-											isPspEditLayout
+											isTrafficEditLayout
 												? (
-													<div style={pspAlignedLabelStyle}>
-														<div
-															className="contract-form-aligned-grid contract-form-aligned-grid--two gap-3"
-
-														>
-															<ContractAlignedField label={t("performance.fields.psp.performanceValue")}>
-																<RHFProNumber<EditFormValues, any>
-																	name={"value" as any}
-																	label=""
-																	formItemProps={{ className: "mb-0" }}
-																	inputProps={{ placeholder: t("performance.modal.placeholders.enterNumber"), inputMode: "numeric" } as any}
-																	enableGrouping
-																	enableWordsTooltip
-																/>
-															</ContractAlignedField>
-
-															<ContractAlignedField label={t("performance.fields.psp.monthlyRevenue")}>
-																<RHFProNumber<EditFormValues, any>
-																	name={"income" as any}
-																	label=""
-																	formItemProps={{ className: "mb-0" }}
-																	inputProps={{ placeholder: t("performance.modal.placeholders.enterNumber"), inputMode: "numeric" } as any}
-																	enableGrouping
-																	enableWordsTooltip
-																/>
-															</ContractAlignedField>
-														</div>
+													<div className="grid gap-3">
+														{visibleTrafficLocations.has("TEHRAN") && (
+															<div>
+																{isTrafficUnitVisible && trafficContractUnits.tehran && (
+																	<div className="mb-3 rounded-lg border border-[rgba(255,255,255,0.15)] px-4 py-2 text-right text-sm">
+																		{t("performance.traffic.tehranContractUnit")}
+																		{": "}
+																		<strong>{trafficContractUnits.tehran}</strong>
+																	</div>
+																)}
+																<div className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3">
+																	{visibleEditableFields
+																		.filter(f => getTrafficFieldLocation(f.key) === "TEHRAN")
+																		.map(field => (
+																			<RHFProNumber<EditFormValues, any>
+																				key={field.key}
+																				name={field.key as any}
+																				label={field.label}
+																				inputProps={field.key.includes("ConversionRatio")
+																					? { placeholder: "مثلاً 1.5" } as any
+																					: { placeholder: t("performance.modal.placeholders.enterNumber") } as any}
+																				decimal={field.key.includes("ConversionRatio")}
+																				enableGrouping={!field.key.includes("ConversionRatio")}
+																				enableWordsTooltip={!field.key.includes("ConversionRatio")}
+																			/>
+																		))}
+																</div>
+															</div>
+														)}
+														{visibleTrafficLocations.has("COUNTY") && (
+															<div>
+																{isTrafficUnitVisible && trafficContractUnits.county && (
+																	<div className="mb-3 rounded-lg border border-[rgba(255,255,255,0.15)] px-4 py-2 text-right text-sm">
+																		{t("performance.traffic.countyContractUnit")}
+																		{": "}
+																		<strong>{trafficContractUnits.county}</strong>
+																	</div>
+																)}
+																<div className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3">
+																	{visibleEditableFields
+																		.filter(f => getTrafficFieldLocation(f.key) === "COUNTY")
+																		.map(field => (
+																			<RHFProNumber<EditFormValues, any>
+																				key={field.key}
+																				name={field.key as any}
+																				label={field.label}
+																				inputProps={field.key.includes("ConversionRatio")
+																					? { placeholder: "مثلاً 1.5" } as any
+																					: { placeholder: t("performance.modal.placeholders.enterNumber") } as any}
+																				decimal={field.key.includes("ConversionRatio")}
+																				enableGrouping={!field.key.includes("ConversionRatio")}
+																				enableWordsTooltip={!field.key.includes("ConversionRatio")}
+																			/>
+																		))}
+																</div>
+															</div>
+														)}
 													</div>
 												)
-												: isOpenApiPackageEditLayout || isSmsEditAlignedLayout
+												: isPspEditLayout
 													? (
-														<div style={isOpenApiPackageEditLayout ? openApiPackageAlignedLabelStyle : smsAlignedLabelStyle}>
-															<div
-																className="contract-form-aligned-grid contract-form-aligned-grid--two gap-3"
+														<div style={pspAlignedLabelStyle}>
+															<div className="contract-form-aligned-grid contract-form-aligned-grid--two gap-3">
+																<ContractAlignedField label={t("performance.fields.psp.performanceValue")}>
+																	<RHFProNumber<EditFormValues, any>
+																		name={"value" as any}
+																		label=""
+																		formItemProps={{ className: "mb-0" }}
+																		inputProps={{ placeholder: t("performance.modal.placeholders.enterNumber"), inputMode: "numeric" } as any}
+																		enableGrouping
+																		enableWordsTooltip
+																	/>
+																</ContractAlignedField>
 
-															>
-																{visibleEditableFields.map((field) => {
-																	const addonAfter = getSmsPerformanceFieldAddon(field.key);
-																	const alignedLabel = addonAfter
-																		? OPENAPI_PACKAGE_PERFORMANCE_LABEL
-																		: field.label;
-
-																	return (
-																		<ContractAlignedField key={field.key} label={alignedLabel}>
-																			<RHFProNumber<EditFormValues, any>
-																				name={field.key as any}
-																				label=""
-																				formItemProps={{ className: "mb-0" }}
-																				inputProps={{
-																					placeholder: t("performance.modal.placeholders.enterNumber"),
-																					inputMode: "numeric",
-																					...(addonAfter ? { addonAfter } : {}),
-																				} as any}
-																				enableGrouping
-																				enableWordsTooltip
-																			/>
-																		</ContractAlignedField>
-																	);
-																})}
+																<ContractAlignedField label={t("performance.fields.psp.monthlyRevenue")}>
+																	<RHFProNumber<EditFormValues, any>
+																		name={"income" as any}
+																		label=""
+																		formItemProps={{ className: "mb-0" }}
+																		inputProps={{ placeholder: t("performance.modal.placeholders.enterNumber"), inputMode: "numeric" } as any}
+																		enableGrouping
+																		enableWordsTooltip
+																	/>
+																</ContractAlignedField>
 															</div>
 														</div>
 													)
-													: (
-														<div
-															className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3"
-														>
-															{visibleEditableFields.map((field) => {
-																if (field.type === "number") {
+													: isOpenApiPackageEditLayout || isSmsEditAlignedLayout
+														? (
+															<div style={isOpenApiPackageEditLayout ? openApiPackageAlignedLabelStyle : smsAlignedLabelStyle}>
+																<div
+																	className="contract-form-aligned-grid contract-form-aligned-grid--two gap-3"
+
+																>
+																	{visibleEditableFields.map((field) => {
+																		const addonAfter = getSmsPerformanceFieldAddon(field.key);
+																		const alignedLabel = addonAfter
+																			? OPENAPI_PACKAGE_PERFORMANCE_LABEL
+																			: field.label;
+																		return (
+																			<ContractAlignedField key={field.key} label={alignedLabel}>
+																				<RHFProNumber<EditFormValues, any>
+																					name={field.key as any}
+																					label=""
+																					formItemProps={{ className: "mb-0" }}
+																					inputProps={{
+																						placeholder: t("performance.modal.placeholders.enterNumber"),
+																						inputMode: "numeric",
+																						...(addonAfter ? { addonAfter } : {}),
+																					} as any}
+																					enableGrouping
+																					enableWordsTooltip
+																				/>
+																			</ContractAlignedField>
+																		);
+																	})}
+																</div>
+															</div>
+														)
+														: (
+															<div
+																className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3"
+															>
+																{visibleEditableFields.map((field) => {
+																	if (field.type === "number") {
+																		return (
+																			<RHFProNumber<EditFormValues, any>
+																				key={field.key}
+																				name={field.key as any}
+																				label={field.label}
+																				inputProps={{ placeholder: t("performance.modal.placeholders.enterNumber"), inputMode: "numeric" } as any}
+																				enableGrouping
+																				enableWordsTooltip
+																			/>
+																		);
+																	}
+
 																	return (
-																		<RHFProNumber<EditFormValues, any>
+																		<RHFProText<EditFormValues, any>
 																			key={field.key}
 																			name={field.key as any}
 																			label={field.label}
-																			inputProps={{ placeholder: t("performance.modal.placeholders.enterNumber"), inputMode: "numeric" } as any}
-																			enableGrouping
-																			enableWordsTooltip
+																			inputProps={{ placeholder: t("performance.modal.placeholders.enterValue") }}
 																		/>
 																	);
-																}
-
-																return (
-																	<RHFProText<EditFormValues, any>
-																		key={field.key}
-																		name={field.key as any}
-																		label={field.label}
-																		inputProps={{ placeholder: t("performance.modal.placeholders.enterValue") }}
-																	/>
-																);
-															})}
-														</div>
-													)
-										)
+																})}
+															</div>
+														))
 										: null}
 								</div>
 							</Card>
