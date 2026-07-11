@@ -8,7 +8,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { FormProvider, useForm, useWatch } from "react-hook-form";
-import { buildContractSchema, getComparableContractString, mergeContractValues } from "../../model/contract.schema";
+import { buildContractSchema, mergeContractValues, normalizeContractValue } from "../../model/contract.schema";
 import { serviceRegistry } from "../../services/registry";
 import { findFirstError } from "../../utils";
 import { ActionSection } from "./sections/ActionSection";
@@ -47,6 +47,32 @@ interface Props {
 	showExtendedActions?: boolean
 }
 
+function hasMeaningfulDirtyField(
+	dirtyFields: unknown,
+	currentValue: unknown,
+	initialValue: unknown,
+): boolean {
+	if (dirtyFields === true) {
+		const normalizedCurrent = JSON.stringify(normalizeContractValue(currentValue));
+		const normalizedInitial = JSON.stringify(normalizeContractValue(initialValue));
+		return normalizedCurrent !== normalizedInitial;
+	}
+
+	if (!dirtyFields || typeof dirtyFields !== "object")
+		return false;
+
+	return Object.entries(dirtyFields as Record<string, unknown>).some(([key, dirtyValue]) => {
+		const currentChild = currentValue != null && typeof currentValue === "object"
+			? (currentValue as Record<string, unknown>)[key]
+			: undefined;
+		const initialChild = initialValue != null && typeof initialValue === "object"
+			? (initialValue as Record<string, unknown>)[key]
+			: undefined;
+
+		return hasMeaningfulDirtyField(dirtyValue, currentChild, initialChild);
+	});
+}
+
 export function ContractForm({
 	mode = "create",
 	initialValues,
@@ -80,10 +106,10 @@ export function ContractForm({
 		resolver: dynamicResolver,
 	});
 	const watchedValues = useWatch({ control: form.control, defaultValue: mergedInitialValues as any });
+	const { dirtyFields } = form.formState;
 	const isDirty = useMemo(() => {
-		const currentMerged = mergeContractValues(mergedInitialValues, watchedValues as Partial<ContractFormValues>);
-		return getComparableContractString(currentMerged) !== getComparableContractString(mergedInitialValues);
-	}, [mergedInitialValues, watchedValues]);
+		return hasMeaningfulDirtyField(dirtyFields, watchedValues, mergedInitialValues);
+	}, [dirtyFields, mergedInitialValues, watchedValues]);
 	useEffect(() => {
 		// serviceCode has no direct input; keep it registered so submit/validate cycles do not drop it.
 		form.register("serviceCode");
