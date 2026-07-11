@@ -1,7 +1,11 @@
 import type { PerformanceReportListItem, PerformanceReportTotals } from "#src/features/performance/api/performances.api";
+import type { PeriodType, ReportAuditColumnKey, TrafficReportLayout } from "./constants";
+import { formatReportDatacenterName, formatReportUserRef, getReportMonthLabel, getReportYearValue, REPORT_FIELD_KEYS } from "./constants";
 
 export type ReportFinancialColumnKey
 	= | "income" | "expense" | "profit" | "total" | "contractType" | "unitPrice" | "karashabIncome" | "karashabExpense" | "karashabProfit" | "telecomIncome" | "firstPartyIncome" | "regionIncome" | "salesAgentIncome";
+
+type ReportServiceLayout = "openapi" | "sms" | "sms-commission" | "psp" | "shahkar" | "traffic" | "default";
 
 interface ReportExportColumn {
 	title: string
@@ -43,7 +47,7 @@ function buildRowsHtml(rows: PerformanceReportListItem[], columns: ReportExportC
 }
 
 function buildSummaryHtml(summary: PerformanceReportTotals | null | undefined, financialColumnTitles: Partial<Record<ReportFinancialColumnKey, string>>) {
-	if (!summary)
+	if (!summary || !financialColumnTitles.total)
 		return "";
 
 	const entries = [
@@ -281,60 +285,682 @@ export function openPerformanceReportPdfPrint(args: {
 		});
 }
 
-export function createPerformanceReportExportColumns(args: {
+function getSalesAgentExportValue(row: PerformanceReportListItem) {
+	const name = pickReportValue(row, ["sales_agent_name", "salesAgentName"]);
+	if (name)
+		return String(name);
+	const agent = pickReportValue(row, ["sales_agent", "sales_agent_id", "agent"]);
+	return agent == null ? "-" : String(agent);
+}
+
+function buildLayoutExportColumns(args: {
+	layout: Exclude<ReportServiceLayout, "default">
+	idTitle: string
+	serviceNameTitle: string
 	companyNameTitle: string
+	companyTypeTitle: string
 	yearTitle: string
 	monthTitle: string
 	operationTypeTitle: string
+	operatorTitle: string
+	languageTitle: string
+	countTitle: string
+	unitPriceTitle: string
+	incomeTitle: string
+	expenseTitle: string
+	profitTitle: string
+	totalTitle: string
 	contractTypeTitle: string
+	karashabIncomeTitle: string
+	karashabExpenseTitle: string
+	karashabProfitTitle: string
+	telecomIncomeTitle: string
+	firstPartyIncomeTitle: string
+	regionIncomeTitle: string
+	salesAgentTitle: string
+	salesAgentIncomeTitle: string
 	monthNameByValue: (month: unknown) => string
 	operationTypeLabelByValue: (operationType: unknown) => string
+	operatorLabelByValue: (operator: unknown) => string
+	languageLabelByValue: (language: unknown) => string
 	contractTypeLabelByValue: (isOfficial: unknown) => string
+	companyTypeLabelByValue: (companyType: unknown) => string
+	contractUnitTitle?: string
+	positionTitle?: string
+	sentTrafficTitle?: string
+	receivedTrafficTitle?: string
+	conversionRatioTitle?: string
+	datacenterTitle?: string
+	partnerTypeTitle?: string
+	rackHalfCountTitle?: string
+	ipCountTitle?: string
+	portCountTitle?: string
+	bandwidthUsedTitle?: string
+	ampereUsedTitle?: string
+	rackHalfIncomeTitle?: string
+	rackIncomeTitle?: string
+	ipIncomeTitle?: string
+	portIncomeTitle?: string
+	bandwidthIncomeTitle?: string
+	ampereIncomeTitle?: string
+	trafficLocationLabelByValue?: (location: unknown) => string
+	trafficLayout?: TrafficReportLayout
+	periodType?: PeriodType
 	financialColumnTitles: Partial<Record<ReportFinancialColumnKey, string>>
+	hideCompanyColumn?: boolean
+	hideMonthColumn?: boolean
+	hideOperatorColumn?: boolean
+	hideLanguageColumn?: boolean
 }) {
-	const baseColumns: ReportExportColumn[] = [
-		{
+	const periodType = args.periodType ?? "sh";
+	const columns: ReportExportColumn[] = [
+		{ title: args.idTitle, getValue: row => String(row.id ?? "-") },
+	];
+
+	if (args.layout === "shahkar") {
+		columns.push({
+			title: args.serviceNameTitle,
+			getValue: row => String(row.service_name ?? "-"),
+		});
+		if (!args.hideCompanyColumn) {
+			columns.push({
+				title: args.companyNameTitle,
+				getValue: row => String(row.company_name ?? "-"),
+			});
+		}
+		columns.push({
+			title: args.yearTitle,
+			getValue: row => String(getReportYearValue(row, periodType)),
+		});
+		if (!args.hideMonthColumn) {
+			columns.push({
+				title: args.monthTitle,
+				getValue: row => String(getReportMonthLabel(row, periodType)),
+			});
+		}
+		columns.push({
+			title: args.countTitle,
+			getValue: row => formatNumeric(row.value),
+		});
+		if (args.financialColumnTitles.income) {
+			columns.push({
+				title: args.incomeTitle,
+				getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.income])),
+			});
+		}
+		if (args.financialColumnTitles.expense) {
+			columns.push({
+				title: args.expenseTitle,
+				getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.expense])),
+			});
+		}
+		if (args.financialColumnTitles.profit) {
+			columns.push({
+				title: args.profitTitle,
+				getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.profit])),
+			});
+		}
+		return columns;
+	}
+
+	if (args.layout === "traffic") {
+		const trafficLayout = args.trafficLayout ?? "cp";
+		columns.push({
+			title: args.serviceNameTitle,
+			getValue: row => String(row.service_name ?? "-"),
+		});
+		if (!args.hideCompanyColumn) {
+			columns.push({
+				title: args.companyNameTitle,
+				getValue: row => String(row.company_name ?? "-"),
+			});
+		}
+		columns.push({
+			title: args.companyTypeTitle,
+			getValue: row => args.companyTypeLabelByValue(row.company_type),
+		});
+		columns.push({
+			title: args.yearTitle,
+			getValue: row => String(getReportYearValue(row, periodType)),
+		});
+		if (!args.hideMonthColumn) {
+			columns.push({
+				title: args.monthTitle,
+				getValue: row => String(getReportMonthLabel(row, periodType)),
+			});
+		}
+
+		if (trafficLayout === "collocation") {
+			columns.push(
+				{
+					title: args.datacenterTitle ?? "",
+					getValue: row => formatReportDatacenterName(pickReportValue(row, [...REPORT_FIELD_KEYS.datacenter])),
+				},
+				{
+					title: args.partnerTypeTitle ?? "",
+					getValue: (row) => {
+						const value = pickReportValue(row, [...REPORT_FIELD_KEYS.collocationMode]);
+						return value == null ? "-" : String(value);
+					},
+				},
+				{
+					title: args.rackHalfCountTitle ?? "",
+					getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.rackHalfCount])),
+				},
+				{
+					title: args.ipCountTitle ?? "",
+					getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.ipCount])),
+				},
+				{
+					title: args.portCountTitle ?? "",
+					getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.portCount])),
+				},
+				{
+					title: args.bandwidthUsedTitle ?? "",
+					getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.bandwidthUsed])),
+				},
+				{
+					title: args.ampereUsedTitle ?? "",
+					getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.ampereUsed])),
+				},
+				{
+					title: args.rackHalfIncomeTitle ?? "",
+					getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.rackHalfIncome])),
+				},
+				{
+					title: args.rackIncomeTitle ?? "",
+					getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.rackIncome])),
+				},
+				{
+					title: args.ipIncomeTitle ?? "",
+					getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.ipIncome])),
+				},
+				{
+					title: args.portIncomeTitle ?? "",
+					getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.portIncome])),
+				},
+				{
+					title: args.bandwidthIncomeTitle ?? "",
+					getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.bandwidthIncome])),
+				},
+				{
+					title: args.ampereIncomeTitle ?? "",
+					getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.ampereIncome])),
+				},
+			);
+		}
+		else if (trafficLayout === "tci-ixp") {
+			columns.push(
+				{
+					title: args.conversionRatioTitle ?? "",
+					getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.conversionRatio])),
+				},
+				{
+					title: args.positionTitle ?? "",
+					getValue: row => args.trafficLocationLabelByValue?.(pickReportValue(row, [...REPORT_FIELD_KEYS.location])) ?? "-",
+				},
+				{
+					title: args.sentTrafficTitle ?? "",
+					getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.sentTraffic])),
+				},
+				{
+					title: args.receivedTrafficTitle ?? "",
+					getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.receivedTraffic])),
+				},
+			);
+		}
+		else {
+			columns.push(
+				{
+					title: args.contractUnitTitle ?? "",
+					getValue: (row) => {
+						const value = pickReportValue(row, [...REPORT_FIELD_KEYS.contractUnit]);
+						return value == null ? "-" : String(value);
+					},
+				},
+				{
+					title: args.positionTitle ?? "",
+					getValue: row => args.trafficLocationLabelByValue?.(pickReportValue(row, [...REPORT_FIELD_KEYS.location])) ?? "-",
+				},
+				{
+					title: args.sentTrafficTitle ?? "",
+					getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.sentTraffic])),
+				},
+				{
+					title: args.receivedTrafficTitle ?? "",
+					getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.receivedTraffic])),
+				},
+			);
+		}
+
+		if (args.financialColumnTitles.income) {
+			columns.push({
+				title: args.incomeTitle,
+				getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.income])),
+			});
+		}
+		if (args.financialColumnTitles.expense) {
+			columns.push({
+				title: args.expenseTitle,
+				getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.expense])),
+			});
+		}
+		if (args.financialColumnTitles.profit) {
+			columns.push({
+				title: args.profitTitle,
+				getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.profit])),
+			});
+		}
+		if (args.financialColumnTitles.contractType) {
+			columns.push({
+				title: args.contractTypeTitle,
+				getValue: row => args.contractTypeLabelByValue(row.is_official),
+			});
+		}
+		return columns;
+	}
+
+	if (args.layout === "psp") {
+		columns.push({
+			title: args.companyTypeTitle,
+			getValue: row => args.companyTypeLabelByValue(row.company_type),
+		});
+		columns.push({
+			title: args.yearTitle,
+			getValue: row => String(getReportYearValue(row, periodType)),
+		});
+		columns.push({
+			title: args.countTitle,
+			getValue: row => formatNumeric(row.value),
+		});
+		if (args.financialColumnTitles.income) {
+			columns.push({
+				title: args.incomeTitle,
+				getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.income])),
+			});
+		}
+		if (args.financialColumnTitles.expense) {
+			columns.push({
+				title: args.expenseTitle,
+				getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.expense])),
+			});
+		}
+		if (args.financialColumnTitles.profit) {
+			columns.push({
+				title: args.profitTitle,
+				getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.profit])),
+			});
+		}
+		return columns;
+	}
+
+	if (!args.hideCompanyColumn) {
+		columns.push({
 			title: args.companyNameTitle,
 			getValue: row => String(row.company_name ?? "-"),
-		},
-		{
-			title: args.yearTitle,
-			getValue: row => String(row.sh_year ?? "-"),
-		},
-		{
+		});
+	}
+
+	columns.push({
+		title: args.yearTitle,
+		getValue: row => String(getReportYearValue(row, periodType)),
+	});
+
+	if (!args.hideMonthColumn) {
+		columns.push({
 			title: args.monthTitle,
-			getValue: row => args.monthNameByValue(row.sh_month),
-		},
-		{
+			getValue: row => String(getReportMonthLabel(row, periodType)),
+		});
+	}
+
+	if (args.layout === "sms" || args.layout === "sms-commission") {
+		if (!args.hideOperatorColumn) {
+			columns.push({
+				title: args.operatorTitle,
+				getValue: row => args.operatorLabelByValue(row.operator),
+			});
+		}
+		if (!args.hideLanguageColumn) {
+			columns.push({
+				title: args.languageTitle,
+				getValue: row => args.languageLabelByValue(row.language),
+			});
+		}
+	}
+
+	columns.push({
+		title: args.countTitle,
+		getValue: row => formatNumeric(row.value),
+	});
+
+	if (args.layout === "openapi") {
+		columns.push({
 			title: args.operationTypeTitle,
 			getValue: row => args.operationTypeLabelByValue(row.operation_type),
-		},
-	];
+		});
+		if (args.financialColumnTitles.income) {
+			columns.push({
+				title: args.incomeTitle,
+				getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.income])),
+			});
+		}
+		if (args.financialColumnTitles.expense) {
+			columns.push({
+				title: args.expenseTitle,
+				getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.expense])),
+			});
+		}
+		if (args.financialColumnTitles.profit) {
+			columns.push({
+				title: args.profitTitle,
+				getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.profit])),
+			});
+		}
+		return columns;
+	}
+
+	if (args.layout === "sms") {
+		columns.push({
+			title: args.unitPriceTitle,
+			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.unitPrice])),
+		});
+		if (args.financialColumnTitles.income) {
+			columns.push({
+				title: args.incomeTitle,
+				getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.income])),
+			});
+		}
+		if (args.financialColumnTitles.expense) {
+			columns.push({
+				title: args.expenseTitle,
+				getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.expense])),
+			});
+		}
+		if (args.financialColumnTitles.profit) {
+			columns.push({
+				title: args.profitTitle,
+				getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.profit])),
+			});
+		}
+		if (args.financialColumnTitles.contractType) {
+			columns.push({
+				title: args.contractTypeTitle,
+				getValue: row => args.contractTypeLabelByValue(row.is_official),
+			});
+		}
+		return columns;
+	}
+
+	if (args.financialColumnTitles.unitPrice) {
+		columns.push({
+			title: args.unitPriceTitle,
+			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.unitPrice])),
+		});
+	}
+	if (args.financialColumnTitles.karashabIncome) {
+		columns.push({
+			title: args.karashabIncomeTitle,
+			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.karashabIncome])),
+		});
+	}
+	if (args.financialColumnTitles.karashabExpense) {
+		columns.push({
+			title: args.karashabExpenseTitle,
+			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.karashabExpense])),
+		});
+	}
+	if (args.financialColumnTitles.karashabProfit) {
+		columns.push({
+			title: args.karashabProfitTitle,
+			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.karashabProfit])),
+		});
+	}
+	if (args.financialColumnTitles.telecomIncome) {
+		columns.push({
+			title: args.telecomIncomeTitle,
+			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.telecomIncome])),
+		});
+	}
+	if (args.financialColumnTitles.firstPartyIncome) {
+		columns.push({
+			title: args.firstPartyIncomeTitle,
+			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.firstPartyIncome])),
+		});
+	}
+	if (args.financialColumnTitles.regionIncome) {
+		columns.push({
+			title: args.regionIncomeTitle,
+			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.regionIncome])),
+		});
+	}
+
+	columns.push({
+		title: args.salesAgentTitle,
+		getValue: row => getSalesAgentExportValue(row),
+	});
+
+	if (args.financialColumnTitles.salesAgentIncome) {
+		columns.push({
+			title: args.salesAgentIncomeTitle,
+			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.salesAgentIncome])),
+		});
+	}
+
+	return columns;
+}
+
+function appendAuditExportColumns(
+	columns: ReportExportColumn[],
+	selectedAuditColumns: ReportAuditColumnKey[],
+	createdByUserTitle: string,
+	updatedByUserTitle: string,
+) {
+	if (selectedAuditColumns.includes("createdByUser")) {
+		columns.push({
+			title: createdByUserTitle,
+			getValue: row => formatReportUserRef(row.created_by_user),
+		});
+	}
+	if (selectedAuditColumns.includes("updatedByUser")) {
+		columns.push({
+			title: updatedByUserTitle,
+			getValue: row => formatReportUserRef(row.updated_by_user),
+		});
+	}
+	return columns;
+}
+
+export function createPerformanceReportExportColumns(args: {
+	layout?: ReportServiceLayout
+	idTitle: string
+	serviceNameTitle: string
+	companyNameTitle: string
+	companyTypeTitle: string
+	yearTitle: string
+	monthTitle: string
+	operationTypeTitle: string
+	operatorTitle: string
+	languageTitle: string
+	countTitle: string
+	unitPriceTitle: string
+	incomeTitle: string
+	expenseTitle: string
+	profitTitle: string
+	totalTitle: string
+	contractTypeTitle: string
+	karashabIncomeTitle: string
+	karashabExpenseTitle: string
+	karashabProfitTitle: string
+	telecomIncomeTitle: string
+	firstPartyIncomeTitle: string
+	regionIncomeTitle: string
+	salesAgentTitle: string
+	salesAgentIncomeTitle: string
+	monthNameByValue: (month: unknown) => string
+	operationTypeLabelByValue: (operationType: unknown) => string
+	operatorLabelByValue: (operator: unknown) => string
+	languageLabelByValue: (language: unknown) => string
+	contractTypeLabelByValue: (isOfficial: unknown) => string
+	companyTypeLabelByValue: (companyType: unknown) => string
+	contractUnitTitle?: string
+	positionTitle?: string
+	sentTrafficTitle?: string
+	receivedTrafficTitle?: string
+	conversionRatioTitle?: string
+	datacenterTitle?: string
+	partnerTypeTitle?: string
+	rackHalfCountTitle?: string
+	ipCountTitle?: string
+	portCountTitle?: string
+	bandwidthUsedTitle?: string
+	ampereUsedTitle?: string
+	rackHalfIncomeTitle?: string
+	rackIncomeTitle?: string
+	ipIncomeTitle?: string
+	portIncomeTitle?: string
+	bandwidthIncomeTitle?: string
+	ampereIncomeTitle?: string
+	trafficLocationLabelByValue?: (location: unknown) => string
+	trafficLayout?: TrafficReportLayout
+	periodType?: PeriodType
+	selectedAuditColumns?: ReportAuditColumnKey[]
+	createdByUserTitle?: string
+	updatedByUserTitle?: string
+	financialColumnTitles: Partial<Record<ReportFinancialColumnKey, string>>
+	hideCompanyColumn?: boolean
+	hideMonthColumn?: boolean
+	showOperatorLanguageColumns?: boolean
+	hideOperatorColumn?: boolean
+	hideLanguageColumn?: boolean
+}) {
+	const layout = args.layout ?? "default";
+	const periodType = args.periodType ?? "sh";
+	const selectedAuditColumns = args.selectedAuditColumns ?? [];
+	if (layout !== "default") {
+		return appendAuditExportColumns(
+			buildLayoutExportColumns({
+				layout,
+				idTitle: args.idTitle,
+				serviceNameTitle: args.serviceNameTitle,
+				companyNameTitle: args.companyNameTitle,
+				companyTypeTitle: args.companyTypeTitle,
+				yearTitle: args.yearTitle,
+				monthTitle: args.monthTitle,
+				operationTypeTitle: args.operationTypeTitle,
+				operatorTitle: args.operatorTitle,
+				languageTitle: args.languageTitle,
+				countTitle: args.countTitle,
+				unitPriceTitle: args.unitPriceTitle,
+				incomeTitle: args.incomeTitle,
+				expenseTitle: args.expenseTitle,
+				profitTitle: args.profitTitle,
+				totalTitle: args.totalTitle,
+				contractTypeTitle: args.contractTypeTitle,
+				karashabIncomeTitle: args.karashabIncomeTitle,
+				karashabExpenseTitle: args.karashabExpenseTitle,
+				karashabProfitTitle: args.karashabProfitTitle,
+				telecomIncomeTitle: args.telecomIncomeTitle,
+				firstPartyIncomeTitle: args.firstPartyIncomeTitle,
+				regionIncomeTitle: args.regionIncomeTitle,
+				salesAgentTitle: args.salesAgentTitle,
+				salesAgentIncomeTitle: args.salesAgentIncomeTitle,
+				monthNameByValue: args.monthNameByValue,
+				operationTypeLabelByValue: args.operationTypeLabelByValue,
+				operatorLabelByValue: args.operatorLabelByValue,
+				languageLabelByValue: args.languageLabelByValue,
+				contractTypeLabelByValue: args.contractTypeLabelByValue,
+				companyTypeLabelByValue: args.companyTypeLabelByValue,
+				contractUnitTitle: args.contractUnitTitle,
+				positionTitle: args.positionTitle,
+				sentTrafficTitle: args.sentTrafficTitle,
+				receivedTrafficTitle: args.receivedTrafficTitle,
+				conversionRatioTitle: args.conversionRatioTitle,
+				datacenterTitle: args.datacenterTitle,
+				partnerTypeTitle: args.partnerTypeTitle,
+				rackHalfCountTitle: args.rackHalfCountTitle,
+				ipCountTitle: args.ipCountTitle,
+				portCountTitle: args.portCountTitle,
+				bandwidthUsedTitle: args.bandwidthUsedTitle,
+				ampereUsedTitle: args.ampereUsedTitle,
+				rackHalfIncomeTitle: args.rackHalfIncomeTitle,
+				rackIncomeTitle: args.rackIncomeTitle,
+				ipIncomeTitle: args.ipIncomeTitle,
+				portIncomeTitle: args.portIncomeTitle,
+				bandwidthIncomeTitle: args.bandwidthIncomeTitle,
+				ampereIncomeTitle: args.ampereIncomeTitle,
+				trafficLocationLabelByValue: args.trafficLocationLabelByValue,
+				trafficLayout: args.trafficLayout,
+				periodType,
+				financialColumnTitles: args.financialColumnTitles,
+				hideCompanyColumn: args.hideCompanyColumn,
+				hideMonthColumn: args.hideMonthColumn,
+				hideOperatorColumn: args.hideOperatorColumn,
+				hideLanguageColumn: args.hideLanguageColumn,
+			}),
+			selectedAuditColumns,
+			args.createdByUserTitle ?? "",
+			args.updatedByUserTitle ?? "",
+		);
+	}
+
+	const baseColumns: ReportExportColumn[] = [];
+
+	if (!args.hideCompanyColumn) {
+		baseColumns.push({
+			title: args.companyNameTitle,
+			getValue: row => String(row.company_name ?? "-"),
+		});
+	}
+
+	baseColumns.push({
+		title: args.yearTitle,
+		getValue: row => String(getReportYearValue(row, periodType)),
+	});
+
+	if (!args.hideMonthColumn) {
+		baseColumns.push({
+			title: args.monthTitle,
+			getValue: row => String(getReportMonthLabel(row, periodType)),
+		});
+	}
+
+	baseColumns.push({
+		title: args.operationTypeTitle,
+		getValue: row => args.operationTypeLabelByValue(row.operation_type),
+	});
+
+	if (args.showOperatorLanguageColumns && !args.hideOperatorColumn) {
+		baseColumns.push({
+			title: args.operatorTitle,
+			getValue: row => args.operatorLabelByValue(row.operator),
+		});
+	}
+
+	if (args.showOperatorLanguageColumns && !args.hideLanguageColumn) {
+		baseColumns.push({
+			title: args.languageTitle,
+			getValue: row => args.languageLabelByValue(row.language),
+		});
+	}
 
 	const financialColumns: ReportExportColumn[] = [];
 
-	if (args.financialColumnTitles.total) {
-		financialColumns.push({
-			title: args.financialColumnTitles.total,
-			getValue: row => formatNumeric(row.value),
-		});
-	}
 	if (args.financialColumnTitles.income) {
 		financialColumns.push({
 			title: args.financialColumnTitles.income,
-			getValue: row => formatNumeric(row.income_financial),
+			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.income])),
 		});
 	}
 	if (args.financialColumnTitles.expense) {
 		financialColumns.push({
 			title: args.financialColumnTitles.expense,
-			getValue: row => formatNumeric(row.expense_financial),
+			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.expense])),
 		});
 	}
 	if (args.financialColumnTitles.profit) {
 		financialColumns.push({
 			title: args.financialColumnTitles.profit,
-			getValue: row => formatNumeric(row.profit_financial),
+			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.profit])),
 		});
 	}
 	if (args.financialColumnTitles.contractType) {
@@ -346,51 +972,56 @@ export function createPerformanceReportExportColumns(args: {
 	if (args.financialColumnTitles.unitPrice) {
 		financialColumns.push({
 			title: args.financialColumnTitles.unitPrice,
-			getValue: row => formatNumeric(pickReportValue(row, ["price", "unit_price", "sale_rate"])),
+			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.unitPrice])),
 		});
 	}
 	if (args.financialColumnTitles.karashabIncome) {
 		financialColumns.push({
 			title: args.financialColumnTitles.karashabIncome,
-			getValue: row => formatNumeric(pickReportValue(row, ["karashab_income", "income_karashab", "karashabIncome"])),
+			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.karashabIncome])),
 		});
 	}
 	if (args.financialColumnTitles.karashabExpense) {
 		financialColumns.push({
 			title: args.financialColumnTitles.karashabExpense,
-			getValue: row => formatNumeric(pickReportValue(row, ["karashab_expense", "expense_karashab", "karashabExpense"])),
+			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.karashabExpense])),
 		});
 	}
 	if (args.financialColumnTitles.karashabProfit) {
 		financialColumns.push({
 			title: args.financialColumnTitles.karashabProfit,
-			getValue: row => formatNumeric(pickReportValue(row, ["karashab_profit", "profit_karashab", "karashabProfit"])),
+			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.karashabProfit])),
 		});
 	}
 	if (args.financialColumnTitles.telecomIncome) {
 		financialColumns.push({
 			title: args.financialColumnTitles.telecomIncome,
-			getValue: row => formatNumeric(pickReportValue(row, ["mokhaberat_income", "telecom_income", "income_mokhaberat", "income_telecom"])),
+			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.telecomIncome])),
 		});
 	}
 	if (args.financialColumnTitles.firstPartyIncome) {
 		financialColumns.push({
 			title: args.financialColumnTitles.firstPartyIncome,
-			getValue: row => formatNumeric(pickReportValue(row, ["first_party_income", "income_first_party", "firstPartyIncome"])),
+			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.firstPartyIncome])),
 		});
 	}
 	if (args.financialColumnTitles.regionIncome) {
 		financialColumns.push({
 			title: args.financialColumnTitles.regionIncome,
-			getValue: row => formatNumeric(pickReportValue(row, ["area_income", "region_income", "income_area", "income_region"])),
+			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.regionIncome])),
 		});
 	}
 	if (args.financialColumnTitles.salesAgentIncome) {
 		financialColumns.push({
 			title: args.financialColumnTitles.salesAgentIncome,
-			getValue: row => formatNumeric(pickReportValue(row, ["sales_agent_income", "income_sales_agent", "salesAgentIncome"])),
+			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.salesAgentIncome])),
 		});
 	}
 
-	return [...baseColumns, ...financialColumns];
+	return appendAuditExportColumns(
+		[...baseColumns, ...financialColumns],
+		selectedAuditColumns,
+		args.createdByUserTitle ?? "",
+		args.updatedByUserTitle ?? "",
+	);
 }

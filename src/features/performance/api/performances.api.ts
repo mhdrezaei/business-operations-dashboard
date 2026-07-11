@@ -106,6 +106,8 @@ export interface PerformanceReportListItem {
 	service_name?: string | null
 	sh_year: number
 	sh_month: number
+	fiscal_year?: number | null
+	fiscal_month?: number | null
 	value: number
 	operation_type: string
 	company_name: string
@@ -113,6 +115,20 @@ export interface PerformanceReportListItem {
 	income_financial: number
 	expense_financial: number
 	profit_financial: number
+	income?: number | null
+	expense?: number | null
+	profit?: number | null
+	income_tci?: number | null
+	income_first_side?: number | null
+	income_area?: number | null
+	income_sales_agent?: number | null
+	price?: number | null
+	sales_agent_id?: number | null
+	sales_agent_name?: string | null
+	operator?: string | null
+	language?: string | null
+	created_by_user?: Record<string, unknown> | string | null
+	updated_by_user?: Record<string, unknown> | string | null
 	[key: string]: unknown
 }
 
@@ -137,6 +153,10 @@ export interface PerformanceReportQuery {
 	company_ids?: string
 	company_type?: string
 	is_official?: boolean
+	by_company?: boolean
+	by_month?: boolean
+	by_operator?: boolean
+	by_language?: boolean
 	page?: number
 	page_size?: number
 	total?: boolean
