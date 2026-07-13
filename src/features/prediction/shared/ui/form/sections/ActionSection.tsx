@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 interface Props {
 	mode?: "create" | "edit"
 	submitting?: boolean
+	disabled?: boolean
 	onSubmit: () => void
 	onSubmitAndCreateAnother: () => void
 	onSubmitAndEdit: () => void
@@ -14,6 +15,7 @@ interface Props {
 export function ActionSection({
 	mode = "create",
 	submitting,
+	disabled,
 	onSubmit,
 	onSubmitAndCreateAnother,
 	onSubmitAndEdit,
@@ -30,7 +32,7 @@ export function ActionSection({
 				{onCancel
 					? <Button onClick={onCancel}>{t("common.cancel")}</Button>
 					: null}
-				<Button loading={!!submitting} type="primary" onClick={onSubmit}>
+				<Button loading={!!submitting} disabled={disabled || submitting} type="primary" onClick={onSubmit}>
 					{t("prediction.actions.saveChanges")}
 				</Button>
 			</div>
@@ -44,13 +46,13 @@ export function ActionSection({
 			<Button onClick={onReset}>{t("prediction.actions.clearForm")}</Button>
 
 			<div className="flex gap-2 flex-wrap">
-				<Button loading={!!submitting} onClick={onSubmit}>
+				<Button loading={!!submitting} disabled={disabled || submitting} onClick={onSubmit}>
 					{t("prediction.actions.submit")}
 				</Button>
-				<Button loading={!!submitting} onClick={onSubmitAndCreateAnother}>
+				<Button loading={!!submitting} disabled={disabled || submitting} onClick={onSubmitAndCreateAnother}>
 					{t("prediction.actions.submitAndCreateAnother")}
 				</Button>
-				<Button loading={!!submitting} type="primary" onClick={onSubmitAndEdit}>
+				<Button loading={!!submitting} disabled={disabled || submitting} type="primary" onClick={onSubmitAndEdit}>
 					{t("prediction.actions.submitAndEdit")}
 				</Button>
 			</div>
