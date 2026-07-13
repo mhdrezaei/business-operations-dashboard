@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export function emptyToNull(v: unknown) {
-	if (v === "" || v === undefined || v === null)
+	if (v === undefined || v === null || (typeof v === "string" && v.trim() === ""))
 		return null;
 	return v;
 }
