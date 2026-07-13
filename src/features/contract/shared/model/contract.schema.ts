@@ -58,14 +58,22 @@ export function getComparableContractString(values: ContractFormValues): string 
 
 const fixedStartSchema = z.object({
 	serviceId: z.number().int().positive().nullable(),
-	serviceCode: z.preprocess(v => (v === undefined ? null : v), z.string().nullable()),
+	serviceCode: z.preprocess(
+		v => (typeof v === "string" ? v.trim() || null : v ?? null),
+		z.string().nullable(),
+	),
 	companyId: z.number().int().positive().nullable(),
 	counterpartyType: z.preprocess(
 		v => (v === "" || v == null ? null : v),
 		z.enum(["partners", "gov_ops"]).nullable().catch(null),
 	),
 	companyType: z.preprocess(
-		value => value == null || value === "" ? null : String(value).trim().toUpperCase(),
+		(value) => {
+			if (value == null)
+				return null;
+			const normalized = String(value).trim().toUpperCase();
+			return normalized || null;
+		},
 		z.string().nullable(),
 	).optional(),
 	startYear: z.number().int().min(1401).max(1410).nullable(),
