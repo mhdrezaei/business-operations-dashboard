@@ -1,5 +1,10 @@
-import type { UploadProps } from "antd";
+import type { UploadFile, UploadProps } from "antd";
 import type { ContractFormValues } from "../../../model/contract.form.types";
+import {
+	createContractDocument,
+	deleteContractDocument,
+	downloadContractDocument,
+} from "#src/features/contract/api/contract-documents.api";
 import { RHFProCheckbox, RHFProTextArea, RHFProUploadButton } from "#src/shared/ui/rhf-pro";
 
 import { Card } from "antd";
@@ -7,19 +12,52 @@ import { ContractAlignedField, useContractAlignedLabelWidth } from "../component
 
 interface FixedEndSectionProps {
 	showSignedCheckbox?: boolean
+	contractId?: number | null
 }
 
-export function FixedEndSection({ showSignedCheckbox = false }: FixedEndSectionProps) {
+export function FixedEndSection({ showSignedCheckbox = false, contractId = null }: FixedEndSectionProps) {
 	const alignedLabelStyle = useContractAlignedLabelWidth(["توضیحات", "مدارک", "قرارداد امضا شده است"]);
-	const uploadProps: UploadProps = {
-		multiple: true,
-		maxCount: 10,
-		accept: ".pdf",
-		// اگر آپلود سمت سرور دارید، این‌ها رو ست کنید:
-		// action: "api/v1/upload/",
-		// headers: { ... },
-		// با request ky هم میشه customRequest نوشت (اگر خواستی می‌دم)
-	};
+
+	// در حالت ایجاد قرارداد (بدون contractId) فایل‌ها فقط محلی نگه‌داشته می‌شوند
+	// و بعد از ثبت موفق قرارداد، توسط فراخواننده (CreateContract) به سرور ارسال می‌شوند.
+	const uploadProps: UploadProps = contractId
+		? {
+			multiple: true,
+			maxCount: 10,
+			accept: ".pdf,.png,.jpg,.jpeg",
+			showUploadList: {
+				showDownloadIcon: true,
+				showRemoveIcon: true,
+			},
+			customRequest: async (options) => {
+				const { file, onSuccess, onError } = options;
+				try {
+					const dto = await createContractDocument(contractId, file as File);
+					onSuccess?.(dto);
+				}
+				catch (error) {
+					onError?.(error as Error);
+				}
+			},
+			onDownload: async (file: UploadFile) => {
+				const documentId = Number((file as any).documentId ?? file.uid);
+				if (Number.isFinite(documentId))
+					await downloadContractDocument(documentId, file.name);
+			},
+			onRemove: async (file: UploadFile) => {
+				const documentId = Number((file as any).documentId ?? file.uid);
+				if (!Number.isFinite(documentId))
+					return true;
+				await deleteContractDocument(documentId);
+				return true;
+			},
+		}
+		: {
+			multiple: true,
+			maxCount: 10,
+			accept: ".pdf,.png,.jpg,.jpeg",
+			beforeUpload: () => false,
+		};
 
 	return (
 		<Card className="w-full">

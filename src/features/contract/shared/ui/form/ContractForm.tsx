@@ -36,6 +36,7 @@ export const defaultContractFormValues: ContractFormValues = {
 
 interface Props {
 	mode?: "create" | "edit"
+	contractId?: number | null
 	initialValues?: Partial<ContractFormValues> | null
 	onSubmit?: (
 		values: ContractFormValues,
@@ -75,6 +76,7 @@ function hasMeaningfulDirtyField(
 
 export function ContractForm({
 	mode = "create",
+	contractId = null,
 	initialValues,
 	onSubmit: onSubmitProp,
 	submitText = "ثبت قرارداد",
@@ -200,7 +202,7 @@ export function ContractForm({
 								: null}
 						</AnimatePresence>
 
-						{isCollocationFlow ? null : <FixedEndSection />}
+						{isCollocationFlow ? null : <FixedEndSection contractId={contractId} />}
 
 						<div className="mt-4 w-full">
 							{showExtendedActions
