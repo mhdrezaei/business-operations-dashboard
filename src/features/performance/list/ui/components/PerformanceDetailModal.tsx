@@ -25,8 +25,8 @@ import {
 import { RHFProNumber, RHFProText } from "#src/shared/ui/rhf-pro";
 import { Button, Card, Modal, Spin } from "antd";
 import i18next from "i18next";
-import { useEffect, useMemo, useState } from "react";
-import { FormProvider, useForm } from "react-hook-form";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import "#src/features/contract/shared/ui/form/contract-form.css";
 
@@ -1142,7 +1142,15 @@ export function PerformanceDetailModal({
 		mode: "all",
 		shouldUnregister: true,
 	});
-	const { isDirty } = form.formState;
+	const initialFormValuesRef = useRef<EditFormValues>({});
+	const watchedEditValues = useWatch({ control: form.control }) as EditFormValues;
+	const hasMeaningfulChanges = useMemo(() => {
+		return visibleEditableFields.some((field) => {
+			const currentValue = toPayloadValue(watchedEditValues?.[field.key]);
+			const initialValue = toPayloadValue(initialFormValuesRef.current[field.key]);
+			return !Object.is(currentValue, initialValue);
+		});
+	}, [visibleEditableFields, watchedEditValues]);
 
 	useEffect(() => {
 		if (!open || !service || !record)
@@ -1399,6 +1407,7 @@ export function PerformanceDetailModal({
 					initialValues.otherEn = value ?? initialValues.otherEn;
 			}
 		}
+		initialFormValuesRef.current = initialValues;
 		form.reset(initialValues);
 	}, [service, record, detail, config, form, smsBreakdownCards, openApiPerformances, trafficPerformances, isUnregisteredMode]);
 
@@ -1904,7 +1913,7 @@ export function PerformanceDetailModal({
 										<Button
 											type="primary"
 											loading={saving}
-											disabled={!isDirty || saving}
+											disabled={!hasMeaningfulChanges || saving}
 											onClick={() => void handleSubmit()}
 										>
 											{t("performance.actions.editPerformance")}
