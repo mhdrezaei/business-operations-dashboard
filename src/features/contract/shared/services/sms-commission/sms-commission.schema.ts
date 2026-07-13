@@ -6,7 +6,10 @@ const nullableNumberSchema = z.preprocess(
 		if (v === "" || v == null)
 			return null;
 		if (typeof v === "string") {
-			const n = Number(v.trim());
+			const trimmed = v.trim();
+			if (!trimmed)
+				return null;
+			const n = Number(trimmed);
 			return Number.isFinite(n) ? n : v;
 		}
 		return v;
@@ -19,7 +22,10 @@ const nullablePercentSchema = z.preprocess(
 		if (v === "" || v == null)
 			return null;
 		if (typeof v === "string") {
-			const n = Number(v.trim());
+			const trimmed = v.trim();
+			if (!trimmed)
+				return null;
+			const n = Number(trimmed);
 			return Number.isFinite(n) ? n : v;
 		}
 		return v;

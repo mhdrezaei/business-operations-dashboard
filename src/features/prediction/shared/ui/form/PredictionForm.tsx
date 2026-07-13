@@ -5,7 +5,7 @@ import { notification } from "#src/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Card } from "antd";
 import { AnimatePresence, motion } from "framer-motion";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { buildPredictionSchema } from "../../model/prediction.schema";
@@ -37,6 +37,36 @@ const defaultValues: PredictionFormValues = {
 	note: "",
 	serviceFields: {},
 };
+
+function normalizeComparableValue(value: unknown): unknown {
+	if (value == null)
+		return null;
+	if (typeof value === "string") {
+		const trimmed = value.trim();
+		if (!trimmed)
+			return "";
+		const numeric = Number(trimmed);
+		return Number.isFinite(numeric) ? numeric : trimmed;
+	}
+	if (Array.isArray(value))
+		return value.map(normalizeComparableValue);
+	if (typeof value === "object") {
+		return Object.keys(value as Record<string, unknown>)
+			.sort()
+			.reduce<Record<string, unknown>>((result, key) => {
+				result[key] = normalizeComparableValue((value as Record<string, unknown>)[key]);
+				return result;
+			}, {});
+	}
+	return value;
+}
+
+function getComparablePredictionContent(values: Partial<PredictionFormValues>) {
+	return JSON.stringify(normalizeComparableValue({
+		note: values.note ?? "",
+		serviceFields: values.serviceFields ?? {},
+	}));
+}
 
 function extractFirstErrorMessage(value: unknown): string | null {
 	if (typeof value === "string") {
@@ -146,6 +176,9 @@ export function PredictionForm({
 		shouldUnregister: false,
 		resolver: dynamicResolver,
 	});
+	const createInteractionRef = useRef<{ baseKey: string, baseline: string } | null>(null);
+	const [createInteraction, setCreateInteraction] = useState<{ baseKey: string, baseline: string } | null>(null);
+	const watchedValues = useWatch({ control: form.control, defaultValue: mergedInitialValues as any });
 
 	useEffect(() => {
 		form.register("recordId");
@@ -161,6 +194,10 @@ export function PredictionForm({
 		});
 	}, [form, initialValues, mergedInitialValues]);
 
+	const serviceId = useWatch({
+		control: form.control,
+		name: "serviceId",
+	});
 	const serviceCode = useWatch({
 		control: form.control,
 		name: "serviceCode",
@@ -176,6 +213,22 @@ export function PredictionForm({
 	const module = serviceCode ? predictionServiceRegistry[serviceCode] : undefined;
 	const requiresCompanyType = serviceCode === "sms" || serviceCode === "psp" || serviceCode === "traffic";
 	const canShowServiceForm = !!serviceCode && fiscalYear != null && (!requiresCompanyType || !!companyType);
+	const baseSelectionKey = `${serviceId ?? ""}:${fiscalYear ?? ""}`;
+	const hasMeaningfulCreateChange = useMemo(() => {
+		if (mode !== "create" || createInteraction?.baseKey !== baseSelectionKey)
+			return false;
+		return getComparablePredictionContent(watchedValues) !== createInteraction.baseline;
+	}, [baseSelectionKey, createInteraction, mode, watchedValues]);
+	const captureCreateBaseline = () => {
+		if (mode !== "create" || createInteractionRef.current?.baseKey === baseSelectionKey)
+			return;
+		const nextInteraction = {
+			baseKey: baseSelectionKey,
+			baseline: getComparablePredictionContent(form.getValues()),
+		};
+		createInteractionRef.current = nextInteraction;
+		setCreateInteraction(nextInteraction);
+	};
 	const submitIntentRef = useRef<PredictionSubmitIntent>("submit");
 
 	const submit = form.handleSubmit(
@@ -185,6 +238,8 @@ export function PredictionForm({
 
 			try {
 				await onSubmitProp(values, submitIntentRef.current, form);
+				createInteractionRef.current = null;
+				setCreateInteraction(null);
 			}
 			catch (error: any) {
 				const description = await resolveSubmitErrorMessage(error);
@@ -214,11 +269,18 @@ export function PredictionForm({
 
 	function resetForm() {
 		form.reset(defaultValues);
+		createInteractionRef.current = null;
+		setCreateInteraction(null);
 	}
 
 	return (
 		<FormProvider {...form}>
-			<div className="w-full flex flex-col gap-4">
+			<div
+				className="w-full flex flex-col gap-4"
+				onChangeCapture={captureCreateBaseline}
+				onKeyDownCapture={captureCreateBaseline}
+				onPointerDownCapture={captureCreateBaseline}
+			>
 				<input type="hidden" {...form.register("recordId")} />
 				<input type="hidden" {...form.register("serviceCode")} />
 
@@ -253,6 +315,7 @@ export function PredictionForm({
 							<ActionSection
 								mode={mode}
 								submitting={submitting}
+								disabled={mode === "create" && !hasMeaningfulCreateChange}
 								onSubmit={() => triggerSubmit("submit")}
 								onSubmitAndCreateAnother={() => triggerSubmit("submit_and_create_another")}
 								onSubmitAndEdit={() => triggerSubmit("submit_and_edit")}
