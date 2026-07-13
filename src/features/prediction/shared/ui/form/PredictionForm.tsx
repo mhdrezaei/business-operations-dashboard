@@ -176,8 +176,8 @@ export function PredictionForm({
 		shouldUnregister: false,
 		resolver: dynamicResolver,
 	});
-	const createInteractionRef = useRef<{ baseKey: string, baseline: string } | null>(null);
-	const [createInteraction, setCreateInteraction] = useState<{ baseKey: string, baseline: string } | null>(null);
+	const interactionRef = useRef<{ baseKey: string, baseline: string } | null>(null);
+	const [interaction, setInteraction] = useState<{ baseKey: string, baseline: string } | null>(null);
 	const watchedValues = useWatch({ control: form.control, defaultValue: mergedInitialValues as any });
 
 	useEffect(() => {
@@ -213,21 +213,21 @@ export function PredictionForm({
 	const module = serviceCode ? predictionServiceRegistry[serviceCode] : undefined;
 	const requiresCompanyType = serviceCode === "sms" || serviceCode === "psp" || serviceCode === "traffic";
 	const canShowServiceForm = !!serviceCode && fiscalYear != null && (!requiresCompanyType || !!companyType);
-	const baseSelectionKey = `${serviceId ?? ""}:${fiscalYear ?? ""}`;
-	const hasMeaningfulCreateChange = useMemo(() => {
-		if (mode !== "create" || createInteraction?.baseKey !== baseSelectionKey)
+	const baseSelectionKey = `${mode}:${serviceId ?? ""}:${fiscalYear ?? ""}`;
+	const hasMeaningfulChange = useMemo(() => {
+		if (interaction?.baseKey !== baseSelectionKey)
 			return false;
-		return getComparablePredictionContent(watchedValues) !== createInteraction.baseline;
-	}, [baseSelectionKey, createInteraction, mode, watchedValues]);
-	const captureCreateBaseline = () => {
-		if (mode !== "create" || createInteractionRef.current?.baseKey === baseSelectionKey)
+		return getComparablePredictionContent(watchedValues) !== interaction.baseline;
+	}, [baseSelectionKey, interaction, watchedValues]);
+	const captureBaseline = () => {
+		if (interactionRef.current?.baseKey === baseSelectionKey)
 			return;
 		const nextInteraction = {
 			baseKey: baseSelectionKey,
 			baseline: getComparablePredictionContent(form.getValues()),
 		};
-		createInteractionRef.current = nextInteraction;
-		setCreateInteraction(nextInteraction);
+		interactionRef.current = nextInteraction;
+		setInteraction(nextInteraction);
 	};
 	const submitIntentRef = useRef<PredictionSubmitIntent>("submit");
 
@@ -238,8 +238,8 @@ export function PredictionForm({
 
 			try {
 				await onSubmitProp(values, submitIntentRef.current, form);
-				createInteractionRef.current = null;
-				setCreateInteraction(null);
+				interactionRef.current = null;
+				setInteraction(null);
 			}
 			catch (error: any) {
 				const description = await resolveSubmitErrorMessage(error);
@@ -269,17 +269,17 @@ export function PredictionForm({
 
 	function resetForm() {
 		form.reset(defaultValues);
-		createInteractionRef.current = null;
-		setCreateInteraction(null);
+		interactionRef.current = null;
+		setInteraction(null);
 	}
 
 	return (
 		<FormProvider {...form}>
 			<div
 				className="w-full flex flex-col gap-4"
-				onChangeCapture={captureCreateBaseline}
-				onKeyDownCapture={captureCreateBaseline}
-				onPointerDownCapture={captureCreateBaseline}
+				onChangeCapture={captureBaseline}
+				onKeyDownCapture={captureBaseline}
+				onPointerDownCapture={captureBaseline}
 			>
 				<input type="hidden" {...form.register("recordId")} />
 				<input type="hidden" {...form.register("serviceCode")} />
@@ -315,7 +315,7 @@ export function PredictionForm({
 							<ActionSection
 								mode={mode}
 								submitting={submitting}
-								disabled={mode === "create" && !hasMeaningfulCreateChange}
+								disabled={!hasMeaningfulChange}
 								onSubmit={() => triggerSubmit("submit")}
 								onSubmitAndCreateAnother={() => triggerSubmit("submit_and_create_another")}
 								onSubmitAndEdit={() => triggerSubmit("submit_and_edit")}
