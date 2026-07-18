@@ -332,6 +332,35 @@ export interface TrafficExcelUpdateResponse {
 	}>
 }
 
+export type SmsGatewayImportStatus = "will_create" | "will_update" | "no_contract" | "unmapped" | string;
+
+export interface SmsGatewayImportOperator {
+	operator: "MCI" | "IRANCELL" | "OTHER" | string
+	language: "FA" | "EN" | string
+	value: number
+}
+
+export interface SmsGatewayManualImportResponse {
+	sh_year: number
+	sh_month: number
+	confirmed: boolean
+	items: Array<{
+		status: SmsGatewayImportStatus
+		gateway_customer_name: string
+		company_id: number | null
+		company_name: string | null
+		company_type: string | null
+		service: string | null
+		operators: SmsGatewayImportOperator[]
+	}>
+	summary: {
+		will_create: number
+		will_update: number
+		no_contract: number
+		unmapped: number
+	}
+}
+
 function buildContractsPath(service: PerformanceContractServicePath) {
 	return `contracts/${service}/`;
 }
@@ -620,6 +649,14 @@ export function fetchSmsCommissionAgents() {
 			},
 		})
 		.json<Paginated<SmsCommissionAgentDto>>();
+}
+
+export function importSmsGatewayPerformance(shYear: number, shMonth: number, confirmed: boolean) {
+	return request
+		.post("sms-gateway/manual-import/", {
+			json: { sh_year: shYear, sh_month: shMonth, confirmed },
+		})
+		.json<SmsGatewayManualImportResponse>();
 }
 
 export function fetchUnregisteredPerformanceList(params: UnregisterdPerformanceListQuery) {
