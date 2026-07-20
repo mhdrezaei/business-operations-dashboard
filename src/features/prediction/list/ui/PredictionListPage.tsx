@@ -2,12 +2,13 @@ import type { ActionType, ProColumns, ProFormInstance } from "@ant-design/pro-co
 import type { PredictionListRow } from "../../shared/model/prediction.list.types";
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import { useAccess } from "#src/hooks";
-import { EditOutlined, PlusCircleOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, PlusCircleOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
-import { Button } from "antd";
+import { Button, Popconfirm } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
+import { deletePrediction } from "../../api/predictions.api";
 import { buildFiscalYearOptions } from "../../shared/model/prediction.helpers";
 import { predictionServicesQuery } from "../../shared/queries/prediction.queries";
 import { predictionServiceRegistry } from "../../shared/services/registry";
@@ -19,6 +20,8 @@ const ORDERING_OPTIONS = [
 	{ labelKey: "prediction.list.ordering.fiscalYearDesc", value: "-fiscal_year" },
 	{ labelKey: "prediction.list.ordering.fiscalYearAsc", value: "fiscal_year" },
 ] as const;
+
+const DELETABLE_PREDICTION_SERVICES = ["openapi", "psp", "shahkar", "sms", "traffic"] as const;
 
 function formatDateTime(value: string | null) {
 	if (!value)
@@ -111,6 +114,15 @@ export default function PredictionListPage() {
 
 	function refreshTable() {
 		actionRef.current?.reload?.();
+	}
+
+	async function handleDelete(row: PredictionListRow) {
+		if (!DELETABLE_PREDICTION_SERVICES.includes(row.serviceCode as typeof DELETABLE_PREDICTION_SERVICES[number]))
+			return;
+
+		await deletePrediction(row.serviceCode as typeof DELETABLE_PREDICTION_SERVICES[number], row.id);
+		window.$message?.success(t("common.deleteSuccess"));
+		refreshTable();
 	}
 
 	const columns: ProColumns<PredictionListRow>[] = useMemo(() => {
@@ -215,20 +227,35 @@ export default function PredictionListPage() {
 				fixed: "right",
 				align: "center",
 				render: (_, row) => {
-					if (!hasDomainPermissionByServiceId("predictions", "update", row.serviceId)) {
-						return [];
+					const actions = [] as React.ReactNode[];
+					if (hasDomainPermissionByServiceId("predictions", "update", row.serviceId)) {
+						actions.push(
+							<BasicButton
+								key="edit"
+								type="link"
+								size="large"
+								title={t("prediction.actions.editPrediction")}
+								icon={<EditOutlined />}
+								onClick={() => handleOpenEdit(row)}
+							/>,
+						);
 					}
 
-					return [
-						<BasicButton
-							key="edit"
-							type="link"
-							size="large"
-							title={t("prediction.actions.editPrediction")}
-							icon={<EditOutlined />}
-							onClick={() => handleOpenEdit(row)}
-						/>,
-					];
+					if (hasDomainPermissionByServiceId("predictions", "delete", row.serviceId)) {
+						actions.push(
+							<Popconfirm
+								key="delete"
+								title={t("common.confirmDelete")}
+								okText={t("common.confirm")}
+								cancelText={t("common.cancel")}
+								onConfirm={() => handleDelete(row)}
+							>
+								<BasicButton type="link" size="large" title={t("common.delete")} icon={<DeleteOutlined />} />
+							</Popconfirm>,
+						);
+					}
+
+					return actions;
 				},
 			},
 		];

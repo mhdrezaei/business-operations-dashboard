@@ -175,6 +175,18 @@ function buildPredictionListSearchParams(params: PredictionListParams) {
 	);
 }
 
+export function deletePrediction(service: "openapi" | "psp" | "shahkar" | "sms" | "traffic", id: number) {
+	const paths = {
+		openapi: `predictions/openapi/years/${id}/`,
+		psp: `predictions/psp/years/${id}/`,
+		shahkar: `predictions/shahkar/years/${id}/`,
+		sms: `prediction/sms/year/${id}/`,
+		traffic: `predictions/traffic/years/${id}/`,
+	};
+
+	return request.delete(paths[service]).json<unknown>();
+}
+
 export function fetchOpenApiPredictionYears(serviceId: number) {
 	return request
 		.get("predictions/openapi/years/", {
