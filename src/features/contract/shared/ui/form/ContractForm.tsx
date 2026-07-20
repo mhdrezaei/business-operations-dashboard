@@ -18,6 +18,10 @@ import "./contract-form.css";
 
 export type ContractSubmitIntent = "submit" | "submit_and_create_another" | "submit_and_edit";
 
+export interface ContractFormActions {
+	resetForCreateAnother: (values: ContractFormValues) => void
+}
+
 export const defaultContractFormValues: ContractFormValues = {
 	serviceId: null,
 	serviceCode: null,
@@ -42,6 +46,7 @@ interface Props {
 		values: ContractFormValues,
 		intent: ContractSubmitIntent,
 		form: UseFormReturn<ContractFormValues>,
+		actions: ContractFormActions,
 	) => void | Promise<void>
 	submitText?: string
 	submitting?: boolean
@@ -138,11 +143,21 @@ export function ContractForm({
 	const isCollocationFlow = serviceCode === "traffic" && String(companyType ?? "").trim().toUpperCase() === "COLLOCATION";
 	const module = serviceCode ? serviceRegistry[serviceCode] : undefined;
 	const submitIntentRef = useRef<ContractSubmitIntent>("submit");
+	const preserveDatesDuringResetRef = useRef(false);
+	const formActions = useMemo<ContractFormActions>(() => ({
+		resetForCreateAnother: (values) => {
+			preserveDatesDuringResetRef.current = true;
+			form.reset(values);
+			window.setTimeout(() => {
+				preserveDatesDuringResetRef.current = false;
+			}, 0);
+		},
+	}), [form]);
 	const onSubmit = form.handleSubmit(
 		async (values) => {
 			try {
 				if (onSubmitProp) {
-					await onSubmitProp(values, submitIntentRef.current, form);
+					await onSubmitProp(values, submitIntentRef.current, form, formActions);
 					return;
 				}
 				console.warn("submit", values);
@@ -183,7 +198,7 @@ export function ContractForm({
 				<Card>
 					<div className="w-full flex flex-col justify-center items-center gap-2">
 						<input type="hidden" {...form.register("serviceCode")} />
-						<FixedStartSection mode={mode} />
+						<FixedStartSection mode={mode} preserveDatesDuringResetRef={preserveDatesDuringResetRef} />
 
 						<AnimatePresence mode="wait">
 							{module?.Fields
