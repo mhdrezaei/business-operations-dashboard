@@ -251,3 +251,95 @@ html:not(.dark) .ant-input-affix-wrapper:has(input:-webkit-autofill),
 html:not(.dark) .ant-input-password:has(input:-webkit-autofill) {
 	background-color: var(--ant-colorBgContainer) !important;
 }
+
+.sms-gateway-import-scrollbar {
+	scrollbar-color: #b8c3d5 #f3f6fa;
+	scrollbar-width: thin;
+}
+
+.sms-gateway-import-scrollbar::-webkit-scrollbar {
+	width: 9px;
+}
+
+.sms-gateway-import-scrollbar::-webkit-scrollbar-track {
+	background: #f3f6fa;
+	border-radius: 999px;
+}
+
+.sms-gateway-import-scrollbar::-webkit-scrollbar-thumb {
+	background: #b8c3d5;
+	border: 2px solid #f3f6fa;
+	border-radius: 999px;
+}
+
+.sms-gateway-import-scrollbar::-webkit-scrollbar-thumb:hover {
+	background: #8fa0ba;
+}
+
+.sms-gateway-import-modal .ant-modal-body {
+	scrollbar-color: #b8c3d5 #f3f6fa;
+	scrollbar-width: thin;
+}
+
+.sms-gateway-import-modal .ant-modal-body::-webkit-scrollbar {
+	width: 9px;
+}
+
+.sms-gateway-import-modal .ant-modal-body::-webkit-scrollbar-track {
+	background: #f3f6fa;
+}
+
+.sms-gateway-import-modal .ant-modal-body::-webkit-scrollbar-thumb {
+	background: #b8c3d5;
+	border: 2px solid #f3f6fa;
+	border-radius: 999px;
+}
+
+html.dark .sms-gateway-import-scrollbar {
+	scrollbar-color: #4b5c75 #172033;
+}
+
+html.dark .sms-gateway-import-scrollbar::-webkit-scrollbar-track {
+	background: #172033;
+}
+
+html.dark .sms-gateway-import-scrollbar::-webkit-scrollbar-thumb {
+	background: #4b5c75;
+	border-color: #172033;
+}
+
+html.dark .sms-gateway-import-modal .ant-modal-body {
+	scrollbar-color: #4b5c75 #172033;
+}
+
+html.dark .sms-gateway-import-modal .ant-modal-body::-webkit-scrollbar-track {
+	background: #172033;
+}
+
+html.dark .sms-gateway-import-modal .ant-modal-body::-webkit-scrollbar-thumb {
+	background: #4b5c75;
+	border-color: #172033;
+}
+
+.sms-gateway-success-row {
+	background: #f1f5f9;
+	color: #334155;
+}
+
+.sms-gateway-success-icon {
+	color: #22c55e;
+}
+
+html.dark .sms-gateway-success-modal .ant-modal-content {
+	background: #111b2e;
+	color: #e5edf9;
+}
+
+html.dark .sms-gateway-success-modal .ant-modal-footer {
+	border-top-color: #26344d;
+}
+
+html.dark .sms-gateway-success-row {
+	background: #243148;
+	color: #d7e1ef;
+}

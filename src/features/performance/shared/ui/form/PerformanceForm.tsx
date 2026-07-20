@@ -1,15 +1,18 @@
 import type { Resolver, UseFormReturn } from "react-hook-form";
 import type { PerformanceFormValues } from "../../model/performance.form.types";
 import { notification } from "#src/utils";
+import { UploadOutlined } from "@ant-design/icons";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Button } from "antd";
 import { AnimatePresence, motion } from "framer-motion";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { buildPerformanceSchema } from "../../model/performance.schema";
 import { performanceServiceRegistry } from "../../services/registry";
 import { ActionSection } from "./sections/ActionSection";
 import { FixedStartSection } from "./sections/FixedStartSection";
+import { SmsGatewayImportModal } from "./sections/SmsGatewayImportModal";
 
 export type PerformanceSubmitIntent = "submit" | "submit_and_create_another" | "submit_and_edit";
 
@@ -179,6 +182,8 @@ export function PerformanceForm({
 	const showActionSection = canShowServiceForm && !(serviceCode === "traffic" && trafficSubmitMode === "template");
 
 	const submitIntentRef = useRef<PerformanceSubmitIntent>("submit");
+	const [isSmsGatewayImportOpen, setIsSmsGatewayImportOpen] = useState(false);
+	const isSmsGatewayImportSupported = serviceCode === "sms" || serviceCode === "sms-commission" || serviceCode === "sms_commission";
 
 	const submit = form.handleSubmit(
 		async (values) => {
@@ -230,6 +235,10 @@ export function PerformanceForm({
 
 				<FixedStartSection />
 
+				{isSmsGatewayImportSupported && !canShowServiceForm
+					? <div className="w-full"><Button type="primary" icon={<UploadOutlined />} onClick={() => setIsSmsGatewayImportOpen(true)}>ثبت عملکرد از Gateway پیامک</Button></div>
+					: null}
+
 				<AnimatePresence mode="wait">
 					{module?.Fields && canShowServiceForm
 						? (
@@ -256,10 +265,14 @@ export function PerformanceForm({
 								onSubmitAndCreateAnother={() => triggerSubmit("submit_and_create_another")}
 								onSubmitAndEdit={() => triggerSubmit("submit_and_edit")}
 								onReset={resetForm}
+								showSmsGatewayImport={isSmsGatewayImportSupported && canShowServiceForm}
+								onSmsGatewayImport={() => setIsSmsGatewayImportOpen(true)}
 							/>
 						</div>
 					)
 					: null}
+
+				<SmsGatewayImportModal open={isSmsGatewayImportOpen} onClose={() => setIsSmsGatewayImportOpen(false)} />
 			</div>
 		</FormProvider>
 	);

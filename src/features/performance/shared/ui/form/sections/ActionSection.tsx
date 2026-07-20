@@ -1,3 +1,4 @@
+import { UploadOutlined } from "@ant-design/icons";
 import { Button } from "antd";
 import { useTranslation } from "react-i18next";
 
@@ -7,6 +8,8 @@ interface Props {
 	onSubmitAndCreateAnother: () => void
 	onSubmitAndEdit: () => void
 	onReset: () => void
+	showSmsGatewayImport?: boolean
+	onSmsGatewayImport?: () => void
 }
 
 export function ActionSection({
@@ -15,6 +18,8 @@ export function ActionSection({
 	onSubmitAndCreateAnother,
 	onSubmitAndEdit,
 	onReset,
+	showSmsGatewayImport,
+	onSmsGatewayImport,
 }: Props) {
 	const { t } = useTranslation();
 
@@ -22,7 +27,12 @@ export function ActionSection({
 		<div
 			className="flex justify-between items-center gap-3 flex-wrap"
 		>
-			<Button onClick={onReset}>{t("performance.actions.clearForm")}</Button>
+			<div className="flex gap-2 flex-wrap">
+				{showSmsGatewayImport
+					? <Button type="primary" icon={<UploadOutlined />} onClick={onSmsGatewayImport}>ثبت عملکرد از Gateway پیامک</Button>
+					: null}
+				<Button onClick={onReset}>{t("performance.actions.clearForm")}</Button>
+			</div>
 
 			<div className="flex gap-2 flex-wrap">
 				<Button loading={!!submitting} onClick={onSubmit}>
