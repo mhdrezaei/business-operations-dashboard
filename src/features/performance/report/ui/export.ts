@@ -3,7 +3,7 @@ import type { PeriodType, ReportAuditColumnKey, TrafficReportLayout } from "./co
 import { formatReportDatacenterName, formatReportUserRef, getReportMonthLabel, getReportYearValue, REPORT_FIELD_KEYS } from "./constants";
 
 export type ReportFinancialColumnKey
-	= | "income" | "expense" | "profit" | "total" | "contractType" | "unitPrice" | "karashabIncome" | "karashabExpense" | "karashabProfit" | "telecomIncome" | "firstPartyIncome" | "regionIncome" | "salesAgentIncome";
+	= | "income" | "expense" | "profit" | "total" | "contractType" | "showBaseUnit" | "rial" | "unitPrice" | "karashabIncome" | "karashabExpense" | "karashabProfit" | "telecomIncome" | "firstPartyIncome" | "regionIncome" | "salesAgentIncome";
 
 type ReportServiceLayout = "openapi" | "sms" | "sms-commission" | "psp" | "shahkar" | "traffic" | "default";
 
@@ -32,6 +32,17 @@ function formatNumeric(value: unknown) {
 	return numeric.toLocaleString("en-US");
 }
 
+function formatMoney(value: unknown, showRial: boolean) {
+	if (value == null || value === "")
+		return "-";
+
+	const numeric = Number(value);
+	if (!Number.isFinite(numeric))
+		return "-";
+
+	return (showRial ? numeric : numeric / 10).toLocaleString("en-US");
+}
+
 function pickReportValue(row: PerformanceReportListItem, keys: string[]) {
 	const record = row as Record<string, unknown>;
 	for (const key of keys) {
@@ -50,11 +61,12 @@ function buildSummaryHtml(summary: PerformanceReportTotals | null | undefined, f
 	if (!summary || !financialColumnTitles.total)
 		return "";
 
+	const showRial = !!financialColumnTitles.rial;
 	const entries = [
 		["total", financialColumnTitles.total, formatNumeric(summary.value)],
-		["income", financialColumnTitles.income, formatNumeric(summary.income_financial)],
-		["expense", financialColumnTitles.expense, formatNumeric(summary.expense_financial)],
-		["profit", financialColumnTitles.profit, formatNumeric(summary.profit_financial)],
+		["income", financialColumnTitles.income, formatMoney(summary.income_financial, showRial)],
+		["expense", financialColumnTitles.expense, formatMoney(summary.expense_financial, showRial)],
+		["profit", financialColumnTitles.profit, formatMoney(summary.profit_financial, showRial)],
 	].filter(([, label]) => !!label) as Array<[ReportFinancialColumnKey, string, string]>;
 
 	if (!entries.length)
@@ -67,12 +79,14 @@ function buildBaseHtml(args: {
 	title: string
 	serviceLabel?: string
 	serviceName?: string | null
+	currencyLabel?: string
+	currencyValue?: string
 	rows: PerformanceReportListItem[]
 	columns: ReportExportColumn[]
 	summary: PerformanceReportTotals | null | undefined
 	financialColumnTitles: Partial<Record<ReportFinancialColumnKey, string>>
 }) {
-	const { title, serviceLabel, serviceName, rows, columns, summary, financialColumnTitles } = args;
+	const { title, serviceLabel, serviceName, currencyLabel, currencyValue, rows, columns, summary, financialColumnTitles } = args;
 	const today = new Date().toLocaleDateString("fa-IR");
 	const origin = window.location.origin;
 
@@ -218,6 +232,7 @@ function buildBaseHtml(args: {
 				<div class="meta">تاریخ تولید: ${escapeHtml(today)}</div>
 			</div>
 			${serviceName ? `<div class="service-meta">${escapeHtml(serviceLabel ?? "سرویس")}: ${escapeHtml(serviceName)}</div>` : ""}
+			${currencyValue ? `<div class="service-meta">${escapeHtml(currencyLabel ?? "واحد پول")}: ${escapeHtml(currencyValue)}</div>` : ""}
 			<table>
 				<thead>
 					<tr>${columns.map(column => `<th>${escapeHtml(column.title)}</th>`).join("")}</tr>
@@ -238,6 +253,8 @@ export function downloadPerformanceReportExcel(args: {
 	title: string
 	serviceLabel?: string
 	serviceName?: string | null
+	currencyLabel?: string
+	currencyValue?: string
 	rows: PerformanceReportListItem[]
 	columns: ReportExportColumn[]
 	summary: PerformanceReportTotals | null | undefined
@@ -257,6 +274,8 @@ export function openPerformanceReportPdfPrint(args: {
 	title: string
 	serviceLabel?: string
 	serviceName?: string | null
+	currencyLabel?: string
+	currencyValue?: string
 	rows: PerformanceReportListItem[]
 	columns: ReportExportColumn[]
 	summary: PerformanceReportTotals | null | undefined
@@ -329,6 +348,10 @@ function buildLayoutExportColumns(args: {
 	positionTitle?: string
 	sentTrafficTitle?: string
 	receivedTrafficTitle?: string
+	sentTrafficGbMonthTitle?: string
+	receivedTrafficGbMonthTitle?: string
+	sentTrafficMbpsTitle?: string
+	receivedTrafficMbpsTitle?: string
 	conversionRatioTitle?: string
 	datacenterTitle?: string
 	partnerTypeTitle?: string
@@ -353,6 +376,7 @@ function buildLayoutExportColumns(args: {
 	hideLanguageColumn?: boolean
 }) {
 	const periodType = args.periodType ?? "sh";
+	const showRial = !!args.financialColumnTitles.rial;
 	const columns: ReportExportColumn[] = [
 		{ title: args.idTitle, getValue: row => String(row.id ?? "-") },
 	];
@@ -385,19 +409,19 @@ function buildLayoutExportColumns(args: {
 		if (args.financialColumnTitles.income) {
 			columns.push({
 				title: args.incomeTitle,
-				getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.income])),
+				getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.income]), showRial),
 			});
 		}
 		if (args.financialColumnTitles.expense) {
 			columns.push({
 				title: args.expenseTitle,
-				getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.expense])),
+				getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.expense]), showRial),
 			});
 		}
 		if (args.financialColumnTitles.profit) {
 			columns.push({
 				title: args.profitTitle,
-				getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.profit])),
+				getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.profit]), showRial),
 			});
 		}
 		return columns;
@@ -465,27 +489,27 @@ function buildLayoutExportColumns(args: {
 				},
 				{
 					title: args.rackHalfIncomeTitle ?? "",
-					getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.rackHalfIncome])),
+					getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.rackHalfIncome]), showRial),
 				},
 				{
 					title: args.rackIncomeTitle ?? "",
-					getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.rackIncome])),
+					getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.rackIncome]), showRial),
 				},
 				{
 					title: args.ipIncomeTitle ?? "",
-					getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.ipIncome])),
+					getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.ipIncome]), showRial),
 				},
 				{
 					title: args.portIncomeTitle ?? "",
-					getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.portIncome])),
+					getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.portIncome]), showRial),
 				},
 				{
 					title: args.bandwidthIncomeTitle ?? "",
-					getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.bandwidthIncome])),
+					getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.bandwidthIncome]), showRial),
 				},
 				{
 					title: args.ampereIncomeTitle ?? "",
-					getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.ampereIncome])),
+					getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.ampereIncome]), showRial),
 				},
 			);
 		}
@@ -518,37 +542,67 @@ function buildLayoutExportColumns(args: {
 						return value == null ? "-" : String(value);
 					},
 				},
-				{
-					title: args.positionTitle ?? "",
-					getValue: row => args.trafficLocationLabelByValue?.(pickReportValue(row, [...REPORT_FIELD_KEYS.location])) ?? "-",
-				},
-				{
-					title: args.sentTrafficTitle ?? "",
-					getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.sentTraffic])),
-				},
-				{
-					title: args.receivedTrafficTitle ?? "",
-					getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.receivedTraffic])),
-				},
 			);
+			if (!args.financialColumnTitles.showBaseUnit) {
+				columns.push({
+					title: args.conversionRatioTitle ?? "",
+					getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.conversionRatio])),
+				});
+			}
+			columns.push({
+				title: args.positionTitle ?? "",
+				getValue: row => args.trafficLocationLabelByValue?.(pickReportValue(row, [...REPORT_FIELD_KEYS.location])) ?? "-",
+			});
+			if (args.financialColumnTitles.showBaseUnit) {
+				columns.push(
+					{
+						title: args.sentTrafficTitle ?? "",
+						getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.sentTraffic])),
+					},
+					{
+						title: args.receivedTrafficTitle ?? "",
+						getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.receivedTraffic])),
+					},
+				);
+			}
+			else {
+				columns.push(
+					{
+						title: args.sentTrafficGbMonthTitle ?? "",
+						getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.sentTrafficGbMonth])),
+					},
+					{
+						title: args.receivedTrafficGbMonthTitle ?? "",
+						getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.receivedTrafficGbMonth])),
+					},
+					{
+						title: args.sentTrafficMbpsTitle ?? "",
+						getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.sentTrafficMbps])),
+					},
+					{
+						title: args.receivedTrafficMbpsTitle ?? "",
+						getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.receivedTrafficMbps])),
+					},
+				);
+			}
 		}
 
 		if (args.financialColumnTitles.income) {
 			columns.push({
 				title: args.incomeTitle,
-				getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.income])),
+				getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.income]), showRial),
 			});
 		}
 		if (args.financialColumnTitles.expense) {
 			columns.push({
 				title: args.expenseTitle,
-				getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.expense])),
+				getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.expense]), showRial),
 			});
 		}
 		if (args.financialColumnTitles.profit) {
 			columns.push({
 				title: args.profitTitle,
-				getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.profit])),
+				getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.profit]), showRial),
 			});
 		}
 		if (args.financialColumnTitles.contractType) {
@@ -576,19 +630,19 @@ function buildLayoutExportColumns(args: {
 		if (args.financialColumnTitles.income) {
 			columns.push({
 				title: args.incomeTitle,
-				getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.income])),
+				getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.income]), showRial),
 			});
 		}
 		if (args.financialColumnTitles.expense) {
 			columns.push({
 				title: args.expenseTitle,
-				getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.expense])),
+				getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.expense]), showRial),
 			});
 		}
 		if (args.financialColumnTitles.profit) {
 			columns.push({
 				title: args.profitTitle,
-				getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.profit])),
+				getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.profit]), showRial),
 			});
 		}
 		return columns;
@@ -641,19 +695,19 @@ function buildLayoutExportColumns(args: {
 		if (args.financialColumnTitles.income) {
 			columns.push({
 				title: args.incomeTitle,
-				getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.income])),
+				getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.income]), showRial),
 			});
 		}
 		if (args.financialColumnTitles.expense) {
 			columns.push({
 				title: args.expenseTitle,
-				getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.expense])),
+				getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.expense]), showRial),
 			});
 		}
 		if (args.financialColumnTitles.profit) {
 			columns.push({
 				title: args.profitTitle,
-				getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.profit])),
+				getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.profit]), showRial),
 			});
 		}
 		return columns;
@@ -662,24 +716,24 @@ function buildLayoutExportColumns(args: {
 	if (args.layout === "sms") {
 		columns.push({
 			title: args.unitPriceTitle,
-			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.unitPrice])),
+			getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.unitPrice]), showRial),
 		});
 		if (args.financialColumnTitles.income) {
 			columns.push({
 				title: args.incomeTitle,
-				getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.income])),
+				getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.income]), showRial),
 			});
 		}
 		if (args.financialColumnTitles.expense) {
 			columns.push({
 				title: args.expenseTitle,
-				getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.expense])),
+				getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.expense]), showRial),
 			});
 		}
 		if (args.financialColumnTitles.profit) {
 			columns.push({
 				title: args.profitTitle,
-				getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.profit])),
+				getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.profit]), showRial),
 			});
 		}
 		if (args.financialColumnTitles.contractType) {
@@ -694,43 +748,43 @@ function buildLayoutExportColumns(args: {
 	if (args.financialColumnTitles.unitPrice) {
 		columns.push({
 			title: args.unitPriceTitle,
-			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.unitPrice])),
+			getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.unitPrice]), showRial),
 		});
 	}
 	if (args.financialColumnTitles.karashabIncome) {
 		columns.push({
 			title: args.karashabIncomeTitle,
-			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.karashabIncome])),
+			getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.karashabIncome]), showRial),
 		});
 	}
 	if (args.financialColumnTitles.karashabExpense) {
 		columns.push({
 			title: args.karashabExpenseTitle,
-			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.karashabExpense])),
+			getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.karashabExpense]), showRial),
 		});
 	}
 	if (args.financialColumnTitles.karashabProfit) {
 		columns.push({
 			title: args.karashabProfitTitle,
-			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.karashabProfit])),
+			getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.karashabProfit]), showRial),
 		});
 	}
 	if (args.financialColumnTitles.telecomIncome) {
 		columns.push({
 			title: args.telecomIncomeTitle,
-			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.telecomIncome])),
+			getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.telecomIncome]), showRial),
 		});
 	}
 	if (args.financialColumnTitles.firstPartyIncome) {
 		columns.push({
 			title: args.firstPartyIncomeTitle,
-			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.firstPartyIncome])),
+			getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.firstPartyIncome]), showRial),
 		});
 	}
 	if (args.financialColumnTitles.regionIncome) {
 		columns.push({
 			title: args.regionIncomeTitle,
-			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.regionIncome])),
+			getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.regionIncome]), showRial),
 		});
 	}
 
@@ -742,7 +796,7 @@ function buildLayoutExportColumns(args: {
 	if (args.financialColumnTitles.salesAgentIncome) {
 		columns.push({
 			title: args.salesAgentIncomeTitle,
-			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.salesAgentIncome])),
+			getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.salesAgentIncome]), showRial),
 		});
 	}
 
@@ -806,6 +860,10 @@ export function createPerformanceReportExportColumns(args: {
 	positionTitle?: string
 	sentTrafficTitle?: string
 	receivedTrafficTitle?: string
+	sentTrafficGbMonthTitle?: string
+	receivedTrafficGbMonthTitle?: string
+	sentTrafficMbpsTitle?: string
+	receivedTrafficMbpsTitle?: string
 	conversionRatioTitle?: string
 	datacenterTitle?: string
 	partnerTypeTitle?: string
@@ -836,6 +894,7 @@ export function createPerformanceReportExportColumns(args: {
 	const layout = args.layout ?? "default";
 	const periodType = args.periodType ?? "sh";
 	const selectedAuditColumns = args.selectedAuditColumns ?? [];
+	const showRial = !!args.financialColumnTitles.rial;
 	if (layout !== "default") {
 		return appendAuditExportColumns(
 			buildLayoutExportColumns({
@@ -874,6 +933,10 @@ export function createPerformanceReportExportColumns(args: {
 				positionTitle: args.positionTitle,
 				sentTrafficTitle: args.sentTrafficTitle,
 				receivedTrafficTitle: args.receivedTrafficTitle,
+				sentTrafficGbMonthTitle: args.sentTrafficGbMonthTitle,
+				receivedTrafficGbMonthTitle: args.receivedTrafficGbMonthTitle,
+				sentTrafficMbpsTitle: args.sentTrafficMbpsTitle,
+				receivedTrafficMbpsTitle: args.receivedTrafficMbpsTitle,
 				conversionRatioTitle: args.conversionRatioTitle,
 				datacenterTitle: args.datacenterTitle,
 				partnerTypeTitle: args.partnerTypeTitle,
@@ -948,19 +1011,19 @@ export function createPerformanceReportExportColumns(args: {
 	if (args.financialColumnTitles.income) {
 		financialColumns.push({
 			title: args.financialColumnTitles.income,
-			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.income])),
+			getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.income]), showRial),
 		});
 	}
 	if (args.financialColumnTitles.expense) {
 		financialColumns.push({
 			title: args.financialColumnTitles.expense,
-			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.expense])),
+			getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.expense]), showRial),
 		});
 	}
 	if (args.financialColumnTitles.profit) {
 		financialColumns.push({
 			title: args.financialColumnTitles.profit,
-			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.profit])),
+			getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.profit]), showRial),
 		});
 	}
 	if (args.financialColumnTitles.contractType) {
@@ -972,49 +1035,49 @@ export function createPerformanceReportExportColumns(args: {
 	if (args.financialColumnTitles.unitPrice) {
 		financialColumns.push({
 			title: args.financialColumnTitles.unitPrice,
-			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.unitPrice])),
+			getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.unitPrice]), showRial),
 		});
 	}
 	if (args.financialColumnTitles.karashabIncome) {
 		financialColumns.push({
 			title: args.financialColumnTitles.karashabIncome,
-			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.karashabIncome])),
+			getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.karashabIncome]), showRial),
 		});
 	}
 	if (args.financialColumnTitles.karashabExpense) {
 		financialColumns.push({
 			title: args.financialColumnTitles.karashabExpense,
-			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.karashabExpense])),
+			getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.karashabExpense]), showRial),
 		});
 	}
 	if (args.financialColumnTitles.karashabProfit) {
 		financialColumns.push({
 			title: args.financialColumnTitles.karashabProfit,
-			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.karashabProfit])),
+			getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.karashabProfit]), showRial),
 		});
 	}
 	if (args.financialColumnTitles.telecomIncome) {
 		financialColumns.push({
 			title: args.financialColumnTitles.telecomIncome,
-			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.telecomIncome])),
+			getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.telecomIncome]), showRial),
 		});
 	}
 	if (args.financialColumnTitles.firstPartyIncome) {
 		financialColumns.push({
 			title: args.financialColumnTitles.firstPartyIncome,
-			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.firstPartyIncome])),
+			getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.firstPartyIncome]), showRial),
 		});
 	}
 	if (args.financialColumnTitles.regionIncome) {
 		financialColumns.push({
 			title: args.financialColumnTitles.regionIncome,
-			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.regionIncome])),
+			getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.regionIncome]), showRial),
 		});
 	}
 	if (args.financialColumnTitles.salesAgentIncome) {
 		financialColumns.push({
 			title: args.financialColumnTitles.salesAgentIncome,
-			getValue: row => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.salesAgentIncome])),
+			getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.salesAgentIncome]), showRial),
 		});
 	}
 

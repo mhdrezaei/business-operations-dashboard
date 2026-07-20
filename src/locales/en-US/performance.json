@@ -54,6 +54,9 @@
 		"contractUnit": "Contract Unit",
 		"position": "Position",
 		"conversionRatio": "Conversion Ratio",
+		"showBaseUnit": "Show Base Unit",
+		"rial": "Rial",
+		"toman": "Toman",
 		"datacenter": "Datacenter",
 		"partnerType": "Partner Type",
 		"rackHalfCount": "Half Rack Count",
@@ -115,6 +118,7 @@
 		"selectMonths": "Select months",
 		"selectCompanies": "Select companies",
 		"selectFinancialColumns": "Select financial columns",
+		"enterConversionRatio": "Enter conversion ratio",
 		"pspValue": "e.g. number of transactions",
 		"shahkarValue": "e.g. 123.45",
 		"example100": "e.g. 100",
@@ -137,6 +141,7 @@
 		"selectAll": "Select All",
 		"smsReportType": "SMS Report Type",
 		"periodType": "Period Type",
+		"currencyUnit": "Currency Unit",
 		"contractYear": "Contract Year",
 		"contractMonth": "Contract Month",
 		"openapiContractModel": "OpenAPI Contract Model:",
@@ -295,7 +300,9 @@
 			"countyValueReceive": "Received Traffic in County Centers",
 			"countyConversionRatio": "County Centers Conversion Ratio",
 			"sentTraffic": "Sent Traffic",
-			"receivedTraffic": "Received Traffic"
+			"receivedTraffic": "Received Traffic",
+			"sentTrafficWithUnit": "Sent Traffic to {{unit}}",
+			"receivedTrafficWithUnit": "Received Traffic to {{unit}}"
 		}
 	},
 	"summary": {

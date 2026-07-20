@@ -106,19 +106,31 @@ function formatSummaryNumber(value: number | null | undefined) {
 	return Number(value).toLocaleString("en-US");
 }
 
+function formatSummaryMoney(value: number | null | undefined, showRial: boolean) {
+	if (value == null)
+		return "-";
+	return (showRial ? Number(value) : Number(value) / 10).toLocaleString("en-US");
+}
+
+function isValidDefaultConversionRatio(value: number | null) {
+	return value != null && Number.isFinite(value) && value >= 0 && value <= 10;
+}
+
 // In the fiscal calendar the period month is 3 months ahead of the month it
 // represents to the user (fiscal month 1 = دی, 11 = آبان, 12 = آذر). Only the
 // displayed name is shifted; the underlying period value stays untouched.
 
-const DEFAULT_FINANCIAL_COLUMNS: ReportFinancialColumnKey[] = ["income", "expense", "profit", "total"];
-const OPENAPI_FINANCIAL_COLUMNS: ReportFinancialColumnKey[] = ["income", "expense"];
-const PSP_FINANCIAL_COLUMNS: ReportFinancialColumnKey[] = ["income", "expense", "profit"];
-const SHAHKAR_FINANCIAL_COLUMNS: ReportFinancialColumnKey[] = ["income", "expense", "profit", "total"];
-const TRAFFIC_FINANCIAL_COLUMNS: ReportFinancialColumnKey[] = ["income", "expense", "profit", "contractType", "total"];
-const SMS_NORMAL_FINANCIAL_COLUMNS: ReportFinancialColumnKey[] = ["income", "expense", "contractType"];
-const SMS_FINANCE_FINANCIAL_COLUMNS: ReportFinancialColumnKey[] = ["income", "total"];
-const SMS_SUMMARY_FINANCIAL_COLUMNS: ReportFinancialColumnKey[] = ["income", "expense", "profit", "contractType", "total"];
+const DEFAULT_FINANCIAL_COLUMNS: ReportFinancialColumnKey[] = ["rial", "income", "expense", "profit", "total"];
+const OPENAPI_FINANCIAL_COLUMNS: ReportFinancialColumnKey[] = ["rial", "income", "expense"];
+const PSP_FINANCIAL_COLUMNS: ReportFinancialColumnKey[] = ["rial", "income", "expense", "profit"];
+const SHAHKAR_FINANCIAL_COLUMNS: ReportFinancialColumnKey[] = ["rial", "income", "expense", "profit", "total"];
+const TRAFFIC_FINANCIAL_COLUMNS: ReportFinancialColumnKey[] = ["rial", "income", "expense", "profit", "contractType", "total"];
+const TRAFFIC_CP_FINANCIAL_COLUMNS: ReportFinancialColumnKey[] = ["showBaseUnit", ...TRAFFIC_FINANCIAL_COLUMNS];
+const SMS_NORMAL_FINANCIAL_COLUMNS: ReportFinancialColumnKey[] = ["rial", "income", "expense", "contractType"];
+const SMS_FINANCE_FINANCIAL_COLUMNS: ReportFinancialColumnKey[] = ["rial", "income", "total"];
+const SMS_SUMMARY_FINANCIAL_COLUMNS: ReportFinancialColumnKey[] = ["rial", "income", "expense", "profit", "contractType", "total"];
 const SMS_COMMISSION_FINANCIAL_COLUMNS: ReportFinancialColumnKey[] = [
+	"rial",
 	"unitPrice",
 	"karashabIncome",
 	"karashabExpense",
@@ -156,6 +168,8 @@ export function PerformanceReportPage() {
 	const [selectedFinancialColumns, setSelectedFinancialColumns] = useState<ReportFinancialColumnKey[]>(DEFAULT_FINANCIAL_COLUMNS);
 	const [selectedAuditColumns, setSelectedAuditColumns] = useState<ReportAuditColumnKey[]>([]);
 	const [selectedAggregation, setSelectedAggregation] = useState<ReportAggregationKey[]>([]);
+	const [defaultConversionRatio, setDefaultConversionRatio] = useState<number | null>(null);
+	const [debouncedDefaultConversionRatio, setDebouncedDefaultConversionRatio] = useState<number | null>(null);
 	const [summary, setSummary] = useState<PerformanceReportSummary>(null);
 
 	const permittedViewIdsFromPerformances = getPermittedServiceIds("performances", "view");
@@ -224,6 +238,8 @@ export function PerformanceReportPage() {
 		setSelectedFinancialColumns(DEFAULT_FINANCIAL_COLUMNS);
 		setSelectedAuditColumns([]);
 		setSelectedAggregation([]);
+		setDefaultConversionRatio(null);
+		setDebouncedDefaultConversionRatio(null);
 		setSummary(null);
 		formRef.current?.setFieldsValue({
 			service_id: undefined,
@@ -237,6 +253,7 @@ export function PerformanceReportPage() {
 			financial_columns: DEFAULT_FINANCIAL_COLUMNS,
 			audit_columns: undefined,
 			aggregation: [],
+			default_conversion_ratio: undefined,
 		});
 	}, [selectedServiceId, permittedViewServiceIdsList.join(",")]);
 
@@ -255,6 +272,10 @@ export function PerformanceReportPage() {
 	const requiresCompanyType = isSmsService || isPspService || isTrafficService;
 	const supportsContractType = isSmsService || isTrafficService;
 	const isAuditColumnsDisabled = selectedAggregation.length > 0;
+	const isTrafficCp = isTrafficService && String(selectedCompanyType ?? "").trim().toUpperCase() === "CP";
+	const isBaseUnitHidden = !selectedFinancialColumns.includes("showBaseUnit");
+	const hasDefaultConversionRatio = defaultConversionRatio != null;
+	const isDefaultConversionRatioInvalid = isTrafficCp && isBaseUnitHidden && hasDefaultConversionRatio && !isValidDefaultConversionRatio(defaultConversionRatio);
 
 	const availablePeriods = useMemo(() => {
 		const fromApi = availabilityBase.data?.periods ?? [];
@@ -419,8 +440,10 @@ export function PerformanceReportPage() {
 	}, [isAuditColumnsDisabled, selectedAuditColumns.length]);
 
 	const financialColumnOptions = useMemo<ReportSelectOption[]>(() => {
+		const rialOption = { label: t("performance.columns.rial"), value: "rial" };
 		if (isSmsCommissionService) {
 			return [
+				rialOption,
 				{ label: t("performance.columns.unitPrice"), value: "unitPrice" },
 				{ label: t("performance.columns.karashabIncome"), value: "karashabIncome" },
 				{ label: t("performance.columns.karashabExpense"), value: "karashabExpense" },
@@ -434,6 +457,7 @@ export function PerformanceReportPage() {
 		}
 		if (isOpenApiService) {
 			return [
+				rialOption,
 				{ label: t("performance.columns.income"), value: "income" },
 				{ label: t("performance.columns.expense"), value: "expense" },
 				{ label: t("performance.columns.profit"), value: "profit" },
@@ -442,6 +466,7 @@ export function PerformanceReportPage() {
 		}
 		if (isPspService) {
 			return [
+				rialOption,
 				{ label: t("performance.columns.income"), value: "income" },
 				{ label: t("performance.columns.expense"), value: "expense" },
 				{ label: t("performance.columns.profit"), value: "profit" },
@@ -450,6 +475,7 @@ export function PerformanceReportPage() {
 		}
 		if (isShahkarService) {
 			return [
+				rialOption,
 				{ label: t("performance.columns.income"), value: "income" },
 				{ label: t("performance.columns.expense"), value: "expense" },
 				{ label: t("performance.columns.profit"), value: "profit" },
@@ -457,21 +483,31 @@ export function PerformanceReportPage() {
 			];
 		}
 		if (isTrafficService) {
-			return [
+			const options: ReportSelectOption[] = [
+				rialOption,
 				{ label: t("performance.columns.income"), value: "income" },
 				{ label: t("performance.columns.expense"), value: "expense" },
 				{ label: t("performance.columns.profit"), value: "profit" },
 				{ label: t("performance.columns.contractType"), value: "contractType" },
 				{ label: t("performance.columns.total"), value: "total" },
 			];
+			if (isTrafficCp) {
+				return [
+					{ label: t("performance.columns.showBaseUnit"), value: "showBaseUnit" },
+					...options,
+				];
+			}
+			return options;
 		}
 		if (isSmsService && selectedSmsReportType === "finance") {
 			return [
+				rialOption,
 				{ label: t("performance.columns.income"), value: "income" },
 				{ label: t("performance.columns.total"), value: "total" },
 			];
 		}
 		const options: ReportSelectOption[] = [
+			rialOption,
 			{ label: t("performance.columns.income"), value: "income" },
 			{ label: t("performance.columns.expense"), value: "expense" },
 			{ label: t("performance.columns.profit"), value: "profit" },
@@ -480,12 +516,51 @@ export function PerformanceReportPage() {
 			options.push({ label: t("performance.columns.contractType"), value: "contractType" });
 		options.push({ label: t("performance.columns.total"), value: "total" });
 		return options;
-	}, [isOpenApiService, isPspService, isShahkarService, isTrafficService, isSmsCommissionService, isSmsService, selectedSmsReportType, supportsContractType, t]);
+	}, [isOpenApiService, isPspService, isShahkarService, isTrafficService, isTrafficCp, isSmsCommissionService, isSmsService, selectedSmsReportType, supportsContractType, t]);
 
 	const auditColumnOptions = useMemo<ReportSelectOption[]>(() => ([
 		{ label: t("performance.columns.createdByUser"), value: "createdByUser" },
 		{ label: t("performance.columns.updatedByUser"), value: "updatedByUser" },
 	]), [t]);
+
+	useEffect(() => {
+		setSelectedFinancialColumns((prev) => {
+			const hasShowBaseUnit = prev.includes("showBaseUnit");
+			if (isTrafficCp) {
+				if (hasShowBaseUnit)
+					return prev;
+				const next = ["showBaseUnit", ...prev] as ReportFinancialColumnKey[];
+				formRef.current?.setFieldsValue({ financial_columns: next });
+				return next;
+			}
+
+			if (!hasShowBaseUnit)
+				return prev;
+			const next = prev.filter(key => key !== "showBaseUnit");
+			formRef.current?.setFieldsValue({ financial_columns: next });
+			return next;
+		});
+
+		if (isTrafficCp)
+			return;
+
+		setDefaultConversionRatio(null);
+		setDebouncedDefaultConversionRatio(null);
+		formRef.current?.setFieldsValue({ default_conversion_ratio: undefined });
+	}, [isTrafficCp]);
+
+	useEffect(() => {
+		if (isDefaultConversionRatioInvalid)
+			return;
+
+		const timeoutId = window.setTimeout(() => {
+			setDebouncedDefaultConversionRatio(defaultConversionRatio);
+		}, 500);
+
+		return () => {
+			window.clearTimeout(timeoutId);
+		};
+	}, [defaultConversionRatio, isDefaultConversionRatioInvalid]);
 
 	const selectedFinancialColumnTitles = useMemo(() => {
 		const titles: Partial<Record<ReportFinancialColumnKey, string>> = {};
@@ -500,6 +575,10 @@ export function PerformanceReportPage() {
 				titles.total = t("performance.columns.total");
 			if (key === "contractType")
 				titles.contractType = t("performance.columns.contractType");
+			if (key === "showBaseUnit")
+				titles.showBaseUnit = t("performance.columns.showBaseUnit");
+			if (key === "rial")
+				titles.rial = t("performance.columns.rial");
 			if (key === "unitPrice")
 				titles.unitPrice = t("performance.columns.unitPrice");
 			if (key === "karashabIncome")
@@ -554,6 +633,8 @@ export function PerformanceReportPage() {
 		setSelectedFinancialColumns(nextFinancialColumns);
 		setSelectedAuditColumns([]);
 		setSelectedAggregation([]);
+		setDefaultConversionRatio(null);
+		setDebouncedDefaultConversionRatio(null);
 		setSummary(null);
 
 		formRef.current?.setFieldsValue({
@@ -566,6 +647,7 @@ export function PerformanceReportPage() {
 			financial_columns: nextFinancialColumns,
 			audit_columns: undefined,
 			aggregation: [],
+			default_conversion_ratio: undefined,
 		});
 	};
 
@@ -641,21 +723,30 @@ export function PerformanceReportPage() {
 	};
 
 	const handleFinancialColumnsChange = (columns: ReportFinancialColumnKey[]) => {
-		const fallback = isSmsCommissionService
-			? SMS_COMMISSION_FINANCIAL_COLUMNS
-			: isSmsService
-				? getSmsFinancialDefaults(selectedSmsReportType)
-				: isOpenApiService
-					? OPENAPI_FINANCIAL_COLUMNS
-					: isPspService
-						? PSP_FINANCIAL_COLUMNS
-						: isShahkarService
-							? SHAHKAR_FINANCIAL_COLUMNS
-							: isTrafficService
-								? TRAFFIC_FINANCIAL_COLUMNS
-								: DEFAULT_FINANCIAL_COLUMNS;
+		let fallback = DEFAULT_FINANCIAL_COLUMNS;
+		if (isSmsCommissionService)
+			fallback = SMS_COMMISSION_FINANCIAL_COLUMNS;
+		else if (isSmsService)
+			fallback = getSmsFinancialDefaults(selectedSmsReportType);
+		else if (isOpenApiService)
+			fallback = OPENAPI_FINANCIAL_COLUMNS;
+		else if (isPspService)
+			fallback = PSP_FINANCIAL_COLUMNS;
+		else if (isShahkarService)
+			fallback = SHAHKAR_FINANCIAL_COLUMNS;
+		else if (isTrafficService)
+			fallback = isTrafficCp ? TRAFFIC_CP_FINANCIAL_COLUMNS : TRAFFIC_FINANCIAL_COLUMNS;
+
 		const nextColumns = columns.length > 0 ? columns : fallback;
+		const shouldClearDefaultConversionRatio = !selectedFinancialColumns.includes("showBaseUnit") && nextColumns.includes("showBaseUnit");
 		setSelectedFinancialColumns(nextColumns);
+		if (shouldClearDefaultConversionRatio) {
+			setDefaultConversionRatio(null);
+			setDebouncedDefaultConversionRatio(null);
+			formRef.current?.setFieldsValue({
+				default_conversion_ratio: undefined,
+			});
+		}
 	};
 
 	const handleAuditColumnsChange = (columns: ReportAuditColumnKey[]) => {
@@ -705,6 +796,8 @@ export function PerformanceReportPage() {
 			selectedCompanyIds,
 			selectedFinancialColumns,
 			selectedAuditColumns,
+			defaultConversionRatio,
+			isDefaultConversionRatioInvalid,
 			isAuditColumnsDisabled,
 			selectedAggregation,
 			selectedSmsReportType,
@@ -727,6 +820,7 @@ export function PerformanceReportPage() {
 			onPeriodTypeChange: handlePeriodTypeChange,
 			onFinancialColumnsChange: handleFinancialColumnsChange,
 			onAuditColumnsChange: handleAuditColumnsChange,
+			onDefaultConversionRatioChange: setDefaultConversionRatio,
 			onAggregationChange: handleAggregationChange,
 		});
 	}, [
@@ -749,6 +843,8 @@ export function PerformanceReportPage() {
 		selectedCompanyIds,
 		selectedFinancialColumns,
 		selectedAuditColumns,
+		defaultConversionRatio,
+		isDefaultConversionRatioInvalid,
 		isAuditColumnsDisabled,
 		selectedAggregation,
 		selectedSmsReportType,
@@ -794,6 +890,15 @@ export function PerformanceReportPage() {
 			: undefined;
 		const contractType = String(formValues?.is_official ?? selectedContractType ?? "all") as SmsContractTypeFilter;
 		const isOfficial = contractType === "official" ? true : contractType === "unofficial" ? false : undefined;
+		const ratioRaw = formValues?.default_conversion_ratio ?? defaultConversionRatio;
+		const ratio = ratioRaw == null || ratioRaw === "" ? null : Number(ratioRaw);
+		const isBaseUnitHidden = !selectedFinancialColumns.includes("showBaseUnit");
+		if (isTrafficCp && isBaseUnitHidden && ratio != null && !isValidDefaultConversionRatio(ratio)) {
+			window.$message?.warning(t("performance.validation.traffic.conversionRatioRange"));
+			return null;
+		}
+		const shouldSendDefaultConversionRatio = isTrafficCp && isBaseUnitHidden && isValidDefaultConversionRatio(ratio);
+		const payloadDefaultConversionRatio = shouldSendDefaultConversionRatio ? Number(ratio) : undefined;
 
 		const periodsKey = selectedPeriodType === "fiscal" ? "fiscal_periods" : "sh_periods";
 
@@ -804,12 +909,13 @@ export function PerformanceReportPage() {
 			company_ids: isSmsService ? undefined : companyIds.length > 0 ? companyIds.join(",") : undefined,
 			company_type: companyType,
 			is_official: supportsContractType ? isOfficial : undefined,
+			default_conversion_ratio: payloadDefaultConversionRatio,
 			...buildReportAggregationParams(selectedAggregation),
 			page,
 			page_size: pageSize,
 			total: includeTotals,
 		};
-	}, [isSmsService, requiresCompanyType, selectedAggregation, selectedCompanyIds, selectedContractType, selectedFinancialColumns, selectedPeriods, selectedServiceId, selectedServiceCode, selectedPeriodType, supportsContractType]);
+	}, [defaultConversionRatio, isSmsService, isTrafficCp, requiresCompanyType, selectedAggregation, selectedCompanyIds, selectedContractType, selectedFinancialColumns, selectedPeriods, selectedServiceId, selectedServiceCode, selectedPeriodType, supportsContractType, t]);
 
 	const getOperatorLabel = useCallback((operator: unknown) => {
 		const value = String(operator ?? "").trim().toUpperCase();
@@ -898,6 +1004,10 @@ export function PerformanceReportPage() {
 			positionTitle: t("performance.columns.position"),
 			sentTrafficTitle: t("performance.fields.traffic.sentTraffic"),
 			receivedTrafficTitle: t("performance.fields.traffic.receivedTraffic"),
+			sentTrafficGbMonthTitle: t("performance.fields.traffic.sentTrafficWithUnit", { unit: "GB/month", interpolation: { escapeValue: false } }),
+			receivedTrafficGbMonthTitle: t("performance.fields.traffic.receivedTrafficWithUnit", { unit: "GB/month", interpolation: { escapeValue: false } }),
+			sentTrafficMbpsTitle: t("performance.fields.traffic.sentTrafficWithUnit", { unit: "Mbps" }),
+			receivedTrafficMbpsTitle: t("performance.fields.traffic.receivedTrafficWithUnit", { unit: "Mbps" }),
 			conversionRatioTitle: t("performance.columns.conversionRatio"),
 			datacenterTitle: t("performance.columns.datacenter"),
 			partnerTypeTitle: t("performance.columns.partnerType"),
@@ -992,28 +1102,40 @@ export function PerformanceReportPage() {
 		if (!exportData)
 			return;
 
+		const currencyValue = selectedFinancialColumns.includes("rial")
+			? t("performance.columns.rial")
+			: t("performance.columns.toman");
+
 		downloadPerformanceReportExcel({
 			filename: `performance-report-${new Date().toISOString().slice(0, 10)}.xls`,
 			title: t("performance.titles.performanceReport"),
 			serviceLabel: t("performance.columns.service"),
 			serviceName: selectedServiceName,
+			currencyLabel: t("performance.labels.currencyUnit"),
+			currencyValue,
 			rows: exportData.rows,
 			columns: exportColumns,
 			summary: exportData.summary,
 			financialColumnTitles: selectedFinancialColumnTitles,
 		});
-	}, [exportColumns, fetchAllRowsForExport, selectedFinancialColumnTitles, selectedServiceName, t]);
+	}, [exportColumns, fetchAllRowsForExport, selectedFinancialColumnTitles, selectedFinancialColumns, selectedServiceName, t]);
 
 	const handleDownloadPdf = useCallback(async () => {
 		const exportData = await fetchAllRowsForExport();
 		if (!exportData)
 			return;
 
+		const currencyValue = selectedFinancialColumns.includes("rial")
+			? t("performance.columns.rial")
+			: t("performance.columns.toman");
+
 		try {
 			openPerformanceReportPdfPrint({
 				title: t("performance.titles.performanceReport"),
 				serviceLabel: t("performance.columns.service"),
 				serviceName: selectedServiceName,
+				currencyLabel: t("performance.labels.currencyUnit"),
+				currencyValue,
 				rows: exportData.rows,
 				columns: exportColumns,
 				summary: exportData.summary,
@@ -1023,9 +1145,12 @@ export function PerformanceReportPage() {
 		catch {
 			window.$message?.warning(t("performance.messages.popupBlocked"));
 		}
-	}, [exportColumns, fetchAllRowsForExport, selectedFinancialColumnTitles, selectedServiceName, t]);
+	}, [exportColumns, fetchAllRowsForExport, selectedFinancialColumnTitles, selectedFinancialColumns, selectedServiceName, t]);
 
-	const canExport = !!selectedServiceId && !!selectedServiceCode && selectedPeriods.length > 0;
+	const canExport = !!selectedServiceId && !!selectedServiceCode && selectedPeriods.length > 0 && !isDefaultConversionRatioInvalid;
+	const reportReloadFinancialColumnsKey = selectedFinancialColumns
+		.filter(column => column !== "rial")
+		.join(",");
 
 	const reportFilterKey = [
 		selectedServiceId,
@@ -1036,7 +1161,7 @@ export function PerformanceReportPage() {
 		selectedContractType,
 		selectedPeriodType,
 		selectedAggregation.join(","),
-		selectedFinancialColumns.join(","),
+		reportReloadFinancialColumnsKey,
 		selectedSmsReportType,
 	].join("|");
 
@@ -1055,6 +1180,7 @@ export function PerformanceReportPage() {
 				columns={columns}
 				actionRef={actionRef}
 				formRef={formRef}
+				autoSearchDebounceTime={800}
 				search={{
 					defaultCollapsed: false,
 				}}
@@ -1067,6 +1193,7 @@ export function PerformanceReportPage() {
 						company_type: undefined,
 						is_official: "all",
 						aggregation: [],
+						default_conversion_ratio: undefined,
 					},
 				}}
 				request={async (params) => {
@@ -1102,6 +1229,16 @@ export function PerformanceReportPage() {
 					const companyType = requiresCompanyType ? selectedCompanyType ?? undefined : undefined;
 					const contractType = selectedContractType;
 					const isOfficial = contractType === "official" ? true : contractType === "unofficial" ? false : undefined;
+					const isBaseUnitHidden = !selectedFinancialColumns.includes("showBaseUnit");
+					if (isTrafficCp && isBaseUnitHidden && isDefaultConversionRatioInvalid) {
+						return {
+							data: [],
+							total: 0,
+							success: true,
+						};
+					}
+					const shouldSendDefaultConversionRatio = isTrafficCp && isBaseUnitHidden && isValidDefaultConversionRatio(debouncedDefaultConversionRatio);
+					const payloadDefaultConversionRatio = shouldSendDefaultConversionRatio ? Number(debouncedDefaultConversionRatio) : undefined;
 
 					const includeTotals = selectedFinancialColumns.includes("total");
 
@@ -1112,6 +1249,7 @@ export function PerformanceReportPage() {
 						company_ids: isSmsService ? undefined : companyIds.length > 0 ? companyIds.join(",") : undefined,
 						company_type: companyType,
 						is_official: supportsContractType ? isOfficial : undefined,
+						default_conversion_ratio: payloadDefaultConversionRatio,
 						...buildReportAggregationParams(selectedAggregation),
 						page: params.current ?? 1,
 						page_size: params.pageSize ?? 20,
@@ -1130,6 +1268,7 @@ export function PerformanceReportPage() {
 				toolBarRender={() => {
 					const items: React.ReactNode[] = [];
 					const showReportSummary = selectedFinancialColumns.includes("total") && summary;
+					const showRial = selectedFinancialColumns.includes("rial");
 
 					if (showReportSummary) {
 						const summaryFields: React.ReactNode[] = [];
@@ -1141,17 +1280,17 @@ export function PerformanceReportPage() {
 						}
 						if (selectedFinancialColumnTitles.income) {
 							summaryFields.push(
-								<Typography.Text key="income">{`${selectedFinancialColumnTitles.income}: ${formatSummaryNumber(summary.income_financial)}`}</Typography.Text>,
+								<Typography.Text key="income">{`${selectedFinancialColumnTitles.income}: ${formatSummaryMoney(summary.income_financial, showRial)}`}</Typography.Text>,
 							);
 						}
 						if (selectedFinancialColumnTitles.expense) {
 							summaryFields.push(
-								<Typography.Text key="expense">{`${selectedFinancialColumnTitles.expense}: ${formatSummaryNumber(summary.expense_financial)}`}</Typography.Text>,
+								<Typography.Text key="expense">{`${selectedFinancialColumnTitles.expense}: ${formatSummaryMoney(summary.expense_financial, showRial)}`}</Typography.Text>,
 							);
 						}
 						if (selectedFinancialColumnTitles.profit) {
 							summaryFields.push(
-								<Typography.Text key="profit">{`${selectedFinancialColumnTitles.profit}: ${formatSummaryNumber(summary.profit_financial)}`}</Typography.Text>,
+								<Typography.Text key="profit">{`${selectedFinancialColumnTitles.profit}: ${formatSummaryMoney(summary.profit_financial, showRial)}`}</Typography.Text>,
 							);
 						}
 

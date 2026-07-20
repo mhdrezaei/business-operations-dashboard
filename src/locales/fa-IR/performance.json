@@ -55,6 +55,9 @@
 		"contractUnit": "واحد قرارداد",
 		"position": "موقعیت",
 		"conversionRatio": "ضریب تبدیل",
+		"showBaseUnit": "نمایش واحد اصلی",
+		"rial": "ریال",
+		"toman": "تومان",
 		"datacenter": "دیتاسنتر",
 		"partnerType": "نوع شریک",
 		"rackHalfCount": "نیم‌رک (تعداد)",
@@ -116,6 +119,7 @@
 		"selectMonths": "ماه‌ها را انتخاب کنید",
 		"selectCompanies": "شرکت‌ها را انتخاب کنید",
 		"selectFinancialColumns": "ستون های مالی را انتخاب کنید",
+		"enterConversionRatio": "ضریب تبدیل را وارد کنید",
 		"pspValue": "مثلاً تعداد تراکنش",
 		"shahkarValue": "مثلاً 123.45",
 		"example100": "مثلاً 100",
@@ -138,6 +142,7 @@
 		"selectAll": "انتخاب همه",
 		"smsReportType": "نوع گزارش پیامک",
 		"periodType": "نوع دوره",
+		"currencyUnit": "واحد پول",
 		"contractYear": "سال قرارداد",
 		"contractMonth": "ماه قرارداد",
 		"openapiContractModel": "مدل قرارداد OpenAPI:",
@@ -296,7 +301,9 @@
 			"countyValueReceive": "مقدار ترافیک دریافتی در مراکز استان",
 			"countyConversionRatio": "ضریب تبدیل مراکز استان",
 			"sentTraffic": "ترافیک ارسالی",
-			"receivedTraffic": "ترافیک دریافتی"
+			"receivedTraffic": "ترافیک دریافتی",
+			"sentTrafficWithUnit": "ترافیک ارسالی به {{unit}}",
+			"receivedTrafficWithUnit": "ترافیک دریافتی به {{unit}}"
 		}
 	},
 	"summary": {

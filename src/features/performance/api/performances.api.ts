@@ -153,6 +153,7 @@ export interface PerformanceReportQuery {
 	company_ids?: string
 	company_type?: string
 	is_official?: boolean
+	default_conversion_ratio?: number
 	by_company?: boolean
 	by_month?: boolean
 	by_operator?: boolean
