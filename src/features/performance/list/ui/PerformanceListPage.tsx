@@ -28,7 +28,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button, Popconfirm } from "antd";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { PerformanceDetailModal } from "./components/PerformanceDetailModal";
 import { TrafficUpdateTemplateModal } from "./components/TrafficUpdateTemplateModal";
 import { getPerformanceColumns } from "./constants";
@@ -49,10 +49,12 @@ function serviceRequiresCompanyType(serviceCode: string | null | undefined) {
 export default function PerformanceListPage() {
 	const { t } = useTranslation();
 	const navigate = useNavigate();
+	const location = useLocation();
 	const { hasDomainPermissionByServiceId, getPermittedCompanyTypes, getPermittedServiceIds } = useAccess();
 
 	const actionRef = useRef<ActionType>(null);
 	const formRef = useRef<ProFormInstance | undefined>(undefined);
+	const openedDirectEditRef = useRef(false);
 
 	const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
 	const [selectedServiceCode, setSelectedServiceCode] = useState<string | null>(null);
@@ -62,6 +64,14 @@ export default function PerformanceListPage() {
 	const [selectedYear, setSelectedYear] = useState<number | null>(null);
 	const [selectedRow, setSelectedRow] = useState<PerformanceListRow | null>(null);
 	const [deletingRowId, setDeletingRowId] = useState<number | null>(null);
+	const directEdit = (location.state as {
+		directEdit?: {
+			service: PerformanceServicePath
+			serviceCode: string | null
+			serviceId: number | null
+			record: PerformanceListRow
+		}
+	} | null)?.directEdit;
 	const resetInvalidSelectedService = useCallback(() => {
 		setSelectedServiceId(null);
 		setSelectedServiceCode(null);
@@ -87,6 +97,25 @@ export default function PerformanceListPage() {
 	);
 	const requiresCompanyType = serviceRequiresCompanyType(selectedServiceCode);
 	const isTraffic = selectedServicePath === "traffic";
+
+	useEffect(() => {
+		if (!directEdit || openedDirectEditRef.current)
+			return;
+
+		openedDirectEditRef.current = true;
+		setSelectedServiceId(directEdit.serviceId);
+		setSelectedServiceCode(directEdit.serviceCode);
+		setSelectedCompanyType(normalizePerformanceRecord(directEdit.record).companyType);
+		setSelectedRow(directEdit.record);
+		setOpenDetail(true);
+	}, [directEdit]);
+
+	const closePerformanceDetail = () => {
+		setOpenDetail(false);
+		setSelectedRow(null);
+		if (directEdit)
+			navigate("/performances/edit", { replace: true, state: null });
+	};
 
 	const isSmsCommission = isSmsCommissionServicePath(selectedServicePath);
 	const smsCommissionAgents = useQuery(smsCommissionAgentsQuery(isSmsCommission));
@@ -547,10 +576,7 @@ export default function PerformanceListPage() {
 				service={selectedServicePath}
 				companies={companies.data?.results}
 				record={selectedRow}
-				onClose={() => {
-					setOpenDetail(false);
-					setSelectedRow(null);
-				}}
+				onClose={closePerformanceDetail}
 				onUpdated={refreshTable}
 			/>
 
