@@ -43,8 +43,8 @@ function formatMoney(value: unknown, showRial: boolean) {
 	return (showRial ? numeric : numeric / 10).toLocaleString("en-US");
 }
 
-function pickReportValue(row: PerformanceReportListItem, keys: string[]) {
-	const record = row as Record<string, unknown>;
+function pickReportValue(row: Record<string, unknown>, keys: readonly string[]) {
+	const record = row;
 	for (const key of keys) {
 		const value = record[key];
 		if (value !== undefined && value !== null && value !== "")
@@ -57,22 +57,202 @@ function buildRowsHtml(rows: PerformanceReportListItem[], columns: ReportExportC
 	return rows.map(row => `<tr>${columns.map(column => `<td>${escapeHtml(column.getValue(row))}</td>`).join("")}</tr>`).join("");
 }
 
-function buildSummaryHtml(summary: PerformanceReportTotals | null | undefined, financialColumnTitles: Partial<Record<ReportFinancialColumnKey, string>>) {
+function buildSummaryEntries(summary: PerformanceReportTotals | null | undefined, financialColumnTitles: Partial<Record<ReportFinancialColumnKey, string>>) {
 	if (!summary || !financialColumnTitles.total)
-		return "";
+		return [];
 
 	const showRial = !!financialColumnTitles.rial;
-	const entries = [
-		["total", financialColumnTitles.total, formatNumeric(summary.value)],
-		["income", financialColumnTitles.income, formatMoney(summary.income_financial, showRial)],
-		["expense", financialColumnTitles.expense, formatMoney(summary.expense_financial, showRial)],
-		["profit", financialColumnTitles.profit, formatMoney(summary.profit_financial, showRial)],
-	].filter(([, label]) => !!label) as Array<[ReportFinancialColumnKey, string, string]>;
+	const entries: Array<[ReportFinancialColumnKey, string, string]> = [];
+	const appendMoneyEntry = (key: ReportFinancialColumnKey, keys: readonly string[]) => {
+		const label = financialColumnTitles[key];
+		if (!label)
+			return;
+
+		const value = pickReportValue(summary, keys);
+		if (value == null)
+			return;
+
+		entries.push([key, label, formatMoney(value, showRial)]);
+	};
+
+	entries.push(["total", financialColumnTitles.total, formatNumeric(summary.value)]);
+	appendMoneyEntry("income", REPORT_FIELD_KEYS.income);
+	appendMoneyEntry("expense", REPORT_FIELD_KEYS.expense);
+	appendMoneyEntry("profit", REPORT_FIELD_KEYS.profit);
+	appendMoneyEntry("karashabIncome", REPORT_FIELD_KEYS.karashabIncome);
+	appendMoneyEntry("karashabExpense", REPORT_FIELD_KEYS.karashabExpense);
+	appendMoneyEntry("karashabProfit", REPORT_FIELD_KEYS.karashabProfit);
+	appendMoneyEntry("telecomIncome", REPORT_FIELD_KEYS.telecomIncome);
+	appendMoneyEntry("firstPartyIncome", REPORT_FIELD_KEYS.firstPartyIncome);
+	appendMoneyEntry("regionIncome", REPORT_FIELD_KEYS.regionIncome);
+	appendMoneyEntry("salesAgentIncome", REPORT_FIELD_KEYS.salesAgentIncome);
+
+	return entries;
+}
+
+function buildSummaryHtml(summary: PerformanceReportTotals | null | undefined, financialColumnTitles: Partial<Record<ReportFinancialColumnKey, string>>) {
+	const entries = buildSummaryEntries(summary, financialColumnTitles);
 
 	if (!entries.length)
 		return "";
 
 	return `<section class="summary"><h3>جمع‌بندی</h3><div class="summary-grid">${entries.map(([, label, value]) => `<div class="summary-item"><span class="summary-label">${escapeHtml(label)}</span><strong class="summary-value">${escapeHtml(value)}</strong></div>`).join("")}</div></section>`;
+}
+
+function buildExcelSummaryRows(summary: PerformanceReportTotals | null | undefined, financialColumnTitles: Partial<Record<ReportFinancialColumnKey, string>>, columnsCount: number) {
+	const entries = buildSummaryEntries(summary, financialColumnTitles);
+
+	if (!entries.length)
+		return "";
+
+	const trailingCell = columnsCount > 2 ? `<td class="empty-cell" colspan="${columnsCount - 2}"></td>` : "";
+
+	return `
+		<tr class="spacer-row"><td colspan="${columnsCount}"></td></tr>
+		<tr><td class="summary-title" colspan="2">جمع‌بندی</td>${trailingCell}</tr>
+		${entries.map(([, label, value]) => `<tr><td class="summary-label">${escapeHtml(label)}</td><td class="summary-value">${escapeHtml(value)}</td>${trailingCell}</tr>`).join("")}
+	`;
+}
+
+function getExcelColumnWidth(column: ReportExportColumn) {
+	return Math.min(Math.max(column.title.length * 7 + 28, 68), 140);
+}
+
+function buildExcelColgroup(columns: ReportExportColumn[]) {
+	return `<colgroup>${columns.map((column) => {
+		const width = getExcelColumnWidth(column);
+		return `<col width="${width}" style="width:${width}pt;mso-width-source:userset" />`;
+	}).join("")}</colgroup>`;
+}
+
+function buildExcelHeaderHtml(columns: ReportExportColumn[]) {
+	return columns
+		.map(column => `<th style="width:${getExcelColumnWidth(column)}pt">${escapeHtml(column.title)}</th>`)
+		.join("");
+}
+
+function buildExcelRowsHtml(rows: PerformanceReportListItem[], columns: ReportExportColumn[]) {
+	return rows
+		.map(row => `<tr>${columns.map(column => `<td style="width:${getExcelColumnWidth(column)}pt">${escapeHtml(column.getValue(row))}</td>`).join("")}</tr>`)
+		.join("");
+}
+
+function buildExcelHtml(args: {
+	title: string
+	serviceLabel?: string
+	serviceName?: string | null
+	currencyLabel?: string
+	currencyValue?: string
+	rows: PerformanceReportListItem[]
+	columns: ReportExportColumn[]
+	summary: PerformanceReportTotals | null | undefined
+	financialColumnTitles: Partial<Record<ReportFinancialColumnKey, string>>
+}) {
+	const { title, serviceLabel, serviceName, currencyLabel, currencyValue, rows, columns, summary, financialColumnTitles } = args;
+	const today = new Date().toLocaleDateString("fa-IR");
+	const columnsCount = Math.max(columns.length, 1);
+	const metaItems = [
+		`تاریخ تولید: ${today}`,
+		serviceName ? `${serviceLabel ?? "سرویس"}: ${serviceName}` : "",
+		currencyValue ? `${currencyLabel ?? "واحد پول"}: ${currencyValue}` : "",
+	].filter(Boolean);
+
+	return `<!doctype html>
+<html lang="fa" dir="rtl" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+	<meta charset="UTF-8" />
+	<!--[if gte mso 9]>
+	<xml>
+		<x:ExcelWorkbook>
+			<x:ExcelWorksheets>
+				<x:ExcelWorksheet>
+					<x:Name>${escapeHtml(title)}</x:Name>
+					<x:WorksheetOptions>
+						<x:DisplayRightToLeft/>
+					</x:WorksheetOptions>
+				</x:ExcelWorksheet>
+			</x:ExcelWorksheets>
+		</x:ExcelWorkbook>
+	</xml>
+	<![endif]-->
+	<style>
+		body {
+			font-family: Tahoma, Arial, sans-serif;
+			direction: rtl;
+		}
+		table {
+			border-collapse: collapse;
+			direction: rtl;
+			table-layout: auto;
+		}
+		th, td {
+			border: 0.5pt solid #7f7f7f;
+			color: #000;
+			font-family: Tahoma, Arial, sans-serif;
+			font-size: 10pt;
+			height: 22pt;
+			padding: 4pt 6pt;
+			text-align: center;
+			vertical-align: middle;
+			white-space: nowrap;
+			mso-number-format: "\\@";
+		}
+		th {
+			background: #dbe5f1;
+			font-weight: 700;
+		}
+		.title-row td {
+			background: #d9d9d9;
+			border: 1pt solid #000;
+			font-size: 12pt;
+			font-weight: 700;
+			height: 22pt;
+		}
+		.meta-row td {
+			border: 1pt solid #000;
+			font-size: 10pt;
+			font-weight: 600;
+			height: 22pt;
+		}
+		.spacer-row td {
+			border: none;
+			background: #fff;
+			height: 14pt;
+		}
+		.empty-cell {
+			border: none;
+			background: #fff;
+		}
+		.summary-title {
+			background: #dbe5f1;
+			font-weight: 700;
+			text-align: right;
+		}
+		.summary-label {
+			background: #dbe5f1;
+			font-weight: 700;
+		}
+		.summary-value {
+			font-weight: 700;
+		}
+	</style>
+</head>
+<body>
+	<table>
+		${buildExcelColgroup(columns)}
+		<tr class="title-row"><td colspan="${columnsCount}">${escapeHtml(title)}</td></tr>
+		<tr class="meta-row"><td colspan="${columnsCount}">${escapeHtml(metaItems.join(" | "))}</td></tr>
+		<tr class="spacer-row"><td colspan="${columnsCount}"></td></tr>
+		<thead>
+			<tr>${buildExcelHeaderHtml(columns)}</tr>
+		</thead>
+		<tbody>
+			${buildExcelRowsHtml(rows, columns)}
+			${buildExcelSummaryRows(summary, financialColumnTitles, columnsCount)}
+		</tbody>
+	</table>
+</body>
+</html>`;
 }
 
 function buildBaseHtml(args: {
@@ -89,9 +269,11 @@ function buildBaseHtml(args: {
 	const { title, serviceLabel, serviceName, currencyLabel, currencyValue, rows, columns, summary, financialColumnTitles } = args;
 	const today = new Date().toLocaleDateString("fa-IR");
 	const origin = window.location.origin;
+	const logoUrl = `${origin}/negah-logo.svg`;
+	const compactTable = columns.length > 12;
 
 	return `<!doctype html>
-<html lang="fa" dir="rtl">
+<html lang="fa" dir="rtl" class="${compactTable ? "compact-table" : ""}">
 <head>
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -136,6 +318,10 @@ function buildBaseHtml(args: {
 			color: #0f172a;
 			margin: 0;
 			padding: 24px;
+			box-sizing: border-box;
+		}
+		* {
+			box-sizing: inherit;
 		}
 		.container {
 			max-width: 1200px;
@@ -149,10 +335,25 @@ function buildBaseHtml(args: {
 		}
 		.header {
 			display: flex;
+			flex-direction: column;
 			align-items: center;
-			justify-content: space-between;
-			gap: 16px;
+			justify-content: center;
+			gap: 10px;
 			margin-bottom: 20px;
+			text-align: center;
+		}
+		.brand {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: 8px;
+			min-width: 0;
+		}
+		.brand-logo {
+			width: 120px;
+			height: auto;
+			object-fit: contain;
+			flex: 0 0 auto;
 		}
 		.title {
 			font-size: 22px;
@@ -162,24 +363,58 @@ function buildBaseHtml(args: {
 			font-size: 13px;
 			color: #64748b;
 		}
-		.service-meta {
+		.report-meta {
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: center;
+			gap: 8px 18px;
 			margin-bottom: 16px;
 			font-size: 14px;
 			font-weight: 500;
+			text-align: center;
+		}
+		.report-meta-item {
+			white-space: nowrap;
 		}
 		table {
-			width: 100%;
+			width: max-content;
+			min-width: 100%;
 			border-collapse: collapse;
 			font-size: 13px;
+			table-layout: auto;
 		}
 		th, td {
 			border: 1px solid #dbe4f5;
 			padding: 10px 12px;
 			text-align: center;
+			white-space: nowrap;
 		}
 		th {
 			background: #eef4ff;
 			font-weight: 700;
+		}
+		.compact-table .container {
+			max-width: none;
+		}
+		.compact-table table {
+			font-size: 10px;
+		}
+		.compact-table th,
+		.compact-table td {
+			padding: 6px 5px;
+			line-height: 1.45;
+		}
+		.table-fit {
+			--table-scale: 1;
+			width: 100%;
+			overflow: hidden;
+		}
+		.table-fit.is-scaled {
+			height: var(--table-scaled-height);
+		}
+		.table-fit.is-scaled table {
+			transform: scale(var(--table-scale));
+			transform-origin: top right;
 		}
 		.summary {
 			margin-top: 18px;
@@ -212,14 +447,61 @@ function buildBaseHtml(args: {
 		.summary-value {
 			font-size: 15px;
 		}
+		.report-footer {
+			margin-top: 18px;
+			padding-top: 12px;
+			border-top: 1px solid #dbe4f5;
+			color: #64748b;
+			font-size: 12px;
+			text-align: center;
+		}
+		@page {
+			size: A4 landscape;
+			margin: 8mm;
+		}
 		@media print {
+			html,
+			body {
+				width: 100%;
+			}
 			body {
 				background: #fff;
 				padding: 0;
+				-webkit-print-color-adjust: exact;
+				print-color-adjust: exact;
+			}
+			.container {
+				max-width: none;
+				width: 100%;
 			}
 			.card {
 				border: none;
 				padding: 0;
+			}
+			table {
+				page-break-inside: auto;
+			}
+			tr {
+				page-break-inside: avoid;
+				page-break-after: auto;
+			}
+			thead {
+				display: table-header-group;
+			}
+			.summary {
+				page-break-inside: avoid;
+			}
+			.report-footer {
+				page-break-inside: avoid;
+			}
+		}
+		@media print and (max-width: 1200px) {
+			.compact-table table {
+				font-size: 8px;
+			}
+			.compact-table th,
+			.compact-table td {
+				padding: 4px 3px;
 			}
 		}
 	</style>
@@ -228,22 +510,66 @@ function buildBaseHtml(args: {
 	<div class="container">
 		<div class="card">
 			<div class="header">
-				<div class="title">${escapeHtml(title)}</div>
+				<div class="brand">
+					<img class="brand-logo" src="${escapeHtml(logoUrl)}" alt="نگاه" />
+					<div class="title">${escapeHtml(title)}</div>
+				</div>
 				<div class="meta">تاریخ تولید: ${escapeHtml(today)}</div>
 			</div>
-			${serviceName ? `<div class="service-meta">${escapeHtml(serviceLabel ?? "سرویس")}: ${escapeHtml(serviceName)}</div>` : ""}
-			${currencyValue ? `<div class="service-meta">${escapeHtml(currencyLabel ?? "واحد پول")}: ${escapeHtml(currencyValue)}</div>` : ""}
-			<table>
-				<thead>
-					<tr>${columns.map(column => `<th>${escapeHtml(column.title)}</th>`).join("")}</tr>
-				</thead>
-				<tbody>
-					${buildRowsHtml(rows, columns)}
-				</tbody>
-			</table>
+			<div class="report-meta">
+				${serviceName ? `<span class="report-meta-item">${escapeHtml(serviceLabel ?? "سرویس")}: ${escapeHtml(serviceName)}</span>` : ""}
+				${currencyValue ? `<span class="report-meta-item">${escapeHtml(currencyLabel ?? "واحد پول")}: ${escapeHtml(currencyValue)}</span>` : ""}
+			</div>
+			<div class="table-fit">
+				<table>
+					<thead>
+						<tr>${columns.map(column => `<th>${escapeHtml(column.title)}</th>`).join("")}</tr>
+					</thead>
+					<tbody>
+						${buildRowsHtml(rows, columns)}
+					</tbody>
+				</table>
+			</div>
 			${buildSummaryHtml(summary, financialColumnTitles)}
+			<div class="report-footer">این گزارش به صورت خودکار از سامانه تولید شده است.</div>
 		</div>
 	</div>
+	<script>
+		(function () {
+			function fitTable() {
+				var wrapper = document.querySelector(".table-fit");
+				var table = wrapper && wrapper.querySelector("table");
+				if (!wrapper || !table)
+					return;
+
+				wrapper.classList.remove("is-scaled");
+				wrapper.style.removeProperty("--table-scale");
+				wrapper.style.removeProperty("--table-scaled-height");
+
+				var availableWidth = wrapper.clientWidth;
+				var tableWidth = table.scrollWidth;
+				if (!availableWidth || !tableWidth || tableWidth <= availableWidth)
+					return;
+
+				var scale = Math.min(1, availableWidth / tableWidth);
+				wrapper.style.setProperty("--table-scale", String(scale));
+				wrapper.style.setProperty("--table-scaled-height", (table.offsetHeight * scale) + "px");
+				wrapper.classList.add("is-scaled");
+			}
+			function scheduleFitTable() {
+				window.requestAnimationFrame(function () {
+					window.requestAnimationFrame(fitTable);
+				});
+			}
+
+			window.addEventListener("load", scheduleFitTable);
+			window.addEventListener("resize", scheduleFitTable);
+			window.addEventListener("beforeprint", fitTable);
+			if (document.fonts && document.fonts.ready)
+				document.fonts.ready.then(scheduleFitTable).catch(scheduleFitTable);
+			scheduleFitTable();
+		})();
+	</script>
 </body>
 </html>`;
 }
@@ -260,7 +586,7 @@ export function downloadPerformanceReportExcel(args: {
 	summary: PerformanceReportTotals | null | undefined
 	financialColumnTitles: Partial<Record<ReportFinancialColumnKey, string>>
 }) {
-	const html = buildBaseHtml(args);
+	const html = buildExcelHtml(args);
 	const blob = new Blob([`\uFEFF${html}`], { type: "application/vnd.ms-excel;charset=utf-8" });
 	const url = URL.createObjectURL(blob);
 	const anchor = document.createElement("a");
@@ -312,10 +638,18 @@ function getSalesAgentExportValue(row: PerformanceReportListItem) {
 	return agent == null ? "-" : String(agent);
 }
 
+function getReportServiceName(row: PerformanceReportListItem, fallback?: string | null) {
+	const serviceName = String(row.service_name ?? "").trim();
+	if (serviceName)
+		return serviceName;
+	return fallback || "-";
+}
+
 function buildLayoutExportColumns(args: {
 	layout: Exclude<ReportServiceLayout, "default">
 	idTitle: string
 	serviceNameTitle: string
+	serviceNameFallback?: string | null
 	companyNameTitle: string
 	companyTypeTitle: string
 	yearTitle: string
@@ -384,7 +718,7 @@ function buildLayoutExportColumns(args: {
 	if (args.layout === "shahkar") {
 		columns.push({
 			title: args.serviceNameTitle,
-			getValue: row => String(row.service_name ?? "-"),
+			getValue: row => getReportServiceName(row, args.serviceNameFallback),
 		});
 		if (!args.hideCompanyColumn) {
 			columns.push({
@@ -431,7 +765,7 @@ function buildLayoutExportColumns(args: {
 		const trafficLayout = args.trafficLayout ?? "cp";
 		columns.push({
 			title: args.serviceNameTitle,
-			getValue: row => String(row.service_name ?? "-"),
+			getValue: row => getReportServiceName(row, args.serviceNameFallback),
 		});
 		if (!args.hideCompanyColumn) {
 			columns.push({
@@ -828,6 +1162,7 @@ export function createPerformanceReportExportColumns(args: {
 	layout?: ReportServiceLayout
 	idTitle: string
 	serviceNameTitle: string
+	serviceNameFallback?: string | null
 	companyNameTitle: string
 	companyTypeTitle: string
 	yearTitle: string
@@ -901,6 +1236,7 @@ export function createPerformanceReportExportColumns(args: {
 				layout,
 				idTitle: args.idTitle,
 				serviceNameTitle: args.serviceNameTitle,
+				serviceNameFallback: args.serviceNameFallback,
 				companyNameTitle: args.companyNameTitle,
 				companyTypeTitle: args.companyTypeTitle,
 				yearTitle: args.yearTitle,

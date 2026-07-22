@@ -25,6 +25,7 @@ import {
 	getReportDisplayMonth,
 	getReportServiceLayout,
 	getTrafficReportLayout,
+	REPORT_FIELD_KEYS,
 	supportsOperatorLanguageAggregation,
 } from "./constants";
 import {
@@ -110,6 +111,22 @@ function formatSummaryMoney(value: number | null | undefined, showRial: boolean)
 	if (value == null)
 		return "-";
 	return (showRial ? Number(value) : Number(value) / 10).toLocaleString("en-US");
+}
+
+function pickSummaryValue(summary: PerformanceReportSummary, keys: readonly string[]) {
+	if (!summary)
+		return null;
+
+	const record = summary as Record<string, unknown>;
+	for (const key of keys) {
+		const value = record[key];
+		if (value !== undefined && value !== null && value !== "") {
+			const numeric = Number(value);
+			if (Number.isFinite(numeric))
+				return numeric;
+		}
+	}
+	return null;
 }
 
 function isValidDefaultConversionRatio(value: number | null) {
@@ -978,6 +995,7 @@ export function PerformanceReportPage() {
 			layout: reportServiceLayout,
 			idTitle: t("performance.columns.id"),
 			serviceNameTitle: t("performance.columns.serviceName"),
+			serviceNameFallback: selectedServiceName,
 			companyNameTitle: t("performance.columns.companyName"),
 			companyTypeTitle: t("performance.columns.companyType"),
 			yearTitle: reportYearTitle,
@@ -1058,6 +1076,7 @@ export function PerformanceReportPage() {
 		reportMonthTitle,
 		reportServiceLayout,
 		trafficLayout,
+		selectedServiceName,
 		selectedPeriodType,
 		effectiveAuditColumns,
 		selectedAggregation,
@@ -1293,6 +1312,32 @@ export function PerformanceReportPage() {
 								<Typography.Text key="profit">{`${selectedFinancialColumnTitles.profit}: ${formatSummaryMoney(summary.profit_financial, showRial)}`}</Typography.Text>,
 							);
 						}
+						const extendedSummaryFields: Array<{
+							key: ReportFinancialColumnKey
+							title?: string
+							keys: readonly string[]
+						}> = [
+							{ key: "karashabIncome", title: selectedFinancialColumnTitles.karashabIncome, keys: REPORT_FIELD_KEYS.karashabIncome },
+							{ key: "karashabExpense", title: selectedFinancialColumnTitles.karashabExpense, keys: REPORT_FIELD_KEYS.karashabExpense },
+							{ key: "karashabProfit", title: selectedFinancialColumnTitles.karashabProfit, keys: REPORT_FIELD_KEYS.karashabProfit },
+							{ key: "telecomIncome", title: selectedFinancialColumnTitles.telecomIncome, keys: REPORT_FIELD_KEYS.telecomIncome },
+							{ key: "firstPartyIncome", title: selectedFinancialColumnTitles.firstPartyIncome, keys: REPORT_FIELD_KEYS.firstPartyIncome },
+							{ key: "regionIncome", title: selectedFinancialColumnTitles.regionIncome, keys: REPORT_FIELD_KEYS.regionIncome },
+							{ key: "salesAgentIncome", title: selectedFinancialColumnTitles.salesAgentIncome, keys: REPORT_FIELD_KEYS.salesAgentIncome },
+						];
+
+						extendedSummaryFields.forEach((field) => {
+							if (!field.title || !selectedFinancialColumns.includes(field.key))
+								return;
+
+							const value = pickSummaryValue(summary, field.keys);
+							if (value == null)
+								return;
+
+							summaryFields.push(
+								<Typography.Text key={field.key}>{`${field.title}: ${formatSummaryMoney(value, showRial)}`}</Typography.Text>,
+							);
+						});
 
 						if (summaryFields.length > 0) {
 							items.push(

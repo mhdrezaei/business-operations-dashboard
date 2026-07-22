@@ -137,6 +137,11 @@ export interface PerformanceReportTotals {
 	income_financial: number
 	expense_financial: number
 	profit_financial: number
+	income_tci?: number | null
+	income_first_side?: number | null
+	income_area?: number | null
+	income_sales_agent?: number | null
+	[key: string]: unknown
 }
 
 export interface PerformanceReportListResponse extends Paginated<PerformanceReportListItem> {
