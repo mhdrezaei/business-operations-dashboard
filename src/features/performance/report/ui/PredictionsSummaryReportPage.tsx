@@ -164,36 +164,57 @@ function getQuarterMonths(quarter: number) {
 	return [start, start + 1, start + 2];
 }
 
-function getRealMonthsYear(year: number, months: number[], periodMode: PredictionSummaryPeriodMode) {
+function getRealMonthYear(year: number, month: number, periodMode: PredictionSummaryPeriodMode) {
 	if (!Number.isFinite(year))
 		return null;
 	if (!periodMode.startsWith("fiscal"))
 		return year;
 
-	const startsInPreviousShamsiYear = months.length > 0 && months.every(month => month >= 1 && month <= 3);
-	return startsInPreviousShamsiYear ? year - 1 : year;
+	return month >= 1 && month <= 3 ? year - 1 : year;
+}
+
+function formatRealMonthsLabel(year: number, months: number[], periodMode: PredictionSummaryPeriodMode) {
+	const realMonths = months.map((month) => {
+		return {
+			label: getPeriodMonthLabel(month, periodMode),
+			year: getRealMonthYear(year, month, periodMode),
+		};
+	});
+
+	if (realMonths.length === 0)
+		return "-";
+
+	const firstMonth = realMonths[0];
+	const lastMonth = realMonths[realMonths.length - 1];
+
+	if (realMonths.length === 1) {
+		const yearLabel = firstMonth.year == null ? "" : `سال ${firstMonth.year}: `;
+		return `ماه‌های واقعی: ${yearLabel}${firstMonth.label}`;
+	}
+
+	if (firstMonth.year != null && lastMonth.year != null && firstMonth.year !== lastMonth.year)
+		return `ماه‌های واقعی: از ${firstMonth.label} ${firstMonth.year} تا ${lastMonth.label} ${lastMonth.year}`;
+
+	const yearLabel = firstMonth.year == null ? "" : `سال ${firstMonth.year}: `;
+	return `ماه‌های واقعی: ${yearLabel}از ${firstMonth.label} تا ${lastMonth.label}`;
 }
 
 function getPeriodMonthsLabel(period: Record<string, unknown>, periodMode: PredictionSummaryPeriodMode) {
 	const year = Number(period.year);
+	const month = Number(period.month);
 	const quarter = Number(period.quarter);
 	const monthsExpanded = Array.isArray(period.months_expanded)
 		? period.months_expanded.map(item => Number(item)).filter(item => Number.isFinite(item) && item >= 1 && item <= 12)
 		: [];
-	const months = monthsExpanded.length > 0
-		? monthsExpanded
-		: Number.isFinite(quarter) && quarter >= 1 && quarter <= 4
-			? getQuarterMonths(quarter)
-			: [];
+	let months: number[] = [];
+	if (monthsExpanded.length > 0)
+		months = monthsExpanded;
+	else if (Number.isFinite(month) && month >= 1 && month <= 12)
+		months = [month];
+	else if (Number.isFinite(quarter) && quarter >= 1 && quarter <= 4)
+		months = getQuarterMonths(quarter);
 
-	if (months.length === 0)
-		return "-";
-
-	const firstMonth = getPeriodMonthLabel(months[0], periodMode);
-	const lastMonth = getPeriodMonthLabel(months[months.length - 1], periodMode);
-	const realYear = getRealMonthsYear(year, months, periodMode);
-	const yearLabel = realYear == null ? "" : `سال ${realYear}: `;
-	return `ماه‌های واقعی: ${yearLabel}از ${firstMonth} تا ${lastMonth}`;
+	return formatRealMonthsLabel(year, months, periodMode);
 }
 
 function getPeriodLabel(period: Record<string, unknown>, periodMode: PredictionSummaryPeriodMode) {
@@ -201,7 +222,7 @@ function getPeriodLabel(period: Record<string, unknown>, periodMode: PredictionS
 	const month = Number(period.month);
 	const quarter = Number(period.quarter);
 	if (Number.isFinite(month) && month > 0)
-		return `${Number.isFinite(year) ? year : "-"} / ${getPeriodMonthLabel(month, periodMode)}`;
+		return `${Number.isFinite(year) ? year : "-"} / ماه ${month}`;
 	if (Number.isFinite(quarter) && quarter > 0)
 		return `${Number.isFinite(year) ? year : "-"} / کوارتر ${quarter}`;
 
@@ -209,7 +230,7 @@ function getPeriodLabel(period: Record<string, unknown>, periodMode: PredictionS
 		? period.months_expanded.map(item => Number(item)).filter(Number.isFinite)
 		: [];
 	if (monthsExpanded.length > 0)
-		return `${Number.isFinite(year) ? year : "-"} / ${monthsExpanded.map(item => getPeriodMonthLabel(item, periodMode)).join("، ")}`;
+		return `${Number.isFinite(year) ? year : "-"} / ماه‌های ${monthsExpanded.join("، ")}`;
 
 	return Number.isFinite(year) ? String(year) : getPeriodModeCalendarLabel(periodMode);
 }
@@ -651,37 +672,6 @@ export function PredictionsSummaryReportPage() {
 		{ title: `سود (${showRial ? "ریال" : "تومان"})`, dataIndex: "profit", width: 160, render: (_: unknown, row: DisplayMetricRow) => formatMetricValue(row, "profit", showRial) },
 	];
 
-	const singleTableTrafficExtraColumns = [
-		{
-			title: "ترافیک ارسالی",
-			dataIndex: "sentTraffic",
-			width: 230,
-			render: (_: unknown, row: DisplayMetricRow) => row.serviceCode === "traffic"
-				? row.isTrafficCollocation
-					? row.trafficResourcesLabel
-					: formatTrafficValues(row, "sent")
-				: "-",
-		},
-		{
-			title: "ترافیک دریافتی",
-			dataIndex: "receivedTraffic",
-			width: 230,
-			render: (_: unknown, row: DisplayMetricRow) => row.serviceCode === "traffic"
-				? formatTrafficValues(row, "received")
-				: "-",
-		},
-	];
-	const singleTableMetricColumns = rows.length > 0 && rows.every(row => row.serviceCode === "traffic")
-		? trafficMetricColumns
-		: [...metricColumns, ...singleTableTrafficExtraColumns];
-	const singleTableColumns = [
-		{ title: "سرویس", dataIndex: "serviceName", width: 180 },
-		{ title: "دوره", dataIndex: "periodLabel", width: 150 },
-		{ title: "ماه‌های واقعی", dataIndex: "periodMonthsLabel", width: 260 },
-		{ title: "تقویم", dataIndex: "calendarLabel", width: 170 },
-		...singleTableMetricColumns,
-	];
-
 	const renderClassicResults = () => {
 		const servicesList = mutation.data?.services ?? [];
 		if (!hasServices)
@@ -799,7 +789,7 @@ export function PredictionsSummaryReportPage() {
 							</div>
 
 							<div>
-								<Typography.Text className="mb-2 block">نوع خروجی</Typography.Text>
+								<Typography.Text className="mb-2 block">نوع خروجی فایل</Typography.Text>
 								<Select
 									value={outputMode}
 									className="w-full"
@@ -899,19 +889,7 @@ export function PredictionsSummaryReportPage() {
 
 				<Card title={`نتایج گزارش (${showRial ? "ریال" : "تومان"})`} loading={mutation.isPending}>
 					{mutation.data
-						? outputMode === "single-table"
-							? (
-								<Table
-									size="small"
-									rowKey="key"
-									columns={singleTableColumns}
-									dataSource={rows}
-									pagination={false}
-									scroll={{ x: 1440 }}
-									locale={{ emptyText: "داده‌ای وجود ندارد." }}
-								/>
-							)
-							: renderClassicResults()
+						? renderClassicResults()
 						: <Empty description="برای مشاهده گزارش، فیلترها را انتخاب و اعمال کنید." />}
 				</Card>
 			</Space>
