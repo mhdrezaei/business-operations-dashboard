@@ -167,6 +167,45 @@ export interface PerformanceReportQuery {
 	page_size?: number
 	total?: boolean
 }
+
+export type PredictionSummaryPeriodMode = "shamsi_months" | "fiscal_months" | "shamsi_quarters" | "fiscal_quarters";
+
+export interface PredictionSummarySelectedPeriod {
+	year: number
+	months?: number[]
+	quarters?: number[]
+}
+
+export interface PredictionSummaryQuery {
+	service_codes: string
+	period_mode: PredictionSummaryPeriodMode
+	periods: string
+	total?: boolean
+	default_conversion_ratio?: number
+}
+
+export interface PredictionSummaryPeriod {
+	calendar_type?: string | null
+	bucket_type?: string | null
+	year?: number | string | null
+	month?: number | string | null
+	quarter?: number | string | null
+	months_expanded?: Array<number | string>
+	performance?: Record<string, unknown> | null
+	predictions?: Record<string, unknown> | null
+	[key: string]: unknown
+}
+
+export interface PredictionSummaryService {
+	service_id?: number | string | null
+	service_code?: string | null
+	period_mode?: PredictionSummaryPeriodMode | string | null
+	periods?: PredictionSummaryPeriod[]
+}
+
+export interface PredictionSummaryResponse {
+	services: PredictionSummaryService[]
+}
 export interface PerformanceContractListItem {
 	id: number
 	company: number | null
@@ -702,4 +741,12 @@ export function fetchPerformanceReport(params: PerformanceReportQuery) {
 			searchParams: compactSearchParams(params as unknown as Record<string, unknown>),
 		})
 		.json<PerformanceReportListResponse>();
+}
+
+export function fetchPredictionPerformanceSummary(params: PredictionSummaryQuery) {
+	return request
+		.get("performances/report/predictions-performance-summary/", {
+			searchParams: compactSearchParams(params as unknown as Record<string, unknown>),
+		})
+		.json<PredictionSummaryResponse>();
 }

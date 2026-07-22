@@ -39,7 +39,8 @@
 		"profile": "Mein Profil",
 		"settings": "Einstellungen",
 		"unregisteredPerformances": "Nicht registrierte Leistungen",
-		"performanceReports": "Leistungsberichte"
+		"performanceReports": "Leistungsberichte",
+		"predictionsSummaryReport": "Performance and Prediction Summary Report"
 	},
 	"appLoading": "Ressourcen werden geladen ...",
 	"back": "ZurÃ¼ck",

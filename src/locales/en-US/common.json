@@ -43,7 +43,8 @@
 		"profile": "My Profile",
 		"settings": "Settings",
 		"unregisteredPerformances": "Unregistered Performances",
-		"performanceReports": "Performance Reports"
+		"performanceReports": "Performance Reports",
+		"predictionsSummaryReport": "Performance and Prediction Summary Report"
 	},
 	"appLoading": "Loading Resources...",
 	"back": "Back",
