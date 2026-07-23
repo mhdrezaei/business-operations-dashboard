@@ -923,7 +923,7 @@ export function PerformanceReportPage() {
 			service_id: selectedServiceId,
 			service_code: selectedServiceCode,
 			[periodsKey]: periods.join(","),
-			company_ids: isSmsService ? undefined : companyIds.length > 0 ? companyIds.join(",") : undefined,
+			company_ids: companyIds.length > 0 ? companyIds.join(",") : undefined,
 			company_type: companyType,
 			is_official: supportsContractType ? isOfficial : undefined,
 			default_conversion_ratio: payloadDefaultConversionRatio,
@@ -932,7 +932,7 @@ export function PerformanceReportPage() {
 			page_size: pageSize,
 			total: includeTotals,
 		};
-	}, [defaultConversionRatio, isSmsService, isTrafficCp, requiresCompanyType, selectedAggregation, selectedCompanyIds, selectedContractType, selectedFinancialColumns, selectedPeriods, selectedServiceId, selectedServiceCode, selectedPeriodType, supportsContractType, t]);
+	}, [defaultConversionRatio, isTrafficCp, requiresCompanyType, selectedAggregation, selectedCompanyIds, selectedContractType, selectedFinancialColumns, selectedPeriods, selectedServiceId, selectedServiceCode, selectedPeriodType, supportsContractType, t]);
 
 	const getOperatorLabel = useCallback((operator: unknown) => {
 		const value = String(operator ?? "").trim().toUpperCase();
@@ -999,6 +999,7 @@ export function PerformanceReportPage() {
 			companyNameTitle: t("performance.columns.companyName"),
 			companyTypeTitle: t("performance.columns.companyType"),
 			yearTitle: reportYearTitle,
+			shYearTitle: t("performance.columns.shYear"),
 			monthTitle: reportMonthTitle,
 			operationTypeTitle: t("performance.columns.operationType"),
 			operatorTitle: t("performance.columns.operator"),
@@ -1265,7 +1266,7 @@ export function PerformanceReportPage() {
 						service_id: selectedServiceId,
 						service_code: selectedServiceCode,
 						[selectedPeriodType === "fiscal" ? "fiscal_periods" : "sh_periods"]: periods.join(","),
-						company_ids: isSmsService ? undefined : companyIds.length > 0 ? companyIds.join(",") : undefined,
+						company_ids: companyIds.length > 0 ? companyIds.join(",") : undefined,
 						company_type: companyType,
 						is_official: supportsContractType ? isOfficial : undefined,
 						default_conversion_ratio: payloadDefaultConversionRatio,
