@@ -1,14 +1,11 @@
-import type { UseFormReturn } from "react-hook-form";
 import type { PerformanceListRow } from "../../list/model/performance.list.types";
 import type { PerformanceFormValues } from "../../shared/model/performance.form.types";
 import type { resolvePerformanceServicePath } from "../../shared/model/performance.helpers";
 import type { PerformanceSubmitIntent } from "../../shared/ui/form/PerformanceForm";
-import { useQuery } from "@tanstack/react-query";
-import { useMemo, useRef, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
 import { fetchPerformanceList } from "../../api/performances.api";
-import { PerformanceDetailModal } from "../../list/ui/components/PerformanceDetailModal";
-import { companiesByServiceQuery } from "../../shared/queries/performance.queries";
 import { PerformanceForm } from "../../shared/ui/form/PerformanceForm";
 import { submitPerformance } from "./performance.submit";
 
@@ -26,13 +23,18 @@ function applySubmitIntent(
 
 	if (intent === "submit_and_create_another") {
 		window.$message?.success(t("performance.messages.createAndAnotherSuccess"));
+		const submitMode = values.serviceFields?.submitMode;
 		form.reset({
-			...values,
+			serviceId: values.serviceId,
+			serviceCode: values.serviceCode,
 			companyId: null,
+			companyType: values.companyType,
 			salesAgentId: null,
+			year: values.year,
+			month: values.month,
 			contractId: null,
 			contractModel: null,
-			serviceFields: {},
+			serviceFields: submitMode == null ? {} : { submitMode },
 		});
 		return;
 	}
@@ -103,51 +105,38 @@ async function loadCreatedPerformanceRecord(
 
 function CreatePerformance() {
 	const { t } = useTranslation();
+	const navigate = useNavigate();
 	const [submitting, setSubmitting] = useState(false);
-	const [editingService, setEditingService] = useState<ReturnType<typeof resolvePerformanceServicePath> | null>(null);
-	const [editingRecord, setEditingRecord] = useState<PerformanceListRow | null>(null);
-	const formRef = useRef<UseFormReturn<PerformanceFormValues> | null>(null);
-	const companies = useQuery(companiesByServiceQuery(editingRecord?.service_id ?? editingRecord?.service ?? null));
-	const editingCompanies = useMemo(() => companies.data?.results, [companies.data]);
-
-	function handleCloseEditModal() {
-		setEditingService(null);
-		setEditingRecord(null);
-	}
-
-	function handleUpdatedEditModal() {
-		formRef.current?.reset();
-	}
 
 	return (
 		<>
 			<PerformanceForm
 				submitting={submitting}
 				onSubmit={async (values, intent, form) => {
-					formRef.current = form;
 					setSubmitting(true);
 					try {
 						const result = await submitPerformance(values);
 						applySubmitIntent(intent, values, form, t);
 
 						if (intent === "submit_and_edit") {
-							setEditingService(result.servicePath);
-							setEditingRecord(await loadCreatedPerformanceRecord(values, result.servicePath, result.record));
+							const record = await loadCreatedPerformanceRecord(values, result.servicePath, result.record);
+							form.reset();
+							navigate("/performances/edit", {
+								state: {
+									directEdit: {
+										service: result.servicePath,
+										serviceCode: values.serviceCode,
+										serviceId: values.serviceId,
+										record,
+									},
+								},
+							});
 						}
 					}
 					finally {
 						setSubmitting(false);
 					}
 				}}
-			/>
-
-			<PerformanceDetailModal
-				open={!!editingService && !!editingRecord}
-				service={editingService}
-				record={editingRecord}
-				companies={editingCompanies}
-				onClose={handleCloseEditModal}
-				onUpdated={handleUpdatedEditModal}
 			/>
 		</>
 	);

@@ -152,12 +152,9 @@ export function FixedStartSection() {
 		setValue("salesAgentId", null, { shouldDirty: true, shouldValidate: false });
 		setValue("serviceFields", preservedServiceFields, { shouldDirty: true, shouldValidate: false });
 
-		// Keep year/month when company is cleared by "submit and create another".
-		if (companyId == null)
-			return;
-
-		setValue("year", null, { shouldDirty: true, shouldValidate: false });
-		setValue("month", null, { shouldDirty: true, shouldValidate: false });
+		// The contract period belongs to the registration session, rather than
+		// the company selector. Keeping it lets the user select another company
+		// and register the same year/month without selecting the period again.
 	}, [companyId, setValue, preservedServiceFields]);
 
 	useEffect(() => {
@@ -493,24 +490,6 @@ export function FixedStartSection() {
 	const shouldShowPeriodSelectors = shouldShowTrafficTemplatePeriodSelectors || (hasCompanySelection && !isPeriodStateLoading && !hasNoContractsForCompany && hasAnyYearMonthOption);
 	const shouldShowMissingPeriodError = !isTrafficTemplateMode && hasCompanySelection && !isPeriodStateLoading && !shouldShowPeriodSelectors;
 	const shouldShowNoMonthlyContractAlert = usesMonthlyStatus	&& year != null	&& month != null && monthlyStatus.isSuccess && !monthlyStatus.data?.has_contract;
-
-	useEffect(() => {
-		if (!shouldShowMissingPeriodError)
-			return;
-
-		if (getValues("year") != null) {
-			setValue("year", null, { shouldDirty: true, shouldValidate: false });
-		}
-		if (getValues("month") != null) {
-			setValue("month", null, { shouldDirty: true, shouldValidate: false });
-		}
-		if (getValues("contractId") != null) {
-			setValue("contractId", null, { shouldDirty: true, shouldValidate: false });
-		}
-		if (getValues("contractModel") != null) {
-			setValue("contractModel", null, { shouldDirty: true, shouldValidate: false });
-		}
-	}, [shouldShowMissingPeriodError, setValue, getValues]);
 
 	return (
 		<Card className="w-full">

@@ -136,7 +136,10 @@ export function PerformanceForm({
 	const form = useForm<PerformanceFormValues>({
 		defaultValues: mergedInitialValues,
 		mode: "all",
-		shouldUnregister: true,
+		// The period selectors are temporarily unmounted when the company is
+		// cleared for "submit and create another". Keep their values so the
+		// selected contract year and month remain available for the next entry.
+		shouldUnregister: false,
 		resolver: dynamicResolver,
 	});
 
@@ -145,6 +148,8 @@ export function PerformanceForm({
 		form.register("contractId");
 		form.register("contractModel");
 		form.register("salesAgentId");
+		form.register("year");
+		form.register("month");
 	}, [form]);
 
 	useEffect(() => {
@@ -232,6 +237,8 @@ export function PerformanceForm({
 				<input type="hidden" {...form.register("contractId")} />
 				<input type="hidden" {...form.register("contractModel")} />
 				<input type="hidden" {...form.register("salesAgentId")} />
+				<input type="hidden" {...form.register("year")} />
+				<input type="hidden" {...form.register("month")} />
 
 				<FixedStartSection />
 
