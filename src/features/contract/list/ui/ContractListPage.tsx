@@ -37,6 +37,7 @@ export default function ContractListPage() {
 	const navigate = useNavigate();
 	const actionRef = useRef<ActionType>(null);
 	const formRef = useRef<ProFormInstance | undefined>(undefined);
+	const openedDeepLinkRef = useRef<string | null>(null);
 
 	const [openDetail, setOpenDetail] = useState(false);
 	const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -161,11 +162,23 @@ export default function ContractListPage() {
 		const resolvedService = resolveServicePathByServiceId(deepLinkedServiceId);
 		if (!resolvedService)
 			return;
+		const deepLinkKey = `${deepLinkedContractId}:${deepLinkedServiceId ?? ""}`;
+		if (openedDeepLinkRef.current === deepLinkKey)
+			return;
 
+		openedDeepLinkRef.current = deepLinkKey;
 		setSelectedId(deepLinkedContractId);
 		setSelectedServicePath(resolvedService);
 		setOpenDetail(true);
 	}, [deepLinkedContractId, deepLinkedServiceId, openDetail, serviceCodeById]);
+
+	const closeContractDetail = () => {
+		setOpenDetail(false);
+		setSelectedId(null);
+		setSelectedServicePath(null);
+		if (deepLinkedContractId)
+			navigate("/contracts/edit", { replace: true });
+	};
 
 	useEffect(() => {
 		if (!isCompanyTypeService || !selectedTrafficCompanyType) {
@@ -430,11 +443,7 @@ export default function ContractListPage() {
 				open={openDetail}
 				contractId={selectedId}
 				service={selectedServicePath}
-				onClose={() => {
-					setOpenDetail(false);
-					setSelectedId(null);
-					setSelectedServicePath(null);
-				}}
+				onClose={closeContractDetail}
 				onUpdated={() => {
 					actionRef.current?.reload?.();
 				}}

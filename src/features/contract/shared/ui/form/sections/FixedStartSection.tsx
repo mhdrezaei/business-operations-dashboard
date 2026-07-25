@@ -81,6 +81,7 @@ function mapMonthsToOptions(months: number[]): YearMonthOption[] {
 
 interface FixedStartSectionProps {
 	mode?: "create" | "edit"
+	preserveDatesDuringResetRef?: React.MutableRefObject<boolean>
 }
 
 interface CollocationChoiceButtonProps {
@@ -262,7 +263,7 @@ function CollocationChoiceButton({
 	);
 }
 
-export function FixedStartSection({ mode = "create" }: FixedStartSectionProps) {
+export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef }: FixedStartSectionProps) {
 	const { setValue, control, trigger, formState, resetField, setFocus } = useFormContext<ContractFormValues>();
 	const { getPermittedCompanyTypes, getPermittedServiceIds } = useAccess();
 	const permissionAction = mode === "edit" ? "update" : "create";
@@ -404,12 +405,14 @@ export function FixedStartSection({ mode = "create" }: FixedStartSectionProps) {
 			return;
 
 		if (prev !== companyId) {
+			if (preserveDatesDuringResetRef?.current)
+				return;
 			setValue("startYear", null, { shouldDirty: true, shouldValidate: false });
 			setValue("startMonth", null, { shouldDirty: true, shouldValidate: false });
 			setValue("endYear", null, { shouldDirty: true, shouldValidate: false });
 			setValue("endMonth", null, { shouldDirty: true, shouldValidate: false });
 		}
-	}, [companyId, setValue]);
+	}, [companyId, setValue, preserveDatesDuringResetRef]);
 
 	useEffect(() => {
 		const prev = prevStartYearRef.current;
@@ -419,9 +422,11 @@ export function FixedStartSection({ mode = "create" }: FixedStartSectionProps) {
 			return;
 
 		if (prev !== startYear) {
+			if (preserveDatesDuringResetRef?.current)
+				return;
 			setValue("startMonth", null, { shouldDirty: true, shouldValidate: false });
 		}
-	}, [startYear, setValue]);
+	}, [startYear, setValue, preserveDatesDuringResetRef]);
 
 	useEffect(() => {
 		const prev = prevEndYearRef.current;
@@ -431,9 +436,11 @@ export function FixedStartSection({ mode = "create" }: FixedStartSectionProps) {
 			return;
 
 		if (prev !== endYear) {
+			if (preserveDatesDuringResetRef?.current)
+				return;
 			setValue("endMonth", null, { shouldDirty: true, shouldValidate: false });
 		}
-	}, [endYear, setValue]);
+	}, [endYear, setValue, preserveDatesDuringResetRef]);
 
 	useEffect(() => {
 		const allDateFieldsAreSelected

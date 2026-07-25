@@ -1,6 +1,6 @@
 import type { ContractServicePath } from "#src/features/contract/api/contracts.api";
 import type { ContractFormValues } from "#src/features/contract/shared/model/contract.form.types";
-import type { ContractSubmitIntent } from "#src/features/contract/shared/ui/form/ContractForm";
+import type { ContractFormActions, ContractSubmitIntent } from "#src/features/contract/shared/ui/form/ContractForm";
 import type { UploadFile } from "antd";
 import type { UseFormReturn } from "react-hook-form";
 import { fetchCompaniesByService } from "#src/api/common/common.api";
@@ -8,6 +8,7 @@ import { createContractDocument } from "#src/features/contract/api/contract-docu
 import { contractTypeToApiPricing } from "#src/features/contract/api/pricing.mapper";
 import { defaultContractFormValues } from "#src/features/contract/shared/ui/form/ContractForm";
 import React, { useState } from "react";
+import { useNavigate } from "react-router";
 import { fetchCreateContract } from "../../api/contracts.api";
 import { ContractForm } from "../../shared/ui/form/ContractForm";
 
@@ -650,6 +651,9 @@ async function formValuesToApiPayload(values: ContractFormValues) {
 function applySubmitIntent(
 	intent: ContractSubmitIntent,
 	form: UseFormReturn<ContractFormValues>,
+	createdContract: { id?: number | null },
+	navigate: ReturnType<typeof useNavigate>,
+	actions: ContractFormActions,
 ) {
 	window.$message?.success("قرارداد با موفقیت ثبت شد");
 
@@ -662,27 +666,51 @@ function applySubmitIntent(
 			const {
 				serviceId,
 				serviceCode,
-				companyId,
 				companyType,
+				startYear,
+				startMonth,
+				endYear,
+				endMonth,
+				serviceFields,
 			} = form.getValues();
+			const legacyPricing = (serviceFields as Record<string, unknown> | null)?.legacyPricing;
 
-			form.reset({
+			actions.resetForCreateAnother({
 				...defaultContractFormValues,
 				serviceId,
 				serviceCode,
-				companyId,
 				companyType,
+				startYear,
+				startMonth,
+				endYear,
+				endMonth,
+				serviceFields: legacyPricing == null
+					? {}
+					: {
+						contractModel: "legacy",
+						packageMode: null,
+						plans: [],
+						addenda: [],
+						legacyPricing: structuredClone(legacyPricing),
+					},
 			});
 			break;
 		}
 
-		case "submit_and_edit":
+		case "submit_and_edit": {
+			const serviceId = form.getValues("serviceId");
+			form.reset(defaultContractFormValues);
+			if (createdContract.id != null) {
+				navigate(`/contracts/edit?contract_id=${createdContract.id}&service_id=${serviceId ?? ""}`);
+			}
 			break;
+		}
 	}
 }
 
 function CreateContract() {
 	const [submitting, setSubmitting] = useState(false);
+	const navigate = useNavigate();
 
 	return (
 		<>
@@ -690,14 +718,14 @@ function CreateContract() {
 				submitText="ثبت قرارداد"
 				showExtendedActions
 				submitting={submitting}
-				onSubmit={async (values, intent, form) => {
+				onSubmit={async (values, intent, form, actions) => {
 					setSubmitting(true);
 					try {
 						const service = resolveCreateServicePath(values);
 						const created = await fetchCreateContract(service, await formValuesToApiPayload(values));
 						if (created?.id != null)
 							await uploadStagedDocuments(created.id, values.documents);
-						applySubmitIntent(intent, form);
+						applySubmitIntent(intent, form, created, navigate, actions);
 					}
 					finally {
 						setSubmitting(false);
