@@ -2,6 +2,7 @@ import type { ServiceDto } from "#src/api/common/common.types";
 import type { AdminRoleDto } from "#src/features/audit/admin-roles/model/admin-roles.types";
 import type { AdminUserDto } from "#src/features/audit/admin-users/model/admin-users.types";
 import type { ActionType, ProColumns, ProCoreActionType, ProFormInstance } from "@ant-design/pro-components";
+import type { NotificationManualJob } from "../api/notification-rules.api";
 import type { NotificationRuleDto } from "../model/notification-rules.types";
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import { useAccess } from "#src/hooks";
@@ -59,8 +60,8 @@ export default function AdminNotificationRulesPage() {
 
 	const runJobMutation = useMutation({
 		mutationFn: fetchRunNotificationJob,
-		onSuccess: async () => {
-			window.$message?.success("Job اجرا شد.");
+		onSuccess: async (response) => {
+			window.$message?.success(`Job در صف قرار گرفت. status: ${response.status} | task_id: ${response.task_id}`);
 			await latestRunQuery.refetch();
 		},
 		onError: () => {
@@ -82,7 +83,7 @@ export default function AdminNotificationRulesPage() {
 	);
 
 	const baseColumns = useMemo(
-		() => getNotificationRulesColumns({ t, userNameById, roleNameById }),
+		() => getNotificationRulesColumns({ userNameById, roleNameById }),
 		[t, userNameById, roleNameById],
 	);
 
@@ -159,6 +160,14 @@ export default function AdminNotificationRulesPage() {
 
 	const latestRun = latestRunQuery.data;
 	const runMeta = latestRun?.meta ?? {};
+	const manualJobs: Array<{ key: NotificationManualJob, label: string }> = [
+		{ key: "IN_APP", label: "Run Contract Expiry IN_APP Now" },
+		{ key: "SMS", label: "Run Contract Expiry SMS Now" },
+		{ key: "MISSING_PREV_MONTH_IN_APP", label: "Run Missing Prev Month IN_APP Now" },
+		{ key: "MISSING_PREV_MONTH_SMS", label: "Run Missing Prev Month SMS Now" },
+		{ key: "BUSINESS_APPROVAL_PENDING", label: "Run Business Approval Pending Now" },
+		{ key: "SIGN_PENDING", label: "Run Sign Pending Now" },
+	];
 
 	return (
 		<BasicContent className="h-full !overflow-y-auto">
@@ -209,27 +218,22 @@ export default function AdminNotificationRulesPage() {
 				/>
 
 				<section className="rounded-lg border border-[var(--ant-color-border-secondary)] bg-[var(--ant-color-bg-container)] p-4">
-					<div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+					<div className="mb-4 flex flex-wrap items-center gap-3">
 						<Typography.Title level={4} className="!mb-0">
 							اجرای دستی Job
 						</Typography.Title>
-						<Space wrap>
-							<Button
-								type="primary"
-								icon={<PlayCircleOutlined />}
-								loading={runJobMutation.isPending && runJobMutation.variables === "SMS"}
-								onClick={() => runJobMutation.mutate("SMS")}
-							>
-								Run Contract Expiry SMS Now
-							</Button>
-							<Button
-								type="primary"
-								icon={<PlayCircleOutlined />}
-								loading={runJobMutation.isPending && runJobMutation.variables === "IN_APP"}
-								onClick={() => runJobMutation.mutate("IN_APP")}
-							>
-								Run Contract Expiry IN_APP Now
-							</Button>
+						<Space wrap className="mr-auto">
+							{manualJobs.map(job => (
+								<Button
+									key={job.key}
+									type="primary"
+									icon={<PlayCircleOutlined />}
+									loading={runJobMutation.isPending && runJobMutation.variables === job.key}
+									onClick={() => runJobMutation.mutate(job.key)}
+								>
+									{job.label}
+								</Button>
+							))}
 							<Button
 								icon={<ReloadOutlined />}
 								loading={latestRunQuery.isFetching}

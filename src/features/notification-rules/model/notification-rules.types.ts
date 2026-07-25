@@ -26,6 +26,9 @@ export interface NotificationRuleDto {
 	created_at: string
 	updated_at: string
 	service_names: string[]
+	is_global?: boolean
+	is_deleted?: boolean
+	traffic_company_type?: string | null
 }
 
 export interface NotificationRulesListQuery {

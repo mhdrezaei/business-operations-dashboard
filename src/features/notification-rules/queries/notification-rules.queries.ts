@@ -33,5 +33,9 @@ export function latestNotificationRunQuery() {
 		queryKey: ["notifications", "runs", "latest"],
 		queryFn: fetchLatestNotificationRun,
 		staleTime: 30 * 1000,
+		refetchInterval: (query) => {
+			const status = query.state.data?.status;
+			return status === "RUNNING" || status === "QUEUED" ? 5000 : false;
+		},
 	});
 }
