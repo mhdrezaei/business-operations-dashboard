@@ -38,6 +38,7 @@ export default function ContractListPage() {
 	const actionRef = useRef<ActionType>(null);
 	const formRef = useRef<ProFormInstance | undefined>(undefined);
 	const openedDeepLinkRef = useRef<string | null>(null);
+	const dismissedDeepLinkRef = useRef<string | null>(null);
 
 	const [openDetail, setOpenDetail] = useState(false);
 	const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -163,6 +164,8 @@ export default function ContractListPage() {
 		if (!resolvedService)
 			return;
 		const deepLinkKey = `${deepLinkedContractId}:${deepLinkedServiceId ?? ""}`;
+		if (dismissedDeepLinkRef.current === deepLinkKey)
+			return;
 		if (openedDeepLinkRef.current === deepLinkKey)
 			return;
 
@@ -173,6 +176,9 @@ export default function ContractListPage() {
 	}, [deepLinkedContractId, deepLinkedServiceId, openDetail, serviceCodeById]);
 
 	const closeContractDetail = () => {
+		if (deepLinkedContractId) {
+			dismissedDeepLinkRef.current = `${deepLinkedContractId}:${deepLinkedServiceId ?? ""}`;
+		}
 		setOpenDetail(false);
 		setSelectedId(null);
 		setSelectedServicePath(null);
