@@ -645,6 +645,26 @@ function getReportServiceName(row: PerformanceReportListItem, fallback?: string 
 	return fallback || "-";
 }
 
+function appendReportYearExportColumns(
+	columns: ReportExportColumn[],
+	args: {
+		periodType: PeriodType
+		yearTitle: string
+		shYearTitle: string
+	},
+) {
+	if (args.periodType === "fiscal") {
+		columns.push({
+			title: args.shYearTitle,
+			getValue: row => String(row.sh_year ?? "-"),
+		});
+	}
+	columns.push({
+		title: args.yearTitle,
+		getValue: row => String(getReportYearValue(row, args.periodType)),
+	});
+}
+
 function buildLayoutExportColumns(args: {
 	layout: Exclude<ReportServiceLayout, "default">
 	idTitle: string
@@ -653,6 +673,7 @@ function buildLayoutExportColumns(args: {
 	companyNameTitle: string
 	companyTypeTitle: string
 	yearTitle: string
+	shYearTitle: string
 	monthTitle: string
 	operationTypeTitle: string
 	operatorTitle: string
@@ -726,9 +747,10 @@ function buildLayoutExportColumns(args: {
 				getValue: row => String(row.company_name ?? "-"),
 			});
 		}
-		columns.push({
-			title: args.yearTitle,
-			getValue: row => String(getReportYearValue(row, periodType)),
+		appendReportYearExportColumns(columns, {
+			periodType,
+			yearTitle: args.yearTitle,
+			shYearTitle: args.shYearTitle,
 		});
 		if (!args.hideMonthColumn) {
 			columns.push({
@@ -777,9 +799,10 @@ function buildLayoutExportColumns(args: {
 			title: args.companyTypeTitle,
 			getValue: row => args.companyTypeLabelByValue(row.company_type),
 		});
-		columns.push({
-			title: args.yearTitle,
-			getValue: row => String(getReportYearValue(row, periodType)),
+		appendReportYearExportColumns(columns, {
+			periodType,
+			yearTitle: args.yearTitle,
+			shYearTitle: args.shYearTitle,
 		});
 		if (!args.hideMonthColumn) {
 			columns.push({
@@ -953,9 +976,10 @@ function buildLayoutExportColumns(args: {
 			title: args.companyTypeTitle,
 			getValue: row => args.companyTypeLabelByValue(row.company_type),
 		});
-		columns.push({
-			title: args.yearTitle,
-			getValue: row => String(getReportYearValue(row, periodType)),
+		appendReportYearExportColumns(columns, {
+			periodType,
+			yearTitle: args.yearTitle,
+			shYearTitle: args.shYearTitle,
 		});
 		columns.push({
 			title: args.countTitle,
@@ -989,9 +1013,10 @@ function buildLayoutExportColumns(args: {
 		});
 	}
 
-	columns.push({
-		title: args.yearTitle,
-		getValue: row => String(getReportYearValue(row, periodType)),
+	appendReportYearExportColumns(columns, {
+		periodType,
+		yearTitle: args.yearTitle,
+		shYearTitle: args.shYearTitle,
 	});
 
 	if (!args.hideMonthColumn) {
@@ -1166,6 +1191,7 @@ export function createPerformanceReportExportColumns(args: {
 	companyNameTitle: string
 	companyTypeTitle: string
 	yearTitle: string
+	shYearTitle: string
 	monthTitle: string
 	operationTypeTitle: string
 	operatorTitle: string
@@ -1240,6 +1266,7 @@ export function createPerformanceReportExportColumns(args: {
 				companyNameTitle: args.companyNameTitle,
 				companyTypeTitle: args.companyTypeTitle,
 				yearTitle: args.yearTitle,
+				shYearTitle: args.shYearTitle,
 				monthTitle: args.monthTitle,
 				operationTypeTitle: args.operationTypeTitle,
 				operatorTitle: args.operatorTitle,
@@ -1311,9 +1338,10 @@ export function createPerformanceReportExportColumns(args: {
 		});
 	}
 
-	baseColumns.push({
-		title: args.yearTitle,
-		getValue: row => String(getReportYearValue(row, periodType)),
+	appendReportYearExportColumns(baseColumns, {
+		periodType,
+		yearTitle: args.yearTitle,
+		shYearTitle: args.shYearTitle,
 	});
 
 	if (!args.hideMonthColumn) {

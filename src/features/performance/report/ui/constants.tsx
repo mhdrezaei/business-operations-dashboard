@@ -521,6 +521,33 @@ function createReportYearColumn(
 	};
 }
 
+function createReportShYearColumn(t: TFunction<"translation", undefined>): ProColumns<PerformanceReportRow> {
+	return {
+		title: t("performance.columns.shYear"),
+		dataIndex: "sh_year",
+		search: false,
+		width: 100,
+		render: (_, row) => row.sh_year ?? "-",
+	};
+}
+
+function appendFiscalShYearColumn(
+	tableColumns: ProColumns<PerformanceReportRow>[],
+	ctx: ReportTableColumnContext,
+) {
+	if (ctx.periodType === "fiscal")
+		tableColumns.push(createReportShYearColumn(ctx.t));
+}
+
+function appendFiscalYearColumns(
+	tableColumns: ProColumns<PerformanceReportRow>[],
+	ctx: ReportTableColumnContext,
+	title?: string,
+) {
+	appendFiscalShYearColumn(tableColumns, ctx);
+	tableColumns.push(createReportYearColumn(ctx.t, title, ctx.periodType));
+}
+
 function createReportMonthColumn(
 	t: TFunction<"translation", undefined>,
 	periodType: PeriodType = "sh",
@@ -851,7 +878,7 @@ function appendSharedDimensionColumns(
 	if (!ctx.aggregateByCompany)
 		tableColumns.push(createReportCompanyNameColumn(ctx.t));
 
-	tableColumns.push(createReportYearColumn(ctx.t, undefined, ctx.periodType));
+	appendFiscalYearColumns(tableColumns, ctx);
 
 	if (!ctx.aggregateByMonth)
 		tableColumns.push(createReportMonthColumn(ctx.t, ctx.periodType));
@@ -1020,7 +1047,7 @@ function buildShahkarReportTableColumns(
 	if (!ctx.aggregateByCompany)
 		tableColumns.push(createReportCompanyNameColumn(ctx.t));
 
-	tableColumns.push(createReportYearColumn(ctx.t, undefined, ctx.periodType));
+	appendFiscalYearColumns(tableColumns, ctx);
 
 	if (!ctx.aggregateByMonth)
 		tableColumns.push(createReportMonthColumn(ctx.t, ctx.periodType));
@@ -1060,8 +1087,8 @@ function buildTrafficReportTableColumns(
 
 	tableColumns.push(
 		createReportCompanyTypeColumn(ctx.t, ctx.companyTypeLabelByKey),
-		createReportYearColumn(ctx.t, yearTitle, ctx.periodType),
 	);
+	appendFiscalYearColumns(tableColumns, ctx, yearTitle);
 
 	if (!ctx.aggregateByMonth)
 		tableColumns.push(createReportMonthColumn(ctx.t, ctx.periodType, monthTitle));
@@ -1124,9 +1151,9 @@ function buildPspReportTableColumns(
 		createReportIndexColumn(ctx.t),
 		createReportIdColumn(ctx.t),
 		createReportCompanyTypeColumn(ctx.t, ctx.companyTypeLabelByKey),
-		createReportYearColumn(ctx.t, undefined, ctx.periodType),
-		createReportCountColumn(ctx.t),
 	];
+	appendFiscalYearColumns(tableColumns, ctx);
+	tableColumns.push(createReportCountColumn(ctx.t));
 
 	if (financialColumns.has("income"))
 		tableColumns.push(createReportIncomeColumn(ctx.t, ctx.showRial));
@@ -1150,7 +1177,7 @@ function buildDefaultReportTableColumns(
 	if (!ctx.aggregateByCompany)
 		tableColumns.push(createReportCompanyNameColumn(ctx.t));
 
-	tableColumns.push(createReportYearColumn(ctx.t, undefined, ctx.periodType));
+	appendFiscalYearColumns(tableColumns, ctx);
 
 	if (!ctx.aggregateByMonth)
 		tableColumns.push(createReportMonthColumn(ctx.t, ctx.periodType));
@@ -1314,7 +1341,6 @@ export function getPerformanceReportColumns({
 	selectedPeriodType,
 	selectedCompanyType,
 	isSmsService,
-	isSmsCommissionService,
 	isTrafficService,
 	supportsOperatorLanguageAggregation,
 	requiresCompanyType,
@@ -1523,7 +1549,6 @@ export function getPerformanceReportColumns({
 			title: t("performance.columns.company"),
 			dataIndex: "company_ids",
 			hideInTable: true,
-			hideInSearch: isSmsService || isSmsCommissionService,
 			valueType: "select",
 			valueEnum: createValueEnum(companyOptions),
 			fieldProps: {

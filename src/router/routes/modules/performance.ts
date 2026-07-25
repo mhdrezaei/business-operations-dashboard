@@ -9,6 +9,7 @@ import { createElement, lazy } from "react";
 const CreatePerformancePage = lazy(() => import("#src/pages/performances/"));
 const EditPerformancePage = lazy(() => import("#src/pages/performances/edit"));
 const PerformanceReportPage = lazy(() => import("#src/pages/performances/report"));
+const PredictionsSummaryReportPage = lazy(() => import("#src/pages/performances/predictions-summary-report"));
 
 const routes: AppRouteRecordRaw[] = [
 	{
@@ -58,6 +59,16 @@ const routes: AppRouteRecordRaw[] = [
 				handle: {
 					icon: "FileTextOutlined",
 					title: $t("common.menu.performanceReports"),
+					accessDomain: "performances",
+					accessAction: "view",
+				},
+			},
+			{
+				path: "/performances/report/predictions-summary",
+				Component: PredictionsSummaryReportPage,
+				handle: {
+					icon: "FileTextOutlined",
+					title: $t("common.menu.predictionsSummaryReport"),
 					accessDomain: "performances",
 					accessAction: "view",
 				},
