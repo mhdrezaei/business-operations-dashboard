@@ -7,7 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button, Popconfirm } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { deletePrediction } from "../../api/predictions.api";
 import { buildFiscalYearOptions } from "../../shared/model/prediction.helpers";
 import { predictionServicesQuery } from "../../shared/queries/prediction.queries";
@@ -37,6 +37,7 @@ function formatDateTime(value: string | null) {
 export default function PredictionListPage() {
 	const { t } = useTranslation();
 	const navigate = useNavigate();
+	const location = useLocation();
 	const { getPermittedCompanyTypes, getPermittedServiceIds, hasDomainPermissionByServiceId } = useAccess();
 
 	const actionRef = useRef<ActionType>(null);
@@ -46,6 +47,16 @@ export default function PredictionListPage() {
 	const [selectedServiceCode, setSelectedServiceCode] = useState<PredictionListRow["serviceCode"] | null>(null);
 	const [selectedRow, setSelectedRow] = useState<PredictionListRow | null>(null);
 	const [modalOpen, setModalOpen] = useState(false);
+
+	useEffect(() => {
+		const directEdit = (location.state as { directEdit?: PredictionListRow } | null)?.directEdit;
+		if (!directEdit)
+			return;
+
+		setSelectedRow(directEdit);
+		setModalOpen(true);
+		navigate(location.pathname, { replace: true, state: null });
+	}, [location.pathname, location.state, navigate]);
 
 	const permittedViewServiceIdsList = getPermittedServiceIds("predictions", "view");
 	const permittedCreateServiceIdsList = getPermittedServiceIds("predictions", "create");
