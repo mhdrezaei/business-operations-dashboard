@@ -8,6 +8,7 @@ import { lazy } from "react";
 
 const CreateContractPage = lazy(() => import("#src/pages/contracts/"));
 const EditContractPage = lazy(() => import("#src/pages/contracts/edit"));
+const ContractTemplate = lazy(() => import("#src/pages/contracts/contract-template"));
 
 const routes: AppRouteRecordRaw[] = [
 	{
@@ -44,6 +45,23 @@ const routes: AppRouteRecordRaw[] = [
 				handle: {
 					icon: "FileTextOutlined",
 					title: $t("common.menu.editContract"),
+					accessDomain: "contracts",
+					accessAction: "view",
+					// roles: ["admin"],
+					// permissions: [
+					// 	accessControlCodes.get,
+					// 	accessControlCodes.add,
+					// 	accessControlCodes.update,
+					// 	accessControlCodes.update,
+					// ],
+				},
+			},
+			{
+				path: "/contracts/template",
+				Component: ContractTemplate,
+				handle: {
+					icon: "FileTextOutlined",
+					title: $t("common.menu.contractTemplate"),
 					accessDomain: "contracts",
 					accessAction: "view",
 					// roles: ["admin"],
