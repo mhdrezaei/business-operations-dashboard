@@ -4,19 +4,24 @@ import type { TemplateListItemType } from "../model/templates.list.types";
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import { DeleteOutlined, EditOutlined, PlusCircleOutlined } from "@ant-design/icons";
 import { Button, Popconfirm } from "antd";
-import React, { useMemo, useRef } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 
 import { fetchDeleteTemplate, fetchTemplatesList } from "../api/templates.api";
+import TemplateCreateModal from "../create/TemplateCreateModal"; // اضافه شدن ایمپورت
 import { getTemplateColumns } from "./constants";
 
 export default function TemplateListPage() {
 	const { t } = useTranslation();
 	const navigate = useNavigate();
 	const actionRef = useRef<ActionType>(null);
-
-	// تابع هندل کردن حذف تمپلیت
+	const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+	const [clickPosition, setClickPosition] = useState({ x: 0, y: 0 });
+	const handleOpenCreateModal = (e: React.MouseEvent) => {
+		setClickPosition({ x: e.clientX, y: e.clientY });
+		setIsCreateModalOpen(true);
+	};
 	const handleDeleteRow = async (row: TemplateListItemType) => {
 		try {
 			await fetchDeleteTemplate(row.id);
@@ -104,11 +109,17 @@ export default function TemplateListPage() {
 						key="addNewTemplate"
 						icon={<PlusCircleOutlined />}
 						type="primary"
-						onClick={() => navigate("/contracts/templates/new")}
+						onClick={handleOpenCreateModal}
 					>
 						قالب جدید
 					</Button>,
 				]}
+			/>
+			{/* مودال تمام صفحه ایجاد قالب */}
+			<TemplateCreateModal
+				isOpen={isCreateModalOpen}
+				onClose={() => setIsCreateModalOpen(false)}
+				originPosition={clickPosition}
 			/>
 		</BasicContent>
 	);

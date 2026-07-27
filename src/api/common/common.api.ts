@@ -1,3 +1,4 @@
+// src/api/common/common.api.ts
 import type { Paginated } from "#src/api/types";
 import type { CompanyDto, ServiceDto } from "./common.types";
 import { request } from "#src/utils/request";
