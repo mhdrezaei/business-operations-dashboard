@@ -1,8 +1,9 @@
+import TemplateListPage from "#src/features/contract-templates/list/TemplateListPage.js";
 import React from "react";
 
 function ContractTemplatePAge() {
 	return (
-		<div>ContractTemplatePAge</div>
+		<div><TemplateListPage /></div>
 	);
 }
 
