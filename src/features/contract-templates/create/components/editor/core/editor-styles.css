@@ -1,0 +1,62 @@
+.ProseMirror {
+    outline: none;
+    direction: rtl;
+    min-height: 100%;
+}
+
+/* استایل برگه A4 */
+.prose-editor-canvas {
+    background-color: #ffffff;
+    width: 21cm;
+    min-height: 29.7cm; /* طول استاندارد A4 */
+    margin: 2rem auto;
+    padding: 2.5cm 2cm;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e2e8f0;
+}
+
+/* تیترها و پاراگراف‌ها */
+.ProseMirror p { margin-top: 0.5em; margin-bottom: 0.5em; line-height: 1.8; }
+.ProseMirror h1 { font-size: 2em; font-weight: bold; margin-bottom: 0.5em; }
+.ProseMirror h2 { font-size: 1.5em; font-weight: bold; margin-bottom: 0.5em; }
+.ProseMirror h3 { font-size: 1.17em; font-weight: bold; margin-bottom: 0.5em; }
+
+/* تنظیمات دقیق جدول Tiptap */
+.ProseMirror table {
+    border-collapse: collapse;
+    table-layout: fixed;
+    width: 100%;
+    margin: 1rem 0;
+    overflow: hidden;
+}
+.ProseMirror table td, .ProseMirror table th {
+    min-width: 1em;
+    border: 1px solid #cbd5e1;
+    padding: 8px;
+    vertical-align: top;
+    box-sizing: border-box;
+    position: relative;
+}
+.ProseMirror table th {
+    font-weight: bold;
+    text-align: right;
+    background-color: #f8fafc;
+}
+.ProseMirror .selectedCell:after {
+    z-index: 2;
+    position: absolute;
+    content: "";
+    left: 0; right: 0; top: 0; bottom: 0;
+    background: rgba(99, 102, 241, 0.2); /* رنگ انتخاب سلول */
+    pointer-events: none;
+}
+.ProseMirror .column-resize-handle {
+    position: absolute;
+    right: -2px;
+    top: 0;
+    bottom: -2px;
+    width: 4px;
+    background-color: #6366f1; /* رنگ هندل تغییر سایز */
+    pointer-events: none;
+    z-index: 20;
+}

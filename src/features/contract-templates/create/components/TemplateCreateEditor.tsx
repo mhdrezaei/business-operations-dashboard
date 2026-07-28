@@ -1,33 +1,28 @@
-import { theme } from "antd";
-import { useFontsListQuery } from "../../queries/template-create.queries";
+// src/features/contract-templates/create/components/TemplateCreateEditor.tsx
+import React, { useState } from "react";
+import ProEditor from "./editor/ProEditor";
 
 export default function TemplateCreateEditor() {
-	const { token } = theme.useToken();
+	// ۱. استیت تنظیمات هدر (لوگو، متن اضافه و ...)
+	// const [headerData, setHeaderData] = useState({});
 
-	// لود کردن فونت‌ها در پس‌زمینه به محض باز شدن ادیتور
-	const { data: fontsData, isLoading: isLoadingFonts } = useFontsListQuery();
+	// ۲. استیت محتوای ویرایشگر (HTML خروجی قرارداد)
+	const [editorContent, setEditorContent] = useState("");
 
 	return (
-		<div
-			className="flex-1 flex flex-col rounded-xl border overflow-hidden"
-			style={{ backgroundColor: token.colorBgContainer, borderColor: token.colorBorderSecondary }}
-		>
-			<div
-				className="h-12 border-b flex items-center px-4 gap-2"
-				style={{ borderColor: token.colorBorderSecondary }}
-			>
-				<div style={{ color: token.colorTextDescription }} className="text-sm">
-					{isLoadingFonts ? "در حال دریافت فونت‌ها..." : `${fontsData?.results?.length || 0} فونت آماده است`}
-				</div>
+		<div className="flex-1 flex flex-col gap-4 overflow-hidden h-full">
+			{/* بخش تنظیمات هدر */}
+			<div className="flex-shrink-0">
+				{/* <HeaderEditor header={headerData} onChange={setHeaderData} /> */}
 			</div>
 
-			<div
-				className="flex-1 p-6 overflow-y-auto flex justify-center"
-				style={{ backgroundColor: token.colorBgLayout }}
-			>
-				<div className="w-full max-w-4xl h-[1056px] shadow-lg rounded bg-white">
-					{/* محتوای ادیتور */}
-				</div>
+			{/* بخش ادیتور پیشرفته Tiptap (کاملاً کپسوله و تمیز) */}
+			<div className="flex-1 h-full min-h-[800px] overflow-hidden flex flex-col">
+				<ProEditor
+					value={editorContent}
+					onChange={setEditorContent}
+					// placeholder="متن قرارداد خود را اینجا بنویسید..."
+				/>
 			</div>
 		</div>
 	);
