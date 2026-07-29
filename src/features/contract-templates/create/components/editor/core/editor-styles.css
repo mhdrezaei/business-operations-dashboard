@@ -7,6 +7,7 @@
 /* استایل برگه A4 */
 .prose-editor-canvas {
     background-color: #ffffff;
+    color: #111;
     width: 21cm;
     min-height: 29.7cm; /* طول استاندارد A4 */
     margin: 2rem auto;

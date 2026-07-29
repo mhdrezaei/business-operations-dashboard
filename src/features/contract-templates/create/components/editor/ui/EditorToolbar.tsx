@@ -24,7 +24,6 @@ import {
 } from "@ant-design/icons";
 import { useEditorState } from "@tiptap/react";
 import { Button, ColorPicker, Divider, Select, Space, theme, Tooltip } from "antd";
-// src/features/contract-templates/create/components/editor/ui/EditorToolbar.tsx
 import React, { useMemo } from "react";
 
 const FONT_SIZES = [
@@ -91,20 +90,19 @@ function ToolbarBtn({ onClick, active = false, title, disabled = false, icon }: 
 				size="small"
 				icon={icon}
 				onMouseDown={(e) => {
-					// نگه داشتن فوکوس ادیتور هنگام کلیک
 					e.preventDefault();
 					e.stopPropagation();
 				}}
 				onClick={onClick}
 				disabled={disabled}
 				className="flex items-center justify-center min-w-[28px]"
-				style={active ? { backgroundColor: token.colorPrimaryBg } : { border: "none", boxShadow: "none" }}
+				// 🔴 اصلاح شده: تطبیق کامل رنگ متن و پس‌زمینه با توکن‌های سیستم (دارک/لایت)
+				style={active ? { backgroundColor: token.colorPrimaryBg, color: token.colorPrimary } : { border: "none", boxShadow: "none", color: token.colorText }}
 			/>
 		</Tooltip>
 	);
 }
 
-// eslint-disable-next-line react/no-unstable-default-props
 export default function EditorToolbar({ editor, customFonts = [] }: { editor: Editor | null, customFonts?: any[] }) {
 	const { token } = theme.useToken();
 
@@ -132,7 +130,7 @@ export default function EditorToolbar({ editor, customFonts = [] }: { editor: Ed
 				fontFamily: e.getAttributes("textStyle").fontFamily || "default",
 				fontSize: e.getAttributes("textStyle").fontSize || "default",
 				color: e.getAttributes("textStyle").color || token.colorText,
-				bgColor: e.getAttributes("highlight").color || "#ffffff",
+				bgColor: e.getAttributes("highlight").color || "transparent",
 				heading1: e.isActive("heading", { level: 1 }),
 				heading2: e.isActive("heading", { level: 2 }),
 				heading3: e.isActive("heading", { level: 3 }),
@@ -145,12 +143,10 @@ export default function EditorToolbar({ editor, customFonts = [] }: { editor: Ed
 	if (!editor || !state)
 		return null;
 
-	// تابع اصلی برای اجرای دستورات بدون از دست دادن فوکوس
 	const chain = () => editor.chain().focus();
 
 	const headingValue = state.heading1 ? "1" : state.heading2 ? "2" : state.heading3 ? "3" : "p";
 
-	// ساخت لیست فونت‌ها با مقادیر امن
 	// eslint-disable-next-line react-hooks/rules-of-hooks
 	const fontFamilyOptions = useMemo(() => [
 		{ value: "default", label: "فونت پیش‌فرض" },
@@ -163,21 +159,23 @@ export default function EditorToolbar({ editor, customFonts = [] }: { editor: Ed
 		})),
 	], [customFonts]);
 
-	// رفع مشکل پریدن فوکوس با مقید کردن پاپ‌آپ‌ها به عنصر پدر
 	const getPopupContainer = (trigger: HTMLElement) => trigger.parentNode as HTMLElement;
 
-	return (
-		<div className="flex flex-wrap items-center gap-2 p-2 px-3 border-b bg-slate-50/50" style={{ borderColor: token.colorBorderSecondary }}>
+	// 🔴 استایل مرکزی برای گروه‌های ابزار جهت هماهنگی خودکار با دارک مود
+	const groupStyle = { backgroundColor: token.colorBgContainer, borderColor: token.colorBorder };
 
-			<Space.Compact className="bg-white rounded-md border" style={{ borderColor: token.colorBorder }}>
+	return (
+	// 🔴 حذف bg-slate-50 و استفاده از رنگ اصولی layout برای نوار ابزار اصلی
+		<div className="flex flex-wrap items-center gap-2 p-2 px-3 border-b" style={{ backgroundColor: token.colorBgLayout, borderColor: token.colorBorderSecondary }}>
+
+			<Space.Compact className="rounded-md border" style={groupStyle}>
 				<ToolbarBtn icon={<UndoOutlined />} onClick={() => chain().undo().run()} disabled={!state.canUndo} title="واگرد (Ctrl+Z)" />
 				<ToolbarBtn icon={<RedoOutlined />} onClick={() => chain().redo().run()} disabled={!state.canRedo} title="ازنو (Ctrl+Y)" />
 				<ToolbarBtn icon={<ClearOutlined />} onClick={() => chain().unsetAllMarks().run()} title="پاک کردن تمام استایل‌ها" />
 			</Space.Compact>
 
-			<Divider type="vertical" className="m-0 h-6" />
+			<Divider type="vertical" className="m-0 h-6" style={{ borderColor: token.colorBorder }} />
 
-			{/* بخش فونت و سایز */}
 			<Space.Compact>
 				<Select
 					size="small"
@@ -205,18 +203,16 @@ export default function EditorToolbar({ editor, customFonts = [] }: { editor: Ed
 				/>
 			</Space.Compact>
 
-			<Divider type="vertical" className="m-0 h-6" />
+			<Divider type="vertical" className="m-0 h-6" style={{ borderColor: token.colorBorder }} />
 
-			{/* بخش استایل‌های متنی */}
-			<Space.Compact className="bg-white rounded-md border" style={{ borderColor: token.colorBorder }}>
+			<Space.Compact className="rounded-md border" style={groupStyle}>
 				<ToolbarBtn icon={<BoldOutlined />} onClick={() => chain().toggleBold().run()} active={state.bold} title="ضخیم (Ctrl+B)" />
 				<ToolbarBtn icon={<ItalicOutlined />} onClick={() => chain().toggleItalic().run()} active={state.italic} title="مورب (Ctrl+I)" />
 				<ToolbarBtn icon={<UnderlineOutlined />} onClick={() => chain().toggleUnderline().run()} active={state.underline} title="زیرخط (Ctrl+U)" />
 				<ToolbarBtn icon={<StrikethroughOutlined />} onClick={() => chain().toggleStrike().run()} active={state.strike} title="خط‌خوردگی" />
 			</Space.Compact>
 
-			{/* بخش انتخاب رنگ */}
-			<Space.Compact className="bg-white rounded-md border px-1 flex items-center" style={{ borderColor: token.colorBorder }}>
+			<Space.Compact className="rounded-md border px-1 flex items-center" style={groupStyle}>
 				<Tooltip title="رنگ متن" mouseEnterDelay={0.4}>
 					<ColorPicker
 						size="small"
@@ -224,7 +220,8 @@ export default function EditorToolbar({ editor, customFonts = [] }: { editor: Ed
 						getPopupContainer={getPopupContainer}
 						onChange={color => chain().setColor(color.toHexString()).run()}
 					>
-						<div className="flex items-center justify-center p-1.5 cursor-pointer hover:bg-slate-100 rounded">
+						{/* 🔴 حذف hover هاردکد شده و استفاده از token.colorText برای نمایان بودن آیکون در دارک مود */}
+						<div className="flex items-center justify-center p-1.5 cursor-pointer rounded" style={{ color: token.colorText }}>
 							<FormatPainterOutlined style={{ color: state.color === token.colorText ? undefined : state.color }} />
 						</div>
 					</ColorPicker>
@@ -236,17 +233,17 @@ export default function EditorToolbar({ editor, customFonts = [] }: { editor: Ed
 						getPopupContainer={getPopupContainer}
 						onChange={color => chain().toggleHighlight({ color: color.toHexString() }).run()}
 					>
-						<div className="flex items-center justify-center p-1.5 cursor-pointer hover:bg-slate-100 rounded">
-							<BgColorsOutlined style={{ color: state.bgColor === "#ffffff" ? undefined : state.bgColor }} />
+						{/* 🔴 اصلاح مشابه برای پس‌زمینه */}
+						<div className="flex items-center justify-center p-1.5 cursor-pointer rounded" style={{ color: token.colorText }}>
+							<BgColorsOutlined style={{ color: state.bgColor === "transparent" || state.bgColor === "#ffffff" ? undefined : state.bgColor }} />
 						</div>
 					</ColorPicker>
 				</Tooltip>
 			</Space.Compact>
 
-			<Divider type="vertical" className="m-0 h-6" />
+			<Divider type="vertical" className="m-0 h-6" style={{ borderColor: token.colorBorder }} />
 
-			{/* بخش پاراگراف و ترازها */}
-			<Space.Compact className="bg-white rounded-md border" style={{ borderColor: token.colorBorder }}>
+			<Space.Compact className="rounded-md border" style={groupStyle}>
 				<ToolbarBtn icon={<AlignRightOutlined />} onClick={() => chain().setTextAlign("right").run()} active={state.alignRight} title="راست‌چین" />
 				<ToolbarBtn icon={<AlignCenterOutlined />} onClick={() => chain().setTextAlign("center").run()} active={state.alignCenter} title="وسط‌چین" />
 				<ToolbarBtn icon={<AlignLeftOutlined />} onClick={() => chain().setTextAlign("left").run()} active={state.alignLeft} title="چپ‌چین" />
@@ -259,16 +256,15 @@ export default function EditorToolbar({ editor, customFonts = [] }: { editor: Ed
 				/>
 			</Space.Compact>
 
-			<Divider type="vertical" className="m-0 h-6" />
+			<Divider type="vertical" className="m-0 h-6" style={{ borderColor: token.colorBorder }} />
 
-			<Space.Compact className="bg-white rounded-md border" style={{ borderColor: token.colorBorder }}>
+			<Space.Compact className="rounded-md border" style={groupStyle}>
 				<ToolbarBtn icon={<UnorderedListOutlined />} onClick={() => chain().toggleBulletList().run()} active={state.bulletList} title="لیست نقطه‌ای" />
 				<ToolbarBtn icon={<OrderedListOutlined />} onClick={() => chain().toggleOrderedList().run()} active={state.orderedList} title="لیست شماره‌دار" />
 				<ToolbarBtn icon={<MinusOutlined />} onClick={() => chain().setHorizontalRule().run()} title="خط جداکننده (افقی)" />
 				<ToolbarBtn icon={<TableOutlined />} onClick={() => chain().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} active={state.inTable} title="درج جدول" />
 			</Space.Compact>
 
-			{/* ابزارهای جدول */}
 			{state.inTable && (
 				<div className="flex items-center gap-1 pl-2 border-l ml-1" style={{ borderColor: token.colorBorderSecondary }}>
 					<Select
@@ -295,7 +291,7 @@ export default function EditorToolbar({ editor, customFonts = [] }: { editor: Ed
 							commands[action]?.();
 						}}
 					/>
-					<Space.Compact className="bg-white rounded-md border" style={{ borderColor: token.colorBorder }}>
+					<Space.Compact className="rounded-md border" style={groupStyle}>
 						<ToolbarBtn icon={<BorderOutlined />} onClick={() => chain().updateAttributes("table", { borderless: !state.tableBorderless }).run()} active={state.tableBorderless} title="جدول بدون خط مرزی" />
 						<ToolbarBtn icon={<DeleteOutlined className="text-red-500" />} onClick={() => chain().deleteTable().run()} title="حذف کامل جدول" />
 					</Space.Compact>

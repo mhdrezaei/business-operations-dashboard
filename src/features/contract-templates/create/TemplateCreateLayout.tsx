@@ -1,6 +1,10 @@
-import React from "react";
+// src/features/contract-templates/create/TemplateCreateLayout.tsx
+import type { HeaderData } from "./components/editor/ui/HeaderEditor";
+import { Card, theme } from "antd"; // 🔴 اضافه شدن تم آنت‌دیزاین برای رنگ‌بندی داینامیک
+import React, { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
-import TemplateCreateEditor from "./components/TemplateCreateEditor";
+import ProEditor from "./components/editor/ProEditor";
+import { useTemplateEditor } from "./components/editor/ui/TemplateEditorCanvas";
 import TemplateCreateForm from "./components/TemplateCreateForm";
 import TemplateCreateHeader from "./components/TemplateCreateHeader";
 import TemplateCreateSidebar from "./components/TemplateCreateSidebar";
@@ -9,7 +13,6 @@ interface TemplateCreateLayoutProps {
 	onClose: () => void
 }
 
-// تعریف تایپ مقادیر فرم
 export interface TemplateFormValues {
 	name: string
 	service_id: number | null
@@ -18,7 +21,8 @@ export interface TemplateFormValues {
 }
 
 export default function TemplateCreateLayout({ onClose }: TemplateCreateLayoutProps) {
-	// مقداردهی اولیه React Hook Form
+	const { token } = theme.useToken();
+
 	const methods = useForm<TemplateFormValues>({
 		defaultValues: {
 			name: "",
@@ -28,25 +32,49 @@ export default function TemplateCreateLayout({ onClose }: TemplateCreateLayoutPr
 		},
 		mode: "onChange",
 	});
+	const [headerData, setHeaderData] = useState<HeaderData>({});
+	const [editorContent, setEditorContent] = useState("");
+
+	const editor = useTemplateEditor({ initialContent: editorContent });
 
 	return (
 		<FormProvider {...methods}>
-			<div className="flex flex-col h-screen w-full overflow-hidden bg-transparent">
-				<TemplateCreateHeader onClose={onClose} />
+			<Card
+				className="flex flex-col h-full w-full rounded-xl overflow-y-scroll"
+				style={{ backgroundColor: token.colorBgLayout, color: token.colorText }}
+			>
+				<div className="flex-shrink-0">
+					<TemplateCreateHeader onClose={onClose} />
+				</div>
 
-				<div className="flex flex-col flex-1 p-4 gap-4 overflow-hidden">
-					<TemplateCreateForm />
+				{/* 🔴 حذف overflow-scroll و اضافه کردن overflow-hidden */}
+				<div className="flex flex-col flex-1 p-4 gap-4 min-h-0 overflow-hidden">
 
-					<div className="flex flex-1 gap-4 overflow-hidden">
-						<div className="w-80 flex-shrink-0 h-full">
-							<TemplateCreateSidebar />
+					{/* فرم بالایی (ثابت) */}
+					<div className="flex-shrink-0">
+						<TemplateCreateForm />
+					</div>
+
+					{/* کانتینر ادیتور و سایدبار */}
+					<div className="flex flex-1 gap-4 min-h-0 overflow-hidden">
+
+						{/* 🔴 سایدبار (حالا به درستی اسکرول داخلی خواهد داشت) */}
+						<div className="w-80 flex-shrink-0 h-full min-h-0 flex flex-col">
+							<TemplateCreateSidebar
+								editor={editor}
+								headerData={headerData}
+								setHeaderData={setHeaderData}
+							/>
 						</div>
-						<div className="flex-1 h-full overflow-hidden">
-							<TemplateCreateEditor />
+
+						{/* 🔴 ادیتور */}
+						<div className="flex-1 h-full min-w-0 flex flex-col relative">
+							<ProEditor editor={editor} onChange={setEditorContent} />
 						</div>
+
 					</div>
 				</div>
-			</div>
+			</Card>
 		</FormProvider>
 	);
 }

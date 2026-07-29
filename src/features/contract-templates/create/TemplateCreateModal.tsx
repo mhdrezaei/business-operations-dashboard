@@ -3,6 +3,7 @@ import { theme } from "antd";
 import { AnimatePresence, motion } from "framer-motion";
 import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
+import { VariableRegistryProvider } from "./components/editor/variables/VariableRegistryContext";
 import TemplateCreateLayout from "./TemplateCreateLayout";
 
 interface TemplateCreateModalProps {
@@ -51,7 +52,10 @@ export default function TemplateCreateModal({ isOpen, onClose, originPosition }:
 						color: token.colorText,
 					}}
 				>
-					<TemplateCreateLayout onClose={onClose} />
+					<VariableRegistryProvider kind="contract" documentKind="contract">
+
+						<TemplateCreateLayout onClose={onClose} />
+					</VariableRegistryProvider>
 				</motion.div>
 			)}
 		</AnimatePresence>
