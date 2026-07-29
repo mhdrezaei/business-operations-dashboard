@@ -1,6 +1,6 @@
 // src/features/contract-templates/create/TemplateCreateLayout.tsx
 import type { HeaderData } from "./components/editor/ui/HeaderEditor";
-import { Card, theme } from "antd"; // 🔴 اضافه شدن تم آنت‌دیزاین برای رنگ‌بندی داینامیک
+import { Card, theme } from "antd";
 import React, { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import ProEditor from "./components/editor/ProEditor";
@@ -39,15 +39,38 @@ export default function TemplateCreateLayout({ onClose }: TemplateCreateLayoutPr
 
 	return (
 		<FormProvider {...methods}>
+			{/* 🔴 اضافه شدن تگ style برای کاستوم کردن اسکرول‌بار مودال */}
+			<style>
+				{`
+                .custom-modal-scroll::-webkit-scrollbar {
+                    width: 6px;
+                    height: 6px;
+                }
+                .custom-modal-scroll::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                .custom-modal-scroll::-webkit-scrollbar-thumb {
+                    background-color: rgba(136, 136, 136, 0.35);
+                    border-radius: 10px;
+                }
+                .custom-modal-scroll::-webkit-scrollbar-thumb:hover {
+                    background-color: rgba(136, 136, 136, 0.55);
+                }
+                .custom-modal-scroll {
+                    scrollbar-width: thin;
+                    scrollbar-color: rgba(136, 136, 136, 0.35) transparent;
+                }
+            `}
+			</style>
 			<Card
-				className="flex flex-col h-full w-full rounded-xl overflow-y-scroll"
+				// 🔴 جایگزینی overflow-y-scroll با کلاس کاستوم اسکرول
+				className="flex flex-col h-full w-full rounded-xl overflow-y-auto custom-modal-scroll"
 				style={{ backgroundColor: token.colorBgLayout, color: token.colorText }}
 			>
 				<div className="flex-shrink-0">
 					<TemplateCreateHeader onClose={onClose} />
 				</div>
 
-				{/* 🔴 حذف overflow-scroll و اضافه کردن overflow-hidden */}
 				<div className="flex flex-col flex-1 p-4 gap-4 min-h-0">
 
 					{/* فرم بالایی (ثابت) */}
@@ -58,7 +81,7 @@ export default function TemplateCreateLayout({ onClose }: TemplateCreateLayoutPr
 					{/* کانتینر ادیتور و سایدبار */}
 					<div className="flex flex-1 gap-4 min-h-0 items-start">
 
-						{/* 🔴 سایدبار (حالا به درستی اسکرول داخلی خواهد داشت) */}
+						{/* سایدبار */}
 						<div
 							className="w-80 flex-shrink-0 flex flex-col sticky top-4"
 							style={{ height: "calc(100vh)" }}
@@ -70,7 +93,7 @@ export default function TemplateCreateLayout({ onClose }: TemplateCreateLayoutPr
 							/>
 						</div>
 
-						{/* 🔴 ادیتور */}
+						{/* ادیتور */}
 						<div className="flex-1 h-full min-w-0 flex flex-col relative">
 							<ProEditor editor={editor} onChange={setEditorContent} />
 						</div>
