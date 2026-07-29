@@ -11,7 +11,8 @@ import {
 	UnorderedListOutlined,
 	UploadOutlined,
 } from "@ant-design/icons";
-import { Alert, Button, Card, Input, Tabs, theme, Typography } from "antd"; // 🔴 اضافه شدن Alert
+// 🔴 کامپوننت Collapse اضافه شد
+import { Alert, Button, Card, Collapse, Input, Tabs, theme, Typography } from "antd";
 import React, { useMemo, useState } from "react";
 
 import HeaderEditor from "./editor/ui/HeaderEditor";
@@ -203,45 +204,49 @@ export default function TemplateCreateSidebar({ editor, headerData, setHeaderDat
 				className="mb-4 flex-shrink-0"
 			/>
 
-			{/* 🔴 اضافه شدن min-h-0 برای فعال شدن اسکرول داخلی */}
-			<div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1 pb-10 space-y-4">
-				{staticGroupsWithBlocks.map((group: any) => (
-					<div key={group.group}>
-						<div className="mb-2 text-[11px] font-bold" style={{ color: token.colorTextDescription }}>
-							{group.label}
-						</div>
-						<div className="space-y-1.5">
-							{group.blocks.map((block: any, blockIdx: number) =>
-								block.type === "singles"
-									? (
-										<div key={`singles-${blockIdx}`} className="flex flex-wrap gap-1.5">
-											{block.variables.map((variable: any) => (
-												<VariableButton key={variable.key} variable={variable} onInsert={handleInsert} />
-											))}
-										</div>
-									)
-									: (
-										<FamilySlotBlock
-											key={block.prefix}
-											block={block}
-											visibleCount={resolveVisibleCount(block.prefix)}
-											onRevealNext={() => revealNextSlot(block.prefix, block.maxIndex)}
-											onCollapse={() => collapseFamily(block.prefix)}
-											onInsert={handleInsert}
-										/>
-									),
-							)}
-						</div>
-					</div>
-				))}
+			<div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1 pb-10">
+				{/* 🔴 تبدیل رندر دستی متغیرها به آکاردئون (Collapse) */}
+				<Collapse
+					ghost
+					size="small"
+					expandIconPosition="end"
+					defaultActiveKey={staticGroupsWithBlocks.map((g: any) => g.group)} // باز بودن همه در ابتدا برای دسترسی سریع‌تر
+					items={staticGroupsWithBlocks.map((group: any) => ({
+						key: group.group,
+						label: <span className="text-[11px] font-bold" style={{ color: token.colorTextDescription }}>{group.label}</span>,
+						children: (
+							<div className="space-y-1.5 pt-1">
+								{group.blocks.map((block: any, blockIdx: number) =>
+									block.type === "singles"
+										? (
+											<div key={`singles-${blockIdx}`} className="flex flex-wrap gap-1.5">
+												{block.variables.map((variable: any) => (
+													<VariableButton key={variable.key} variable={variable} onInsert={handleInsert} />
+												))}
+											</div>
+										)
+										: (
+											<FamilySlotBlock
+												key={block.prefix}
+												block={block}
+												visibleCount={resolveVisibleCount(block.prefix)}
+												onRevealNext={() => revealNextSlot(block.prefix, block.maxIndex)}
+												onCollapse={() => collapseFamily(block.prefix)}
+												onInsert={handleInsert}
+											/>
+										),
+								)}
+							</div>
+						),
+					}))}
+				/>
 
 				{(!query.trim() || financialTree.length > 0 || !financialSupported) && (
-					<div>
+					<div className="mt-4 px-2">
 						<div className="mb-2 text-[11px] font-bold" style={{ color: token.colorTextDescription }}>
 							اطلاعات مالی و تسویه
 						</div>
 						{!financialSupported && (
-						/* 🔴 استفاده از Alert استاندارد آنت دیزاین برای پشتیبانی خودکار از دارک مود */
 							<Alert
 								type="warning"
 								showIcon
@@ -269,7 +274,6 @@ export default function TemplateCreateSidebar({ editor, headerData, setHeaderDat
 					<Button size="small" type="dashed" icon={<UploadOutlined />}>آپلود فونت</Button>
 				</div>
 				<div className="flex flex-col gap-2">
-					{/* 🔴 استفاده از colorBgElevated برای تناسب با دارک/لایت مود */}
 					<div className="flex justify-between items-center p-2 rounded border text-xs" style={{ backgroundColor: token.colorBgElevated, borderColor: token.colorBorderSecondary, color: token.colorText }}>
 						Vazirmatn (پیش‌فرض)
 					</div>
@@ -289,9 +293,27 @@ export default function TemplateCreateSidebar({ editor, headerData, setHeaderDat
 
 	return (
 		<div
-			className="h-full flex flex-col rounded-xl border shadow-sm"
+			className="h-full flex flex-col rounded-xl border shadow-sm overflow-hidden"
 			style={{ backgroundColor: token.colorBgContainer, borderColor: token.colorBorderSecondary }}
 		>
+			<style>
+				{`
+                .custom-tabs .ant-tabs-content-holder {
+                    flex: auto;
+                    min-height: 0;
+                    overflow: hidden;
+                }
+                .custom-tabs .ant-tabs-content, 
+                .custom-tabs .ant-tabs-tabpane {
+                    height: 100%;
+                }
+                /* استایل برای تمیزتر شدن آکاردئون Antd */
+                .ant-collapse-ghost > .ant-collapse-item > .ant-collapse-content > .ant-collapse-content-box {
+                    padding-top: 0 !important;
+                    padding-bottom: 8px !important;
+                }
+            `}
+			</style>
 			<Tabs
 				defaultActiveKey="1"
 				centered
