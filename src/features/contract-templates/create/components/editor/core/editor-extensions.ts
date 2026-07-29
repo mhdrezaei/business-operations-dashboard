@@ -1,3 +1,4 @@
+// src/features/contract-templates/create/components/editor/core/editor-extensions.ts
 import { Extension, mergeAttributes, Node } from "@tiptap/core";
 import Color from "@tiptap/extension-color";
 import FontFamily from "@tiptap/extension-font-family";
@@ -11,11 +12,9 @@ import TextAlign from "@tiptap/extension-text-align";
 import { TextStyle } from "@tiptap/extension-text-style";
 import Underline from "@tiptap/extension-underline";
 import { ReactNodeViewRenderer } from "@tiptap/react";
-// src/features/contract-templates/create/components/editor/core/editor-extensions.ts
 import StarterKit from "@tiptap/starter-kit";
-import VariableChip from "../ui/VariableChip"; // کامپوننت تگ متغیر
+import VariableChip from "../ui/VariableChip";
 
-// گسترش تایپ‌های Tiptap
 declare module "@tiptap/core" {
 	interface Commands<ReturnType> {
 		fontSize: { setFontSize: (size: string) => ReturnType, unsetFontSize: () => ReturnType }
@@ -24,7 +23,6 @@ declare module "@tiptap/core" {
 	}
 }
 
-// افزونه کاستوم برای متغیرها (تبدیل {$key} به تگ ویژوال)
 export const VariableNode = Node.create({
 	name: "templateVariable",
 	group: "inline",

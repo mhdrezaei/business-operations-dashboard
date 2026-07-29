@@ -9,7 +9,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 
 import { fetchDeleteTemplate, fetchTemplatesList } from "../api/templates.api";
-import TemplateCreateModal from "../create/TemplateCreateModal"; // اضافه شدن ایمپورت
+import TemplateCreateModal from "../create/TemplateCreateModal";
 import { getTemplateColumns } from "./constants";
 
 export default function TemplateListPage() {
@@ -57,7 +57,6 @@ export default function TemplateListPage() {
 						title="ویرایش قالب"
 						icon={<EditOutlined />}
 						onClick={() => {
-							// هدایت به صفحه ویرایش
 							navigate(`/contracts/templates/${record.id}/edit`);
 						}}
 					/>,

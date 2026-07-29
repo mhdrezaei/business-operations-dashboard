@@ -63,7 +63,6 @@ export default function TemplateCreateLayout({ onClose }: TemplateCreateLayoutPr
             `}
 			</style>
 			<Card
-				// 🔴 جایگزینی overflow-y-scroll با کلاس کاستوم اسکرول
 				className="flex flex-col h-full w-full rounded-xl overflow-y-auto custom-modal-scroll"
 				style={{ backgroundColor: token.colorBgLayout, color: token.colorText }}
 			>

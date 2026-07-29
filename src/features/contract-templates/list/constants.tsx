@@ -19,7 +19,7 @@ export function getTemplateColumns({ t }: GetTemplateColumnsArgs): ProColumns<Te
 			dataIndex: "service_name",
 			ellipsis: true,
 			width: 150,
-			search: false, // اگر سرچ روی این فیلد در API پیاده‌سازی نشده است
+			search: false,
 		},
 		{
 			title: "نوع سند",
@@ -65,7 +65,6 @@ export function getTemplateColumns({ t }: GetTemplateColumnsArgs): ProColumns<Te
 			width: 150,
 			search: false,
 		},
-		// فیلد سرچ کلی برای ارسال به API طبق تصویر image_ca9207.png
 		{
 			title: t("common.search"),
 			dataIndex: "search",

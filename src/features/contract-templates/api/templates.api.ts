@@ -11,5 +11,5 @@ export async function fetchDeleteTemplate(id: number): Promise<void> {
 export function fetchTemplateFonts() {
 	return request
 		.get("contracts/templates/fonts/")
-		.json<{ count: number, results: FontDto[] }>(); // بر اساس ساختار پاسخی که فرستادید
+		.json<{ count: number, results: FontDto[] }>();
 }

@@ -13,7 +13,6 @@ interface TemplateCreateModalProps {
 }
 
 export default function TemplateCreateModal({ isOpen, onClose, originPosition }: TemplateCreateModalProps) {
-	// دریافت توکن‌های رنگی استاندارد از تم پروژه
 	const { token } = theme.useToken();
 
 	useEffect(() => {
@@ -46,7 +45,6 @@ export default function TemplateCreateModal({ isOpen, onClose, originPosition }:
 					}}
 					transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
 					className="fixed inset-0 z-[9999] overflow-hidden"
-					// اعمال یکپارچه رنگ پس‌زمینه و متن بر اساس تم Antd پروژه
 					style={{
 						backgroundColor: token.colorBgLayout,
 						color: token.colorText,

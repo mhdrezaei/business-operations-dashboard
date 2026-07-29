@@ -9,7 +9,6 @@ import { getVariable } from "../variables/registry";
 export default function VariableChip({ node, deleteNode }: NodeViewProps) {
 	const { token } = theme.useToken();
 
-	// خواندن امن کلید متغیر
 	const key = node.attrs.key as string;
 
 	const variableDef = getVariable(key);

@@ -54,7 +54,6 @@ export default function TemplateCreateForm() {
 		{ label: "الحاقیه", value: "addendum" },
 	];
 
-	// این تابع ساده باعث می‌شود دراپ‌داون‌ها داخل مودال رندر شوند، نه پشت آن
 	const getPopupContainer = (triggerNode: any) => triggerNode.parentNode;
 
 	return (
@@ -80,7 +79,6 @@ export default function TemplateCreateForm() {
 						showSearch: true,
 						optionFilterProp: "label",
 						virtual: false,
-						// ✅ اضافه شدن این خط مشکل لیست خالی را حل می‌کند
 						getPopupContainer,
 					}}
 					formItemProps={{ className: "m-0" }}
@@ -92,7 +90,7 @@ export default function TemplateCreateForm() {
 					options={documentKindOptions}
 					selectProps={{
 						placeholder: "انتخاب نوع سند...",
-						getPopupContainer, // ✅
+						getPopupContainer,
 					}}
 					formItemProps={{ className: "m-0" }}
 				/>
@@ -105,7 +103,7 @@ export default function TemplateCreateForm() {
 						placeholder: selectedServiceId ? "انتخاب کنید..." : "ابتدا سرویس را انتخاب کنید",
 						allowClear: true,
 						disabled: !selectedServiceId || companyTypeOptions.length === 0,
-						getPopupContainer, // ✅
+						getPopupContainer,
 					}}
 					formItemProps={{ className: "m-0" }}
 				/>

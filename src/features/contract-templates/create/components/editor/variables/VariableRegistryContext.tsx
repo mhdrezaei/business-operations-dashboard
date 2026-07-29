@@ -1,8 +1,6 @@
 import React, { createContext, useContext, useMemo } from "react";
-// 🔴 ایمپورت توابع از فایل registry.js که خودتان قبلاً ساخته بودید
 import { getVariables, GROUP_LABELS } from "./registry";
 
-// ۱. تعریف دقیق Props هایی که پروایدر از بیرون می‌گیرد
 export interface VariableRegistryProviderProps {
 	kind?: string
 	documentKind?: string
@@ -18,7 +16,7 @@ export interface VariableRegistryProviderProps {
 	children: React.ReactNode
 }
 
-// ۲. تعریف ساختار دیتایی که کانتکست به سایدبار و ادیتور پاس می‌دهد
+//  تعریف ساختار دیتایی که کانتکست به سایدبار و ادیتور پاس می‌دهد
 export interface VariableRegistryContextType {
 	getVariable: (key: string) => any
 	staticGroups: any[]
@@ -37,7 +35,6 @@ const VariableRegistryContext = createContext<VariableRegistryContextType | null
 export function useVariableRegistry() {
 	const context = useContext(VariableRegistryContext);
 	if (!context) {
-		// Fallback امن در صورتی که کامپوننتی بیرون از Provider صدا زده شود
 		return {
 			getVariable: () => null,
 			staticGroups: [],
@@ -69,12 +66,10 @@ export const VariableRegistryProvider: React.FC<VariableRegistryProviderProps> =
 	children,
 }) => {
 	const value = useMemo(() => {
-		// خواندن متغیرها از فایل رجیستری استاتیک شما بر اساس kind
 		const staticVars = getVariables({ kind, documentKind });
 		const allVars = [...staticVars, ...financialVariables];
 		const byKey = new Map(allVars.map(v => [v.key, v]));
 
-		// گروه‌بندی متغیرها دقیقاً مطابق منطق قبلی خودتان
 		const groups = new Map();
 		for (const variable of staticVars) {
 			if (variable.hiddenFromPicker)

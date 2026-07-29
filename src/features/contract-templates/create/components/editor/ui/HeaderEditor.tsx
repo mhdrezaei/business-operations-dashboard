@@ -1,14 +1,10 @@
-// توجه: مسیر این ابزارها را بر اساس ساختار پوشه‌های پروژه خود تنظیم کنید
 // src/features/contract-templates/create/components/editor/ui/HeaderEditor.tsx
 import { DeleteOutlined, LayoutOutlined, PictureOutlined } from "@ant-design/icons";
 import { Button, Checkbox, Input, theme, Typography } from "antd";
-
 import React, { useRef } from "react";
-// import { uploadAsset } from "#src/api/common.api";
-// import karashabLogoUrl from "@/assets/karashab-logo.png";
 
 const { Text } = Typography;
-const MAX_LOGO_SIZE = 1024 * 1024; // حداکثر حجم مجاز: 1 مگابایت
+const MAX_LOGO_SIZE = 1024 * 1024;
 
 export interface HeaderData {
 	logo_asset_id?: number | null
@@ -32,7 +28,6 @@ export default function HeaderEditor({ header, onChange }: HeaderEditorProps) {
 	const handleLogoFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
 		const file = event.target.files?.[0];
 
-		// ریست کردن اینپوت برای اینکه کاربر بتواند دوباره همان فایل را انتخاب کند
 		if (event.target) {
 			event.target.value = "";
 		}
@@ -41,7 +36,6 @@ export default function HeaderEditor({ header, onChange }: HeaderEditorProps) {
 			return;
 
 		if (!/image\/(?:png|jpe?g|svg\+xml)/.test(file.type)) {
-			// اگر متد showErrorAlert را ندارید، موقتا از window.$message.error استفاده کنید
 			window.$message?.error("فقط تصویر PNG ،JPG یا SVG مجاز است.");
 			return;
 		}
@@ -51,10 +45,6 @@ export default function HeaderEditor({ header, onChange }: HeaderEditorProps) {
 		}
 
 		try {
-			// آپلود عکس به سرور (تابع آپلود پروژه خود را اینجا جایگزین کنید)
-			// const asset = await uploadAsset(file);
-
-			// کد تستی (تا زمانی که API آپلود را متصل کنید)
 			const reader = new FileReader();
 			reader.onload = (e) => {
 				set({
@@ -72,7 +62,6 @@ export default function HeaderEditor({ header, onChange }: HeaderEditorProps) {
 
 	const hasCustomLogo = Boolean(header.logo_data_url || header.logo_url);
 
-	// اگر لوگوی پیش‌فرض دارید متغیر زیر را با فایل آن پر کنید
 	const logoSrc = header.logo_data_url || header.logo_url || "/default-logo.png";
 
 	return (
