@@ -4,7 +4,12 @@ import { Button, theme, Typography } from "antd";
 
 const { Title, Text } = Typography;
 
-export default function TemplateCreateHeader({ onClose }: { onClose: () => void }) {
+interface TemplateCreateHeaderProps {
+	onClose: () => void
+	onOpenPrintPreview?: () => void // 🔴 اضافه شدن پروپ پیش‌نمایش
+}
+
+export default function TemplateCreateHeader({ onClose, onOpenPrintPreview }: TemplateCreateHeaderProps) {
 	const { token } = theme.useToken();
 
 	return (
@@ -30,10 +35,10 @@ export default function TemplateCreateHeader({ onClose }: { onClose: () => void 
 				<Button
 					type="default"
 					icon={<PrinterOutlined />}
+					onClick={onOpenPrintPreview}
 				>
 					پیش‌ نمایش چاپ
 				</Button>
-				{/* با استفاده از type="primary"، رنگ دکمه به صورت خودکار با تم Antd تنظیم می‌شود */}
 				<Button
 					type="primary"
 					icon={<SaveOutlined />}

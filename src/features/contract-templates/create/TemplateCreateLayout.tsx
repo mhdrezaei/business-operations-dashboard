@@ -8,6 +8,7 @@ import { useTemplateEditor } from "./components/editor/ui/TemplateEditorCanvas";
 import TemplateCreateForm from "./components/TemplateCreateForm";
 import TemplateCreateHeader from "./components/TemplateCreateHeader";
 import TemplateCreateSidebar from "./components/TemplateCreateSidebar";
+import TemplatePrintPreviewModal from "./components/TemplatePrintPreviewModal";
 
 interface TemplateCreateLayoutProps {
 	onClose: () => void
@@ -34,7 +35,7 @@ export default function TemplateCreateLayout({ onClose }: TemplateCreateLayoutPr
 	});
 	const [headerData, setHeaderData] = useState<HeaderData>({});
 	const [editorContent, setEditorContent] = useState("");
-
+	const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 	const editor = useTemplateEditor({ initialContent: editorContent });
 
 	return (
@@ -67,7 +68,7 @@ export default function TemplateCreateLayout({ onClose }: TemplateCreateLayoutPr
 				style={{ backgroundColor: token.colorBgLayout, color: token.colorText }}
 			>
 				<div className="flex-shrink-0">
-					<TemplateCreateHeader onClose={onClose} />
+					<TemplateCreateHeader onClose={onClose} onOpenPrintPreview={() => setIsPreviewOpen(true)} />
 				</div>
 
 				<div className="flex flex-col flex-1 p-4 gap-4 min-h-0">
@@ -100,6 +101,12 @@ export default function TemplateCreateLayout({ onClose }: TemplateCreateLayoutPr
 					</div>
 				</div>
 			</Card>
+			<TemplatePrintPreviewModal
+				isOpen={isPreviewOpen}
+				onClose={() => setIsPreviewOpen(false)}
+				editor={editor}
+				headerData={headerData}
+			/>
 		</FormProvider>
 	);
 }
