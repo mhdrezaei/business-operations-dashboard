@@ -48,7 +48,7 @@ export default function TemplateCreateLayout({ onClose }: TemplateCreateLayoutPr
 				</div>
 
 				{/* 🔴 حذف overflow-scroll و اضافه کردن overflow-hidden */}
-				<div className="flex flex-col flex-1 p-4 gap-4 min-h-0 overflow-hidden">
+				<div className="flex flex-col flex-1 p-4 gap-4 min-h-0">
 
 					{/* فرم بالایی (ثابت) */}
 					<div className="flex-shrink-0">
@@ -56,7 +56,7 @@ export default function TemplateCreateLayout({ onClose }: TemplateCreateLayoutPr
 					</div>
 
 					{/* کانتینر ادیتور و سایدبار */}
-					<div className="flex flex-1 gap-4 min-h-0 overflow-hidden">
+					<div className="flex flex-1 gap-4 min-h-0 ">
 
 						{/* 🔴 سایدبار (حالا به درستی اسکرول داخلی خواهد داشت) */}
 						<div className="w-80 flex-shrink-0 h-full min-h-0 flex flex-col">
