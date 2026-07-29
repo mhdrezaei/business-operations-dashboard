@@ -2,6 +2,7 @@ import type { Editor } from "@tiptap/react";
 import type { HeaderData } from "./editor/ui/HeaderEditor";
 import {
 	DeleteOutlined,
+	DownCircleOutlined,
 	FileWordOutlined,
 	FunctionOutlined,
 	LayoutOutlined,
@@ -11,7 +12,6 @@ import {
 	UnorderedListOutlined,
 	UploadOutlined,
 } from "@ant-design/icons";
-// 🔴 کامپوننت Collapse اضافه شد
 import { Alert, Button, Card, Collapse, Input, Tabs, theme, Typography } from "antd";
 import React, { useMemo, useState } from "react";
 
@@ -205,12 +205,12 @@ export default function TemplateCreateSidebar({ editor, headerData, setHeaderDat
 			/>
 
 			<div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1 pb-10">
-				{/* 🔴 تبدیل رندر دستی متغیرها به آکاردئون (Collapse) */}
 				<Collapse
 					ghost
 					size="small"
+					expandIcon={DownCircleOutlined}
 					expandIconPosition="end"
-					defaultActiveKey={staticGroupsWithBlocks.map((g: any) => g.group)} // باز بودن همه در ابتدا برای دسترسی سریع‌تر
+					defaultActiveKey={staticGroupsWithBlocks.map((g: any) => g.group)}
 					items={staticGroupsWithBlocks.map((group: any) => ({
 						key: group.group,
 						label: <span className="text-[11px] font-bold" style={{ color: token.colorTextDescription }}>{group.label}</span>,
@@ -311,6 +311,27 @@ export default function TemplateCreateSidebar({ editor, headerData, setHeaderDat
                 .ant-collapse-ghost > .ant-collapse-item > .ant-collapse-content > .ant-collapse-content-box {
                     padding-top: 0 !important;
                     padding-bottom: 8px !important;
+                }
+                
+                /* 🔴 استایل‌های اسکرول‌بار کاستوم (پشتیبانی خودکار از دارک/لایت مود) */
+                .custom-scrollbar::-webkit-scrollbar {
+                    width: 5px;
+                    height: 5px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background-color: rgba(136, 136, 136, 0.35);
+                    border-radius: 10px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                    background-color: rgba(136, 136, 136, 0.55);
+                }
+                /* پشتیبانی از فایرفاکس */
+                .custom-scrollbar {
+                    scrollbar-width: thin;
+                    scrollbar-color: rgba(136, 136, 136, 0.35) transparent;
                 }
             `}
 			</style>
