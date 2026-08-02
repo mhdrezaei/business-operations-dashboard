@@ -1,54 +1,32 @@
 import type { ServiceDto } from "#src/api/common/common.types";
 import type {
 	PredictionSummaryPeriodMode,
-	PredictionSummaryQuery,
 	PredictionSummaryResponse,
 	PredictionSummarySelectedPeriod,
 } from "#src/features/performance/api/performances.api";
+import type { PredictionSummaryDisplayRow, PredictionSummarySection } from "./predictions-summary-export";
 import { BasicContent } from "#src/components";
+import { fetchPredictionPerformanceSummary } from "#src/features/performance/api/performances.api";
 import { normalizeServiceCode } from "#src/features/performance/shared/model/performance.helpers";
 import { servicesQuery } from "#src/features/performance/shared/queries/performance.queries";
 import { useAccess } from "#src/hooks";
-import { request } from "#src/utils/request";
-import { DeleteOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons";
+import { DeleteOutlined, FileExcelOutlined, FilePdfOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Alert, Button, Card, Checkbox, Empty, InputNumber, Select, Space, Switch, Table, Tag, Typography } from "antd";
 import { useMemo, useState } from "react";
 import { getReportDisplayMonth } from "./constants";
+import {
+	downloadPredictionSummaryExcel,
+	openPredictionSummaryPdfPrint,
+} from "./predictions-summary-export";
 
 type ReportMode = "separated" | "total";
 type OutputMode = "classic" | "single-table";
-type ReportSection = "performance" | "predictions";
 
 interface PeriodSelection {
 	id: string
 	year: number
 	values: number[]
-}
-
-interface DisplayMetricRow {
-	key: string
-	serviceCode: string
-	serviceName: string
-	periodLabel: string
-	periodMonthsLabel: string
-	calendarLabel: string
-	section: ReportSection
-	typeLabel: string
-	value: unknown
-	sentTraffic: unknown
-	sentTrafficUnit: string | null
-	sentTrafficMbps: unknown
-	sentTrafficGbMonth: unknown
-	receivedTraffic: unknown
-	receivedTrafficUnit: string | null
-	receivedTrafficMbps: unknown
-	receivedTrafficGbMonth: unknown
-	trafficResourcesLabel: string
-	isTrafficCollocation: boolean
-	income: unknown
-	expense: unknown
-	profit: unknown
 }
 
 const PERIOD_MODE_OPTIONS: Array<{ label: string, value: PredictionSummaryPeriodMode }> = [
@@ -98,24 +76,6 @@ const METRIC_KEYS = [
 	"profit_financial",
 ];
 
-function compactSearchParams(params: Record<string, unknown>) {
-	const output: Record<string, string> = {};
-	Object.entries(params).forEach(([key, value]) => {
-		if (value == null || value === "")
-			return;
-		output[key] = String(value);
-	});
-	return output;
-}
-
-function fetchPredictionPerformanceSummary(params: PredictionSummaryQuery) {
-	return request
-		.get("performances/report/predictions-performance-summary/", {
-			searchParams: compactSearchParams(params as unknown as Record<string, unknown>),
-		})
-		.json<PredictionSummaryResponse>();
-}
-
 function isQuarterMode(periodMode: PredictionSummaryPeriodMode) {
 	return periodMode === "shamsi_quarters" || periodMode === "fiscal_quarters";
 }
@@ -159,6 +119,12 @@ function getPeriodMonthLabel(month: number, periodMode: PredictionSummaryPeriodM
 	return MONTH_NAMES_BY_VALUE[displayMonth] ?? String(month);
 }
 
+function formatPersianInteger(value: number | null | undefined) {
+	if (value == null || !Number.isFinite(value))
+		return "-";
+	return value.toLocaleString("fa-IR", { useGrouping: false });
+}
+
 function getQuarterMonths(quarter: number) {
 	const start = (quarter - 1) * 3 + 1;
 	return [start, start + 1, start + 2];
@@ -173,13 +139,15 @@ function getRealMonthYear(year: number, month: number, periodMode: PredictionSum
 	return month >= 1 && month <= 3 ? year - 1 : year;
 }
 
-function formatRealMonthsLabel(year: number, months: number[], periodMode: PredictionSummaryPeriodMode) {
-	const realMonths = months.map((month) => {
-		return {
-			label: getPeriodMonthLabel(month, periodMode),
-			year: getRealMonthYear(year, month, periodMode),
-		};
-	});
+function formatRealMonthsLabel(
+	year: number,
+	months: Array<{ month: number, year?: number | null, isActualShamsiMonth?: boolean }>,
+	periodMode: PredictionSummaryPeriodMode,
+) {
+	const realMonths = months.map(item => ({
+		label: getPeriodMonthLabel(item.month, item.isActualShamsiMonth ? "shamsi_months" : periodMode),
+		year: item.year ?? getRealMonthYear(year, item.month, periodMode),
+	}));
 
 	if (realMonths.length === 0)
 		return "-";
@@ -188,14 +156,14 @@ function formatRealMonthsLabel(year: number, months: number[], periodMode: Predi
 	const lastMonth = realMonths[realMonths.length - 1];
 
 	if (realMonths.length === 1) {
-		const yearLabel = firstMonth.year == null ? "" : `سال ${firstMonth.year}: `;
+		const yearLabel = firstMonth.year == null ? "" : `سال ${formatPersianInteger(firstMonth.year)}: `;
 		return `ماه‌های واقعی: ${yearLabel}${firstMonth.label}`;
 	}
 
 	if (firstMonth.year != null && lastMonth.year != null && firstMonth.year !== lastMonth.year)
-		return `ماه‌های واقعی: از ${firstMonth.label} ${firstMonth.year} تا ${lastMonth.label} ${lastMonth.year}`;
+		return `ماه‌های واقعی: از ${firstMonth.label} ${formatPersianInteger(firstMonth.year)} تا ${lastMonth.label} ${formatPersianInteger(lastMonth.year)}`;
 
-	const yearLabel = firstMonth.year == null ? "" : `سال ${firstMonth.year}: `;
+	const yearLabel = firstMonth.year == null ? "" : `سال ${formatPersianInteger(firstMonth.year)}: `;
 	return `ماه‌های واقعی: ${yearLabel}از ${firstMonth.label} تا ${lastMonth.label}`;
 }
 
@@ -204,15 +172,24 @@ function getPeriodMonthsLabel(period: Record<string, unknown>, periodMode: Predi
 	const month = Number(period.month);
 	const quarter = Number(period.quarter);
 	const monthsExpanded = Array.isArray(period.months_expanded)
-		? period.months_expanded.map(item => Number(item)).filter(item => Number.isFinite(item) && item >= 1 && item <= 12)
+		? period.months_expanded.map((item) => {
+			if (isPlainRecord(item)) {
+				return {
+					month: Number(item.sh_month),
+					year: Number.isFinite(Number(item.sh_year)) ? Number(item.sh_year) : null,
+					isActualShamsiMonth: true,
+				};
+			}
+			return { month: Number(item) };
+		}).filter(item => Number.isFinite(item.month) && item.month >= 1 && item.month <= 12)
 		: [];
-	let months: number[] = [];
+	let months: Array<{ month: number, year?: number | null, isActualShamsiMonth?: boolean }> = [];
 	if (monthsExpanded.length > 0)
 		months = monthsExpanded;
 	else if (Number.isFinite(month) && month >= 1 && month <= 12)
-		months = [month];
+		months = [{ month }];
 	else if (Number.isFinite(quarter) && quarter >= 1 && quarter <= 4)
-		months = getQuarterMonths(quarter);
+		months = getQuarterMonths(quarter).map(item => ({ month: item }));
 
 	return formatRealMonthsLabel(year, months, periodMode);
 }
@@ -222,17 +199,17 @@ function getPeriodLabel(period: Record<string, unknown>, periodMode: PredictionS
 	const month = Number(period.month);
 	const quarter = Number(period.quarter);
 	if (Number.isFinite(month) && month > 0)
-		return `${Number.isFinite(year) ? year : "-"} / ماه ${month}`;
+		return `${formatPersianInteger(year)} / ماه ${formatPersianInteger(month)}`;
 	if (Number.isFinite(quarter) && quarter > 0)
-		return `${Number.isFinite(year) ? year : "-"} / کوارتر ${quarter}`;
+		return `${formatPersianInteger(year)} / کوارتر ${formatPersianInteger(quarter)}`;
 
 	const monthsExpanded = Array.isArray(period.months_expanded)
-		? period.months_expanded.map(item => Number(item)).filter(Number.isFinite)
+		? period.months_expanded.map(item => Number(isPlainRecord(item) ? item.sh_month : item)).filter(Number.isFinite)
 		: [];
 	if (monthsExpanded.length > 0)
-		return `${Number.isFinite(year) ? year : "-"} / ماه‌های ${monthsExpanded.join("، ")}`;
+		return `${formatPersianInteger(year)} / ماه‌های ${monthsExpanded.map(formatPersianInteger).join("، ")}`;
 
-	return Number.isFinite(year) ? String(year) : getPeriodModeCalendarLabel(periodMode);
+	return Number.isFinite(year) ? formatPersianInteger(year) : getPeriodModeCalendarLabel(periodMode);
 }
 
 function getPeriodStableKey(period: Record<string, unknown>, periodMode: PredictionSummaryPeriodMode) {
@@ -275,13 +252,13 @@ function formatTrafficResources(record: Record<string, unknown>) {
 	const fields = [
 		{ label: "IP", value: record.ip_count },
 		{ label: "پورت", value: record.port_count },
-		{ label: "پهنای‌باند", value: record.bandwidth_used },
+		{ label: "BW", value: record.bandwidth_used },
 		{ label: "آمپر", value: record.ampere_used },
 	];
 	const parts = fields
 		.filter(field => field.value !== undefined && field.value !== null && field.value !== "")
 		.map(field => `${field.label}: ${formatNumber(field.value)}`);
-	return parts.length > 0 ? parts.join(" · ") : "-";
+	return parts.length > 0 ? parts.join(" | ") : "-";
 }
 
 function hasMetricLeaf(record: Record<string, unknown>) {
@@ -314,6 +291,10 @@ function getOpenApiTypeLabel(token: string) {
 	const labels: Record<string, string> = {
 		RECEIPT_REGISTER: "ثبت وصولی",
 		BILL_INQUIRY: "استعلام قبض",
+		BILL_INQUIRY_MIDTERM: "استعلام قبض میان‌دوره",
+		BILL_INQUIRY_ENDTERM: "استعلام قبض پایان‌دوره",
+		RECEIPT_REGISTER_CONNECTED: "ثبت وصولی متصل",
+		RECEIPT_REGISTER_DISCONNECTED: "ثبت وصولی غیرمتصل",
 		SMS: "پیامک",
 		TRAFFIC: "ترافیک",
 	};
@@ -335,11 +316,11 @@ function getTrafficTypeLabel(parts: string[]) {
 	const second = normalizeTypeToken(parts[1] ?? "");
 
 	if (first === "COLLOCATION")
-		return "کولوکیشن";
+		return "COLLOCATION";
 	if (first === "CP" && second === "TEHRAN")
 		return "CP (تهران)";
 	if (first === "CP" && second === "COUNTY")
-		return "CP (مراکز استان)";
+		return "CP (مناطق استان)";
 	if (first === "IXP" && second === "TEHRAN")
 		return "IXP (تهران)";
 	if (first === "TCI" && second === "TEHRAN")
@@ -383,12 +364,12 @@ function formatNumber(value: unknown, showRial = true) {
 	if (!Number.isFinite(numeric))
 		return "-";
 	const displayValue = showRial ? numeric : numeric / 10;
-	return displayValue.toLocaleString("en-US", {
+	return displayValue.toLocaleString("fa-IR", {
 		maximumFractionDigits: 4,
 	});
 }
 
-function formatMetricValue(row: DisplayMetricRow, field: "value" | "income" | "expense" | "profit", showRial: boolean) {
+function formatMetricValue(row: PredictionSummaryDisplayRow, field: "value" | "income" | "expense" | "profit", showRial: boolean) {
 	return formatNumber(row[field], !FINANCIAL_KEYS.has(field) || showRial);
 }
 
@@ -399,7 +380,7 @@ function formatTrafficValue(value: unknown, unit: string | null) {
 	return unit ? `${unit}: ${formatted}` : formatted;
 }
 
-function formatTrafficValues(row: DisplayMetricRow, direction: "sent" | "received") {
+function formatTrafficValues(row: PredictionSummaryDisplayRow, direction: "sent" | "received") {
 	const gbMonth = direction === "sent" ? row.sentTrafficGbMonth : row.receivedTrafficGbMonth;
 	const mbps = direction === "sent" ? row.sentTrafficMbps : row.receivedTrafficMbps;
 	const fallbackValue = direction === "sent" ? row.sentTraffic : row.receivedTraffic;
@@ -434,9 +415,9 @@ function normalizeSummaryRows(response: PredictionSummaryResponse | null | undef
 			const periodMonthsLabel = getPeriodMonthsLabel(period, periodMode);
 			const calendarLabel = getPeriodModeCalendarLabel(periodMode);
 
-			return (["performance", "predictions"] as ReportSection[]).flatMap((section) => {
+			return (["performance", "predictions"] as PredictionSummarySection[]).flatMap((section) => {
 				const sectionRows = flattenMetricRecords(period[section]);
-				return sectionRows.map((item, rowIndex): DisplayMetricRow => {
+				return sectionRows.map((item, rowIndex): PredictionSummaryDisplayRow => {
 					const sentTraffic = pickTrafficMetric(item.record, [
 						{ key: "value_gb_month", unit: "GB/month" },
 						{ key: "value_mbps", unit: "Mbps" },
@@ -452,9 +433,13 @@ function normalizeSummaryRows(response: PredictionSummaryResponse | null | undef
 						key: `${serviceIndex}-${periodIndex}-${section}-${rowIndex}-${item.typeLabel}`,
 						serviceCode,
 						serviceName,
+						periodKey: getPeriodStableKey(period, periodMode),
 						periodLabel,
 						periodMonthsLabel,
 						calendarLabel,
+						yearLabel: Number.isFinite(Number(period.year))
+							? Number(period.year).toLocaleString("fa-IR", { useGrouping: false })
+							: "-",
 						section,
 						typeLabel: formatTypeLabel(serviceCode, item.typeLabel),
 						value: pickFirstMetricValue(item.record, ["value", "count", "ip_count", "port_count", "bandwidth_used", "ampere_used"]),
@@ -493,6 +478,29 @@ function buildSelectedPeriods(periodMode: PredictionSummaryPeriodMode, selection
 			: { year: selection.year, months: values });
 		return acc;
 	}, []).sort((a, b) => a.year - b.year);
+}
+
+function getQueryPeriodCount(periodsJson: string | undefined) {
+	if (!periodsJson)
+		return 0;
+	try {
+		const periods = JSON.parse(periodsJson) as unknown;
+		if (!Array.isArray(periods))
+			return 0;
+		return periods.reduce((total, period) => {
+			if (!isPlainRecord(period))
+				return total;
+			const values = Array.isArray(period.quarters) ? period.quarters : Array.isArray(period.months) ? period.months : [];
+			return total + values.length;
+		}, 0);
+	}
+	catch {
+		return 0;
+	}
+}
+
+function getQueryServiceCount(serviceCodes: string | undefined) {
+	return serviceCodes?.split(",").map(value => value.trim()).filter(Boolean).length ?? 0;
 }
 
 function buildSummaryQuery({
@@ -581,6 +589,35 @@ export function PredictionsSummaryReportPage() {
 
 	const rows = useMemo(() => normalizeSummaryRows(mutation.data, serviceNameByCode), [mutation.data, serviceNameByCode]);
 	const hasServices = (mutation.data?.services ?? []).length > 0;
+	const exportMeta = useMemo(() => ({
+		serviceCount: Math.max(getQueryServiceCount(mutation.variables?.service_codes), new Set(rows.map(row => row.serviceCode)).size),
+		periodCount: getQueryPeriodCount(mutation.variables?.periods) || new Set(rows.map(row => row.periodKey)).size,
+		periodMode: mutation.variables?.period_mode ?? periodMode,
+		showRial,
+	}), [rows, mutation.variables?.period_mode, mutation.variables?.periods, mutation.variables?.service_codes, periodMode, showRial]);
+	const canExport = rows.length > 0 && !mutation.isPending;
+
+	const handleDownloadExcel = () => {
+		if (!canExport || outputMode !== "classic")
+			return;
+		downloadPredictionSummaryExcel({
+			filename: `predictions-performance-summary-${new Date().toISOString().slice(0, 10)}.xls`,
+			rows,
+			meta: exportMeta,
+			mode: outputMode,
+		});
+	};
+
+	const handleDownloadPdf = () => {
+		if (!canExport)
+			return;
+		try {
+			openPredictionSummaryPdfPrint(rows, exportMeta);
+		}
+		catch {
+			window.$message?.warning("پاپ‌آپ مرورگر مسدود است. لطفاً آن را فعال کنید.");
+		}
+	};
 
 	const handlePeriodModeChange = (value: PredictionSummaryPeriodMode) => {
 		setPeriodMode(value);
@@ -626,17 +663,17 @@ export function PredictionsSummaryReportPage() {
 			title: "بخش",
 			dataIndex: "section",
 			width: 120,
-			render: (section: ReportSection) => (
+			render: (section: PredictionSummarySection) => (
 				<Tag color={section === "performance" ? "success" : "processing"}>
 					{section === "performance" ? "عملکرد" : "پیش‌بینی"}
 				</Tag>
 			),
 		},
 		{ title: "نوع", dataIndex: "typeLabel", width: 180 },
-		{ title: "تعداد", dataIndex: "value", width: 140, render: (_: unknown, row: DisplayMetricRow) => formatMetricValue(row, "value", showRial) },
-		{ title: `درآمد (${showRial ? "ریال" : "تومان"})`, dataIndex: "income", width: 160, render: (_: unknown, row: DisplayMetricRow) => formatMetricValue(row, "income", showRial) },
-		{ title: `هزینه (${showRial ? "ریال" : "تومان"})`, dataIndex: "expense", width: 160, render: (_: unknown, row: DisplayMetricRow) => formatMetricValue(row, "expense", showRial) },
-		{ title: `سود (${showRial ? "ریال" : "تومان"})`, dataIndex: "profit", width: 160, render: (_: unknown, row: DisplayMetricRow) => formatMetricValue(row, "profit", showRial) },
+		{ title: "تعداد", dataIndex: "value", width: 140, render: (_: unknown, row: PredictionSummaryDisplayRow) => formatMetricValue(row, "value", showRial) },
+		{ title: `درآمد (${showRial ? "ریال" : "تومان"})`, dataIndex: "income", width: 160, render: (_: unknown, row: PredictionSummaryDisplayRow) => formatMetricValue(row, "income", showRial) },
+		{ title: `هزینه (${showRial ? "ریال" : "تومان"})`, dataIndex: "expense", width: 160, render: (_: unknown, row: PredictionSummaryDisplayRow) => formatMetricValue(row, "expense", showRial) },
+		{ title: `سود (${showRial ? "ریال" : "تومان"})`, dataIndex: "profit", width: 160, render: (_: unknown, row: PredictionSummaryDisplayRow) => formatMetricValue(row, "profit", showRial) },
 	];
 
 	const trafficMetricColumns = [
@@ -644,7 +681,7 @@ export function PredictionsSummaryReportPage() {
 			title: "بخش",
 			dataIndex: "section",
 			width: 120,
-			render: (section: ReportSection) => (
+			render: (section: PredictionSummarySection) => (
 				<Tag color={section === "performance" ? "success" : "processing"}>
 					{section === "performance" ? "عملکرد" : "پیش‌بینی"}
 				</Tag>
@@ -655,7 +692,7 @@ export function PredictionsSummaryReportPage() {
 			title: "ترافیک ارسالی",
 			dataIndex: "sentTraffic",
 			width: 230,
-			render: (_: unknown, row: DisplayMetricRow) => {
+			render: (_: unknown, row: PredictionSummaryDisplayRow) => {
 				if (row.isTrafficCollocation)
 					return row.trafficResourcesLabel;
 				return formatTrafficValues(row, "sent");
@@ -665,13 +702,12 @@ export function PredictionsSummaryReportPage() {
 			title: "ترافیک دریافتی",
 			dataIndex: "receivedTraffic",
 			width: 230,
-			render: (_: unknown, row: DisplayMetricRow) => formatTrafficValues(row, "received"),
+			render: (_: unknown, row: PredictionSummaryDisplayRow) => formatTrafficValues(row, "received"),
 		},
-		{ title: `درآمد (${showRial ? "ریال" : "تومان"})`, dataIndex: "income", width: 160, render: (_: unknown, row: DisplayMetricRow) => formatMetricValue(row, "income", showRial) },
-		{ title: `هزینه (${showRial ? "ریال" : "تومان"})`, dataIndex: "expense", width: 160, render: (_: unknown, row: DisplayMetricRow) => formatMetricValue(row, "expense", showRial) },
-		{ title: `سود (${showRial ? "ریال" : "تومان"})`, dataIndex: "profit", width: 160, render: (_: unknown, row: DisplayMetricRow) => formatMetricValue(row, "profit", showRial) },
+		{ title: `درآمد (${showRial ? "ریال" : "تومان"})`, dataIndex: "income", width: 160, render: (_: unknown, row: PredictionSummaryDisplayRow) => formatMetricValue(row, "income", showRial) },
+		{ title: `هزینه (${showRial ? "ریال" : "تومان"})`, dataIndex: "expense", width: 160, render: (_: unknown, row: PredictionSummaryDisplayRow) => formatMetricValue(row, "expense", showRial) },
+		{ title: `سود (${showRial ? "ریال" : "تومان"})`, dataIndex: "profit", width: 160, render: (_: unknown, row: PredictionSummaryDisplayRow) => formatMetricValue(row, "profit", showRial) },
 	];
-
 	const renderClassicResults = () => {
 		const servicesList = mutation.data?.services ?? [];
 		if (!hasServices)
@@ -887,7 +923,22 @@ export function PredictionsSummaryReportPage() {
 					/>
 				)}
 
-				<Card title={`نتایج گزارش (${showRial ? "ریال" : "تومان"})`} loading={mutation.isPending}>
+				<Card
+					title={`نتایج گزارش (${showRial ? "ریال" : "تومان"})`}
+					loading={mutation.isPending}
+					extra={(
+						<Space wrap>
+							<Button icon={<FileExcelOutlined />} disabled={!canExport} onClick={handleDownloadExcel}>
+								خروجی اکسل
+							</Button>
+							{outputMode === "classic" && (
+								<Button icon={<FilePdfOutlined />} disabled={!canExport} onClick={handleDownloadPdf}>
+									خروجی PDF
+								</Button>
+							)}
+						</Space>
+					)}
+				>
 					{mutation.data
 						? renderClassicResults()
 						: <Empty description="برای مشاهده گزارش، فیلترها را انتخاب و اعمال کنید." />}
