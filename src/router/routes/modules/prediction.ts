@@ -9,7 +9,6 @@ import {
 import { createElement, lazy } from "react";
 
 const CreatePredictionPage = lazy(() => import("#src/pages/predictions/"));
-const EditPredictionPage = lazy(() => import("#src/pages/predictions/edit"));
 const PredictionListPage = lazy(() => import("#src/pages/predictions/list/"));
 
 const routes: AppRouteRecordRaw[] = [
@@ -33,16 +32,6 @@ const routes: AppRouteRecordRaw[] = [
 					title: "\u062B\u0628\u062A \u067E\u06CC\u0634 \u0628\u06CC\u0646\u06CC",
 					accessDomain: "predictions",
 					accessAction: "create",
-				},
-			},
-			{
-				path: "/predictions/edit",
-				Component: EditPredictionPage,
-				handle: {
-					icon: createElement(FileTextOutlined),
-					title: "ویرایش پیش‌بینی",
-					accessDomain: "predictions",
-					accessAction: "view",
 				},
 			},
 			{

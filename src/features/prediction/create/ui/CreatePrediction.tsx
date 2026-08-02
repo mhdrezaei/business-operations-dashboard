@@ -109,7 +109,7 @@ function CreatePrediction() {
 						const row = buildSavedPredictionRow(values, result, savedRecordId);
 						if (row) {
 							form.reset();
-							navigate("/predictions/edit", { state: { directEdit: row } });
+							navigate("/predictions/list", { state: { directEdit: row } });
 						}
 					}
 				}
