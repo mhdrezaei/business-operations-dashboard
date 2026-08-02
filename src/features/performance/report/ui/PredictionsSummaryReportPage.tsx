@@ -357,6 +357,14 @@ function formatTypeLabel(serviceCode: string, typeLabel: string) {
 	return typeLabel;
 }
 
+function shouldIncludeMetricType(serviceCode: string, typeLabel: string) {
+	if (normalizeApiServiceCode(serviceCode) !== "openapi")
+		return true;
+
+	const rootType = normalizeTypeToken(typeLabel.split("/")[0] ?? typeLabel);
+	return rootType !== "SMS" && rootType !== "TRAFFIC";
+}
+
 function formatNumber(value: unknown, showRial = true) {
 	if (value === null || value === undefined || value === "")
 		return "-";
@@ -416,7 +424,8 @@ function normalizeSummaryRows(response: PredictionSummaryResponse | null | undef
 			const calendarLabel = getPeriodModeCalendarLabel(periodMode);
 
 			return (["performance", "predictions"] as PredictionSummarySection[]).flatMap((section) => {
-				const sectionRows = flattenMetricRecords(period[section]);
+				const sectionRows = flattenMetricRecords(period[section])
+					.filter(item => shouldIncludeMetricType(serviceCode, item.typeLabel));
 				return sectionRows.map((item, rowIndex): PredictionSummaryDisplayRow => {
 					const sentTraffic = pickTrafficMetric(item.record, [
 						{ key: "value_gb_month", unit: "GB/month" },
@@ -563,6 +572,7 @@ export function PredictionsSummaryReportPage() {
 	const serviceOptions = useMemo(() => {
 		return (services.data?.results ?? [])
 			.filter(service => permittedIdSet.has(Number(service.id)))
+			.filter(service => normalizeApiServiceCode(service.code) !== "commercial")
 			.map((service: ServiceDto) => ({
 				label: service.name,
 				value: normalizeApiServiceCode(service.code),
@@ -598,18 +608,23 @@ export function PredictionsSummaryReportPage() {
 	const canExport = rows.length > 0 && !mutation.isPending;
 
 	const handleDownloadExcel = () => {
-		if (!canExport || outputMode !== "classic")
+		if (!canExport)
 			return;
-		downloadPredictionSummaryExcel({
-			filename: `predictions-performance-summary-${new Date().toISOString().slice(0, 10)}.xls`,
-			rows,
-			meta: exportMeta,
-			mode: outputMode,
-		});
+		try {
+			downloadPredictionSummaryExcel({
+				filename: `predictions-performance-summary-${new Date().toISOString().slice(0, 10)}.xls`,
+				rows,
+				meta: exportMeta,
+				mode: outputMode,
+			});
+		}
+		catch {
+			window.$message?.error("ساخت یا دانلود فایل اکسل با خطا مواجه شد.");
+		}
 	};
 
 	const handleDownloadPdf = () => {
-		if (!canExport)
+		if (!canExport || outputMode !== "classic")
 			return;
 		try {
 			openPredictionSummaryPdfPrint(rows, exportMeta);
