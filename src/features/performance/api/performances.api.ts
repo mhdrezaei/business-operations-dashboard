@@ -190,7 +190,10 @@ export interface PredictionSummaryPeriod {
 	year?: number | string | null
 	month?: number | string | null
 	quarter?: number | string | null
-	months_expanded?: Array<number | string>
+	months_expanded?: Array<number | string | {
+		sh_year?: number | string | null
+		sh_month?: number | string | null
+	}>
 	performance?: Record<string, unknown> | null
 	predictions?: Record<string, unknown> | null
 	[key: string]: unknown
