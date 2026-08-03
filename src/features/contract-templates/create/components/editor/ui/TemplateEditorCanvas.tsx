@@ -208,35 +208,32 @@ const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasPro
 	return (
 		<div className="flex flex-col h-full w-full relative" style={{ backgroundColor: token.colorBgLayout }}>
 
-			{/* 🔴 استایل‌های مهندسی‌شده برای تجربه کاربری عالی و رفع مشکلات ظاهر */}
 			<style>
 				{`
-                /* حذف تمام کادرهای مزاحم و بیرون زده */
                 .ms-word-editor .ProseMirror {
                     outline: none !important;
                     border: none !important;
                     box-shadow: none !important;
                     background: transparent !important;
-                }
-                
-                /* رفع مشکل رنگ سفید متن در دارک مود - همیشه مشکی روی کاغذ سفید */
-                .ms-word-editor .ProseMirror * {
-                    color: #1a1a1a !important; 
+                    color: #1a1a1a;
+                    font-family: 'Vazirmatn', Tahoma, sans-serif;
                 }
 
-                /* اصلاح فاصله بین خطوط و پاراگراف‌ها (تایپوگرافی استاندارد نامه) */
                 .ms-word-editor .ProseMirror p {
-                    line-height: 1.8 !important; 
-                    margin-bottom: 14px !important;
-                    text-align: justify !important;
+                    line-height: 1.8; 
+                    margin-bottom: 14px;
+                    text-align: justify;
                 }
 
-                /* تغییر آیکن موس به حالت تایپ در کل بوم */
+                /* رفع باگ استایل‌دهی: اسپَن‌ها باید فونت‌فمیلی خودشان (که تولبار تعیین میکند) را دریافت کنند */
+                .ms-word-editor .ProseMirror span {
+                    font-family: inherit;
+                }
+
                 .ms-word-editor {
                     cursor: text;
                 }
 
-                /* کادر سایه‌دار صفحات افزونه */
                 .ms-word-editor [data-rm-pagination] {
                     background-color: #ffffff !important;
                 }
@@ -245,13 +242,7 @@ const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasPro
 
 			{pager}
 
-			{/* محیط وسط‌چین کادر */}
 			<div className="flex-1 w-full flex justify-center py-6 overflow-hidden bg-black/5 dark:bg-black/20">
-
-				{/*
-                  🔴 پنجره ثابت (Viewport) - قفل شده روی ۱۱۲۳ پیکسل.
-                  جلوگیری از اسکرول بومی مرورگر با onScroll
-                */}
 				<div
 					className="ms-word-editor relative shadow-2xl rounded-sm bg-white"
 					onClick={handleCanvasClick}
@@ -265,7 +256,6 @@ const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasPro
 						boxSizing: "border-box",
 					}}
 				>
-					{/* 🔴 موتور اسلاید: با انیمیشن بسیار نرم بین صفحات جابجا می‌شود */}
 					<div
 						style={{
 							transform: `translateY(-${pageIndex * TOTAL_STEP_PX}px)`,
@@ -276,7 +266,6 @@ const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasPro
 						<EditorContent editor={editor} />
 					</div>
 				</div>
-
 			</div>
 		</div>
 	);

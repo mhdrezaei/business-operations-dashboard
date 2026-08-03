@@ -1,3 +1,4 @@
+import type { HeaderData, HeaderEditorProps } from "../../../../types";
 // src/features/contract-templates/create/components/editor/ui/HeaderEditor.tsx
 import { TemplateCreateApi } from "#src/features/contract-templates/api/api.js";
 import { DeleteOutlined, LayoutOutlined, LoadingOutlined, PictureOutlined } from "@ant-design/icons";
@@ -6,19 +7,6 @@ import React, { useRef, useState } from "react";
 
 const { Text } = Typography;
 const MAX_LOGO_SIZE = 1024 * 1024;
-
-export interface HeaderData {
-	logo_asset_id?: number | null
-	logo_data_url?: string | null
-	logo_url?: string | null
-	show_contract_number?: boolean
-	extra_text?: string
-}
-
-interface HeaderEditorProps {
-	header: HeaderData
-	onChange: (data: HeaderData) => void
-}
 
 export default function HeaderEditor({ header, onChange }: HeaderEditorProps) {
 	const { token } = theme.useToken();

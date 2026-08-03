@@ -1,4 +1,5 @@
 import type { Editor } from "@tiptap/react";
+import { useTemplateStore } from "#src/features/contract-templates/store/useTemplateStore.js";
 import {
 	AlignCenterOutlined,
 	AlignLeftOutlined,
@@ -77,15 +78,25 @@ function ToolbarBtn({ onClick, active = false, title, disabled = false, icon }: 
 	);
 }
 
-export default function EditorToolbar({ editor, customFonts = [] }: { editor: Editor | null, customFonts?: any[] }) {
+export default function EditorToolbar({ editor }: { editor: Editor | null, customFonts?: any[] }) {
 	const { token } = theme.useToken();
+	const { customFonts } = useTemplateStore();
+
+	// 🔴 افزودن استایل فونت به Labelها تا کاربر شکل واقعی فونت را در Select ببیند
 	const fontFamilyOptions = useMemo(() => [
 		{ value: "default", label: "فونت پیش‌فرض" },
-		{ value: "Vazirmatn", label: "وزیرمتن" },
-		{ value: "Tahoma", label: "تاهوما" },
-		{ value: "B Nazanin", label: "بی نازنین" },
-		...customFonts.map(font => ({ value: font.family || font.name, label: font.name })),
+		{ value: "Vazirmatn", label: <span style={{ fontFamily: "Vazirmatn" }}>وزیرمتن</span> },
+		{ value: "Tahoma", label: <span style={{ fontFamily: "Tahoma" }}>تاهوما</span> },
+		{ value: "B Nazanin", label: <span style={{ fontFamily: "B Nazanin" }}>بی نازنین</span> },
+		...customFonts.map((font) => {
+			const familyName = font.family || font.name;
+			return {
+				value: familyName,
+				label: <span style={{ fontFamily: familyName }}>{font.name}</span>,
+			};
+		}),
 	], [customFonts]);
+
 	const state = useEditorState({
 		editor,
 		selector: ({ editor: e }) => {
@@ -138,7 +149,17 @@ export default function EditorToolbar({ editor, customFonts = [] }: { editor: Ed
 			<Divider type="vertical" className="m-0 h-6" style={{ borderColor: token.colorBorder }} />
 			<Space.Compact>
 				<Select size="small" value={headingValue} options={HEADING_OPTIONS} getPopupContainer={getPopupContainer} onChange={val => val === "p" ? chain().setParagraph().run() : chain().toggleHeading({ level: Number(val) as any }).run()} className="w-28 font-medium" />
-				<Select size="small" value={state.fontFamily} options={fontFamilyOptions} getPopupContainer={getPopupContainer} onChange={val => val === "default" ? chain().unsetFontFamily().run() : chain().setFontFamily(val).run()} className="w-32" />
+
+				{/* 🔴 اعمال فونت انتخاب شده روی ویرایشگر با setFontFamily */}
+				<Select
+					size="small"
+					value={state.fontFamily}
+					options={fontFamilyOptions}
+					getPopupContainer={getPopupContainer}
+					onChange={val => val === "default" ? chain().unsetFontFamily().run() : chain().setFontFamily(val).run()}
+					className="w-32"
+				/>
+
 				<Select size="small" value={state.fontSize} options={[{ value: "default", label: "اندازه" }, ...FONT_SIZES]} getPopupContainer={getPopupContainer} onChange={val => val === "default" ? chain().unsetFontSize().run() : chain().setFontSize(val).run()} className="w-20" />
 			</Space.Compact>
 			<Divider type="vertical" className="m-0 h-6" style={{ borderColor: token.colorBorder }} />

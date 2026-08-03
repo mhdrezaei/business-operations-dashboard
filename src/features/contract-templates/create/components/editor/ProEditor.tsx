@@ -1,14 +1,8 @@
-import type { Editor } from "@tiptap/react";
+import type { ProEditorProps } from "../../../types";
 import { theme } from "antd";
-import React from "react";
 import EditorToolbar from "./ui/EditorToolbar";
 import TemplateEditorCanvas from "./ui/TemplateEditorCanvas";
 import "./core/editor-styles.css";
-
-interface ProEditorProps {
-	editor: Editor | null
-	onChange?: (content: string) => void
-}
 
 export default function ProEditor({ editor, onChange }: ProEditorProps) {
 	const { token } = theme.useToken();

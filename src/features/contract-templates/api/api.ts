@@ -1,23 +1,31 @@
-// src/features/contract-templates/queries/template-create.queries.ts
+// src/features/contract-templates/api/api.ts
 
+import type { AssetUploadResponse, PaginatedFonts, TemplateFont } from "../types";
 import { request } from "#src/utils/index.js";
 
-export interface AssetUploadResponse {
-	id: number
-	file_url: string
-}
-
 export const TemplateCreateApi = {
-	/**
-	 * آپلود فایل (لوگو و ...) برای قالب قرارداد
-	 */
 	uploadAsset: (file: File) => {
 		const formData = new FormData();
 		formData.append("file", file);
-
-		// توکن احراز هویت به صورت خودکار توسط اینترسپتورهای ky شما اضافه می‌شود
 		return request.post("contracts/templates/assets/", {
 			body: formData,
 		}).json<AssetUploadResponse>();
+	},
+
+	getFonts: () => {
+		return request.get("contracts/templates/fonts/").json<PaginatedFonts>();
+	},
+
+	uploadFont: (name: string, file: File) => {
+		const formData = new FormData();
+		formData.append("name", name);
+		formData.append("file", file);
+		return request.post("contracts/templates/fonts/", {
+			body: formData,
+		}).json<TemplateFont>();
+	},
+
+	deleteFont: (id: number) => {
+		return request.delete(`contracts/templates/fonts/${id}/`).json();
 	},
 };

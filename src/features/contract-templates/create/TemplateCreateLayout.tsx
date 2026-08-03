@@ -1,13 +1,14 @@
 // src/features/contract-templates/create/TemplateCreateLayout.tsx
-import type { HeaderData } from "./components/editor/ui/HeaderEditor";
 import { Card, theme } from "antd";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
+// 🔴 فراخوانی استور Zustand
+import { useTemplateStore } from "../store/useTemplateStore";
 import ProEditor from "./components/editor/ProEditor";
 import { useTemplateEditor } from "./components/editor/ui/TemplateEditorCanvas";
+import TemplateCreateSidebar from "./components/sidebar/TemplateCreateSidebar";
 import TemplateCreateForm from "./components/TemplateCreateForm";
 import TemplateCreateHeader from "./components/TemplateCreateHeader";
-import TemplateCreateSidebar from "./components/TemplateCreateSidebar";
 import TemplatePrintPreviewModal from "./components/TemplatePrintPreviewModal";
 
 interface TemplateCreateLayoutProps {
@@ -33,14 +34,22 @@ export default function TemplateCreateLayout({ onClose }: TemplateCreateLayoutPr
 		},
 		mode: "onChange",
 	});
-	const [headerData, setHeaderData] = useState<HeaderData>({});
+
 	const [editorContent, setEditorContent] = useState("");
 	const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
 	const editor = useTemplateEditor({ initialContent: editorContent });
+
+	// 🔴 خواندن فونت‌ها و تابع دریافت آن‌ها از استور (دیگر نیازی به useState لوکال نیست)
+	const { customFonts, fetchFonts } = useTemplateStore();
+
+	// 🔴 دریافت فونت‌ها در هنگام لود شدن کامپوننت
+	useEffect(() => {
+		fetchFonts();
+	}, [fetchFonts]);
 
 	return (
 		<FormProvider {...methods}>
-			{/* 🔴 اضافه شدن تگ style برای کاستوم کردن اسکرول‌بار مودال */}
 			<style>
 				{`
                 .custom-modal-scroll::-webkit-scrollbar {
@@ -61,6 +70,15 @@ export default function TemplateCreateLayout({ onClose }: TemplateCreateLayoutPr
                     scrollbar-width: thin;
                     scrollbar-color: rgba(136, 136, 136, 0.35) transparent;
                 }
+                
+                ${customFonts.map(f => `
+                    @font-face {
+                        font-family: '${f.family}';
+                        src: url('${f.file_url}') format('${f.format || "truetype"}');
+                        font-weight: normal;
+                        font-style: normal;
+                    }
+                `).join("\n")}
             `}
 			</style>
 			<Card
@@ -72,40 +90,32 @@ export default function TemplateCreateLayout({ onClose }: TemplateCreateLayoutPr
 				</div>
 
 				<div className="flex flex-col flex-1 p-4 gap-4 min-h-0">
-
-					{/* فرم بالایی (ثابت) */}
 					<div className="flex-shrink-0">
 						<TemplateCreateForm />
 					</div>
 
-					{/* کانتینر ادیتور و سایدبار */}
 					<div className="flex flex-1 gap-4 min-h-0 items-start">
-
-						{/* سایدبار */}
 						<div
 							className="w-80 flex-shrink-0 flex flex-col sticky top-4"
 							style={{ height: "calc(100vh)" }}
 						>
-							<TemplateCreateSidebar
-								editor={editor}
-								headerData={headerData}
-								setHeaderData={setHeaderData}
-							/>
+							{/* 🔴 ارور برطرف شد: چون سایدبار به استور متصل است، فقط ادیتور را به آن پاس می‌دهیم */}
+							<TemplateCreateSidebar editor={editor} />
 						</div>
 
-						{/* ادیتور */}
 						<div className="flex-1 h-full min-w-0 flex flex-col relative">
+							{/* 🔴 نیازی به پاس دادن customFonts به ProEditor نیست، تولبار از استور می‌خواند */}
 							<ProEditor editor={editor} onChange={setEditorContent} />
 						</div>
-
 					</div>
 				</div>
 			</Card>
+
+			{/* 🔴 نیازی به پاس دادن headerData و customFonts به مودال نیست، مودال از استور می‌خواند */}
 			<TemplatePrintPreviewModal
 				isOpen={isPreviewOpen}
 				onClose={() => setIsPreviewOpen(false)}
 				editor={editor}
-				headerData={headerData}
 			/>
 		</FormProvider>
 	);

@@ -1,21 +1,26 @@
 // src/features/contract-templates/create/components/TemplatePrintPreviewModal.tsx
 import type { Editor } from "@tiptap/react";
-import type { HeaderData } from "./editor/ui/HeaderEditor";
 import { FilePdfOutlined, PrinterOutlined } from "@ant-design/icons";
 import { DOMSerializer } from "@tiptap/pm/model";
 import { Button, message, Modal, theme } from "antd";
 import React, { useMemo } from "react";
+// 🔴 فراخوانی استور برای دریافت یکپارچه‌ی داده‌ها
+import { useTemplateStore } from "../../store/useTemplateStore";
 import { useVariableRegistry } from "./editor/variables/VariableRegistryContext";
 
+// 🔴 پراپ‌های اضافی حذف شدند
 interface TemplatePrintPreviewModalProps {
 	isOpen: boolean
 	onClose: () => void
 	editor: Editor | null
-	headerData?: HeaderData
 }
 
-export default function TemplatePrintPreviewModal({ isOpen, onClose, editor, headerData }: TemplatePrintPreviewModalProps) {
+export default function TemplatePrintPreviewModal({ isOpen, onClose, editor }: TemplatePrintPreviewModalProps) {
 	const { token } = theme.useToken();
+
+	// 🔴 خواندن مستقیم هدر و فونت‌ها از استور
+	const { headerData, customFonts } = useTemplateStore();
+
 	const registry = useVariableRegistry() as any;
 	const staticGroups = registry?.staticGroups || [];
 
@@ -106,9 +111,20 @@ export default function TemplatePrintPreviewModal({ isOpen, onClose, editor, hea
 			message.info("لطفاً در پنجره چاپ، قسمت Destination را روی «Save as PDF» تنظیم کنید.");
 		}
 
-		// 🔴 مشکل اینجا بود! تگ <style> اضافه شد
+		// 🔴 استفاده از f.family || f.name تا مطمئن شویم در پرینت هم دقیقاً نام صحیح اعمال می‌شود
+		const customFontFaces = customFonts.map(f => `
+            @font-face {
+                font-family: '${f.family || f.name}';
+                src: url('${f.file_url}') format('${f.format || "truetype"}');
+                font-weight: normal;
+                font-style: normal;
+            }
+        `).join("\n");
+
 		printWindow.document.write(`
             <style>
+                ${customFontFaces}
+                
                 html, body {
                     padding: 0;
                     margin: 0;
@@ -123,6 +139,11 @@ export default function TemplatePrintPreviewModal({ isOpen, onClose, editor, hea
                     margin: 0 auto;
                     padding: 1.5cm 2cm;
                     text-align: justify;
+                }
+                /* استایل برای حفظ کردن تگ‌های inline تیپ‌تپ مثل font-family */
+                .print-container * {
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
                 }
                 @media print {
                     body { -webkit-print-color-adjust: exact; }
@@ -139,10 +160,11 @@ export default function TemplatePrintPreviewModal({ isOpen, onClose, editor, hea
 		printWindow.document.close();
 		printWindow.focus();
 
+		// کمی تأخیر بیشتر (۶۰۰ میلی‌ثانیه) تا فونت‌ها کاملاً توسط مرورگر لود شوند و بعد پنجره چاپ باز شود
 		setTimeout(() => {
 			printWindow.print();
 			printWindow.close();
-		}, 400);
+		}, 600);
 	};
 
 	return (
