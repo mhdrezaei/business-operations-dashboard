@@ -13,9 +13,10 @@ import { ContractAlignedField, useContractAlignedLabelWidth } from "../component
 interface FixedEndSectionProps {
 	showSignedCheckbox?: boolean
 	contractId?: number | null
+	showDocuments?: boolean
 }
 
-export function FixedEndSection({ showSignedCheckbox = false, contractId = null }: FixedEndSectionProps) {
+export function FixedEndSection({ showSignedCheckbox = false, contractId = null, showDocuments = true }: FixedEndSectionProps) {
 	const alignedLabelStyle = useContractAlignedLabelWidth(["توضیحات", "مدارک", "قرارداد امضا شده است"]);
 
 	// در حالت ایجاد قرارداد (بدون contractId) فایل‌ها فقط محلی نگه‌داشته می‌شوند
@@ -76,14 +77,18 @@ export function FixedEndSection({ showSignedCheckbox = false, contractId = null 
 					/>
 				</ContractAlignedField>
 
-				<ContractAlignedField label="مدارک" labelId="contract-form-label-documents">
-					<RHFProUploadButton<ContractFormValues, "documents">
-						name="documents"
-						buttonText="آپلود مدارک (PDF)"
-						itemProps={{ className: "mb-0" }}
-						uploadProps={uploadProps}
-					/>
-				</ContractAlignedField>
+				{showDocuments
+					? (
+						<ContractAlignedField label="مدارک" labelId="contract-form-label-documents">
+							<RHFProUploadButton<ContractFormValues, "documents">
+								name="documents"
+								buttonText="آپلود مدارک (PDF)"
+								itemProps={{ className: "mb-0" }}
+								uploadProps={uploadProps}
+							/>
+						</ContractAlignedField>
+					)
+					: null}
 
 				{showSignedCheckbox
 					? (

@@ -1,4 +1,5 @@
 import type { ContractFormValues } from "#src/features/contract/shared/model/contract.form.types";
+import type { ContractFormSelectionContext } from "#src/features/contract/shared/ui/form/ContractForm";
 import type { UploadFile } from "antd";
 import type { ContractServicePath } from "../../../api/contracts.api";
 import { fetchCompaniesByService } from "#src/api/common/common.api";
@@ -6,9 +7,11 @@ import { listContractDocuments } from "#src/features/contract/api/contract-docum
 import { apiPricingToContractType, contractTypeToApiPricing } from "#src/features/contract/api/pricing.mapper";
 import { ContractForm } from "#src/features/contract/shared/ui/form/ContractForm";
 import { pickCompanyTypeToken } from "#src/features/contract/shared/utils";
-import { Empty, Modal, Spin } from "antd";
-import React, { useEffect, useMemo, useState } from "react";
+import { Alert, Empty, Spin } from "antd";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { fetchContractDetail, fetchUpdateContract } from "../../../api/contracts.api";
+import { CompanyContractsPanel } from "./CompanyContractsPanel";
+import { ContractDocumentsPanel } from "./ContractDocumentsPanel";
 
 function contractDocumentToUploadFile(doc: { id: number, original_filename: string, size: number, mime_type: string }): UploadFile {
 	return {
@@ -27,11 +30,11 @@ const BEHESHTI_DATACENTER_TAG = "DEFAULT_BEHESHTI";
 const TELECOM_COLLOCATION_COMPANY_SEARCH = "TRAFFIC_COLLOCATION_COST_GLOBAL";
 
 interface Props {
-	open: boolean
-	contractId: number | null
-	service: ContractServicePath | null
-	onClose: () => void
+	contractId: number
+	service: ContractServicePath
 	onUpdated?: () => void
+	onSaved?: () => void
+	onContractSelect?: (contractId: number, serviceId: number, companyType: string | null, service: ContractServicePath) => void
 }
 
 function servicePathToServiceCode(service: ContractServicePath): string {
@@ -40,9 +43,10 @@ function servicePathToServiceCode(service: ContractServicePath): string {
 }
 
 function normalizeSmsCounterpartyType(value: unknown): "partners" | "gov_ops" | null {
-	if (value === "partners" || value === "client")
+	const normalized = String(value ?? "").trim().toLowerCase();
+	if (normalized === "partners" || normalized === "client")
 		return "partners";
-	if (value === "gov_ops" || value === "vendor")
+	if (normalized === "gov_ops" || normalized === "vendor")
 		return "gov_ops";
 	return null;
 }
@@ -303,6 +307,7 @@ function mapOpenApiAddenda(
 		const row = (item ?? {}) as Record<string, any>;
 
 		const mapped: Record<string, any> = {
+			...mapAddendumIdentity(row),
 			start_jy: toNumberOrNull(row.startYear),
 			start_jm: toNumberOrNull(row.startMonth),
 			end_jy: toNumberOrNull(row.endYear),
@@ -317,18 +322,20 @@ function mapOpenApiAddenda(
 		else if (contractModel === "package") {
 			mapped.contract_openapi_details = mainOpenApiDetails ?? mapOpenApiPackageDetails(serviceFields);
 		}
+		mapped.children = mapOpenApiAddenda(row.children, contractModel, serviceFields, mainOpenApiDetails);
 
 		return mapped;
 	});
 }
 
-function mapCommercialAddenda(addenda: unknown) {
+function mapCommercialAddenda(addenda: unknown): Array<Record<string, any>> {
 	const list = Array.isArray(addenda) ? addenda : [];
 
 	return list.map((item) => {
 		const row = (item ?? {}) as Record<string, any>;
 
 		return {
+			...mapAddendumIdentity(row),
 			start_jy: toNumberOrNull(row.startYear),
 			start_jm: toNumberOrNull(row.startMonth),
 			end_jy: toNumberOrNull(row.endYear),
@@ -336,17 +343,19 @@ function mapCommercialAddenda(addenda: unknown) {
 			contract_number: row.contractNumber ?? "",
 			note: row.description ?? "",
 			contract_openapi_details: mapOpenApiLegacyDetails(row.contractPricing),
+			children: mapCommercialAddenda(row.children),
 		};
 	});
 }
 
-function mapSmsCommissionAddenda(addenda: unknown) {
+function mapSmsCommissionAddenda(addenda: unknown): Array<Record<string, any>> {
 	const list = Array.isArray(addenda) ? addenda : [];
 
 	return list.map((item) => {
 		const row = (item ?? {}) as Record<string, any>;
 
 		return {
+			...mapAddendumIdentity(row),
 			start_jy: toNumberOrNull(row.startYear),
 			start_jm: toNumberOrNull(row.startMonth),
 			end_jy: toNumberOrNull(row.endYear),
@@ -360,6 +369,108 @@ function mapSmsCommissionAddenda(addenda: unknown) {
 			first_side_percent: toStringOrNull(row.firstPartySharePercent),
 			area_percent: toStringOrNull(row.regionSharePercent),
 			sales_agent_percent: toStringOrNull(row.salesAgentSharePercent),
+			children: mapSmsCommissionAddenda(row.children),
+		};
+	});
+}
+
+function mapShahkarAddenda(addenda: unknown): Array<Record<string, any>> {
+	const list = Array.isArray(addenda) ? addenda : [];
+
+	return list.map((item) => {
+		const row = (item ?? {}) as Record<string, any>;
+		const pricing = contractTypeToApiPricing((row.contractPricing ?? null) as any);
+
+		return {
+			...mapAddendumIdentity(row),
+			start_jy: toNumberOrNull(row.startYear),
+			start_jm: toNumberOrNull(row.startMonth),
+			end_jy: toNumberOrNull(row.endYear),
+			end_jm: toNumberOrNull(row.endMonth),
+			contract_number: row.contractNumber ?? "",
+			note: row.description ?? "",
+			calculation_type: pricing?.calculation_type ?? null,
+			tiers: pricing?.tiers ?? [],
+			children: mapShahkarAddenda(row.children),
+		};
+	});
+}
+
+function mapGenericAddenda(addenda: unknown): Array<Record<string, any>> {
+	const list = Array.isArray(addenda) ? addenda : [];
+
+	return list.map((item) => {
+		const row = (item ?? {}) as Record<string, any>;
+		const {
+			startYear,
+			startMonth,
+			endYear,
+			endMonth,
+			contractNumber,
+			description,
+			contractPricing,
+			children: _children,
+			parentAddendumId: _parentAddendumId,
+			displayAddendumNumber: _displayAddendumNumber,
+			fieldArrayId: _fieldArrayId,
+			...rest
+		} = row;
+		const pricing = contractTypeToApiPricing((contractPricing ?? null) as any);
+
+		return {
+			...rest,
+			...mapAddendumIdentity(row),
+			start_jy: toNumberOrNull(startYear),
+			start_jm: toNumberOrNull(startMonth),
+			end_jy: toNumberOrNull(endYear),
+			end_jm: toNumberOrNull(endMonth),
+			contract_number: contractNumber ?? "",
+			note: description ?? "",
+			...(pricing ?? {}),
+			children: mapGenericAddenda(row.children),
+		};
+	});
+}
+
+function normalizeAddendumIdentity(row: Record<string, any>) {
+	return {
+		id: toNumberOrNull(row.id) ?? undefined,
+		parentAddendumId: toNumberOrNull(row.parent_addendum_id ?? row.parentAddendumId),
+		displayAddendumNumber: row.display_addendum_number ?? row.displayAddendumNumber ?? undefined,
+	};
+}
+
+function mapAddendumIdentity(row: Record<string, any>) {
+	const id = toNumberOrNull(row.id);
+	const parentAddendumId = toNumberOrNull(row.parentAddendumId ?? row.parent_addendum_id);
+
+	return {
+		...(id != null ? { id } : {}),
+		...(parentAddendumId != null ? { parent_addendum_id: parentAddendumId } : {}),
+	};
+}
+
+function normalizeAddendumBase(row: Record<string, any>) {
+	return {
+		...normalizeAddendumIdentity(row),
+		startYear: toNumberOrNull(row.start_jy ?? row.startYear),
+		startMonth: toNumberOrNull(row.start_jm ?? row.startMonth),
+		endYear: toNumberOrNull(row.end_jy ?? row.endYear),
+		endMonth: toNumberOrNull(row.end_jm ?? row.endMonth),
+		contractNumber: row.contract_number ?? row.contractNumber ?? "",
+		description: row.note ?? row.description ?? "",
+	};
+}
+
+function normalizeGenericAddendaFromDto(addenda: unknown): Array<Record<string, any>> {
+	const list = Array.isArray(addenda) ? addenda : [];
+
+	return list.map((item) => {
+		const row = (item ?? {}) as Record<string, any>;
+		return {
+			...row,
+			...normalizeAddendumBase(row),
+			children: normalizeGenericAddendaFromDto(row.children),
 		};
 	});
 }
@@ -373,20 +484,32 @@ function normalizeTrafficLocation(location: unknown) {
 	return null;
 }
 
-function mapTrafficLocationPayload(location: "TEHRAN" | "COUNTY", pricingValue: unknown) {
+function normalizeTrafficUnit(unit: unknown): "GB/month" | "Mbps" | null {
+	const normalized = String(unit ?? "").trim().toLowerCase();
+	if (normalized === "gb/month")
+		return "GB/month";
+	if (normalized === "mbps")
+		return "Mbps";
+	return null;
+}
+
+function mapTrafficLocationPayload(location: "TEHRAN" | "COUNTY", pricingValue: unknown, unit?: string | null, basedTire?: boolean, incomePercentage?: unknown) {
 	const pricing = contractTypeToApiPricing((pricingValue ?? null) as any);
 	if (!pricing)
 		return null;
+	const normalizedIncomePercentage = toNumberOrNull(incomePercentage);
 
 	return {
 		location,
-		unit: "GB/month",
+		unit: unit ?? "GB/month",
 		calculation_type: pricing.calculation_type,
 		tiers: pricing.tiers ?? [],
+		...(typeof basedTire === "boolean" ? { based_tire: basedTire } : {}),
+		...(normalizedIncomePercentage != null ? { income_percentage: normalizedIncomePercentage } : {}),
 	};
 }
 
-function mapTrafficAddenda(addenda: unknown) {
+function mapTrafficAddenda(addenda: unknown): Array<Record<string, any>> {
 	const list = Array.isArray(addenda) ? addenda : [];
 
 	return list.map((item) => {
@@ -395,6 +518,7 @@ function mapTrafficAddenda(addenda: unknown) {
 		const pricing = location ? mapTrafficLocationPayload(location, row.contractPricing) : null;
 
 		return {
+			...mapAddendumIdentity(row),
 			start_jy: toNumberOrNull(row.startYear),
 			start_jm: toNumberOrNull(row.startMonth),
 			end_jy: toNumberOrNull(row.endYear),
@@ -402,11 +526,12 @@ function mapTrafficAddenda(addenda: unknown) {
 			contract_number: row.contractNumber ?? "",
 			note: row.description ?? "",
 			...(pricing ?? {}),
+			children: mapTrafficAddenda(row.children),
 		};
 	});
 }
 
-function normalizeCommercialAddendaFromDto(addenda: unknown) {
+function normalizeCommercialAddendaFromDto(addenda: unknown): Array<Record<string, any>> {
 	const list = Array.isArray(addenda) ? addenda : [];
 
 	return list.map((item) => {
@@ -423,13 +548,9 @@ function normalizeCommercialAddendaFromDto(addenda: unknown) {
 		);
 
 		return {
-			startYear: toNumberOrNull(row.start_jy ?? row.startYear),
-			startMonth: toNumberOrNull(row.start_jm ?? row.startMonth),
-			endYear: toNumberOrNull(row.end_jy ?? row.endYear),
-			endMonth: toNumberOrNull(row.end_jm ?? row.endMonth),
-			contractNumber: row.contract_number ?? row.contractNumber ?? "",
-			description: row.note ?? row.description ?? "",
+			...normalizeAddendumBase(row),
 			contractPricing: pricing ?? undefined,
+			children: normalizeCommercialAddendaFromDto(row.children),
 		};
 	});
 }
@@ -520,6 +641,197 @@ function normalizeOpenApiServiceFields(dto: any) {
 	return {};
 }
 
+function normalizeOpenApiAddendaFromDto(addenda: unknown): Array<Record<string, any>> {
+	const list = Array.isArray(addenda) ? addenda : [];
+
+	return list.map((item) => {
+		const row = (item ?? {}) as Record<string, any>;
+		const details = row.contract_openapi_details ?? row.contractOpenapiDetails ?? null;
+		const pricing = apiPricingToContractType(
+			details?.bill_inquiry
+			?? details?.billInquiry
+			?? details?.receipt_register
+			?? details?.receiptRegister
+			?? row.bill_inquiry
+			?? row.receipt_register
+			?? row,
+		);
+
+		return {
+			...normalizeAddendumBase(row),
+			operationType: row.operation_type ?? row.operationType ?? null,
+			contractPricing: pricing ?? undefined,
+			children: normalizeOpenApiAddendaFromDto(row.children),
+		};
+	});
+}
+
+function normalizeSmsOperatorRevenue(operatorRevenue: unknown) {
+	const rows = Array.isArray(operatorRevenue) ? operatorRevenue : [];
+	const normalized: Record<string, ReturnType<typeof apiPricingToContractType>> = {};
+
+	for (const row of rows) {
+		const operator = String(row?.operator ?? "").trim().toUpperCase();
+		const language = String(row?.language ?? "").trim().toUpperCase();
+		const field = operator === "IRANCELL"
+			? language === "EN" ? "irancellEn" : "irancellFa"
+			: operator === "MCI"
+				? language === "EN" ? "hamrahAvalEn" : "hamrahAvalFa"
+				: operator === "OTHER"
+					? language === "EN" ? "otherEn" : "otherFa"
+					: null;
+
+		if (field)
+			normalized[field] = apiPricingToContractType(row);
+	}
+
+	return normalized;
+}
+
+function normalizeSmsServiceFields(dto: any) {
+	const profit = dto?.profit ?? null;
+	const governmentRevenue = dto?.government_revenue ?? dto?.governmentRevenue ?? null;
+
+	return {
+		isOfficial: dto?.is_official ?? dto?.isOfficial ?? dto?.is_signed ?? true,
+		operatorRevenue: normalizeSmsOperatorRevenue(dto?.operator_revenue ?? dto?.operatorRevenue),
+		governmentRevenue: apiPricingToContractType(governmentRevenue),
+		governmentRate: apiPricingToContractType(dto?.government_rate ?? dto?.governmentRate ?? governmentRevenue),
+		profit: profit
+			? {
+				pricing: apiPricingToContractType(profit),
+				minProfit: toNumberOrStringNumber(profit?.min_profit_amount ?? profit?.minProfit),
+			}
+			: undefined,
+		addenda: normalizeSmsAddendaFromDto(dto?.addenda),
+	};
+}
+
+function normalizeSmsAddendaFromDto(addenda: unknown): Array<Record<string, any>> {
+	const list = Array.isArray(addenda) ? addenda : [];
+	const hasComponentRows = list.some(item => typeof item?.component === "string");
+
+	if (hasComponentRows) {
+		const groups = new Map<string, Record<string, any>[]>();
+		for (const item of list) {
+			const row = (item ?? {}) as Record<string, any>;
+			const key = String(
+				row.display_addendum_number
+				?? row.displayAddendumNumber
+				?? `${row.start_jy ?? row.startYear}-${row.start_jm ?? row.startMonth}-${row.end_jy ?? row.endYear}-${row.end_jm ?? row.endMonth}-${row.contract_number ?? row.contractNumber ?? ""}`,
+			);
+			groups.set(key, [...(groups.get(key) ?? []), row]);
+		}
+
+		return [...groups.values()].map((rows) => {
+			const first = rows[0];
+			const operatorRows = rows.filter(row => String(row.component ?? "").toUpperCase() === "OPERATOR");
+			const government = rows.find(row => String(row.component ?? "").toUpperCase() === "GOVERNMENT");
+			const profit = rows.find(row => String(row.component ?? "").toUpperCase() === "PROFIT");
+			const children = rows.flatMap(row => Array.isArray(row.children) ? row.children : []);
+
+			return {
+				...normalizeAddendumBase(first),
+				operatorRevenue: normalizeSmsOperatorRevenue(operatorRows),
+				governmentRevenue: apiPricingToContractType(government as any),
+				governmentRate: apiPricingToContractType(government as any),
+				profit: profit
+					? {
+						pricing: apiPricingToContractType(profit as any),
+						minProfit: toNumberOrStringNumber(profit.min_profit_amount ?? profit.minProfit),
+					}
+					: undefined,
+				children: normalizeSmsAddendaFromDto(children),
+			};
+		});
+	}
+
+	return list.map((item) => {
+		const row = (item ?? {}) as Record<string, any>;
+		const profit = row.profit ?? null;
+		const governmentRevenue = row.government_revenue ?? row.governmentRevenue ?? row.government_rate ?? row.governmentRate ?? null;
+
+		return {
+			...normalizeAddendumBase(row),
+			operatorRevenue: normalizeSmsOperatorRevenue(row.operator_revenue ?? row.operatorRevenue),
+			governmentRevenue: apiPricingToContractType(governmentRevenue),
+			governmentRate: apiPricingToContractType(governmentRevenue),
+			profit: profit
+				? {
+					pricing: apiPricingToContractType(profit),
+					minProfit: toNumberOrStringNumber(profit?.min_profit_amount ?? profit?.minProfit),
+				}
+				: undefined,
+			children: normalizeSmsAddendaFromDto(row.children),
+		};
+	});
+}
+
+function mapSmsPricingPayload(pricingValue: unknown) {
+	const pricing = contractTypeToApiPricing((pricingValue ?? null) as any);
+	return {
+		calculation_type: pricing?.calculation_type ?? null,
+		tiers: pricing?.tiers ?? [],
+	};
+}
+
+function mapSmsOperatorRevenuePayload(operatorRevenueValue: unknown) {
+	const operatorRevenue = (operatorRevenueValue ?? {}) as Record<string, unknown>;
+	const mciEnSource = operatorRevenue.hamrahAvalEn ?? operatorRevenue.hamrahAvalFa;
+
+	return [
+		{ operator: "IRANCELL", language: "FA", ...mapSmsPricingPayload(operatorRevenue.irancellFa) },
+		{ operator: "IRANCELL", language: "EN", ...mapSmsPricingPayload(operatorRevenue.irancellEn) },
+		{ operator: "MCI", language: "FA", ...mapSmsPricingPayload(operatorRevenue.hamrahAvalFa) },
+		{ operator: "MCI", language: "EN", ...mapSmsPricingPayload(mciEnSource) },
+		{ operator: "OTHER", language: "FA", ...mapSmsPricingPayload(operatorRevenue.otherFa) },
+		{ operator: "OTHER", language: "EN", ...mapSmsPricingPayload(operatorRevenue.otherEn) },
+	];
+}
+
+function mapSmsAddenda(addenda: unknown, includeProfit: boolean): Array<Record<string, any>> {
+	const list = Array.isArray(addenda) ? addenda : [];
+
+	return list.flatMap((item) => {
+		const row = (item ?? {}) as Record<string, any>;
+		const children = mapSmsAddenda(row.children, includeProfit);
+		const base = {
+			start_jy: toNumberOrNull(row.startYear),
+			start_jm: toNumberOrNull(row.startMonth),
+			end_jy: toNumberOrNull(row.endYear),
+			end_jm: toNumberOrNull(row.endMonth),
+			note: row.description ?? "",
+			contract_number: row.contractNumber ?? "",
+			children,
+		};
+		const operatorEntries = mapSmsOperatorRevenuePayload(row.operatorRevenue).map(entry => ({
+			...base,
+			component: "OPERATOR",
+			...entry,
+		}));
+		const governmentPricing = includeProfit ? row.governmentRevenue : row.governmentRate;
+		const result: Array<Record<string, any>> = [
+			...operatorEntries,
+			{
+				...base,
+				component: "GOVERNMENT",
+				...mapSmsPricingPayload(governmentPricing),
+			},
+		];
+
+		if (includeProfit) {
+			result.push({
+				...base,
+				component: "PROFIT",
+				...mapSmsPricingPayload(row.profit?.pricing),
+				min_profit_amount: toStringOrNull(row.profit?.minProfit),
+			});
+		}
+
+		return result;
+	});
+}
+
 function normalizeCommercialServiceFields(dto: any) {
 	const details = dto?.contract_openapi_details ?? dto?.contractOpenapiDetails ?? null;
 	const pricing = apiPricingToContractType(
@@ -538,6 +850,23 @@ function normalizeCommercialServiceFields(dto: any) {
 	};
 }
 
+function normalizeShahkarAddendaFromDto(addenda: unknown): Array<Record<string, any>> {
+	const list = Array.isArray(addenda) ? addenda : [];
+
+	return list.map((item) => {
+		const row = (item ?? {}) as Record<string, any>;
+
+		return {
+			...normalizeAddendumBase(row),
+			contractPricing: apiPricingToContractType({
+				calculation_type: row.calculation_type ?? row.calculationType ?? null,
+				tiers: row.tiers ?? null,
+			} as any),
+			children: normalizeShahkarAddendaFromDto(row.children),
+		};
+	});
+}
+
 function normalizeShahkarServiceFields(dto: any) {
 	const pricing = apiPricingToContractType({
 		calculation_type: dto?.calculation_type ?? dto?.calculationType ?? null,
@@ -546,23 +875,18 @@ function normalizeShahkarServiceFields(dto: any) {
 
 	return {
 		contractPricing: pricing ?? null,
-		addenda: dto?.addenda ?? [],
+		addenda: normalizeShahkarAddendaFromDto(dto?.addenda),
 	};
 }
 
-function normalizeSmsCommissionAddendaFromDto(addenda: unknown) {
+function normalizeSmsCommissionAddendaFromDto(addenda: unknown): Array<Record<string, any>> {
 	const list = Array.isArray(addenda) ? addenda : [];
 
 	return list.map((item) => {
 		const row = (item ?? {}) as Record<string, any>;
 
 		return {
-			startYear: toNumberOrNull(row.start_jy ?? row.startYear),
-			startMonth: toNumberOrNull(row.start_jm ?? row.startMonth),
-			endYear: toNumberOrNull(row.end_jy ?? row.endYear),
-			endMonth: toNumberOrNull(row.end_jm ?? row.endMonth),
-			description: row.note ?? row.description ?? "",
-			contractNumber: row.contract_number ?? row.contractNumber ?? "",
+			...normalizeAddendumBase(row),
 			initialCommission: toNumberOrStringNumber(row.initial_receive_fee ?? row.initialReceiveFee),
 			finalCommission: toNumberOrStringNumber(row.final_receive_fee ?? row.finalReceiveFee),
 			expertPercent: toNumberOrStringNumber(row.karashab_percent ?? row.karashabPercent),
@@ -570,6 +894,7 @@ function normalizeSmsCommissionAddendaFromDto(addenda: unknown) {
 			firstPartySharePercent: toNumberOrStringNumber(row.first_side_percent ?? row.firstSidePercent),
 			regionSharePercent: toNumberOrStringNumber(row.area_percent ?? row.areaPercent),
 			salesAgentSharePercent: toNumberOrStringNumber(row.sales_agent_percent ?? row.salesAgentPercent),
+			children: normalizeSmsCommissionAddendaFromDto(row.children),
 		};
 	});
 }
@@ -588,7 +913,7 @@ function normalizeSmsCommissionServiceFields(dto: any) {
 	};
 }
 
-function normalizeTrafficAddendaFromDto(addenda: unknown) {
+function normalizeTrafficAddendaFromDto(addenda: unknown): Array<Record<string, any>> {
 	const list = Array.isArray(addenda) ? addenda : [];
 
 	return list.map((item) => {
@@ -596,17 +921,13 @@ function normalizeTrafficAddendaFromDto(addenda: unknown) {
 		const location = normalizeTrafficLocation(row.location);
 
 		return {
-			startYear: toNumberOrNull(row.start_jy ?? row.startYear),
-			startMonth: toNumberOrNull(row.start_jm ?? row.startMonth),
-			endYear: toNumberOrNull(row.end_jy ?? row.endYear),
-			endMonth: toNumberOrNull(row.end_jm ?? row.endMonth),
-			description: row.note ?? row.description ?? "",
-			contractNumber: row.contract_number ?? row.contractNumber ?? "",
+			...normalizeAddendumBase(row),
 			location: location === "COUNTY" ? "PROVINCE" : location,
 			contractPricing: apiPricingToContractType({
 				calculation_type: row.calculation_type ?? row.calculationType ?? null,
 				tiers: row.tiers ?? null,
 			} as any),
+			children: normalizeTrafficAddendaFromDto(row.children),
 		};
 	});
 }
@@ -628,6 +949,10 @@ function normalizeTrafficServiceFields(dto: any) {
 			telecomCollocationLocation?.tiers?.cost_per_month
 			?? telecomCollocationLocation?.tiers?.costPerMonth,
 		),
+		tehranUnit: normalizeTrafficUnit(tehranLocation?.unit),
+		provinceUnit: normalizeTrafficUnit(countyLocation?.unit),
+		tehranRevenuePercent: toNumberOrStringNumber(tehranLocation?.income_percentage ?? tehranLocation?.incomePercentage),
+		provinceRevenuePercent: toNumberOrStringNumber(countyLocation?.income_percentage ?? countyLocation?.incomePercentage),
 		tehranPricing: tehranLocation
 			? apiPricingToContractType({
 				calculation_type: tehranLocation.calculation_type ?? tehranLocation.calculationType ?? null,
@@ -651,7 +976,7 @@ function dtoToFormValues(dto: any, service: ContractServicePath): ContractFormVa
 	const description = dto?.note ?? dto?.description ?? "";
 
 	const companyType = pickCompanyTypeToken(dto?.company_type ?? dto?.traffic_company_type);
-	const counterpartyType = normalizeSmsCounterpartyType(dto?.sms_party ?? dto?.counterparty_type ?? dto?.counterpartyType);
+	const counterpartyType = normalizeSmsCounterpartyType(dto?.sms_party ?? dto?.counterparty_type ?? dto?.counterpartyType) ?? (service === "sms/client" ? "partners" : service === "sms/vendor" ? "gov_ops" : null);
 
 	const serviceCodeRaw = dto?.service_code ?? dto?.service?.code ?? servicePathToServiceCode(service);
 	const serviceCode = typeof serviceCodeRaw === "string" ? serviceCodeRaw.trim().toLowerCase() : null;
@@ -661,8 +986,11 @@ function dtoToFormValues(dto: any, service: ContractServicePath): ContractFormVa
 	if (serviceCode === "openapi") {
 		serviceFields = {
 			...normalizeOpenApiServiceFields(dto),
-			addenda: dto?.addenda ?? [],
+			addenda: normalizeOpenApiAddendaFromDto(dto?.addenda),
 		};
+	}
+	else if (serviceCode === "sms") {
+		serviceFields = normalizeSmsServiceFields(dto);
 	}
 	else if (serviceCode === "sms-commission" || serviceCode === "sms_commission") {
 		serviceFields = normalizeSmsCommissionServiceFields(dto);
@@ -711,7 +1039,7 @@ function dtoToFormValues(dto: any, service: ContractServicePath): ContractFormVa
 		serviceFields = {
 			...(rest ?? {}),
 			...(typeof dto?.is_official === "boolean" ? { isOfficial: dto.is_official } : {}),
-			addenda: dto?.addenda ?? [],
+			addenda: normalizeGenericAddendaFromDto(dto?.addenda),
 		};
 	}
 
@@ -791,6 +1119,25 @@ async function formValuesToApiPayload(values: ContractFormValues) {
 	if (values.counterpartyType != null && serviceCode === "sms")
 		payload.sms_party = values.counterpartyType;
 
+	if (serviceCode === "sms") {
+		payload.operator_revenue = mapSmsOperatorRevenuePayload(serviceFields.operatorRevenue);
+		payload.is_official = serviceFields.isOfficial ?? true;
+		payload.addenda = mapSmsAddenda(addenda, values.counterpartyType === "partners");
+
+		if (values.counterpartyType === "partners") {
+			payload.government_revenue = mapSmsPricingPayload(serviceFields.governmentRevenue);
+			payload.profit = {
+				...mapSmsPricingPayload(serviceFields.profit?.pricing),
+				min_profit_amount: toStringOrNull(serviceFields.profit?.minProfit),
+			};
+		}
+		else {
+			payload.government_revenue = mapSmsPricingPayload(serviceFields.governmentRate);
+		}
+
+		return payload;
+	}
+
 	if (serviceCode === "sms-commission" || serviceCode === "sms_commission") {
 		payload.sales_agent = toNumberOrNull(serviceFields.agent);
 		payload.initial_receive_fee = toStringOrNull(serviceFields.initialCommission);
@@ -808,6 +1155,7 @@ async function formValuesToApiPayload(values: ContractFormValues) {
 		const pricing = contractTypeToApiPricing((serviceFields.contractPricing ?? null) as any);
 		payload.calculation_type = pricing?.calculation_type ?? null;
 		payload.tiers = pricing?.tiers ?? [];
+		payload.addenda = mapShahkarAddenda(addenda);
 		return payload;
 	}
 
@@ -819,9 +1167,13 @@ async function formValuesToApiPayload(values: ContractFormValues) {
 
 	if (serviceCode === "traffic") {
 		const isOfficial = serviceFields.isOfficial ?? true;
+		const normalizedCompanyType = String(values.companyType ?? "").trim().toUpperCase();
+		const isUnitCompanyType = ["CP", "PREMIUM", "IXP", "TCI"].includes(normalizedCompanyType);
+		const isPremiumCompanyType = normalizedCompanyType === "PREMIUM";
+		const basedTire = normalizedCompanyType === "IXP" ? true : undefined;
 		const locations = [
-			mapTrafficLocationPayload("TEHRAN", serviceFields.tehranPricing),
-			mapTrafficLocationPayload("COUNTY", serviceFields.provincePricing),
+			mapTrafficLocationPayload("TEHRAN", serviceFields.tehranPricing, isUnitCompanyType ? serviceFields.tehranUnit : null, basedTire, isPremiumCompanyType ? serviceFields.tehranRevenuePercent : null),
+			mapTrafficLocationPayload("COUNTY", serviceFields.provincePricing, isUnitCompanyType ? serviceFields.provinceUnit : null, basedTire, isPremiumCompanyType ? serviceFields.provinceRevenuePercent : null),
 		].filter(Boolean);
 
 		payload.is_signed = isOfficial;
@@ -865,6 +1217,7 @@ async function formValuesToApiPayload(values: ContractFormValues) {
 	}
 
 	// For non-openapi services backend fields usually live at root level.
+	payload.addenda = mapGenericAddenda(addenda);
 	const { addenda: _addenda, ...restServiceFields } = serviceFields;
 	return {
 		...payload,
@@ -888,26 +1241,73 @@ function getSmsFallbackService(service: ContractServicePath) {
 	return null;
 }
 
-export function ContractDetailModal({ open, contractId, service, onClose, onUpdated }: Props) {
+function resolveSelectionService(context: ContractFormSelectionContext): ContractServicePath | null {
+	const code = context.serviceCode?.trim().toLowerCase();
+	if (!code)
+		return null;
+
+	if (code === "sms") {
+		if (context.counterpartyType === "partners")
+			return "sms/client";
+		if (context.counterpartyType === "gov_ops")
+			return "sms/vendor";
+		return null;
+	}
+	if (code === "sms_commission" || code === "sms-commission")
+		return "sms-commission";
+	if (["openapi", "traffic", "psp", "commercial", "shahkar"].includes(code))
+		return code as ContractServicePath;
+	return null;
+}
+
+interface ContractListScope {
+	serviceId: number | null
+	service: ContractServicePath | null
+	companyId: number | null
+	companyType: string | null
+}
+
+export function ContractEditForm({ contractId, service, onUpdated, onSaved, onContractSelect }: Props) {
 	const [loading, setLoading] = useState(false);
 	const [saving, setSaving] = useState(false);
 	const [initialValues, setInitialValues] = useState<ContractFormValues | null>(null);
 	const [resolvedService, setResolvedService] = useState<ContractServicePath | null>(null);
+	const [loadedContractId, setLoadedContractId] = useState<number | null>(null);
+	const [loadError, setLoadError] = useState(false);
+	const [contractListScope, setContractListScope] = useState<ContractListScope | null>(null);
+	const contractListScopeRef = useRef<ContractListScope | null>(null);
+	const [awaitingContractSelection, setAwaitingContractSelection] = useState(false);
 
-	const modalTitle = useMemo(() => (contractId ? "ویرایش قرارداد" : "جزئیات قرارداد"), [contractId]);
+	const handleSelectionContextChange = useCallback((context: ContractFormSelectionContext) => {
+		const current = contractListScopeRef.current;
+		const nextService = resolveSelectionService(context);
+		const companyScopeChanged = current != null && (
+			current.serviceId !== context.serviceId
+			|| current.service !== nextService
+			|| current.companyType !== context.companyType
+		);
+		const selectionChanged = companyScopeChanged || (current != null && current.companyId !== context.companyId);
+		const nextScope = {
+			serviceId: context.serviceId,
+			service: nextService,
+			companyId: companyScopeChanged ? null : context.companyId,
+			companyType: context.companyType,
+		};
+
+		contractListScopeRef.current = nextScope;
+		setContractListScope(nextScope);
+		if (selectionChanged)
+			setAwaitingContractSelection(true);
+	}, []);
 
 	useEffect(() => {
-		if (!open || !contractId || !service)
-			return;
-
 		let cancelled = false;
 		const smsFallbackService = getSmsFallbackService(service);
 		const candidateServices: ContractServicePath[] = smsFallbackService ? [service, smsFallbackService] : [service];
 
 		(async () => {
 			setLoading(true);
-			setInitialValues(null);
-			setResolvedService(service);
+			setLoadError(false);
 			try {
 				for (const candidateService of candidateServices) {
 					try {
@@ -927,6 +1327,16 @@ export function ContractDetailModal({ open, contractId, service, onClose, onUpda
 						if (!cancelled) {
 							setResolvedService(candidateService);
 							setInitialValues(formValues);
+							setLoadedContractId(contractId);
+							const loadedScope = {
+								serviceId: formValues.serviceId ?? null,
+								service: candidateService,
+								companyId: formValues.companyId ?? null,
+								companyType: formValues.companyType ?? null,
+							};
+							contractListScopeRef.current = loadedScope;
+							setContractListScope(loadedScope);
+							setAwaitingContractSelection(false);
 						}
 						return;
 					}
@@ -934,6 +1344,8 @@ export function ContractDetailModal({ open, contractId, service, onClose, onUpda
 						// try the next fallback service candidate
 					}
 				}
+				if (!cancelled)
+					setLoadError(true);
 			}
 			finally {
 				if (!cancelled)
@@ -944,50 +1356,90 @@ export function ContractDetailModal({ open, contractId, service, onClose, onUpda
 		return () => {
 			cancelled = true;
 		};
-	}, [open, contractId, service]);
+	}, [contractId, service]);
 
 	return (
-		<Modal
-			open={open}
-			onCancel={onClose}
-			title={modalTitle}
-			footer={null}
-			width={1100}
-			destroyOnHidden
-		>
-			{!contractId || !resolvedService
-				? null
-				: loading
-					? (
-						<div className="flex min-h-[240px] items-center justify-center">
-							<Spin />
+		loading && !initialValues
+			? (
+				<div className="flex min-h-[240px] items-center justify-center">
+					<Spin />
+				</div>
+			)
+			: !initialValues || !resolvedService || loadedContractId == null
+				? <Empty description="اطلاعات قرارداد یافت نشد" />
+				: (
+					<div dir="rtl" className="flex flex-col items-start lg:flex-row">
+						<div className="order-2 min-w-0 w-full flex-1 lg:order-1">
+							{loadError
+								? (
+									<div className="p-4">
+										<Alert type="error" showIcon message="دریافت اطلاعات قرارداد ناموفق بود" />
+									</div>
+								)
+								: (
+									<Spin spinning={loading} tip="در حال دریافت اطلاعات قرارداد" wrapperClassName="w-full">
+										<ContractForm
+											key={`${resolvedService}-${loadedContractId}`}
+											mode="edit"
+											contractId={loadedContractId}
+											initialValues={initialValues}
+											showDocuments={false}
+											onSelectionContextChange={handleSelectionContextChange}
+											awaitingContractSelection={awaitingContractSelection}
+											submitText="ذخیره تغییرات"
+											submitting={saving || loading}
+											onSubmit={async (values) => {
+												setSaving(true);
+												try {
+													await fetchUpdateContract(resolvedService, loadedContractId, await formValuesToApiPayload(values));
+													window.$message?.success("قرارداد با موفقیت ویرایش شد");
+													onUpdated?.();
+													onSaved?.();
+												}
+												finally {
+													setSaving(false);
+												}
+											}}
+										/>
+									</Spin>
+								)}
 						</div>
-					)
-					: !initialValues
-						? (
-							<Empty description="اطلاعات قرارداد یافت نشد" />
-						)
-						: (
-							<ContractForm
-								key={`${resolvedService}-${contractId}`}
-								mode="edit"
-								contractId={contractId}
-								initialValues={initialValues}
-								submitText="ذخیره تغییرات"
-								submitting={saving}
-								onSubmit={async (values) => {
-									setSaving(true);
-									try {
-										await fetchUpdateContract(resolvedService, contractId, await formValuesToApiPayload(values));
-										onUpdated?.();
-										onClose();
-									}
-									finally {
-										setSaving(false);
-									}
-								}}
-							/>
-						)}
-		</Modal>
+
+						{initialValues.companyId != null
+							? (
+								<aside className="order-1 flex w-full flex-col gap-3 px-2 pt-4 lg:order-2 lg:w-[25rem] lg:shrink-0 lg:pr-0">
+									<CompanyContractsPanel
+										companyId={contractListScope?.companyId}
+										companyType={contractListScope?.companyType}
+										currentContractId={awaitingContractSelection ? 0 : loadedContractId}
+										service={contractListScope?.service}
+										serviceId={contractListScope?.serviceId}
+										onSelect={(selectedContract) => {
+											const selectedServiceId = Number(selectedContract.service_id ?? selectedContract.service ?? contractListScope?.serviceId);
+											if (Number.isInteger(selectedServiceId) && selectedServiceId > 0) {
+												onContractSelect?.(
+													selectedContract.id,
+													selectedServiceId,
+													contractListScope?.companyType ?? null,
+													contractListScope?.service ?? resolvedService,
+												);
+											}
+										}}
+									/>
+									{awaitingContractSelection
+										? null
+										: (
+											<ContractDocumentsPanel
+												key={loadedContractId}
+												contractId={loadedContractId}
+												initialDocuments={initialValues.documents as UploadFile[]}
+												loading={loading}
+											/>
+										)}
+								</aside>
+							)
+							: null}
+					</div>
+				)
 	);
 }

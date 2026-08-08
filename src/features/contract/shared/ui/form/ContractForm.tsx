@@ -3,7 +3,7 @@ import type { ContractFormValues, ContractServiceCode } from "../../model/contra
 import { BasicContent } from "#src/components/index.js";
 import { notification } from "#src/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Card } from "antd";
+import { Button, Card, Empty } from "antd";
 import { AnimatePresence, motion } from "framer-motion";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 
@@ -20,6 +20,14 @@ export type ContractSubmitIntent = "submit" | "submit_and_create_another" | "sub
 
 export interface ContractFormActions {
 	resetForCreateAnother: (values: ContractFormValues) => void
+}
+
+export interface ContractFormSelectionContext {
+	serviceId: number | null
+	serviceCode: string | null
+	companyId: number | null
+	companyType: string | null
+	counterpartyType: ContractFormValues["counterpartyType"]
 }
 
 export const defaultContractFormValues: ContractFormValues = {
@@ -51,6 +59,9 @@ interface Props {
 	submitText?: string
 	submitting?: boolean
 	showExtendedActions?: boolean
+	showDocuments?: boolean
+	onSelectionContextChange?: (context: ContractFormSelectionContext) => void
+	awaitingContractSelection?: boolean
 }
 
 function hasMeaningfulDirtyField(
@@ -87,6 +98,9 @@ export function ContractForm({
 	submitText = "ثبت قرارداد",
 	submitting,
 	showExtendedActions = false,
+	showDocuments = true,
+	onSelectionContextChange,
+	awaitingContractSelection = false,
 }: Props) {
 	const dynamicResolver: Resolver<ContractFormValues> = useCallback(
 		async (values, context, options) => {
@@ -117,6 +131,22 @@ export function ContractForm({
 	const isDirty = useMemo(() => {
 		return hasMeaningfulDirtyField(dirtyFields, watchedValues, mergedInitialValues);
 	}, [dirtyFields, mergedInitialValues, watchedValues]);
+	useEffect(() => {
+		onSelectionContextChange?.({
+			serviceId: watchedValues.serviceId ?? null,
+			serviceCode: watchedValues.serviceCode ?? null,
+			companyId: watchedValues.companyId ?? null,
+			companyType: watchedValues.companyType ?? null,
+			counterpartyType: watchedValues.counterpartyType ?? null,
+		});
+	}, [
+		watchedValues.serviceId,
+		watchedValues.serviceCode,
+		watchedValues.companyId,
+		watchedValues.companyType,
+		watchedValues.counterpartyType,
+		onSelectionContextChange,
+	]);
 	useEffect(() => {
 		// serviceCode has no direct input; keep it registered so submit/validate cycles do not drop it.
 		form.register("serviceCode");
@@ -200,44 +230,57 @@ export function ContractForm({
 						<input type="hidden" {...form.register("serviceCode")} />
 						<FixedStartSection mode={mode} preserveDatesDuringResetRef={preserveDatesDuringResetRef} />
 
-						<AnimatePresence mode="wait">
-							{module?.Fields
-								? (
-									<motion.div
-										key={module.code}
-										initial={{ opacity: 0, y: 8 }}
-										animate={{ opacity: 1, y: 0 }}
-										exit={{ opacity: 0, y: -8 }}
-										transition={{ duration: 0.2 }}
-										className="w-full"
-									>
-										<module.Fields />
-									</motion.div>
-								)
-								: null}
-						</AnimatePresence>
-
-						{isCollocationFlow ? null : <FixedEndSection contractId={contractId} />}
-
-						<div className="mt-4 w-full">
-							{showExtendedActions
-								? (
-									<ActionSection
-										submitting={submitting}
-										disabled={submitDisabled}
-										submitText={submitText}
-										onSubmit={() => triggerSubmit("submit")}
-										onSubmitAndCreateAnother={() => triggerSubmit("submit_and_create_another")}
-										onSubmitAndEdit={() => triggerSubmit("submit_and_edit")}
-										onReset={resetForm}
+						{awaitingContractSelection
+							? (
+								<div className="flex min-h-[240px] w-full items-center justify-center">
+									<Empty
+										image={Empty.PRESENTED_IMAGE_SIMPLE}
+										description="جهت مشاهده، یک قرارداد را از پنل سمت چپ انتخاب کنید"
 									/>
-								)
-								: (
-									<Button type="primary" onClick={() => triggerSubmit("submit")} loading={!!submitting} disabled={submitDisabled}>
-										{submitText}
-									</Button>
-								)}
-						</div>
+								</div>
+							)
+							: (
+								<>
+									<AnimatePresence mode="wait">
+										{module?.Fields
+											? (
+												<motion.div
+													key={module.code}
+													initial={{ opacity: 0, y: 8 }}
+													animate={{ opacity: 1, y: 0 }}
+													exit={{ opacity: 0, y: -8 }}
+													transition={{ duration: 0.2 }}
+													className="w-full"
+												>
+													<module.Fields />
+												</motion.div>
+											)
+											: null}
+									</AnimatePresence>
+
+									{isCollocationFlow ? null : <FixedEndSection contractId={contractId} showDocuments={showDocuments} />}
+
+									<div className="mt-4 w-full">
+										{showExtendedActions
+											? (
+												<ActionSection
+													submitting={submitting}
+													disabled={submitDisabled}
+													submitText={submitText}
+													onSubmit={() => triggerSubmit("submit")}
+													onSubmitAndCreateAnother={() => triggerSubmit("submit_and_create_another")}
+													onSubmitAndEdit={() => triggerSubmit("submit_and_edit")}
+													onReset={resetForm}
+												/>
+											)
+											: (
+												<Button type="primary" onClick={() => triggerSubmit("submit")} loading={!!submitting} disabled={submitDisabled}>
+													{submitText}
+												</Button>
+											)}
+									</div>
+								</>
+							)}
 					</div>
 				</Card>
 			</BasicContent>

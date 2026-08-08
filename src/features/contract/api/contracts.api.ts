@@ -84,6 +84,42 @@ export function fetchContractsList(params: ContractsListQuery) {
 		.json<PaginatedResult<ContractListItemType>>();
 }
 
+export function fetchCompanyContracts(
+	service: ContractServicePath,
+	companyId: number,
+	companyType?: string | null,
+	serviceId?: number | null,
+) {
+	if (service === "sms/client" || service === "sms/vendor") {
+		const searchParams: Record<string, string> = {
+			company_id: String(companyId),
+			page_size: "1000",
+			sms_party: service === "sms/client" ? "client" : "vendor",
+		};
+
+		if (serviceId != null)
+			searchParams.service_id = String(serviceId);
+
+		return request
+			.get("contracts/list", { searchParams })
+			.json<PaginatedResult<any>>();
+	}
+
+	const searchParams: Record<string, string> = {
+		company: String(companyId),
+		page_size: "1000",
+	};
+
+	if (companyType)
+		searchParams.company_type = companyType;
+	if (serviceId != null)
+		searchParams.service = String(serviceId);
+
+	return request
+		.get(buildContractPath(service), { searchParams })
+		.json<PaginatedResult<any>>();
+}
+
 /* ===================== DETAIL ===================== */
 
 export function fetchContractDetail(

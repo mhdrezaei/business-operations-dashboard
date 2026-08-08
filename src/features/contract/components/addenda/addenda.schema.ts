@@ -14,8 +14,9 @@ function overlap(aStart: number, aEnd: number, bStart: number, bEnd: number) {
 function getAtPath(obj: any, path: (string | number)[]) {
 	return path.reduce((acc, key) => (acc == null ? acc : acc[key as any]), obj);
 }
-export const addendumSchema = z
+export const addendumSchema: z.ZodType<any> = z.lazy(() => z
 	.object({
+		id: z.number().int().positive().optional(),
 		startYear: z.number().int().min(1401).max(1410).nullable(),
 		startMonth: z.number().int().min(1).max(12).nullable(),
 		endYear: z.number().int().min(1401).max(1410).nullable(),
@@ -23,8 +24,8 @@ export const addendumSchema = z
 
 		contractPricing: contractTypeSchema.optional(),
 		contractNumber: z.string().optional(),
-
 		description: z.string().max(2000).optional(),
+		children: z.array(addendumSchema).default([]).optional(),
 	})
 	.passthrough()
 	.superRefine((v, ctx) => {
@@ -36,7 +37,7 @@ export const addendumSchema = z
 			ctx.addIssue({ code: "custom", path: ["endYear"], message: "سال پایان الحاقیه الزامی است" });
 		if (v.endMonth == null)
 			ctx.addIssue({ code: "custom", path: ["endMonth"], message: "ماه پایان الحاقیه الزامی است" });
-	});
+	}));
 
 export function addendaRefineNoOverlapAndInsideContract(opts: {
 // ✅ Each must be exactly [yearPath, monthPath]

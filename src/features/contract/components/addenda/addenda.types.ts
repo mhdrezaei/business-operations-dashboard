@@ -1,4 +1,7 @@
 export interface AddendumValue {
+	id?: number
+	parentAddendumId?: number | null
+	displayAddendumNumber?: string
 	startYear: number | null
 	startMonth: number | null
 	endYear: number | null
@@ -7,6 +10,7 @@ export interface AddendumValue {
 	description?: string
 	pricing: any
 	contractPricing?: any
+	children?: AddendumValue[]
 }
 
 export const defaultAddendumValue: AddendumValue = {
@@ -46,4 +50,5 @@ export const defaultAddendumValue: AddendumValue = {
 			],
 		}],
 	},
+	children: [],
 };

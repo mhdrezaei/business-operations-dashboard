@@ -350,7 +350,7 @@ export default function NotificationInboxPage() {
 																						params.set("contract_id", String(contract.contractId));
 																						if (contract.serviceId != null)
 																							params.set("service_id", String(contract.serviceId));
-																						navigate(`/contracts/edit?${params.toString()}`);
+																						navigate(`/contracts/list?${params.toString()}`);
 																					}}
 																				>
 																					{contract.companyName}

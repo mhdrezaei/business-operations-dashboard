@@ -449,26 +449,6 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 							}
 						}
 					}
-
-					// ✅ PREMIUM: Revenue share percentage only when official + PREMIUM
-					if (isOfficial && val.companyType === "PREMIUM") {
-						const p = (val.serviceFields as any)?.premiumRevenuePercent;
-
-						if (p == null) {
-							ctx.addIssue({
-								code: "custom",
-								path: ["serviceFields", "premiumRevenuePercent"],
-								message: "درصد سهم درآمد الزامی است",
-							});
-						}
-						else if (typeof p !== "number" || !Number.isFinite(p) || p < 0 || p > 100) {
-							ctx.addIssue({
-								code: "custom",
-								path: ["serviceFields", "premiumRevenuePercent"],
-								message: "درصد باید بین 0 تا 100 باشد",
-							});
-						}
-					}
 				}
 			}
 

@@ -68,6 +68,8 @@ interface Props<TFV extends FieldValues> {
 	contractStartMonthPath: Path<TFV>
 	contractEndYearPath: Path<TFV>
 	contractEndMonthPath: Path<TFV>
+	level?: number
+	displayPrefix?: string
 }
 
 export function ContractAddendaSection<TFV extends FieldValues>({
@@ -82,6 +84,8 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 	contractStartMonthPath,
 	contractEndYearPath,
 	contractEndMonthPath,
+	level = 0,
+	displayPrefix,
 }: Props<TFV>) {
 	const { control, getValues, setError, clearErrors, trigger } = useFormContext<TFV>();
 	const addendaValues = useWatch({
@@ -98,7 +102,7 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 	const contractEndKey = ymToKey(contractEndYear, contractEndMonth);
 	const contractRangeReady = contractStartKey != null && contractEndKey != null && contractStartKey <= contractEndKey;
 
-	const { fields, append, remove } = useFieldArray({ control, name });
+	const { fields, append, remove } = useFieldArray({ control, name, keyName: "fieldArrayId" });
 	const [activeKey, setActiveKey] = useState<string | undefined>(undefined);
 
 	// ✅ Allowed years based on contract period
@@ -220,6 +224,8 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 	const collapseItems = useMemo(() => {
 		return fields.map((f, idx) => {
 			const base = `${name}.${idx}`;
+			const generatedNumber = displayPrefix ? `${displayPrefix}.${idx + 1}` : String(idx + 1);
+			const displayNumber = getValues(p(base, "displayAddendumNumber")) || generatedNumber;
 
 			const sy = getValues(p(base, "startYear")) as number | null;
 			const sm = getValues(p(base, "startMonth")) as number | null;
@@ -240,7 +246,7 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 				label: (
 					<div className="flex justify-between items-center w-full gap-3">
 						<div className="font-bold">
-							{`الحاقیه ${idx + 1}`}
+							{`الحاقیه ${displayNumber}`}
 							{" "}
 							<span className="opacity-75 font-medium">{headerHint}</span>
 						</div>
@@ -356,6 +362,24 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 								textAreaProps={{ placeholder: "توضیح اختیاری برای این الحاقیه" }}
 							/>
 						</div>
+
+						<div className="mt-3">
+							<ContractAddendaSection<TFV>
+								name={p(base, "children")}
+								title={`زیرالحاقیه‌های الحاقیه ${displayNumber}`}
+								contractTypeTitle={contractTypeTitle}
+								contractTypeFieldKey={contractTypeFieldKey}
+								renderAddendumFields={renderAddendumFields}
+								canAddAddendum={canAddAddendum}
+								addendumAddBlockedMessage={addendumAddBlockedMessage}
+								contractStartYearPath={p(base, "startYear")}
+								contractStartMonthPath={p(base, "startMonth")}
+								contractEndYearPath={p(base, "endYear")}
+								contractEndMonthPath={p(base, "endMonth")}
+								level={level + 1}
+								displayPrefix={String(displayNumber)}
+							/>
+						</div>
 					</Card>
 				),
 			};
@@ -375,12 +399,14 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 		canAddAddendum,
 		addendumAddBlockedMessage,
 		trigger,
+		level,
+		displayPrefix,
 	]);
 
 	return (
 		<Card
 			bordered
-			className="rounded-md mt-3"
+			className={level === 0 ? "rounded-md mt-3" : "rounded-md mt-3 border-dashed"}
 			title={title}
 			extra={(
 				<Button icon={<PlusOutlined />} onClick={addAddendum} disabled={!contractRangeReady || !canAddAddendum}>

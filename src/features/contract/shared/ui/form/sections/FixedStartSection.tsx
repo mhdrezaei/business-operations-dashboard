@@ -265,6 +265,7 @@ function CollocationChoiceButton({
 
 export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef }: FixedStartSectionProps) {
 	const { setValue, control, trigger, formState, resetField, setFocus } = useFormContext<ContractFormValues>();
+	const isContractIdentityReadOnly = mode === "edit";
 	const { getPermittedCompanyTypes, getPermittedServiceIds } = useAccess();
 	const permissionAction = mode === "edit" ? "update" : "create";
 	const [collocationStep, setCollocationStep] = useState(0);
@@ -411,8 +412,13 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 			setValue("startMonth", null, { shouldDirty: true, shouldValidate: false });
 			setValue("endYear", null, { shouldDirty: true, shouldValidate: false });
 			setValue("endMonth", null, { shouldDirty: true, shouldValidate: false });
+			if (mode === "edit") {
+				resetField("contractNumber", { defaultValue: "" });
+				resetField("description", { defaultValue: "" });
+				resetField("serviceFields", { defaultValue: {} as any });
+			}
 		}
-	}, [companyId, setValue, preserveDatesDuringResetRef]);
+	}, [companyId, mode, resetField, setValue, preserveDatesDuringResetRef]);
 
 	useEffect(() => {
 		const prev = prevStartYearRef.current;
@@ -1293,6 +1299,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													formItemProps={compactFormItemStyle}
 													inputProps={{
 														"placeholder": "مثلا CN-1405-001",
+														"readOnly": isContractIdentityReadOnly,
 														"aria-labelledby": "contract-form-label-contract-number-telecom",
 													}}
 												/>
@@ -1317,6 +1324,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													options={startYearOptions}
 													selectProps={{
 														"allowClear": true,
+														"disabled": isContractIdentityReadOnly,
 														"placeholder": "سال",
 														"aria-labelledby": "contract-form-label-start-year-telecom",
 													} as any}
@@ -1331,6 +1339,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													options={startMonthOptions}
 													selectProps={{
 														"allowClear": true,
+														"disabled": isContractIdentityReadOnly,
 														"placeholder": "ماه",
 														"aria-labelledby": "contract-form-label-start-month-telecom",
 													} as any}
@@ -1345,6 +1354,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													options={endYearOptions}
 													selectProps={{
 														"allowClear": true,
+														"disabled": isContractIdentityReadOnly,
 														"placeholder": "سال",
 														"aria-labelledby": "contract-form-label-end-year-telecom",
 													} as any}
@@ -1359,6 +1369,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													options={endMonthOptions}
 													selectProps={{
 														"allowClear": true,
+														"disabled": isContractIdentityReadOnly,
 														"placeholder": "ماه",
 														"aria-labelledby": "contract-form-label-end-month-telecom",
 													} as any}
@@ -1434,6 +1445,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													formItemProps={compactFormItemStyle}
 													inputProps={{
 														"placeholder": "مثلا CN-1405-001",
+														"readOnly": isContractIdentityReadOnly,
 														"aria-labelledby": "contract-form-label-contract-number",
 													}}
 												/>
@@ -1458,6 +1470,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													options={startYearOptions}
 													selectProps={{
 														"allowClear": true,
+														"disabled": isContractIdentityReadOnly,
 														"placeholder": "سال",
 														"aria-labelledby": "contract-form-label-start-year",
 													} as any}
@@ -1472,6 +1485,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													options={startMonthOptions}
 													selectProps={{
 														"allowClear": true,
+														"disabled": isContractIdentityReadOnly,
 														"placeholder": "ماه",
 														"aria-labelledby": "contract-form-label-start-month",
 													} as any}
@@ -1486,6 +1500,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													options={endYearOptions}
 													selectProps={{
 														"allowClear": true,
+														"disabled": isContractIdentityReadOnly,
 														"placeholder": "سال",
 														"aria-labelledby": "contract-form-label-end-year",
 													} as any}
@@ -1500,6 +1515,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													options={endMonthOptions}
 													selectProps={{
 														"allowClear": true,
+														"disabled": isContractIdentityReadOnly,
 														"placeholder": "ماه",
 														"aria-labelledby": "contract-form-label-end-month",
 													} as any}
@@ -1808,6 +1824,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 							options={startYearOptions}
 							selectProps={{
 								"allowClear": true,
+								"disabled": isContractIdentityReadOnly,
 								"placeholder": "انتخاب سال",
 								"aria-labelledby": "contract-form-label-start-year",
 							} as any}
@@ -1822,6 +1839,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 							options={startMonthOptions}
 							selectProps={{
 								"allowClear": true,
+								"disabled": isContractIdentityReadOnly,
 								"placeholder": "انتخاب ماه",
 								"aria-labelledby": "contract-form-label-start-month",
 							} as any}
@@ -1836,6 +1854,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 							options={endYearOptions}
 							selectProps={{
 								"allowClear": true,
+								"disabled": isContractIdentityReadOnly,
 								"placeholder": "انتخاب سال",
 								"aria-labelledby": "contract-form-label-end-year",
 							} as any}
@@ -1850,6 +1869,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 							options={endMonthOptions}
 							selectProps={{
 								"allowClear": true,
+								"disabled": isContractIdentityReadOnly,
 								"placeholder": "انتخاب ماه",
 								"aria-labelledby": "contract-form-label-end-month",
 							} as any}
@@ -1874,6 +1894,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 								formItemProps={compactFormItemStyle}
 								inputProps={{
 									"placeholder": "مثلا CN-1404-001",
+									"readOnly": isContractIdentityReadOnly,
 									"aria-labelledby": "contract-form-label-contract-number",
 								}}
 							/>

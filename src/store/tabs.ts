@@ -146,7 +146,6 @@ export const useTabsStore = create<TabsState & TabsAction>()(
 					return state;
 				});
 			},
-
 			/**
 			 * @fa حذف تب
 			 * @en Remove a tab.

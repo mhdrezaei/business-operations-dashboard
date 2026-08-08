@@ -5,7 +5,6 @@ import type { ContractListItemType } from "../model/contracts.list.types";
 
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import { companiesByServiceQuery, servicesQuery } from "#src/features/contract/create/queries/contract.queries";
-import { ContractDetailModal } from "#src/features/contract/list/ui/components/ContractDetailModal";
 import { useAccess } from "#src/hooks";
 import { DeleteOutlined, EditOutlined, FilePdfOutlined, PlusCircleOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
@@ -13,18 +12,11 @@ import { useQuery } from "@tanstack/react-query";
 import { Button, Popconfirm } from "antd";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useSearchParams } from "react-router";
+import { useNavigate } from "react-router";
 import { fetchContractDetail, fetchContractsList, fetchDeleteContract } from "../../api/contracts.api";
 import { companyTypeMatches, pickCompanyTypeToken } from "../../shared/utils";
 import { getContractColumns } from "./constants";
 import { openContractPdfPrint } from "./utils/contract-pdf";
-
-function parsePositiveInt(value: string | null) {
-	if (!value)
-		return null;
-	const numeric = Number(value);
-	return Number.isInteger(numeric) && numeric > 0 ? numeric : null;
-}
 
 export default function ContractListPage() {
 	const { t } = useTranslation();
@@ -37,19 +29,9 @@ export default function ContractListPage() {
 	const navigate = useNavigate();
 	const actionRef = useRef<ActionType>(null);
 	const formRef = useRef<ProFormInstance | undefined>(undefined);
-	const openedDeepLinkRef = useRef<string | null>(null);
-
-	const [openDetail, setOpenDetail] = useState(false);
-	const [selectedId, setSelectedId] = useState<number | null>(null);
-	const [selectedServicePath, setSelectedServicePath]
-		= useState<ContractServicePath | null>(null);
 	const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
 	const [selectedTrafficCompanyType, setSelectedTrafficCompanyType] = useState<string | null>(null);
 	const [downloadingPdfId, setDownloadingPdfId] = useState<number | null>(null);
-	const [searchParams] = useSearchParams();
-
-	const deepLinkedContractId = parsePositiveInt(searchParams.get("contract_id"));
-	const deepLinkedServiceId = parsePositiveInt(searchParams.get("service_id"));
 
 	const canCreateContracts = hasDomainPermission("contracts", "create");
 	const permittedViewServiceIdList = getPermittedServiceIds("contracts", "view");
@@ -115,31 +97,6 @@ export default function ContractListPage() {
 		return "openapi";
 	};
 
-	const resolveServicePathByServiceId = (serviceId: number | null): ContractServicePath | null => {
-		if (!serviceId)
-			return null;
-
-		const rawCode = serviceCodeById.get(serviceId) ?? null;
-		const code = typeof rawCode === "string" ? rawCode.trim().toLowerCase() : null;
-
-		if (code === "psp")
-			return "psp";
-		if (code === "traffic")
-			return "traffic";
-		if (code === "shahkar")
-			return "shahkar";
-		if (code === "commercial")
-			return "commercial";
-		if (code === "sms-commission" || code === "sms_commission")
-			return "sms-commission";
-		if (code === "sms")
-			return "sms/client";
-		if (code === "openapi")
-			return "openapi";
-
-		return null;
-	};
-
 	const selectedService = useMemo(() => {
 		if (!selectedServiceId)
 			return null;
@@ -154,31 +111,6 @@ export default function ContractListPage() {
 		() => isCompanyTypeService ? getPermittedCompanyTypes("contracts", "view", selectedServiceId) : [],
 		[isCompanyTypeService, selectedServiceId, getPermittedCompanyTypes],
 	);
-
-	useEffect(() => {
-		if (!deepLinkedContractId || openDetail)
-			return;
-
-		const resolvedService = resolveServicePathByServiceId(deepLinkedServiceId);
-		if (!resolvedService)
-			return;
-		const deepLinkKey = `${deepLinkedContractId}:${deepLinkedServiceId ?? ""}`;
-		if (openedDeepLinkRef.current === deepLinkKey)
-			return;
-
-		openedDeepLinkRef.current = deepLinkKey;
-		setSelectedId(deepLinkedContractId);
-		setSelectedServicePath(resolvedService);
-		setOpenDetail(true);
-	}, [deepLinkedContractId, deepLinkedServiceId, openDetail, serviceCodeById]);
-
-	const closeContractDetail = () => {
-		setOpenDetail(false);
-		setSelectedId(null);
-		setSelectedServicePath(null);
-		if (deepLinkedContractId)
-			navigate("/contracts/edit", { replace: true });
-	};
 
 	useEffect(() => {
 		if (!isCompanyTypeService || !selectedTrafficCompanyType) {
@@ -340,9 +272,9 @@ export default function ContractListPage() {
 								title="ویرایش قرارداد"
 								icon={<EditOutlined />}
 								onClick={() => {
-									setSelectedId(record.id);
-									setSelectedServicePath(resolveServicePath(record));
-									setOpenDetail(true);
+									const service = resolveServicePath(record);
+									const companyType = getRowCompanyType(record) ?? "";
+									navigate(`/contracts/${record.id}/edit?service=${encodeURIComponent(service)}&serviceId=${record.service_id}&companyType=${encodeURIComponent(companyType)}`);
 								}}
 							/>,
 						);
@@ -436,16 +368,6 @@ export default function ContractListPage() {
 							{t("common.addNewContract")}
 						</Button>,
 					];
-				}}
-			/>
-
-			<ContractDetailModal
-				open={openDetail}
-				contractId={selectedId}
-				service={selectedServicePath}
-				onClose={closeContractDetail}
-				onUpdated={() => {
-					actionRef.current?.reload?.();
 				}}
 			/>
 		</BasicContent>
