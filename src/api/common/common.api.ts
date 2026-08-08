@@ -10,6 +10,7 @@ interface FetchServicesOptions {
 interface FetchCompaniesByServiceOptions {
 	companyType?: string | null
 	search?: string | null
+	pageSize?: number
 }
 
 function isFetchServicesOptions(value: unknown): value is FetchServicesOptions {
@@ -33,6 +34,8 @@ export function fetchCompaniesByService(serviceId: number, options?: FetchCompan
 		searchParams.company_type = options.companyType;
 	if (options?.search)
 		searchParams.search = options.search;
+	if (options?.pageSize)
+		searchParams.page_size = String(options.pageSize);
 
 	return request
 		.get(COMMON_API.companies, {

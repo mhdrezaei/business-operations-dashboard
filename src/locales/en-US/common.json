@@ -44,7 +44,8 @@
 		"settings": "Settings",
 		"unregisteredPerformances": "Unregistered Performances",
 		"performanceReports": "Performance Reports",
-		"predictionsSummaryReport": "Performance and Prediction Summary Report"
+		"predictionsSummaryReport": "Performance and Prediction Summary Report",
+		"smsGatewayTrafficReport": "SMS Gateway Traffic Report"
 	},
 	"appLoading": "Loading Resources...",
 	"back": "Back",

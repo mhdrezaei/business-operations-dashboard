@@ -753,3 +753,48 @@ export function fetchPredictionPerformanceSummary(params: PredictionSummaryQuery
 		})
 		.json<PredictionSummaryResponse>();
 }
+
+export interface SmsGatewayTrafficReportItem {
+	company_id: number
+	company_name: string
+	gateway_customer_name: string
+	total: number
+	operators: Array<{
+		operator: string
+		total: number
+		statuses: Array<{ delivery_status: string, total_count: number }>
+	}>
+}
+
+export interface SmsGatewayTrafficReportResult {
+	job_id: number
+	status: "PENDING" | "RUNNING" | "SUCCESS" | "FAILURE" | string
+	started_at?: string | null
+	finished_at?: string | null
+	count?: number
+	grand_total?: number
+	operator_totals?: Array<{ operator: string, total: number }>
+	status_totals?: Array<{ delivery_status: string, total_count: number }>
+	results?: SmsGatewayTrafficReportItem[]
+}
+
+export interface SmsGatewayTrafficReportFilters {
+	start_date?: string
+	end_date?: string
+	company_ids?: number[]
+	operators?: string[]
+	delivery_statuses?: string[]
+}
+
+export function createSmsGatewayTrafficReport(filters: SmsGatewayTrafficReportFilters) {
+	return request.post("sms-gateway/traffic-report/", {
+		json: filters,
+		suppressErrorNotification: true,
+	}).json<SmsGatewayTrafficReportResult>();
+}
+
+export function fetchSmsGatewayTrafficReportStatus(jobId: number, page = 1, pageSize = 20) {
+	return request
+		.get(`sms-gateway/traffic-report/status/${jobId}/`, { searchParams: { page, page_size: pageSize } })
+		.json<SmsGatewayTrafficReportResult>();
+}
