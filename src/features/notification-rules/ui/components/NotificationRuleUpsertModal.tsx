@@ -9,7 +9,7 @@ import type {
 	NotificationRuleUpsertPayload,
 } from "../../model/notification-rules.types";
 import { BasicButton } from "#src/components";
-import { Button, Checkbox, Form, Input, Modal, Segmented, Select, Space, Switch, Typography } from "antd";
+import { Button, Checkbox, Form, Input, Modal, Select, Space, Typography } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	defaultInAppPayloadTemplate,
@@ -47,6 +47,7 @@ interface NotificationRuleFormValues {
 	name: string
 	code: NotificationRuleCode
 	is_active: boolean
+	is_global: boolean
 	service_names: string[]
 	days_before_end: string
 	payload_template: PayloadFormValue
@@ -93,7 +94,7 @@ function getFirstActionString(source: NotificationRulePayloadTemplate, key: stri
 function buildPayloadFormValue(code: NotificationRuleCode, payload?: NotificationRulePayloadTemplate): PayloadFormValue {
 	const normalized = normalizeRulePayloadTemplate(code, payload);
 
-	if (code === "CONTRACT_EXPIRY_SMS") {
+	if (resolveRuleChannel(code) === "SMS") {
 		return {
 			json: safeJsonStringify(normalized),
 		};
@@ -113,12 +114,15 @@ function buildPayloadFormValue(code: NotificationRuleCode, payload?: Notificatio
 }
 
 function buildDefaultValues(initial?: NotificationRuleDto | null): NotificationRuleFormValues {
-	const code = (initial?.code === "CONTRACT_EXPIRY_SMS" ? "CONTRACT_EXPIRY_SMS" : "CONTRACT_EXPIRY") satisfies NotificationRuleCode;
+	const code = notificationRuleCodeOptions.some(option => option.value === initial?.code)
+		? initial!.code as NotificationRuleCode
+		: "CONTRACT_EXPIRY";
 
 	return {
 		name: initial?.name ?? "",
 		code,
 		is_active: initial?.is_active ?? true,
+		is_global: initial?.is_global ?? false,
 		service_names: initial?.service_names ?? [],
 		days_before_end: stringifyDaysBeforeEnd(initial?.days_before_end?.length ? initial.days_before_end : defaultNotificationRuleDays),
 		payload_template: buildPayloadFormValue(code, initial?.payload_template),
@@ -180,7 +184,7 @@ function stableComparable(value: unknown): ComparableValue {
 }
 
 function comparablePayloadTemplate(code: NotificationRuleCode, payloadMode: PayloadMode, payload?: PayloadFormValue): ComparableValue {
-	if (code === "CONTRACT_EXPIRY_SMS" || payloadMode === "json") {
+	if (resolveRuleChannel(code) === "SMS" || payloadMode === "json") {
 		try {
 			return stableComparable(parsePayloadJson(payload?.json ?? "{}"));
 		}
@@ -197,6 +201,7 @@ function comparableRuleFormValues(values: NotificationRuleFormValues, payloadMod
 		code: values.code,
 		name: values.name.trim(),
 		is_active: values.is_active,
+		is_global: values.is_global,
 		service_names: [...(values.service_names ?? [])].map(value => value.trim()).sort(),
 		days_before_end: parseDaysBeforeEnd(values.days_before_end ?? "").sort((left, right) => left - right),
 		payload_template: comparablePayloadTemplate(values.code, payloadMode, values.payload_template),
@@ -232,10 +237,11 @@ function toRulePayload(values: NotificationRuleFormValues, payloadMode: PayloadM
 		code: values.code,
 		name: values.name.trim(),
 		is_active: values.is_active,
+		is_global: values.is_global,
 		service_names: values.service_names ?? [],
 		days_before_end: days,
 		channels: [channel],
-		payload_template: values.code === "CONTRACT_EXPIRY_SMS" || payloadMode === "json"
+		payload_template: resolveRuleChannel(values.code) === "SMS" || payloadMode === "json"
 			? parsePayloadJson(values.payload_template?.json ?? "{}")
 			: buildInAppPayload(values.payload_template ?? {}),
 		recipients,
@@ -263,7 +269,6 @@ export function NotificationRuleUpsertModal({
 	const defaultValues = useMemo(() => buildDefaultValues(initial), [initial]);
 	const selectedCode = Form.useWatch("code", form) ?? defaultValues.code;
 	const selectedChannel = resolveRuleChannel(selectedCode);
-	const isSmsRule = selectedCode === "CONTRACT_EXPIRY_SMS";
 
 	const serviceOptions = useMemo(
 		() => services.map(service => ({ label: service.name, value: service.name })),
@@ -285,7 +290,7 @@ export function NotificationRuleUpsertModal({
 
 		form.setFieldsValue(defaultValues);
 		initialValuesRef.current = defaultValues;
-		initialPayloadModeRef.current = defaultValues.code === "CONTRACT_EXPIRY_SMS" ? "json" : "simple";
+		initialPayloadModeRef.current = resolveRuleChannel(defaultValues.code) === "SMS" ? "json" : "simple";
 		setIsDirty(false);
 		setPayloadMode(initialPayloadModeRef.current);
 	}, [defaultValues, form, open]);
@@ -300,31 +305,10 @@ export function NotificationRuleUpsertModal({
 	};
 
 	function handleCodeChange(code: NotificationRuleCode) {
-		form.setFieldValue("payload_template", buildPayloadFormValue(code, code === "CONTRACT_EXPIRY" ? defaultInAppPayloadTemplate : {}));
-		const nextPayloadMode = code === "CONTRACT_EXPIRY_SMS" ? "json" : "simple";
+		form.setFieldValue("payload_template", buildPayloadFormValue(code, resolveRuleChannel(code) === "IN_APP" ? defaultInAppPayloadTemplate : {}));
+		const nextPayloadMode = resolveRuleChannel(code) === "SMS" ? "json" : "simple";
 		setPayloadMode(nextPayloadMode);
 		handleValuesChange(nextPayloadMode);
-	}
-
-	function handlePayloadModeChange(nextMode: PayloadMode) {
-		const currentPayload = form.getFieldValue("payload_template") ?? {};
-
-		if (nextMode === "json") {
-			form.setFieldValue(["payload_template", "json"], safeJsonStringify(buildInAppPayload(currentPayload)));
-			setPayloadMode("json");
-			handleValuesChange("json");
-			return;
-		}
-
-		try {
-			const parsedPayload = parsePayloadJson(currentPayload.json ?? "{}");
-			form.setFieldValue("payload_template", buildPayloadFormValue("CONTRACT_EXPIRY", parsedPayload));
-			setPayloadMode("simple");
-			handleValuesChange("simple");
-		}
-		catch {
-			window.$message?.error("JSON وارد شده معتبر نیست.");
-		}
 	}
 
 	async function handleFinish(values: NotificationRuleFormValues) {
@@ -351,7 +335,7 @@ export function NotificationRuleUpsertModal({
 			onCancel={onClose}
 			title={title}
 			footer={null}
-			width={980}
+			width={900}
 			destroyOnHidden
 		>
 			<Form<NotificationRuleFormValues>
@@ -394,86 +378,45 @@ export function NotificationRuleUpsertModal({
 						<Input dir="ltr" placeholder="30,15,7,3,2,1" />
 					</Form.Item>
 
-					<Form.Item
-						name="is_active"
-						label="وضعیت"
-						valuePropName="checked"
-					>
-						<Switch checkedChildren="فعال" unCheckedChildren="غیرفعال" />
-					</Form.Item>
+					<div className="flex items-center gap-6 md:col-span-2">
+						<Form.Item
+							name="is_active"
+							valuePropName="checked"
+							className="!mb-0"
+						>
+							<Checkbox>Rule فعال باشد</Checkbox>
+						</Form.Item>
 
+						<Form.Item
+							name="is_global"
+							valuePropName="checked"
+							className="!mb-0"
+						>
+							<Checkbox>اعمال برای همه کاربران مجاز (Global)</Checkbox>
+						</Form.Item>
+					</div>
+
+				</div>
+
+				<section className="mt-2 rounded-lg border border-[var(--ant-color-border-secondary)] p-4">
 					<Form.Item
 						name="service_names"
-						label="سرویس‌ها"
-						tooltip="اگر خالی بماند، Rule برای همه سرویس‌ها اعمال می‌شود."
+						label="service_names"
+						extra="اگر خالی باشد، همه سرویس‌ها در نظر گرفته می‌شوند."
+						className="!mb-0"
 					>
 						<Select
 							mode="multiple"
 							allowClear
+							showSearch
 							loading={loadingOptions}
 							options={serviceOptions}
+							optionFilterProp="label"
 							placeholder="انتخاب سرویس‌ها"
+							maxTagCount="responsive"
+							listHeight={160}
 						/>
 					</Form.Item>
-				</div>
-
-				<section className="mt-2 rounded-lg border border-[var(--ant-color-border-secondary)] p-4">
-					<div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-						<Typography.Title level={5} className="!mb-0">
-							payload_template
-						</Typography.Title>
-						<Segmented<PayloadMode>
-							value={payloadMode}
-							disabled={isSmsRule}
-							options={[
-								{ label: "ساده", value: "simple" },
-								{ label: "JSON پیشرفته", value: "json" },
-							]}
-							onChange={handlePayloadModeChange}
-						/>
-					</div>
-
-					{selectedCode === "CONTRACT_EXPIRY" && payloadMode === "simple"
-						? (
-							<div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-								<Form.Item name={["payload_template", "ui_category"]} label="ui.category">
-									<Input dir="ltr" />
-								</Form.Item>
-								<Form.Item name={["payload_template", "ui_icon"]} label="ui.icon">
-									<Input dir="ltr" />
-								</Form.Item>
-								<Form.Item name={["payload_template", "ui_severity"]} label="ui.severity">
-									<Select
-										options={[
-											{ label: "warning", value: "warning" },
-											{ label: "info", value: "info" },
-											{ label: "success", value: "success" },
-											{ label: "error", value: "error" },
-										]}
-									/>
-								</Form.Item>
-								<Form.Item name={["payload_template", "message_title_fa"]} label="message.title_fa">
-									<Input />
-								</Form.Item>
-								<Form.Item name={["payload_template", "message_body_fa"]} label="message.body_fa" className="md:col-span-2">
-									<Input />
-								</Form.Item>
-								<Form.Item name={["payload_template", "action_type"]} label="actions[0].type">
-									<Input dir="ltr" />
-								</Form.Item>
-								<Form.Item name={["payload_template", "action_label"]} label="actions[0].label">
-									<Input />
-								</Form.Item>
-								<Form.Item name={["payload_template", "action_url"]} label="actions[0].url">
-									<Input dir="ltr" />
-								</Form.Item>
-							</div>
-						)
-						: (
-							<Form.Item name={["payload_template", "json"]} label="JSON">
-								<Input.TextArea rows={6} dir="ltr" />
-							</Form.Item>
-						)}
 				</section>
 
 				<section className="mt-4 rounded-lg border border-[var(--ant-color-border-secondary)] p-4">

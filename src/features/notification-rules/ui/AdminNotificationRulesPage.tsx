@@ -3,11 +3,12 @@ import type { AdminRoleDto } from "#src/features/audit/admin-roles/model/admin-r
 import type { AdminUserDto } from "#src/features/audit/admin-users/model/admin-users.types";
 import type { ActionType, ProColumns, ProCoreActionType, ProFormInstance } from "@ant-design/pro-components";
 import type { NotificationManualJob } from "../api/notification-rules.api";
-import type { NotificationRuleDto } from "../model/notification-rules.types";
+import type { NotificationRuleCode, NotificationRuleDto } from "../model/notification-rules.types";
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
+import { emitNotificationSync } from "#src/features/notification/shared/notification-sync";
 import { useAccess } from "#src/hooks";
 import { DeleteOutlined, EditOutlined, PlayCircleOutlined, PlusCircleOutlined, ReloadOutlined } from "@ant-design/icons";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Descriptions, Empty, Popconfirm, Space, Tag, Typography } from "antd";
 import React, { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -40,6 +41,7 @@ function renderRunStatus(status?: string | null) {
 export default function AdminNotificationRulesPage() {
 	const { t } = useTranslation();
 	const { hasAdminPanelAccess } = useAccess();
+	const queryClient = useQueryClient();
 
 	const actionRef = useRef<ActionType>(null);
 	const formRef = useRef<ProFormInstance | undefined>(undefined);
@@ -60,9 +62,18 @@ export default function AdminNotificationRulesPage() {
 
 	const runJobMutation = useMutation({
 		mutationFn: fetchRunNotificationJob,
-		onSuccess: async (response) => {
+		onSuccess: async (response, job) => {
 			window.$message?.success(`Job در صف قرار گرفت. status: ${response.status} | task_id: ${response.task_id}`);
-			await latestRunQuery.refetch();
+			await Promise.all([
+				latestRunQuery.refetch(),
+				...(job === "IN_APP" || job === "MISSING_PREV_MONTH_IN_APP"
+					? [queryClient.invalidateQueries({ queryKey: ["notifications", "inbox"] })]
+					: []),
+			]);
+
+			if (job === "IN_APP" || job === "MISSING_PREV_MONTH_IN_APP") {
+				refreshInAppNotificationsUntilDelivered();
+			}
 		},
 		onError: () => {
 			window.$message?.error("اجرای Job با خطا مواجه شد. مسیر API اجرای دستی را بررسی کنید.");
@@ -89,6 +100,20 @@ export default function AdminNotificationRulesPage() {
 
 	function refreshTable() {
 		actionRef.current?.reload?.();
+	}
+
+	function refreshInAppNotifications() {
+		void queryClient.refetchQueries({
+			queryKey: ["notifications", "inbox"],
+			type: "all",
+		});
+		emitNotificationSync();
+	}
+
+	function refreshInAppNotificationsUntilDelivered() {
+		for (let attempt = 0; attempt < 10; attempt += 1) {
+			window.setTimeout(() => refreshInAppNotifications(), attempt * 1500);
+		}
 	}
 
 	function handleOpenCreate() {
@@ -184,7 +209,7 @@ export default function AdminNotificationRulesPage() {
 							page_size: params.pageSize ?? 10,
 							search: (params as Record<string, unknown>).search as string | undefined,
 							ordering: (params as Record<string, unknown>).ordering as string | undefined,
-							code: (params as Record<string, unknown>).code as "CONTRACT_EXPIRY" | "CONTRACT_EXPIRY_SMS" | undefined,
+							code: (params as Record<string, unknown>).code as NotificationRuleCode | undefined,
 							is_active: typeof (params as Record<string, unknown>).is_active === "string"
 								? (params as Record<string, unknown>).is_active === "true"
 								: undefined,

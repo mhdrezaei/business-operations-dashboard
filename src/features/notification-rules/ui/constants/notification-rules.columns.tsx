@@ -6,6 +6,7 @@ import {
 	formatRuleServiceNames,
 	getRuleCodeLabel,
 	getRuleStatusLabel,
+	notificationRuleCodeOptions,
 } from "../../model/notification-rules.utils";
 
 const ORDERING_OPTIONS: Array<{ label: string, value: string }> = [
@@ -53,7 +54,7 @@ export function getNotificationRulesColumns({ userNameById, roleNameById }: {
 		{ title: "روزها", dataIndex: "days_before_end", width: 140, search: false, render: (_, record) => record.days_before_end.join("، ") },
 		{ title: "گیرنده‌ها", dataIndex: "recipients", width: 300, search: false, ellipsis: true, render: (_, record) => <Tooltip title={formatRuleRecipients(record.recipients, userNameById, roleNameById)}><span>{formatRuleRecipients(record.recipients, userNameById, roleNameById)}</span></Tooltip> },
 		{ title: "جستجو", dataIndex: "search", hideInTable: true, valueType: "text", fieldProps: { allowClear: true, placeholder: "جستجو بر اساس نام یا کد..." } },
-		{ title: "کد", dataIndex: "code", hideInTable: true, valueType: "select", valueEnum: { CONTRACT_EXPIRY: "CONTRACT_EXPIRY", CONTRACT_EXPIRY_SMS: "CONTRACT_EXPIRY_SMS" }, fieldProps: { allowClear: true } },
+		{ title: "کد", dataIndex: "code", hideInTable: true, valueType: "select", valueEnum: Object.fromEntries(notificationRuleCodeOptions.map(option => [option.value, option.label])), fieldProps: { allowClear: true } },
 		{ title: "مرتب‌سازی", dataIndex: "ordering", hideInTable: true, valueType: "select", valueEnum: getOrderingValueEnum(), fieldProps: { allowClear: true, placeholder: "مرتب‌سازی..." } },
 	];
 }
