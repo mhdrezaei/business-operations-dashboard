@@ -2,13 +2,13 @@
 import { Card, theme } from "antd";
 import React, { useEffect, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
-// 🔴 فراخوانی استور Zustand
 import { useTemplateStore } from "../store/useTemplateStore";
 import ProEditor from "./components/editor/ProEditor";
 import { useTemplateEditor } from "./components/editor/ui/TemplateEditorCanvas";
+import TemplateCreateHeader from "./components/header/TemplateCreateHeader";
+import { exportEditorToWord } from "./components/header/word-exporter";
 import TemplateCreateSidebar from "./components/sidebar/TemplateCreateSidebar";
 import TemplateCreateForm from "./components/TemplateCreateForm";
-import TemplateCreateHeader from "./components/TemplateCreateHeader";
 import TemplatePrintPreviewModal from "./components/TemplatePrintPreviewModal";
 
 interface TemplateCreateLayoutProps {
@@ -42,6 +42,20 @@ export default function TemplateCreateLayout({ onClose }: TemplateCreateLayoutPr
 
 	// 🔴 خواندن فونت‌ها و تابع دریافت آن‌ها از استور (دیگر نیازی به useState لوکال نیست)
 	const { customFonts, fetchFonts } = useTemplateStore();
+
+	const handleExportWord = () => {
+		if (!editor)
+			return;
+
+		// گرفتن HTML فعلی داخل ادیتور
+		const currentHtml = editor.getHTML();
+
+		// دریافت نام تمپلیت از فرم (اگر اسمی نداشت یک اسم پیش‌فرض می‌گذارد)
+		const templateName = methods.getValues("name") || "قالب-قرارداد";
+
+		// صدا زدن سرویس دانلود
+		exportEditorToWord(currentHtml, templateName);
+	};
 
 	// 🔴 دریافت فونت‌ها در هنگام لود شدن کامپوننت
 	useEffect(() => {
@@ -86,7 +100,7 @@ export default function TemplateCreateLayout({ onClose }: TemplateCreateLayoutPr
 				style={{ backgroundColor: token.colorBgLayout, color: token.colorText }}
 			>
 				<div className="flex-shrink-0">
-					<TemplateCreateHeader onClose={onClose} onOpenPrintPreview={() => setIsPreviewOpen(true)} />
+					<TemplateCreateHeader onClose={onClose} onOpenPrintPreview={() => setIsPreviewOpen(true)} onExportWord={handleExportWord} />
 				</div>
 
 				<div className="flex flex-col flex-1 p-4 gap-4 min-h-0">
