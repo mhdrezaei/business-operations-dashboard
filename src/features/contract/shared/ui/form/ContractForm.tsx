@@ -123,7 +123,7 @@ export function ContractForm({
 		defaultValues: mergedInitialValues as any,
 		mode: "onTouched",
 		reValidateMode: "onChange",
-		shouldUnregister: true,
+		shouldUnregister: false,
 		resolver: dynamicResolver,
 	});
 	const watchedValues = useWatch({ control: form.control, defaultValue: mergedInitialValues as any });

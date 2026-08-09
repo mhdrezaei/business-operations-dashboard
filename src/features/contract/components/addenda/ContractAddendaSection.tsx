@@ -3,9 +3,9 @@ import { RHFProText, RHFProTextArea, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { message } from "#src/utils";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { Button, Card, Collapse } from "antd";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
-import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
+import { useFormContext, useWatch } from "react-hook-form";
 import { MONTH_OPTIONS, YEAR_OPTIONS } from "../../constant/jalali-date-options";
 import { ContractTypeSection } from "../contract-type/ContractTypeSection";
 import { defaultAddendumValue } from "./addenda.types";
@@ -29,6 +29,34 @@ function ymToKey(y: number | string | null | undefined, m: number | string | nul
 }
 function overlap(aStart: number, aEnd: number, bStart: number, bEnd: number) {
 	return aStart <= bEnd && aEnd >= bStart;
+}
+
+function readDisplayNumber(value: unknown) {
+	if (value == null || typeof value !== "object")
+		return null;
+	const row = value as Record<string, unknown>;
+	const displayNumber = row.displayAddendumNumber ?? row.display_addendum_number;
+	return displayNumber == null || !String(displayNumber).trim() ? null : String(displayNumber);
+}
+
+function getNextDisplayNumber(items: unknown[], prefix?: string) {
+	const usedNumbers = new Set<number>();
+	for (const item of items) {
+		const displayNumber = readDisplayNumber(item);
+		if (!displayNumber)
+			continue;
+
+		const suffix = prefix
+			? displayNumber.startsWith(`${prefix}.`) ? displayNumber.slice(prefix.length + 1) : null
+			: displayNumber;
+		if (suffix && /^\d+$/.test(suffix))
+			usedNumbers.add(Number(suffix));
+	}
+
+	let nextNumber = 1;
+	while (usedNumbers.has(nextNumber))
+		nextNumber++;
+	return prefix ? `${prefix}.${nextNumber}` : String(nextNumber);
 }
 
 function monthsInYearOptions(year: number | string, startKey: number, endKey: number) {
@@ -70,6 +98,13 @@ interface Props<TFV extends FieldValues> {
 	contractEndMonthPath: Path<TFV>
 	level?: number
 	displayPrefix?: string
+	addendaFallback?: unknown[]
+	contractRangeFallback?: {
+		startYear?: number | null
+		startMonth?: number | null
+		endYear?: number | null
+		endMonth?: number | null
+	}
 }
 
 export function ContractAddendaSection<TFV extends FieldValues>({
@@ -86,24 +121,75 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 	contractEndMonthPath,
 	level = 0,
 	displayPrefix,
+	addendaFallback,
+	contractRangeFallback,
 }: Props<TFV>) {
-	const { control, getValues, setError, clearErrors, trigger } = useFormContext<TFV>();
-	const addendaValues = useWatch({
+	const { control, getValues, setValue, setError, clearErrors, trigger } = useFormContext<TFV>();
+	const initialAddendaRef = useRef<unknown[]>((() => {
+		const initialValue = getValues(name as unknown as Path<TFV>);
+		return Array.isArray(initialValue) ? initialValue : (addendaFallback ?? []);
+	})());
+	const watchedAddendaValues = useWatch({
 		control,
 		name: name as unknown as Path<TFV>,
+		defaultValue: initialAddendaRef.current as PathValue<TFV, typeof name>,
+		disabled: level > 0,
 	}) as PathValue<TFV, typeof name> | undefined;
+	const addendaValues = level === 0 ? watchedAddendaValues : addendaFallback;
+	const stableAddendaRef = useRef<unknown[]>(initialAddendaRef.current);
+	const fields = useMemo(() => {
+		const watchedRows = Array.isArray(addendaValues) ? addendaValues : stableAddendaRef.current;
+		const rowCount = Math.max(watchedRows.length, stableAddendaRef.current.length);
+		return Array.from({ length: rowCount }, (_, idx) => {
+			const row = watchedRows[idx];
+			const stableRow = stableAddendaRef.current[idx];
+			if (row == null || typeof row !== "object")
+				return stableRow ?? row;
+			if (stableRow == null || typeof stableRow !== "object")
+				return row;
+
+			const definedWatchedValues = Object.fromEntries(
+				Object.entries(row as Record<string, unknown>)
+					.filter(([, value]) => value !== undefined),
+			);
+			return {
+				...(stableRow as Record<string, unknown>),
+				...definedWatchedValues,
+			};
+		});
+	}, [addendaValues]);
+	useEffect(() => {
+		stableAddendaRef.current = fields;
+	}, [fields]);
 	// Date of original contract
-	const contractStartYear = useWatch({ control, name: contractStartYearPath }) as any;
-	const contractStartMonth = useWatch({ control, name: contractStartMonthPath }) as any;
-	const contractEndYear = useWatch({ control, name: contractEndYearPath }) as any;
-	const contractEndMonth = useWatch({ control, name: contractEndMonthPath }) as any;
+	const watchedContractStartYear = useWatch({ control, name: contractStartYearPath, disabled: level > 0 }) as any;
+	const watchedContractStartMonth = useWatch({ control, name: contractStartMonthPath, disabled: level > 0 }) as any;
+	const watchedContractEndYear = useWatch({ control, name: contractEndYearPath, disabled: level > 0 }) as any;
+	const watchedContractEndMonth = useWatch({ control, name: contractEndMonthPath, disabled: level > 0 }) as any;
+	const contractStartYear = level === 0 ? watchedContractStartYear : contractRangeFallback?.startYear;
+	const contractStartMonth = level === 0 ? watchedContractStartMonth : contractRangeFallback?.startMonth;
+	const contractEndYear = level === 0 ? watchedContractEndYear : contractRangeFallback?.endYear;
+	const contractEndMonth = level === 0 ? watchedContractEndMonth : contractRangeFallback?.endMonth;
 
 	const contractStartKey = ymToKey(contractStartYear, contractStartMonth);
 	const contractEndKey = ymToKey(contractEndYear, contractEndMonth);
 	const contractRangeReady = contractStartKey != null && contractEndKey != null && contractStartKey <= contractEndKey;
 
-	const { fields, append, remove } = useFieldArray({ control, name, keyName: "fieldArrayId" });
 	const [activeKey, setActiveKey] = useState<string | undefined>(undefined);
+	const getAddendumValue = (idx: number, key: string): any => {
+		const registeredValue = getValues(p(`${name}.${idx}`, key));
+		if (registeredValue !== undefined)
+			return registeredValue;
+
+		const watchedAddendum = Array.isArray(addendaValues) ? addendaValues[idx] : undefined;
+		if (watchedAddendum != null && typeof watchedAddendum === "object") {
+			const watchedValue = (watchedAddendum as Record<string, unknown>)[key];
+			if (watchedValue !== undefined)
+				return watchedValue;
+		}
+
+		return (fields[idx] as Record<string, unknown> | undefined)?.[key];
+	};
 
 	// ✅ Allowed years based on contract period
 	const allowedYears = useMemo(() => {
@@ -121,10 +207,10 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 
 		const base = `${name}.${idx}`;
 
-		const sy = getValues(p(base, "startYear")) as number | null;
-		const sm = getValues(p(base, "startMonth")) as number | null;
-		const ey = getValues(p(base, "endYear")) as number | null;
-		const em = getValues(p(base, "endMonth")) as number | null;
+		const sy = getAddendumValue(idx, "startYear") as number | null;
+		const sm = getAddendumValue(idx, "startMonth") as number | null;
+		const ey = getAddendumValue(idx, "endYear") as number | null;
+		const em = getAddendumValue(idx, "endMonth") as number | null;
 
 		const sKey = ymToKey(sy, sm);
 		const eKey = ymToKey(ey, em);
@@ -152,11 +238,10 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 			if (i === idx)
 				continue;
 
-			const obase = `${name}.${i}`;
-			const osy = getValues(p(obase, "startYear")) as number | null;
-			const osm = getValues(p(obase, "startMonth")) as number | null;
-			const oey = getValues(p(obase, "endYear")) as number | null;
-			const oem = getValues(p(obase, "endMonth")) as number | null;
+			const osy = getAddendumValue(i, "startYear") as number | null;
+			const osm = getAddendumValue(i, "startMonth") as number | null;
+			const oey = getAddendumValue(i, "endYear") as number | null;
+			const oem = getAddendumValue(i, "endMonth") as number | null;
 
 			const osKey = ymToKey(osy, osm);
 			const oeKey = ymToKey(oey, oem);
@@ -190,10 +275,10 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 			const lastIdx = fields.length - 1;
 			const base = `${name}.${lastIdx}`;
 
-			const sy = getValues(p(base, "startYear"));
-			const sm = getValues(p(base, "startMonth"));
-			const ey = getValues(p(base, "endYear"));
-			const em = getValues(p(base, "endMonth"));
+			const sy = getAddendumValue(lastIdx, "startYear");
+			const sm = getAddendumValue(lastIdx, "startMonth");
+			const ey = getAddendumValue(lastIdx, "endYear");
+			const em = getAddendumValue(lastIdx, "endMonth");
 
 			if (ymToKey(sy, sm) == null || ymToKey(ey, em) == null) {
 				message.warning("ابتدا تاریخ‌های الحاقیه قبلی را کامل کنید.");
@@ -211,26 +296,81 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 		}
 
 		const idx = fields.length;
-		append(structuredClone(defaultAddendumValue) as any);
+		const nextAddendum = structuredClone(defaultAddendumValue);
+		nextAddendum.displayAddendumNumber = getNextDisplayNumber(fields, displayPrefix);
+		const nextFields = [...fields, nextAddendum];
+		stableAddendaRef.current = nextFields;
+		setValue(name as unknown as Path<TFV>, nextFields as any, {
+			shouldDirty: true,
+			shouldTouch: true,
+		});
 		setActiveKey(String(idx));
 	};
 
 	const removeAddendum = (idx: number) => {
-		remove(idx);
+		const nextFields = fields.filter((_, fieldIndex) => fieldIndex !== idx);
+		stableAddendaRef.current = nextFields;
+		setValue(name as unknown as Path<TFV>, nextFields as any, {
+			shouldDirty: true,
+			shouldTouch: true,
+		});
 		const next = idx === 0 ? "0" : String(idx - 1);
 		setActiveKey(fields.length <= 1 ? undefined : next);
 	};
 
-	const collapseItems = useMemo(() => {
+	const addChildAddendum = (idx: number, parentDisplayNumber?: string) => {
+		const startKey = ymToKey(
+			getAddendumValue(idx, "startYear"),
+			getAddendumValue(idx, "startMonth"),
+		);
+		const endKey = ymToKey(
+			getAddendumValue(idx, "endYear"),
+			getAddendumValue(idx, "endMonth"),
+		);
+
+		if (startKey == null || endKey == null || startKey > endKey) {
+			message.warning("ابتدا تاریخ شروع و پایان این الحاقیه را کامل کنید.");
+			return;
+		}
+
+		const children = getAddendumValue(idx, "children");
+		const childItems = Array.isArray(children) ? children : [];
+		const nextChild = structuredClone(defaultAddendumValue);
+		nextChild.displayAddendumNumber = getNextDisplayNumber(childItems, parentDisplayNumber);
+		setValue(
+			p(`${name}.${idx}`, "children"),
+			[...childItems, nextChild] as any,
+			{ shouldDirty: true, shouldTouch: true },
+		);
+	};
+
+	const treeItems = useMemo(() => {
 		return fields.map((f, idx) => {
 			const base = `${name}.${idx}`;
-			const generatedNumber = displayPrefix ? `${displayPrefix}.${idx + 1}` : String(idx + 1);
-			const displayNumber = getValues(p(base, "displayAddendumNumber")) || generatedNumber;
+			const watchedAddendum = Array.isArray(addendaValues) ? addendaValues[idx] : undefined;
+			const definedWatchedValues = watchedAddendum != null && typeof watchedAddendum === "object"
+				? Object.fromEntries(
+					Object.entries(watchedAddendum as Record<string, unknown>)
+						.filter(([, value]) => value !== undefined),
+				)
+				: {};
+			const addendum = {
+				...(f as Record<string, unknown>),
+				...definedWatchedValues,
+			} as Record<string, any>;
+			const serverDisplayNumber = readDisplayNumber(addendum);
+			const generatedDisplayNumber = addendum.id == null
+				? displayPrefix ? `${displayPrefix}.${idx + 1}` : String(idx + 1)
+				: null;
+			const displayNumber = serverDisplayNumber ?? generatedDisplayNumber;
+			const addendumTitle = displayNumber != null && String(displayNumber).trim()
+				? `الحاقیه ${displayNumber}`
+				: "الحاقیه";
 
-			const sy = getValues(p(base, "startYear")) as number | null;
-			const sm = getValues(p(base, "startMonth")) as number | null;
-			const ey = getValues(p(base, "endYear")) as number | null;
-			const em = getValues(p(base, "endMonth")) as number | null;
+			const sy = addendum.startYear as number | null;
+			const sm = addendum.startMonth as number | null;
+			const ey = addendum.endYear as number | null;
+			const em = addendum.endMonth as number | null;
 
 			const headerHint
 				= sy && sm && ey && em ? `(${sy}/${sm} تا ${ey}/${em})` : "(تاریخ‌ها تکمیل نشده)";
@@ -242,146 +382,150 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 				= contractRangeReady && ey ? monthsInYearOptions(ey, contractStartKey!, contractEndKey!) : MONTH_OPTIONS;
 
 			return {
-				key: String(idx),
-				label: (
-					<div className="flex justify-between items-center w-full gap-3">
-						<div className="font-bold">
-							{`الحاقیه ${displayNumber}`}
-							{" "}
-							<span className="opacity-75 font-medium">{headerHint}</span>
-						</div>
-
-						<Button
-							danger
-							size="small"
-							icon={<DeleteOutlined />}
-							onClick={(e) => {
-								e.stopPropagation();
-								removeAddendum(idx);
-							}}
-						>
-							حذف الحاقیه
-						</Button>
-					</div>
+				reactKey: String(
+					addendum.id
+					?? addendum.displayAddendumNumber
+					?? addendum.display_addendum_number
+					?? `${name}.${idx}`,
 				),
-				children: (
-					<Card className="[&_.ant-pro-card-body]:p-0">
-						<div className="grid grid-cols-4 gap-3 mt-2">
-							<RHFSelect
-								name={p(base, "startYear")}
-								label="سال شروع الحاقیه"
-								options={allowedYears as any}
-								selectProps={{ placeholder: "سال", allowClear: true }}
-								onValueChange={async () => {
-									validateAddendumRangeNow(idx);
-									await trigger([
-										p(base, "startYear") as any,
-										p(base, "startMonth") as any,
-										p(base, "endYear") as any,
-										p(base, "endMonth") as any,
-									]);
-								}}
-							/>
+				addendum,
+				addendumTitle,
+				displayNumber,
+				hasChildren: Array.isArray(addendum.children) && addendum.children.length > 0,
+				collapseItem: {
+					key: String(idx),
+					label: (
+						<div className="flex justify-between items-center w-full gap-3">
+							<div className="font-bold">
+								{addendumTitle}
+								{" "}
+								<span className="opacity-75 font-medium">{headerHint}</span>
+							</div>
 
-							<RHFSelect
-								name={p(base, "startMonth")}
-								label="ماه شروع"
-								options={startMonthOptions as any}
-								onValueChange={async () => {
-									validateAddendumRangeNow(idx);
-									await trigger([
-										p(base, "startYear") as any,
-										p(base, "startMonth") as any,
-										p(base, "endYear") as any,
-										p(base, "endMonth") as any,
-									]);
+							<Button
+								danger
+								size="small"
+								icon={<DeleteOutlined />}
+								onClick={(e) => {
+									e.stopPropagation();
+									removeAddendum(idx);
 								}}
-								selectProps={{
-									placeholder: "ماه",
-									allowClear: true,
-								}}
-							/>
-
-							<RHFSelect
-								name={p(base, "endYear")}
-								label="سال پایان الحاقیه"
-								options={allowedYears as any}
-								onValueChange={async () => {
-									validateAddendumRangeNow(idx);
-									await trigger([
-										p(base, "startYear") as any,
-										p(base, "startMonth") as any,
-										p(base, "endYear") as any,
-										p(base, "endMonth") as any,
-									]);
-								}}
-								selectProps={{
-									placeholder: "سال",
-									allowClear: true,
-								}}
-							/>
-
-							<RHFSelect
-								name={p(base, "endMonth")}
-								label="ماه پایان"
-								options={endMonthOptions as any}
-								onValueChange={async () => {
-									validateAddendumRangeNow(idx);
-									await trigger([
-										p(base, "startYear") as any,
-										p(base, "startMonth") as any,
-										p(base, "endYear") as any,
-										p(base, "endMonth") as any,
-									]);
-								}}
-								selectProps={{
-									placeholder: "ماه",
-									allowClear: true,
-								}}
-							/>
+							>
+								حذف الحاقیه
+							</Button>
 						</div>
+					),
+					children: (
+						<Card className="[&_.ant-pro-card-body]:p-0">
+							<div className="grid grid-cols-4 gap-3 mt-2">
+								<RHFSelect
+									name={p(base, "startYear")}
+									label="سال شروع الحاقیه"
+									options={allowedYears as any}
+									selectProps={{ placeholder: "سال", allowClear: true }}
+									onValueChange={async () => {
+										validateAddendumRangeNow(idx);
+										await trigger([
+											p(base, "startYear") as any,
+											p(base, "startMonth") as any,
+											p(base, "endYear") as any,
+											p(base, "endMonth") as any,
+										]);
+									}}
+								/>
 
-						<div className="mt-3">
-							<RHFProText
-								name={p(base, "contractNumber")}
-								label="شماره قرارداد الحاقیه"
-								inputProps={{ placeholder: "مثلاً ADD-1405-01" }}
-							/>
-						</div>
+								<RHFSelect
+									name={p(base, "startMonth")}
+									label="ماه شروع"
+									options={startMonthOptions as any}
+									onValueChange={async () => {
+										validateAddendumRangeNow(idx);
+										await trigger([
+											p(base, "startYear") as any,
+											p(base, "startMonth") as any,
+											p(base, "endYear") as any,
+											p(base, "endMonth") as any,
+										]);
+									}}
+									selectProps={{
+										placeholder: "ماه",
+										allowClear: true,
+									}}
+								/>
 
-						<div className="mt-3">
-							{renderAddendumFields
-								? renderAddendumFields(base, idx)
-								: <ContractTypeSection title={contractTypeTitle} name={p(base, contractTypeFieldKey)} />}
-						</div>
+								<RHFSelect
+									name={p(base, "endYear")}
+									label="سال پایان الحاقیه"
+									options={allowedYears as any}
+									onValueChange={async () => {
+										validateAddendumRangeNow(idx);
+										await trigger([
+											p(base, "startYear") as any,
+											p(base, "startMonth") as any,
+											p(base, "endYear") as any,
+											p(base, "endMonth") as any,
+										]);
+									}}
+									selectProps={{
+										placeholder: "سال",
+										allowClear: true,
+									}}
+								/>
 
-						<div className="mt-3">
-							<RHFProTextArea
-								name={p(base, "description")}
-								label="توضیح الحاقیه"
-								textAreaProps={{ placeholder: "توضیح اختیاری برای این الحاقیه" }}
-							/>
-						</div>
+								<RHFSelect
+									name={p(base, "endMonth")}
+									label="ماه پایان"
+									options={endMonthOptions as any}
+									onValueChange={async () => {
+										validateAddendumRangeNow(idx);
+										await trigger([
+											p(base, "startYear") as any,
+											p(base, "startMonth") as any,
+											p(base, "endYear") as any,
+											p(base, "endMonth") as any,
+										]);
+									}}
+									selectProps={{
+										placeholder: "ماه",
+										allowClear: true,
+									}}
+								/>
+							</div>
 
-						<div className="mt-3">
-							<ContractAddendaSection<TFV>
-								name={p(base, "children")}
-								title={`زیرالحاقیه‌های الحاقیه ${displayNumber}`}
-								contractTypeTitle={contractTypeTitle}
-								contractTypeFieldKey={contractTypeFieldKey}
-								renderAddendumFields={renderAddendumFields}
-								canAddAddendum={canAddAddendum}
-								addendumAddBlockedMessage={addendumAddBlockedMessage}
-								contractStartYearPath={p(base, "startYear")}
-								contractStartMonthPath={p(base, "startMonth")}
-								contractEndYearPath={p(base, "endYear")}
-								contractEndMonthPath={p(base, "endMonth")}
-								level={level + 1}
-								displayPrefix={String(displayNumber)}
-							/>
-						</div>
-					</Card>
-				),
+							<div className="mt-3">
+								<RHFProText
+									name={p(base, "contractNumber")}
+									label="شماره قرارداد الحاقیه"
+									inputProps={{ placeholder: "مثلاً ADD-1405-01" }}
+								/>
+							</div>
+
+							<div className="mt-3">
+								{renderAddendumFields
+									? renderAddendumFields(base, idx)
+									: <ContractTypeSection title={contractTypeTitle} name={p(base, contractTypeFieldKey)} />}
+							</div>
+
+							<div className="mt-3">
+								<RHFProTextArea
+									name={p(base, "description")}
+									label="توضیح الحاقیه"
+									textAreaProps={{ placeholder: "توضیح اختیاری برای این الحاقیه" }}
+								/>
+							</div>
+
+							<div className="mt-3 flex justify-end">
+								<Button
+									icon={<PlusOutlined />}
+									onClick={() => addChildAddendum(idx, displayNumber ?? undefined)}
+									disabled={!canAddAddendum}
+								>
+									افزودن زیرالحاقیه
+								</Button>
+							</div>
+						</Card>
+					),
+				},
 			};
 		});
 	}, [
@@ -399,21 +543,11 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 		canAddAddendum,
 		addendumAddBlockedMessage,
 		trigger,
-		level,
 		displayPrefix,
 	]);
 
-	return (
-		<Card
-			bordered
-			className={level === 0 ? "rounded-md mt-3" : "rounded-md mt-3 border-dashed"}
-			title={title}
-			extra={(
-				<Button icon={<PlusOutlined />} onClick={addAddendum} disabled={!contractRangeReady || !canAddAddendum}>
-					افزودن الحاقیه
-				</Button>
-			)}
-		>
+	const notices = (
+		<>
 			{!contractRangeReady
 				? (
 					<div className="opacity-75">برای افزودن الحاقیه، ابتدا تاریخ شروع و پایان قرارداد را انتخاب کنید.</div>
@@ -424,17 +558,75 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 					<div className="opacity-75 mt-2">{addendumAddBlockedMessage}</div>
 				)
 				: null}
+		</>
+	);
 
-			{fields.length === 0
-				? null
-				: (
-					<Collapse
-						accordion
-						activeKey={activeKey}
-						onChange={k => setActiveKey(Array.isArray(k) ? String(k[0] ?? "") : (k ? String(k) : undefined))}
-						items={collapseItems as any}
-					/>
-				)}
+	const tree = treeItems.length === 0
+		? null
+		: (
+			<div className="flex flex-col gap-3">
+				{treeItems.map((item, idx) => {
+					const itemKey = String(idx);
+					return (
+						<div key={item.reactKey}>
+							<Collapse
+								activeKey={activeKey === itemKey ? [itemKey] : []}
+								onChange={(key) => {
+									const nextKey = Array.isArray(key) ? key[0] : key;
+									setActiveKey(nextKey == null ? undefined : String(nextKey));
+								}}
+								items={[item.collapseItem] as any}
+							/>
+							{item.hasChildren
+								? (
+									<div className="relative mt-3 pr-6 before:absolute before:bottom-0 before:right-2 before:top-0 before:border-r before:border-dashed before:border-[var(--ant-color-border)]">
+										<ContractAddendaSection<TFV>
+											name={p(`${name}.${idx}`, "children")}
+											displayPrefix={item.displayNumber ?? undefined}
+											addendaFallback={item.addendum.children}
+											contractTypeTitle={contractTypeTitle}
+											contractTypeFieldKey={contractTypeFieldKey}
+											renderAddendumFields={renderAddendumFields}
+											canAddAddendum={canAddAddendum}
+											addendumAddBlockedMessage={addendumAddBlockedMessage}
+											contractStartYearPath={p(`${name}.${idx}`, "startYear")}
+											contractStartMonthPath={p(`${name}.${idx}`, "startMonth")}
+											contractEndYearPath={p(`${name}.${idx}`, "endYear")}
+											contractEndMonthPath={p(`${name}.${idx}`, "endMonth")}
+											contractRangeFallback={{
+												startYear: item.addendum.startYear,
+												startMonth: item.addendum.startMonth,
+												endYear: item.addendum.endYear,
+												endMonth: item.addendum.endMonth,
+											}}
+											level={level + 1}
+										/>
+									</div>
+								)
+								: null}
+						</div>
+					);
+				})}
+			</div>
+		);
+
+	if (level > 0) {
+		return tree;
+	}
+
+	return (
+		<Card
+			bordered
+			className="rounded-md mt-3"
+			title={title}
+			extra={(
+				<Button icon={<PlusOutlined />} onClick={addAddendum} disabled={!contractRangeReady || !canAddAddendum}>
+					افزودن الحاقیه
+				</Button>
+			)}
+		>
+			{notices}
+			{tree}
 		</Card>
 	);
 }

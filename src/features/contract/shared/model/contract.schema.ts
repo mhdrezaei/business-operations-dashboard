@@ -85,7 +85,10 @@ const fixedStartSchema = z.object({
 
 const fixedEndSchema = z.object({
 	description: z.string().max(2000).optional(),
-	documents: z.array(z.any()),
+	documents: z.preprocess(
+		value => (Array.isArray(value) ? value : []),
+		z.array(z.any()),
+	),
 });
 
 export function buildContractSchema(serviceCode: ContractServiceCode | null) {

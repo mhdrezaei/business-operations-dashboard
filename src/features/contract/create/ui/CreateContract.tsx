@@ -378,6 +378,7 @@ function mapShahkarAddenda(addenda: unknown): Array<Record<string, any>> {
 			end_jm: toNumberOrNull(row.endMonth),
 			contract_number: row.contractNumber ?? "",
 			note: row.description ?? "",
+			is_signed: row.isSigned ?? row.is_signed ?? false,
 			...mapShahkarPricingPayload(row.contractPricing),
 			children: mapShahkarAddenda(row.children),
 		};
@@ -397,9 +398,13 @@ function mapGenericAddenda(addenda: unknown): Array<Record<string, any>> {
 			contractNumber,
 			description,
 			contractPricing,
+			isSigned,
+			is_signed: _isSigned,
 			children: _children,
 			parentAddendumId: _parentAddendumId,
+			parent_addendum_id: _parentAddendumIdSnake,
 			displayAddendumNumber: _displayAddendumNumber,
+			display_addendum_number: _displayAddendumNumberSnake,
 			fieldArrayId: _fieldArrayId,
 			...rest
 		} = row;
@@ -413,6 +418,7 @@ function mapGenericAddenda(addenda: unknown): Array<Record<string, any>> {
 			end_jm: toNumberOrNull(endMonth),
 			contract_number: contractNumber ?? "",
 			note: description ?? "",
+			is_signed: isSigned ?? _isSigned ?? false,
 			...(pricing ?? {}),
 			children: mapGenericAddenda(row.children),
 		};
@@ -651,6 +657,7 @@ async function formValuesToApiPayload(values: ContractFormValues) {
 
 	if (serviceCode === "shahkar") {
 		const shahkarPricing = mapShahkarPricingPayload(serviceFields.contractPricing);
+		payload.is_signed = serviceFields.isSigned ?? false;
 		payload.calculation_type = shahkarPricing.calculation_type;
 		payload.tiers = shahkarPricing.tiers;
 		payload.addenda = mapShahkarAddenda(addenda);
@@ -722,7 +729,13 @@ async function formValuesToApiPayload(values: ContractFormValues) {
 		return payload;
 	}
 
-	const { addenda: _addenda, ...restServiceFields } = serviceFields;
+	payload.is_signed = serviceFields.isSigned ?? serviceFields.is_signed ?? false;
+	const {
+		addenda: _addenda,
+		isSigned: _isSigned,
+		is_signed: _isSignedSnake,
+		...restServiceFields
+	} = serviceFields;
 	return {
 		...payload,
 		addenda: mapGenericAddenda(addenda),

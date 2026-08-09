@@ -389,6 +389,7 @@ function mapShahkarAddenda(addenda: unknown): Array<Record<string, any>> {
 			end_jm: toNumberOrNull(row.endMonth),
 			contract_number: row.contractNumber ?? "",
 			note: row.description ?? "",
+			is_signed: row.isSigned ?? row.is_signed ?? false,
 			calculation_type: pricing?.calculation_type ?? null,
 			tiers: pricing?.tiers ?? [],
 			children: mapShahkarAddenda(row.children),
@@ -409,9 +410,13 @@ function mapGenericAddenda(addenda: unknown): Array<Record<string, any>> {
 			contractNumber,
 			description,
 			contractPricing,
+			isSigned,
+			is_signed: _isSigned,
 			children: _children,
 			parentAddendumId: _parentAddendumId,
+			parent_addendum_id: _parentAddendumIdSnake,
 			displayAddendumNumber: _displayAddendumNumber,
+			display_addendum_number: _displayAddendumNumberSnake,
 			fieldArrayId: _fieldArrayId,
 			...rest
 		} = row;
@@ -426,6 +431,7 @@ function mapGenericAddenda(addenda: unknown): Array<Record<string, any>> {
 			end_jm: toNumberOrNull(endMonth),
 			contract_number: contractNumber ?? "",
 			note: description ?? "",
+			is_signed: isSigned ?? _isSigned ?? false,
 			...(pricing ?? {}),
 			children: mapGenericAddenda(row.children),
 		};
@@ -442,11 +448,9 @@ function normalizeAddendumIdentity(row: Record<string, any>) {
 
 function mapAddendumIdentity(row: Record<string, any>) {
 	const id = toNumberOrNull(row.id);
-	const parentAddendumId = toNumberOrNull(row.parentAddendumId ?? row.parent_addendum_id);
 
 	return {
 		...(id != null ? { id } : {}),
-		...(parentAddendumId != null ? { parent_addendum_id: parentAddendumId } : {}),
 	};
 }
 
@@ -459,7 +463,78 @@ function normalizeAddendumBase(row: Record<string, any>) {
 		endMonth: toNumberOrNull(row.end_jm ?? row.endMonth),
 		contractNumber: row.contract_number ?? row.contractNumber ?? "",
 		description: row.note ?? row.description ?? "",
+		isSigned: row.is_signed ?? row.isSigned ?? false,
 	};
+}
+
+function buildAddendaTree(addenda: unknown): Array<Record<string, any>> {
+	const list = Array.isArray(addenda) ? addenda : [];
+	let anonymousId = 0;
+	let order = 0;
+	const nodes = new Map<string, {
+		key: string
+		parentKey: string | null
+		order: number
+		row: Record<string, any>
+	}>();
+
+	const collect = (items: unknown, inferredParentKey: string | null = null) => {
+		if (!Array.isArray(items))
+			return;
+
+		for (const item of items) {
+			const source = (item ?? {}) as Record<string, any>;
+			const id = toNumberOrNull(source.id);
+			const key = id != null ? `id:${id}` : `anonymous:${anonymousId++}`;
+			const explicitParentId = toNumberOrNull(source.parentAddendumId ?? source.parent_addendum_id);
+			const parentKey = explicitParentId != null ? `id:${explicitParentId}` : inferredParentKey;
+			const existing = nodes.get(key);
+			const node = existing ?? {
+				key,
+				parentKey,
+				order: order++,
+				row: {},
+			};
+
+			node.parentKey = node.parentKey ?? parentKey;
+			node.row = {
+				...node.row,
+				...source,
+				children: [],
+			};
+			nodes.set(key, node);
+			collect(source.children, key);
+		}
+	};
+
+	collect(list);
+
+	const roots: Array<(typeof nodes extends Map<any, infer V> ? V : never)> = [];
+	for (const node of nodes.values()) {
+		const parent = node.parentKey ? nodes.get(node.parentKey) : undefined;
+		if (parent && parent.key !== node.key)
+			(parent.row.children as Array<Record<string, any>>).push(node.row);
+		else
+			roots.push(node);
+	}
+
+	const collator = new Intl.Collator("fa", { numeric: true, sensitivity: "base" });
+	const sortRows = (rows: Array<Record<string, any>>) => {
+		rows.sort((left, right) => {
+			const leftNumber = left.displayAddendumNumber ?? left.display_addendum_number;
+			const rightNumber = right.displayAddendumNumber ?? right.display_addendum_number;
+			if (leftNumber == null || rightNumber == null)
+				return 0;
+			return collator.compare(String(leftNumber), String(rightNumber));
+		});
+		rows.forEach(row => sortRows(Array.isArray(row.children) ? row.children : []));
+	};
+
+	const result = roots
+		.sort((left, right) => left.order - right.order)
+		.map(node => node.row);
+	sortRows(result);
+	return result;
 }
 
 function normalizeGenericAddendaFromDto(addenda: unknown): Array<Record<string, any>> {
@@ -874,6 +949,7 @@ function normalizeShahkarServiceFields(dto: any) {
 	} as any);
 
 	return {
+		isSigned: dto?.is_signed ?? dto?.isSigned ?? false,
 		contractPricing: pricing ?? null,
 		addenda: normalizeShahkarAddendaFromDto(dto?.addenda),
 	};
@@ -1039,7 +1115,15 @@ function dtoToFormValues(dto: any, service: ContractServicePath): ContractFormVa
 		serviceFields = {
 			...(rest ?? {}),
 			...(typeof dto?.is_official === "boolean" ? { isOfficial: dto.is_official } : {}),
+			isSigned: dto?.is_signed ?? dto?.isSigned ?? false,
 			addenda: normalizeGenericAddendaFromDto(dto?.addenda),
+		};
+	}
+
+	if (Array.isArray(serviceFields.addenda)) {
+		serviceFields = {
+			...serviceFields,
+			addenda: buildAddendaTree(serviceFields.addenda),
 		};
 	}
 
@@ -1153,6 +1237,7 @@ async function formValuesToApiPayload(values: ContractFormValues) {
 
 	if (serviceCode === "shahkar") {
 		const pricing = contractTypeToApiPricing((serviceFields.contractPricing ?? null) as any);
+		payload.is_signed = serviceFields.isSigned ?? false;
 		payload.calculation_type = pricing?.calculation_type ?? null;
 		payload.tiers = pricing?.tiers ?? [];
 		payload.addenda = mapShahkarAddenda(addenda);
@@ -1218,7 +1303,13 @@ async function formValuesToApiPayload(values: ContractFormValues) {
 
 	// For non-openapi services backend fields usually live at root level.
 	payload.addenda = mapGenericAddenda(addenda);
-	const { addenda: _addenda, ...restServiceFields } = serviceFields;
+	payload.is_signed = serviceFields.isSigned ?? serviceFields.is_signed ?? false;
+	const {
+		addenda: _addenda,
+		isSigned: _isSigned,
+		is_signed: _isSignedSnake,
+		...restServiceFields
+	} = serviceFields;
 	return {
 		...payload,
 		...restServiceFields,

@@ -58,6 +58,9 @@ export function CompanyContractsPanel({ companyId, companyType, currentContractI
 		return {
 			key: String(contract.id),
 			showArrow: false,
+			style: {
+				borderBottom: `1px solid var(${isCurrent ? "--ant-color-primary" : "--ant-color-border"})`,
+			},
 			label: (
 				<div className="flex min-w-0 items-center justify-between gap-3">
 					<span className="max-w-full truncate rounded-lg bg-primaryBgHover px-2.5 py-1 font-medium text-text">
