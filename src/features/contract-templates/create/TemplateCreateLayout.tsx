@@ -47,7 +47,6 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 	const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
 
-	// 🔴 استیت جدید برای نمایش لودینگ در زمان دریافت اطلاعات قالب (ویرایش)
 	const [isLoadingTemplate, setIsLoadingTemplate] = useState(false);
 	const [isInitialDataLoaded, setIsInitialDataLoaded] = useState(false);
 
@@ -62,10 +61,8 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 		exportEditorToWord(editor.getHTML(), methods.getValues("name") || "قالب-قرارداد");
 	};
 
-	// 🔴 واکشی اطلاعات قالب در صورت وجود templateId (حالت ویرایش)
 	useEffect(() => {
 		const loadTemplateData = async () => {
-			// اطمینان از اینکه ادیتور و لیست سرویس‌ها آماده است
 			if (!templateId || !editor || !servicesData || isInitialDataLoaded)
 				return;
 
@@ -73,13 +70,11 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 			try {
 				const template = await TemplateCreateApi.getTemplate(templateId);
 
-				// ۱. پر کردن فیلدهای متنی و ساده فرم
 				methods.setValue("name", template.name || "");
 				methods.setValue("document_kind", template.document_kind || null);
 				methods.setValue("variant", template.variant || null);
 				methods.setValue("company_type", template.company_type || null);
 
-				// ۲. پیدا کردن آیدی سرویس از روی رشته برگشتی سرور (مثلاً "traffic")
 				const payloadData = (servicesData as any)?.data ?? servicesData;
 				const rawServices = Array.isArray(payloadData?.results) ? payloadData.results : [];
 
@@ -88,17 +83,13 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 				);
 
 				if (matchedService) {
-					methods.setValue("service_id", matchedService.id); // قرار دادن ID در فرم برای سلکتور
+					methods.setValue("service_id", matchedService.id);
 				}
 
-				// ۳. پر کردن ویرایشگر متن با دستور بومی Tiptap
 				if (template.content_html) {
 					editor.commands.setContent(template.content_html);
 					setEditorContent(template.content_html);
 				}
-
-				// ۴. (اختیاری) اگر متد setHeaderData در استور دارید، آن را اینجا صدا بزنید
-				// useTemplateStore.getState().setHeaderData(template.header);
 
 				setIsInitialDataLoaded(true);
 			}
@@ -168,7 +159,6 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 				font_ids: customFonts.map(font => font.id),
 			};
 
-			// 🔴 تصمیم‌گیری هوشمند برای ساخت یا ویرایش
 			if (templateId) {
 				await TemplateCreateApi.updateTemplate(templateId, payload);
 				message.success("قالب با موفقیت ویرایش شد!");
@@ -214,6 +204,17 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
                 .custom-modal-scroll::-webkit-scrollbar-thumb:hover { background-color: rgba(136, 136, 136, 0.55); }
                 .custom-modal-scroll { scrollbar-width: thin; scrollbar-color: rgba(136, 136, 136, 0.35) transparent; }
                 
+                /* 🔴 فیکس قطعی برای مشکل Spin و برگشتن اسکرول */
+                .template-spin-wrapper {
+                    height: 100vh;
+                    width: 100%;
+                }
+                .template-spin-wrapper .ant-spin-container {
+                    height: 100%;
+                    display: flex;
+                    flex-direction: column;
+                }
+                
                 ${customFonts.map(f => `
                     @font-face {
                         font-family: '${f.family}';
@@ -225,11 +226,21 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
             `}
 			</style>
 
-			{/* 🔴 نمایش حالت لودینگ حرفه‌ای در زمان واکشی دیتا */}
-			<Spin spinning={isLoadingTemplate} tip="در حال دریافت اطلاعات قالب..." size="large">
+			{/* 🔴 استفاده از کلاس کاستوم برای اسپینر */}
+			<Spin
+				spinning={isLoadingTemplate}
+				tip="در حال دریافت اطلاعات قالب..."
+				size="large"
+				wrapperClassName="template-spin-wrapper"
+			>
 				<Card
 					className="flex flex-col h-full w-full rounded-xl overflow-y-auto custom-modal-scroll"
-					style={{ backgroundColor: token.colorBgLayout, color: token.colorText, minHeight: "600px" }}
+					style={{
+						backgroundColor: token.colorBgLayout,
+						color: token.colorText,
+						height: "100%", // 🔴 تغییر کلیدی: Card دقیقاً به اندازه کانتینر پدرش (صفحه) می‌شود و اسکرول داخلی فعال می‌گردد
+						border: "none", // برداشتن بوردر برای زیبایی بیشتر در حالت مودال فول‌اسکرین
+					}}
 				>
 					<div className="flex-shrink-0">
 						<TemplateCreateHeader
@@ -249,7 +260,7 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 						<div className="flex flex-1 gap-4 min-h-0 items-start">
 							<div
 								className="w-80 flex-shrink-0 flex flex-col sticky top-4"
-								style={{ height: "calc(100vh)" }}
+								style={{ height: "calc(100vh - 150px)" }}
 							>
 								<TemplateCreateSidebar editor={editor} />
 							</div>
