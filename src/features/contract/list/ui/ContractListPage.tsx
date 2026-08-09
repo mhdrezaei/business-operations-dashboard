@@ -9,17 +9,21 @@ import { useAccess } from "#src/hooks";
 import { DeleteOutlined, EditOutlined, FilePdfOutlined, PlusCircleOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 
-import { Button, Popconfirm } from "antd";
+import { Button, Popconfirm, theme } from "antd";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { fetchContractDetail, fetchContractsList, fetchDeleteContract } from "../../api/contracts.api";
 import { companyTypeMatches, pickCompanyTypeToken } from "../../shared/utils";
+import { useContractAddendaTableStyles } from "./components/contract-addenda-table.styles";
+import { ContractAddendaExpandedRow } from "./components/ContractAddendaExpandedRow";
 import { getContractColumns } from "./constants";
 import { openContractPdfPrint } from "./utils/contract-pdf";
 
 export default function ContractListPage() {
 	const { t } = useTranslation();
+	const { token } = theme.useToken();
+	const addendaTableClasses = useContractAddendaTableStyles();
 	const {
 		hasDomainPermission,
 		hasDomainPermissionByServiceId,
@@ -319,8 +323,19 @@ export default function ContractListPage() {
 		<BasicContent className="h-full">
 			<BasicTable<ContractListItemType>
 				adaptive
+				rootClassName={addendaTableClasses.contractTable}
 				rowKey="id"
 				columns={columns}
+				expandable={{
+					columnWidth: token.controlHeight,
+					rowExpandable: record => Number(record.addenda_count) > 0,
+					expandedRowRender: record => (
+						<ContractAddendaExpandedRow
+							contract={record}
+							service={resolveServicePath(record)}
+						/>
+					),
+				}}
 				actionRef={actionRef}
 				formRef={formRef}
 

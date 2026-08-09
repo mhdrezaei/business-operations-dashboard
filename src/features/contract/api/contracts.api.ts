@@ -84,6 +84,31 @@ export function fetchContractsList(params: ContractsListQuery) {
 		.json<PaginatedResult<ContractListItemType>>();
 }
 
+export interface ContractApprovalHistoryEntryDto {
+	field_name: string
+	old_value: boolean | null
+	new_value: boolean | null
+	changed_by: {
+		id: number
+		name: string
+	} | null
+	changed_at: string
+	reason: string
+	comment: string
+}
+
+export interface ContractApprovalHistorySubjectDto {
+	id: number
+	display_addendum_number?: string
+	is_signed: boolean | null
+	is_business_approved: boolean | null
+	sign_approval_history: ContractApprovalHistoryEntryDto[]
+}
+
+export interface ContractApprovalHistoryResponse extends ContractApprovalHistorySubjectDto {
+	addenda: ContractApprovalHistorySubjectDto[]
+}
+
 export function fetchCompanyContracts(
 	service: ContractServicePath,
 	companyId: number,
@@ -129,6 +154,12 @@ export function fetchContractDetail(
 	return request
 		.get(buildContractPath(service, id))
 		.json<any>();
+}
+
+export function fetchContractApprovalHistory(service: ContractServicePath, id: number) {
+	return request
+		.get(`${buildContractPath(service, id)}approve/`)
+		.json<ContractApprovalHistoryResponse>();
 }
 /* ===================== CREATE ===================== */
 

@@ -11,6 +11,7 @@ import { Alert, Empty, Spin } from "antd";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { fetchContractDetail, fetchUpdateContract } from "../../../api/contracts.api";
 import { CompanyContractsPanel } from "./CompanyContractsPanel";
+import { ContractApprovalHistoryPanel } from "./ContractApprovalHistoryPanel";
 import { ContractDocumentsPanel } from "./ContractDocumentsPanel";
 
 function contractDocumentToUploadFile(doc: { id: number, original_filename: string, size: number, mime_type: string }): UploadFile {
@@ -1604,12 +1605,18 @@ export function ContractEditForm({ contractId, service, onUpdated, onSaved, onCo
 									{awaitingContractSelection
 										? null
 										: (
-											<ContractDocumentsPanel
-												key={loadedContractId}
-												contractId={loadedContractId}
-												initialDocuments={initialValues.documents as UploadFile[]}
-												loading={loading}
-											/>
+											<>
+												<ContractDocumentsPanel
+													key={loadedContractId}
+													contractId={loadedContractId}
+													initialDocuments={initialValues.documents as UploadFile[]}
+													loading={loading}
+												/>
+												<ContractApprovalHistoryPanel
+													contractId={loadedContractId}
+													service={resolvedService}
+												/>
+											</>
 										)}
 								</aside>
 							)
