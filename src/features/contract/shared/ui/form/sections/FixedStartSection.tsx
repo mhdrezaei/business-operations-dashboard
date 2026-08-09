@@ -1830,7 +1830,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 												selectProps={{ placeholder: "انتخاب نوع محاسبه", allowClear: true }}
 											/>
 											<ContractTypeSection
-												title="روش محاسبه قیمت"
+												title="نوع قرارداد"
 												name={`${base}.contractPricing` as any}
 											/>
 										</>

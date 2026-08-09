@@ -1,9 +1,9 @@
-import { RHFProNumber, RHFSelect } from "#src/shared/ui/rhf-pro";
+import { RHFProNumber, RHFSegmentedSwitch, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { ProFormGroup } from "@ant-design/pro-components";
-import { Button, Card, Form, Select } from "antd";
+import { Button, Card } from "antd";
 import React, { useEffect, useRef } from "react";
-import { useController, useFieldArray, useFormContext, useWatch } from "react-hook-form";
+import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { BLENDED_MODE_OPTIONS, CONTRACT_TYPE_OPTIONS } from "./contract-type.options";
 import { ContractTierTable } from "./ContractTierTable";
 
@@ -33,17 +33,11 @@ export function ContractTypeSection({ title, name, topAside }: Props) {
 	const { control, getValues, setValue } = useFormContext();
 	const typePath = `${name}.type` as any;
 	const sectionsPath = `${name}.sections` as any;
-	const {
-		field: typeField,
-		fieldState: typeFieldState,
-		formState,
-	} = useController({
+	const type = useWatch({
 		control,
 		name: typePath,
 		defaultValue: getValues(typePath),
-	});
-	const type = typeField.value as any;
-	const typeError = formState.isSubmitted || typeFieldState.isTouched ? typeFieldState.error?.message : undefined;
+	}) as any;
 
 	const sectionsFa = useFieldArray({ control, name: sectionsPath });
 	const sections = useWatch({
@@ -124,27 +118,16 @@ export function ContractTypeSection({ title, name, topAside }: Props) {
 	}
 
 	function renderTopRow() {
-		const typeSelect = (
-			<Form.Item
-				label="روش محاسبه قیمت"
-				help={typeError}
-				validateStatus={typeError ? "error" : undefined}
-			>
-				<Select
-					placeholder="انتخاب نوع محاسبه"
-					allowClear
-					options={CONTRACT_TYPE_OPTIONS}
-					value={typeField.value}
-					onChange={typeField.onChange}
-					onBlur={typeField.onBlur}
-					ref={typeField.ref as any}
-					status={typeError ? "error" : undefined}
-				/>
-			</Form.Item>
+		const typeSwitch = (
+			<RHFSegmentedSwitch
+				name={typePath}
+				label="نوع قرارداد"
+				options={CONTRACT_TYPE_OPTIONS}
+			/>
 		);
 
 		if (!topAside) {
-			return typeSelect;
+			return typeSwitch;
 		}
 
 		return (
@@ -152,7 +135,7 @@ export function ContractTypeSection({ title, name, topAside }: Props) {
 				className="flex flex-wrap gap-3 items-start"
 			>
 				<div className="min-w-0 flex-[1_1_320px]">
-					{typeSelect}
+					{typeSwitch}
 				</div>
 
 				<div className="min-w-0 flex-[1_1_320px]">

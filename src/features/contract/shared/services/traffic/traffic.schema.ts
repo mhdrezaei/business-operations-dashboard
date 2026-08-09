@@ -67,14 +67,14 @@ export const trafficServiceFieldsSchema = z
 					ctx.addIssue({
 						code: "custom",
 						path: [...path, "tehranPricing"],
-						message: "روش محاسبه قیمت قرارداد تهران در الحاقیه الزامی است",
+						message: "نوع قرارداد تهران در الحاقیه الزامی است",
 					});
 				}
 				if (requiresProvince && addendum?.provincePricing == null) {
 					ctx.addIssue({
 						code: "custom",
 						path: [...path, "provincePricing"],
-						message: "روش محاسبه قیمت قرارداد مراکز استانی در الحاقیه الزامی است",
+						message: "نوع قرارداد مراکز استانی در الحاقیه الزامی است",
 					});
 				}
 				if (Array.isArray(addendum?.children))

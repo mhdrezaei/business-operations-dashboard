@@ -1,0 +1,55 @@
+.rhf-segmented-switch.ant-segmented {
+	overflow: hidden;
+	padding: 0;
+	border: 1px solid var(--rhf-segmented-border-color);
+	border-radius: var(--rhf-segmented-border-radius);
+	background: transparent;
+}
+
+.rhf-segmented-switch .ant-segmented-group {
+	width: 100%;
+}
+
+.rhf-segmented-switch .ant-segmented-item {
+	min-width: 0;
+	flex: 1;
+	border-radius: 0;
+	color: var(--rhf-segmented-text-color);
+}
+
+.rhf-segmented-switch .ant-segmented-item + .ant-segmented-item {
+	border-inline-start: 1px solid var(--rhf-segmented-border-color);
+}
+
+.rhf-segmented-switch .ant-segmented-item-label {
+	min-height: 36px;
+	padding-inline: 12px;
+	overflow: hidden;
+	line-height: 36px;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.rhf-segmented-switch .ant-segmented-item:not(.ant-segmented-item-selected):hover {
+	background: var(--rhf-segmented-hover-color);
+	color: var(--rhf-segmented-text-color);
+}
+
+.rhf-segmented-switch .ant-segmented-item-selected,
+.rhf-segmented-switch .ant-segmented-thumb {
+	border-radius: 0;
+	background: var(--rhf-segmented-selected-color);
+	box-shadow: none;
+}
+
+.rhf-segmented-switch .ant-segmented-item-selected {
+	color: var(--rhf-segmented-selected-text-color);
+}
+
+.rhf-segmented-switch .ant-segmented-item-selected:hover {
+	background: var(--rhf-segmented-selected-hover-color);
+}
+
+.rhf-segmented-switch .ant-segmented-item-disabled {
+	color: var(--rhf-segmented-disabled-text-color);
+}
