@@ -244,6 +244,20 @@ function mapOpenApiLegacyDetails(pricingValue: unknown) {
 	};
 }
 
+function mapOpenApiAddendumLegacyDetails(row: Record<string, any>) {
+	const sharedLegacyPricing = row.contractPricing ?? null;
+	return {
+		openapi_model: "LEGACY",
+		contract_model: "LEGACY",
+		receipt_register: contractTypeToApiPricing(
+			row.legacyPricing?.paymentRegistration ?? sharedLegacyPricing,
+		),
+		bill_inquiry: contractTypeToApiPricing(
+			row.legacyPricing?.billInquiry ?? sharedLegacyPricing,
+		),
+	};
+}
+
 function mapOpenApiPackageDetails(serviceFields: Record<string, any>) {
 	const plans = Array.isArray(serviceFields.plans) ? serviceFields.plans : [];
 	return {
@@ -293,7 +307,7 @@ function mapOpenApiAddenda(
 		};
 
 		if (contractModel === "legacy") {
-			mapped.contract_openapi_details = mapOpenApiLegacyDetails(row.contractPricing);
+			mapped.contract_openapi_details = mapOpenApiAddendumLegacyDetails(row);
 		}
 		else if (contractModel === "package") {
 			mapped.contract_openapi_details = mainOpenApiDetails ?? mapOpenApiPackageDetails(serviceFields);
@@ -425,13 +439,41 @@ function mapGenericAddenda(addenda: unknown): Array<Record<string, any>> {
 	});
 }
 
-function mapTrafficAddenda(addenda: unknown): Array<Record<string, any>> {
+function mapTrafficAddenda(
+	addenda: unknown,
+	companyType: unknown,
+	mainLocations: { tehran: boolean, province: boolean },
+): Array<Record<string, any>> {
 	const list = Array.isArray(addenda) ? addenda : [];
+	const normalizedCompanyType = String(companyType ?? "").trim().toUpperCase();
+	const hasTrafficUnit = ["CP", "PREMIUM", "IXP", "TCI"].includes(normalizedCompanyType);
+	const isPremium = normalizedCompanyType === "PREMIUM";
+	const basedTire = normalizedCompanyType === "IXP" ? true : undefined;
 
 	return list.map((item) => {
 		const row = (item ?? {}) as Record<string, any>;
-		const location = normalizeTrafficLocation(row.location);
-		const pricing = location ? mapTrafficLocationPayload(location, row.contractPricing) : null;
+		if (normalizedCompanyType === "COLLOCATION") {
+			const location = normalizeTrafficLocation(row.location);
+			const pricing = location ? mapTrafficLocationPayload(location, row.contractPricing) : null;
+			return {
+				start_jy: toNumberOrNull(row.startYear),
+				start_jm: toNumberOrNull(row.startMonth),
+				end_jy: toNumberOrNull(row.endYear),
+				end_jm: toNumberOrNull(row.endMonth),
+				contract_number: row.contractNumber ?? "",
+				note: row.description ?? "",
+				...(pricing ?? {}),
+				children: mapTrafficAddenda(row.children, companyType, mainLocations),
+			};
+		}
+		const locations = [
+			mainLocations.tehran
+				? mapTrafficLocationPayload("TEHRAN", row.tehranPricing, hasTrafficUnit ? row.tehranUnit : null, basedTire, isPremium ? row.tehranRevenuePercent : null)
+				: null,
+			mainLocations.province
+				? mapTrafficLocationPayload("COUNTY", row.provincePricing, hasTrafficUnit ? row.provinceUnit : null, basedTire, isPremium ? row.provinceRevenuePercent : null)
+				: null,
+		].filter(Boolean);
 
 		return {
 			start_jy: toNumberOrNull(row.startYear),
@@ -440,8 +482,8 @@ function mapTrafficAddenda(addenda: unknown): Array<Record<string, any>> {
 			end_jm: toNumberOrNull(row.endMonth),
 			contract_number: row.contractNumber ?? "",
 			note: row.description ?? "",
-			...(pricing ?? {}),
-			children: mapTrafficAddenda(row.children),
+			locations,
+			children: mapTrafficAddenda(row.children, companyType, mainLocations),
 		};
 	});
 }
@@ -700,7 +742,10 @@ async function formValuesToApiPayload(values: ContractFormValues) {
 			if (realStart)
 				payload.real_start = realStart;
 		}
-		payload.addenda = mapTrafficAddenda(addenda);
+		payload.addenda = mapTrafficAddenda(addenda, values.companyType, {
+			tehran: serviceFields.tehranPricing != null,
+			province: serviceFields.provincePricing != null,
+		});
 		return payload;
 	}
 

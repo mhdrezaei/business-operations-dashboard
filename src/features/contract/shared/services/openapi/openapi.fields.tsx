@@ -25,11 +25,6 @@ const PACKAGE_MODE_OPTIONS = [
 	{ label: "AND", value: "AND" },
 ];
 
-const ADDENDA_OPERATION_OPTIONS = [
-	{ label: "استعلام قبض", value: "BILL_INQUIRY" },
-	{ label: "ثبت وصولی", value: "RECEIPT_REGISTER" },
-];
-
 function OpenApiPackagePlanPanel({ idx }: { idx: number }) {
 	const smsLabelStyle = useContractAlignedLabelWidth(["حداقل پیامک", "حداکثر پیامک", "نرخ فروش پیامک"]);
 	const billLabelStyle = useContractAlignedLabelWidth([
@@ -238,8 +233,6 @@ export function OpenApiFields() {
 	const [activeKey, setActiveKey] = useState<string>("0");
 
 	const contractModel = "legacy" as "package" | "legacy" | null;
-	const serviceCode = useWatch({ control, name: "serviceCode" }) as string | null;
-	const isOpenApiService = serviceCode === "openapi";
 
 	React.useEffect(() => {
 		register(sf("contractModel"));
@@ -273,45 +266,6 @@ export function OpenApiFields() {
 			});
 		}
 	}, [contractModel, setValue, getValues]);
-
-	React.useEffect(() => {
-		if (contractModel == null)
-			return;
-
-		const currentAddenda = getValues(sf("addenda")) as Array<Record<string, unknown>> | undefined;
-		if (!Array.isArray(currentAddenda) || currentAddenda.length === 0)
-			return;
-
-		const shouldKeepOperationType = isOpenApiService && contractModel === "legacy";
-
-		let changed = false;
-		const nextAddenda = currentAddenda.map((item) => {
-			if (!item || typeof item !== "object")
-				return item;
-
-			const nextItem: Record<string, unknown> = { ...item };
-
-			if (!shouldKeepOperationType) {
-				if ("operationType" in nextItem) {
-					delete nextItem.operationType;
-					changed = true;
-				}
-			}
-			else if (!("operationType" in nextItem)) {
-				nextItem.operationType = null;
-				changed = true;
-			}
-
-			return nextItem;
-		});
-
-		if (changed) {
-			setValue(sf("addenda"), nextAddenda as any, {
-				shouldDirty: true,
-				shouldValidate: true,
-			});
-		}
-	}, [contractModel, isOpenApiService, getValues, setValue]);
 
 	React.useEffect(() => {
 		if (contractModel !== "package")
@@ -626,23 +580,20 @@ export function OpenApiFields() {
 							canAddAddendum={!!contractModel}
 							addendumAddBlockedMessage="ابتدا مدل قرارداد را انتخاب کنید."
 							renderAddendumFields={base => (
-								<>
-									{isOpenApiService && contractModel === "legacy"
-										? (
-											<RHFSelect
-												name={`${base}.operationType` as any}
-												label="نوع عملیات (الحاقیه)"
-												options={ADDENDA_OPERATION_OPTIONS}
-												selectProps={{ placeholder: "انتخاب کنید", allowClear: true }}
-											/>
-										)
-										: null}
-
-									<ContractTypeSection
-										title={contractModel === "package" ? "نوع قرارداد (الحاقیه بسته‌ای)" : "نوع قرارداد"}
-										name={`${base}.contractPricing` as any}
-									/>
-								</>
+								<Row gutter={[12, 12]} align="stretch">
+									<Col xs={24} xl={12}>
+										<ContractTypeSection
+											title="بهای ثبت وصولی"
+											name={`${base}.legacyPricing.paymentRegistration` as any}
+										/>
+									</Col>
+									<Col xs={24} xl={12}>
+										<ContractTypeSection
+											title="بهای استعلام قبض"
+											name={`${base}.legacyPricing.billInquiry` as any}
+										/>
+									</Col>
+								</Row>
 							)}
 							contractStartYearPath={"startYear" as Path<ContractFormValues>}
 							contractStartMonthPath={"startMonth" as Path<ContractFormValues>}

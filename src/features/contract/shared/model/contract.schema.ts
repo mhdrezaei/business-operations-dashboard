@@ -1,6 +1,6 @@
 import type { ContractFormValues, ContractServiceCode } from "./contract.form.types";
 import { z } from "zod";
-import { addendaRefineNoOverlapAndInsideContract } from "../../components/addenda/addenda.schema";
+import { addendaRefineValidAndNoOverlap } from "../../components/addenda/addenda.schema";
 import { serviceRegistry } from "../services/registry";
 
 function isBlankContractValue(value: unknown) {
@@ -111,9 +111,7 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 				serviceFields: serviceFieldsSchema,
 			}),
 		)
-		.superRefine(addendaRefineNoOverlapAndInsideContract({
-			contractStartPath: ["startYear", "startMonth"],
-			contractEndPath: ["endYear", "endMonth"],
+		.superRefine(addendaRefineValidAndNoOverlap({
 			addendaPath: ["serviceFields", "addenda"],
 		}))
 		.superRefine((val, ctx) => {

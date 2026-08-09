@@ -8,7 +8,7 @@ export interface AddendumValue {
 	endMonth: number | null
 	contractNumber?: string
 	description?: string
-	pricing: any
+	pricing?: any
 	contractPricing?: any
 	children?: AddendumValue[]
 }
@@ -20,35 +20,5 @@ export const defaultAddendumValue: AddendumValue = {
 	endMonth: null,
 	contractNumber: "",
 	description: "",
-	pricing: {
-		type: null,
-		fixedAmount: null,
-		rows: [
-			{ from: null, to: null, fee: null },
-			{ from: null, to: null, fee: null },
-		],
-		sections: [{
-			mode: null,
-			rows: [
-				{ from: null, to: null, fee: null },
-				{ from: null, to: null, fee: null },
-			],
-		}],
-	},
-	contractPricing: {
-		type: null,
-		fixedAmount: null,
-		rows: [
-			{ from: null, to: null, fee: null },
-			{ from: null, to: null, fee: null },
-		],
-		sections: [{
-			mode: null,
-			rows: [
-				{ from: null, to: null, fee: null },
-				{ from: null, to: null, fee: null },
-			],
-		}],
-	},
 	children: [],
 };

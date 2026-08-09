@@ -10,17 +10,13 @@ import React, { useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
 const sf = (path: string) => `serviceFields.${path}` as const;
-const ADDENDA_LOCATION_OPTIONS = [
-	{ label: "تهران", value: "TEHRAN" },
-	{ label: "مراکز استانی", value: "PROVINCE" },
-];
 const TRAFFIC_UNIT_OPTIONS = [
 	{ label: "GB/month", value: "GB/month" },
 	{ label: "Mbps", value: "Mbps" },
 ];
 
 export function TrafficFields() {
-	const { control, setValue } = useFormContext<ContractFormValues>();
+	const { control, getValues, setValue } = useFormContext<ContractFormValues>();
 
 	const isOfficial = useWatch({ control, name: sf("isOfficial") as any }) as boolean | undefined;
 
@@ -77,6 +73,60 @@ export function TrafficFields() {
 			setValue(sf("provinceRevenuePercent") as any, undefined, { shouldDirty: true, shouldValidate: true });
 		}
 	}, [isOfficial, setValue]);
+
+	React.useEffect(() => {
+		const addenda = getValues(sf("addenda") as any) as Array<Record<string, any>> | undefined;
+		if (!Array.isArray(addenda) || addenda.length === 0)
+			return;
+
+		let changed = false;
+		const syncLocations = (items: Array<Record<string, any>>): Array<Record<string, any>> => items.map((item) => {
+			const next = { ...item };
+			const legacyLocation = String(next.location ?? "").trim().toUpperCase();
+			if (next.contractPricing && legacyLocation === "TEHRAN" && !next.tehranPricing) {
+				next.tehranPricing = next.contractPricing;
+				changed = true;
+			}
+			if (next.contractPricing && ["PROVINCE", "COUNTY"].includes(legacyLocation) && !next.provincePricing) {
+				next.provincePricing = next.contractPricing;
+				changed = true;
+			}
+			if ("location" in next || "contractPricing" in next) {
+				delete next.location;
+				delete next.contractPricing;
+				changed = true;
+			}
+
+			if (!tehranPricing) {
+				for (const key of ["tehranPricing", "tehranUnit", "tehranRevenuePercent"]) {
+					if (key in next) {
+						delete next[key];
+						changed = true;
+					}
+				}
+			}
+			if (!provincePricing) {
+				for (const key of ["provincePricing", "provinceUnit", "provinceRevenuePercent"]) {
+					if (key in next) {
+						delete next[key];
+						changed = true;
+					}
+				}
+			}
+
+			if (Array.isArray(next.children))
+				next.children = syncLocations(next.children);
+			return next;
+		});
+
+		const nextAddenda = syncLocations(addenda);
+		if (changed) {
+			setValue(sf("addenda") as any, nextAddenda as any, {
+				shouldDirty: true,
+				shouldValidate: true,
+			});
+		}
+	}, [tehranPricing, provincePricing, getValues, setValue]);
 
 	if (isCollocation)
 		return null;
@@ -221,18 +271,49 @@ export function TrafficFields() {
 							contractTypeTitle=""
 							contractTypeFieldKey="contractPricing"
 							renderAddendumFields={base => (
-								<>
-									<RHFSelect
-										name={`${base}.location` as any}
-										label="موقعیت"
-										options={ADDENDA_LOCATION_OPTIONS}
-										selectProps={{ placeholder: "انتخاب نوع محاسبه", allowClear: true }}
-									/>
-									<ContractTypeSection
-										title="روش محاسبه قیمت"
-										name={`${base}.contractPricing` as any}
-									/>
-								</>
+								<div className="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-3">
+									{tehranPricing
+										? (
+											<Card bordered title="قرارداد ترافیک تهران" className="rounded-md [&_.ant-pro-card-body]:p-4">
+												{showUnitSelector
+													? (
+														<RHFSelect
+															name={`${base}.tehranUnit` as any}
+															label="واحد"
+															options={TRAFFIC_UNIT_OPTIONS}
+															selectProps={{ placeholder: "انتخاب واحد", allowClear: false }}
+														/>
+													)
+													: null}
+												<ContractTypeSection title="" name={`${base}.tehranPricing` as any} />
+												{showPremiumRevenuePercent
+													? <RHFProNumber name={`${base}.tehranRevenuePercent` as any} label="درصد سهم درآمد (تهران)" inputProps={{ placeholder: "بین 0 تا 100" } as any} />
+													: null}
+											</Card>
+										)
+										: null}
+
+									{provincePricing
+										? (
+											<Card bordered title="قرارداد ترافیک مراکز استان‌ها" className="rounded-md [&_.ant-pro-card-body]:p-4">
+												{showUnitSelector
+													? (
+														<RHFSelect
+															name={`${base}.provinceUnit` as any}
+															label="واحد"
+															options={TRAFFIC_UNIT_OPTIONS}
+															selectProps={{ placeholder: "انتخاب واحد", allowClear: false }}
+														/>
+													)
+													: null}
+												<ContractTypeSection title="" name={`${base}.provincePricing` as any} />
+												{showPremiumRevenuePercent
+													? <RHFProNumber name={`${base}.provinceRevenuePercent` as any} label="درصد سهم درآمد (مراکز استانی)" inputProps={{ placeholder: "بین 0 تا 100" } as any} />
+													: null}
+											</Card>
+										)
+										: null}
+								</div>
 							)}
 							contractStartYearPath={"startYear" as Path<ContractFormValues>}
 							contractStartMonthPath={"startMonth" as Path<ContractFormValues>}

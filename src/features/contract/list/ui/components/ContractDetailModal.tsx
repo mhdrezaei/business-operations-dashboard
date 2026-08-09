@@ -267,6 +267,20 @@ function mapOpenApiLegacyDetails(pricingValue: unknown) {
 	};
 }
 
+function mapOpenApiAddendumLegacyDetails(row: Record<string, any>) {
+	const sharedLegacyPricing = row.contractPricing ?? null;
+	return {
+		openapi_model: "LEGACY",
+		contract_model: "LEGACY",
+		receipt_register: contractTypeToApiPricing(
+			row.legacyPricing?.paymentRegistration ?? sharedLegacyPricing,
+		),
+		bill_inquiry: contractTypeToApiPricing(
+			row.legacyPricing?.billInquiry ?? sharedLegacyPricing,
+		),
+	};
+}
+
 function mapOpenApiPackageDetails(serviceFields: Record<string, any>) {
 	const plans = Array.isArray(serviceFields.plans) ? serviceFields.plans : [];
 	return {
@@ -317,7 +331,7 @@ function mapOpenApiAddenda(
 		};
 
 		if (contractModel === "legacy") {
-			mapped.contract_openapi_details = mapOpenApiLegacyDetails(row.contractPricing);
+			mapped.contract_openapi_details = mapOpenApiAddendumLegacyDetails(row);
 		}
 		else if (contractModel === "package") {
 			mapped.contract_openapi_details = mainOpenApiDetails ?? mapOpenApiPackageDetails(serviceFields);
@@ -584,13 +598,42 @@ function mapTrafficLocationPayload(location: "TEHRAN" | "COUNTY", pricingValue: 
 	};
 }
 
-function mapTrafficAddenda(addenda: unknown): Array<Record<string, any>> {
+function mapTrafficAddenda(
+	addenda: unknown,
+	companyType: unknown,
+	mainLocations: { tehran: boolean, province: boolean },
+): Array<Record<string, any>> {
 	const list = Array.isArray(addenda) ? addenda : [];
+	const normalizedCompanyType = String(companyType ?? "").trim().toUpperCase();
+	const hasTrafficUnit = ["CP", "PREMIUM", "IXP", "TCI"].includes(normalizedCompanyType);
+	const isPremium = normalizedCompanyType === "PREMIUM";
+	const basedTire = normalizedCompanyType === "IXP" ? true : undefined;
 
 	return list.map((item) => {
 		const row = (item ?? {}) as Record<string, any>;
-		const location = normalizeTrafficLocation(row.location);
-		const pricing = location ? mapTrafficLocationPayload(location, row.contractPricing) : null;
+		if (normalizedCompanyType === "COLLOCATION") {
+			const location = normalizeTrafficLocation(row.location);
+			const pricing = location ? mapTrafficLocationPayload(location, row.contractPricing) : null;
+			return {
+				...mapAddendumIdentity(row),
+				start_jy: toNumberOrNull(row.startYear),
+				start_jm: toNumberOrNull(row.startMonth),
+				end_jy: toNumberOrNull(row.endYear),
+				end_jm: toNumberOrNull(row.endMonth),
+				contract_number: row.contractNumber ?? "",
+				note: row.description ?? "",
+				...(pricing ?? {}),
+				children: mapTrafficAddenda(row.children, companyType, mainLocations),
+			};
+		}
+		const locations = [
+			mainLocations.tehran
+				? mapTrafficLocationPayload("TEHRAN", row.tehranPricing, hasTrafficUnit ? row.tehranUnit : null, basedTire, isPremium ? row.tehranRevenuePercent : null)
+				: null,
+			mainLocations.province
+				? mapTrafficLocationPayload("COUNTY", row.provincePricing, hasTrafficUnit ? row.provinceUnit : null, basedTire, isPremium ? row.provinceRevenuePercent : null)
+				: null,
+		].filter(Boolean);
 
 		return {
 			...mapAddendumIdentity(row),
@@ -600,8 +643,8 @@ function mapTrafficAddenda(addenda: unknown): Array<Record<string, any>> {
 			end_jm: toNumberOrNull(row.endMonth),
 			contract_number: row.contractNumber ?? "",
 			note: row.description ?? "",
-			...(pricing ?? {}),
-			children: mapTrafficAddenda(row.children),
+			locations,
+			children: mapTrafficAddenda(row.children, companyType, mainLocations),
 		};
 	});
 }
@@ -722,20 +765,34 @@ function normalizeOpenApiAddendaFromDto(addenda: unknown): Array<Record<string, 
 	return list.map((item) => {
 		const row = (item ?? {}) as Record<string, any>;
 		const details = row.contract_openapi_details ?? row.contractOpenapiDetails ?? null;
-		const pricing = apiPricingToContractType(
+		const sharedLegacyPricing = (
 			details?.bill_inquiry
 			?? details?.billInquiry
 			?? details?.receipt_register
 			?? details?.receiptRegister
 			?? row.bill_inquiry
 			?? row.receipt_register
-			?? row,
+			?? row
+		);
+		const paymentRegistration = apiPricingToContractType(
+			details?.receipt_register
+			?? details?.receiptRegister
+			?? row.receipt_register
+			?? sharedLegacyPricing,
+		);
+		const billInquiry = apiPricingToContractType(
+			details?.bill_inquiry
+			?? details?.billInquiry
+			?? row.bill_inquiry
+			?? sharedLegacyPricing,
 		);
 
 		return {
 			...normalizeAddendumBase(row),
-			operationType: row.operation_type ?? row.operationType ?? null,
-			contractPricing: pricing ?? undefined,
+			legacyPricing: {
+				paymentRegistration,
+				billInquiry,
+			},
 			children: normalizeOpenApiAddendaFromDto(row.children),
 		};
 	});
@@ -989,21 +1046,45 @@ function normalizeSmsCommissionServiceFields(dto: any) {
 	};
 }
 
-function normalizeTrafficAddendaFromDto(addenda: unknown): Array<Record<string, any>> {
+function normalizeTrafficAddendaFromDto(addenda: unknown, companyType?: unknown): Array<Record<string, any>> {
 	const list = Array.isArray(addenda) ? addenda : [];
+	const normalizedCompanyType = pickCompanyTypeToken(companyType);
 
 	return list.map((item) => {
 		const row = (item ?? {}) as Record<string, any>;
-		const location = normalizeTrafficLocation(row.location);
+		if (normalizedCompanyType === "COLLOCATION") {
+			const location = normalizeTrafficLocation(row.location);
+			return {
+				...normalizeAddendumBase(row),
+				location: location === "COUNTY" ? "PROVINCE" : location,
+				contractPricing: apiPricingToContractType({
+					calculation_type: row.calculation_type ?? row.calculationType ?? null,
+					tiers: row.tiers ?? null,
+				} as any),
+				children: normalizeTrafficAddendaFromDto(row.children, companyType),
+			};
+		}
+		const locations = Array.isArray(row.locations) && row.locations.length > 0
+			? row.locations
+			: [row];
+		const tehranLocation = locations.find((location: any) => normalizeTrafficLocation(location?.location) === "TEHRAN");
+		const provinceLocation = locations.find((location: any) => normalizeTrafficLocation(location?.location) === "COUNTY");
+		const normalizePricing = (location: any) => location
+			? apiPricingToContractType({
+				calculation_type: location.calculation_type ?? location.calculationType ?? null,
+				tiers: location.tiers ?? null,
+			} as any)
+			: undefined;
 
 		return {
 			...normalizeAddendumBase(row),
-			location: location === "COUNTY" ? "PROVINCE" : location,
-			contractPricing: apiPricingToContractType({
-				calculation_type: row.calculation_type ?? row.calculationType ?? null,
-				tiers: row.tiers ?? null,
-			} as any),
-			children: normalizeTrafficAddendaFromDto(row.children),
+			tehranPricing: normalizePricing(tehranLocation),
+			tehranUnit: normalizeTrafficUnit(tehranLocation?.unit),
+			tehranRevenuePercent: toNumberOrStringNumber(tehranLocation?.income_percentage ?? tehranLocation?.incomePercentage),
+			provincePricing: normalizePricing(provinceLocation),
+			provinceUnit: normalizeTrafficUnit(provinceLocation?.unit),
+			provinceRevenuePercent: toNumberOrStringNumber(provinceLocation?.income_percentage ?? provinceLocation?.incomePercentage),
+			children: normalizeTrafficAddendaFromDto(row.children, companyType),
 		};
 	});
 }
@@ -1041,7 +1122,7 @@ function normalizeTrafficServiceFields(dto: any) {
 				tiers: countyLocation.tiers ?? null,
 			} as any)
 			: undefined,
-		addenda: normalizeTrafficAddendaFromDto(dto?.addenda),
+		addenda: normalizeTrafficAddendaFromDto(dto?.addenda, dto?.company_type ?? dto?.traffic_company_type),
 	};
 }
 
@@ -1272,7 +1353,10 @@ async function formValuesToApiPayload(values: ContractFormValues) {
 			if (realStart)
 				payload.real_start = realStart;
 		}
-		payload.addenda = mapTrafficAddenda(addenda);
+		payload.addenda = mapTrafficAddenda(addenda, values.companyType, {
+			tehran: serviceFields.tehranPricing != null,
+			province: serviceFields.provincePricing != null,
+		});
 		return payload;
 	}
 
