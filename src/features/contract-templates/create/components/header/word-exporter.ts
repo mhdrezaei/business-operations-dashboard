@@ -7,7 +7,6 @@ export async function exportEditorToWord(htmlContent: string, fileName = "contra
 	const hideLoading = message.loading("در حال آماده‌سازی و ساخت فایل Word...", 0);
 
 	try {
-		// ۱. اضافه کردن ساختار استاندارد HTML همراه با فونت و راست‌چین کردن سند
 		const fullHtml = `
             <!DOCTYPE html>
             <html dir="rtl" lang="fa">
@@ -43,18 +42,16 @@ export async function exportEditorToWord(htmlContent: string, fileName = "contra
             </html>
         `;
 
-		// ۲. تبدیل HTML به بافر Word (docx)
 		const docxBlob = await asBlob(fullHtml, {
 			orientation: "portrait",
 			margins: {
-				top: 1440, // معادل 1 اینچ استاندارد ورد
+				top: 1440,
 				right: 1440,
 				bottom: 1440,
 				left: 1440,
 			},
 		});
 
-		// ۳. دانلود فایل روی سیستم کاربر
 		const blobData = Array.isArray(docxBlob) ? docxBlob[0] : docxBlob;
 		saveAs(blobData as Blob, `${fileName}.docx`);
 

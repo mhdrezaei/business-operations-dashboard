@@ -7,8 +7,6 @@ interface TemplateState {
 	customFonts: TemplateFont[]
 	headerData: HeaderData
 	isFetchingFonts: boolean
-
-	// Actions
 	fetchFonts: () => Promise<void>
 	setHeaderData: (data: HeaderData) => void
 }

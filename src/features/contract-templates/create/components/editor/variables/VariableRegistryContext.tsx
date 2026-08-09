@@ -16,7 +16,6 @@ export interface VariableRegistryProviderProps {
 	children: React.ReactNode
 }
 
-//  تعریف ساختار دیتایی که کانتکست به سایدبار و ادیتور پاس می‌دهد
 export interface VariableRegistryContextType {
 	getVariable: (key: string) => any
 	staticGroups: any[]

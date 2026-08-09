@@ -4,11 +4,9 @@ import { FilePdfOutlined, PrinterOutlined } from "@ant-design/icons";
 import { DOMSerializer } from "@tiptap/pm/model";
 import { Button, message, Modal, theme } from "antd";
 import React, { useMemo } from "react";
-// 🔴 فراخوانی استور برای دریافت یکپارچه‌ی داده‌ها
 import { useTemplateStore } from "../../store/useTemplateStore";
 import { useVariableRegistry } from "./editor/variables/VariableRegistryContext";
 
-// 🔴 پراپ‌های اضافی حذف شدند
 interface TemplatePrintPreviewModalProps {
 	isOpen: boolean
 	onClose: () => void
@@ -18,7 +16,6 @@ interface TemplatePrintPreviewModalProps {
 export default function TemplatePrintPreviewModal({ isOpen, onClose, editor }: TemplatePrintPreviewModalProps) {
 	const { token } = theme.useToken();
 
-	// 🔴 خواندن مستقیم هدر و فونت‌ها از استور
 	const { headerData, customFonts } = useTemplateStore();
 
 	const registry = useVariableRegistry() as any;
@@ -111,7 +108,6 @@ export default function TemplatePrintPreviewModal({ isOpen, onClose, editor }: T
 			message.info("لطفاً در پنجره چاپ، قسمت Destination را روی «Save as PDF» تنظیم کنید.");
 		}
 
-		// 🔴 استفاده از f.family || f.name تا مطمئن شویم در پرینت هم دقیقاً نام صحیح اعمال می‌شود
 		const customFontFaces = customFonts.map(f => `
             @font-face {
                 font-family: '${f.family || f.name}';

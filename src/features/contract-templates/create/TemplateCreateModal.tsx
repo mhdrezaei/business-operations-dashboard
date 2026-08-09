@@ -10,9 +10,11 @@ interface TemplateCreateModalProps {
 	isOpen: boolean
 	onClose: () => void
 	originPosition: { x: number, y: number }
+	onSuccess?: () => void
+	templateId?: number | null
 }
 
-export default function TemplateCreateModal({ isOpen, onClose, originPosition }: TemplateCreateModalProps) {
+export default function TemplateCreateModal({ isOpen, onClose, originPosition, onSuccess, templateId }: TemplateCreateModalProps) {
 	const { token } = theme.useToken();
 
 	useEffect(() => {
@@ -52,7 +54,7 @@ export default function TemplateCreateModal({ isOpen, onClose, originPosition }:
 				>
 					<VariableRegistryProvider kind="contract" documentKind="contract">
 
-						<TemplateCreateLayout onClose={onClose} />
+						<TemplateCreateLayout onClose={onClose} onSuccess={onSuccess} templateId={templateId} />
 					</VariableRegistryProvider>
 				</motion.div>
 			)}

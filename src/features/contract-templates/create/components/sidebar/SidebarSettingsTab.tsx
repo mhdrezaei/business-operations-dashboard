@@ -66,7 +66,6 @@ export default function SidebarSettingsTab({ editor }: { editor: Editor | null }
 		}
 
 		setIsImportingWord(true);
-		// استفاده از فایلی که ساختیم
 		await importWordToEditor(file, editor, () => setIsImportingWord(false));
 	};
 

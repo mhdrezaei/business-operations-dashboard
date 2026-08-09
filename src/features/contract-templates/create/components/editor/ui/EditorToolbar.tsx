@@ -82,7 +82,6 @@ export default function EditorToolbar({ editor }: { editor: Editor | null, custo
 	const { token } = theme.useToken();
 	const { customFonts } = useTemplateStore();
 
-	// 🔴 افزودن استایل فونت به Labelها تا کاربر شکل واقعی فونت را در Select ببیند
 	const fontFamilyOptions = useMemo(() => [
 		{ value: "default", label: "فونت پیش‌فرض" },
 		{ value: "Vazirmatn", label: <span style={{ fontFamily: "Vazirmatn" }}>وزیرمتن</span> },
