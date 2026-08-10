@@ -226,7 +226,7 @@ export function ContractForm({
 		<FormProvider {...form}>
 			<BasicContent>
 				<Card>
-					<div className="w-full flex flex-col justify-center items-center gap-2">
+					<div className="contract-form w-full flex flex-col justify-center items-center gap-2">
 						<input type="hidden" {...form.register("serviceCode")} />
 						<FixedStartSection mode={mode} preserveDatesDuringResetRef={preserveDatesDuringResetRef} />
 

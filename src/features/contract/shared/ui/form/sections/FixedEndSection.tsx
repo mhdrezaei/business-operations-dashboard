@@ -5,10 +5,8 @@ import {
 	deleteContractDocument,
 	downloadContractDocument,
 } from "#src/features/contract/api/contract-documents.api";
+import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import { RHFProCheckbox, RHFProTextArea, RHFProUploadButton } from "#src/shared/ui/rhf-pro";
-
-import { Card } from "antd";
-import { ContractAlignedField, useContractAlignedLabelWidth } from "../components/ContractAlignedField";
 
 interface FixedEndSectionProps {
 	showSignedCheckbox?: boolean
@@ -17,8 +15,6 @@ interface FixedEndSectionProps {
 }
 
 export function FixedEndSection({ showSignedCheckbox = false, contractId = null, showDocuments = true }: FixedEndSectionProps) {
-	const alignedLabelStyle = useContractAlignedLabelWidth(["توضیحات", "مدارک", "قرارداد امضا شده است"]);
-
 	// در حالت ایجاد قرارداد (بدون contractId) فایل‌ها فقط محلی نگه‌داشته می‌شوند
 	// و بعد از ثبت موفق قرارداد، توسط فراخواننده (CreateContract) به سرور ارسال می‌شوند.
 	const uploadProps: UploadProps = contractId
@@ -61,50 +57,50 @@ export function FixedEndSection({ showSignedCheckbox = false, contractId = null,
 		};
 
 	return (
-		<Card className="w-full">
-			<div className="flex flex-col gap-3" style={alignedLabelStyle}>
-				<ContractAlignedField label="توضیحات" labelId="contract-form-label-description" align="start">
+		<ContractFormSection title="اطلاعات تکمیلی" className="w-full mt-3">
+			<div className="contract-supplementary-fields">
+				<div className="contract-supplementary-control contract-supplementary-description-control">
+					<div className="contract-supplementary-control__label">توضیحات</div>
 					<RHFProTextArea<ContractFormValues, "description">
 						name="description"
-						formItemProps={{ className: "mb-0" }}
+						label=""
+						formItemProps={{ className: "contract-supplementary-field mb-0" }}
 						textAreaProps={{
-							"rows": 4,
-							"placeholder": "توضیحات قرارداد را وارد کنید...",
-							"showCount": true,
-							"maxLength": 2000,
-							"aria-labelledby": "contract-form-label-description",
+							placeholder: "توضیحات قرارداد",
+							autoSize: { minRows: 1, maxRows: 4 },
+							maxLength: 2000,
 						} as any}
 					/>
-				</ContractAlignedField>
+				</div>
 
 				{showDocuments
 					? (
-						<ContractAlignedField label="مدارک" labelId="contract-form-label-documents">
+						<div className="contract-supplementary-control contract-supplementary-upload-control">
+							<div className="contract-supplementary-control__label">مدارک پیوستی</div>
 							<RHFProUploadButton<ContractFormValues, "documents">
 								name="documents"
-								buttonText="آپلود مدارک (PDF)"
-								itemProps={{ className: "mb-0" }}
+								label=""
+								variant="dragger"
+								draggerTitle="فایل‌ها را بکشید یا برای انتخاب اینجا کلیک کنید"
+								draggerHint="امکان آپلود هم‌زمان فایل‌های PNG، JPG و PDF"
+								itemProps={{ className: "contract-supplementary-field mb-0" }}
 								uploadProps={uploadProps}
 							/>
-						</ContractAlignedField>
+						</div>
 					)
 					: null}
 
 				{showSignedCheckbox
 					? (
-						<ContractAlignedField label="" labelId="contract-form-label-signed">
-							<RHFProCheckbox<ContractFormValues, any>
-								name={"serviceFields.isOfficial" as any}
-								label=""
-								checkboxLabel="قرارداد امضا شده است"
-								checkboxProps={{
-									"aria-labelledby": "contract-form-label-signed",
-								} as any}
-							/>
-						</ContractAlignedField>
+						<RHFProCheckbox<ContractFormValues, any>
+							name={"serviceFields.isOfficial" as any}
+							label=""
+							checkboxLabel="قرارداد امضا شده است"
+							checkboxProps={{}}
+						/>
 					)
 					: null}
 			</div>
-		</Card>
+		</ContractFormSection>
 	);
 }

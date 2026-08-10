@@ -3,8 +3,9 @@ import type { ContractFormValues } from "../../../model/contract.form.types";
 import { BasicContent } from "#src/components/";
 import { ContractAddendaSection } from "#src/features/contract/components/addenda/ContractAddendaSection";
 import { ContractTypeSection } from "#src/features/contract/components/contract-type/ContractTypeSection";
+import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import { useAccess } from "#src/hooks";
-import { RHFProNumber, RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
+import { RHFProCheckbox, RHFProNumber, RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Card, Steps, Tooltip } from "antd";
@@ -1151,7 +1152,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 	// }
 
 	return (
-		<Card className="w-full">
+		<ContractFormSection title="اطلاعات پایه قرارداد" className="w-full">
 			<BasicContent className="w-full">
 				<div className="contract-form-aligned-grid contract-form-aligned-grid--two" style={alignedLabelStyle}>
 					<ContractAlignedField label="نوع سرویس" labelId="contract-form-label-service">
@@ -1933,7 +1934,20 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 						</ContractAlignedField>
 					</div>
 				</div>
+
+				{isSms
+					? (
+						<div className="contract-form-official-row">
+							<RHFProCheckbox<ContractFormValues, any>
+								name={"serviceFields.isOfficial" as any}
+								label=""
+								checkboxLabel="قرارداد رسمی است"
+								checkboxProps={{}}
+							/>
+						</div>
+					)
+					: null}
 			</BasicContent>
-		</Card>
+		</ContractFormSection>
 	);
 }

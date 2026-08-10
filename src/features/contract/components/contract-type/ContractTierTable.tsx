@@ -6,6 +6,8 @@ import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 
 interface Props {
 	name: string
+	currencyAddon?: React.ReactNode
+	variant?: "card" | "embedded"
 }
 
 interface TierToFieldProps {
@@ -54,7 +56,7 @@ function TierToField({ name, showHint }: TierToFieldProps): React.JSX.Element {
 	);
 }
 
-export function ContractTierTable({ name }: Props) {
+export function ContractTierTable({ name, currencyAddon, variant = "card" }: Props) {
 	const { control, setValue } = useFormContext();
 	const { fields, append, remove } = useFieldArray({ control, name });
 
@@ -64,7 +66,7 @@ export function ContractTierTable({ name }: Props) {
 		() => [
 			{ key: "from", title: "شروع بازه" },
 			{ key: "to", title: "پایان بازه" },
-			{ key: "fee", title: "مبلغ" },
+			{ key: "fee", title: "مبلغ هر واحد" },
 		],
 		[],
 	);
@@ -100,79 +102,99 @@ export function ContractTierTable({ name }: Props) {
 		append({ from: previousTo, to: null, fee: null } as any);
 	}
 
-	return (
-		<Card variant="outlined" className="rounded-xl [&_.ant-pro-card-body]:p-3">
-			<div className="font-semibold mb-3">تعریف بازه‌ها و نرخ</div>
+	const content = (
+		<>
+			{variant === "card" ? <div className="font-semibold mb-3">تعریف بازه‌ها و نرخ</div> : null}
 
-			<div className="overflow-hidden">
-				<div className="grid grid-cols-[1fr_1fr_1fr_64px]">
-					{header.map(item => (
-						<div key={item.key} className="p-3 text-center font-semibold">
-							{item.title}
+			<div className={variant === "embedded" ? "overflow-x-auto" : "overflow-hidden"}>
+				<div className={variant === "embedded" ? "min-w-[640px]" : undefined}>
+					<div className="grid grid-cols-[1fr_1fr_1fr_64px] gap-4">
+						{header.map(item => (
+							<div
+								key={item.key}
+								className="contract-tier-header-badge px-3 py-1 text-center font-semibold"
+							>
+								{item.title}
+							</div>
+						))}
+						<div />
+					</div>
+
+					{fields.map((field, index) => (
+						<div
+							key={field.id}
+							className="mt-3 grid grid-cols-[1fr_1fr_1fr_64px] gap-4"
+						>
+							<div className={variant === "embedded" ? "" : "p-3"}>
+								<RHFProNumber
+									name={`${name}.${index}.from` as any}
+									label=""
+									enableGrouping
+									enableWordsTooltip
+									inputProps={{
+										placeholder: "از",
+										inputMode: "numeric",
+										disabled: index > 0,
+									} as any}
+									formItemProps={{ className: "mb-0" }}
+								/>
+							</div>
+
+							<div className={variant === "embedded" ? "" : "p-3"}>
+								<TierToField
+									name={`${name}.${index}.to`}
+									showHint={index === fields.length - 1}
+								/>
+							</div>
+
+							<div className={variant === "embedded" ? "" : "p-3"}>
+								<RHFProNumber
+									name={`${name}.${index}.fee` as any}
+									label=""
+									enableGrouping
+									enableWordsTooltip
+									inputProps={{
+										placeholder: "برای مثال ۱۲۰",
+										inputMode: "numeric",
+										addonAfter: currencyAddon,
+									} as any}
+									formItemProps={{ className: "contract-type-currency-field mb-0" }}
+								/>
+							</div>
+
+							<div className={`flex items-center justify-center ${variant === "embedded" ? "" : "p-3"}`}>
+								<Tooltip title="حذف بازه">
+									<Button
+										type="text"
+										danger
+										className="contract-tier-delete-button"
+										icon={<DeleteOutlined />}
+										onClick={() => handleRemoveRow(index)}
+									/>
+								</Tooltip>
+							</div>
 						</div>
 					))}
-					<div />
-				</div>
 
-				{fields.map((field, index) => (
-					<div
-						key={field.id}
-						className="grid grid-cols-[1fr_1fr_1fr_64px] border-t border-t-[rgba(255,255,255,0.08)]"
-					>
-						<div className="p-3">
-							<RHFProNumber
-								name={`${name}.${index}.from` as any}
-								label=""
-								enableGrouping
-								enableWordsTooltip
-								inputProps={{
-									placeholder: "از",
-									inputMode: "numeric",
-									disabled: index > 0,
-								} as any}
-								formItemProps={{ className: "mb-0" }}
-							/>
-						</div>
-
-						<div className="p-3">
-							<TierToField
-								name={`${name}.${index}.to`}
-								showHint={index === fields.length - 1}
-							/>
-						</div>
-
-						<div className="p-3">
-							<RHFProNumber
-								name={`${name}.${index}.fee` as any}
-								label=""
-								enableGrouping
-								enableWordsTooltip
-								inputProps={{ placeholder: "مبلغ (تومان)", inputMode: "numeric" } as any}
-								formItemProps={{ className: "mb-0" }}
-							/>
-						</div>
-
-						<div className="flex items-center justify-center p-3">
-							<Tooltip title="حذف بازه">
-								<Button
-									type="text"
-									danger
-									icon={<DeleteOutlined />}
-									onClick={() => handleRemoveRow(index)}
-								/>
-							</Tooltip>
-						</div>
+					<div className={variant === "embedded" ? "mt-3" : "p-3"}>
+						<Tooltip title="مقدار شروع بازه جدید به‌طور خودکار تنظیم می‌شود.">
+							<Button className="contract-dashed-action" icon={<PlusOutlined />} onClick={handleAddRow}>
+								افزودن بازه
+							</Button>
+						</Tooltip>
 					</div>
-				))}
-
-				<div className="p-3">
-					<Tooltip title="مقدار شروع بازه جدید به‌طور خودکار تنظیم می‌شود.">
-						<Button icon={<PlusOutlined />} onClick={handleAddRow}>
-							افزودن بازه
-						</Button>
-					</Tooltip>
 				</div>
 			</div>
+		</>
+	);
+
+	if (variant === "embedded") {
+		return content;
+	}
+
+	return (
+		<Card variant="outlined" className="rounded-xl [&_.ant-pro-card-body]:p-3">
+			{content}
 		</Card>
 	);
 }

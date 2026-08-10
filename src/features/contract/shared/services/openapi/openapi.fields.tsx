@@ -1,6 +1,5 @@
 import type { ArrayPath, Path } from "react-hook-form";
 import type { ContractFormValues } from "../../../shared/model/contract.form.types";
-import { BasicContent } from "#src/components/index.js";
 import { ContractAddendaSection } from "#src/features/contract/components/addenda/ContractAddendaSection.js";
 import { RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro/fields/RHFProNumber.js";
@@ -493,11 +492,7 @@ export function OpenApiFields() {
 	}));
 
 	return (
-		<Card
-			bordered
-			title="بهای هر واحد"
-			className="[&_.ant-pro-card-body]:p-4"
-		>
+		<div className="w-full">
 			<Row gutter={24} justify="space-between" style={{ display: "none" }}>
 				<Col span={12}>
 					<RHFSelect
@@ -522,25 +517,21 @@ export function OpenApiFields() {
 				</Col>
 			</Row>
 
-			<Row>
+			<div className="w-full">
 				{contractModel === "legacy"
 					? (
-						<BasicContent className="w-full overflow-hidden ">
-							<Row gutter={[12, 12]} align="stretch">
-								<Col xs={24} xl={12}>
-									<ContractTypeSection
-										title="بهای ثبت وصولی"
-										name={sf("legacyPricing.paymentRegistration")}
-									/>
-								</Col>
-								<Col xs={24} xl={12}>
-									<ContractTypeSection
-										title="بهای استعلام قبض"
-										name={sf("legacyPricing.billInquiry")}
-									/>
-								</Col>
-							</Row>
-						</BasicContent>
+						<div className="flex w-full flex-col">
+							<ContractTypeSection
+								title="بهای ثبت وصولی"
+								name={sf("legacyPricing.paymentRegistration")}
+								tone="purple"
+							/>
+							<ContractTypeSection
+								title="بهای استعلام قبض"
+								name={sf("legacyPricing.billInquiry")}
+								tone="purple"
+							/>
+						</div>
 					)
 					: null}
 
@@ -567,7 +558,7 @@ export function OpenApiFields() {
 						</Card>
 					)
 					: null}
-			</Row>
+			</div>
 
 			{showAddenda
 				? (
@@ -580,20 +571,18 @@ export function OpenApiFields() {
 							canAddAddendum={!!contractModel}
 							addendumAddBlockedMessage="ابتدا مدل قرارداد را انتخاب کنید."
 							renderAddendumFields={base => (
-								<Row gutter={[12, 12]} align="stretch">
-									<Col xs={24} xl={12}>
-										<ContractTypeSection
-											title="بهای ثبت وصولی"
-											name={`${base}.legacyPricing.paymentRegistration` as any}
-										/>
-									</Col>
-									<Col xs={24} xl={12}>
-										<ContractTypeSection
-											title="بهای استعلام قبض"
-											name={`${base}.legacyPricing.billInquiry` as any}
-										/>
-									</Col>
-								</Row>
+								<div className="flex w-full flex-col">
+									<ContractTypeSection
+										title="بهای ثبت وصولی"
+										name={`${base}.legacyPricing.paymentRegistration` as any}
+										tone="purple"
+									/>
+									<ContractTypeSection
+										title="بهای استعلام قبض"
+										name={`${base}.legacyPricing.billInquiry` as any}
+										tone="purple"
+									/>
+								</div>
 							)}
 							contractStartYearPath={"startYear" as Path<ContractFormValues>}
 							contractStartMonthPath={"startMonth" as Path<ContractFormValues>}
@@ -603,6 +592,6 @@ export function OpenApiFields() {
 					</div>
 				)
 				: null}
-		</Card>
+		</div>
 	);
 }

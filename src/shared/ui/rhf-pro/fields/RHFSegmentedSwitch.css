@@ -1,5 +1,6 @@
 .rhf-segmented-switch.ant-segmented {
-	overflow: hidden;
+	overflow-x: auto;
+	overflow-y: hidden;
 	padding: 0;
 	border: 1px solid var(--rhf-segmented-border-color);
 	border-radius: var(--rhf-segmented-border-radius);
@@ -8,11 +9,12 @@
 
 .rhf-segmented-switch .ant-segmented-group {
 	width: 100%;
+	min-width: max-content;
 }
 
 .rhf-segmented-switch .ant-segmented-item {
-	min-width: 0;
-	flex: 1;
+	min-width: max-content !important;
+	flex: 1 0 auto !important;
 	border-radius: 0;
 	color: var(--rhf-segmented-text-color);
 }
@@ -24,9 +26,9 @@
 .rhf-segmented-switch .ant-segmented-item-label {
 	min-height: 36px;
 	padding-inline: 12px;
-	overflow: hidden;
+	overflow: visible !important;
 	line-height: 36px;
-	text-overflow: ellipsis;
+	text-overflow: clip !important;
 	white-space: nowrap;
 }
 

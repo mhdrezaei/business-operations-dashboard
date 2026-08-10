@@ -1,10 +1,13 @@
 import type { ArrayPath, FieldValues, Path, PathValue } from "react-hook-form";
 import type { AddendaMonthsByYear } from "./addenda.gaps";
+import { ContractSectionToneContext } from "#src/features/contract/shared/ui/form/components/contract-section-tone-context";
+import { ContractDashedBorder } from "#src/features/contract/shared/ui/form/components/ContractDashedBorder";
+import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import { RHFProText, RHFProTextArea, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { message } from "#src/utils";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
-import { Button, Card, Collapse } from "antd";
+import { Button, Collapse } from "antd";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
@@ -382,16 +385,15 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 				: null;
 			const displayNumber = serverDisplayNumber ?? generatedDisplayNumber;
 			const addendumTitle = displayNumber != null && String(displayNumber).trim()
-				? `الحاقیه ${displayNumber}`
-				: "الحاقیه";
+				? String(displayNumber)
+				: String(idx + 1);
 
 			const sy = addendum.startYear as number | null;
 			const sm = addendum.startMonth as number | null;
 			const ey = addendum.endYear as number | null;
 			const em = addendum.endMonth as number | null;
 
-			const headerHint
-				= sy && sm && ey && em ? `(${sy}/${sm} تا ${ey}/${em})` : "(تاریخ‌ها تکمیل نشده)";
+			const headerHint = sy && sm && ey && em ? `(${sy}/${sm} تا ${ey}/${em})` : null;
 			const startMonthOptions = sy
 				? (MONTH_OPTIONS as any[]).filter(option => availableMonthsByYear.get(Number(sy))?.includes(Number(option.value)))
 				: [];
@@ -415,15 +417,15 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 					key: String(idx),
 					label: (
 						<div className="flex justify-between items-center w-full gap-3">
-							<div className="font-bold">
-								{addendumTitle}
-								{" "}
-								<span className="opacity-75 font-medium">{headerHint}</span>
+							<div className="flex items-center gap-2 font-bold">
+								<span className="contract-addenda-item-badge">{addendumTitle}</span>
+								{headerHint ? <span className="opacity-75 font-medium">{headerHint}</span> : null}
 							</div>
 
 							<Button
 								danger
 								size="small"
+								className="contract-dashed-action"
 								icon={<DeleteOutlined />}
 								onClick={(e) => {
 									e.stopPropagation();
@@ -435,7 +437,7 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 						</div>
 					),
 					children: (
-						<Card className="[&_.ant-pro-card-body]:p-0">
+						<div className="contract-addenda-content">
 							<div className="grid grid-cols-4 gap-3 mt-2">
 								<RHFSelect
 									name={p(base, "startYear")}
@@ -535,6 +537,7 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 
 							<div className="mt-3 flex justify-end">
 								<Button
+									className="contract-dashed-action"
 									icon={<PlusOutlined />}
 									onClick={() => addChildAddendum(idx, displayNumber ?? undefined)}
 									disabled={!canAddAddendum}
@@ -542,7 +545,7 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 									افزودن زیرالحاقیه
 								</Button>
 							</div>
-						</Card>
+						</div>
 					),
 				},
 			};
@@ -589,17 +592,21 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 					const itemKey = String(idx);
 					return (
 						<div key={item.reactKey}>
-							<Collapse
-								activeKey={activeKey === itemKey ? [itemKey] : []}
-								onChange={(key) => {
-									const nextKey = Array.isArray(key) ? key[0] : key;
-									setActiveKey(nextKey == null ? undefined : String(nextKey));
-								}}
-								items={[item.collapseItem] as any}
-							/>
+							<div className="contract-addenda-item">
+								<ContractDashedBorder />
+								<Collapse
+									className="contract-addenda-collapse"
+									activeKey={activeKey === itemKey ? [itemKey] : []}
+									onChange={(key) => {
+										const nextKey = Array.isArray(key) ? key[0] : key;
+										setActiveKey(nextKey == null ? undefined : String(nextKey));
+									}}
+									items={[item.collapseItem] as any}
+								/>
+							</div>
 							{item.hasChildren
 								? (
-									<div className="relative mt-3 pr-6 before:absolute before:bottom-0 before:right-2 before:top-0 before:border-r before:border-dashed before:border-[var(--ant-color-border)]">
+									<div className="contract-addenda-tree-branch relative mt-3 pr-6">
 										<ContractAddendaSection<TFV>
 											name={p(`${name}.${idx}`, "children")}
 											displayPrefix={item.displayNumber ?? undefined}
@@ -631,23 +638,24 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 			</div>
 		);
 
-	if (level > 0) {
-		return tree;
-	}
+	if (level > 0)
+		return <ContractSectionToneContext.Provider value="addenda">{tree}</ContractSectionToneContext.Provider>;
 
 	return (
-		<Card
-			bordered
-			className="rounded-md mt-3"
-			title={title}
-			extra={(
-				<Button icon={<PlusOutlined />} onClick={addAddendum} disabled={!contractRangeReady || !canAddAddendum}>
-					افزودن الحاقیه
-				</Button>
-			)}
-		>
-			{notices}
-			{tree}
-		</Card>
+		<ContractSectionToneContext.Provider value="addenda">
+			<ContractFormSection
+				title={title}
+				tone="addenda"
+				className="contract-addenda-section mt-3"
+				extra={(
+					<Button className="contract-dashed-action" icon={<PlusOutlined />} onClick={addAddendum} disabled={!contractRangeReady || !canAddAddendum}>
+						افزودن الحاقیه
+					</Button>
+				)}
+			>
+				{notices}
+				{tree}
+			</ContractFormSection>
+		</ContractSectionToneContext.Provider>
 	);
 }

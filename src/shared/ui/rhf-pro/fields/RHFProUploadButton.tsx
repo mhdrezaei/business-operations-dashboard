@@ -1,8 +1,8 @@
 import type { UploadProps } from "antd";
 import type { FieldValues, Path } from "react-hook-form";
 import type { CommonFieldProps } from "../types";
-import { ProForm } from "@ant-design/pro-components";
-import { Button, Upload } from "antd";
+import { InboxOutlined } from "@ant-design/icons";
+import { Button, Form, theme, Upload } from "antd";
 import React from "react";
 
 import { Controller } from "react-hook-form";
@@ -11,6 +11,9 @@ import { buildItemStatus, useSmartControl } from "../utils";
 export type RHFProUploadButtonProps<TFV extends FieldValues, TName extends Path<TFV>> = CommonFieldProps<TFV, TName> & {
 	uploadProps?: Omit<UploadProps, "fileList" | "onChange">
 	buttonText?: string
+	variant?: "button" | "dragger"
+	draggerTitle?: React.ReactNode
+	draggerHint?: React.ReactNode
 	/**
 	 * اگر می‌خوای مقدار ذخیره‌شده در فرم چیزی غیر از fileList باشه
 	 * مثلا فقط ids یا urls
@@ -27,6 +30,7 @@ export function RHFProUploadButton<TFV extends FieldValues, TName extends Path<T
 	props: RHFProUploadButtonProps<TFV, TName>,
 ) {
 	const control = useSmartControl<TFV>(props.control);
+	const { token } = theme.useToken();
 
 	return (
 		<Controller
@@ -37,25 +41,46 @@ export function RHFProUploadButton<TFV extends FieldValues, TName extends Path<T
 				const status = buildItemStatus(err);
 
 				const fileList = props.mapValueToFileList?.(field.value) ?? ((field.value ?? []) as UploadProps["fileList"]);
+				const handleChange: NonNullable<UploadProps["onChange"]> = (info) => {
+					const nextList = info.fileList;
+					if (props.mapFileListToValue) {
+						field.onChange(props.mapFileListToValue(nextList));
+					}
+					else {
+						field.onChange(nextList);
+					}
+				};
 
 				return (
-					<ProForm.Item label={props.label} {...props.itemProps} {...status}>
-						<Upload
-							{...props.uploadProps}
-							fileList={fileList}
-							onChange={(info) => {
-								const nextList = info.fileList;
-								if (props.mapFileListToValue) {
-									field.onChange(props.mapFileListToValue(nextList));
-								}
-								else {
-									field.onChange(nextList);
-								}
-							}}
-						>
-							<Button>{props.buttonText ?? "آپلود"}</Button>
-						</Upload>
-					</ProForm.Item>
+					<Form.Item label={props.label} {...props.itemProps} {...status}>
+						{props.variant === "dragger"
+							? (
+								<Upload.Dragger
+									{...props.uploadProps}
+									fileList={fileList}
+									onChange={handleChange}
+								>
+									<div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: token.marginXS }}>
+										<InboxOutlined style={{ color: token.colorPrimary, fontSize: token.fontSizeHeading1 }} />
+										<div style={{ color: token.colorPrimary, fontWeight: token.fontWeightStrong }}>
+											{props.draggerTitle ?? "فایل‌ها را بکشید یا برای انتخاب کلیک کنید"}
+										</div>
+										{props.draggerHint
+											? <div style={{ color: token.colorTextTertiary }}>{props.draggerHint}</div>
+											: null}
+									</div>
+								</Upload.Dragger>
+							)
+							: (
+								<Upload
+									{...props.uploadProps}
+									fileList={fileList}
+									onChange={handleChange}
+								>
+									<Button>{props.buttonText ?? "آپلود"}</Button>
+								</Upload>
+							)}
+					</Form.Item>
 				);
 			}}
 		/>
