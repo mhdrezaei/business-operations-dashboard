@@ -54,3 +54,36 @@ export interface TemplatePrintPreviewModalProps {
 	headerData?: HeaderData
 	customFonts?: TemplateFont[]
 }
+
+// تایپ های ساید بار برای سرویس های مختلف
+type RenderMode = "object" | "text" | "enum" | "money" | "tiers";
+type VariableKind = "object" | "scalar";
+
+interface IVariableConstraint {
+	slot?: number
+	source_paths?: string[]
+	nullable_for_document_kind?: boolean
+	contract_model?: string
+}
+
+export interface IVariableNode {
+	key: string
+	label: string
+	category: string
+	kind: VariableKind
+	path: string
+	supported_financial_model: string[]
+	supported_financial_model_labels: any[]
+	render_mode: RenderMode
+	children: IVariableNode[]
+	constraints: IVariableConstraint
+	example: any
+}
+
+export interface ICatalogResponse {
+	service: string
+	variant: string | null
+	company_type: string | null
+	document_kind: string
+	variables: IVariableNode[]
+}

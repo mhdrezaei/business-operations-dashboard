@@ -1,4 +1,4 @@
-// src/features/contract-templates/create/components/TemplateCreateHeader.tsx
+// src/features/contract-templates/create/components/header/TemplateCreateHeader.tsx
 import type { TemplateCreateHeaderProps } from "../../../types";
 import { ArrowRightOutlined, FileWordOutlined, PrinterOutlined, SaveOutlined } from "@ant-design/icons";
 import { Button, message, Popconfirm, theme, Typography } from "antd";

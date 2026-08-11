@@ -1,3 +1,4 @@
+// src/features/contract-templates/create/components/editor/variables/VariableRegistryContext.tsx
 import React, { createContext, useContext, useMemo } from "react";
 import { getVariables, GROUP_LABELS } from "./registry";
 

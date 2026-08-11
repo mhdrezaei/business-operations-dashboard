@@ -1,8 +1,13 @@
+// src/features/contract-templates/create/components/sidebar/SidebarVariablesTab.tsx
 import type { Editor } from "@tiptap/react";
-import { DownCircleOutlined, PlusOutlined, ReloadOutlined, SearchOutlined, UnorderedListOutlined } from "@ant-design/icons";
-import { Alert, Button, Card, Collapse, Input, theme, Typography } from "antd";
-// src/features/contract-templates/create/components/SidebarVariablesTab.tsx
+import { useServicesListQuery } from "#src/features/contract-templates/queries/template-create.queries.js";
+import { DownCircleOutlined, PlusOutlined, ReloadOutlined, SearchOutlined } from "@ant-design/icons";
+import { useQuery } from "@tanstack/react-query";
+import { Button, Card, Collapse, Input, Spin, theme, Typography } from "antd";
 import React, { useMemo, useState } from "react";
+import { useFormContext, useWatch } from "react-hook-form";
+import { TemplateCreateApi } from "../../../api/api";
+import { dynamicVariableCache } from "../editor/variables/registry";
 import { useVariableRegistry } from "../editor/variables/VariableRegistryContext";
 
 const toFaDigits = (value: any) => String(value ?? "").replace(/\d/g, d => "۰۱۲۳۴۵۶۷۸۹"[Number(d)] || d);
@@ -43,7 +48,14 @@ function buildDisplayBlocks(variables: any[]) {
 function VariableButton({ variable, onInsert }: { variable: any, onInsert: (key: string) => void }) {
 	const { token } = theme.useToken();
 	return (
-		<Button size="small" shape="round" title={variable.example ? `مثال: ${variable.example}` : `{$${variable.key}}`} onClick={() => onInsert(variable.key)} style={{ fontSize: "11px", borderColor: token.colorPrimaryBorder, color: token.colorPrimary, backgroundColor: token.colorPrimaryBg, padding: "0 10px" }} className="hover:opacity-80 transition-opacity">
+		<Button
+			size="small"
+			shape="round"
+			title={variable.example ? `مثال: ${variable.example}` : `{$${variable.key}}`}
+			onClick={() => onInsert(variable.key)}
+			style={{ fontSize: "11px", borderColor: token.colorPrimaryBorder, color: token.colorPrimary, backgroundColor: token.colorPrimaryBg, padding: "0 10px" }}
+			className="hover:opacity-80 transition-opacity"
+		>
 			{variable.label}
 		</Button>
 	);
@@ -92,10 +104,74 @@ export default function SidebarVariablesTab({ editor }: { editor: Editor | null 
 	const [familyVisibleCounts, setFamilyVisibleCounts] = useState<Record<string, number>>({});
 
 	const registry = useVariableRegistry() as any;
-	const staticGroups = registry?.staticGroups || [];
-	const financialTree = registry?.financialTree || [];
-	const financialSupported = registry?.financialSupported ?? true;
-	const financialUnsupportedReason = registry?.financialUnsupportedReason || null;
+	const fallbackStaticGroups = registry?.staticGroups || [];
+
+	const { control } = useFormContext();
+	const serviceId = useWatch({ control, name: "service_id" });
+	const variant = useWatch({ control, name: "variant" });
+	const documentKind = useWatch({ control, name: "document_kind" });
+	const companyType = useWatch({ control, name: "company_type" });
+
+	const { data: servicesData } = useServicesListQuery();
+	const payloadData = (servicesData as any)?.data ?? servicesData;
+	const rawServices = Array.isArray(payloadData?.results) ? payloadData.results : [];
+	const selectedService = rawServices.find((s: any) => s.id === serviceId);
+	const serviceStringValue = selectedService?.code || selectedService?.slug || selectedService?.key || serviceId;
+
+	const { data: catalogData, isFetching: isFetchingCatalog } = useQuery({
+		queryKey: ["variable-catalog", serviceStringValue, variant, documentKind, companyType],
+		queryFn: () => {
+			// 🔴 حالا که variant درست رو از فرم میگیریم، نیازی به کدهای شرطی اضافه نیست
+			return TemplateCreateApi.getVariableCatalog({
+				service: serviceStringValue,
+				variant,
+				document_kind: documentKind,
+				company_type: companyType,
+			});
+		},
+		enabled: !!serviceStringValue && !!documentKind,
+		staleTime: 5 * 60 * 1000,
+	});
+
+	const dynamicGroups = useMemo(() => {
+		if (!catalogData?.variables)
+			return null;
+
+		dynamicVariableCache.clear();
+
+		return catalogData.variables
+			.filter((root: any) => root.key !== "service")
+			.map((root: any) => {
+				const vars = Array.isArray(root.children) && root.children.length > 0 ? root.children : [root];
+
+				return {
+					group: root.key,
+					label: root.label,
+					variables: vars.map((v: any) => {
+						let finalKey = v.key;
+
+						// 🔴 رفع قطعی مشکل تداخل (مثلاً ساخت contract_start_jy و addendum_start_jy تا همدیگه رو Overwrite نکنن)
+						if (root.key === "contract" || root.key === "addendum") {
+							if (!finalKey.startsWith(root.key)) {
+								finalKey = `${root.key}_${finalKey}`;
+							}
+						}
+
+						const formattedVariable = {
+							key: finalKey,
+							label: v.label,
+							example: v.example,
+						};
+
+						dynamicVariableCache.set(finalKey, formattedVariable);
+
+						return formattedVariable;
+					}),
+				};
+			});
+	}, [catalogData]);
+
+	const effectiveGroups = dynamicGroups || fallbackStaticGroups;
 
 	const handleInsert = (key: string) => editor?.chain().focus().insertTemplateVariable(key).run();
 	const resolveVisibleCount = (prefix: string) => familyVisibleCounts[prefix] ?? 1;
@@ -104,56 +180,78 @@ export default function SidebarVariablesTab({ editor }: { editor: Editor | null 
 
 	const staticGroupsWithBlocks = useMemo(() => {
 		const q = query.trim().toLowerCase();
-		const filteredGroups = !q ? staticGroups : staticGroups.map((g: any) => ({ ...g, variables: g.variables.filter((v: any) => v.label.includes(q) || v.key.toLowerCase().includes(q)) })).filter((g: any) => g.variables.length > 0);
-		return filteredGroups.map((group: any) => ({ ...group, blocks: q ? [{ type: "singles", variables: group.variables }] : buildDisplayBlocks(group.variables) }));
-	}, [staticGroups, query]);
+
+		const filteredGroups = !q
+			? effectiveGroups
+			: effectiveGroups
+				.map((g: any) => ({
+					...g,
+					variables: g.variables.filter((v: any) => v.label.includes(q) || v.key.toLowerCase().includes(q)),
+				}))
+				.filter((g: any) => g.variables.length > 0);
+
+		return filteredGroups.map((group: any) => ({
+			...group,
+			blocks: q ? [{ type: "singles", variables: group.variables }] : buildDisplayBlocks(group.variables),
+		}));
+	}, [effectiveGroups, query]);
 
 	return (
-		<div className="h-full flex flex-col p-4">
+		<div className="h-full flex flex-col p-4 relative">
 			<div className="flex justify-between items-center mb-3 shrink-0">
 				<Text strong style={{ color: token.colorText }}>&#123; &#125; متغیرها</Text>
-				<Button size="small" type="default" style={{ fontSize: "10px", borderColor: token.colorPrimary, color: token.colorPrimary, backgroundColor: token.colorPrimaryBg }}>
-					<UnorderedListOutlined />
-					{" "}
-					افزودن همه (تست)
-				</Button>
 			</div>
+
 			<Text type="secondary" className="text-[11px] block mb-3 leading-relaxed shrink-0">
-				روی هر متغیر کلیک کنید تا در محل مکان‌نما درج شود. موقع پرینت، مقدار واقعی جایگزین می‌شود.
+				روی هر متغیر کلیک کنید تا در محل مکان‌نما درج شود.
 			</Text>
-			<Input prefix={<SearchOutlined style={{ color: token.colorTextDescription }} />} placeholder="جستجوی متغیر..." value={query} onChange={e => setQuery(e.target.value)} className="mb-4 flex-shrink-0" />
-			<div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1 pb-10">
-				<Collapse
-					ghost
-					size="small"
-					expandIcon={DownCircleOutlined}
-					expandIconPosition="end"
-					defaultActiveKey={staticGroupsWithBlocks.map((g: any) => g.group)}
-					items={staticGroupsWithBlocks.map((group: any) => ({
-						key: group.group,
-						label: <span className="text-[11px] font-bold" style={{ color: token.colorTextDescription }}>{group.label}</span>,
-						children: (
-							<div className="space-y-1.5 pt-1">
-								{group.blocks.map((block: any, blockIdx: number) => block.type === "singles"
-									? (
-										<div key={`singles-${blockIdx}`} className="flex flex-wrap gap-1.5">
-											{block.variables.map((variable: any) => <VariableButton key={variable.key} variable={variable} onInsert={handleInsert} />)}
-										</div>
-									)
-									: (
-										<FamilySlotBlock key={block.prefix} block={block} visibleCount={resolveVisibleCount(block.prefix)} onRevealNext={() => revealNextSlot(block.prefix, block.maxIndex)} onCollapse={() => collapseFamily(block.prefix)} onInsert={handleInsert} />
-									))}
-							</div>
-						),
-					}))}
-				/>
-				{(!query.trim() || financialTree.length > 0 || !financialSupported) && (
-					<div className="mt-4 px-2">
-						<div className="mb-2 text-[11px] font-bold" style={{ color: token.colorTextDescription }}>اطلاعات مالی و تسویه</div>
-						{!financialSupported && <Alert type="warning" showIcon message={financialUnsupportedReason || "این سرویس فعلاً متغیر مالی پشتیبانی‌شد‌ه‌ای ندارد."} style={{ fontSize: "11px", padding: "8px 12px" }} />}
-					</div>
-				)}
-			</div>
+
+			<Input
+				prefix={<SearchOutlined style={{ color: token.colorTextDescription }} />}
+				placeholder="جستجوی متغیر..."
+				value={query}
+				onChange={e => setQuery(e.target.value)}
+				className="mb-4 flex-shrink-0"
+			/>
+
+			<Spin spinning={isFetchingCatalog} tip="در حال به‌روزرسانی..." wrapperClassName="flex-1 min-h-0 overflow-hidden flex flex-col">
+				<div className={`flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1 pb-10 transition-opacity duration-300 ${isFetchingCatalog ? "opacity-50" : "opacity-100"}`}>
+					{
+						staticGroupsWithBlocks.length > 0
+						// eslint-disable-next-line style/multiline-ternary
+							? (
+								<Collapse
+									ghost
+									size="small"
+									expandIcon={DownCircleOutlined}
+									expandIconPosition="end"
+									defaultActiveKey={staticGroupsWithBlocks.map((g: any) => g.group)}
+									items={staticGroupsWithBlocks.map((group: any) => ({
+										key: group.group,
+										label: <span className="text-[11px] font-bold" style={{ color: token.colorTextDescription }}>{group.label}</span>,
+										children: (
+											<div className="space-y-1.5 pt-1">
+												{group.blocks.map((block: any, blockIdx: number) => block.type === "singles"
+													? (
+														<div key={`singles-${blockIdx}`} className="flex flex-wrap gap-1.5">
+															{block.variables.map((variable: any) => <VariableButton key={variable.key} variable={variable} onInsert={handleInsert} />)}
+														</div>
+													)
+													: (
+														<FamilySlotBlock key={block.prefix} block={block} visibleCount={resolveVisibleCount(block.prefix)} onRevealNext={() => revealNextSlot(block.prefix, block.maxIndex)} onCollapse={() => collapseFamily(block.prefix)} onInsert={handleInsert} />
+													))}
+											</div>
+										),
+									}))}
+								/>
+							) : (
+								<div className="text-center mt-6 text-xs text-gray-400">
+									سرویس و نوع سند را انتخاب کنید.
+								</div>
+							)
+					}
+				</div>
+			</Spin>
 		</div>
 	);
 }

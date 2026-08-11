@@ -30,6 +30,8 @@ export default function TemplateCreateForm() {
 		return rawServices.find((s: any) => s.id === selectedServiceId);
 	}, [selectedServiceId, rawServices]);
 
+	const serviceStringValue = selectedService?.code || selectedService?.slug || selectedService?.key || selectedServiceId;
+
 	const companyTypeOptions = useMemo(() => {
 		if (!selectedService)
 			return [];
@@ -46,8 +48,10 @@ export default function TemplateCreateForm() {
 		});
 	}, [selectedService]);
 
+	// با تغییر سرویس، فیلدهای وابسته ریست بشن
 	useEffect(() => {
 		setValue("company_type", undefined);
+		setValue("variant", undefined);
 	}, [selectedServiceId, setValue]);
 
 	const documentKindOptions = [
@@ -55,14 +59,34 @@ export default function TemplateCreateForm() {
 		{ label: "الحاقیه", value: "addendum" },
 	];
 
-	const showVariantField = selectedService?.name?.includes("پیامک") || selectedServiceId === "sms";
+	// منطق داینامیک نمایش و گزینه‌های فیلد Variant
+	const isSmsService = selectedService?.name?.includes("پیامک") || serviceStringValue === "sms";
+	const isOpenApiService = serviceStringValue === "openapi";
+	const showVariantField = isSmsService || isOpenApiService;
+
+	const variantOptions = useMemo(() => {
+		if (isOpenApiService) {
+			return [
+				{ value: "openapi_legacy", label: "قدیمی" },
+				// 🔴 رفع مشکل انتخاب سرویس تفکیکی برای API مالی
+				{ value: "openapi_legacy_2", label: "تفکیکی" },
+			];
+		}
+		if (isSmsService) {
+			return [
+				{ value: "old", label: "قدیمی" },
+				{ value: "new", label: "جدید" },
+			];
+		}
+		return [];
+	}, [isOpenApiService, isSmsService]);
 
 	const getPopupContainer = (triggerNode: any) => triggerNode.parentNode;
 
 	return (
 		<div className="px-6 pb-6 pt-4">
 			<div
-				className="p-5 rounded-lg border flex flex-wrap gap-x-4 gap-y-5 items-start shadow-sm"
+				className="p-5 rounded-lg border flex flex-wrap gap-x-4 gap-y-5 items-start shadow-sm transition-all duration-300"
 				style={{ backgroundColor: token.colorBgContainer, borderColor: token.colorBorderSecondary }}
 			>
 				<div className="flex-1 min-w-[200px]">
@@ -75,7 +99,7 @@ export default function TemplateCreateForm() {
 								<span className="text-red-500">*</span>
 							</span>
 						)}
-						inputProps={{ placeholder: "مثلاً: قرارداد ترافیک پریمیوم", size: "large" }}
+						inputProps={{ placeholder: "مثلاً: قرارداد ترافیک", size: "large" }}
 						formItemProps={{ style: { marginBottom: 0 } }}
 						enableNumericGuard={false}
 					/>
@@ -98,7 +122,6 @@ export default function TemplateCreateForm() {
 							size: "large",
 							showSearch: true,
 							optionFilterProp: "label",
-							virtual: false,
 							getPopupContainer,
 						}}
 						formItemProps={{ style: { marginBottom: 0 } }}
@@ -132,7 +155,7 @@ export default function TemplateCreateForm() {
 									<span className="text-red-500">*</span>
 								</span>
 							)}
-							options={[{ value: "old", label: "قدیمی" }, { value: "new", label: "جدید" }]}
+							options={variantOptions}
 							selectProps={{ placeholder: "انتخاب کنید...", size: "large", getPopupContainer }}
 							formItemProps={{ style: { marginBottom: 0 } }}
 						/>

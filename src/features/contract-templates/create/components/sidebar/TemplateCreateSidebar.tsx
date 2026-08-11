@@ -1,3 +1,4 @@
+// src/features/contract-templates/create/components/sidebar/TemplateCreateSidebar.tsx
 import type { Editor } from "@tiptap/react";
 import { FunctionOutlined, LayoutOutlined } from "@ant-design/icons";
 import { Tabs, theme } from "antd";

@@ -30,15 +30,28 @@ export const TemplateCreateApi = {
 
 	createTemplate: (payload: any) => {
 		return request.post("contracts/templates/", {
-			json: payload, // چون payload یک آبجکت جاوااسکریپتی است، از json استفاده می‌کنیم
+			json: payload,
 		}).json();
 	},
+
 	getTemplate: (id: number) => {
 		return request.get(`contracts/templates/${id}/`).json<any>();
 	},
 
-	// 🔴 متد برای به‌روزرسانی قالب (حالت ویرایش)
 	updateTemplate: (id: number, payload: any) => {
-		return request.put(`contracts/templates/${id}/`, { json: payload }).json();
+		return request.put(`contracts/templates/${id}/`, {
+			json: payload,
+		}).json();
+	},
+
+	// 🔴 اضافه شدن متد دریافت داینامیک متغیرها
+	getVariableCatalog: (params: Record<string, any>) => {
+		// مقادیر خالی (null و undefined و "") را فیلتر می‌کنیم تا URL تمیز بماند
+		const cleanParams = Object.fromEntries(
+			Object.entries(params).filter(([_, v]) => v != null && v !== ""),
+		);
+		return request.get("contracts/templates/variable-catalog/", {
+			searchParams: cleanParams as any,
+		}).json<any>();
 	},
 };
