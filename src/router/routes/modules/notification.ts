@@ -13,7 +13,7 @@ const routes: AppRouteRecordRaw[] = [
 		handle: {
 			icon: createElement(BellOutlined),
 			title: $t("widgets.notifications"),
-			hideInMenu: false,
+			hideInMenu: true,
 			ignoreAccess: false,
 		},
 		children: [

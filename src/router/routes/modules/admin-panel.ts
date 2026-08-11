@@ -1,10 +1,11 @@
 import type { AppRouteRecordRaw } from "#src/router/types";
 
+import { SidebarManagementIcon } from "#src/icons/local-icons";
 import { ContainerLayout } from "#src/layout";
 import { $t } from "#src/locales";
 
 import { userManagement } from "#src/router/extra-info";
-import { BellOutlined } from "@ant-design/icons";
+import { BellOutlined, HistoryOutlined, SafetyOutlined, UserOutlined } from "@ant-design/icons";
 import { createElement, lazy } from "react";
 
 const ListUsers = lazy(() => import("#src/pages/user-management/UsersList"));
@@ -18,7 +19,7 @@ const routes: AppRouteRecordRaw[] = [
 		path: "/admin-panel",
 		Component: ContainerLayout,
 		handle: {
-			icon: "SafetyOutlined",
+			icon: createElement(SidebarManagementIcon),
 			title: $t("common.menu.adminPanel"),
 			order: userManagement,
 			adminAccess: "audit_logs",
@@ -28,7 +29,7 @@ const routes: AppRouteRecordRaw[] = [
 				path: "/admin-panel/userManagement",
 				Component: ListUsers,
 				handle: {
-					icon: "FileTextOutlined",
+					icon: createElement(UserOutlined),
 					title: $t("common.menu.userManagement"),
 					adminAccess: "users",
 					// roles: ["admin"],
@@ -44,7 +45,7 @@ const routes: AppRouteRecordRaw[] = [
 				path: "/admin-panel/roles",
 				Component: ListRoles,
 				handle: {
-					icon: "TeamOutlined",
+					icon: createElement(SafetyOutlined),
 					title: $t("common.menu.role"),
 					adminAccess: "roles",
 				},
@@ -53,7 +54,7 @@ const routes: AppRouteRecordRaw[] = [
 				path: "/admin-panel/audit-logs",
 				Component: AuditLogs,
 				handle: {
-					icon: "HistoryOutlined",
+					icon: createElement(HistoryOutlined),
 					title: $t("common.menu.auditLogs"),
 					adminAccess: "audit_logs",
 				},

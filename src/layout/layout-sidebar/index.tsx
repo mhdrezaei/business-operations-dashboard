@@ -4,8 +4,7 @@ import { useLanguage, usePreferences } from "#src/hooks";
 import { theme as antdTheme, ConfigProvider } from "antd";
 
 import { useEffect, useState } from "react";
-import { headerHeight, siderTriggerHeight } from "../constants";
-import { SiderTrigger } from "../widgets";
+import { headerHeight } from "../constants";
 
 export interface LayoutSidebarProps {
 	children?: React.ReactNode
@@ -15,9 +14,6 @@ export interface LayoutSidebarProps {
 export default function LayoutSidebar({ children, computedSidebarWidth }: LayoutSidebarProps) {
 	const { sidebarCollapsed, sidebarTheme, isDark, setPreferences } = usePreferences();
 	const { isRTL } = useLanguage();
-	const {
-		token: { Menu },
-	} = antdTheme.useToken();
 
 	const isFixedDarkTheme = isDark || sidebarTheme === "dark";
 	const [isStickTop, setIsStickTop] = useState(false);
@@ -48,16 +44,14 @@ export default function LayoutSidebar({ children, computedSidebarWidth }: Layout
 			<aside
 				style={
 					{
-						// One pixel border
-						width: computedSidebarWidth + 1,
-						backgroundColor: isFixedDarkTheme ? Menu?.darkItemBg : Menu?.itemBg,
-						boxShadow: isRTL ? "-3px 0 5px 0 rgb(29, 35, 41, 0.05)" : "3px 0 5px 0 rgb(29, 35, 41, 0.05)",
+						width: computedSidebarWidth,
+						backgroundColor: "transparent",
 					}
 				}
-				className={`fixed  ${isStickTop ? "top-0" : "top-20"} flex flex-col justify-between bottom-0  rounded-md ${isRTL ? "right-3 border-l border-l-colorBorderSecondary" : "left-3 border-r border-r-colorBorderSecondary"} overflow-x-hidden overflow-y-auto transition-all`}
+				className={`fixed ${isStickTop ? "top-0" : "top-20"} bottom-0 flex flex-col ${isRTL ? "right-3" : "left-3"} overflow-x-hidden overflow-y-auto transition-all`}
 			>
 				{/* <Logo sidebarCollapsed={sidebarCollapsed} /> */}
-				<div className="overflow-hidden" style={{ height: `calc(100% - ${headerHeight}px - ${siderTriggerHeight}px)` }}>
+				<div className="h-full overflow-hidden">
 					<Scrollbar>
 						<DateTimeDisplay
 							sidebarCollapsed={sidebarCollapsed}
@@ -67,7 +61,6 @@ export default function LayoutSidebar({ children, computedSidebarWidth }: Layout
 						{children}
 					</Scrollbar>
 				</div>
-				<SiderTrigger />
 			</aside>
 		</ConfigProvider>
 	);

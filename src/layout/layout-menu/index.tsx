@@ -28,6 +28,7 @@ interface LayoutMenuProps {
 	menus?: MenuItemType[]
 	handleMenuSelect?: (key: string, mode: MenuProps["mode"]) => void
 	headerBackgroundColor?: string
+	sidebarStyle?: boolean
 }
 
 /**
@@ -61,6 +62,7 @@ export default function LayoutMenu({
 	handleMenuSelect,
 	menus = emptyArray,
 	headerBackgroundColor,
+	sidebarStyle = false,
 }: LayoutMenuProps) {
 	const classes = useStyles();
 	const matches = useMatches();
@@ -208,7 +210,16 @@ export default function LayoutMenu({
 							// Item padding
 							itemPaddingInline: 12,
 						}
-						: {},
+						: sidebarStyle
+							? {
+								itemHeight: 48,
+								itemMarginBlock: 5,
+								itemMarginInline: 8,
+								itemBorderRadius: 12,
+								subMenuItemBorderRadius: 12,
+								collapsedIconSize: 24,
+							}
+							: {},
 				},
 			}}
 		>
@@ -219,6 +230,7 @@ export default function LayoutMenu({
 				 */
 				className={cn(
 					"!border-none min-w-0 flex-auto",
+					sidebarStyle && classes.sidebarMenu,
 					{
 						/**
 						 * @fa وقتي منوي کناري جمع است، رنگ پس زمينه اضافه کن

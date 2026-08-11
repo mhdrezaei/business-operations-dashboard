@@ -4,16 +4,18 @@ export default function LightLogo({
 	width = 32,
 	height = 32,
 	className,
+	compact = false,
 }: {
 	width?: number
 	height?: number
 	className?: string
+	compact?: boolean
 }) {
 	return (
 		<svg
 			width={width}
 			height={height}
-			viewBox="0 0 491 116"
+			viewBox={compact ? "320 0 171 116" : "0 0 491 116"}
 			fill="none"
 			xmlns="http://www.w3.org/2000/svg"
 			className={className}

@@ -17,6 +17,7 @@ const routes: AppRouteRecordRaw[] = [
 			order: personalCenter,
 			title: $t("common.menu.personalCenter"),
 			icon: createElement(RiAccountCircleLine),
+			hideInMenu: true,
 		},
 		children: [
 			{

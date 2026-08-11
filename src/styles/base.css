@@ -1,8 +1,34 @@
 /* از preflight در tailwind.css استفاده نمي کنيم؛ از reset انتي دي براي جلوگيري از تداخل */
 @import "antd/dist/reset.css";
 
+body {
+	position: relative;
+	background-color: var(--ant-colorBgLayout);
+}
+
+body::before {
+	content: '';
+	position: fixed;
+	z-index: 0;
+	inset: 0;
+	background-image: none;
+	background-repeat: no-repeat;
+	background-position: center top;
+	background-size: cover;
+	opacity: 0;
+	pointer-events: none;
+}
+
+html.dark body::before {
+	background-image: url('/app-background.webp');
+	opacity: 0.05;
+}
+
 #root {
+	position: relative;
+	z-index: 1;
 	height: 100vh;
+	background: transparent;
 }
 
 img {

@@ -71,15 +71,12 @@ export default function LayoutHeader({ className, children }: LayoutHeaderProps)
 
 	const isFixedDarkTheme = isDark || (sidebarTheme === "dark" && (isMixedNav || isTopNav)) || isCustomHeaderDark;
 
-	// Calculate header background color
 	const getHeaderBackground = () => {
-		if (isTopNav || isMixedNav) {
-			if (headerBackgroundType === "default") {
-				return (isDark || (sidebarTheme === "dark" && (isMixedNav || isTopNav))) ? Menu?.darkItemBg : Menu?.itemBg;
-			}
+		if ((isTopNav || isMixedNav) && headerBackgroundType !== "default") {
 			return headerBackgroundColor;
 		}
-		return (isDark || (sidebarTheme === "dark" && (isMixedNav || isTopNav))) ? Menu?.darkItemBg : Menu?.itemBg;
+
+		return isFixedDarkTheme ? Menu?.darkItemBg : Menu?.itemBg;
 	};
 
 	return (

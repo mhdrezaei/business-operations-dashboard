@@ -1,9 +1,9 @@
 import type { AppRouteRecordRaw } from "#src/router/types";
+import { SidebarHomeIcon } from "#src/icons/local-icons";
 import { ContainerLayout } from "#src/layout";
 
 import { $t } from "#src/locales";
 import { home } from "#src/router/extra-info";
-import { HomeOutlined } from "@ant-design/icons";
 import { createElement, lazy } from "react";
 
 const Home = lazy(() => import("#src/pages/home"));
@@ -15,7 +15,7 @@ const routes: AppRouteRecordRaw[] = [
 		handle: {
 			order: home,
 			title: $t("common.menu.home"),
-			icon: createElement(HomeOutlined),
+			icon: createElement(SidebarHomeIcon, { style: { fontSize: 28 } }),
 		},
 		children: [
 			{
@@ -23,7 +23,7 @@ const routes: AppRouteRecordRaw[] = [
 				Component: Home,
 				handle: {
 					title: $t("common.menu.home"),
-					icon: createElement(HomeOutlined),
+					icon: createElement(SidebarHomeIcon, { style: { fontSize: 28 } }),
 				},
 			},
 		],
