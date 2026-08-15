@@ -3,8 +3,9 @@ import type { ContractFormValues } from "../../../model/contract.form.types";
 import { BasicContent } from "#src/components/";
 import { ContractAddendaSection } from "#src/features/contract/components/addenda/ContractAddendaSection";
 import { ContractTypeSection } from "#src/features/contract/components/contract-type/ContractTypeSection";
+import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import { useAccess } from "#src/hooks";
-import { RHFProNumber, RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
+import { RHFProCheckbox, RHFProNumber, RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Card, Steps, Tooltip } from "antd";
@@ -77,6 +78,23 @@ function mapMonthsToOptions(months: number[]): YearMonthOption[] {
 		const found = MONTH_OPTIONS.find(option => option.value === month);
 		return { label: String(found?.label ?? month), value: month };
 	});
+}
+
+function addJalaliRangeToMonths(
+	monthsByYear: Map<number, number[]>,
+	startYear: number,
+	startMonth: number,
+	endYear: number,
+	endMonth: number,
+) {
+	for (let year = startYear; year <= endYear; year++) {
+		const firstMonth = year === startYear ? startMonth : 1;
+		const lastMonth = year === endYear ? endMonth : 12;
+		const months = new Set(monthsByYear.get(year) ?? []);
+		for (let month = firstMonth; month <= lastMonth; month++)
+			months.add(month);
+		monthsByYear.set(year, [...months].sort((a, b) => a - b));
+	}
 }
 
 interface FixedStartSectionProps {
@@ -280,6 +298,28 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 	const startMonth = useWatch({ control, name: "startMonth" });
 	const endYear = useWatch({ control, name: "endYear" });
 	const endMonth = useWatch({ control, name: "endMonth" });
+	const originalEditRangeRef = useRef<{
+		startYear: number
+		startMonth: number
+		endYear: number
+		endMonth: number
+	} | null>(null);
+	const dateFieldsAreDirty = Boolean(
+		formState.dirtyFields.startYear
+		|| formState.dirtyFields.startMonth
+		|| formState.dirtyFields.endYear
+		|| formState.dirtyFields.endMonth,
+	);
+	if (
+		mode === "edit"
+		&& !dateFieldsAreDirty
+		&& startYear != null
+		&& startMonth != null
+		&& endYear != null
+		&& endMonth != null
+	) {
+		originalEditRangeRef.current = { startYear, startMonth, endYear, endMonth };
+	}
 	const selectedAgentId = useWatch({ control, name: "serviceFields.agent" as any });
 	const serviceIsOfficial = useWatch({ control, name: "serviceFields.isOfficial" as any }) as boolean | null | undefined;
 	const collocationPartnerType = useWatch({ control, name: "serviceFields.collocationPartnerType" as any }) as string | null | undefined;
@@ -411,8 +451,13 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 			setValue("startMonth", null, { shouldDirty: true, shouldValidate: false });
 			setValue("endYear", null, { shouldDirty: true, shouldValidate: false });
 			setValue("endMonth", null, { shouldDirty: true, shouldValidate: false });
+			if (mode === "edit") {
+				resetField("contractNumber", { defaultValue: "" });
+				resetField("description", { defaultValue: "" });
+				resetField("serviceFields", { defaultValue: {} as any });
+			}
 		}
-	}, [companyId, setValue, preserveDatesDuringResetRef]);
+	}, [companyId, mode, resetField, setValue, preserveDatesDuringResetRef]);
 
 	useEffect(() => {
 		const prev = prevStartYearRef.current;
@@ -636,18 +681,27 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 	const missingMonthsByYear = useMemo(() => {
 		const output = new Map<number, number[]>();
 		const raw = contractGaps.data?.missing_months_by_year;
-		if (!raw)
-			return output;
 
-		Object.entries(raw).forEach(([yearStr, months]) => {
+		Object.entries(raw ?? {}).forEach(([yearStr, months]) => {
 			const year = Number(yearStr);
 			if (!Number.isInteger(year))
 				return;
 			output.set(year, normalizeMonthList(months));
 		});
 
+		const originalRange = originalEditRangeRef.current;
+		if (mode === "edit" && originalRange) {
+			addJalaliRangeToMonths(
+				output,
+				originalRange.startYear,
+				originalRange.startMonth,
+				originalRange.endYear,
+				originalRange.endMonth,
+			);
+		}
+
 		return output;
-	}, [contractGaps.data]);
+	}, [contractGaps.data, mode, startYear, startMonth, endYear, endMonth, dateFieldsAreDirty]);
 
 	const baseYearOptions = useMemo(() => {
 		const yearsFromMissing = Array.from(missingMonthsByYear.keys()).sort((a, b) => a - b);
@@ -1098,7 +1152,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 	// }
 
 	return (
-		<Card className="w-full">
+		<ContractFormSection title="اطلاعات پایه قرارداد" className="w-full">
 			<BasicContent className="w-full">
 				<div className="contract-form-aligned-grid contract-form-aligned-grid--two" style={alignedLabelStyle}>
 					<ContractAlignedField label="نوع سرویس" labelId="contract-form-label-service">
@@ -1777,7 +1831,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 												selectProps={{ placeholder: "انتخاب نوع محاسبه", allowClear: true }}
 											/>
 											<ContractTypeSection
-												title="روش محاسبه قیمت"
+												title="نوع قرارداد"
 												name={`${base}.contractPricing` as any}
 											/>
 										</>
@@ -1880,7 +1934,20 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 						</ContractAlignedField>
 					</div>
 				</div>
+
+				{isSms
+					? (
+						<div className="contract-form-official-row">
+							<RHFProCheckbox<ContractFormValues, any>
+								name={"serviceFields.isOfficial" as any}
+								label=""
+								checkboxLabel="قرارداد رسمی است"
+								checkboxProps={{}}
+							/>
+						</div>
+					)
+					: null}
 			</BasicContent>
-		</Card>
+		</ContractFormSection>
 	);
 }

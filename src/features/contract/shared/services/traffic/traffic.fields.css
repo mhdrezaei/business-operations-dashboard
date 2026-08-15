@@ -1,0 +1,26 @@
+.traffic-pricing-list,
+.traffic-pricing-fields {
+	display: flex;
+	flex-direction: column;
+	gap: var(--contract-section-body-padding);
+}
+
+.traffic-pricing-list {
+	margin-top: var(--contract-section-body-padding);
+}
+
+.traffic-pricing-meta-fields {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	align-items: end;
+	gap: var(--contract-section-body-padding);
+}
+
+.traffic-pricing-meta-fields :where(.ant-form-item, .ant-pro-form-item) {
+	margin-bottom: 0;
+}
+
+.traffic-non-official-notice {
+	margin-top: var(--contract-section-body-padding);
+	color: var(--ant-colorWarning);
+}

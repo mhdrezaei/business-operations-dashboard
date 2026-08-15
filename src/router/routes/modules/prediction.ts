@@ -1,9 +1,9 @@
 import type { AppRouteRecordRaw } from "#src/router/types";
+import { SidebarPredictIcon } from "#src/icons/local-icons";
 import { ContainerLayout } from "#src/layout";
 import { prediction } from "#src/router/extra-info";
 import {
-	FileTextOutlined,
-	LineChartOutlined,
+	FileAddOutlined,
 	TableOutlined,
 } from "@ant-design/icons";
 import { createElement, lazy } from "react";
@@ -16,7 +16,7 @@ const routes: AppRouteRecordRaw[] = [
 		path: "/predictions",
 		Component: ContainerLayout,
 		handle: {
-			icon: createElement(LineChartOutlined),
+			icon: createElement(SidebarPredictIcon),
 			title: "\u067E\u06CC\u0634 \u0628\u06CC\u0646\u06CC \u0639\u0645\u0644\u06A9\u0631\u062F",
 			order: prediction,
 			accessDomain: "predictions",
@@ -28,7 +28,7 @@ const routes: AppRouteRecordRaw[] = [
 				path: "/predictions/new",
 				Component: CreatePredictionPage,
 				handle: {
-					icon: createElement(FileTextOutlined),
+					icon: createElement(FileAddOutlined),
 					title: "\u062B\u0628\u062A \u067E\u06CC\u0634 \u0628\u06CC\u0646\u06CC",
 					accessDomain: "predictions",
 					accessAction: "create",

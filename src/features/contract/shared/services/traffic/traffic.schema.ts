@@ -53,9 +53,34 @@ export const trafficServiceFieldsSchema = z
 		tehranUnit: z.enum(["GB/month", "Mbps"]).nullable().optional(),
 		provinceUnit: z.enum(["GB/month", "Mbps"]).nullable().optional(),
 	})
-	.superRefine((val) => {
+	.superRefine((val, ctx) => {
 		// ✅ If informal: nothing is validated
 		if (!val.isOfficial)
-			// eslint-disable-next-line no-useless-return
 			return;
+
+		const requiresTehran = val.tehranPricing != null;
+		const requiresProvince = val.provincePricing != null;
+		const validateLocations = (addenda: any[], basePath: (string | number)[]) => {
+			addenda.forEach((addendum, index) => {
+				const path = [...basePath, index];
+				if (requiresTehran && addendum?.tehranPricing == null) {
+					ctx.addIssue({
+						code: "custom",
+						path: [...path, "tehranPricing"],
+						message: "نوع قرارداد تهران در الحاقیه الزامی است",
+					});
+				}
+				if (requiresProvince && addendum?.provincePricing == null) {
+					ctx.addIssue({
+						code: "custom",
+						path: [...path, "provincePricing"],
+						message: "نوع قرارداد مراکز استانی در الحاقیه الزامی است",
+					});
+				}
+				if (Array.isArray(addendum?.children))
+					validateLocations(addendum.children, [...path, "children"]);
+			});
+		};
+
+		validateLocations(val.addenda ?? [], ["addenda"]);
 	});

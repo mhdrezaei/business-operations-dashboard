@@ -40,7 +40,7 @@ export const contractTypeSchema: z.ZodType<ContractTypeValue> = z
 	})
 	.superRefine((val, ctx) => {
 		if (val.type == null) {
-			ctx.addIssue({ code: "custom", path: ["type"], message: "روش محاسبه قیمت الزامی است" });
+			ctx.addIssue({ code: "custom", path: ["type"], message: "نوع قرارداد الزامی است" });
 			return;
 		}
 

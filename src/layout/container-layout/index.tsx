@@ -155,6 +155,7 @@ export default function ContainerLayout() {
 							>
 								<LayoutMenu
 									autoExpandCurrentMenu
+									sidebarStyle
 									menus={sideNavItems}
 									handleMenuSelect={handleMenuSelect}
 								/>

@@ -1,6 +1,6 @@
 import type { ContractFormValues, ContractServiceCode } from "./contract.form.types";
 import { z } from "zod";
-import { addendaRefineNoOverlapAndInsideContract } from "../../components/addenda/addenda.schema";
+import { addendaRefineValidAndNoOverlap } from "../../components/addenda/addenda.schema";
 import { serviceRegistry } from "../services/registry";
 
 function isBlankContractValue(value: unknown) {
@@ -85,7 +85,10 @@ const fixedStartSchema = z.object({
 
 const fixedEndSchema = z.object({
 	description: z.string().max(2000).optional(),
-	documents: z.array(z.any()),
+	documents: z.preprocess(
+		value => (Array.isArray(value) ? value : []),
+		z.array(z.any()),
+	),
 });
 
 export function buildContractSchema(serviceCode: ContractServiceCode | null) {
@@ -108,9 +111,7 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 				serviceFields: serviceFieldsSchema,
 			}),
 		)
-		.superRefine(addendaRefineNoOverlapAndInsideContract({
-			contractStartPath: ["startYear", "startMonth"],
-			contractEndPath: ["endYear", "endMonth"],
+		.superRefine(addendaRefineValidAndNoOverlap({
 			addendaPath: ["serviceFields", "addenda"],
 		}))
 		.superRefine((val, ctx) => {
@@ -447,26 +448,6 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 									message: "درصد سهم درآمد (مراکز استانی) الزامی است",
 								});
 							}
-						}
-					}
-
-					// ✅ PREMIUM: Revenue share percentage only when official + PREMIUM
-					if (isOfficial && val.companyType === "PREMIUM") {
-						const p = (val.serviceFields as any)?.premiumRevenuePercent;
-
-						if (p == null) {
-							ctx.addIssue({
-								code: "custom",
-								path: ["serviceFields", "premiumRevenuePercent"],
-								message: "درصد سهم درآمد الزامی است",
-							});
-						}
-						else if (typeof p !== "number" || !Number.isFinite(p) || p < 0 || p > 100) {
-							ctx.addIssue({
-								code: "custom",
-								path: ["serviceFields", "premiumRevenuePercent"],
-								message: "درصد باید بین 0 تا 100 باشد",
-							});
 						}
 					}
 				}

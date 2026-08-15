@@ -1,13 +1,23 @@
 import type { ArrayPath, FieldValues, Path, PathValue } from "react-hook-form";
+import type { AddendaMonthsByYear } from "./addenda.gaps";
+import { ContractSectionToneContext } from "#src/features/contract/shared/ui/form/components/contract-section-tone-context";
+import { ContractDashedBorder } from "#src/features/contract/shared/ui/form/components/ContractDashedBorder";
+import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import { RHFProText, RHFProTextArea, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { message } from "#src/utils";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import { Button, Card, Collapse } from "antd";
-import React, { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Button, Collapse } from "antd";
 
-import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useFormContext, useWatch } from "react-hook-form";
 import { MONTH_OPTIONS, YEAR_OPTIONS } from "../../constant/jalali-date-options";
+import { contractGapsQuery } from "../../shared/queries/contract.queries";
 import { ContractTypeSection } from "../contract-type/ContractTypeSection";
+import {
+	buildAddendaMonthsByYear,
+	isAvailableAddendaMonth,
+} from "./addenda.gaps";
 import { defaultAddendumValue } from "./addenda.types";
 
 const p = (base: string, path: string) => `${base}.${path}` as any;
@@ -31,28 +41,32 @@ function overlap(aStart: number, aEnd: number, bStart: number, bEnd: number) {
 	return aStart <= bEnd && aEnd >= bStart;
 }
 
-function monthsInYearOptions(year: number | string, startKey: number, endKey: number) {
-	const yn = toNum(year);
-	if (yn == null)
-		return MONTH_OPTIONS as any[];
+function readDisplayNumber(value: unknown) {
+	if (value == null || typeof value !== "object")
+		return null;
+	const row = value as Record<string, unknown>;
+	const displayNumber = row.displayAddendumNumber ?? row.display_addendum_number;
+	return displayNumber == null || !String(displayNumber).trim() ? null : String(displayNumber);
+}
 
-	const startY = Math.floor(startKey / 100);
-	const startM = startKey % 100;
-	const endY = Math.floor(endKey / 100);
-	const endM = endKey % 100;
+function getNextDisplayNumber(items: unknown[], prefix?: string) {
+	const usedNumbers = new Set<number>();
+	for (const item of items) {
+		const displayNumber = readDisplayNumber(item);
+		if (!displayNumber)
+			continue;
 
-	let minM = 1;
-	let maxM = 12;
+		const suffix = prefix
+			? displayNumber.startsWith(`${prefix}.`) ? displayNumber.slice(prefix.length + 1) : null
+			: displayNumber;
+		if (suffix && /^\d+$/.test(suffix))
+			usedNumbers.add(Number(suffix));
+	}
 
-	if (yn === startY)
-		minM = startM;
-	if (yn === endY)
-		maxM = endM;
-
-	return (MONTH_OPTIONS as any[]).filter((o) => {
-		const mv = toNum(o.value);
-		return mv != null && mv >= minM && mv <= maxM;
-	});
+	let nextNumber = 1;
+	while (usedNumbers.has(nextNumber))
+		nextNumber++;
+	return prefix ? `${prefix}.${nextNumber}` : String(nextNumber);
 }
 
 interface Props<TFV extends FieldValues> {
@@ -68,6 +82,16 @@ interface Props<TFV extends FieldValues> {
 	contractStartMonthPath: Path<TFV>
 	contractEndYearPath: Path<TFV>
 	contractEndMonthPath: Path<TFV>
+	level?: number
+	displayPrefix?: string
+	addendaFallback?: unknown[]
+	contractRangeFallback?: {
+		startYear?: number | null
+		startMonth?: number | null
+		endYear?: number | null
+		endMonth?: number | null
+	}
+	availableMonthsFallback?: AddendaMonthsByYear
 }
 
 export function ContractAddendaSection<TFV extends FieldValues>({
@@ -82,45 +106,129 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 	contractStartMonthPath,
 	contractEndYearPath,
 	contractEndMonthPath,
+	level = 0,
+	displayPrefix,
+	addendaFallback,
+	contractRangeFallback,
+	availableMonthsFallback,
 }: Props<TFV>) {
-	const { control, getValues, setError, clearErrors, trigger } = useFormContext<TFV>();
-	const addendaValues = useWatch({
+	const { control, getValues, setValue, setError, clearErrors, trigger } = useFormContext<TFV>();
+	const initialAddendaRef = useRef<unknown[]>((() => {
+		const initialValue = getValues(name as unknown as Path<TFV>);
+		return Array.isArray(initialValue) ? initialValue : (addendaFallback ?? []);
+	})());
+	const watchedAddendaValues = useWatch({
 		control,
 		name: name as unknown as Path<TFV>,
+		defaultValue: initialAddendaRef.current as PathValue<TFV, typeof name>,
+		disabled: level > 0,
 	}) as PathValue<TFV, typeof name> | undefined;
+	const addendaValues = level === 0 ? watchedAddendaValues : addendaFallback;
+	const watchedServiceId = useWatch({ control, name: "serviceId" as Path<TFV>, disabled: level > 0 }) as number | null | undefined;
+	const watchedCompanyId = useWatch({ control, name: "companyId" as Path<TFV>, disabled: level > 0 }) as number | null | undefined;
+	const watchedCompanyType = useWatch({ control, name: "companyType" as Path<TFV>, disabled: level > 0 }) as string | null | undefined;
+	const contractGaps = useQuery(contractGapsQuery({
+		serviceId: level === 0 ? watchedServiceId : null,
+		companyId: level === 0 ? watchedCompanyId : null,
+		companyType: level === 0 ? watchedCompanyType : null,
+	}));
+	const stableAddendaRef = useRef<unknown[]>(initialAddendaRef.current);
+	const fields = useMemo(() => {
+		const watchedRows = Array.isArray(addendaValues) ? addendaValues : stableAddendaRef.current;
+		const rowCount = Math.max(watchedRows.length, stableAddendaRef.current.length);
+		return Array.from({ length: rowCount }, (_, idx) => {
+			const row = watchedRows[idx];
+			const stableRow = stableAddendaRef.current[idx];
+			if (row == null || typeof row !== "object")
+				return stableRow ?? row;
+			if (stableRow == null || typeof stableRow !== "object")
+				return row;
+
+			const definedWatchedValues = Object.fromEntries(
+				Object.entries(row as Record<string, unknown>)
+					.filter(([, value]) => value !== undefined),
+			);
+			return {
+				...(stableRow as Record<string, unknown>),
+				...definedWatchedValues,
+			};
+		});
+	}, [addendaValues]);
+	useEffect(() => {
+		stableAddendaRef.current = fields;
+	}, [fields]);
 	// Date of original contract
-	const contractStartYear = useWatch({ control, name: contractStartYearPath }) as any;
-	const contractStartMonth = useWatch({ control, name: contractStartMonthPath }) as any;
-	const contractEndYear = useWatch({ control, name: contractEndYearPath }) as any;
-	const contractEndMonth = useWatch({ control, name: contractEndMonthPath }) as any;
+	const watchedContractStartYear = useWatch({ control, name: contractStartYearPath, disabled: level > 0 }) as any;
+	const watchedContractStartMonth = useWatch({ control, name: contractStartMonthPath, disabled: level > 0 }) as any;
+	const watchedContractEndYear = useWatch({ control, name: contractEndYearPath, disabled: level > 0 }) as any;
+	const watchedContractEndMonth = useWatch({ control, name: contractEndMonthPath, disabled: level > 0 }) as any;
+	const contractStartYear = level === 0 ? watchedContractStartYear : contractRangeFallback?.startYear;
+	const contractStartMonth = level === 0 ? watchedContractStartMonth : contractRangeFallback?.startMonth;
+	const contractEndYear = level === 0 ? watchedContractEndYear : contractRangeFallback?.endYear;
+	const contractEndMonth = level === 0 ? watchedContractEndMonth : contractRangeFallback?.endMonth;
 
 	const contractStartKey = ymToKey(contractStartYear, contractStartMonth);
 	const contractEndKey = ymToKey(contractEndYear, contractEndMonth);
 	const contractRangeReady = contractStartKey != null && contractEndKey != null && contractStartKey <= contractEndKey;
+	const availableMonthsByYear = useMemo(
+		() => level === 0
+			? buildAddendaMonthsByYear(
+				contractGaps.data?.missing_months_by_year,
+				contractRangeReady
+					? {
+						startYear: Number(contractStartYear),
+						startMonth: Number(contractStartMonth),
+						endYear: Number(contractEndYear),
+						endMonth: Number(contractEndMonth),
+					}
+					: null,
+			)
+			: (availableMonthsFallback ?? new Map()),
+		[
+			level,
+			contractGaps.data?.missing_months_by_year,
+			contractRangeReady,
+			contractStartYear,
+			contractStartMonth,
+			contractEndYear,
+			contractEndMonth,
+			availableMonthsFallback,
+		],
+	);
 
-	const { fields, append, remove } = useFieldArray({ control, name });
 	const [activeKey, setActiveKey] = useState<string | undefined>(undefined);
+	const getAddendumValue = (idx: number, key: string): any => {
+		const registeredValue = getValues(p(`${name}.${idx}`, key));
+		if (registeredValue !== undefined)
+			return registeredValue;
 
-	// ✅ Allowed years based on contract period
+		const watchedAddendum = Array.isArray(addendaValues) ? addendaValues[idx] : undefined;
+		if (watchedAddendum != null && typeof watchedAddendum === "object") {
+			const watchedValue = (watchedAddendum as Record<string, unknown>)[key];
+			if (watchedValue !== undefined)
+				return watchedValue;
+		}
+
+		return (fields[idx] as Record<string, unknown> | undefined)?.[key];
+	};
+
+	// Every addendum at every depth gets the same gaps options as the original contract.
 	const allowedYears = useMemo(() => {
-		if (!contractRangeReady)
-			return YEAR_OPTIONS;
-		const sy = Math.floor(contractStartKey! / 100);
-		const ey = Math.floor(contractEndKey! / 100);
-		return (YEAR_OPTIONS as any[]).filter(o => o.value >= sy && o.value <= ey);
-	}, [contractRangeReady, contractStartKey, contractEndKey]);
+		const years = new Set(availableMonthsByYear.keys());
+		return (YEAR_OPTIONS as any[]).filter(o => years.has(Number(o.value)));
+	}, [availableMonthsByYear]);
 
 	// ✅ Instant check for overlap and within range (we throw an error on the same startYear field)
 	const validateAddendumRangeNow = (idx: number) => {
 		if (!contractRangeReady)
-			return;
+			return false;
 
 		const base = `${name}.${idx}`;
 
-		const sy = getValues(p(base, "startYear")) as number | null;
-		const sm = getValues(p(base, "startMonth")) as number | null;
-		const ey = getValues(p(base, "endYear")) as number | null;
-		const em = getValues(p(base, "endMonth")) as number | null;
+		const sy = getAddendumValue(idx, "startYear") as number | null;
+		const sm = getAddendumValue(idx, "startMonth") as number | null;
+		const ey = getAddendumValue(idx, "endYear") as number | null;
+		const em = getAddendumValue(idx, "endMonth") as number | null;
 
 		const sKey = ymToKey(sy, sm);
 		const eKey = ymToKey(ey, em);
@@ -128,19 +236,21 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 		// Don't show anything until it's complete.
 		if (sKey == null || eKey == null) {
 			clearErrors(p(base, "startYear"));
-			return;
+			return false;
 		}
 
 		// invalid
 		if (sKey > eKey) {
 			setError(p(base, "startYear"), { type: "custom", message: "بازه تاریخ الحاقیه نامعتبر است" } as any);
-			return;
+			return false;
 		}
 
-		// Out of contract
-		if (sKey < contractStartKey! || eKey > contractEndKey!) {
-			setError(p(base, "startYear"), { type: "custom", message: "بازه تاریخ الحاقیه باید داخل بازه قرارداد باشد" } as any);
-			return;
+		if (
+			!isAvailableAddendaMonth(availableMonthsByYear, Number(sy), Number(sm))
+			|| !isAvailableAddendaMonth(availableMonthsByYear, Number(ey), Number(em))
+		) {
+			setError(p(base, "startYear"), { type: "custom", message: "تاریخ شروع و پایان الحاقیه باید در بازه‌های مجاز API gaps باشد" } as any);
+			return false;
 		}
 
 		// overlap with others
@@ -148,11 +258,10 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 			if (i === idx)
 				continue;
 
-			const obase = `${name}.${i}`;
-			const osy = getValues(p(obase, "startYear")) as number | null;
-			const osm = getValues(p(obase, "startMonth")) as number | null;
-			const oey = getValues(p(obase, "endYear")) as number | null;
-			const oem = getValues(p(obase, "endMonth")) as number | null;
+			const osy = getAddendumValue(i, "startYear") as number | null;
+			const osm = getAddendumValue(i, "startMonth") as number | null;
+			const oey = getAddendumValue(i, "endYear") as number | null;
+			const oem = getAddendumValue(i, "endMonth") as number | null;
 
 			const osKey = ymToKey(osy, osm);
 			const oeKey = ymToKey(oey, oem);
@@ -162,12 +271,13 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 
 			if (overlap(sKey, eKey, osKey, oeKey)) {
 				setError(p(base, "startYear"), { type: "custom", message: "این بازه با یکی از الحاقیه‌های قبلی هم‌پوشانی دارد" } as any);
-				return;
+				return false;
 			}
 		}
 
 		// If everything was OK
 		clearErrors(p(base, "startYear"));
+		return true;
 	};
 
 	const addAddendum = async () => {
@@ -186,10 +296,10 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 			const lastIdx = fields.length - 1;
 			const base = `${name}.${lastIdx}`;
 
-			const sy = getValues(p(base, "startYear"));
-			const sm = getValues(p(base, "startMonth"));
-			const ey = getValues(p(base, "endYear"));
-			const em = getValues(p(base, "endMonth"));
+			const sy = getAddendumValue(lastIdx, "startYear");
+			const sm = getAddendumValue(lastIdx, "startMonth");
+			const ey = getAddendumValue(lastIdx, "endYear");
+			const em = getAddendumValue(lastIdx, "endMonth");
 
 			if (ymToKey(sy, sm) == null || ymToKey(ey, em) == null) {
 				message.warning("ابتدا تاریخ‌های الحاقیه قبلی را کامل کنید.");
@@ -198,166 +308,246 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 			}
 
 			// ✅ Let's validate here that there is no overlap
-			validateAddendumRangeNow(lastIdx);
-			const ok = await trigger([p(base, "startYear") as any]);
-			if (!ok) {
+			const fieldsAreValid = await trigger([p(base, "startYear") as any]);
+			const rangeIsValid = validateAddendumRangeNow(lastIdx);
+			if (!fieldsAreValid || !rangeIsValid) {
 				setActiveKey(String(lastIdx));
 				return;
 			}
 		}
 
 		const idx = fields.length;
-		append(structuredClone(defaultAddendumValue) as any);
+		const nextAddendum = structuredClone(defaultAddendumValue);
+		nextAddendum.displayAddendumNumber = getNextDisplayNumber(fields, displayPrefix);
+		const nextFields = [...fields, nextAddendum];
+		stableAddendaRef.current = nextFields;
+		setValue(name as unknown as Path<TFV>, nextFields as any, {
+			shouldDirty: true,
+			shouldTouch: true,
+		});
 		setActiveKey(String(idx));
 	};
 
 	const removeAddendum = (idx: number) => {
-		remove(idx);
+		const nextFields = fields.filter((_, fieldIndex) => fieldIndex !== idx);
+		stableAddendaRef.current = nextFields;
+		setValue(name as unknown as Path<TFV>, nextFields as any, {
+			shouldDirty: true,
+			shouldTouch: true,
+		});
 		const next = idx === 0 ? "0" : String(idx - 1);
 		setActiveKey(fields.length <= 1 ? undefined : next);
 	};
 
-	const collapseItems = useMemo(() => {
+	const addChildAddendum = (idx: number, parentDisplayNumber?: string) => {
+		const startKey = ymToKey(
+			getAddendumValue(idx, "startYear"),
+			getAddendumValue(idx, "startMonth"),
+		);
+		const endKey = ymToKey(
+			getAddendumValue(idx, "endYear"),
+			getAddendumValue(idx, "endMonth"),
+		);
+
+		if (startKey == null || endKey == null || startKey > endKey) {
+			message.warning("ابتدا تاریخ شروع و پایان این الحاقیه را کامل کنید.");
+			return;
+		}
+
+		const children = getAddendumValue(idx, "children");
+		const childItems = Array.isArray(children) ? children : [];
+		const nextChild = structuredClone(defaultAddendumValue);
+		nextChild.displayAddendumNumber = getNextDisplayNumber(childItems, parentDisplayNumber);
+		setValue(
+			p(`${name}.${idx}`, "children"),
+			[...childItems, nextChild] as any,
+			{ shouldDirty: true, shouldTouch: true },
+		);
+	};
+
+	const treeItems = useMemo(() => {
 		return fields.map((f, idx) => {
 			const base = `${name}.${idx}`;
+			const watchedAddendum = Array.isArray(addendaValues) ? addendaValues[idx] : undefined;
+			const definedWatchedValues = watchedAddendum != null && typeof watchedAddendum === "object"
+				? Object.fromEntries(
+					Object.entries(watchedAddendum as Record<string, unknown>)
+						.filter(([, value]) => value !== undefined),
+				)
+				: {};
+			const addendum = {
+				...(f as Record<string, unknown>),
+				...definedWatchedValues,
+			} as Record<string, any>;
+			const serverDisplayNumber = readDisplayNumber(addendum);
+			const generatedDisplayNumber = addendum.id == null
+				? displayPrefix ? `${displayPrefix}.${idx + 1}` : String(idx + 1)
+				: null;
+			const displayNumber = serverDisplayNumber ?? generatedDisplayNumber;
+			const addendumTitle = displayNumber != null && String(displayNumber).trim()
+				? String(displayNumber)
+				: String(idx + 1);
 
-			const sy = getValues(p(base, "startYear")) as number | null;
-			const sm = getValues(p(base, "startMonth")) as number | null;
-			const ey = getValues(p(base, "endYear")) as number | null;
-			const em = getValues(p(base, "endMonth")) as number | null;
+			const sy = addendum.startYear as number | null;
+			const sm = addendum.startMonth as number | null;
+			const ey = addendum.endYear as number | null;
+			const em = addendum.endMonth as number | null;
 
-			const headerHint
-				= sy && sm && ey && em ? `(${sy}/${sm} تا ${ey}/${em})` : "(تاریخ‌ها تکمیل نشده)";
+			const headerHint = sy && sm && ey && em ? `(${sy}/${sm} تا ${ey}/${em})` : null;
+			const startMonthOptions = sy
+				? (MONTH_OPTIONS as any[]).filter(option => availableMonthsByYear.get(Number(sy))?.includes(Number(option.value)))
+				: [];
 
-			const startMonthOptions
-				= contractRangeReady && sy ? monthsInYearOptions(sy, contractStartKey!, contractEndKey!) : MONTH_OPTIONS;
-
-			const endMonthOptions
-				= contractRangeReady && ey ? monthsInYearOptions(ey, contractStartKey!, contractEndKey!) : MONTH_OPTIONS;
+			const endMonthOptions = ey
+				? (MONTH_OPTIONS as any[]).filter(option => availableMonthsByYear.get(Number(ey))?.includes(Number(option.value)))
+				: [];
 
 			return {
-				key: String(idx),
-				label: (
-					<div className="flex justify-between items-center w-full gap-3">
-						<div className="font-bold">
-							{`الحاقیه ${idx + 1}`}
-							{" "}
-							<span className="opacity-75 font-medium">{headerHint}</span>
-						</div>
-
-						<Button
-							danger
-							size="small"
-							icon={<DeleteOutlined />}
-							onClick={(e) => {
-								e.stopPropagation();
-								removeAddendum(idx);
-							}}
-						>
-							حذف الحاقیه
-						</Button>
-					</div>
+				reactKey: String(
+					addendum.id
+					?? addendum.displayAddendumNumber
+					?? addendum.display_addendum_number
+					?? `${name}.${idx}`,
 				),
-				children: (
-					<Card className="[&_.ant-pro-card-body]:p-0">
-						<div className="grid grid-cols-4 gap-3 mt-2">
-							<RHFSelect
-								name={p(base, "startYear")}
-								label="سال شروع الحاقیه"
-								options={allowedYears as any}
-								selectProps={{ placeholder: "سال", allowClear: true }}
-								onValueChange={async () => {
-									validateAddendumRangeNow(idx);
-									await trigger([
-										p(base, "startYear") as any,
-										p(base, "startMonth") as any,
-										p(base, "endYear") as any,
-										p(base, "endMonth") as any,
-									]);
-								}}
-							/>
+				addendum,
+				addendumTitle,
+				displayNumber,
+				hasChildren: Array.isArray(addendum.children) && addendum.children.length > 0,
+				collapseItem: {
+					key: String(idx),
+					label: (
+						<div className="flex justify-between items-center w-full gap-3">
+							<div className="flex items-center gap-2 font-bold">
+								<span className="contract-addenda-item-badge">{addendumTitle}</span>
+								{headerHint ? <span className="opacity-75 font-medium">{headerHint}</span> : null}
+							</div>
 
-							<RHFSelect
-								name={p(base, "startMonth")}
-								label="ماه شروع"
-								options={startMonthOptions as any}
-								onValueChange={async () => {
-									validateAddendumRangeNow(idx);
-									await trigger([
-										p(base, "startYear") as any,
-										p(base, "startMonth") as any,
-										p(base, "endYear") as any,
-										p(base, "endMonth") as any,
-									]);
+							<Button
+								danger
+								size="small"
+								className="contract-dashed-action"
+								icon={<DeleteOutlined />}
+								onClick={(e) => {
+									e.stopPropagation();
+									removeAddendum(idx);
 								}}
-								selectProps={{
-									placeholder: "ماه",
-									allowClear: true,
-								}}
-							/>
-
-							<RHFSelect
-								name={p(base, "endYear")}
-								label="سال پایان الحاقیه"
-								options={allowedYears as any}
-								onValueChange={async () => {
-									validateAddendumRangeNow(idx);
-									await trigger([
-										p(base, "startYear") as any,
-										p(base, "startMonth") as any,
-										p(base, "endYear") as any,
-										p(base, "endMonth") as any,
-									]);
-								}}
-								selectProps={{
-									placeholder: "سال",
-									allowClear: true,
-								}}
-							/>
-
-							<RHFSelect
-								name={p(base, "endMonth")}
-								label="ماه پایان"
-								options={endMonthOptions as any}
-								onValueChange={async () => {
-									validateAddendumRangeNow(idx);
-									await trigger([
-										p(base, "startYear") as any,
-										p(base, "startMonth") as any,
-										p(base, "endYear") as any,
-										p(base, "endMonth") as any,
-									]);
-								}}
-								selectProps={{
-									placeholder: "ماه",
-									allowClear: true,
-								}}
-							/>
+							>
+								حذف الحاقیه
+							</Button>
 						</div>
+					),
+					children: (
+						<div className="contract-addenda-content">
+							<div className="grid grid-cols-4 gap-3 mt-2">
+								<RHFSelect
+									name={p(base, "startYear")}
+									label="سال شروع الحاقیه"
+									options={allowedYears as any}
+									selectProps={{ placeholder: "سال", allowClear: true }}
+									onValueChange={async () => {
+										await trigger([
+											p(base, "startYear") as any,
+											p(base, "startMonth") as any,
+											p(base, "endYear") as any,
+											p(base, "endMonth") as any,
+										]);
+										validateAddendumRangeNow(idx);
+									}}
+								/>
 
-						<div className="mt-3">
-							<RHFProText
-								name={p(base, "contractNumber")}
-								label="شماره قرارداد الحاقیه"
-								inputProps={{ placeholder: "مثلاً ADD-1405-01" }}
-							/>
-						</div>
+								<RHFSelect
+									name={p(base, "startMonth")}
+									label="ماه شروع"
+									options={startMonthOptions as any}
+									onValueChange={async () => {
+										await trigger([
+											p(base, "startYear") as any,
+											p(base, "startMonth") as any,
+											p(base, "endYear") as any,
+											p(base, "endMonth") as any,
+										]);
+										validateAddendumRangeNow(idx);
+									}}
+									selectProps={{
+										placeholder: "ماه",
+										allowClear: true,
+									}}
+								/>
 
-						<div className="mt-3">
-							{renderAddendumFields
-								? renderAddendumFields(base, idx)
-								: <ContractTypeSection title={contractTypeTitle} name={p(base, contractTypeFieldKey)} />}
-						</div>
+								<RHFSelect
+									name={p(base, "endYear")}
+									label="سال پایان الحاقیه"
+									options={allowedYears as any}
+									onValueChange={async () => {
+										await trigger([
+											p(base, "startYear") as any,
+											p(base, "startMonth") as any,
+											p(base, "endYear") as any,
+											p(base, "endMonth") as any,
+										]);
+										validateAddendumRangeNow(idx);
+									}}
+									selectProps={{
+										placeholder: "سال",
+										allowClear: true,
+									}}
+								/>
 
-						<div className="mt-3">
-							<RHFProTextArea
-								name={p(base, "description")}
-								label="توضیح الحاقیه"
-								textAreaProps={{ placeholder: "توضیح اختیاری برای این الحاقیه" }}
-							/>
+								<RHFSelect
+									name={p(base, "endMonth")}
+									label="ماه پایان"
+									options={endMonthOptions as any}
+									onValueChange={async () => {
+										await trigger([
+											p(base, "startYear") as any,
+											p(base, "startMonth") as any,
+											p(base, "endYear") as any,
+											p(base, "endMonth") as any,
+										]);
+										validateAddendumRangeNow(idx);
+									}}
+									selectProps={{
+										placeholder: "ماه",
+										allowClear: true,
+									}}
+								/>
+							</div>
+
+							<div className="mt-3">
+								<RHFProText
+									name={p(base, "contractNumber")}
+									label="شماره قرارداد الحاقیه"
+									inputProps={{ placeholder: "مثلاً ADD-1405-01" }}
+								/>
+							</div>
+
+							<div className="mt-3">
+								{renderAddendumFields
+									? renderAddendumFields(base, idx)
+									: <ContractTypeSection title={contractTypeTitle} name={p(base, contractTypeFieldKey)} />}
+							</div>
+
+							<div className="mt-3">
+								<RHFProTextArea
+									name={p(base, "description")}
+									label="توضیح الحاقیه"
+									textAreaProps={{ placeholder: "توضیح اختیاری برای این الحاقیه" }}
+								/>
+							</div>
+
+							<div className="mt-3 flex justify-end">
+								<Button
+									className="contract-dashed-action"
+									icon={<PlusOutlined />}
+									onClick={() => addChildAddendum(idx, displayNumber ?? undefined)}
+									disabled={!canAddAddendum}
+								>
+									افزودن زیرالحاقیه
+								</Button>
+							</div>
 						</div>
-					</Card>
-				),
+					),
+				},
 			};
 		});
 	}, [
@@ -366,6 +556,7 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 		getValues,
 		addendaValues,
 		allowedYears,
+		availableMonthsByYear,
 		contractRangeReady,
 		contractStartKey,
 		contractEndKey,
@@ -375,19 +566,11 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 		canAddAddendum,
 		addendumAddBlockedMessage,
 		trigger,
+		displayPrefix,
 	]);
 
-	return (
-		<Card
-			bordered
-			className="rounded-md mt-3"
-			title={title}
-			extra={(
-				<Button icon={<PlusOutlined />} onClick={addAddendum} disabled={!contractRangeReady || !canAddAddendum}>
-					افزودن الحاقیه
-				</Button>
-			)}
-		>
+	const notices = (
+		<>
 			{!contractRangeReady
 				? (
 					<div className="opacity-75">برای افزودن الحاقیه، ابتدا تاریخ شروع و پایان قرارداد را انتخاب کنید.</div>
@@ -398,17 +581,81 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 					<div className="opacity-75 mt-2">{addendumAddBlockedMessage}</div>
 				)
 				: null}
+		</>
+	);
 
-			{fields.length === 0
-				? null
-				: (
-					<Collapse
-						accordion
-						activeKey={activeKey}
-						onChange={k => setActiveKey(Array.isArray(k) ? String(k[0] ?? "") : (k ? String(k) : undefined))}
-						items={collapseItems as any}
-					/>
+	const tree = treeItems.length === 0
+		? null
+		: (
+			<div className="flex flex-col gap-3">
+				{treeItems.map((item, idx) => {
+					const itemKey = String(idx);
+					return (
+						<div key={item.reactKey}>
+							<div className="contract-addenda-item">
+								<ContractDashedBorder />
+								<Collapse
+									className="contract-addenda-collapse"
+									activeKey={activeKey === itemKey ? [itemKey] : []}
+									onChange={(key) => {
+										const nextKey = Array.isArray(key) ? key[0] : key;
+										setActiveKey(nextKey == null ? undefined : String(nextKey));
+									}}
+									items={[item.collapseItem] as any}
+								/>
+							</div>
+							{item.hasChildren
+								? (
+									<div className="contract-addenda-tree-branch relative mt-3 pr-6">
+										<ContractAddendaSection<TFV>
+											name={p(`${name}.${idx}`, "children")}
+											displayPrefix={item.displayNumber ?? undefined}
+											addendaFallback={item.addendum.children}
+											contractTypeTitle={contractTypeTitle}
+											contractTypeFieldKey={contractTypeFieldKey}
+											renderAddendumFields={renderAddendumFields}
+											canAddAddendum={canAddAddendum}
+											addendumAddBlockedMessage={addendumAddBlockedMessage}
+											contractStartYearPath={p(`${name}.${idx}`, "startYear")}
+											contractStartMonthPath={p(`${name}.${idx}`, "startMonth")}
+											contractEndYearPath={p(`${name}.${idx}`, "endYear")}
+											contractEndMonthPath={p(`${name}.${idx}`, "endMonth")}
+											contractRangeFallback={{
+												startYear: contractStartYear,
+												startMonth: contractStartMonth,
+												endYear: contractEndYear,
+												endMonth: contractEndMonth,
+											}}
+											availableMonthsFallback={availableMonthsByYear}
+											level={level + 1}
+										/>
+									</div>
+								)
+								: null}
+						</div>
+					);
+				})}
+			</div>
+		);
+
+	if (level > 0)
+		return <ContractSectionToneContext.Provider value="addenda">{tree}</ContractSectionToneContext.Provider>;
+
+	return (
+		<ContractSectionToneContext.Provider value="addenda">
+			<ContractFormSection
+				title={title}
+				tone="addenda"
+				className="contract-addenda-section mt-3"
+				extra={(
+					<Button className="contract-dashed-action" icon={<PlusOutlined />} onClick={addAddendum} disabled={!contractRangeReady || !canAddAddendum}>
+						افزودن الحاقیه
+					</Button>
 				)}
-		</Card>
+			>
+				{notices}
+				{tree}
+			</ContractFormSection>
+		</ContractSectionToneContext.Provider>
 	);
 }

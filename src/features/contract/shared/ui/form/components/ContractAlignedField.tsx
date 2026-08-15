@@ -77,7 +77,6 @@ export function ContractAlignedField({
 					? (
 						<span className="contract-form-field__label-text">
 							{label}
-							:
 						</span>
 					)
 					: null}

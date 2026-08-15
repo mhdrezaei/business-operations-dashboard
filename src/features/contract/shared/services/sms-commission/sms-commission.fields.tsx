@@ -5,8 +5,8 @@ import {
 	ContractAlignedField,
 	useContractAlignedLabelWidth,
 } from "#src/features/contract/shared/ui/form/components/ContractAlignedField";
+import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
-import { Card } from "antd";
 import { useEffect, useMemo, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
@@ -244,15 +244,15 @@ export function SmsCommissionFields() {
 
 		return (
 			<div
-				className="grid grid-cols-2 gap-3"
+				className="contract-form-aligned-grid contract-form-aligned-grid--two"
 				style={alignedLabelStyle}
 			>
 				<ContractAlignedField label="کارمزد دریافت اولیه">
 					<RHFProNumber<ContractFormValues, any>
 						name={nameOf("initialCommission") as any}
 						label=""
-						inputProps={{ placeholder: "مثلاً 110" }}
-						formItemProps={{ className: "mb-0" }}
+						inputProps={{ placeholder: "مثلاً 110", addonAfter: "ریال" }}
+						formItemProps={{ className: "contract-type-currency-field mb-0" }}
 					/>
 				</ContractAlignedField>
 
@@ -260,8 +260,8 @@ export function SmsCommissionFields() {
 					<RHFProNumber<ContractFormValues, any>
 						name={nameOf("finalCommission") as any}
 						label=""
-						inputProps={{ placeholder: "مثلاً 150" }}
-						formItemProps={{ className: "mb-0" }}
+						inputProps={{ placeholder: "مثلاً 150", addonAfter: "ریال" }}
+						formItemProps={{ className: "contract-type-currency-field mb-0" }}
 					/>
 				</ContractAlignedField>
 
@@ -269,9 +269,9 @@ export function SmsCommissionFields() {
 					<RHFProNumber<ContractFormValues, any>
 						name={nameOf("expertPercent") as any}
 						label=""
-						inputProps={{ placeholder: "مثلاً 20" }}
+						inputProps={{ placeholder: "مثلاً 20", addonAfter: "درصد" }}
 						enableGrouping={false}
-						formItemProps={{ className: "mb-0" }}
+						formItemProps={{ className: "contract-type-currency-field mb-0" }}
 					/>
 				</ContractAlignedField>
 
@@ -279,9 +279,9 @@ export function SmsCommissionFields() {
 					<RHFProNumber<ContractFormValues, any>
 						name={nameOf("telecomPercent") as any}
 						label=""
-						inputProps={{ placeholder: "مثلاً 80" }}
+						inputProps={{ placeholder: "مثلاً 80", addonAfter: "درصد" }}
 						enableGrouping={false}
-						formItemProps={{ className: "mb-0" }}
+						formItemProps={{ className: "contract-type-currency-field mb-0" }}
 					/>
 				</ContractAlignedField>
 
@@ -289,9 +289,9 @@ export function SmsCommissionFields() {
 					<RHFProNumber<ContractFormValues, any>
 						name={nameOf("firstPartySharePercent") as any}
 						label=""
-						inputProps={{ placeholder: "مثلاً 20" }}
+						inputProps={{ placeholder: "مثلاً 20", addonAfter: "درصد" }}
 						enableGrouping={false}
-						formItemProps={{ className: "mb-0" }}
+						formItemProps={{ className: "contract-type-currency-field mb-0" }}
 					/>
 				</ContractAlignedField>
 
@@ -299,9 +299,9 @@ export function SmsCommissionFields() {
 					<RHFProNumber<ContractFormValues, any>
 						name={nameOf("regionSharePercent") as any}
 						label=""
-						inputProps={{ placeholder: "مثلاً 30" }}
+						inputProps={{ placeholder: "مثلاً 30", addonAfter: "درصد" }}
 						enableGrouping={false}
-						formItemProps={{ className: "mb-0" }}
+						formItemProps={{ className: "contract-type-currency-field mb-0" }}
 					/>
 				</ContractAlignedField>
 
@@ -310,9 +310,9 @@ export function SmsCommissionFields() {
 						<RHFProNumber<ContractFormValues, any>
 							name={nameOf("salesAgentSharePercent") as any}
 							label=""
-							inputProps={{ placeholder: "مثلاً 50" }}
+							inputProps={{ placeholder: "مثلاً 50", addonAfter: "درصد" }}
 							enableGrouping={false}
-							formItemProps={{ className: "mb-0" }}
+							formItemProps={{ className: "contract-type-currency-field mb-0" }}
 						/>
 					</ContractAlignedField>
 				</div>
@@ -322,9 +322,9 @@ export function SmsCommissionFields() {
 
 	return (
 		<>
-			<Card variant="outlined" className="rounded-md [&_.ant-pro-card-body]:p-4">
+			<ContractFormSection title="کارمزدها و درصدها" tone="gold">
 				{renderCommissionGrid()}
-			</Card>
+			</ContractFormSection>
 
 			{showAddenda
 				? (

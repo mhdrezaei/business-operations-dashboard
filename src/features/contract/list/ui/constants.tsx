@@ -206,6 +206,8 @@ export function getContractColumns({
 			dataIndex: "addenda_count",
 			width: 120,
 			search: false,
+			align: "center",
+			render: (_, record) => <Tag bordered={false}>{record.addenda_count ?? 0}</Tag>,
 		},
 
 		{

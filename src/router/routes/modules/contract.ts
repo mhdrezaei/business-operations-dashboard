@@ -1,13 +1,16 @@
 import type { AppRouteRecordRaw } from "#src/router/types";
 
+import { SidebarContractIcon } from "#src/icons/local-icons";
 import { ContainerLayout } from "#src/layout";
 import { $t } from "#src/locales";
 
 import { contract } from "#src/router/extra-info";
-import { lazy } from "react";
+import { EditOutlined, FileAddOutlined, SnippetsOutlined, UnorderedListOutlined } from "@ant-design/icons";
+import { createElement, lazy } from "react";
 
 const CreateContractPage = lazy(() => import("#src/pages/contracts/"));
 const EditContractPage = lazy(() => import("#src/pages/contracts/edit"));
+const EditContractFormPage = lazy(() => import("#src/pages/contracts/edit-contract"));
 const ContractTemplate = lazy(() => import("#src/pages/contracts/contract-template"));
 
 const routes: AppRouteRecordRaw[] = [
@@ -15,7 +18,7 @@ const routes: AppRouteRecordRaw[] = [
 		path: "/contracts",
 		Component: ContainerLayout,
 		handle: {
-			icon: "SafetyOutlined",
+			icon: createElement(SidebarContractIcon),
 			title: $t("common.menu.contractsManangement"),
 			order: contract,
 			accessDomain: "contracts",
@@ -26,7 +29,7 @@ const routes: AppRouteRecordRaw[] = [
 				path: "/contracts/new",
 				Component: CreateContractPage,
 				handle: {
-					icon: "FileTextOutlined",
+					icon: createElement(FileAddOutlined),
 					title: $t("common.menu.newContract"),
 					accessDomain: "contracts",
 					accessAction: "create",
@@ -40,10 +43,10 @@ const routes: AppRouteRecordRaw[] = [
 				},
 			},
 			{
-				path: "/contracts/edit",
+				path: "/contracts/list",
 				Component: EditContractPage,
 				handle: {
-					icon: "FileTextOutlined",
+					icon: createElement(UnorderedListOutlined),
 					title: $t("common.menu.editContract"),
 					accessDomain: "contracts",
 					accessAction: "view",
@@ -57,10 +60,23 @@ const routes: AppRouteRecordRaw[] = [
 				},
 			},
 			{
+				path: "/contracts/:contractId/edit",
+				Component: EditContractFormPage,
+				handle: {
+					icon: createElement(EditOutlined),
+					title: $t("common.menu.editContractForm"),
+					hideInMenu: true,
+					currentActiveMenu: "/contracts/list",
+					accessDomain: "contracts",
+					accessAction: "update",
+					keepAlive: false,
+				},
+			},
+			{
 				path: "/contracts/template",
 				Component: ContractTemplate,
 				handle: {
-					icon: "FileTextOutlined",
+					icon: createElement(SnippetsOutlined),
 					title: $t("common.menu.contractTemplate"),
 					accessDomain: "contracts",
 					accessAction: "view",

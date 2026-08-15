@@ -7,4 +7,5 @@ export * from "./fields/RHFProSlider";
 export * from "./fields/RHFProText";
 export * from "./fields/RHFProTextArea";
 export * from "./fields/RHFProUploadButton";
+export * from "./fields/RHFSegmentedSwitch";
 export * from "./fields/RHFSelect";

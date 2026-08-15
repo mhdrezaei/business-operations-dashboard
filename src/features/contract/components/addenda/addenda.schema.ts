@@ -14,17 +14,39 @@ function overlap(aStart: number, aEnd: number, bStart: number, bEnd: number) {
 function getAtPath(obj: any, path: (string | number)[]) {
 	return path.reduce((acc, key) => (acc == null ? acc : acc[key as any]), obj);
 }
-export const addendumSchema = z
+
+const optionalPercentSchema = z.preprocess(
+	(value) => {
+		if (value === "" || value == null)
+			return null;
+		const numberValue = Number(value);
+		return Number.isFinite(numberValue) ? numberValue : value;
+	},
+	z.number().min(0).max(100).nullable(),
+).optional();
+
+export const addendumSchema: z.ZodType<any> = z.lazy(() => z
 	.object({
+		id: z.number().int().positive().optional(),
 		startYear: z.number().int().min(1401).max(1410).nullable(),
 		startMonth: z.number().int().min(1).max(12).nullable(),
 		endYear: z.number().int().min(1401).max(1410).nullable(),
 		endMonth: z.number().int().min(1).max(12).nullable(),
 
 		contractPricing: contractTypeSchema.optional(),
+		legacyPricing: z.object({
+			paymentRegistration: contractTypeSchema,
+			billInquiry: contractTypeSchema,
+		}).optional(),
+		tehranPricing: contractTypeSchema.optional(),
+		provincePricing: contractTypeSchema.optional(),
+		tehranUnit: z.enum(["GB/month", "Mbps"]).nullable().optional(),
+		provinceUnit: z.enum(["GB/month", "Mbps"]).nullable().optional(),
+		tehranRevenuePercent: optionalPercentSchema,
+		provinceRevenuePercent: optionalPercentSchema,
 		contractNumber: z.string().optional(),
-
 		description: z.string().max(2000).optional(),
+		children: z.array(addendumSchema).default([]).optional(),
 	})
 	.passthrough()
 	.superRefine((v, ctx) => {
@@ -36,27 +58,12 @@ export const addendumSchema = z
 			ctx.addIssue({ code: "custom", path: ["endYear"], message: "سال پایان الحاقیه الزامی است" });
 		if (v.endMonth == null)
 			ctx.addIssue({ code: "custom", path: ["endMonth"], message: "ماه پایان الحاقیه الزامی است" });
-	});
+	}));
 
-export function addendaRefineNoOverlapAndInsideContract(opts: {
-// ✅ Each must be exactly [yearPath, monthPath]
-	contractStartPath: (string | number)[]
-	contractEndPath: (string | number)[]
+export function addendaRefineValidAndNoOverlap(opts: {
 	addendaPath: (string | number)[]
 }) {
 	return (val: any, ctx: z.RefinementCtx) => {
-		const cStartYear = getAtPath(val, [opts.contractStartPath[0]]);
-		const cStartMonth = getAtPath(val, [opts.contractStartPath[1]]);
-		const cEndYear = getAtPath(val, [opts.contractEndPath[0]]);
-		const cEndMonth = getAtPath(val, [opts.contractEndPath[1]]);
-
-		const cStart = ymKey(cStartYear, cStartMonth);
-		const cEnd = ymKey(cEndYear, cEndMonth);
-
-		// If the contract date is not complete, say nothing (fixedStart itself will send a message)
-		if (cStart == null || cEnd == null)
-			return;
-
 		const addenda: any[] = (getAtPath(val, opts.addendaPath) ?? []) as any[];
 		const ranges: Array<{ i: number, s: number, e: number }> = [];
 
@@ -75,14 +82,6 @@ export function addendaRefineNoOverlapAndInsideContract(opts: {
 					message: "بازه تاریخ الحاقیه نامعتبر است",
 				});
 				continue;
-			}
-
-			if (s < cStart || e > cEnd) {
-				ctx.addIssue({
-					code: "custom",
-					path: [...opts.addendaPath, i, "startYear"],
-					message: "بازه تاریخ الحاقیه باید داخل بازه تاریخ قرارداد باشد",
-				});
 			}
 
 			ranges.push({ i, s, e });

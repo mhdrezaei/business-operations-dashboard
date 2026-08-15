@@ -1,10 +1,12 @@
 import type { AppRouteRecordRaw } from "#src/router/types";
 
+import { SidebarCompanyIcon } from "#src/icons/local-icons";
 import { ContainerLayout } from "#src/layout";
 import { $t } from "#src/locales";
 
 import { company } from "#src/router/extra-info";
-import { lazy } from "react";
+import { TeamOutlined } from "@ant-design/icons";
+import { createElement, lazy } from "react";
 
 const CompaniesPage = lazy(() => import("#src/pages/companies/"));
 
@@ -13,7 +15,7 @@ const routes: AppRouteRecordRaw[] = [
 		path: "/company",
 		Component: ContainerLayout,
 		handle: {
-			icon: "SafetyOutlined",
+			icon: createElement(SidebarCompanyIcon),
 			title: $t("common.menu.companies"),
 			order: company,
 			accessDomain: "company_profile",
@@ -24,7 +26,7 @@ const routes: AppRouteRecordRaw[] = [
 				path: "/company/management",
 				Component: CompaniesPage,
 				handle: {
-					icon: "FileTextOutlined",
+					icon: createElement(TeamOutlined),
 					title: $t("common.menu.companiesManagement"),
 					accessDomain: "company_profile",
 					accessAction: "view",

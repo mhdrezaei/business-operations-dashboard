@@ -87,7 +87,7 @@ export default function LayoutContent() {
 		<main
 			id={ELEMENT_ID_MAIN_CONTENT}
 			ref={contentElement}
-			className="relative ml-4 mr-6 flex-grow overflow-y-auto overflow-x-hidden rounded-md bg-bgLayout"
+			className="relative ml-4 mr-6 flex-grow overflow-y-auto overflow-x-hidden rounded-md bg-transparent"
 		>
 			<Scrollbar>
 				<GlobalSpin>

@@ -1,3 +1,292 @@
+.contract-form-section.ant-card {
+	overflow: hidden;
+	border-color: var(--contract-section-border-color);
+	border-radius: var(--contract-section-radius);
+}
+
+.contract-form-section > .ant-card-head {
+	border-bottom: 0;
+}
+
+.contract-form-section > .ant-card-head .ant-card-head-title {
+	flex: 0 0 auto;
+}
+
+.contract-form-section > .ant-card-head .ant-card-extra {
+	display: flex;
+	flex: 1;
+	align-items: center;
+	gap: var(--contract-section-header-gap);
+	margin-inline-start: var(--contract-section-header-gap);
+}
+
+.contract-form-section > .ant-card-head .ant-card-extra::before {
+	content: "";
+	flex: 1;
+	height: var(--contract-section-line-width);
+	background-image: repeating-linear-gradient(
+		to right,
+		var(--contract-section-border-color) 0,
+		var(--contract-section-border-color) var(--contract-section-dash-length),
+		transparent var(--contract-section-dash-length),
+		transparent calc(var(--contract-section-dash-length) + var(--contract-section-dash-gap))
+	);
+}
+
+.contract-form-section__actions {
+	display: flex;
+	align-items: center;
+	gap: var(--contract-section-header-gap);
+}
+
+.contract-form-section__tag.ant-tag {
+	margin-inline-end: 0;
+	border-radius: var(--contract-section-tag-radius);
+	background-color: var(--contract-section-tag-bg);
+	color: var(--contract-section-tag-color);
+}
+
+.contract-form-section > .ant-card-body {
+	padding: var(--contract-section-body-padding);
+}
+
+.contract-form-section--collapsed > .ant-card-body {
+	display: none;
+}
+
+.contract-form-official-row {
+	margin-top: var(--contract-section-body-padding);
+	padding: var(--contract-section-control-padding-block) var(--contract-section-control-padding-inline);
+	border-radius: var(--contract-section-control-radius);
+	background: var(--contract-section-control-bg);
+}
+
+.contract-form-official-row :where(.ant-form-item, .ant-pro-form-item) {
+	margin-bottom: 0;
+}
+
+.contract-addenda-tree-branch::before {
+	content: "";
+	position: absolute;
+	inset-block: 0;
+	inset-inline-start: var(--contract-section-branch-offset);
+	width: var(--contract-section-line-width);
+	background: repeating-linear-gradient(
+		to bottom,
+		var(--contract-section-border-color) 0 var(--contract-section-dash-length),
+		transparent var(--contract-section-dash-length) calc(var(--contract-section-dash-length) + var(--contract-section-dash-gap))
+	);
+}
+
+.contract-addenda-item-badge {
+	display: inline-flex;
+	align-items: center;
+	padding-block: var(--contract-section-control-padding-block);
+	padding-inline: var(--contract-section-control-padding-inline);
+	border-radius: var(--contract-section-tag-radius);
+	background: var(--contract-section-accent-bg);
+	color: var(--contract-section-accent-color);
+}
+
+.contract-type-standard-fields {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: end;
+	gap: var(--contract-section-body-padding);
+}
+
+.contract-type-standard-fields__switch {
+	flex: 0 1 720px;
+}
+
+.contract-type-standard-fields__amount {
+	flex: 1 1 320px;
+}
+
+.contract-type-standard-fields__aside {
+	flex: 0 1 420px;
+}
+
+.contract-type-currency-field .ant-input-group-addon {
+	border-color: var(--contract-section-currency-border-color);
+	background-color: var(--contract-section-currency-bg);
+	color: var(--contract-section-currency-text-color);
+}
+
+.contract-tier-header-badge {
+	border-radius: var(--contract-section-tag-radius);
+	background: var(--contract-section-accent-bg);
+	color: var(--contract-section-accent-color);
+}
+
+.contract-blended-card.ant-card,
+.contract-tier-card.ant-card {
+	position: relative;
+	overflow: hidden;
+	border-color: transparent;
+	border-radius: var(--contract-blended-radius);
+	background: var(--contract-section-nested-bg);
+}
+
+.contract-dashed-border {
+	position: absolute;
+	z-index: 3;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	overflow: visible;
+	pointer-events: none;
+}
+
+.contract-addenda-item {
+	position: relative;
+	overflow: hidden;
+	border: var(--contract-section-line-width) solid transparent;
+	border-radius: calc(var(--contract-section-body-padding) + var(--contract-section-tag-radius));
+	background: var(--contract-section-nested-bg);
+}
+
+.contract-addenda-collapse.ant-collapse {
+	position: relative;
+	z-index: 2;
+	border: 0;
+	background: transparent;
+}
+
+.contract-addenda-collapse.ant-collapse > .ant-collapse-item {
+	border: 0;
+}
+
+.contract-addenda-collapse.ant-collapse > .ant-collapse-item > .ant-collapse-header {
+	align-items: center;
+	padding: var(--contract-section-control-padding-inline) var(--contract-section-body-padding);
+	background: transparent;
+}
+
+.contract-addenda-collapse.ant-collapse .ant-collapse-content {
+	border-top: 0;
+	background: transparent;
+}
+
+.contract-addenda-collapse.ant-collapse .ant-collapse-content > .ant-collapse-content-box {
+	padding: var(--contract-section-body-padding);
+}
+
+.contract-addenda-content {
+	width: 100%;
+}
+
+.contract-blended-card__toolbar {
+	display: flex;
+	align-items: center;
+	gap: var(--contract-section-body-padding);
+}
+
+.contract-blended-index-badge {
+	display: inline-flex;
+	flex: 0 0 auto;
+	align-items: center;
+	justify-content: center;
+	min-width: var(--ant-control-height);
+	height: var(--ant-control-height);
+	padding-inline: var(--contract-section-control-padding-inline);
+	border-radius: var(--contract-section-tag-radius);
+	background: var(--contract-section-accent-bg);
+	color: var(--contract-section-accent-color);
+}
+
+.contract-blended-card__tiers {
+	margin-top: var(--contract-section-body-padding);
+}
+
+.contract-dashed-action.ant-btn,
+.contract-tier-delete-button.ant-btn {
+	border: var(--contract-section-line-width) dashed var(--contract-section-border-color);
+	border-radius: var(--contract-section-tag-radius);
+	background: transparent;
+}
+
+.contract-dashed-action.ant-btn-dangerous,
+.contract-tier-delete-button.ant-btn-dangerous {
+	border-color: var(--contract-section-danger-border-color);
+}
+
+.contract-supplementary-fields {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--contract-section-body-padding);
+	width: 100%;
+}
+
+.contract-supplementary-control,
+.contract-supplementary-field {
+	display: block;
+	width: 100%;
+	min-width: 0;
+}
+
+.contract-supplementary-control__label {
+	display: flex;
+	align-items: center;
+	min-height: var(--contract-section-field-label-height);
+	margin-bottom: var(--contract-section-field-label-gap);
+	color: var(--contract-section-tag-color);
+}
+
+.contract-supplementary-upload-control {
+	min-height: calc(
+		var(--contract-section-field-label-height)
+		+ var(--contract-section-field-label-gap)
+		+ var(--contract-section-upload-min-height)
+	);
+}
+
+.contract-supplementary-description-control {
+	min-height: calc(
+		var(--contract-section-field-label-height)
+		+ var(--contract-section-field-label-gap)
+		+ var(--contract-section-field-control-height)
+	);
+}
+
+.contract-supplementary-field .ant-form-item-row {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	width: 100%;
+}
+
+.contract-supplementary-field .ant-form-item-label {
+	display: none;
+}
+
+.contract-supplementary-field .ant-form-item-label > label {
+	height: auto;
+}
+
+.contract-supplementary-field .ant-form-item-control,
+.contract-supplementary-field .ant-form-item-control-input,
+.contract-supplementary-field .ant-form-item-control-input-content,
+.contract-supplementary-field .ant-upload-wrapper,
+.contract-supplementary-field .ant-upload-drag {
+	width: 100%;
+	max-width: none;
+}
+
+.contract-supplementary-field .ant-upload-wrapper {
+	display: block;
+	min-height: var(--contract-section-upload-min-height);
+}
+
+.contract-supplementary-field .ant-upload-drag {
+	height: auto;
+	min-height: var(--contract-section-upload-min-height);
+}
+
+.contract-supplementary-field .ant-upload-drag-container {
+	width: 100%;
+}
+
 .contract-form-aligned-grid {
 	display: grid;
 	gap: 12px 16px;
@@ -77,7 +366,70 @@
 	text-align: right;
 }
 
+.contract-form .ant-form-item:not(.contract-form-field__control .ant-form-item) > .ant-form-item-row {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	width: 100%;
+}
+
+.contract-form .ant-form-item:not(.contract-form-field__control .ant-form-item) > .ant-form-item-row > .ant-form-item-label {
+	flex: none;
+	max-width: 100%;
+	padding: 0 0 var(--contract-section-field-label-gap, var(--ant-marginXS));
+	overflow: visible;
+	text-align: start;
+	white-space: normal;
+}
+
+.contract-form .ant-form-item:not(.contract-form-field__control .ant-form-item) > .ant-form-item-row > .ant-form-item-label:has(> label:empty) {
+	display: none;
+}
+
+.contract-form .ant-form-item:not(.contract-form-field__control .ant-form-item) > .ant-form-item-row > .ant-form-item-label > label {
+	height: auto;
+}
+
+.contract-form .ant-form-item:not(.contract-form-field__control .ant-form-item) > .ant-form-item-row > .ant-form-item-label > label::after {
+	display: none;
+}
+
+.contract-form .ant-form-item:not(.contract-form-field__control .ant-form-item) > .ant-form-item-row > .ant-form-item-control {
+	flex: 1 1 auto;
+	width: 100%;
+	max-width: 100%;
+}
+
+.contract-form :where(.ant-select, .ant-input, .ant-input-affix-wrapper, .ant-input-group-wrapper, .ant-input-number, .ant-picker, .ant-upload-wrapper) {
+	width: 100%;
+}
+
+.contract-form .contract-form-field {
+	width: 100%;
+	grid-template-columns: minmax(0, 1fr);
+	align-items: stretch;
+	row-gap: var(--contract-section-field-label-gap, var(--ant-marginXS));
+}
+
+.contract-form .contract-form-date-grid .contract-form-field {
+	grid-template-columns: minmax(0, 1fr);
+}
+
+.contract-form .contract-form-aligned-grid {
+	align-items: start;
+}
+
+.contract-form .contract-form-field__label {
+	min-height: auto;
+}
+
 @media (max-width: 1200px) {
+	.contract-type-standard-fields__switch,
+	.contract-type-standard-fields__amount,
+	.contract-type-standard-fields__aside {
+		flex-basis: 100%;
+	}
+
 	.contract-form-aligned-grid--four {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}

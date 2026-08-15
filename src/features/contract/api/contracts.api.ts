@@ -84,6 +84,67 @@ export function fetchContractsList(params: ContractsListQuery) {
 		.json<PaginatedResult<ContractListItemType>>();
 }
 
+export interface ContractApprovalHistoryEntryDto {
+	field_name: string
+	old_value: boolean | null
+	new_value: boolean | null
+	changed_by: {
+		id: number
+		name: string
+	} | null
+	changed_at: string
+	reason: string
+	comment: string
+}
+
+export interface ContractApprovalHistorySubjectDto {
+	id: number
+	display_addendum_number?: string
+	is_signed: boolean | null
+	is_business_approved: boolean | null
+	sign_approval_history: ContractApprovalHistoryEntryDto[]
+}
+
+export interface ContractApprovalHistoryResponse extends ContractApprovalHistorySubjectDto {
+	addenda: ContractApprovalHistorySubjectDto[]
+}
+
+export function fetchCompanyContracts(
+	service: ContractServicePath,
+	companyId: number,
+	companyType?: string | null,
+	serviceId?: number | null,
+) {
+	if (service === "sms/client" || service === "sms/vendor") {
+		const searchParams: Record<string, string> = {
+			company_id: String(companyId),
+			page_size: "1000",
+			sms_party: service === "sms/client" ? "client" : "vendor",
+		};
+
+		if (serviceId != null)
+			searchParams.service_id = String(serviceId);
+
+		return request
+			.get("contracts/list", { searchParams })
+			.json<PaginatedResult<any>>();
+	}
+
+	const searchParams: Record<string, string> = {
+		company: String(companyId),
+		page_size: "1000",
+	};
+
+	if (companyType)
+		searchParams.company_type = companyType;
+	if (serviceId != null)
+		searchParams.service = String(serviceId);
+
+	return request
+		.get(buildContractPath(service), { searchParams })
+		.json<PaginatedResult<any>>();
+}
+
 /* ===================== DETAIL ===================== */
 
 export function fetchContractDetail(
@@ -93,6 +154,12 @@ export function fetchContractDetail(
 	return request
 		.get(buildContractPath(service, id))
 		.json<any>();
+}
+
+export function fetchContractApprovalHistory(service: ContractServicePath, id: number) {
+	return request
+		.get(`${buildContractPath(service, id)}approve/`)
+		.json<ContractApprovalHistoryResponse>();
 }
 /* ===================== CREATE ===================== */
 

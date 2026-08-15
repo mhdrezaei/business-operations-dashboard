@@ -244,6 +244,20 @@ function mapOpenApiLegacyDetails(pricingValue: unknown) {
 	};
 }
 
+function mapOpenApiAddendumLegacyDetails(row: Record<string, any>) {
+	const sharedLegacyPricing = row.contractPricing ?? null;
+	return {
+		openapi_model: "LEGACY",
+		contract_model: "LEGACY",
+		receipt_register: contractTypeToApiPricing(
+			row.legacyPricing?.paymentRegistration ?? sharedLegacyPricing,
+		),
+		bill_inquiry: contractTypeToApiPricing(
+			row.legacyPricing?.billInquiry ?? sharedLegacyPricing,
+		),
+	};
+}
+
 function mapOpenApiPackageDetails(serviceFields: Record<string, any>) {
 	const plans = Array.isArray(serviceFields.plans) ? serviceFields.plans : [];
 	return {
@@ -293,17 +307,18 @@ function mapOpenApiAddenda(
 		};
 
 		if (contractModel === "legacy") {
-			mapped.contract_openapi_details = mapOpenApiLegacyDetails(row.contractPricing);
+			mapped.contract_openapi_details = mapOpenApiAddendumLegacyDetails(row);
 		}
 		else if (contractModel === "package") {
 			mapped.contract_openapi_details = mainOpenApiDetails ?? mapOpenApiPackageDetails(serviceFields);
 		}
+		mapped.children = mapOpenApiAddenda(row.children, contractModel, serviceFields, mainOpenApiDetails);
 
 		return mapped;
 	});
 }
 
-function mapCommercialAddenda(addenda: unknown) {
+function mapCommercialAddenda(addenda: unknown): Array<Record<string, any>> {
 	const list = Array.isArray(addenda) ? addenda : [];
 
 	return list.map((item) => {
@@ -317,6 +332,7 @@ function mapCommercialAddenda(addenda: unknown) {
 			contract_number: row.contractNumber ?? "",
 			note: row.description ?? "",
 			contract_openapi_details: mapOpenApiLegacyDetails(row.contractPricing),
+			children: mapCommercialAddenda(row.children),
 		};
 	});
 }
@@ -347,26 +363,27 @@ function normalizeTrafficLocation(location: unknown) {
 	return null;
 }
 
-function mapTrafficLocationPayload(location: "TEHRAN" | "COUNTY", pricingValue: unknown, unit?: string | null) {
+function mapTrafficLocationPayload(location: "TEHRAN" | "COUNTY", pricingValue: unknown, unit?: string | null, basedTire?: boolean, incomePercentage?: unknown) {
 	const pricing = contractTypeToApiPricing((pricingValue ?? null) as any);
 	if (!pricing)
 		return null;
+	const normalizedIncomePercentage = toNumberOrNull(incomePercentage);
 
 	return {
 		location,
 		unit: unit ?? "GB/month",
 		calculation_type: pricing.calculation_type,
 		tiers: pricing.tiers ?? [],
+		...(typeof basedTire === "boolean" ? { based_tire: basedTire } : {}),
+		...(normalizedIncomePercentage != null ? { income_percentage: normalizedIncomePercentage } : {}),
 	};
 }
 
-function mapTrafficAddenda(addenda: unknown) {
+function mapShahkarAddenda(addenda: unknown): Array<Record<string, any>> {
 	const list = Array.isArray(addenda) ? addenda : [];
 
 	return list.map((item) => {
 		const row = (item ?? {}) as Record<string, any>;
-		const location = normalizeTrafficLocation(row.location);
-		const pricing = location ? mapTrafficLocationPayload(location, row.contractPricing) : null;
 
 		return {
 			start_jy: toNumberOrNull(row.startYear),
@@ -375,7 +392,98 @@ function mapTrafficAddenda(addenda: unknown) {
 			end_jm: toNumberOrNull(row.endMonth),
 			contract_number: row.contractNumber ?? "",
 			note: row.description ?? "",
+			is_signed: row.isSigned ?? row.is_signed ?? false,
+			...mapShahkarPricingPayload(row.contractPricing),
+			children: mapShahkarAddenda(row.children),
+		};
+	});
+}
+
+function mapGenericAddenda(addenda: unknown): Array<Record<string, any>> {
+	const list = Array.isArray(addenda) ? addenda : [];
+
+	return list.map((item) => {
+		const row = (item ?? {}) as Record<string, any>;
+		const {
+			startYear,
+			startMonth,
+			endYear,
+			endMonth,
+			contractNumber,
+			description,
+			contractPricing,
+			isSigned,
+			is_signed: _isSigned,
+			children: _children,
+			parentAddendumId: _parentAddendumId,
+			parent_addendum_id: _parentAddendumIdSnake,
+			displayAddendumNumber: _displayAddendumNumber,
+			display_addendum_number: _displayAddendumNumberSnake,
+			fieldArrayId: _fieldArrayId,
+			...rest
+		} = row;
+		const pricing = contractTypeToApiPricing((contractPricing ?? null) as any);
+
+		return {
+			...rest,
+			start_jy: toNumberOrNull(startYear),
+			start_jm: toNumberOrNull(startMonth),
+			end_jy: toNumberOrNull(endYear),
+			end_jm: toNumberOrNull(endMonth),
+			contract_number: contractNumber ?? "",
+			note: description ?? "",
+			is_signed: isSigned ?? _isSigned ?? false,
 			...(pricing ?? {}),
+			children: mapGenericAddenda(row.children),
+		};
+	});
+}
+
+function mapTrafficAddenda(
+	addenda: unknown,
+	companyType: unknown,
+	mainLocations: { tehran: boolean, province: boolean },
+): Array<Record<string, any>> {
+	const list = Array.isArray(addenda) ? addenda : [];
+	const normalizedCompanyType = String(companyType ?? "").trim().toUpperCase();
+	const hasTrafficUnit = ["CP", "PREMIUM", "IXP", "TCI"].includes(normalizedCompanyType);
+	const isPremium = normalizedCompanyType === "PREMIUM";
+	const basedTire = normalizedCompanyType === "IXP" ? true : undefined;
+
+	return list.map((item) => {
+		const row = (item ?? {}) as Record<string, any>;
+		if (normalizedCompanyType === "COLLOCATION") {
+			const location = normalizeTrafficLocation(row.location);
+			const pricing = location ? mapTrafficLocationPayload(location, row.contractPricing) : null;
+			return {
+				start_jy: toNumberOrNull(row.startYear),
+				start_jm: toNumberOrNull(row.startMonth),
+				end_jy: toNumberOrNull(row.endYear),
+				end_jm: toNumberOrNull(row.endMonth),
+				contract_number: row.contractNumber ?? "",
+				note: row.description ?? "",
+				...(pricing ?? {}),
+				children: mapTrafficAddenda(row.children, companyType, mainLocations),
+			};
+		}
+		const locations = [
+			mainLocations.tehran
+				? mapTrafficLocationPayload("TEHRAN", row.tehranPricing, hasTrafficUnit ? row.tehranUnit : null, basedTire, isPremium ? row.tehranRevenuePercent : null)
+				: null,
+			mainLocations.province
+				? mapTrafficLocationPayload("COUNTY", row.provincePricing, hasTrafficUnit ? row.provinceUnit : null, basedTire, isPremium ? row.provinceRevenuePercent : null)
+				: null,
+		].filter(Boolean);
+
+		return {
+			start_jy: toNumberOrNull(row.startYear),
+			start_jm: toNumberOrNull(row.startMonth),
+			end_jy: toNumberOrNull(row.endYear),
+			end_jm: toNumberOrNull(row.endMonth),
+			contract_number: row.contractNumber ?? "",
+			note: row.description ?? "",
+			locations,
+			children: mapTrafficAddenda(row.children, companyType, mainLocations),
 		};
 	});
 }
@@ -418,11 +526,12 @@ function mapSmsOperatorRevenuePayload(operatorRevenueValue: unknown) {
 	];
 }
 
-function mapSmsPartnersAddenda(addenda: unknown) {
+function mapSmsAddenda(addenda: unknown, includeProfit: boolean): Array<Record<string, any>> {
 	const list = Array.isArray(addenda) ? addenda : [];
 
 	return list.flatMap((item) => {
 		const row = (item ?? {}) as Record<string, any>;
+		const children = mapSmsAddenda(row.children, includeProfit);
 		const base = {
 			start_jy: toNumberOrNull(row.startYear),
 			start_jm: toNumberOrNull(row.startMonth),
@@ -430,6 +539,7 @@ function mapSmsPartnersAddenda(addenda: unknown) {
 			end_jm: toNumberOrNull(row.endMonth),
 			note: row.description ?? "",
 			contract_number: row.contractNumber ?? "",
+			children,
 		};
 
 		const operatorEntries = mapSmsOperatorRevenuePayload(row.operatorRevenue).map(entry => ({
@@ -438,24 +548,30 @@ function mapSmsPartnersAddenda(addenda: unknown) {
 			...entry,
 		}));
 
-		return [
+		const governmentPricing = includeProfit ? row.governmentRevenue : row.governmentRate;
+		const result: Array<Record<string, any>> = [
 			...operatorEntries,
 			{
 				...base,
 				component: "GOVERNMENT",
-				...mapSmsPricingPayload(row.governmentRevenue),
+				...mapSmsPricingPayload(governmentPricing),
 			},
-			{
+		];
+
+		if (includeProfit) {
+			result.push({
 				...base,
 				component: "PROFIT",
 				...mapSmsPricingPayload(row.profit?.pricing),
 				min_profit_amount: toStringOrNull(row.profit?.minProfit),
-			},
-		];
+			});
+		}
+
+		return result;
 	});
 }
 
-function mapSmsCommissionAddenda(addenda: unknown) {
+function mapSmsCommissionAddenda(addenda: unknown): Array<Record<string, any>> {
 	const list = Array.isArray(addenda) ? addenda : [];
 
 	return list.map((item) => {
@@ -475,6 +591,7 @@ function mapSmsCommissionAddenda(addenda: unknown) {
 			first_side_percent: toStringOrNull(row.firstPartySharePercent),
 			area_percent: toStringOrNull(row.regionSharePercent),
 			sales_agent_percent: toStringOrNull(row.salesAgentSharePercent),
+			children: mapSmsCommissionAddenda(row.children),
 		};
 	});
 }
@@ -562,7 +679,7 @@ async function formValuesToApiPayload(values: ContractFormValues) {
 			...mapSmsPricingPayload(serviceFields.profit?.pricing),
 			min_profit_amount: toStringOrNull(serviceFields.profit?.minProfit),
 		};
-		payload.addenda = mapSmsPartnersAddenda(addenda);
+		payload.addenda = mapSmsAddenda(addenda, true);
 		payload.is_official = serviceFields.isOfficial ?? true;
 		return payload;
 	}
@@ -582,8 +699,18 @@ async function formValuesToApiPayload(values: ContractFormValues) {
 
 	if (serviceCode === "shahkar") {
 		const shahkarPricing = mapShahkarPricingPayload(serviceFields.contractPricing);
+		payload.is_signed = serviceFields.isSigned ?? false;
 		payload.calculation_type = shahkarPricing.calculation_type;
 		payload.tiers = shahkarPricing.tiers;
+		payload.addenda = mapShahkarAddenda(addenda);
+		return payload;
+	}
+
+	if (serviceCode === "sms") {
+		payload.operator_revenue = mapSmsOperatorRevenuePayload(serviceFields.operatorRevenue);
+		payload.government_revenue = mapSmsPricingPayload(serviceFields.governmentRate);
+		payload.addenda = mapSmsAddenda(addenda, false);
+		payload.is_official = serviceFields.isOfficial ?? true;
 		return payload;
 	}
 
@@ -595,10 +722,13 @@ async function formValuesToApiPayload(values: ContractFormValues) {
 
 	if (serviceCode === "traffic") {
 		const isOfficial = serviceFields.isOfficial ?? true;
-		const isUnitCompanyType = ["CP", "PREMIUM", "IXP", "TCI"].includes(String(values.companyType ?? "").trim().toUpperCase());
+		const normalizedCompanyType = String(values.companyType ?? "").trim().toUpperCase();
+		const isUnitCompanyType = ["CP", "PREMIUM", "IXP", "TCI"].includes(normalizedCompanyType);
+		const isPremiumCompanyType = normalizedCompanyType === "PREMIUM";
+		const basedTire = normalizedCompanyType === "IXP" ? true : undefined;
 		const locations = [
-			mapTrafficLocationPayload("TEHRAN", serviceFields.tehranPricing, isUnitCompanyType ? serviceFields.tehranUnit : null),
-			mapTrafficLocationPayload("COUNTY", serviceFields.provincePricing, isUnitCompanyType ? serviceFields.provinceUnit : null),
+			mapTrafficLocationPayload("TEHRAN", serviceFields.tehranPricing, isUnitCompanyType ? serviceFields.tehranUnit : null, basedTire, isPremiumCompanyType ? serviceFields.tehranRevenuePercent : null),
+			mapTrafficLocationPayload("COUNTY", serviceFields.provincePricing, isUnitCompanyType ? serviceFields.provinceUnit : null, basedTire, isPremiumCompanyType ? serviceFields.provinceRevenuePercent : null),
 		].filter(Boolean);
 
 		payload.is_signed = isOfficial;
@@ -612,7 +742,10 @@ async function formValuesToApiPayload(values: ContractFormValues) {
 			if (realStart)
 				payload.real_start = realStart;
 		}
-		payload.addenda = mapTrafficAddenda(addenda);
+		payload.addenda = mapTrafficAddenda(addenda, values.companyType, {
+			tehran: serviceFields.tehranPricing != null,
+			province: serviceFields.provincePricing != null,
+		});
 		return payload;
 	}
 
@@ -641,9 +774,16 @@ async function formValuesToApiPayload(values: ContractFormValues) {
 		return payload;
 	}
 
-	const { addenda: _addenda, ...restServiceFields } = serviceFields;
+	payload.is_signed = serviceFields.isSigned ?? serviceFields.is_signed ?? false;
+	const {
+		addenda: _addenda,
+		isSigned: _isSigned,
+		is_signed: _isSignedSnake,
+		...restServiceFields
+	} = serviceFields;
 	return {
 		...payload,
+		addenda: mapGenericAddenda(addenda),
 		...restServiceFields,
 	};
 }
@@ -652,6 +792,7 @@ function applySubmitIntent(
 	intent: ContractSubmitIntent,
 	form: UseFormReturn<ContractFormValues>,
 	createdContract: { id?: number | null },
+	service: ContractServicePath,
 	navigate: ReturnType<typeof useNavigate>,
 	actions: ContractFormActions,
 ) {
@@ -699,9 +840,10 @@ function applySubmitIntent(
 
 		case "submit_and_edit": {
 			const serviceId = form.getValues("serviceId");
+			const companyType = form.getValues("companyType") ?? "";
 			form.reset(defaultContractFormValues);
-			if (createdContract.id != null) {
-				navigate(`/contracts/edit?contract_id=${createdContract.id}&service_id=${serviceId ?? ""}`);
+			if (createdContract.id != null && serviceId != null) {
+				navigate(`/contracts/${createdContract.id}/edit?service=${encodeURIComponent(service)}&serviceId=${serviceId}&companyType=${encodeURIComponent(companyType)}`);
 			}
 			break;
 		}
@@ -725,7 +867,7 @@ function CreateContract() {
 						const created = await fetchCreateContract(service, await formValuesToApiPayload(values));
 						if (created?.id != null)
 							await uploadStagedDocuments(created.id, values.documents);
-						applySubmitIntent(intent, form, created, navigate, actions);
+						applySubmitIntent(intent, form, created, service, navigate, actions);
 					}
 					finally {
 						setSubmitting(false);
