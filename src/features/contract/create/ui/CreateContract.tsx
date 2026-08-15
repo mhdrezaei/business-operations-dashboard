@@ -807,33 +807,43 @@ function applySubmitIntent(
 			const {
 				serviceId,
 				serviceCode,
+				companyId,
 				companyType,
+				counterpartyType,
 				startYear,
 				startMonth,
 				endYear,
 				endMonth,
 				serviceFields,
 			} = form.getValues();
-			const legacyPricing = (serviceFields as Record<string, unknown> | null)?.legacyPricing;
+			const currentServiceFields = (serviceFields as Record<string, unknown> | null) ?? {};
+			const retainedSmsRevenue = {
+				governmentRevenue: structuredClone(currentServiceFields.governmentRevenue ?? null),
+				operatorRevenue: structuredClone(currentServiceFields.operatorRevenue ?? null),
+			};
 
 			actions.resetForCreateAnother({
 				...defaultContractFormValues,
 				serviceId,
 				serviceCode,
+				companyId,
 				companyType,
+				counterpartyType,
 				startYear,
 				startMonth,
 				endYear,
 				endMonth,
-				serviceFields: legacyPricing == null
-					? {}
-					: {
-						contractModel: "legacy",
-						packageMode: null,
-						plans: [],
-						addenda: [],
-						legacyPricing: structuredClone(legacyPricing),
-					},
+				serviceFields: serviceCode === "sms" && counterpartyType === "partners"
+					? retainedSmsRevenue
+					: currentServiceFields.legacyPricing == null
+						? {}
+						: {
+							contractModel: "legacy",
+							packageMode: null,
+							plans: [],
+							addenda: [],
+							legacyPricing: structuredClone(currentServiceFields.legacyPricing),
+						},
 			});
 			break;
 		}
