@@ -343,3 +343,57 @@ html.dark .sms-gateway-success-row {
 	background: #243148;
 	color: #d7e1ef;
 }
+
+.sms-gateway-history-modal .ant-modal-content {
+	background: #f7f9fd;
+	box-shadow: 0 24px 70px rgb(30 64 175 / 18%);
+}
+
+.sms-gateway-history-modal .ant-modal-header {
+	background: transparent;
+	border-bottom: 1px solid #e1e8f3;
+}
+
+.sms-gateway-history-body {
+	background: #edf3fb;
+	border: 1px solid #dce7f5;
+	border-radius: 14px;
+	padding: 16px;
+}
+
+.sms-gateway-history-card {
+	background: #fff;
+	border: 1px solid #d7e2f0;
+	box-shadow: 0 7px 18px rgb(33 74 132 / 10%);
+}
+
+.sms-gateway-history-summary-row {
+	background: #f2f6fb;
+	color: #40516a;
+}
+
+html.dark .sms-gateway-history-modal .ant-modal-content {
+	background: #111b2e;
+	box-shadow: 0 24px 80px rgb(0 0 0 / 45%);
+}
+
+html.dark .sms-gateway-history-modal .ant-modal-header {
+	background: transparent;
+	border-bottom-color: #263a58;
+}
+
+html.dark .sms-gateway-history-body {
+	background: #17243a;
+	border-color: #2c4262;
+}
+
+html.dark .sms-gateway-history-card {
+	background: #1d2b43;
+	border-color: #314968;
+	box-shadow: 0 9px 22px rgb(0 0 0 / 26%);
+}
+
+html.dark .sms-gateway-history-summary-row {
+	background: #152238;
+	color: #c6d4e8;
+}
