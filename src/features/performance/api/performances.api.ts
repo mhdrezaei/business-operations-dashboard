@@ -409,6 +409,22 @@ export interface SmsGatewayManualImportResponse {
 	}
 }
 
+export interface SmsGatewayImportHistoryItem {
+	id?: number
+	job_id?: number
+	sh_year?: number
+	sh_month?: number
+	requested_by?: string | { username?: string, full_name?: string, name?: string } | null
+	requested_by_username?: string | null
+	created_at?: string
+	started_at?: string | null
+	finished_at?: string | null
+	status?: string
+	confirmed?: boolean
+	summary?: Record<string, number>
+	[key: string]: unknown
+}
+
 function buildContractsPath(service: PerformanceContractServicePath) {
 	return `contracts/${service}/`;
 }
@@ -705,6 +721,12 @@ export function importSmsGatewayPerformance(shYear: number, shMonth: number, con
 			json: { sh_year: shYear, sh_month: shMonth, confirmed },
 		})
 		.json<SmsGatewayManualImportResponse>();
+}
+
+export function fetchSmsGatewayImportHistory() {
+	return request
+		.get("sms-gateway/manual-import/jobs/", { searchParams: { limit: "20" } })
+		.json<{ jobs?: SmsGatewayImportHistoryItem[] }>();
 }
 
 export function fetchUnregisteredPerformanceList(params: UnregisterdPerformanceListQuery) {
