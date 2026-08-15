@@ -26,6 +26,11 @@ export async function importWordToEditor(file: File, editor: Editor, onComplete?
 			},
 		);
 
+		if (!result || !result.value) {
+			message.warning({ content: "این فایل ورد فاقد محتوای متنی است یا با فرمت پشتیبانی‌شده همخوانی ندارد.", key: "import-word", duration: 4 });
+			return;
+		}
+
 		const parser = new DOMParser();
 		const doc = parser.parseFromString(result.value, "text/html");
 

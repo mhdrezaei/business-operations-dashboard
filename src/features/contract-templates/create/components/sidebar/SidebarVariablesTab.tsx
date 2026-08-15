@@ -121,7 +121,6 @@ export default function SidebarVariablesTab({ editor }: { editor: Editor | null 
 	const { data: catalogData, isFetching: isFetchingCatalog } = useQuery({
 		queryKey: ["variable-catalog", serviceStringValue, variant, documentKind, companyType],
 		queryFn: () => {
-			// 🔴 حالا که variant درست رو از فرم میگیریم، نیازی به کدهای شرطی اضافه نیست
 			return TemplateCreateApi.getVariableCatalog({
 				service: serviceStringValue,
 				variant,
@@ -150,7 +149,6 @@ export default function SidebarVariablesTab({ editor }: { editor: Editor | null 
 					variables: vars.map((v: any) => {
 						let finalKey = v.key;
 
-						// 🔴 رفع قطعی مشکل تداخل (مثلاً ساخت contract_start_jy و addendum_start_jy تا همدیگه رو Overwrite نکنن)
 						if (root.key === "contract" || root.key === "addendum") {
 							if (!finalKey.startsWith(root.key)) {
 								finalKey = `${root.key}_${finalKey}`;

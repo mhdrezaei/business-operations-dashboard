@@ -156,7 +156,6 @@ export default function TemplatePrintPreviewModal({ isOpen, onClose, editor }: T
 		printWindow.document.close();
 		printWindow.focus();
 
-		// کمی تأخیر بیشتر (۶۰۰ میلی‌ثانیه) تا فونت‌ها کاملاً توسط مرورگر لود شوند و بعد پنجره چاپ باز شود
 		setTimeout(() => {
 			printWindow.print();
 			printWindow.close();

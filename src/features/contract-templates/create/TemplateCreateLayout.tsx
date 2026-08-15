@@ -238,8 +238,8 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 					style={{
 						backgroundColor: token.colorBgLayout,
 						color: token.colorText,
-						height: "100%", // 🔴 تغییر کلیدی: Card دقیقاً به اندازه کانتینر پدرش (صفحه) می‌شود و اسکرول داخلی فعال می‌گردد
-						border: "none", // برداشتن بوردر برای زیبایی بیشتر در حالت مودال فول‌اسکرین
+						height: "100%",
+						border: "none",
 					}}
 				>
 					<div className="flex-shrink-0">

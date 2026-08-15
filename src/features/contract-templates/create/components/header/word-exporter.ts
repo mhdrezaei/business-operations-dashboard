@@ -1,12 +1,64 @@
+// src/features/contract-templates/create/components/word-exporter.ts
 import { message } from "antd";
 import { saveAs } from "file-saver";
-// src/features/contract-templates/create/components/word-exporter.ts
 import { asBlob } from "html-docx-js-typescript";
+import { getVariable } from "../editor/variables/registry";
 
 export async function exportEditorToWord(htmlContent: string, fileName = "contract-template") {
 	const hideLoading = message.loading("در حال آماده‌سازی و ساخت فایل Word...", 0);
 
 	try {
+		const parser = new DOMParser();
+		const doc = parser.parseFromString(htmlContent, "text/html");
+
+		doc.querySelectorAll("button, svg, script, noscript, style, iframe").forEach(el => el.remove());
+
+		const allElements = Array.from(doc.querySelectorAll("*")).reverse();
+
+		allElements.forEach((el) => {
+			if (!el.parentNode)
+				return;
+
+			const titleAttr = el.getAttribute("title") || "";
+			const isVariable = titleAttr.startsWith("{$") || el.hasAttribute("data-type") || el.hasAttribute("key") || el.getAttribute("contenteditable") === "false" || el.tagName.toLowerCase() === "variable-chip" || el.tagName.toLowerCase() === "node-view-wrapper";
+
+			if (isVariable) {
+				let key = el.getAttribute("key") || el.getAttribute("data-id") || el.getAttribute("data-key");
+				if (!key && titleAttr.startsWith("{$")) {
+					key = titleAttr.replace("{$", "").replace("}", "");
+				}
+
+				let label = "";
+				if (key) {
+					const variableDef = getVariable(key);
+					label = variableDef ? variableDef.label : key;
+				}
+
+				if (!label) {
+					label = el.textContent?.replace("X", "")?.trim() || "متغیر";
+				}
+
+				const strong = doc.createElement("strong");
+				strong.textContent = ` [${label}] `;
+				strong.style.color = "#1677ff";
+
+				el.replaceWith(strong);
+			}
+		});
+
+		Array.from(doc.querySelectorAll("*")).forEach((el) => {
+			const attrs = Array.from(el.attributes);
+			for (const attr of attrs) {
+				const attrName = attr.name.toLowerCase();
+				const safeAttributes = ["style", "dir", "colspan", "rowspan", "href", "src"];
+				if (!safeAttributes.includes(attrName)) {
+					el.removeAttribute(attrName);
+				}
+			}
+		});
+
+		const cleanedContent = doc.body.innerHTML;
+
 		const fullHtml = `
             <!DOCTYPE html>
             <html dir="rtl" lang="fa">
@@ -37,7 +89,7 @@ export async function exportEditorToWord(htmlContent: string, fileName = "contra
                 </style>
             </head>
             <body>
-                ${htmlContent}
+                ${cleanedContent}
             </body>
             </html>
         `;

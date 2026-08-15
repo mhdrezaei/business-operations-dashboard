@@ -55,7 +55,6 @@ export interface TemplatePrintPreviewModalProps {
 	customFonts?: TemplateFont[]
 }
 
-// تایپ های ساید بار برای سرویس های مختلف
 type RenderMode = "object" | "text" | "enum" | "money" | "tiers";
 type VariableKind = "object" | "scalar";
 

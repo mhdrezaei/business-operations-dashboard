@@ -44,9 +44,7 @@ export const TemplateCreateApi = {
 		}).json();
 	},
 
-	// 🔴 اضافه شدن متد دریافت داینامیک متغیرها
 	getVariableCatalog: (params: Record<string, any>) => {
-		// مقادیر خالی (null و undefined و "") را فیلتر می‌کنیم تا URL تمیز بماند
 		const cleanParams = Object.fromEntries(
 			Object.entries(params).filter(([_, v]) => v != null && v !== ""),
 		);

@@ -48,7 +48,6 @@ export default function TemplateCreateForm() {
 		});
 	}, [selectedService]);
 
-	// با تغییر سرویس، فیلدهای وابسته ریست بشن
 	useEffect(() => {
 		setValue("company_type", undefined);
 		setValue("variant", undefined);
@@ -59,7 +58,6 @@ export default function TemplateCreateForm() {
 		{ label: "الحاقیه", value: "addendum" },
 	];
 
-	// منطق داینامیک نمایش و گزینه‌های فیلد Variant
 	const isSmsService = selectedService?.name?.includes("پیامک") || serviceStringValue === "sms";
 	const isOpenApiService = serviceStringValue === "openapi";
 	const showVariantField = isSmsService || isOpenApiService;
@@ -68,7 +66,6 @@ export default function TemplateCreateForm() {
 		if (isOpenApiService) {
 			return [
 				{ value: "openapi_legacy", label: "قدیمی" },
-				// 🔴 رفع مشکل انتخاب سرویس تفکیکی برای API مالی
 				{ value: "openapi_legacy_2", label: "تفکیکی" },
 			];
 		}
