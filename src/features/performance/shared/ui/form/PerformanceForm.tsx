@@ -1,7 +1,7 @@
 import type { Resolver, UseFormReturn } from "react-hook-form";
 import type { PerformanceFormValues } from "../../model/performance.form.types";
 import { notification } from "#src/utils";
-import { UploadOutlined } from "@ant-design/icons";
+import { HistoryOutlined, UploadOutlined } from "@ant-design/icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "antd";
 import { AnimatePresence, motion } from "framer-motion";
@@ -12,6 +12,7 @@ import { buildPerformanceSchema } from "../../model/performance.schema";
 import { performanceServiceRegistry } from "../../services/registry";
 import { ActionSection } from "./sections/ActionSection";
 import { FixedStartSection } from "./sections/FixedStartSection";
+import { SmsGatewayImportHistoryModal } from "./sections/SmsGatewayImportHistoryModal";
 import { SmsGatewayImportModal } from "./sections/SmsGatewayImportModal";
 
 export type PerformanceSubmitIntent = "submit" | "submit_and_create_another" | "submit_and_edit";
@@ -188,6 +189,7 @@ export function PerformanceForm({
 
 	const submitIntentRef = useRef<PerformanceSubmitIntent>("submit");
 	const [isSmsGatewayImportOpen, setIsSmsGatewayImportOpen] = useState(false);
+	const [isSmsGatewayImportHistoryOpen, setIsSmsGatewayImportHistoryOpen] = useState(false);
 	const isSmsGatewayImportSupported = serviceCode === "sms" || serviceCode === "sms-commission" || serviceCode === "sms_commission";
 
 	const submit = form.handleSubmit(
@@ -243,7 +245,12 @@ export function PerformanceForm({
 				<FixedStartSection />
 
 				{isSmsGatewayImportSupported && !canShowServiceForm
-					? <div className="w-full"><Button type="primary" icon={<UploadOutlined />} onClick={() => setIsSmsGatewayImportOpen(true)}>ثبت عملکرد از Gateway پیامک</Button></div>
+					? (
+						<div className="w-full flex flex-wrap gap-2">
+							<Button type="primary" icon={<UploadOutlined />} onClick={() => setIsSmsGatewayImportOpen(true)}>ثبت عملکرد از Gateway پیامک</Button>
+							<Button type="primary" icon={<HistoryOutlined />} onClick={() => setIsSmsGatewayImportHistoryOpen(true)}>تاریخچه دریافت‌های Gateway پیامک</Button>
+						</div>
+					)
 					: null}
 
 				<AnimatePresence mode="wait">
@@ -274,12 +281,14 @@ export function PerformanceForm({
 								onReset={resetForm}
 								showSmsGatewayImport={isSmsGatewayImportSupported && canShowServiceForm}
 								onSmsGatewayImport={() => setIsSmsGatewayImportOpen(true)}
+								onSmsGatewayImportHistory={() => setIsSmsGatewayImportHistoryOpen(true)}
 							/>
 						</div>
 					)
 					: null}
 
 				<SmsGatewayImportModal open={isSmsGatewayImportOpen} onClose={() => setIsSmsGatewayImportOpen(false)} />
+				<SmsGatewayImportHistoryModal open={isSmsGatewayImportHistoryOpen} onClose={() => setIsSmsGatewayImportHistoryOpen(false)} />
 			</div>
 		</FormProvider>
 	);
