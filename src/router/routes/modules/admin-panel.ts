@@ -5,13 +5,14 @@ import { ContainerLayout } from "#src/layout";
 import { $t } from "#src/locales";
 
 import { userManagement } from "#src/router/extra-info";
-import { BellOutlined, HistoryOutlined, SafetyOutlined, UserOutlined } from "@ant-design/icons";
+import { AuditOutlined, BellOutlined, HistoryOutlined, SafetyOutlined, UserOutlined } from "@ant-design/icons";
 import { createElement, lazy } from "react";
 
 const ListUsers = lazy(() => import("#src/pages/user-management/UsersList"));
 const ListRoles = lazy(() => import("#src/pages/user-management/RolesList"));
 const AuditLogs = lazy(() => import("#src/pages/user-management/AuditLogsList"));
 const NotificationRules = lazy(() => import("#src/pages/user-management/NotificationRules"));
+const SignFlowRules = lazy(() => import("#src/pages/user-management/SignFlowRules"));
 // const EditContractPage = lazy(() => import("#src/pages/user-management/edit"));
 
 const routes: AppRouteRecordRaw[] = [
@@ -65,6 +66,15 @@ const routes: AppRouteRecordRaw[] = [
 				handle: {
 					icon: createElement(BellOutlined),
 					title: $t("common.menu.notificationRules"),
+					adminAccess: "policies",
+				},
+			},
+			{
+				path: "/admin-panel/sign-flow-rules",
+				Component: SignFlowRules,
+				handle: {
+					icon: createElement(AuditOutlined),
+					title: "قوانین گردش امضای قرارداد",
 					adminAccess: "policies",
 				},
 			},
