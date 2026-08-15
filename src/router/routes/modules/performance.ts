@@ -5,12 +5,14 @@ import { $t } from "#src/locales";
 import UnregisteredPerformancePage from "#src/pages/performances/unregistered.js";
 import { performance } from "#src/router/extra-info";
 import { BarChartOutlined, EditOutlined, FileAddOutlined, FileUnknownOutlined, PieChartOutlined } from "@ant-design/icons";
+import { LineChartOutlined } from "@ant-design/icons/lib";
 import { createElement, lazy } from "react";
 
 const CreatePerformancePage = lazy(() => import("#src/pages/performances/"));
 const EditPerformancePage = lazy(() => import("#src/pages/performances/edit"));
 const PerformanceReportPage = lazy(() => import("#src/pages/performances/report"));
 const PredictionsSummaryReportPage = lazy(() => import("#src/pages/performances/predictions-summary-report"));
+const SmsGatewayTrafficReportPage = lazy(() => import("#src/pages/performances/sms-gateway-traffic-report"));
 
 const routes: AppRouteRecordRaw[] = [
 	{
@@ -70,6 +72,16 @@ const routes: AppRouteRecordRaw[] = [
 				handle: {
 					icon: createElement(PieChartOutlined),
 					title: $t("common.menu.predictionsSummaryReport"),
+					accessDomain: "performances",
+					accessAction: "view",
+				},
+			},
+			{
+				path: "/performances/sms-gateway/traffic-report",
+				Component: SmsGatewayTrafficReportPage,
+				handle: {
+					icon: createElement(LineChartOutlined),
+					title: $t("common.menu.smsGatewayTrafficReport"),
 					accessDomain: "performances",
 					accessAction: "view",
 				},
