@@ -29,3 +29,11 @@ export interface PaginatedResponse<T> {
 	previous: string | null
 	results: T[]
 }
+export interface FontDto {
+	id: number
+	name: string
+	family: string
+	format: string
+	size: number
+	file_url: string
+}

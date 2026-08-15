@@ -1,3 +1,4 @@
+// src/shared/ui/rhf-pro/fields/RHFProText.tsx
 import type { InputProps } from "antd";
 import type { FieldValues, Path } from "react-hook-form";
 import type { CommonFieldProps } from "../types";

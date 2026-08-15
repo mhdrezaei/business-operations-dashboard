@@ -1,22 +1,46 @@
+// src/features/contract-templates/list/TemplateListPage.tsx
 import type { ActionType, ProColumns } from "@ant-design/pro-components";
 import type { TemplateListItemType } from "../model/templates.list.types";
 
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import { DeleteOutlined, EditOutlined, PlusCircleOutlined } from "@ant-design/icons";
 import { Button, Popconfirm } from "antd";
-import React, { useMemo, useRef } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
 
 import { fetchDeleteTemplate, fetchTemplatesList } from "../api/templates.api";
+import TemplateCreateModal from "../create/TemplateCreateModal";
 import { getTemplateColumns } from "./constants";
 
 export default function TemplateListPage() {
 	const { t } = useTranslation();
-	const navigate = useNavigate();
 	const actionRef = useRef<ActionType>(null);
 
-	// تابع هندل کردن حذف تمپلیت
+	const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+	const [editingTemplateId, setEditingTemplateId] = useState<number | null>(null);
+	const [clickPosition, setClickPosition] = useState({ x: 0, y: 0 });
+
+	const handleOpenCreateModal = (e: React.MouseEvent) => {
+		setClickPosition({ x: e.clientX, y: e.clientY });
+		setEditingTemplateId(null);
+		setIsCreateModalOpen(true);
+	};
+
+	const handleOpenEditModal = (e: React.MouseEvent, id: number) => {
+		setClickPosition({ x: e.clientX, y: e.clientY });
+		setEditingTemplateId(id);
+		setIsCreateModalOpen(true);
+	};
+
+	const handleCloseModal = () => {
+		setIsCreateModalOpen(false);
+		setEditingTemplateId(null);
+	};
+
+	const handleModalSuccess = () => {
+		actionRef.current?.reload?.();
+	};
+
 	const handleDeleteRow = async (row: TemplateListItemType) => {
 		try {
 			await fetchDeleteTemplate(row.id);
@@ -51,9 +75,8 @@ export default function TemplateListPage() {
 						size="large"
 						title="ویرایش قالب"
 						icon={<EditOutlined />}
-						onClick={() => {
-							// هدایت به صفحه ویرایش
-							navigate(`/contracts/templates/${record.id}/edit`);
+						onClick={(e) => {
+							handleOpenEditModal(e, record.id);
 						}}
 					/>,
 					<Popconfirm
@@ -73,7 +96,7 @@ export default function TemplateListPage() {
 				],
 			},
 		];
-	}, [baseColumns, navigate, t]);
+	}, [baseColumns, t]);
 
 	return (
 		<BasicContent className="h-full">
@@ -104,11 +127,20 @@ export default function TemplateListPage() {
 						key="addNewTemplate"
 						icon={<PlusCircleOutlined />}
 						type="primary"
-						onClick={() => navigate("/contracts/templates/new")}
+						onClick={handleOpenCreateModal}
 					>
 						قالب جدید
 					</Button>,
 				]}
+			/>
+
+			<TemplateCreateModal
+				isOpen={isCreateModalOpen}
+				onClose={handleCloseModal}
+				originPosition={clickPosition}
+
+				onSuccess={handleModalSuccess}
+				templateId={editingTemplateId}
 			/>
 		</BasicContent>
 	);

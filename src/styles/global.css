@@ -36,7 +36,7 @@ body {
 /* Persian language specific styling */
 html[lang="fa-IR"] *,
 html[lang="fa"] * {
-	font-family: var(--font-family-persian) !important;
+	font-family: var(--font-family-persian);
 }
 
 .ant-app,
