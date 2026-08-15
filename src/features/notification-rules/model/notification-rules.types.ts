@@ -26,7 +26,8 @@ export interface NotificationRuleDto {
 	created_at: string
 	updated_at: string
 	service_names: string[]
-	is_global?: boolean
+	apply_to_all_users?: boolean
+	excluded_user_ids?: number[]
 	is_deleted?: boolean
 	traffic_company_type?: string | null
 }
@@ -44,7 +45,8 @@ export interface NotificationRuleUpsertPayload {
 	code: NotificationRuleCode
 	name: string
 	is_active: boolean
-	is_global?: boolean
+	apply_to_all_users?: boolean
+	excluded_user_ids?: number[]
 	service_names: string[]
 	days_before_end: number[]
 	channels: NotificationRuleChannel[]

@@ -47,7 +47,7 @@ export function getNotificationRulesColumns({ userNameById, roleNameById }: {
 		{ title: "نام", dataIndex: "name", width: 220, ellipsis: true },
 		{ title: "کد", dataIndex: "code", width: 210, render: (_, record) => <Tooltip title={getRuleCodeLabel(record.code)}><Tag>{record.code}</Tag></Tooltip> },
 		{ title: "فعال", dataIndex: "is_active", width: 100, valueType: "select", valueEnum: { true: "فعال", false: "غیرفعال" }, render: (_, record) => <Tag color={record.is_active ? "success" : "default"}>{getRuleStatusLabel(record.is_active)}</Tag> },
-		{ title: "گلوبال", dataIndex: "is_global", width: 100, search: false, render: (_, record) => record.is_global ? "بله" : "خیر" },
+		{ title: "گلوبال", dataIndex: "apply_to_all_users", width: 100, search: false, render: (_, record) => record.apply_to_all_users ? "بله" : "خیر" },
 		{ title: "حذف‌شده‌ها", dataIndex: "is_deleted", width: 120, search: false, render: (_, record) => record.is_deleted ? "بله" : "خیر" },
 		{ title: "سرویس‌ها", dataIndex: "service_names", width: 220, search: false, render: (_, record) => renderServiceNames(record.service_names) },
 		{ title: "نوع شرکت ترافیک", dataIndex: "traffic_company_type", width: 180, search: false, render: (_, record) => record.traffic_company_type ?? "-" },

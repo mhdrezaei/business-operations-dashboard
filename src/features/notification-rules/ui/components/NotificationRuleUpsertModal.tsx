@@ -47,7 +47,8 @@ interface NotificationRuleFormValues {
 	name: string
 	code: NotificationRuleCode
 	is_active: boolean
-	is_global: boolean
+	apply_to_all_users: boolean
+	excluded_user_ids: number[]
 	service_names: string[]
 	days_before_end: string
 	payload_template: PayloadFormValue
@@ -122,7 +123,8 @@ function buildDefaultValues(initial?: NotificationRuleDto | null): NotificationR
 		name: initial?.name ?? "",
 		code,
 		is_active: initial?.is_active ?? true,
-		is_global: initial?.is_global ?? false,
+		apply_to_all_users: initial?.apply_to_all_users ?? false,
+		excluded_user_ids: initial?.excluded_user_ids ?? [],
 		service_names: initial?.service_names ?? [],
 		days_before_end: stringifyDaysBeforeEnd(initial?.days_before_end?.length ? initial.days_before_end : defaultNotificationRuleDays),
 		payload_template: buildPayloadFormValue(code, initial?.payload_template),
@@ -201,7 +203,8 @@ function comparableRuleFormValues(values: NotificationRuleFormValues, payloadMod
 		code: values.code,
 		name: values.name.trim(),
 		is_active: values.is_active,
-		is_global: values.is_global,
+		apply_to_all_users: values.apply_to_all_users,
+		excluded_user_ids: [...(values.excluded_user_ids ?? [])].sort((left, right) => left - right),
 		service_names: [...(values.service_names ?? [])].map(value => value.trim()).sort(),
 		days_before_end: parseDaysBeforeEnd(values.days_before_end ?? "").sort((left, right) => left - right),
 		payload_template: comparablePayloadTemplate(values.code, payloadMode, values.payload_template),
@@ -221,7 +224,7 @@ function toRulePayload(values: NotificationRuleFormValues, payloadMode: PayloadM
 		throw new Error("حداقل یک مقدار معتبر برای days_before_end وارد کنید.");
 	}
 
-	const recipients = values.recipients
+	const recipients = (values.recipients ?? [])
 		.filter(recipient => recipient.target_id)
 		.map(recipient => ({
 			target_type: recipient.target_type,
@@ -229,7 +232,7 @@ function toRulePayload(values: NotificationRuleFormValues, payloadMode: PayloadM
 			role_id: recipient.target_type === "ROLE" ? recipient.target_id ?? null : null,
 		}));
 
-	if (!recipients.length) {
+	if (!values.apply_to_all_users && !recipients.length) {
 		throw new Error("حداقل یک گیرنده انتخاب کنید.");
 	}
 
@@ -237,14 +240,15 @@ function toRulePayload(values: NotificationRuleFormValues, payloadMode: PayloadM
 		code: values.code,
 		name: values.name.trim(),
 		is_active: values.is_active,
-		is_global: values.is_global,
+		apply_to_all_users: values.apply_to_all_users,
+		excluded_user_ids: values.apply_to_all_users ? values.excluded_user_ids ?? [] : [],
 		service_names: values.service_names ?? [],
 		days_before_end: days,
 		channels: [channel],
 		payload_template: resolveRuleChannel(values.code) === "SMS" || payloadMode === "json"
 			? parsePayloadJson(values.payload_template?.json ?? "{}")
 			: buildInAppPayload(values.payload_template ?? {}),
-		recipients,
+		recipients: values.apply_to_all_users ? [] : recipients,
 	};
 }
 
@@ -268,6 +272,7 @@ export function NotificationRuleUpsertModal({
 
 	const defaultValues = useMemo(() => buildDefaultValues(initial), [initial]);
 	const selectedCode = Form.useWatch("code", form) ?? defaultValues.code;
+	const isGlobal = Form.useWatch("apply_to_all_users", form) ?? defaultValues.apply_to_all_users;
 	const selectedChannel = resolveRuleChannel(selectedCode);
 
 	const serviceOptions = useMemo(
@@ -388,7 +393,7 @@ export function NotificationRuleUpsertModal({
 						</Form.Item>
 
 						<Form.Item
-							name="is_global"
+							name="apply_to_all_users"
 							valuePropName="checked"
 							className="!mb-0"
 						>
@@ -397,6 +402,29 @@ export function NotificationRuleUpsertModal({
 					</div>
 
 				</div>
+
+				{isGlobal && (
+					<section className="mt-4 rounded-lg border border-[var(--ant-color-border-secondary)] p-4">
+						<Form.Item
+							name="excluded_user_ids"
+							label="کاربران مستثنا (excluded_user_ids)"
+							extra="کاربرانی را انتخاب کنید که نباید این نوتیفیکیشن را دریافت کنند."
+							className="!mb-0"
+						>
+							<Select
+								mode="multiple"
+								allowClear
+								showSearch
+								loading={loadingOptions}
+								options={userOptions}
+								optionFilterProp="label"
+								placeholder="انتخاب کاربران مستثنا"
+								maxTagCount="responsive"
+								listHeight={160}
+							/>
+						</Form.Item>
+					</section>
+				)}
 
 				<section className="mt-2 rounded-lg border border-[var(--ant-color-border-secondary)] p-4">
 					<Form.Item
@@ -419,76 +447,78 @@ export function NotificationRuleUpsertModal({
 					</Form.Item>
 				</section>
 
-				<section className="mt-4 rounded-lg border border-[var(--ant-color-border-secondary)] p-4">
-					<div className="mb-3 flex items-center justify-between gap-3">
-						<Typography.Title level={5} className="!mb-0">
-							Recipients
-						</Typography.Title>
+				{!isGlobal && (
+					<section className="mt-4 rounded-lg border border-[var(--ant-color-border-secondary)] p-4">
+						<div className="mb-3 flex items-center justify-between gap-3">
+							<Typography.Title level={5} className="!mb-0">
+								Recipients
+							</Typography.Title>
+							<Form.List name="recipients">
+								{(_, { add }) => (
+									<Button onClick={() => add({ target_type: "USER" })}>
+										افزودن گیرنده
+									</Button>
+								)}
+							</Form.List>
+						</div>
+
 						<Form.List name="recipients">
-							{(_, { add }) => (
-								<Button onClick={() => add({ target_type: "USER" })}>
-									افزودن گیرنده
-								</Button>
+							{(fields, { remove }) => (
+								<div className="flex flex-col gap-3">
+									{fields.map(field => (
+										<div key={field.key} className="grid grid-cols-1 gap-3 rounded-lg border border-[var(--ant-color-border-secondary)] p-3 md:grid-cols-[180px_1fr_110px]">
+											<Form.Item
+												{...field}
+												name={[field.name, "target_type"]}
+												label="نوع"
+												rules={[{ required: true }]}
+											>
+												<Select
+													options={[
+														{ label: notificationRuleTargetTypeLabels.USER, value: "USER" },
+														{ label: notificationRuleTargetTypeLabels.ROLE, value: "ROLE" },
+													]}
+													onChange={() => {
+														form.setFieldValue(["recipients", field.name, "target_id"], undefined);
+														handleValuesChange();
+													}}
+												/>
+											</Form.Item>
+											<Form.Item shouldUpdate noStyle>
+												{({ getFieldValue }) => {
+													const targetType = getFieldValue(["recipients", field.name, "target_type"]) as NotificationRecipientTargetType | undefined;
+													const options = targetType === "ROLE" ? roleOptions : userOptions;
+													return (
+														<Form.Item
+															{...field}
+															name={[field.name, "target_id"]}
+															label={targetType === "ROLE" ? "انتخاب نقش" : "انتخاب کاربر"}
+															rules={[{ required: true, message: "گیرنده را انتخاب کنید." }]}
+														>
+															<Select
+																showSearch
+																loading={loadingOptions}
+																options={options}
+																optionFilterProp="label"
+																placeholder={targetType === "ROLE" ? "نقش" : "کاربر"}
+																onChange={() => handleValuesChange()}
+															/>
+														</Form.Item>
+													);
+												}}
+											</Form.Item>
+											<div className="flex items-end pb-6">
+												<Button danger block onClick={() => remove(field.name)}>
+													حذف
+												</Button>
+											</div>
+										</div>
+									))}
+								</div>
 							)}
 						</Form.List>
-					</div>
-
-					<Form.List name="recipients">
-						{(fields, { remove }) => (
-							<div className="flex flex-col gap-3">
-								{fields.map(field => (
-									<div key={field.key} className="grid grid-cols-1 gap-3 rounded-lg border border-[var(--ant-color-border-secondary)] p-3 md:grid-cols-[180px_1fr_110px]">
-										<Form.Item
-											{...field}
-											name={[field.name, "target_type"]}
-											label="نوع"
-											rules={[{ required: true }]}
-										>
-											<Select
-												options={[
-													{ label: notificationRuleTargetTypeLabels.USER, value: "USER" },
-													{ label: notificationRuleTargetTypeLabels.ROLE, value: "ROLE" },
-												]}
-												onChange={() => {
-													form.setFieldValue(["recipients", field.name, "target_id"], undefined);
-													handleValuesChange();
-												}}
-											/>
-										</Form.Item>
-										<Form.Item shouldUpdate noStyle>
-											{({ getFieldValue }) => {
-												const targetType = getFieldValue(["recipients", field.name, "target_type"]) as NotificationRecipientTargetType | undefined;
-												const options = targetType === "ROLE" ? roleOptions : userOptions;
-												return (
-													<Form.Item
-														{...field}
-														name={[field.name, "target_id"]}
-														label={targetType === "ROLE" ? "انتخاب نقش" : "انتخاب کاربر"}
-														rules={[{ required: true, message: "گیرنده را انتخاب کنید." }]}
-													>
-														<Select
-															showSearch
-															loading={loadingOptions}
-															options={options}
-															optionFilterProp="label"
-															placeholder={targetType === "ROLE" ? "نقش" : "کاربر"}
-															onChange={() => handleValuesChange()}
-														/>
-													</Form.Item>
-												);
-											}}
-										</Form.Item>
-										<div className="flex items-end pb-6">
-											<Button danger block onClick={() => remove(field.name)}>
-												حذف
-											</Button>
-										</div>
-									</div>
-								))}
-							</div>
-						)}
-					</Form.List>
-				</section>
+					</section>
+				)}
 
 				<div className="mt-5 flex flex-wrap items-center justify-between gap-3">
 					<Checkbox
