@@ -322,7 +322,6 @@ export default function ContractListPage() {
 	return (
 		<BasicContent className="h-full">
 			<BasicTable<ContractListItemType>
-				adaptive
 				rootClassName={addendaTableClasses.contractTable}
 				rowKey="id"
 				columns={columns}
