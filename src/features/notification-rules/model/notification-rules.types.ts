@@ -1,6 +1,6 @@
 import type { Paginated } from "#src/api/types";
 
-export type NotificationRuleCode = "CONTRACT_EXPIRY" | "CONTRACT_EXPIRY_SMS";
+export type NotificationRuleCode = "CONTRACT_EXPIRY" | "CONTRACT_EXPIRY_SMS" | "PERFORMANCE_MISSING_PREV_MONTH" | "PERFORMANCE_MISSING_PREV_MONTH_SMS" | "BUSINESS_APPROVAL_PENDING" | "SIGN_PENDING";
 export type NotificationRuleChannel = "IN_APP" | "SMS";
 export type NotificationRecipientTargetType = "USER" | "ROLE";
 
@@ -26,6 +26,10 @@ export interface NotificationRuleDto {
 	created_at: string
 	updated_at: string
 	service_names: string[]
+	apply_to_all_users?: boolean
+	excluded_user_ids?: number[]
+	is_deleted?: boolean
+	traffic_company_type?: string | null
 }
 
 export interface NotificationRulesListQuery {
@@ -41,6 +45,8 @@ export interface NotificationRuleUpsertPayload {
 	code: NotificationRuleCode
 	name: string
 	is_active: boolean
+	apply_to_all_users?: boolean
+	excluded_user_ids?: number[]
 	service_names: string[]
 	days_before_end: number[]
 	channels: NotificationRuleChannel[]

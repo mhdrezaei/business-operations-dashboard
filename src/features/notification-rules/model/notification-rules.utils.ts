@@ -10,8 +10,12 @@ import type {
 } from "./notification-rules.types";
 
 export const notificationRuleCodeOptions: Array<{ label: string, value: NotificationRuleCode }> = [
-	{ label: "نوتیفیکیشن داخل سامانه", value: "CONTRACT_EXPIRY" },
-	{ label: "پیامک", value: "CONTRACT_EXPIRY_SMS" },
+	{ label: "هشدار پایان قرارداد (نوتیفیکیشن داخل سامانه)", value: "CONTRACT_EXPIRY" },
+	{ label: "هشدار پایان قرارداد (پیامک)", value: "CONTRACT_EXPIRY_SMS" },
+	{ label: "یادآوری ثبت عملکرد ماه قبل (نوتیفیکیشن داخل سامانه)", value: "PERFORMANCE_MISSING_PREV_MONTH" },
+	{ label: "یادآوری ثبت عملکرد ماه قبل (پیامک)", value: "PERFORMANCE_MISSING_PREV_MONTH_SMS" },
+	{ label: "یادآوری تأیید درخواست کسب‌وکار (نوتیفیکیشن داخل سامانه)", value: "BUSINESS_APPROVAL_PENDING" },
+	{ label: "یادآوری امضای در انتظار (نوتیفیکیشن داخل سامانه)", value: "SIGN_PENDING" },
 ];
 
 export const notificationRuleChannelLabels: Record<NotificationRuleChannel, string> = {
@@ -46,14 +50,14 @@ export const defaultInAppPayloadTemplate: NotificationRulePayloadTemplate = {
 };
 
 export function resolveRuleChannel(code: NotificationRuleCode): NotificationRuleChannel {
-	return code === "CONTRACT_EXPIRY_SMS" ? "SMS" : "IN_APP";
+	return code.endsWith("_SMS") ? "SMS" : "IN_APP";
 }
 
 export function normalizeRulePayloadTemplate(
 	code: NotificationRuleCode,
 	payload: NotificationRulePayloadTemplate | null | undefined,
 ): NotificationRulePayloadTemplate {
-	if (code === "CONTRACT_EXPIRY_SMS") {
+	if (resolveRuleChannel(code) === "SMS") {
 		return payload && Object.keys(payload).length > 0 ? payload : {};
 	}
 

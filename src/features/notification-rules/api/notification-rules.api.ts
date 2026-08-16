@@ -13,7 +13,18 @@ const RUNS_BASE = "notifications/runs";
 const RUN_NOW_ENDPOINTS = {
 	IN_APP: "notifications/jobs/contract-expiry/run-now/",
 	SMS: "notifications/jobs/contract-expiry-sms/run-now/",
+	MISSING_PREV_MONTH_IN_APP: "notifications/jobs/performance-missing-prev-month/run-now/",
+	MISSING_PREV_MONTH_SMS: "notifications/jobs/performance-missing-prev-month-sms/run-now/",
+	BUSINESS_APPROVAL_PENDING: "notifications/jobs/business-approval-pending/run-now/",
+	SIGN_PENDING: "notifications/jobs/sign-pending/run-now/",
 } as const;
+
+export type NotificationManualJob = keyof typeof RUN_NOW_ENDPOINTS;
+
+export interface NotificationRunNowResponse {
+	task_id: string
+	status: string
+}
 
 export function fetchNotificationRulesList(query: NotificationRulesListQuery) {
 	return request
@@ -43,6 +54,6 @@ export function fetchLatestNotificationRun() {
 		.json<NotificationRunDto>();
 }
 
-export async function fetchRunNotificationJob(channel: "IN_APP" | "SMS") {
-	await request.post(RUN_NOW_ENDPOINTS[channel]);
+export function fetchRunNotificationJob(job: NotificationManualJob) {
+	return request.post(RUN_NOW_ENDPOINTS[job]).json<NotificationRunNowResponse>();
 }
