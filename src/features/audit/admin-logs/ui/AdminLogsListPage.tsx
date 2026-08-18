@@ -2,7 +2,7 @@ import type { ActionType, ProColumns, ProFormInstance } from "@ant-design/pro-co
 import type { AuditLogDto, AuditLogsListQuery } from "../model/admin-logs.types";
 
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
-import { EyeOutlined } from "@ant-design/icons";
+import { TableActionEyeIcon } from "#src/icons";
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -62,7 +62,7 @@ export default function AdminLogsListPage() {
 						type="link"
 						size="large"
 						title="جزئیات"
-						icon={<EyeOutlined />}
+						icon={<TableActionEyeIcon />}
 						onClick={() => handleOpenDetails(record)}
 					/>,
 				],

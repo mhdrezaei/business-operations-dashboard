@@ -3,7 +3,7 @@ import type { ContractServicePath } from "../../../api/contracts.api";
 import type { ContractAddendumTreeNode } from "../../model/contract-addenda-tree";
 import type { ContractListItemType } from "../../model/contracts.list.types";
 
-import { FilePdfOutlined } from "@ant-design/icons";
+import { TableActionDownloadIcon } from "#src/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Alert, Button, Empty, Space, Spin, Table, Tag } from "antd";
 import { fetchContractDetail } from "../../../api/contracts.api";
@@ -81,7 +81,7 @@ function getColumns(onDownload: (row: ContractAddendumTableRow) => void): Column
 						size="small"
 						title="دانلود PDF الحاقیه"
 						aria-label={`دانلود PDF الحاقیه ${row.displayNumber}`}
-						icon={<FilePdfOutlined />}
+						icon={<TableActionDownloadIcon />}
 						onClick={() => onDownload(row)}
 					/>
 				</Space>

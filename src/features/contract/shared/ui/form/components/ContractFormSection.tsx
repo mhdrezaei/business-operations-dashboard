@@ -90,6 +90,7 @@ export function ContractFormSection({
 						? (
 							<Button
 								type="text"
+								disabled={false}
 								aria-label={expanded ? `بستن ${String(title)}` : `باز کردن ${String(title)}`}
 								icon={expanded ? <UpOutlined /> : <DownOutlined />}
 								onClick={() => setExpanded(current => !current)}

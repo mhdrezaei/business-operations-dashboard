@@ -3,6 +3,7 @@ import type { CompanyDocumentDto } from "../model/company-documents.types";
 
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import { useAccess } from "#src/hooks";
+import { TableActionEditIcon, TableActionTrashIcon } from "#src/icons";
 import { PlusCircleOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Popconfirm, Tag } from "antd";
@@ -198,6 +199,7 @@ export default function CompanyDocumentsTable({ serviceId, companyId }: Props) {
 								key="edit"
 								type="link"
 								size="small"
+								icon={<TableActionEditIcon />}
 								onClick={() => {
 									setSelectedId(record.id);
 									setOpenModal(true);
@@ -216,7 +218,7 @@ export default function CompanyDocumentsTable({ serviceId, companyId }: Props) {
 								cancelText="خیر"
 								onConfirm={() => handleDeleteRow(record, action)}
 							>
-								<BasicButton type="link" size="small">
+								<BasicButton type="link" size="small" icon={<TableActionTrashIcon />}>
 									حذف
 								</BasicButton>
 							</Popconfirm>,

@@ -6,7 +6,8 @@ import type { ContractListItemType } from "../model/contracts.list.types";
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import { companiesByServiceQuery, servicesQuery } from "#src/features/contract/create/queries/contract.queries";
 import { useAccess } from "#src/hooks";
-import { DeleteOutlined, EditOutlined, FilePdfOutlined, PlusCircleOutlined } from "@ant-design/icons";
+import { TableActionDownloadIcon, TableActionEditIcon, TableActionEyeIcon, TableActionTrashIcon } from "#src/icons";
+import { PlusCircleOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 
 import { Button, Popconfirm, theme } from "antd";
@@ -260,12 +261,14 @@ export default function ContractListPage() {
 				title: t("common.action"),
 				valueType: "option",
 				key: "option",
-				width: 120,
+				width: 160,
 				fixed: "right",
 				align: "center",
 
 				render: (_, record, __, action) => {
 					const actions = [] as React.ReactNode[];
+					const service = resolveServicePath(record);
+					const companyType = getRowCompanyType(record) ?? "";
 
 					if (canUpdateRow(record)) {
 						actions.push(
@@ -274,15 +277,38 @@ export default function ContractListPage() {
 								type="link"
 								size="large"
 								title="ویرایش قرارداد"
-								icon={<EditOutlined />}
+								icon={<TableActionEditIcon />}
 								onClick={() => {
-									const service = resolveServicePath(record);
-									const companyType = getRowCompanyType(record) ?? "";
 									navigate(`/contracts/${record.id}/edit?service=${encodeURIComponent(service)}&serviceId=${record.service_id}&companyType=${encodeURIComponent(companyType)}`);
 								}}
 							/>,
 						);
 					}
+
+					actions.push(
+						<BasicButton
+							key="preview"
+							type="link"
+							size="large"
+							title="پیش‌نمایش قرارداد"
+							icon={<TableActionEyeIcon />}
+							onClick={() => navigate(`/contracts/${record.id}/preview?service=${encodeURIComponent(service)}&serviceId=${record.service_id}&companyType=${encodeURIComponent(companyType)}`)}
+						/>,
+					);
+
+					actions.push(
+						<BasicButton
+							key="pdf"
+							type="link"
+							size="large"
+							title="دانلود PDF قرارداد"
+							icon={<TableActionDownloadIcon />}
+							loading={downloadingPdfId === record.id}
+							onClick={() => handleDownloadPdf(record)}
+						>
+
+						</BasicButton>,
+					);
 
 					if (canDeleteRow(record)) {
 						actions.push(
@@ -293,25 +319,11 @@ export default function ContractListPage() {
 								cancelText={t("common.cancel")}
 								onConfirm={() => handleDeleteRow(record, action)}
 							>
-								<BasicButton type="link" size="large" title="حذف قرارداد" icon={<DeleteOutlined />}>
+								<BasicButton type="link" size="large" title="حذف قرارداد" icon={<TableActionTrashIcon />}>
 								</BasicButton>
 							</Popconfirm>,
 						);
 					}
-
-					actions.push(
-						<BasicButton
-							key="pdf"
-							type="link"
-							size="large"
-							title="دانلود PDF قرارداد"
-							icon={<FilePdfOutlined />}
-							loading={downloadingPdfId === record.id}
-							onClick={() => handleDownloadPdf(record)}
-						>
-
-						</BasicButton>,
-					);
 
 					return actions;
 				},

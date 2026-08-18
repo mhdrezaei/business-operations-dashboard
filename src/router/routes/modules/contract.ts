@@ -5,12 +5,13 @@ import { ContainerLayout } from "#src/layout";
 import { $t } from "#src/locales";
 
 import { contract } from "#src/router/extra-info";
-import { EditOutlined, FileAddOutlined, SnippetsOutlined, UnorderedListOutlined } from "@ant-design/icons";
+import { EditOutlined, EyeOutlined, FileAddOutlined, SnippetsOutlined, UnorderedListOutlined } from "@ant-design/icons";
 import { createElement, lazy } from "react";
 
 const CreateContractPage = lazy(() => import("#src/pages/contracts/"));
 const EditContractPage = lazy(() => import("#src/pages/contracts/edit"));
 const EditContractFormPage = lazy(() => import("#src/pages/contracts/edit-contract"));
+const ContractPreviewPage = lazy(() => import("#src/pages/contracts/preview"));
 const ContractTemplate = lazy(() => import("#src/pages/contracts/contract-template"));
 
 const routes: AppRouteRecordRaw[] = [
@@ -57,6 +58,19 @@ const routes: AppRouteRecordRaw[] = [
 					// 	accessControlCodes.update,
 					// 	accessControlCodes.update,
 					// ],
+				},
+			},
+			{
+				path: "/contracts/:contractId/preview",
+				Component: ContractPreviewPage,
+				handle: {
+					icon: createElement(EyeOutlined),
+					title: "پیش‌نمایش قرارداد",
+					hideInMenu: true,
+					currentActiveMenu: "/contracts/list",
+					accessDomain: "contracts",
+					accessAction: "view",
+					keepAlive: false,
 				},
 			},
 			{

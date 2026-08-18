@@ -13,6 +13,7 @@ interface Props {
 	contractId: number
 	initialDocuments: UploadFile[]
 	loading?: boolean
+	readOnly?: boolean
 }
 
 const MAX_FILE_COUNT = 10;
@@ -44,7 +45,7 @@ function formatFileSize(size?: number) {
 	return `${new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 1 }).format(size / (1024 * 1024))} MB`;
 }
 
-export function ContractDocumentsPanel({ contractId, initialDocuments, loading = false }: Props) {
+export function ContractDocumentsPanel({ contractId, initialDocuments, loading = false, readOnly = false }: Props) {
 	const [documents, setDocuments] = useState<UploadFile[]>(initialDocuments);
 	const [uploading, setUploading] = useState(false);
 	const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -128,7 +129,7 @@ export function ContractDocumentsPanel({ contractId, initialDocuments, loading =
 				<div className="flex flex-col gap-4">
 					<div className="flex items-center justify-between gap-3 px-1">
 						<span className="font-semibold text-text">فایل‌های پیوست</span>
-						<Upload {...uploadProps} disabled={uploading || documents.length >= MAX_FILE_COUNT}>
+						<Upload className={readOnly ? "hidden" : undefined} {...uploadProps} disabled={readOnly || uploading || documents.length >= MAX_FILE_COUNT}>
 							<Button loading={uploading} className="!rounded-xl">
 								افزودن
 							</Button>
@@ -179,6 +180,7 @@ export function ContractDocumentsPanel({ contractId, initialDocuments, loading =
 													>
 														<Button
 															danger
+															className={readOnly ? "hidden" : undefined}
 															type="text"
 															size="small"
 															icon={<DeleteOutlined />}

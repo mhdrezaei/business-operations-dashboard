@@ -11,6 +11,14 @@ import { useMatches, useNavigate } from "react-router";
 import { useLayout } from "../hooks";
 import { findDeepestFirstItem, findRootMenuByPath, translateMenus } from "./utils";
 
+function removeSubmenuIcons(items: ReturnType<typeof translateMenus>, keepRootIcons: boolean, level = 0): ReturnType<typeof translateMenus> {
+	return items.map(item => ({
+		...item,
+		icon: keepRootIcons && level === 0 ? item.icon : undefined,
+		children: item.children ? removeSubmenuIcons(item.children, keepRootIcons, level + 1) : undefined,
+	}));
+}
+
 export function useMenu() {
 	const wholeMenus = useAccessStore(state => state.wholeMenus);
 	const { isMixedNav, isTwoColumnNav } = useLayout();
@@ -79,7 +87,9 @@ export function useMenu() {
 	 * منوي کناري
 	 */
 	const sideNavItems = useMemo(() => {
-		return shouldSplitMenuItems ? splitSideNavItems : translatedMenus;
+		return shouldSplitMenuItems
+			? removeSubmenuIcons(splitSideNavItems, false)
+			: removeSubmenuIcons(translatedMenus, true);
 	}, [shouldSplitMenuItems, splitSideNavItems, translatedMenus]);
 
 	/**

@@ -4,7 +4,8 @@ import type { AdminRoleDto } from "../model/admin-roles.types";
 
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import { useAccess } from "#src/hooks";
-import { DeleteOutlined, EditOutlined, EyeOutlined, PlusCircleOutlined } from "@ant-design/icons";
+import { TableActionEditIcon, TableActionEyeIcon, TableActionTrashIcon } from "#src/icons";
+import { PlusCircleOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Popconfirm } from "antd";
 import React, { useMemo, useRef, useState } from "react";
@@ -105,7 +106,7 @@ export default function AdminRolesListPage() {
 								type="link"
 								size="large"
 								title="ویرایش نقش"
-								icon={<EditOutlined />}
+								icon={<TableActionEditIcon />}
 								onClick={() => handleOpenEdit(record)}
 							/>,
 						);
@@ -117,7 +118,7 @@ export default function AdminRolesListPage() {
 							type="link"
 							size="large"
 							title="جزئیات"
-							icon={<EyeOutlined />}
+							icon={<TableActionEyeIcon />}
 							onClick={() => handleOpenDetails(record)}
 						/>,
 					);
@@ -131,7 +132,7 @@ export default function AdminRolesListPage() {
 								cancelText={t("common.cancel")}
 								onConfirm={() => handleDeleteRole(record, action)}
 							>
-								<BasicButton type="link" size="large" title="حذف نقش" icon={<DeleteOutlined />} />
+								<BasicButton type="link" size="large" title="حذف نقش" icon={<TableActionTrashIcon />} />
 							</Popconfirm>,
 						);
 					}

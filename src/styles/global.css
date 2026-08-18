@@ -397,3 +397,9 @@ html.dark .sms-gateway-history-summary-row {
 	background: #152238;
 	color: #c6d4e8;
 }
+
+.ant-table .ant-table-cell .ant-btn-icon > svg {
+	width: 20px;
+	height: 20px;
+	flex: none;
+}

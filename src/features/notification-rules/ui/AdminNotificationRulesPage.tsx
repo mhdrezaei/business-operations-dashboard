@@ -7,7 +7,8 @@ import type { NotificationRuleCode, NotificationRuleDto } from "../model/notific
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import { emitNotificationSync } from "#src/features/notification/shared/notification-sync";
 import { useAccess } from "#src/hooks";
-import { DeleteOutlined, EditOutlined, PlayCircleOutlined, PlusCircleOutlined, ReloadOutlined } from "@ant-design/icons";
+import { TableActionEditIcon, TableActionTrashIcon } from "#src/icons";
+import { PlayCircleOutlined, PlusCircleOutlined, ReloadOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Descriptions, Empty, Popconfirm, Space, Tag, Typography } from "antd";
 import React, { useMemo, useRef, useState } from "react";
@@ -158,7 +159,7 @@ export default function AdminNotificationRulesPage() {
 							type="link"
 							size="large"
 							title="ویرایش Rule"
-							icon={<EditOutlined />}
+							icon={<TableActionEditIcon />}
 							onClick={() => handleOpenEdit(record)}
 						/>,
 					);
@@ -173,7 +174,7 @@ export default function AdminNotificationRulesPage() {
 							cancelText={t("common.cancel")}
 							onConfirm={() => handleDeleteRule(record, action)}
 						>
-							<BasicButton type="link" size="large" title="حذف Rule" icon={<DeleteOutlined />} />
+							<BasicButton type="link" size="large" title="حذف Rule" icon={<TableActionTrashIcon />} />
 						</Popconfirm>,
 					);
 				}

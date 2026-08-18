@@ -2,7 +2,8 @@ import type { ActionType, ProColumns, ProFormInstance } from "@ant-design/pro-co
 import type { PredictionListRow } from "../../shared/model/prediction.list.types";
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import { useAccess } from "#src/hooks";
-import { DeleteOutlined, EditOutlined, PlusCircleOutlined } from "@ant-design/icons";
+import { TableActionEditIcon, TableActionTrashIcon } from "#src/icons";
+import { PlusCircleOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Popconfirm } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -246,7 +247,7 @@ export default function PredictionListPage() {
 								type="link"
 								size="large"
 								title={t("prediction.actions.editPrediction")}
-								icon={<EditOutlined />}
+								icon={<TableActionEditIcon />}
 								onClick={() => handleOpenEdit(row)}
 							/>,
 						);
@@ -261,7 +262,7 @@ export default function PredictionListPage() {
 								cancelText={t("common.cancel")}
 								onConfirm={() => handleDelete(row)}
 							>
-								<BasicButton type="link" size="large" title={t("common.delete")} icon={<DeleteOutlined />} />
+								<BasicButton type="link" size="large" title={t("common.delete")} icon={<TableActionTrashIcon />} />
 							</Popconfirm>,
 						);
 					}
