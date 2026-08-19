@@ -80,7 +80,6 @@
 	"tabbar": {
 		"title": "标签栏",
 		"enable": "启用标签栏",
-		"icon": "显示标签栏图标",
 		"showMore": "显示更多按钮",
 		"showMaximize": "显示最大化按钮",
 		"persist": "持久化标签页",

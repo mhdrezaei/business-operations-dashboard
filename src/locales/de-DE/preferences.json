@@ -84,7 +84,6 @@
 	"tabbar": {
 		"title": "Tab-Leiste",
 		"enable": "Tab-Leiste aktivieren",
-		"icon": "Tab-Symbol anzeigen",
 		"showMore": "Mehr-Schaltfläche anzeigen",
 		"showMaximize": "Maximieren-Schaltfläche anzeigen",
 		"persist": "Tabs beibehalten",

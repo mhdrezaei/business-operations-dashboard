@@ -17,7 +17,7 @@ import LayoutMixedSidebar from "../layout-mixed-sidebar";
 import LayoutMobileMenu from "../layout-mobile-menu";
 import LayoutSidebar from "../layout-sidebar";
 import LayoutTabbar from "../layout-tabbar";
-import { BreadcrumbViews, Logo } from "../widgets";
+import { Logo } from "../widgets";
 
 const { useBreakpoint } = Grid;
 
@@ -117,20 +117,18 @@ export default function ContainerLayout() {
 			<LayoutHeader>
 				<Logo sidebarCollapsed={sidebarCollapsed} width={computedSidebarWidth} />
 
-				<div className="flex justify-center">
-					{isTopNav || isMixedNav
-						? (
+				{isTopNav || isMixedNav
+					? (
+						<div className="flex justify-center">
 							<LayoutMenu
 								mode="horizontal"
 								menus={topNavItems}
 								handleMenuSelect={handleMenuSelect}
 								headerBackgroundColor={getMenuBackgroundColor()}
 							/>
-						)
-						: (
-							<BreadcrumbViews />
-						)}
-				</div>
+						</div>
+					)
+					: null}
 			</LayoutHeader>
 			<section
 				style={{

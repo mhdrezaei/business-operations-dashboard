@@ -1,8 +1,8 @@
 import type { ButtonProps } from "antd";
 
+import ThemeIcon from "#src/assets/svg/header/theme.svg?react";
 import { BasicButton } from "#src/components";
 import { usePreferences } from "#src/hooks";
-import { RiMoonIcon, RiSunIcon } from "#src/icons";
 import { useEffect } from "react";
 import { flushSync } from "react-dom";
 
@@ -93,7 +93,8 @@ export function ThemeButton({ ...restProps }: ButtonProps) {
 		<BasicButton
 			type="text"
 			{...restProps}
-			icon={isDark ? <RiSunIcon /> : <RiMoonIcon />}
+			aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
+			icon={<ThemeIcon className="size-6" aria-hidden />}
 			onPointerDown={(e) => {
 				restProps?.onPointerDown?.(e);
 				toggleTheme(e);

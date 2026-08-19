@@ -3,6 +3,7 @@ import { useTabsStore } from "#src/store";
 import { cn } from "#src/utils";
 
 import { FullscreenExitOutlined, FullscreenOutlined } from "@ant-design/icons";
+import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/shallow";
 
 interface TabMaximizeProps {
@@ -14,6 +15,7 @@ interface TabMaximizeProps {
  * @returns کامپوننت دکمه بيشينه / کمينه تب
  */
 export function TabMaximize({ className }: TabMaximizeProps) {
+	const { t } = useTranslation();
 	/**
 	 * useShallow - it may cause infinite loops in zustand v5
 	 * https://github.com/pmndrs/zustand/blob/v5.0.0/docs/migrations/migrating-to-v5.md#requiring-stable-selector-outputs
@@ -25,6 +27,7 @@ export function TabMaximize({ className }: TabMaximizeProps) {
 	const onClick = () => {
 		toggleMaximize(!isMaximize);
 	};
+	const label = t(isMaximize ? "preferences.tabbar.contextMenu.restoreMaximize" : "preferences.tabbar.contextMenu.maximize");
 
 	return (
 		<BasicButton
@@ -32,6 +35,8 @@ export function TabMaximize({ className }: TabMaximizeProps) {
 			type="text"
 			size="middle"
 			icon={isMaximize ? <FullscreenExitOutlined /> : <FullscreenOutlined />}
+			aria-label={label}
+			title={label}
 			onClick={onClick}
 		/>
 	);

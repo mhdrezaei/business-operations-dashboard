@@ -1,15 +1,64 @@
 import { createUseStyles } from "react-jss";
 
+import { tabbarHeight } from "../constants";
+
 export const useStyles = createUseStyles(({ token }) => {
 	return {
 		tabsContainer: {
-			backgroundColor: token.colorBgContainer,
-			borderTop: `1px solid ${token.colorBorderSecondary}`,
-			borderBottom: `1px solid ${token.colorBorderSecondary}`,
-			marginLeft: "15px",
-			marginRight: "24px",
-			paddingRight: "5px",
-			borderRadius: "8px",
+			"backgroundColor": token.colorBgContainer,
+			"border": `1px solid ${token.colorPrimaryBorder}`,
+			"boxSizing": "border-box",
+			"height": tabbarHeight,
+			"marginInline": "12px",
+			"paddingBlock": token.paddingXS - 1,
+			"paddingInline": token.paddingSM,
+			"borderRadius": token.borderRadius * 2,
+			"& .ant-tabs": {
+				height: "100%",
+			},
+			"@media (min-width: 640px)": {
+				marginInline: "16px",
+			},
+			"@media (min-width: 1024px)": {
+				marginInline: "24px",
+			},
+			"@media (max-width: 639px)": {
+				paddingInline: token.paddingXS,
+			},
+		},
+		controls: {
+			display: "flex",
+			alignItems: "center",
+			gap: token.marginXXS,
+			height: "100%",
+			paddingInline: token.paddingXXS,
+		},
+		controlButton: {
+			"width": `${token.controlHeightLG}px !important`,
+			"height": `${token.controlHeightLG}px !important`,
+			"minWidth": `${token.controlHeightLG}px !important`,
+			"padding": "0 !important",
+			"borderRadius": `${token.borderRadius}px !important`,
+			"color": `${token.colorPrimary} !important`,
+			"fontSize": `${token.fontSizeXL}px !important`,
+			"lineHeight": 1,
+			"& .ant-btn-icon": {
+				display: "inline-flex",
+				alignItems: "center",
+				justifyContent: "center",
+			},
+			"& svg": {
+				width: "1em",
+				height: "1em",
+			},
+			"&:hover": {
+				backgroundColor: `${token.colorPrimaryBg} !important`,
+				color: `${token.colorPrimaryHover} !important`,
+			},
+			"&:focus-visible": {
+				outline: `2px solid ${token.colorPrimary}`,
+				outlineOffset: "1px",
+			},
 		},
 		resetTabs: {
 			"& .ant-tabs-nav::before": {
@@ -17,14 +66,22 @@ export const useStyles = createUseStyles(({ token }) => {
 			},
 			"& .ant-tabs-nav": {
 				"margin": 0,
+				"height": "100%",
 				"& .ant-tabs-tab": {
 					// انيميشن داخلي antd با انيميشن DND تداخل دارد
-					transition: "inherit",
+					transition: "background-color 160ms ease, color 160ms ease",
 					marginLeft: "0px !important",
 					border: "none !important",
-					borderRadius: "0px !important",
-					paddingTop: "0.3em !important",
-					paddingBottom: "0.3em !important",
+					borderRadius: "9px !important",
+					paddingTop: "0 !important",
+					paddingBottom: "0 !important",
+					height: "32px",
+					alignSelf: "center",
+				},
+				"& .ant-tabs-tab-btn:focus-visible": {
+					outline: `2px solid ${token.colorPrimary}`,
+					outlineOffset: "2px",
+					borderRadius: "6px",
 				},
 			},
 		},
@@ -49,77 +106,24 @@ export const useStyles = createUseStyles(({ token }) => {
 		chrome: {
 			"& .ant-tabs-nav": {
 				"& .ant-tabs-nav-list": {
-					gap: "5px",
+					gap: "8px",
 				},
 				"& .ant-tabs-tab:not(.ant-tabs-tab-active)": {
-					"backgroundColor": token.colorBgContainer,
-					"position": "relative",
-					"borderRadius": "7px !important",
-					"padding": "0px 12px !important",
-					"marginTop": "3px",
-					"marginBottom": "3px",
+					"backgroundColor": token.colorFillTertiary,
+					"borderRadius": "9px !important",
+					"padding": "0 12px !important",
+					"color": token.colorTextSecondary,
 					"&:hover": {
-						backgroundColor: token.colorBorder,
-						color: "inherit",
-					},
-					"&:hover::before": {
-						content: "' '",
-						height: "100%",
-						width: "1px",
-						backgroundColor: token.colorBgContainer,
-						left: "-3px",
-						position: "absolute",
-					},
-					"&:hover::after": {
-						display: "none",
-					},
-					"&::after": {
-						content: "' '",
-						position: "absolute",
-						right: "-3px",
-						// top: "50%",
-						width: "1px",
-						height: "16px",
-						backgroundColor: token.colorBorder,
+						backgroundColor: token.colorFillSecondary,
+						color: token.colorText,
 					},
 				},
 				"& .ant-tabs-tab-active": {
-					"marginTop": "3px",
-					"padding": "0px 12px 3px !important",
+					"padding": "0 12px !important",
 					"backgroundColor": token.colorPrimaryBg,
-					"borderTopLeftRadius": "7px !important",
-					"borderTopRightRadius": "7px !important",
-					"position": "relative",
-					"&::before": {
-						content: "' '",
-						position: "absolute",
-						left: "-7px",
-						bottom: "0",
-						width: "7px",
-						height: "7px",
-						backgroundColor: token.colorPrimaryBg,
-						transform: "rotate(-90deg)",
-						zIndex: 1,
-						clipPath: "path('M 0 0 A 7 7 0 0 0 7 7 L 0 7 Z')",
-					},
-					"&>div::before": {
-						content: "' '",
-						height: "100%",
-						width: "1px",
-						backgroundColor: token.colorBgContainer,
-						left: "-3px",
-						position: "absolute",
-					},
-					"&::after": {
-						content: "' '",
-						position: "absolute",
-						right: "-7px",
-						bottom: "0",
-						width: "7px",
-						height: "7px",
-						zIndex: 1,
-						backgroundColor: token.colorPrimaryBg,
-						clipPath: "path('M 0 0 A 7 7 0 0 0 7 7 L 0 7 Z')",
+					"borderRadius": "9px !important",
+					"& .ant-tabs-tab-btn": {
+						color: `${token.colorPrimary} !important`,
 					},
 				},
 			},

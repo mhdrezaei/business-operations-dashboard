@@ -1,14 +1,15 @@
 import type { ButtonProps, MenuProps } from "antd";
 
+import ProfileIcon from "#src/assets/svg/header/profile.svg?react";
 import { BasicButton } from "#src/components";
 import { RiAccountCircleLine } from "#src/icons";
 import { loginPath } from "#src/router/extra-info";
-import { useAuthStore, useUserStore } from "#src/store";
+import { useAuthStore } from "#src/store";
 import { cn, isWindowsOs } from "#src/utils";
 
 import { LogoutOutlined } from "@ant-design/icons";
 import { useKeyPress } from "ahooks";
-import { Avatar, Dropdown } from "antd";
+import { Dropdown, theme } from "antd";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
@@ -16,7 +17,7 @@ import { useNavigate } from "react-router";
 export function UserMenu({ ...restProps }: ButtonProps) {
 	const navigate = useNavigate();
 	const { t } = useTranslation();
-	const avatar = useUserStore(state => state.avatar);
+	const { token } = theme.useToken();
 	const logout = useAuthStore(state => state.logout);
 
 	const onClick: MenuProps["onClick"] = async ({ key }) => {
@@ -63,9 +64,15 @@ export function UserMenu({ ...restProps }: ButtonProps) {
 			<BasicButton
 				type="text"
 				{...restProps}
-				className={cn(restProps.className, "rounded-full px-1")}
+				aria-label={t("common.menu.personalCenter")}
+				className={cn(restProps.className, "!rounded-full !text-white hover:!text-white hover:!brightness-110")}
+				style={{
+					...restProps.style,
+					backgroundColor: token.colorPrimary,
+					backgroundImage: `linear-gradient(180deg, ${token.colorPrimary} 0%, ${token.cyan6} 100%)`,
+				}}
+				icon={<ProfileIcon className="size-6 [&_path]:fill-current" aria-hidden />}
 			>
-				<Avatar src={avatar} />
 			</BasicButton>
 		</Dropdown>
 	);

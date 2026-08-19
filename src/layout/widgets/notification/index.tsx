@@ -1,13 +1,14 @@
 import type { ButtonProps } from "antd";
 import type { NotificationItem } from "./types";
 
+import NotificationIcon from "#src/assets/svg/header/notification.svg?react";
 import { BasicButton } from "#src/components";
 import { dayjs } from "#src/shared/lib/dayjs-jalali";
 import { cn } from "#src/utils";
 
-import { BellOutlined, ReloadOutlined } from "@ant-design/icons";
+import { ReloadOutlined } from "@ant-design/icons";
 import { useToggle } from "ahooks";
-import { Badge, Empty, List, Popover, Tag, Tooltip } from "antd";
+import { Badge, Empty, List, Popover, Tag, theme, Tooltip } from "antd";
 import { clsx } from "clsx";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -74,6 +75,7 @@ export const NotificationPopup: React.FC<Props> = ({
 	const [open, action] = useToggle();
 	const classes = useStyles();
 	const { t } = useTranslation();
+	const { token } = theme.useToken();
 	const items = notifications ?? [];
 
 	const close = () => {
@@ -177,10 +179,11 @@ export const NotificationPopup: React.FC<Props> = ({
 				size="large"
 				type="text"
 				{...restProps}
+				aria-label={t("widgets.notifications")}
 				className={cn("relative group", restProps.className)}
 				icon={(
-					<Badge count={unreadCount} size="small" color="#ef4444">
-						<BellOutlined className="group-hover:animate-wiggle" />
+					<Badge count={unreadCount} size="small" color={token.colorError}>
+						<NotificationIcon className="size-6 group-hover:animate-wiggle [&_path]:fill-current" aria-hidden />
 					</Badge>
 				)}
 			/>

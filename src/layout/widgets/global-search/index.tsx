@@ -1,14 +1,15 @@
 import type { MenuItemType } from "#src/layout/layout-menu/types";
 import type { InputRef } from "antd";
 
+import SearchIcon from "#src/assets/svg/header/search.svg?react";
 import { Scrollbar } from "#src/components";
 import { useDeviceType } from "#src/hooks";
 import { useAccessStore } from "#src/store";
-import { isString } from "#src/utils";
+import { cn, isString } from "#src/utils";
 
 import { SearchOutlined } from "@ant-design/icons";
 import { useDebounceFn, useKeyPress, useLocalStorageState } from "ahooks";
-import { Divider, Empty, Input, Modal } from "antd";
+import { Divider, Empty, Input, Modal, Tooltip } from "antd";
 import { match } from "pinyin-pro";
 import { isValidElement, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -37,7 +38,12 @@ function transformMenuToFlatMenu(menus: MenuItemType[], flatMap: MenuItemType[] 
 
 const searchHistoryLocalStorageKey = `__search-history-${location.hostname}__`;
 
-export function GlobalSearch() {
+interface GlobalSearchProps {
+	buttonClassName?: string
+	buttonStyle?: React.CSSProperties
+}
+
+export function GlobalSearch({ buttonClassName, buttonStyle }: GlobalSearchProps) {
 	const wholeMenus = useAccessStore(state => state.wholeMenus);
 	const { isMobile } = useDeviceType();
 	const [open, setOpen] = useState(false);
@@ -186,19 +192,17 @@ export function GlobalSearch() {
 
 	return (
 		<>
-			<div
-				onClick={() => setOpen(open => !open)}
-				className="group flex justify-center items-center gap-2 md:bg-colorBgLayout px-3 py-1.5 rounded-full cursor-pointer text-colorTextSecondary hover:text-colorText md:mr-2.5"
-			>
-				<SearchOutlined />
-				<span className="hidden text-xs duration-300 md:block">
-					{t("common.search")}
-				</span>
-				<span className="bg-colorBgContainer relative hidden rounded-sm rounded-r-xl px-1.5 py-1 text-xs leading-none group-hover:opacity-100 md:block">
-					&#x2318;
-					<kbd>K</kbd>
-				</span>
-			</div>
+			<Tooltip title={t("common.search")}>
+				<button
+					type="button"
+					aria-label={t("common.search")}
+					onClick={() => setOpen(open => !open)}
+					className={cn("group flex cursor-pointer items-center justify-center", buttonClassName)}
+					style={buttonStyle}
+				>
+					<SearchIcon className="size-6" aria-hidden />
+				</button>
+			</Tooltip>
 
 			<Modal
 				open={open}

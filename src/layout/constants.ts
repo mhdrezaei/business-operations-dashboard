@@ -21,7 +21,7 @@ export const siderTriggerHeight = 40;
 /**
  * Tabbar Height Height
  */
-export const tabbarHeight = 35;
+export const tabbarHeight = 56;
 
 /**
  * @fa نام فضاي پيش فرض

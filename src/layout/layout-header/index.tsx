@@ -9,7 +9,6 @@ import { cn } from "#src/utils";
 import { MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
 import { theme as antdTheme, Button, ConfigProvider, theme } from "antd";
 
-import { FullscreenButton } from "./components/fullscreen-button";
 import { LanguageButton } from "./components/language-button";
 import { ThemeButton } from "./components/theme-button";
 import { UserMenu } from "./components/user-menu";
@@ -18,11 +17,6 @@ export interface LayoutHeaderProps {
 	className?: string
 	children?: React.ReactNode
 }
-
-const buttonProps: ButtonProps = {
-	size: "large",
-	className: "px-[11px]",
-};
 
 /**
  * Check if a color is dark by calculating its luminance
@@ -50,9 +44,8 @@ function isColorDark(color: string): boolean {
 }
 
 export default function LayoutHeader({ className, children }: LayoutHeaderProps) {
-	const {
-		token: { Menu },
-	} = theme.useToken();
+	const { token } = theme.useToken();
+	const { Menu } = token;
 	const {
 		sidebarCollapsed,
 		setPreferences,
@@ -70,6 +63,24 @@ export default function LayoutHeader({ className, children }: LayoutHeaderProps)
 	const isCustomHeaderDark = (isTopNav || isMixedNav) && headerBackgroundType !== "default" && isColorDark(headerBackgroundColor);
 
 	const isFixedDarkTheme = isDark || (sidebarTheme === "dark" && (isMixedNav || isTopNav)) || isCustomHeaderDark;
+	const effectiveHeaderHeight = Math.max(
+		headerHeight,
+		token.controlHeightLG + token.padding * 2,
+	);
+	const buttonProps: ButtonProps = {
+		size: "large",
+		className: "!inline-flex !items-center !justify-center !rounded-[var(--header-action-radius)] !border-0 !bg-[var(--header-action-bg)] !p-0 !leading-none !text-[var(--header-action-color)] hover:!bg-[var(--header-action-hover-bg)] hover:!text-[var(--header-action-hover-color)] focus-visible:!outline focus-visible:!outline-2 focus-visible:!outline-offset-2 focus-visible:!outline-colorPrimary [&_.ant-badge]:!inline-flex [&_.ant-badge]:items-center [&_.ant-badge]:justify-center [&_.ant-btn-icon]:!m-0 [&_.ant-btn-icon]:flex [&_.ant-btn-icon]:items-center [&_.ant-btn-icon]:justify-center [&_svg]:block [&_svg]:shrink-0",
+		style: {
+			"--header-action-bg": token.colorPrimaryBgHover,
+			"--header-action-hover-bg": token.colorPrimaryActive,
+			"--header-action-color": token.colorText,
+			"--header-action-hover-color": token.colorPrimaryTextHover,
+			"--header-action-radius": `${token.borderRadius}px`,
+			"width": token.controlHeightLG,
+			"height": token.controlHeightLG,
+			"minWidth": token.controlHeightLG,
+		} as React.CSSProperties,
+	};
 
 	const getHeaderBackground = () => {
 		if ((isTopNav || isMixedNav) && headerBackgroundType !== "default") {
@@ -89,14 +100,18 @@ export default function LayoutHeader({ className, children }: LayoutHeaderProps)
 		>
 			<header
 				className={cn(
-					"flex-shrink-0 flex gap-5 justify-between items-center transition-all md:px-4 rounded-md m-3",
+					"mx-3 my-3 flex flex-shrink-0 items-center justify-between border border-solid transition-all sm:mx-4 lg:mx-6",
 					{ "overflow-hidden": isMaximize },
 					className,
 				)}
 				style={{
 					background: getHeaderBackground(),
-					height: isMaximize ? 0 : headerHeight,
-					minHeight: isMaximize ? 0 : headerHeight,
+					borderColor: token.colorPrimaryBorder,
+					borderRadius: token.borderRadius * 2,
+					columnGap: token.margin,
+					paddingInline: token.padding,
+					height: isMaximize ? 0 : effectiveHeaderHeight,
+					minHeight: isMaximize ? 0 : effectiveHeaderHeight,
 				}}
 			>
 
@@ -117,14 +132,15 @@ export default function LayoutHeader({ className, children }: LayoutHeaderProps)
 					{children}
 				</div>
 
-				<div className="flex items-center">
-					<GlobalSearch />
-					{/* <Preferences {...buttonProps} /> */}
-					<ThemeButton {...buttonProps} />
-					<LanguageButton {...buttonProps} />
-					<FullscreenButton {...buttonProps} target={document.documentElement} />
-					<NotificationContainer {...buttonProps} />
+				<div className="flex items-center" style={{ gap: token.margin }} dir="ltr">
 					<UserMenu {...buttonProps} />
+					<NotificationContainer {...buttonProps} />
+					<LanguageButton {...buttonProps} />
+					<ThemeButton {...buttonProps} />
+					<GlobalSearch
+						buttonClassName={buttonProps.className}
+						buttonStyle={buttonProps.style}
+					/>
 				</div>
 			</header>
 		</ConfigProvider>

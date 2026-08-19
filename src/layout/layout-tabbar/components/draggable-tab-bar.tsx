@@ -45,11 +45,12 @@ interface DraggableTabBarProps {
 	tabBarProps: Parameters<Required<TabsProps>["renderTabBar"]>[0]
 	DefaultTabBar: Parameters<Required<TabsProps>["renderTabBar"]>[1]
 	tabItems: TabItemProps[]
+	draggable: boolean
 	items: (tabKey: string) => MenuProps["items"]
 	onClickMenu: (menuKey: string, nodeKey: string) => void
 }
 
-export function DraggableTabBar({ tabBarProps, DefaultTabBar, tabItems, items, onClickMenu }: DraggableTabBarProps) {
+export function DraggableTabBar({ tabBarProps, DefaultTabBar, tabItems, draggable, items, onClickMenu }: DraggableTabBarProps) {
 	// activationConstraint براي حسگر درگ؛ شرط فعال سازي جابجايي حداقل 5 پيکسل است
 	const sensor = useSensor(PointerSensor, { activationConstraint: { distance: 5 } });
 	const changeTabOrder = useTabsStore(state => state.changeTabOrder);
@@ -81,7 +82,7 @@ export function DraggableTabBar({ tabBarProps, DefaultTabBar, tabItems, items, o
 								}}
 								trigger={["contextMenu"]}
 							>
-								{tabItems.some(tabItem => tabItem.key === node.key && tabItem.draggable === false) ? node : <DraggableTabNode {...node.props}>{node}</DraggableTabNode>}
+								{!draggable || tabItems.some(tabItem => tabItem.key === node.key && tabItem.draggable === false) ? node : <DraggableTabNode {...node.props}>{node}</DraggableTabNode>}
 							</Dropdown>
 						);
 					}}
