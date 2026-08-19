@@ -1,11 +1,11 @@
 import type { LanguageType } from "#src/locales";
 import type { ButtonProps, MenuProps } from "antd";
 
+import LanguageIcon from "#src/assets/svg/header/language.svg?react";
 import { BasicButton } from "#src/components";
 import { useLanguage } from "#src/hooks";
 import { getLanguageItems } from "#src/layout/widgets/preferences/blocks/general/utils";
 
-import { TranslationOutlined } from "@ant-design/icons";
 import { Dropdown } from "antd";
 
 export function LanguageButton({ ...restProps }: ButtonProps) {
@@ -33,8 +33,9 @@ export function LanguageButton({ ...restProps }: ButtonProps) {
 				<BasicButton
 					type="text"
 					{...restProps}
+					aria-label="Change language"
+					icon={<LanguageIcon className="size-6 [&_path]:fill-current" aria-hidden />}
 				>
-					<TranslationOutlined />
 				</BasicButton>
 			</span>
 		</Dropdown>

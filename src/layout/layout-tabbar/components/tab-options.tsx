@@ -6,6 +6,7 @@ import { cn } from "#src/utils";
 import { DownOutlined } from "@ant-design/icons";
 import { Dropdown } from "antd";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { useDropdownMenu } from "../hooks/use-dropdown-menu";
 
@@ -26,6 +27,7 @@ interface TabOptionsProps {
  * @returns {JSX.Element} کامپوننت TabOptions
  */
 export function TabOptions({ activeKey, className }: TabOptionsProps) {
+	const { t } = useTranslation();
 	const [isOpen, setIsOpen] = useState(false);
 	const [items, onClickMenu] = useDropdownMenu();
 
@@ -59,6 +61,8 @@ export function TabOptions({ activeKey, className }: TabOptionsProps) {
 				size="middle"
 				type="text"
 				icon={<DownOutlined />}
+				aria-label={t("preferences.tabbar.showMore")}
+				title={t("preferences.tabbar.showMore")}
 			/>
 		</Dropdown>
 	);

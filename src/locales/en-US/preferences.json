@@ -80,7 +80,6 @@
 	"tabbar": {
 		"title": "Tabbar",
 		"enable": "Enable Tab Bar",
-		"icon": "Show Tabbar Icon",
 		"showMore": "Show More Button",
 		"showMaximize": "Show Maximize Button",
 		"persist": "Persist Tabs",

@@ -18,7 +18,7 @@ export interface LogoProps {
 export function Logo({ className, width, sidebarCollapsed }: LogoProps) {
 	const navigate = useNavigate();
 	const { isDark } = usePreferences();
-	const logoWidth = sidebarCollapsed ? 44 : 90;
+	const logoWidth = sidebarCollapsed ? 40 : 100;
 	return (
 		<div
 			style={{
@@ -33,8 +33,8 @@ export function Logo({ className, width, sidebarCollapsed }: LogoProps) {
 			onClick={() => navigate(import.meta.env.VITE_BASE_HOME_PATH)}
 		>
 			{isDark
-				? <DarkLogo width={logoWidth} height={44} compact={sidebarCollapsed} />
-				: <LightLogo width={logoWidth} height={44} compact={sidebarCollapsed} />}
+				? <DarkLogo width={logoWidth} height={40} compact={sidebarCollapsed} />
+				: <LightLogo width={logoWidth} height={40} compact={sidebarCollapsed} />}
 		</div>
 	);
 }

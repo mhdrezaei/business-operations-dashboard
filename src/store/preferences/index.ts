@@ -45,7 +45,6 @@ export const DEFAULT_PREFERENCES = {
 
 	/* ================== Tabbar ================== */
 	tabbarEnable: true,
-	tabbarShowIcon: true,
 	tabbarPersist: true,
 	tabbarDraggable: true,
 	tabbarStyleType: "chrome",

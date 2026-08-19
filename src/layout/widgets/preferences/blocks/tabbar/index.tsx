@@ -9,7 +9,6 @@ export function Tabbar() {
 	const { t } = useTranslation();
 	const {
 		tabbarEnable,
-		tabbarShowIcon,
 		tabbarPersist,
 		tabbarDraggable,
 		tabbarStyleType,
@@ -58,18 +57,10 @@ export function Tabbar() {
 			<SwitchItem
 				name="tabbarDraggable"
 				checked={tabbarDraggable}
-				disabled={true || !tabbarEnable}
+				disabled={!tabbarEnable}
 				onChange={(name, value) => setPreferences(name, value)}
 			>
 				{t("preferences.tabbar.draggable")}
-			</SwitchItem>
-			<SwitchItem
-				name="tabbarShowIcon"
-				checked={tabbarShowIcon}
-				disabled={true || !tabbarEnable}
-				onChange={(name, value) => setPreferences(name, value)}
-			>
-				{t("preferences.tabbar.icon")}
 			</SwitchItem>
 			<SwitchItem
 				name="tabbarShowMore"

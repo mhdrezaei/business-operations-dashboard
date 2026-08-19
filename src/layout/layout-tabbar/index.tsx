@@ -13,7 +13,6 @@ import { isValidElement, useCallback, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router";
 
-import { tabbarHeight } from "../constants";
 import { DraggableTabBar } from "./components/draggable-tab-bar";
 import { TabMaximize } from "./components/tab-maximize";
 import { TabOptions } from "./components/tab-options";
@@ -32,7 +31,7 @@ export default function LayoutTabbar() {
 	const { t } = useTranslation();
 	const currentRoute = useCurrentRoute();
 
-	const { tabbarStyleType, tabbarShowMaximize, tabbarShowMore } = usePreferencesStore();
+	const { tabbarStyleType, tabbarDraggable, tabbarShowMaximize, tabbarShowMore } = usePreferencesStore();
 	const { flatRouteList } = useAccessStore();
 	const { activeKey, isRefresh, setActiveKey, setIsRefresh, openTabs, addTab, insertBeforeTab } = useTabsStore();
 	const [items, onClickMenu] = useDropdownMenu();
@@ -42,7 +41,7 @@ export default function LayoutTabbar() {
 		return {
 			...item,
 			label: (
-				<div className="relative flex items-center gap-1">
+				<div className="relative flex items-center">
 					{isString(tabLabel) ? t(tabLabel) : tabLabel}
 				</div>
 			),
@@ -95,17 +94,18 @@ export default function LayoutTabbar() {
 				tabBarProps={tabBarProps}
 				items={items}
 				tabItems={tabItems}
+				draggable={tabbarDraggable}
 				onClickMenu={onClickMenu}
 			/>
 		);
-	}, [tabItems, items, onClickMenu]);
+	}, [tabItems, tabbarDraggable, items, onClickMenu]);
 
 	/**
 	 * توليد محتواي اضافه نوار تب
 	 */
 	const tabBarExtraContent = useMemo(() => ({
 		right: (
-			<div className="flex items-center" style={{ height: tabbarHeight }}>
+			<div className={classes.controls}>
 				<Button
 					icon={(
 						<RedoOutlined
@@ -115,14 +115,16 @@ export default function LayoutTabbar() {
 					)}
 					size="middle"
 					type="text"
-					className={clsx("rounded-none h-full border-l  border-l-colorBorderSecondary")}
+					className={classes.controlButton}
+					aria-label={t("preferences.tabbar.contextMenu.refresh")}
+					title={t("preferences.tabbar.contextMenu.refresh")}
 					onClick={() => onClickMenu(TabActionKeys.REFRESH, activeKey)}
 				/>
-				{tabbarShowMaximize ? (<TabMaximize className="h-full border-l rounded-none border-l-colorBorderSecondary" />) : null}
-				{tabbarShowMore ? (<TabOptions activeKey={activeKey} className="h-full border-l rtl:border-l-0 rounded-none border-l-colorBorderSecondary" />) : null}
+				{tabbarShowMaximize ? (<TabMaximize className={classes.controlButton} />) : null}
+				{tabbarShowMore ? (<TabOptions activeKey={activeKey} className={classes.controlButton} />) : null}
 			</div>
 		),
-	}), [isRefresh, activeKey, onClickMenu, tabbarShowMore, tabbarShowMaximize]);
+	}), [classes.controlButton, classes.controls, isRefresh, activeKey, onClickMenu, tabbarShowMore, tabbarShowMaximize, t]);
 
 	/**
 	 * اگر تب فعال بسته شود، به مسير مناسب برو

@@ -56,43 +56,10 @@ interface AnimationState {
 	transitionName: string
 }
 
-export type NavigationType =
-  | typeof SIDE_NAVIGATION
-  | typeof TOP_NAVIGATION
-  | typeof TWO_COLUMN_NAVIGATION
-  | typeof MIXED_NAVIGATION;
-export type BuiltinThemeType =
-  | "red"
-  | "volcano"
-  | "orange"
-  | "gold"
-  | "yellow"
-  | "lime"
-  | "green"
-  | "cyan"
-  | "blue"
-  | "geekblue"
-  | "purple"
-  | "magenta"
-  | "gray"
-  | "custom";
+export type NavigationType = typeof SIDE_NAVIGATION | typeof TOP_NAVIGATION | typeof TWO_COLUMN_NAVIGATION | typeof MIXED_NAVIGATION;
+export type BuiltinThemeType = "red" | "volcano" | "orange" | "gold" | "yellow" | "lime" | "green" | "cyan" | "blue" | "geekblue" | "purple" | "magenta" | "gray" | "custom";
 
-export type HeaderBackgroundType =
-  | "red"
-  | "volcano"
-  | "orange"
-  | "gold"
-  | "yellow"
-  | "lime"
-  | "green"
-  | "cyan"
-  | "blue"
-  | "geekblue"
-  | "purple"
-  | "magenta"
-  | "gray"
-  | "custom"
-  | "default";
+export type HeaderBackgroundType = "red" | "volcano" | "orange" | "gold" | "yellow" | "lime" | "green" | "cyan" | "blue" | "geekblue" | "purple" | "magenta" | "gray" | "custom" | "default";
 
 interface LayoutState {
 	navigationStyle: NavigationType
@@ -297,13 +264,6 @@ export interface PreferencesState
 	 */
 	tabbarEnable: boolean
 	/**
-	 * @fa نمايش آيکن تب بار
-	 * @en Whether to show tabbar icon
-	 * @default true
-	 * @todo در انتظار پياده سازي
-	 */
-	tabbarShowIcon: boolean
-	/**
 	 * @fa پايداري تب بار
 	 * @en Whether to persist tabbar
 	 * @default true
@@ -313,7 +273,6 @@ export interface PreferencesState
 	 * @fa قابليت درگ تب بار
 	 * @en Whether to drag tabbar
 	 * @default true
-	 * @todo در انتظار پياده سازي
 	 */
 	tabbarDraggable: boolean
 	/**
