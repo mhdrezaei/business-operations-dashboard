@@ -2,7 +2,8 @@ import type { ActionType, ProColumns, ProCoreActionType, ProFormInstance } from 
 import type { CompanyProfileFormValues } from "../../../model/company-profile.form.types";
 import type { CompanyPersonDto } from "../model/company-people.types";
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
-import { DeleteOutlined, EditOutlined, PlusCircleOutlined } from "@ant-design/icons";
+import { TableActionEditIcon, TableActionTrashIcon } from "#src/icons";
+import { PlusCircleOutlined } from "@ant-design/icons";
 
 import { Button, Popconfirm } from "antd";
 import React, { useMemo, useRef, useState } from "react";
@@ -41,7 +42,7 @@ export default function CompanyPeoplePanel() {
 						type="link"
 						title="ویرایش"
 						size="large"
-						icon={<EditOutlined />}
+						icon={<TableActionEditIcon />}
 						onClick={() => {
 							setSelectedId(record.id);
 							setOpenModal(true);
@@ -59,7 +60,7 @@ export default function CompanyPeoplePanel() {
 							window.$message?.success("حذف شد");
 						}}
 					>
-						<BasicButton type="link" size="large" icon={<DeleteOutlined />} title="حذف">
+						<BasicButton type="link" size="large" icon={<TableActionTrashIcon />} title="حذف">
 
 						</BasicButton>
 					</Popconfirm>,

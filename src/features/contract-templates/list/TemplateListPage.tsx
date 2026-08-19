@@ -3,7 +3,8 @@ import type { ActionType, ProColumns } from "@ant-design/pro-components";
 import type { TemplateListItemType } from "../model/templates.list.types";
 
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
-import { DeleteOutlined, EditOutlined, PlusCircleOutlined } from "@ant-design/icons";
+import { TableActionEditIcon, TableActionTrashIcon } from "#src/icons";
+import { PlusCircleOutlined } from "@ant-design/icons";
 import { Button, Popconfirm } from "antd";
 import React, { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -74,7 +75,7 @@ export default function TemplateListPage() {
 						type="link"
 						size="large"
 						title="ویرایش قالب"
-						icon={<EditOutlined />}
+						icon={<TableActionEditIcon />}
 						onClick={(e) => {
 							handleOpenEditModal(e, record.id);
 						}}
@@ -90,7 +91,7 @@ export default function TemplateListPage() {
 							type="link"
 							size="large"
 							title="حذف قالب"
-							icon={<DeleteOutlined />}
+							icon={<TableActionTrashIcon />}
 						/>
 					</Popconfirm>,
 				],

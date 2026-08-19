@@ -3,6 +3,7 @@ import type { ActionType, ProColumns, ProCoreActionType } from "@ant-design/pro-
 import { fetchDeleteMenuItem, fetchMenuList } from "#src/api/system/menu";
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import { accessControlCodes, useAccess } from "#src/hooks";
+import { TableActionEditIcon, TableActionTrashIcon } from "#src/icons";
 import { handleTree } from "#src/utils";
 
 import { PlusCircleOutlined } from "@ant-design/icons";
@@ -44,6 +45,7 @@ export default function Menu() {
 						key="editable"
 						type="link"
 						size="small"
+						icon={<TableActionEditIcon />}
 						disabled={!hasAccessByCodes(accessControlCodes.update)}
 						onClick={async () => {
 							setIsOpen(true);
@@ -60,7 +62,7 @@ export default function Menu() {
 						okText={t("common.confirm")}
 						cancelText={t("common.cancel")}
 					>
-						<BasicButton type="link" size="small" disabled={!hasAccessByCodes(accessControlCodes.delete)}>{t("common.delete")}</BasicButton>
+						<BasicButton type="link" size="small" icon={<TableActionTrashIcon />} disabled={!hasAccessByCodes(accessControlCodes.delete)}>{t("common.delete")}</BasicButton>
 					</Popconfirm>,
 				];
 			},

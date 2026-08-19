@@ -5,6 +5,7 @@ import type { ContractServicePath } from "../../../api/contracts.api";
 import { fetchCompaniesByService } from "#src/api/common/common.api";
 import { listContractDocuments } from "#src/features/contract/api/contract-documents.api";
 import { apiPricingToContractType, contractTypeToApiPricing } from "#src/features/contract/api/pricing.mapper";
+import { ContractReadOnlyDetails } from "#src/features/contract/preview/ui/ContractReadOnlyDetails";
 import { ContractForm } from "#src/features/contract/shared/ui/form/ContractForm";
 import { pickCompanyTypeToken } from "#src/features/contract/shared/utils";
 import { Alert, Empty, Spin } from "antd";
@@ -36,6 +37,7 @@ interface Props {
 	onUpdated?: () => void
 	onSaved?: () => void
 	onContractSelect?: (contractId: number, serviceId: number, companyType: string | null, service: ContractServicePath) => void
+	readOnly?: boolean
 }
 
 function servicePathToServiceCode(service: ContractServicePath): string {
@@ -1128,8 +1130,8 @@ function normalizeTrafficServiceFields(dto: any) {
 }
 
 function dtoToFormValues(dto: any, service: ContractServicePath): ContractFormValues {
-	const serviceId = toNumberOrNull(dto?.service_id ?? dto?.service?.id ?? dto?.service);
-	const companyId = toNumberOrNull(dto?.company_id ?? dto?.company?.id ?? dto?.company);
+	const serviceId = toNumberOrNull(dto?.service_id ?? dto?.serviceId ?? dto?.service?.id ?? dto?.service);
+	const companyId = toNumberOrNull(dto?.company_id ?? dto?.companyId ?? dto?.company?.id ?? dto?.company);
 
 	const description = dto?.note ?? dto?.description ?? "";
 
@@ -1216,11 +1218,11 @@ function dtoToFormValues(dto: any, service: ContractServicePath): ContractFormVa
 		companyType,
 		counterpartyType,
 
-		startYear: toNumberOrNull(dto?.start_jy),
-		startMonth: toNumberOrNull(dto?.start_jm),
-		endYear: toNumberOrNull(dto?.end_jy),
-		endMonth: toNumberOrNull(dto?.end_jm),
-		contractNumber: dto?.contract_number ?? "",
+		startYear: toNumberOrNull(dto?.start_jy ?? dto?.startYear),
+		startMonth: toNumberOrNull(dto?.start_jm ?? dto?.startMonth),
+		endYear: toNumberOrNull(dto?.end_jy ?? dto?.endYear),
+		endMonth: toNumberOrNull(dto?.end_jm ?? dto?.endMonth),
+		contractNumber: dto?.contract_number ?? dto?.contractNumber ?? dto?.contract_no ?? "",
 
 		description,
 		documents: dto?.documents ?? [],
@@ -1443,10 +1445,11 @@ interface ContractListScope {
 	companyType: string | null
 }
 
-export function ContractEditForm({ contractId, service, onUpdated, onSaved, onContractSelect }: Props) {
+export function ContractEditForm({ contractId, service, onUpdated, onSaved, onContractSelect, readOnly = false }: Props) {
 	const [loading, setLoading] = useState(false);
 	const [saving, setSaving] = useState(false);
 	const [initialValues, setInitialValues] = useState<ContractFormValues | null>(null);
+	const [contractDetail, setContractDetail] = useState<Record<string, unknown> | null>(null);
 	const [resolvedService, setResolvedService] = useState<ContractServicePath | null>(null);
 	const [loadedContractId, setLoadedContractId] = useState<number | null>(null);
 	const [loadError, setLoadError] = useState(false);
@@ -1503,6 +1506,7 @@ export function ContractEditForm({ contractId, service, onUpdated, onSaved, onCo
 						if (!cancelled) {
 							setResolvedService(candidateService);
 							setInitialValues(formValues);
+							setContractDetail(dto as Record<string, unknown>);
 							setLoadedContractId(contractId);
 							const loadedScope = {
 								serviceId: formValues.serviceId ?? null,
@@ -1554,29 +1558,34 @@ export function ContractEditForm({ contractId, service, onUpdated, onSaved, onCo
 								)
 								: (
 									<Spin spinning={loading} tip="در حال دریافت اطلاعات قرارداد" wrapperClassName="w-full">
-										<ContractForm
-											key={`${resolvedService}-${loadedContractId}`}
-											mode="edit"
-											contractId={loadedContractId}
-											initialValues={initialValues}
-											showDocuments={false}
-											onSelectionContextChange={handleSelectionContextChange}
-											awaitingContractSelection={awaitingContractSelection}
-											submitText="ذخیره تغییرات"
-											submitting={saving || loading}
-											onSubmit={async (values) => {
-												setSaving(true);
-												try {
-													await fetchUpdateContract(resolvedService, loadedContractId, await formValuesToApiPayload(values));
-													window.$message?.success("قرارداد با موفقیت ویرایش شد");
-													onUpdated?.();
-													onSaved?.();
-												}
-												finally {
-													setSaving(false);
-												}
-											}}
-										/>
+										{readOnly
+											? contractDetail ? <ContractReadOnlyDetails values={initialValues} detail={contractDetail} service={resolvedService} /> : null
+											: (
+												<ContractForm
+													key={`${resolvedService}-${loadedContractId}`}
+													mode="edit"
+													contractId={loadedContractId}
+													initialValues={initialValues}
+													showDocuments={false}
+													readOnly={readOnly}
+													onSelectionContextChange={handleSelectionContextChange}
+													awaitingContractSelection={awaitingContractSelection}
+													submitText="ذخیره تغییرات"
+													submitting={saving || loading}
+													onSubmit={async (values) => {
+														setSaving(true);
+														try {
+															await fetchUpdateContract(resolvedService, loadedContractId, await formValuesToApiPayload(values));
+															window.$message?.success("قرارداد با موفقیت ویرایش شد");
+															onUpdated?.();
+															onSaved?.();
+														}
+														finally {
+															setSaving(false);
+														}
+													}}
+												/>
+											)}
 									</Spin>
 								)}
 						</div>
@@ -1611,6 +1620,7 @@ export function ContractEditForm({ contractId, service, onUpdated, onSaved, onCo
 													contractId={loadedContractId}
 													initialDocuments={initialValues.documents as UploadFile[]}
 													loading={loading}
+													readOnly={readOnly}
 												/>
 												<ContractApprovalHistoryPanel
 													contractId={loadedContractId}

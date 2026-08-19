@@ -97,6 +97,25 @@ function addJalaliRangeToMonths(
 	}
 }
 
+function isJalaliRangeAvailable(
+	monthsByYear: Map<number, number[]>,
+	startYear: number,
+	startMonth: number,
+	endYear: number,
+	endMonth: number,
+) {
+	for (let year = startYear; year <= endYear; year++) {
+		const firstMonth = year === startYear ? startMonth : 1;
+		const lastMonth = year === endYear ? endMonth : 12;
+		const availableMonths = new Set(monthsByYear.get(year) ?? []);
+		for (let month = firstMonth; month <= lastMonth; month++) {
+			if (!availableMonths.has(month))
+				return false;
+		}
+	}
+	return true;
+}
+
 interface FixedStartSectionProps {
 	mode?: "create" | "edit"
 	preserveDatesDuringResetRef?: React.MutableRefObject<boolean>
@@ -702,6 +721,40 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 
 		return output;
 	}, [contractGaps.data, mode, startYear, startMonth, endYear, endMonth, dateFieldsAreDirty]);
+
+	useEffect(() => {
+		if (!preserveDatesDuringResetRef?.current || !serviceId || !companyId)
+			return;
+
+		if (contractGaps.isLoading || contractGaps.isFetching)
+			return;
+		if (contractGaps.isError)
+			return;
+
+		const hasCompleteRange = startYear != null && startMonth != null && endYear != null && endMonth != null;
+		const rangeIsAvailable = hasCompleteRange && isJalaliRangeAvailable(missingMonthsByYear, startYear, startMonth, endYear, endMonth);
+
+		if (!rangeIsAvailable) {
+			setValue("startYear", null, { shouldDirty: true, shouldValidate: false });
+			setValue("startMonth", null, { shouldDirty: true, shouldValidate: false });
+			setValue("endYear", null, { shouldDirty: true, shouldValidate: false });
+			setValue("endMonth", null, { shouldDirty: true, shouldValidate: false });
+		}
+
+		preserveDatesDuringResetRef.current = false;
+	}, [
+		serviceId,
+		companyId,
+		contractGaps.isLoading,
+		contractGaps.isFetching,
+		missingMonthsByYear,
+		startYear,
+		startMonth,
+		endYear,
+		endMonth,
+		setValue,
+		preserveDatesDuringResetRef,
+	]);
 
 	const baseYearOptions = useMemo(() => {
 		const yearsFromMissing = Array.from(missingMonthsByYear.keys()).sort((a, b) => a - b);

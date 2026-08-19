@@ -2,7 +2,8 @@ import type { ActionType, ProColumns, ProCoreActionType, ProFormInstance } from 
 import type { BankAccountDto } from "../model/bank-accounts.types";
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import { useAccess } from "#src/hooks";
-import { DeleteOutlined, EditOutlined, PlusCircleOutlined } from "@ant-design/icons";
+import { TableActionEditIcon, TableActionTrashIcon } from "#src/icons";
+import { PlusCircleOutlined } from "@ant-design/icons";
 
 import { Button, Popconfirm } from "antd";
 import React, { useMemo, useRef, useState } from "react";
@@ -116,7 +117,7 @@ export default function BankAccountsTable({ serviceId, companyId }: Props) {
 								type="link"
 								size="large"
 								title="ویرایش حساب"
-								icon={<EditOutlined />}
+								icon={<TableActionEditIcon />}
 								onClick={() => {
 									setEditing(record);
 									setOpenModal(true);
@@ -134,7 +135,7 @@ export default function BankAccountsTable({ serviceId, companyId }: Props) {
 								cancelText="انصراف"
 								onConfirm={() => handleDeleteRow(record, action)}
 							>
-								<BasicButton type="link" icon={<DeleteOutlined />} size="large" title="حذف حساب" />
+								<BasicButton type="link" icon={<TableActionTrashIcon />} size="large" title="حذف حساب" />
 							</Popconfirm>,
 						);
 					}

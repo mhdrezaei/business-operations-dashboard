@@ -1,3 +1,7 @@
+export { default as TableActionDownloadIcon } from "~icons/svg/action-download";
+export { default as TableActionEditIcon } from "~icons/svg/action-edit";
+export { default as TableActionEyeIcon } from "~icons/svg/action-eye";
+export { default as TableActionTrashIcon } from "~icons/svg/action-trash";
 export { default as EmbeddedIcon } from "~icons/svg/embedded";
 export { default as ExternalIcon } from "~icons/svg/external";
 export { default as LayoutCenterIcon } from "~icons/svg/layout-center";

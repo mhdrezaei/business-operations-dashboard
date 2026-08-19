@@ -3,7 +3,8 @@ import type { AdminRoleDto, AdminUserDto } from "../model/admin-users.types";
 
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import { useAccess } from "#src/hooks";
-import { CrownOutlined, DeleteOutlined, EditOutlined, EyeOutlined, PlusCircleOutlined, SafetyOutlined, StopOutlined, TeamOutlined } from "@ant-design/icons";
+import { TableActionEditIcon, TableActionEyeIcon, TableActionTrashIcon } from "#src/icons";
+import { CrownOutlined, PlusCircleOutlined, SafetyOutlined, StopOutlined, TeamOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Popconfirm } from "antd";
 import React, { useMemo, useRef, useState } from "react";
@@ -179,7 +180,7 @@ export default function AdminUsersListPage() {
 								type="link"
 								size="large"
 								title="ویرایش کاربر"
-								icon={<EditOutlined />}
+								icon={<TableActionEditIcon />}
 								onClick={() => handleOpenEdit(record.id)}
 							/>,
 						);
@@ -217,7 +218,7 @@ export default function AdminUsersListPage() {
 							type="link"
 							size="large"
 							title="خلاصه"
-							icon={<EyeOutlined />}
+							icon={<TableActionEyeIcon />}
 							onClick={() => handleOpenSummary(record)}
 						/>,
 					);
@@ -251,7 +252,7 @@ export default function AdminUsersListPage() {
 								cancelText={t("common.cancel")}
 								onConfirm={() => handleDeleteRow(record, action)}
 							>
-								<BasicButton type="link" size="large" title="حذف" icon={<DeleteOutlined />} />
+								<BasicButton type="link" size="large" title="حذف" icon={<TableActionTrashIcon />} />
 							</Popconfirm>,
 						);
 					}

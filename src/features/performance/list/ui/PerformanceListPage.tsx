@@ -23,7 +23,8 @@ import {
 	smsCommissionAgentsQuery,
 } from "#src/features/performance/shared/queries/performance.queries";
 import { useAccess } from "#src/hooks";
-import { DeleteOutlined, EditOutlined, FileExcelOutlined, PlusCircleOutlined } from "@ant-design/icons";
+import { TableActionEditIcon, TableActionTrashIcon } from "#src/icons";
+import { FileExcelOutlined, PlusCircleOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Popconfirm } from "antd";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -410,7 +411,7 @@ export default function PerformanceListPage() {
 								type="link"
 								size="large"
 								title={t("performance.actions.editPerformance")}
-								icon={<EditOutlined />}
+								icon={<TableActionEditIcon />}
 								onClick={() => {
 									setSelectedRow(record);
 									setOpenDetail(true);
@@ -432,7 +433,7 @@ export default function PerformanceListPage() {
 									type="link"
 									size="large"
 									title={t("performance.actions.deletePerformance")}
-									icon={<DeleteOutlined />}
+									icon={<TableActionTrashIcon />}
 									loading={deletingRowId != null && normalizePerformanceRecord(record).id === deletingRowId}
 								/>
 							</Popconfirm>,

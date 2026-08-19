@@ -3,7 +3,7 @@ import type { ContractFormValues, ContractServiceCode } from "../../model/contra
 import { BasicContent } from "#src/components/index.js";
 import { notification } from "#src/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Card, Empty } from "antd";
+import { Button, Card, ConfigProvider, Empty } from "antd";
 import { AnimatePresence, motion } from "framer-motion";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 
@@ -62,6 +62,7 @@ interface Props {
 	showDocuments?: boolean
 	onSelectionContextChange?: (context: ContractFormSelectionContext) => void
 	awaitingContractSelection?: boolean
+	readOnly?: boolean
 }
 
 function hasMeaningfulDirtyField(
@@ -101,6 +102,7 @@ export function ContractForm({
 	showDocuments = true,
 	onSelectionContextChange,
 	awaitingContractSelection = false,
+	readOnly = false,
 }: Props) {
 	const dynamicResolver: Resolver<ContractFormValues> = useCallback(
 		async (values, context, options) => {
@@ -178,9 +180,6 @@ export function ContractForm({
 		resetForCreateAnother: (values) => {
 			preserveDatesDuringResetRef.current = true;
 			form.reset(values);
-			window.setTimeout(() => {
-				preserveDatesDuringResetRef.current = false;
-			}, 0);
 		},
 	}), [form]);
 	const onSubmit = form.handleSubmit(
@@ -224,66 +223,72 @@ export function ContractForm({
 
 	return (
 		<FormProvider {...form}>
-			<BasicContent>
-				<Card>
-					<div className="contract-form w-full flex flex-col justify-center items-center gap-2">
-						<input type="hidden" {...form.register("serviceCode")} />
-						<FixedStartSection mode={mode} preserveDatesDuringResetRef={preserveDatesDuringResetRef} />
+			<ConfigProvider componentDisabled={readOnly}>
+				<BasicContent>
+					<Card>
+						<div className="contract-form w-full flex flex-col justify-center items-center gap-2">
+							<input type="hidden" {...form.register("serviceCode")} />
+							<FixedStartSection mode={mode} preserveDatesDuringResetRef={preserveDatesDuringResetRef} />
 
-						{awaitingContractSelection
-							? (
-								<div className="flex min-h-[240px] w-full items-center justify-center">
-									<Empty
-										image={Empty.PRESENTED_IMAGE_SIMPLE}
-										description="جهت مشاهده، یک قرارداد را از پنل سمت چپ انتخاب کنید"
-									/>
-								</div>
-							)
-							: (
-								<>
-									<AnimatePresence mode="wait">
-										{module?.Fields
-											? (
-												<motion.div
-													key={module.code}
-													initial={{ opacity: 0, y: 8 }}
-													animate={{ opacity: 1, y: 0 }}
-													exit={{ opacity: 0, y: -8 }}
-													transition={{ duration: 0.2 }}
-													className="w-full"
-												>
-													<module.Fields />
-												</motion.div>
-											)
-											: null}
-									</AnimatePresence>
-
-									{isCollocationFlow ? null : <FixedEndSection contractId={contractId} showDocuments={showDocuments} />}
-
-									<div className="mt-4 w-full">
-										{showExtendedActions
-											? (
-												<ActionSection
-													submitting={submitting}
-													disabled={submitDisabled}
-													submitText={submitText}
-													onSubmit={() => triggerSubmit("submit")}
-													onSubmitAndCreateAnother={() => triggerSubmit("submit_and_create_another")}
-													onSubmitAndEdit={() => triggerSubmit("submit_and_edit")}
-													onReset={resetForm}
-												/>
-											)
-											: (
-												<Button type="primary" onClick={() => triggerSubmit("submit")} loading={!!submitting} disabled={submitDisabled}>
-													{submitText}
-												</Button>
-											)}
+							{awaitingContractSelection
+								? (
+									<div className="flex min-h-[240px] w-full items-center justify-center">
+										<Empty
+											image={Empty.PRESENTED_IMAGE_SIMPLE}
+											description="جهت مشاهده، یک قرارداد را از پنل سمت چپ انتخاب کنید"
+										/>
 									</div>
-								</>
-							)}
-					</div>
-				</Card>
-			</BasicContent>
+								)
+								: (
+									<>
+										<AnimatePresence mode="wait">
+											{module?.Fields
+												? (
+													<motion.div
+														key={module.code}
+														initial={{ opacity: 0, y: 8 }}
+														animate={{ opacity: 1, y: 0 }}
+														exit={{ opacity: 0, y: -8 }}
+														transition={{ duration: 0.2 }}
+														className="w-full"
+													>
+														<module.Fields />
+													</motion.div>
+												)
+												: null}
+										</AnimatePresence>
+
+										{isCollocationFlow ? null : <FixedEndSection contractId={contractId} showDocuments={showDocuments} />}
+
+										{readOnly
+											? null
+											: (
+												<div className="mt-4 w-full">
+													{showExtendedActions
+														? (
+															<ActionSection
+																submitting={submitting}
+																disabled={submitDisabled}
+																submitText={submitText}
+																onSubmit={() => triggerSubmit("submit")}
+																onSubmitAndCreateAnother={() => triggerSubmit("submit_and_create_another")}
+																onSubmitAndEdit={() => triggerSubmit("submit_and_edit")}
+																onReset={resetForm}
+															/>
+														)
+														: (
+															<Button type="primary" onClick={() => triggerSubmit("submit")} loading={!!submitting} disabled={submitDisabled}>
+																{submitText}
+															</Button>
+														)}
+												</div>
+											)}
+									</>
+								)}
+						</div>
+					</Card>
+				</BasicContent>
+			</ConfigProvider>
 		</FormProvider>
 	);
 }

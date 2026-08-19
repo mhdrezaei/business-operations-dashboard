@@ -15,7 +15,7 @@ const sf = (path: string) => `serviceFields.${path}` as const;
 const COMMISSION_LABELS = [
 	"کارمزد دریافت اولیه",
 	"کارمزد دریافت نهایی",
-	"درصد کارشناسی",
+	"درصد کاراشاب",
 	"درصد مخابرات",
 	"درصد سهم طرف اول",
 	"درصد سهم منطقه",
@@ -31,6 +31,69 @@ function toPercent(v: unknown): number | null {
 
 function isPercentInRange(v: number) {
 	return v >= 0 && v <= 100;
+}
+
+function SmsCommissionAddendumPercentSync({ base }: { base: string }) {
+	const { control, setValue } = useFormContext<ContractFormValues>();
+	const expertRaw = useWatch({ control, name: `${base}.expertPercent` as any });
+	const telecomRaw = useWatch({ control, name: `${base}.telecomPercent` as any });
+	const firstPartyRaw = useWatch({ control, name: `${base}.firstPartySharePercent` as any });
+	const regionRaw = useWatch({ control, name: `${base}.regionSharePercent` as any });
+	const salesAgentRaw = useWatch({ control, name: `${base}.salesAgentSharePercent` as any });
+	const previousPair = useRef<[number | null, number | null]>([null, null]);
+	const previousTriple = useRef<[number | null, number | null, number | null]>([null, null, null]);
+
+	useEffect(() => {
+		const values: [number | null, number | null] = [toPercent(expertRaw), toPercent(telecomRaw)];
+		const changed = values.map((value, index) => value !== previousPair.current[index]);
+		if (changed.filter(Boolean).length === 1) {
+			const changedIndex = changed[0] ? 0 : 1;
+			const otherIndex = changedIndex === 0 ? 1 : 0;
+			const changedValue = values[changedIndex];
+			const otherValue = values[otherIndex];
+			const targetIndex = changedValue != null ? otherIndex : otherValue != null ? changedIndex : null;
+			const remaining = changedValue != null ? 100 - changedValue : otherValue != null ? 100 - otherValue : null;
+			if (targetIndex != null && remaining != null && isPercentInRange(remaining) && values[targetIndex] !== remaining) {
+				const field = targetIndex === 0 ? "expertPercent" : "telecomPercent";
+				setValue(`${base}.${field}` as any, remaining as any, { shouldDirty: true, shouldValidate: true });
+			}
+		}
+		previousPair.current = values;
+	}, [base, expertRaw, telecomRaw, setValue]);
+
+	useEffect(() => {
+		const values: [number | null, number | null, number | null] = [toPercent(firstPartyRaw), toPercent(regionRaw), toPercent(salesAgentRaw)];
+		const changed = values.map((value, index) => value !== previousTriple.current[index]);
+		if (changed.filter(Boolean).length === 1) {
+			const changedIndex = changed.findIndex(Boolean);
+			const otherIndexes = [0, 1, 2].filter(index => index !== changedIndex);
+			const changedValue = values[changedIndex];
+			let targetIndex: number | null = null;
+
+			if (changedValue == null) {
+				if (otherIndexes.every(index => values[index] != null))
+					targetIndex = changedIndex;
+			}
+			else if (values[otherIndexes[0]] != null) {
+				targetIndex = otherIndexes[1];
+			}
+			else if (values[otherIndexes[1]] != null) {
+				targetIndex = otherIndexes[0];
+			}
+
+			if (targetIndex != null) {
+				const sourceIndexes = [0, 1, 2].filter(index => index !== targetIndex);
+				const remaining = 100 - (values[sourceIndexes[0]] ?? 0) - (values[sourceIndexes[1]] ?? 0);
+				if (isPercentInRange(remaining) && values[targetIndex] !== remaining) {
+					const fields = ["firstPartySharePercent", "regionSharePercent", "salesAgentSharePercent"];
+					setValue(`${base}.${fields[targetIndex]}` as any, remaining as any, { shouldDirty: true, shouldValidate: true });
+				}
+			}
+		}
+		previousTriple.current = values;
+	}, [base, firstPartyRaw, regionRaw, salesAgentRaw, setValue]);
+
+	return null;
 }
 
 export function SmsCommissionFields() {
@@ -243,80 +306,83 @@ export function SmsCommissionFields() {
 		const nameOf = (field: string) => base ? `${base}.${field}` : sf(field);
 
 		return (
-			<div
-				className="contract-form-aligned-grid contract-form-aligned-grid--two"
-				style={alignedLabelStyle}
-			>
-				<ContractAlignedField label="کارمزد دریافت اولیه">
-					<RHFProNumber<ContractFormValues, any>
-						name={nameOf("initialCommission") as any}
-						label=""
-						inputProps={{ placeholder: "مثلاً 110", addonAfter: "ریال" }}
-						formItemProps={{ className: "contract-type-currency-field mb-0" }}
-					/>
-				</ContractAlignedField>
-
-				<ContractAlignedField label="کارمزد دریافت نهایی">
-					<RHFProNumber<ContractFormValues, any>
-						name={nameOf("finalCommission") as any}
-						label=""
-						inputProps={{ placeholder: "مثلاً 150", addonAfter: "ریال" }}
-						formItemProps={{ className: "contract-type-currency-field mb-0" }}
-					/>
-				</ContractAlignedField>
-
-				<ContractAlignedField label="درصد کارشناسی">
-					<RHFProNumber<ContractFormValues, any>
-						name={nameOf("expertPercent") as any}
-						label=""
-						inputProps={{ placeholder: "مثلاً 20", addonAfter: "درصد" }}
-						enableGrouping={false}
-						formItemProps={{ className: "contract-type-currency-field mb-0" }}
-					/>
-				</ContractAlignedField>
-
-				<ContractAlignedField label="درصد مخابرات">
-					<RHFProNumber<ContractFormValues, any>
-						name={nameOf("telecomPercent") as any}
-						label=""
-						inputProps={{ placeholder: "مثلاً 80", addonAfter: "درصد" }}
-						enableGrouping={false}
-						formItemProps={{ className: "contract-type-currency-field mb-0" }}
-					/>
-				</ContractAlignedField>
-
-				<ContractAlignedField label="درصد سهم طرف اول">
-					<RHFProNumber<ContractFormValues, any>
-						name={nameOf("firstPartySharePercent") as any}
-						label=""
-						inputProps={{ placeholder: "مثلاً 20", addonAfter: "درصد" }}
-						enableGrouping={false}
-						formItemProps={{ className: "contract-type-currency-field mb-0" }}
-					/>
-				</ContractAlignedField>
-
-				<ContractAlignedField label="درصد سهم منطقه">
-					<RHFProNumber<ContractFormValues, any>
-						name={nameOf("regionSharePercent") as any}
-						label=""
-						inputProps={{ placeholder: "مثلاً 30", addonAfter: "درصد" }}
-						enableGrouping={false}
-						formItemProps={{ className: "contract-type-currency-field mb-0" }}
-					/>
-				</ContractAlignedField>
-
-				<div className="col-span-full">
-					<ContractAlignedField label="درصد سهم نماینده فروش">
+			<>
+				{base ? <SmsCommissionAddendumPercentSync base={base} /> : null}
+				<div
+					className="contract-form-aligned-grid contract-form-aligned-grid--two"
+					style={alignedLabelStyle}
+				>
+					<ContractAlignedField label="کارمزد دریافت اولیه">
 						<RHFProNumber<ContractFormValues, any>
-							name={nameOf("salesAgentSharePercent") as any}
+							name={nameOf("initialCommission") as any}
 							label=""
-							inputProps={{ placeholder: "مثلاً 50", addonAfter: "درصد" }}
+							inputProps={{ placeholder: "مثلاً 110", addonAfter: "ریال" }}
+							formItemProps={{ className: "contract-type-currency-field mb-0" }}
+						/>
+					</ContractAlignedField>
+
+					<ContractAlignedField label="کارمزد دریافت نهایی">
+						<RHFProNumber<ContractFormValues, any>
+							name={nameOf("finalCommission") as any}
+							label=""
+							inputProps={{ placeholder: "مثلاً 150", addonAfter: "ریال" }}
+							formItemProps={{ className: "contract-type-currency-field mb-0" }}
+						/>
+					</ContractAlignedField>
+
+					<ContractAlignedField label="درصد کاراشاب">
+						<RHFProNumber<ContractFormValues, any>
+							name={nameOf("expertPercent") as any}
+							label=""
+							inputProps={{ placeholder: "مثلاً 20", addonAfter: "درصد" }}
 							enableGrouping={false}
 							formItemProps={{ className: "contract-type-currency-field mb-0" }}
 						/>
 					</ContractAlignedField>
+
+					<ContractAlignedField label="درصد مخابرات">
+						<RHFProNumber<ContractFormValues, any>
+							name={nameOf("telecomPercent") as any}
+							label=""
+							inputProps={{ placeholder: "مثلاً 80", addonAfter: "درصد" }}
+							enableGrouping={false}
+							formItemProps={{ className: "contract-type-currency-field mb-0" }}
+						/>
+					</ContractAlignedField>
+
+					<ContractAlignedField label="درصد سهم طرف اول">
+						<RHFProNumber<ContractFormValues, any>
+							name={nameOf("firstPartySharePercent") as any}
+							label=""
+							inputProps={{ placeholder: "مثلاً 20", addonAfter: "درصد" }}
+							enableGrouping={false}
+							formItemProps={{ className: "contract-type-currency-field mb-0" }}
+						/>
+					</ContractAlignedField>
+
+					<ContractAlignedField label="درصد سهم منطقه">
+						<RHFProNumber<ContractFormValues, any>
+							name={nameOf("regionSharePercent") as any}
+							label=""
+							inputProps={{ placeholder: "مثلاً 30", addonAfter: "درصد" }}
+							enableGrouping={false}
+							formItemProps={{ className: "contract-type-currency-field mb-0" }}
+						/>
+					</ContractAlignedField>
+
+					<div className="col-span-full">
+						<ContractAlignedField label="درصد سهم نماینده فروش">
+							<RHFProNumber<ContractFormValues, any>
+								name={nameOf("salesAgentSharePercent") as any}
+								label=""
+								inputProps={{ placeholder: "مثلاً 50", addonAfter: "درصد" }}
+								enableGrouping={false}
+								formItemProps={{ className: "contract-type-currency-field mb-0" }}
+							/>
+						</ContractAlignedField>
+					</div>
 				</div>
-			</div>
+			</>
 		);
 	}
 

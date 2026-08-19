@@ -15,7 +15,8 @@ import {
 	smsCommissionAgentsQuery,
 } from "#src/features/performance/shared/queries/performance.queries";
 import { useAccess } from "#src/hooks";
-import { EditOutlined, PlusCircleOutlined } from "@ant-design/icons";
+import { TableActionEditIcon } from "#src/icons";
+import { PlusCircleOutlined } from "@ant-design/icons";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { Button } from "antd";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -361,7 +362,7 @@ export default function UnregisteredPerformanceList() {
 								size="large"
 								loading={openingRowKey === rowKey}
 								title={t("performance.actions.submitPerformance")}
-								icon={<EditOutlined />}
+								icon={<TableActionEditIcon />}
 								onClick={() => void openPerformanceDetail(record)}
 							/>,
 						);

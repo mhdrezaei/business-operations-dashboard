@@ -37,6 +37,16 @@ function formatJalaliDate(year?: number | null, month?: number | null) {
 	return `${formatFaNumber(year)}/${formatFaNumber(month)}`;
 }
 
+function DateRange({ start, end }: { start: string, end: string }) {
+	return (
+		<span className="inline-flex items-center gap-1 whitespace-nowrap" dir="ltr">
+			<bdi dir="ltr">{start}</bdi>
+			<span dir="rtl">تا</span>
+			<bdi dir="ltr">{end}</bdi>
+		</span>
+	);
+}
+
 export function CompanyContractsPanel({ companyId, companyType, currentContractId, service, serviceId, onSelect }: Props) {
 	const contractsQuery = useQuery({
 		queryKey: ["contracts", "company-contracts", service, serviceId ?? null, companyId, companyType ?? null],
@@ -53,7 +63,8 @@ export function CompanyContractsPanel({ companyId, companyType, currentContractI
 	const items = contracts.map((contract) => {
 		const isCurrent = contract.id === currentContractId;
 		const contractLabel = contract.contract_number?.trim() || formatFaNumber(contract.id);
-		const activeRange = `${formatJalaliDate(contract.start_jy, contract.start_jm)} تا ${formatJalaliDate(contract.end_jy, contract.end_jm)}`;
+		const activeRangeStart = formatJalaliDate(contract.start_jy, contract.start_jm);
+		const activeRangeEnd = formatJalaliDate(contract.end_jy, contract.end_jm);
 
 		return {
 			key: String(contract.id),
@@ -77,7 +88,7 @@ export function CompanyContractsPanel({ companyId, companyType, currentContractI
 				<div className="grid gap-2.5 text-sm">
 					<div className="flex justify-between gap-4">
 						<span className="font-medium text-textSecondary">بازه فعال</span>
-						<span className="text-text" dir="ltr">{activeRange}</span>
+						<span className="text-text"><DateRange start={activeRangeStart} end={activeRangeEnd} /></span>
 					</div>
 					<div className="flex justify-between gap-4">
 						<span className="font-medium text-textSecondary">تاریخ شروع</span>
