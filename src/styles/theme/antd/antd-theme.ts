@@ -1,5 +1,62 @@
 import type { ThemeConfig } from "antd";
 
+const DARK_APP_BORDER_COLOR = "#2e3d63";
+const LIGHT_APP_BORDER_COLOR = "transparent";
+const LIGHT_STRUCTURAL_BORDER_COLOR = "#d7ddea";
+
+/**
+ * Keep every color-valued Ant Design border token aligned with the app theme.
+ * This also covers component-level interaction and semantic border overrides.
+ */
+function withAppBorderColor(theme: ThemeConfig, borderColor: string, structuralBorderColor = borderColor): ThemeConfig {
+	function normalizeTokens(value: unknown, key = ""): unknown {
+		if (typeof value === "string" && (
+			key === "colorSplit"
+			|| key === "headerSplitColor"
+			|| key === "tailColor"
+		)) {
+			return structuralBorderColor;
+		}
+
+		if (typeof value === "string" && /color.*border|border.*color/i.test(key)) {
+			return borderColor;
+		}
+
+		if (Array.isArray(value) || value === null || typeof value !== "object") {
+			return value;
+		}
+
+		return Object.fromEntries(
+			Object.entries(value).map(([nestedKey, nestedValue]) => [
+				nestedKey,
+				normalizeTokens(nestedValue, nestedKey),
+			]),
+		);
+	}
+
+	const normalizedTheme = normalizeTokens(theme) as ThemeConfig;
+
+	return {
+		...normalizedTheme,
+		token: {
+			...normalizedTheme.token,
+			colorBorder: borderColor,
+			colorBorderSecondary: borderColor,
+			colorSplit: structuralBorderColor,
+			colorPrimaryBorder: borderColor,
+			colorPrimaryBorderHover: borderColor,
+			colorSuccessBorder: borderColor,
+			colorSuccessBorderHover: borderColor,
+			colorWarningBorder: borderColor,
+			colorWarningBorderHover: borderColor,
+			colorErrorBorder: borderColor,
+			colorErrorBorderHover: borderColor,
+			colorInfoBorder: borderColor,
+			colorInfoBorderHover: borderColor,
+		},
+	};
+}
+
 /**
  * Get font family based on language/RTL direction
  */
@@ -1069,12 +1126,16 @@ const newBrandLightTheme = {
 /**
  * پیکربندی تم روشن سفارشي Ant Design
  */
-export const customAntdLightTheme: ThemeConfig = newBrandLightTheme;
+export const customAntdLightTheme: ThemeConfig = withAppBorderColor(
+	newBrandLightTheme,
+	LIGHT_APP_BORDER_COLOR,
+	LIGHT_STRUCTURAL_BORDER_COLOR,
+);
 
 /**
  * پیکربندی تم تیره سفارشي Ant Design
  */
-export const customAntdDarkTheme: ThemeConfig = newBrandTheme;
+export const customAntdDarkTheme: ThemeConfig = withAppBorderColor(newBrandTheme, DARK_APP_BORDER_COLOR);
 
 /**
  * Get theme configuration with dynamic font family based on RTL

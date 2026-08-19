@@ -154,16 +154,14 @@ function formatFieldValue(key: string, value: unknown) {
 	return formatValue(value);
 }
 
-function FieldRows({ fields, showLastDivider = false, strongDivider = false }: { fields: Array<[string, ReactNode]>, showLastDivider?: boolean, strongDivider?: boolean }) {
+function FieldRows({ fields, showLastDivider = false }: { fields: Array<[string, ReactNode]>, showLastDivider?: boolean }) {
 	const rows = Array.from({ length: Math.ceil(fields.length / 2) }, (_, rowIndex) => fields.slice(rowIndex * 2, rowIndex * 2 + 2));
 
 	return (
 		<div className="flex flex-col">
 			{rows.map((row, rowIndex) => {
 				const hasDivider = rowIndex < rows.length - 1 || showLastDivider;
-				const dividerClass = hasDivider
-					? strongDivider ? "border-b border-[var(--ant-color-border)]" : "border-b border-[var(--ant-color-border-secondary)]"
-					: "";
+				const dividerClass = hasDivider ? "border-b border-[var(--ant-color-split)]" : "";
 
 				return (
 					<div
@@ -208,7 +206,7 @@ function PricingRows({ rows }: { rows: PricingValue["rows"] }) {
 					{["شروع بازه", "پایان بازه", "مبلغ هر واحد"].map(title => <div key={title} className="rounded-md bg-[var(--contract-section-accent-bg)] px-3 py-1.5 text-center text-sm font-semibold text-[var(--contract-section-accent-color)]">{title}</div>)}
 				</div>
 				{rows.map(row => (
-					<div key={JSON.stringify(row)} className="mt-2 grid grid-cols-3 gap-3 border-b border-[var(--ant-color-border-secondary)] py-2 text-center text-sm last:border-b-0">
+					<div key={JSON.stringify(row)} className="mt-2 grid grid-cols-3 gap-3 border-b border-[var(--ant-color-split)] py-2 text-center text-sm last:border-b-0">
 						<span>{formatValue(row.from)}</span>
 						<span>{formatValue(row.to)}</span>
 						<span>
@@ -267,7 +265,7 @@ function PricingDetails({ value, aside }: { value: PricingValue, aside?: ReactNo
 				</Tag>
 				{hasValueFields
 					? (
-						<div className={`grid min-w-0 flex-1 border-b border-[var(--ant-color-border-secondary)] ${type === "fixed" && aside != null ? "md:grid-cols-2" : "grid-cols-1"}`}>
+						<div className={`grid min-w-0 flex-1 border-b border-[var(--ant-color-split)] ${type === "fixed" && aside != null ? "md:grid-cols-2" : "grid-cols-1"}`}>
 							{type === "fixed"
 								? (
 									<div className="flex min-h-10 w-full items-center justify-between gap-4 px-3 text-sm">
@@ -304,7 +302,7 @@ function TrafficLocationDetails({ pricing, unit, revenuePercent }: { pricing: un
 
 	return (
 		<div>
-			<div className={`grid grid-cols-1 border-b border-[var(--ant-color-border-secondary)] ${type === "fixed" ? "md:grid-cols-4" : "md:grid-cols-3"}`}>
+			<div className={`grid grid-cols-1 border-b border-[var(--ant-color-split)] ${type === "fixed" ? "md:grid-cols-4" : "md:grid-cols-3"}`}>
 				<div className="flex min-h-12 w-full items-center px-3">
 					<Tag bordered={false} className="!m-0 !bg-[var(--ant-color-primary-bg-hover)] !px-3 !py-1 !text-[var(--ant-color-text)]">
 						مدل محاسبه:
@@ -425,7 +423,7 @@ function SmsOperatorRevenueDetails({ data }: { data: Record<string, unknown> }) 
 
 				const allFixed = entries.every(item => (item.value.type ?? "fixed") === "fixed");
 				return (
-					<div key={group[0].key} className={groupIndex < groups.length - 1 ? "border-b border-[var(--ant-color-border-secondary)]" : ""}>
+					<div key={group[0].key} className={groupIndex < groups.length - 1 ? "border-b border-[var(--ant-color-split)]" : ""}>
 						{allFixed
 							? (
 								<div className="grid grid-cols-1 md:grid-cols-2">
@@ -604,7 +602,7 @@ function AddendumServiceDetails({ data, service, tone }: { data: Record<string, 
 		const fields = Object.entries(data)
 			.filter(([key, value]) => !HIDDEN_KEYS.has(key) && !isEmpty(value))
 			.map(([key, value]) => [fieldLabel(key), formatFieldValue(key, value)] as [string, ReactNode]);
-		return <FieldRows fields={fields} strongDivider />;
+		return <FieldRows fields={fields} />;
 	}
 
 	if (service === "psp")
@@ -690,12 +688,11 @@ function AddendumItem({ addendum, index, service, prefix, tone }: { addendum: Re
 										["شماره قرارداد الحاقیه", addendum.contractNumber ? String(addendum.contractNumber) : "—"],
 									]}
 									showLastDivider
-									strongDivider
 								/>
 								{isEmpty(remainingFields) ? null : <div className="mt-4 flex flex-col gap-3"><AddendumServiceDetails data={remainingFields} service={service} tone={tone} /></div>}
 								{addendum.description
 									? (
-										<div className="mt-4 border-t border-[var(--ant-color-border)] pt-4">
+										<div className="mt-4 border-t border-[var(--ant-color-split)] pt-4">
 											<div className="mb-2 text-sm text-[var(--ant-color-text-secondary)]">توضیح الحاقیه:</div>
 											<div className="text-sm leading-7">{String(addendum.description)}</div>
 										</div>

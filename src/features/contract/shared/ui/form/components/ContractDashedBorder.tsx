@@ -1,13 +1,8 @@
-import { ConfigProvider, theme } from "antd";
-import { useContext } from "react";
+import { theme } from "antd";
 
 export function ContractDashedBorder() {
-	const antdContext = useContext(ConfigProvider.ConfigContext);
 	const { token } = theme.useToken();
-	const configuredCardBorder = antdContext.theme?.components?.Card?.colorBorderSecondary;
-	const borderColor = typeof configuredCardBorder === "string"
-		? configuredCardBorder
-		: token.colorPrimaryBorder;
+	const borderColor = token.colorSplit;
 	const borderWidth = token.lineWidth;
 	const radius = token.paddingLG + token.borderRadiusSM;
 	const dashLength = token.sizeXS - token.lineWidthBold;

@@ -4,7 +4,7 @@ import { ContractSectionToneContext } from "#src/features/contract/shared/ui/for
 import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import { RHFProNumber, RHFSegmentedSwitch, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import { Button, Card, ConfigProvider, theme } from "antd";
+import { Button, Card, theme } from "antd";
 import React, { useEffect, useRef } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { BLENDED_MODE_OPTIONS, CONTRACT_TYPE_OPTIONS } from "./contract-type.options";
@@ -40,17 +40,13 @@ export function ContractTypeSection({ title, name, topAside, tone = "primary", v
 	const resolvedTone = inheritedTone ?? tone;
 	const isSmsOperator = variant === "sms-operator";
 	const isEmbedded = variant === "embedded";
-	const antdContext = React.useContext(ConfigProvider.ConfigContext);
 	const { token } = theme.useToken();
-	const configuredCardBorder = antdContext.theme?.components?.Card?.colorBorderSecondary;
 	const smsOperatorRadius = token.paddingLG + token.borderRadiusSM;
 	const smsBlendedRadius = smsOperatorRadius;
 	const smsBorderWidth = token.lineWidth;
 	const smsDashLength = token.sizeXS - token.lineWidthBold;
 	const smsDashGap = token.paddingXXS;
-	const smsBorderColor = typeof configuredCardBorder === "string"
-		? configuredCardBorder
-		: token.colorPrimaryBorder;
+	const smsBorderColor = token.colorSplit;
 	const toneColors = getContractSectionToneColors(token, resolvedTone);
 	const smsCardStyle = isSmsOperator
 		? {
@@ -62,7 +58,7 @@ export function ContractTypeSection({ title, name, topAside, tone = "primary", v
 			"--sms-operator-addon-bg": token.colorPrimary,
 			"--sms-operator-addon-border-color": token.colorPrimary,
 			"--sms-operator-addon-text-color": token.colorTextLightSolid,
-			"--contract-section-danger-border-color": token.colorErrorBorder,
+			"--contract-section-danger-border-color": token.colorSplit,
 			"--contract-section-nested-bg": token.colorBgLayout,
 			"--contract-section-accent-bg": toneColors.background,
 			"--contract-section-accent-color": toneColors.text,

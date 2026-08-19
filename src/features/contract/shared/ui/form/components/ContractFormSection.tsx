@@ -39,7 +39,8 @@ export function ContractFormSection({
 		: token.colorBorderSecondary;
 	const toneColors = getContractSectionToneColors(token, resolvedTone);
 	const style = {
-		"--contract-section-border-color": borderColor,
+		"--contract-section-outline-color": borderColor,
+		"--contract-section-border-color": token.colorSplit,
 		"--contract-section-header-gap": `${token.marginSM}px`,
 		"--contract-section-radius": `${typeof configuredCardRadius === "number" ? configuredCardRadius : token.borderRadiusLG}px`,
 		"--contract-section-line-width": `${token.lineWidth}px`,
@@ -56,7 +57,7 @@ export function ContractFormSection({
 			? configuredInputBackground
 			: token.colorFillSecondary,
 		"--contract-section-nested-bg": token.colorBgLayout,
-		"--contract-section-danger-border-color": token.colorErrorBorder,
+		"--contract-section-danger-border-color": token.colorSplit,
 		"--contract-section-control-radius": `${token.borderRadius}px`,
 		"--contract-section-control-padding-block": `${token.paddingXS}px`,
 		"--contract-section-control-padding-inline": `${token.paddingSM}px`,

@@ -106,7 +106,7 @@ export default function LayoutHeader({ className, children }: LayoutHeaderProps)
 				)}
 				style={{
 					background: getHeaderBackground(),
-					borderColor: token.colorPrimaryBorder,
+					borderColor: token.colorBorder,
 					borderRadius: token.borderRadius * 2,
 					columnGap: token.margin,
 					paddingInline: token.padding,

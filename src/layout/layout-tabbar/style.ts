@@ -6,7 +6,7 @@ export const useStyles = createUseStyles(({ token }) => {
 	return {
 		tabsContainer: {
 			"backgroundColor": token.colorBgContainer,
-			"border": `1px solid ${token.colorPrimaryBorder}`,
+			"border": `1px solid ${token.colorBorder}`,
 			"boxSizing": "border-box",
 			"height": tabbarHeight,
 			"marginInline": "12px",

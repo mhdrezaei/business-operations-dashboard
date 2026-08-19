@@ -1,6 +1,6 @@
 .contract-form-section.ant-card {
 	overflow: hidden;
-	border-color: var(--contract-section-border-color);
+	border-color: var(--contract-section-outline-color);
 	border-radius: var(--contract-section-radius);
 }
 
