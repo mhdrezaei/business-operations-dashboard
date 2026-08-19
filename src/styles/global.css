@@ -164,6 +164,44 @@ html.gray-mode {
 	white-space: pre-wrap;
 }
 
+/* Negah glass layer for transparent dark-theme surfaces. */
+:root {
+	--negah-glass-blur: blur(20px);
+}
+
+.ant-layout-header,
+.ant-layout-sider,
+.ant-layout-sider-trigger,
+.ant-menu-submenu-popup,
+.ant-dropdown,
+.ant-select-dropdown,
+.ant-picker-dropdown,
+.ant-cascader-dropdown,
+.ant-tree-select-dropdown,
+.ant-mentions-dropdown,
+.ant-table,
+.ant-table-footer,
+.ant-table-filter-dropdown,
+.ant-card,
+.ant-card-head,
+.ant-card-actions,
+.ant-modal-content,
+.ant-modal-header,
+.ant-modal-footer,
+.ant-drawer-content,
+.ant-popover-inner,
+.ant-tabs-card .ant-tabs-tab,
+.ant-collapse,
+.ant-collapse-content,
+.ant-spin-container,
+.ant-notification-notice,
+.ant-message-notice-content,
+.ant-float-btn,
+.ant-transfer-list-header {
+	backdrop-filter: var(--negah-glass-blur);
+	-webkit-backdrop-filter: var(--negah-glass-blur);
+}
+
 
 
 /* -------------------------------------------------------------------------- */

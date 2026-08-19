@@ -29,7 +29,7 @@ export const DEFAULT_PREFERENCES = {
 	colorGrayMode: false,
 	themeRadius: 9,
 	builtinTheme: "blue",
-	themeColorPrimary: "#1754E1",
+	themeColorPrimary: "#2C67F0",
 
 	/* ================== Animation ================== */
 	transitionProgress: true,
