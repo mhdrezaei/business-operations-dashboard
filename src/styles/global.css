@@ -110,6 +110,413 @@ html.gray-mode {
 	line-height: 1.9;
 }
 
+/* Shared filter panel for every BasicTable. Values are injected from Ant tokens by BasicTable. */
+.ant-pro-table-search {
+	position: relative;
+	margin-block-end: var(--basic-table-filter-margin, 24px);
+	padding: var(--basic-table-filter-padding, 24px);
+	padding-block-start: var(--basic-table-filter-padding-top, 96px);
+	border: var(--basic-table-filter-border, 1px solid var(--ant-colorBorderSecondary));
+	border-radius: var(--basic-table-filter-radius, 16px);
+	background: var(--basic-table-filter-background, var(--ant-colorBgContainer));
+	box-shadow: var(--basic-table-filter-shadow, var(--ant-boxShadowTertiary));
+	transition:
+		padding-block-start var(--ant-motion-duration-mid, 220ms) var(--ant-motion-ease-in-out, ease),
+		padding-block-end var(--ant-motion-duration-mid, 220ms) var(--ant-motion-ease-in-out, ease);
+}
+
+.basic-table-shell {
+	position: relative;
+}
+
+.basic-table-filter-heading {
+	position: absolute;
+	z-index: 2;
+	inset-block-start: var(--basic-table-filter-padding, 24px);
+	inset-inline: var(--basic-table-filter-padding, 24px);
+	display: flex;
+	align-items: center;
+	gap: var(--ant-marginSM, 12px);
+	direction: rtl;
+	cursor: pointer;
+}
+
+.basic-table-filter-heading__icon {
+	display: inline-flex;
+	flex: 0 0 auto;
+	align-items: center;
+	justify-content: center;
+	width: var(--basic-table-heading-icon-size, 52px);
+	height: var(--basic-table-heading-icon-size, 52px);
+	border-radius: var(--basic-table-heading-icon-radius, 16px);
+	background: var(--basic-table-filter-primary-bg, var(--ant-colorPrimaryBg));
+	color: var(--basic-table-filter-primary, var(--ant-colorPrimary));
+	font-size: var(--ant-fontSizeHeading4, 20px);
+}
+
+.basic-table-filter-heading__icon svg {
+	display: block;
+	width: 32px;
+	height: 32px;
+}
+
+.basic-table-filter-heading__copy {
+	position: relative;
+	direction: rtl;
+	flex: 1 1 auto;
+	min-width: 0;
+	text-align: right;
+	padding-block-start: 1px;
+	padding-block-end: var(--ant-paddingSM, 8px);
+}
+
+.basic-table-filter-heading__copy::after {
+	content: "";
+	position: absolute;
+	inset-block-end: 0;
+	inset-inline: 0;
+	height: var(--basic-table-filter-line-width, 1px);
+	background-image: repeating-linear-gradient(
+		to right,
+		var(--basic-table-filter-split, var(--ant-colorSplit)) 0,
+		var(--basic-table-filter-split, var(--ant-colorSplit)) var(--basic-table-filter-dash-length, 4px),
+		transparent var(--basic-table-filter-dash-length, 4px),
+		transparent calc(var(--basic-table-filter-dash-length, 4px) + var(--basic-table-filter-dash-gap, 4px))
+	);
+}
+
+.basic-table-filter-toggle {
+	display: inline-flex;
+	flex: 0 0 auto;
+	align-items: center;
+	justify-content: center;
+	width: var(--ant-controlHeight, 32px);
+	height: var(--ant-controlHeight, 32px);
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: var(--basic-table-filter-primary, var(--ant-colorPrimary));
+	cursor: pointer;
+}
+
+.basic-table-filter-toggle:hover {
+	color: var(--ant-colorPrimaryHover, var(--ant-colorPrimary));
+}
+
+.basic-table-filter-toggle:focus-visible {
+	outline: var(--basic-table-filter-line-width, 1px) solid var(--basic-table-filter-primary, var(--ant-colorPrimary));
+	outline-offset: 2px;
+}
+
+.basic-table-filter-heading__title {
+	color: var(--basic-table-filter-heading, var(--ant-colorTextHeading));
+	font-size: var(--ant-fontSizeLG, 16px);
+	font-weight: var(--basic-table-filter-label-weight, 600);
+	line-height: var(--ant-lineHeightLG, 1.5);
+}
+
+.basic-table-filter-heading__subtitle {
+	margin-block-start: var(--ant-marginXXS, 4px);
+	color: var(--basic-table-filter-secondary, var(--ant-colorTextSecondary));
+	font-size: var(--ant-fontSizeSM, 13px);
+	line-height: var(--ant-lineHeight, 1.6);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.ant-pro-table-search::before,
+.ant-pro-table-search::after {
+	content: none;
+}
+
+.ant-pro-table-search .ant-pro-query-filter-collapse-button,
+.ant-pro-table-search .ant-query-filter-collapse-button {
+	display: none !important;
+}
+
+.ant-pro-table-search .ant-pro-query-filter,
+.ant-pro-table-search .ant-query-filter {
+	max-height: 1600px;
+	overflow: hidden;
+	opacity: 1;
+	transform: translateY(0);
+	transition:
+		max-height var(--ant-motion-duration-mid, 220ms) var(--ant-motion-ease-in-out, ease),
+		opacity var(--ant-motion-duration-fast, 160ms) ease,
+		transform var(--ant-motion-duration-mid, 220ms) var(--ant-motion-ease-in-out, ease);
+	will-change: max-height, opacity, transform;
+}
+
+.basic-table-shell--collapsed .ant-pro-table-search .ant-pro-query-filter,
+.basic-table-shell--collapsed .ant-pro-table-search .ant-query-filter {
+	max-height: 0;
+	height: 0 !important;
+	min-height: 0 !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	opacity: 0;
+	transform: translateY(-8px);
+	pointer-events: none;
+}
+
+.basic-table-shell--collapsed .ant-pro-table-search .ant-pro-card-body,
+.basic-table-shell--collapsed .ant-pro-table-search > .ant-pro-card-body {
+	min-height: 0 !important;
+	padding-block: 0 !important;
+}
+
+.basic-table-shell--collapsed .ant-pro-table-search {
+	min-height: 0 !important;
+	padding-block-start: calc(
+		var(--basic-table-filter-padding, 24px)
+		+ var(--ant-controlHeightLG, 40px)
+		+ var(--ant-paddingSM, 8px)
+	);
+	padding-block-end: var(--basic-table-filter-padding, 24px);
+}
+
+.basic-table-shell--collapsed .basic-table-filter-heading__copy {
+	padding-block-end: 0;
+}
+
+.basic-table-shell--collapsed .basic-table-filter-heading__copy::after {
+	display: none;
+}
+
+.ant-pro-table-search .ant-form-item-label > label {
+	color: var(--basic-table-filter-text, var(--ant-colorText));
+	font-weight: var(--basic-table-filter-label-weight, 600);
+}
+
+.ant-pro-table-search .ant-select-selector,
+.ant-pro-table-search .ant-input,
+.ant-pro-table-search .ant-input-affix-wrapper {
+	border-radius: var(--basic-table-filter-control-radius, 8px);
+	background: var(--basic-table-filter-fill, var(--ant-colorFillSecondary));
+}
+
+.ant-pro-table-search .ant-form-item {
+	margin-block-end: var(--ant-marginSM, 12px);
+}
+
+/* Shared table surface and toolbar. The table body/columns remain ProTable-driven. */
+.basic-table-shell .ant-pro-table-list-toolbar {
+	margin-block-end: 0;
+	padding-block: var(--basic-table-toolbar-padding, 24px);
+	padding-inline: 0;
+}
+
+.basic-table-shell .ant-pro-table-list-toolbar-container {
+	min-height: var(--ant-controlHeightLG, 40px);
+	align-items: center;
+}
+
+.basic-table-toolbar-heading {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--basic-table-toolbar-gap, 16px);
+	direction: rtl;
+	min-width: 0;
+	text-align: right;
+}
+
+.basic-table-toolbar-heading__icon {
+	display: inline-flex;
+	flex: 0 0 auto;
+	align-items: center;
+	justify-content: center;
+	width: var(--basic-table-heading-icon-size, 52px);
+	height: var(--basic-table-heading-icon-size, 52px);
+	border-radius: var(--basic-table-heading-icon-radius, 16px);
+	background: var(--basic-table-heading-icon-background, var(--ant-colorPrimaryBg));
+	color: var(--basic-table-heading-icon-color, var(--ant-colorPrimary));
+}
+
+.basic-table-toolbar-heading__icon > svg {
+	display: block;
+	width: 32px;
+	height: 32px;
+}
+
+.basic-table-toolbar-heading__icon > svg path {
+	fill: currentColor;
+}
+
+.basic-table-toolbar-heading__copy {
+	display: inline-flex;
+	flex-direction: column;
+	align-items: flex-start;
+	min-width: 0;
+}
+
+.basic-table-toolbar-heading__title {
+	color: var(--basic-table-heading-color, var(--ant-colorTextHeading));
+	font-size: var(--ant-fontSizeLG, 16px);
+	font-weight: var(--ant-fontWeightStrong, 600);
+	line-height: var(--ant-lineHeightLG, 1.5);
+}
+
+.basic-table-toolbar-heading__subtitle {
+	max-width: min(70vw, 760px);
+	margin-block-start: var(--ant-marginXXS, 4px);
+	color: var(--basic-table-subtitle-color, var(--ant-colorTextSecondary));
+	font-size: var(--ant-fontSizeSM, 13px);
+	font-weight: var(--ant-fontWeight, 400);
+	line-height: var(--ant-lineHeight, 1.6);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.basic-table-shell .ant-pro-table-list-toolbar-right,
+.basic-table-shell .ant-pro-table-list-toolbar-left {
+	display: flex;
+	align-items: center;
+	min-width: 0;
+}
+
+.basic-table-shell .ant-pro-table-list-toolbar-setting {
+	margin-inline-start: var(--ant-marginSM, 12px);
+}
+
+.basic-table-shell .ant-pro-table {
+	/* Keep the ProTable wrapper transparent; the card below is the table surface. */
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+	box-shadow: none;
+	overflow: visible;
+}
+
+.basic-table-shell .ant-pro-table > .ant-pro-card:not(.ant-pro-table-search) {
+	border: var(--basic-table-border, 1px solid var(--ant-colorBorderSecondary)) !important;
+	border-radius: var(--basic-table-radius, 16px) !important;
+	background: var(--basic-table-background, var(--ant-colorBgContainer)) !important;
+	box-shadow: none !important;
+	overflow: hidden;
+}
+
+.basic-table-shell .basic-table-grid > .ant-spin-nested-loading > .ant-spin-container > .ant-table {
+	border-radius: var(--basic-table-table-radius, 16px);
+	background: var(--basic-table-row-background, var(--ant-colorBgContainer));
+}
+
+.basic-table-shell .basic-table-grid > .ant-spin-nested-loading > .ant-spin-container > .ant-table > .ant-table-container {
+	border: var(--basic-table-border, 1px solid var(--ant-colorBorderSecondary)) !important;
+	border-radius: var(--basic-table-table-radius, 16px) !important;
+	overflow: hidden;
+}
+
+.basic-table-shell .basic-table-grid > .ant-spin-nested-loading > .ant-spin-container > .ant-table,
+.basic-table-shell .basic-table-grid > .ant-spin-nested-loading > .ant-spin-container > .ant-table > .ant-table-container > .ant-table-content,
+.basic-table-shell .basic-table-grid > .ant-spin-nested-loading > .ant-spin-container > .ant-table > .ant-table-container > .ant-table-body {
+	border-radius: var(--basic-table-table-radius, 16px) !important;
+}
+
+.basic-table-shell .basic-table-grid > .ant-spin-nested-loading > .ant-spin-container > .ant-table > .ant-table-container > .ant-table-content > table > .ant-table-thead > tr:first-child > th:first-child,
+.basic-table-shell .basic-table-grid > .ant-spin-nested-loading > .ant-spin-container > .ant-table > .ant-table-container > .ant-table-body > table > .ant-table-thead > tr:first-child > th:first-child {
+	border-start-start-radius: var(--basic-table-table-radius, 16px) !important;
+}
+
+.basic-table-shell .basic-table-grid > .ant-spin-nested-loading > .ant-spin-container > .ant-table > .ant-table-container > .ant-table-content > table > .ant-table-thead > tr:first-child > th:last-child,
+.basic-table-shell .basic-table-grid > .ant-spin-nested-loading > .ant-spin-container > .ant-table > .ant-table-container > .ant-table-body > table > .ant-table-thead > tr:first-child > th:last-child {
+	border-start-end-radius: var(--basic-table-table-radius, 16px) !important;
+}
+
+.basic-table-shell .ant-table-thead > tr > th {
+	background: var(--basic-table-header-background, var(--ant-colorFillSecondary)) !important;
+	color: var(--basic-table-header-color, var(--ant-colorTextHeading)) !important;
+	font-weight: var(--ant-fontWeightStrong, 600);
+	border-block-end: var(--basic-table-border, 1px solid var(--ant-colorSplit)) !important;
+}
+
+.basic-table-shell .ant-table-tbody > tr > td {
+	background: var(--basic-table-row-background, var(--ant-colorBgContainer)) !important;
+	border-block-end: var(--basic-table-border, 1px solid var(--ant-colorSplit)) !important;
+}
+
+.basic-table-shell .ant-table-tbody > tr:hover > td {
+	background: var(--basic-table-row-hover, var(--ant-colorFillTertiary)) !important;
+}
+
+.basic-table-shell .ant-table-cell {
+	padding-inline: var(--basic-table-cell-padding-inline, 16px);
+	padding-block: var(--basic-table-cell-padding-block, 12px);
+}
+
+/* In RTL the total-records item is rendered first, so start the flow from the right edge. */
+[dir="rtl"] .basic-table-shell .ant-table-pagination {
+	direction: rtl;
+	justify-content: flex-start;
+}
+
+.basic-table-shell .ant-table-pagination {
+	align-items: center !important;
+}
+
+.basic-table-shell .ant-table-pagination .ant-pagination-item {
+	margin-inline-end: calc(var(--ant-marginXS, 8px));
+	min-width: calc(var(--ant-controlHeight, 32px) + 4px);
+	height: calc(var(--ant-controlHeight, 32px) + 4px);
+	line-height: calc(var(--ant-controlHeight, 32px) + 2px);
+}
+
+.basic-table-shell .ant-table-pagination .ant-pagination-prev,
+.basic-table-shell .ant-table-pagination .ant-pagination-next {
+	min-width: calc(var(--ant-controlHeight, 32px) + 4px);
+	height: calc(var(--ant-controlHeight, 32px) + 4px);
+	line-height: calc(var(--ant-controlHeight, 32px) + 4px);
+}
+
+.basic-table-shell .ant-table-pagination .ant-pagination-prev .ant-pagination-item-link,
+.basic-table-shell .ant-table-pagination .ant-pagination-next .ant-pagination-item-link {
+	display: grid !important;
+	place-items: center !important;
+	padding: 0 !important;
+	line-height: 1 !important;
+}
+
+.basic-table-shell .ant-table-pagination .ant-pagination-jump-prev,
+.basic-table-shell .ant-table-pagination .ant-pagination-jump-next {
+	min-width: calc(var(--ant-controlHeight, 32px) + 4px);
+	height: calc(var(--ant-controlHeight, 32px) + 4px);
+	line-height: calc(var(--ant-controlHeight, 32px) + 4px);
+}
+
+.basic-table-shell .ant-table-pagination .ant-pagination-jump-prev .ant-pagination-item-container,
+.basic-table-shell .ant-table-pagination .ant-pagination-jump-next .ant-pagination-item-container {
+	position: relative !important;
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	height: 100% !important;
+}
+
+.basic-table-shell .ant-table-pagination .ant-pagination-item-ellipsis {
+	position: absolute !important;
+	inset: 0 !important;
+	display: grid !important;
+	place-items: center !important;
+	height: auto !important;
+	margin: 0 !important;
+	text-align: center !important;
+	text-indent: 0 !important;
+	letter-spacing: normal !important;
+	line-height: 1 !important;
+}
+
+@media (max-width: 768px) {
+	.basic-table-shell .ant-pro-table-list-toolbar {
+		padding: var(--ant-paddingMD, 16px);
+	}
+
+	.basic-table-toolbar-heading__subtitle {
+		max-width: 52vw;
+	}
+}
+
 .ant-notification .ant-notification-notice-wrapper .ant-notification-notice,
 .ant-notification .ant-notification-notice {
 	padding: 16px 18px;

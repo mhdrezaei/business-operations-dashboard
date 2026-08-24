@@ -335,6 +335,9 @@ export default function ContractListPage() {
 		<BasicContent className="h-full">
 			<BasicTable<ContractListItemType>
 				rootClassName={addendaTableClasses.contractTable}
+				filterTitle="جستجوی قرارداد"
+				filterSubtitle="برای جستجو، فیلتر و مرتب‌سازی قراردادها، نوع سرویس و شرکت را انتخاب کنید."
+				tableSubtitle="قراردادهای ثبت شده را مشاهده و مدیریت کنید. برای ایجاد قرارداد جدید، از کلید ایجاد قرارداد جدید استفاده کنید."
 				rowKey="id"
 				columns={columns}
 				expandable={{
@@ -349,6 +352,9 @@ export default function ContractListPage() {
 				}}
 				actionRef={actionRef}
 				formRef={formRef}
+				search={{
+					defaultCollapsed: false,
+				}}
 
 				onReset={() => {
 					formRef.current?.resetFields();
