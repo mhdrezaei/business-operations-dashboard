@@ -820,3 +820,78 @@ export function fetchSmsGatewayTrafficReportStatus(jobId: number, page = 1, page
 		.get(`sms-gateway/traffic-report/status/${jobId}/`, { searchParams: { page, page_size: pageSize } })
 		.json<SmsGatewayTrafficReportResult>();
 }
+
+export type SmsOperatorCode = "MCI" | "IRANCELL" | "RIGHTEL";
+
+export interface SmsOperatorInvoice {
+	id: number
+	sh_year: number
+	sh_month: number
+	operator: SmsOperatorCode
+	fa_count: number
+	en_count: number
+	fa_cost: number
+	en_cost: number
+	created_at?: string
+	updated_at?: string
+	created_by?: number
+	updated_by?: number
+}
+
+export type SmsOperatorInvoicePayload = Omit<SmsOperatorInvoice, "id" | "created_at" | "updated_at" | "created_by" | "updated_by">;
+
+export function fetchSmsOperatorInvoices() {
+	return request.get("sms-gateway/operator-invoices/").json<SmsOperatorInvoice[]>();
+}
+
+export function createSmsOperatorInvoice(payload: SmsOperatorInvoicePayload) {
+	return request.post("sms-gateway/operator-invoices/", {
+		json: payload,
+		suppressErrorNotification: true,
+	}).json<SmsOperatorInvoice>();
+}
+
+export function updateSmsOperatorInvoice(id: number, payload: SmsOperatorInvoicePayload) {
+	return request.patch(`sms-gateway/operator-invoices/${id}/`, {
+		json: payload,
+		suppressErrorNotification: true,
+	}).json<SmsOperatorInvoice>();
+}
+
+export function deleteSmsOperatorInvoice(id: number) {
+	return request.delete(`sms-gateway/operator-invoices/${id}/`, { suppressErrorNotification: true });
+}
+
+export interface SmsOperatorInvoiceMonthlyReport {
+	job_id: number
+	status: "PENDING" | "RUNNING" | "SUCCESS" | "FAILURE" | string
+	sh_year: number
+	sh_month: number
+	started_at?: string
+	finished_at?: string
+	rows?: Array<{
+		language: "FA" | "EN" | string
+		operator: SmsOperatorCode
+		gateway_total: number
+		internal_system_cost: number
+		internal_system_total: number
+		manual_invoice: { cost: number | null, count: number | null, message?: string, invoice_registered: boolean }
+	}>
+	operator_totals?: Array<{
+		operator: SmsOperatorCode
+		gateway_total: number
+		manual_invoice: { cost: number | null, count: number | null, invoice_registered: boolean }
+		internal_system: { cost: number, total: number }
+	}>
+}
+
+export function createSmsOperatorInvoiceMonthlyReport(sh_year: number, sh_month: number) {
+	return request.post("sms-gateway/operator-invoices/monthly-report/", {
+		json: { sh_year, sh_month },
+		suppressErrorNotification: true,
+	}).json<SmsOperatorInvoiceMonthlyReport>();
+}
+
+export function fetchSmsOperatorInvoiceMonthlyReportStatus(jobId: number) {
+	return request.get(`sms-gateway/operator-invoices/monthly-report/status/${jobId}/`, { suppressErrorNotification: true }).json<SmsOperatorInvoiceMonthlyReport>();
+}

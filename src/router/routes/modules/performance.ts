@@ -4,7 +4,7 @@ import { ContainerLayout } from "#src/layout";
 import { $t } from "#src/locales";
 import UnregisteredPerformancePage from "#src/pages/performances/unregistered.js";
 import { performance } from "#src/router/extra-info";
-import { BarChartOutlined, EditOutlined, FileAddOutlined, FileUnknownOutlined, PieChartOutlined } from "@ant-design/icons";
+import { BarChartOutlined, EditOutlined, FileAddOutlined, FileTextOutlined, FileUnknownOutlined, PieChartOutlined } from "@ant-design/icons";
 import { LineChartOutlined } from "@ant-design/icons/lib";
 import { createElement, lazy } from "react";
 
@@ -13,6 +13,7 @@ const EditPerformancePage = lazy(() => import("#src/pages/performances/edit"));
 const PerformanceReportPage = lazy(() => import("#src/pages/performances/report"));
 const PredictionsSummaryReportPage = lazy(() => import("#src/pages/performances/predictions-summary-report"));
 const SmsGatewayTrafficReportPage = lazy(() => import("#src/pages/performances/sms-gateway-traffic-report"));
+const SmsGatewayOperatorInvoicesPage = lazy(() => import("#src/pages/performances/sms-gateway-operator-invoices"));
 
 const routes: AppRouteRecordRaw[] = [
 	{
@@ -72,6 +73,16 @@ const routes: AppRouteRecordRaw[] = [
 				handle: {
 					icon: createElement(PieChartOutlined),
 					title: $t("common.menu.predictionsSummaryReport"),
+					accessDomain: "performances",
+					accessAction: "view",
+				},
+			},
+			{
+				path: "/performances/sms-gateway/operator-invoices",
+				Component: SmsGatewayOperatorInvoicesPage,
+				handle: {
+					icon: createElement(FileTextOutlined),
+					title: $t("common.menu.smsGatewayOperatorInvoices"),
 					accessDomain: "performances",
 					accessAction: "view",
 				},
