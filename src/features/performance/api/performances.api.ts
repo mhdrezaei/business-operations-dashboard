@@ -718,7 +718,7 @@ export function fetchSmsCommissionAgents() {
 export function importSmsGatewayPerformance(shYear: number, shMonth: number, confirmed: boolean) {
 	return request
 		.post("sms-gateway/manual-import/", {
-			json: { sh_year: shYear, sh_month: shMonth, confirmed },
+			json: { sh_year: shYear, sh_month: shMonth, confirm: confirmed },
 		})
 		.json<SmsGatewayManualImportResponse>();
 }
