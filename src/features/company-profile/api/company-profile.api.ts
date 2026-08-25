@@ -135,6 +135,7 @@ export async function deleteLegalProfile(id: number) {
 export interface FinanceProfileDto {
 	id: number
 	company: number
+	contract_model: string | null
 	economic_code: string
 	tax_file_number: string
 	vat_status: string
@@ -148,6 +149,7 @@ export interface FinanceProfileDto {
 export interface UpsertFinanceProfilePayload {
 	service: number
 	company: number
+	contract_model?: string | null
 	economic_code: string | null
 	tax_file_number: string | null
 	vat_status: string | null
@@ -156,11 +158,12 @@ export interface UpsertFinanceProfilePayload {
 	settlement_term: string | null
 }
 
-export async function getFinanceProfile(params: { company: number, service: number, company_type?: string | null }) {
+export async function getFinanceProfile(params: { company: number, service: number, company_type?: string | null, contract_model?: string | null }) {
 	const searchParams: Record<string, string | number | boolean | undefined> = {
 		company: params.company,
 		service: params.service,
 		company_type: params.company_type ?? undefined,
+		contract_model: params.contract_model ?? undefined,
 	};
 	const data = await request.get("contracts/company/finance-profiles/", { searchParams }).json<unknown>();
 	return pickFirst<FinanceProfileDto>(data);
