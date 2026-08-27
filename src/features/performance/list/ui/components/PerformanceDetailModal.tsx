@@ -1831,8 +1831,8 @@ export function PerformanceDetailModal({
 																	<RHFProNumber<EditFormValues, any>
 																		name={"income" as any}
 																		label=""
-																		formItemProps={{ className: "mb-0" }}
-																		inputProps={{ placeholder: t("performance.modal.placeholders.enterNumber"), inputMode: "numeric" } as any}
+																		formItemProps={{ className: "contract-type-currency-field mb-0" }}
+																		inputProps={{ placeholder: t("performance.modal.placeholders.enterNumber"), inputMode: "numeric", addonAfter: t("performance.columns.rial") } as any}
 																		enableGrouping
 																		enableWordsTooltip
 																	/>
@@ -1848,8 +1848,10 @@ export function PerformanceDetailModal({
 
 																>
 																	{visibleEditableFields.map((field) => {
-																		const addonAfter = getSmsPerformanceFieldAddon(field.key);
-																		const alignedLabel = addonAfter
+																		const smsAddon = getSmsPerformanceFieldAddon(field.key);
+																		const isCurrencyField = field.key === "traffic_income" || field.key === "trafficRevenue";
+																		const addonAfter = smsAddon ?? (isCurrencyField ? t("performance.columns.rial") : undefined);
+																		const alignedLabel = smsAddon
 																			? OPENAPI_PACKAGE_PERFORMANCE_LABEL
 																			: field.label;
 																		return (
@@ -1857,7 +1859,7 @@ export function PerformanceDetailModal({
 																				<RHFProNumber<EditFormValues, any>
 																					name={field.key as any}
 																					label=""
-																					formItemProps={{ className: "mb-0" }}
+																					formItemProps={{ className: isCurrencyField ? "contract-type-currency-field mb-0" : "mb-0" }}
 																					inputProps={{
 																						placeholder: t("performance.modal.placeholders.enterNumber"),
 																						inputMode: "numeric",

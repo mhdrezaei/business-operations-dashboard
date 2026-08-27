@@ -848,3 +848,29 @@ html.dark .sms-gateway-history-summary-row {
 	height: 20px;
 	flex: none;
 }
+
+/* Restore the item outlines used by the Gateway report list. */
+.sms-gateway-company-collapse .ant-collapse-item {
+	margin-block-end: 16px !important;
+	border: 1px solid var(--ant-colorBorderSecondary, #2f4770) !important;
+	border-radius: var(--ant-border-radius-lg) !important;
+	overflow: hidden;
+}
+
+.sms-gateway-company-collapse .ant-collapse-item:last-child {
+	margin-block-end: 0 !important;
+}
+
+.sms-gateway-operator-collapse .ant-collapse-item {
+	margin-block-end: 8px !important;
+	border: 1px solid var(--ant-colorSplit, #263858) !important;
+	border-radius: var(--ant-border-radius) !important;
+}
+
+body .sms-gateway-company-collapse .ant-collapse-item {
+	background-color: #3d2b62 !important;
+}
+
+body .sms-gateway-operator-collapse .ant-collapse-item {
+	background-color: #2f3f68 !important;
+}

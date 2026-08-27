@@ -1,9 +1,12 @@
+import type { ReactNode } from "react";
 import type { PerformanceFormValues } from "../../../model/performance.form.types";
-import { BasicContent, TopRightAlert } from "#src/components";
+import SelectPerformanceEmptyState from "#src/assets/svg/select-performance.svg?react";
+import { TopRightAlert } from "#src/components";
+import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import { useAccess } from "#src/hooks";
 import { RHFProRadioGroup, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { useQuery } from "@tanstack/react-query";
-import { Card, Col, Form, Input, Row, Tag } from "antd";
+import { Col, Form, Input, Row, Tag } from "antd";
 import i18next from "i18next";
 import { useEffect, useMemo, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
@@ -51,7 +54,14 @@ function mapMonthsToOptions(months: number[]) {
 	return months.map(month => ({ label: getMonthLabel(month), value: month }));
 }
 
-export function FixedStartSection() {
+interface FixedStartSectionProps {
+	periodActions?: ReactNode
+	periodModeToggle?: ReactNode
+	hideManualPeriod?: boolean
+	children?: ReactNode
+}
+
+export function FixedStartSection({ periodActions, periodModeToggle, hideManualPeriod = false, children }: FixedStartSectionProps) {
 	const { t } = useTranslation();
 	const { control, setValue, getValues } = useFormContext<PerformanceFormValues>();
 	const { getPermittedCompanyTypes, getPermittedServiceIds } = useAccess();
@@ -490,170 +500,198 @@ export function FixedStartSection() {
 	const shouldShowPeriodSelectors = shouldShowTrafficTemplatePeriodSelectors || (hasCompanySelection && !isPeriodStateLoading && !hasNoContractsForCompany && hasAnyYearMonthOption);
 	const shouldShowMissingPeriodError = !isTrafficTemplateMode && hasCompanySelection && !isPeriodStateLoading && !shouldShowPeriodSelectors;
 	const shouldShowNoMonthlyContractAlert = usesMonthlyStatus	&& year != null	&& month != null && monthlyStatus.isSuccess && !monthlyStatus.data?.has_contract;
+	const shouldShowPeriodEmptyState = shouldShowPeriodSelectors && (year == null || month == null);
 
 	return (
-		<Card className="w-full">
-			<BasicContent className="w-full">
-				<Row gutter={16}>
-					<Col span={12}>
-						<RHFSelect<PerformanceFormValues, "serviceId", number | null>
-							name="serviceId"
-							label={t("performance.labels.serviceName")}
-							loading={services.isLoading}
-							options={serviceOptions}
-							selectProps={{
-								allowClear: true,
-								placeholder: t("performance.placeholders.selectService"),
-								showSearch: true,
-								optionFilterProp: "label",
-							}}
-						/>
-					</Col>
+		<>
+			<ContractFormSection title={t("performance.labels.baseInformation")} className="w-full">
+				<div className="w-full">
+					<Row gutter={16}>
+						<Col xs={24} md={12}>
+							<RHFSelect<PerformanceFormValues, "serviceId", number | null>
+								name="serviceId"
+								label={t("performance.labels.serviceName")}
+								loading={services.isLoading}
+								options={serviceOptions}
+								selectProps={{
+									allowClear: true,
+									placeholder: t("performance.placeholders.selectService"),
+									showSearch: true,
+									optionFilterProp: "label",
+								}}
+							/>
+						</Col>
 
-					{requiresCompanyType
+						{requiresCompanyType
+							? (
+								<Col xs={24} md={12}>
+									<RHFSelect<PerformanceFormValues, "companyType", any>
+										name="companyType"
+										label={t("performance.labels.companyType")}
+										options={companyTypeOptions}
+										selectProps={{
+											allowClear: true,
+											placeholder: t("performance.placeholders.select"),
+											showSearch: true,
+											optionFilterProp: "label",
+										}}
+									/>
+								</Col>
+							)
+							: null}
+
+						{isTraffic
+							? (
+								<Col xs={24} md={12}>
+									<RHFProRadioGroup<PerformanceFormValues, "serviceFields.submitMode">
+										name={"serviceFields.submitMode" as const}
+										label={t("performance.traffic.submitMethod")}
+										radioProps={{
+											optionType: "button",
+											buttonStyle: "solid",
+											options: TRAFFIC_SUBMIT_MODE_OPTIONS,
+										}}
+									/>
+								</Col>
+							)
+							: null}
+
+						{(!isTraffic || isTrafficSingleMode)
+							? (
+								<Col xs={24} md={12}>
+									<RHFSelect<PerformanceFormValues, "companyId", number | null>
+										name="companyId"
+										label={t("performance.labels.companyName")}
+										loading={companies.isLoading}
+										options={companyOptions as any}
+										selectProps={{
+											allowClear: true,
+											disabled: isCompanyDisabled,
+											placeholder: companyPlaceholder,
+											showSearch: true,
+											optionFilterProp: "label",
+											style: isCompanyDisabled ? { cursor: "not-allowed" } : undefined,
+											open: isCompanyDisabled ? false : undefined,
+										}}
+									/>
+								</Col>
+							)
+							: null}
+
+						{isSmsCommission
+							? (
+								<Col span={24}>
+									<Form.Item
+										label={t("performance.columns.salesAgent")}
+										extra={companyId ? t("performance.messages.salesAgentAutoSelected") : undefined}
+									>
+										<Input readOnly value={salesAgentDisplayValue} />
+									</Form.Item>
+								</Col>
+							)
+							: null}
+					</Row>
+				</div>
+			</ContractFormSection>
+
+			<ContractFormSection
+				title={t("performance.labels.performanceValue")}
+				className="mt-3 w-full"
+				tone="addenda"
+			>
+				<div className="w-full">
+					{periodActions
+						? <div className="mb-4 flex flex-wrap gap-2">{periodActions}</div>
+						: null}
+
+					{periodModeToggle ? <div className="mb-4">{periodModeToggle}</div> : null}
+
+					<TopRightAlert
+						alertKey="performance-missing-period-alert"
+						type="error"
+						open={!hideManualPeriod && shouldShowMissingPeriodError}
+						message={hasNoContractsForCompany
+							? t("performance.messages.noContractForCompany")
+							: t("performance.messages.noYearMonthForCompany")}
+					/>
+					<TopRightAlert
+						alertKey="performance-no-monthly-contract-alert"
+						type="error"
+						open={!hideManualPeriod && shouldShowNoMonthlyContractAlert}
+						message={t("performance.messages.noActiveContractForMonth")}
+					/>
+
+					{!hideManualPeriod && shouldShowPeriodSelectors
 						? (
-							<Col span={12}>
-								<RHFSelect<PerformanceFormValues, "companyType", any>
-									name="companyType"
-									label={t("performance.labels.companyType")}
-									options={companyTypeOptions}
-									selectProps={{
-										allowClear: true,
-										placeholder: t("performance.placeholders.select"),
-										showSearch: true,
-										optionFilterProp: "label",
-									}}
-								/>
-							</Col>
+							<Row gutter={16}>
+								<Col xs={24} md={12}>
+									<RHFSelect<PerformanceFormValues, "year", number | null>
+										name="year"
+										label={t("performance.labels.contractYear")}
+										loading={isDateOptionsLoading}
+										options={yearOptions}
+										selectProps={{
+											allowClear: true,
+											placeholder: t("performance.placeholders.year"),
+										}}
+									/>
+								</Col>
+								<Col xs={24} md={12}>
+									<RHFSelect<PerformanceFormValues, "month", number | null>
+										name="month"
+										label={t("performance.labels.contractMonth")}
+										loading={isDateOptionsLoading}
+										options={monthOptions}
+										selectProps={{
+											allowClear: true,
+											placeholder: year == null ? t("performance.placeholders.selectYearFirst") : t("performance.placeholders.month"),
+											disabled: year == null,
+										}}
+									/>
+								</Col>
+								{usesMonthlyStatus && year != null && month != null && monthlyStatus.data
+									? (
+										<Col span={24}>
+											<div className="flex gap-2 flex-wrap">
+												{monthlyStatus.data.used_addendum
+													? <Tag color="gold">{t("performance.badges.usedAddendum")}</Tag>
+													: null}
+												{serviceCode === "openapi" && monthlyStatusOpenApiContractModel
+													? (
+														<Tag color="blue">
+															{t(`performance.contractModel.${monthlyStatusOpenApiContractModel}`)}
+														</Tag>
+													)
+													: null}
+												{isTrafficSingleMode
+													? (
+														<Tag color={trafficHasCountyContract ? "green" : "default"}>
+															{trafficHasCountyContract
+																? t("performance.badges.hasCountyContract")
+																: t("performance.badges.noCountyContract")}
+														</Tag>
+													)
+													: null}
+											</div>
+										</Col>
+									)
+									: null}
+							</Row>
 						)
 						: null}
 
-					{isTraffic && companyType
+					{!hideManualPeriod && shouldShowPeriodEmptyState
 						? (
-							<Col span={12}>
-								<RHFProRadioGroup<PerformanceFormValues, "serviceFields.submitMode">
-									name={"serviceFields.submitMode" as const}
-									label={t("performance.traffic.submitMethod")}
-									radioProps={{
-										optionType: "button",
-										buttonStyle: "solid",
-										options: TRAFFIC_SUBMIT_MODE_OPTIONS,
-									}}
-								/>
-							</Col>
+							<div className="performance-period-empty-state" role="status">
+								<SelectPerformanceEmptyState className="performance-period-empty-state__illustration" aria-hidden="true" />
+								<p>{t("performance.messages.selectYearAndMonth")}</p>
+							</div>
 						)
 						: null}
 
-					{(!isTraffic || isTrafficSingleMode)
-						? (
-							<Col span={12}>
-								<RHFSelect<PerformanceFormValues, "companyId", number | null>
-									name="companyId"
-									label={t("performance.labels.companyName")}
-									loading={companies.isLoading}
-									options={companyOptions as any}
-									selectProps={{
-										allowClear: true,
-										disabled: isCompanyDisabled,
-										placeholder: companyPlaceholder,
-										showSearch: true,
-										optionFilterProp: "label",
-										style: isCompanyDisabled ? { cursor: "not-allowed" } : undefined,
-										open: isCompanyDisabled ? false : undefined,
-									}}
-								/>
-							</Col>
-						)
-						: null}
-
-					{isSmsCommission
-						? (
-							<Col span={24}>
-								<Form.Item
-									label={t("performance.columns.salesAgent")}
-									extra={companyId ? t("performance.messages.salesAgentAutoSelected") : undefined}
-								>
-									<Input readOnly value={salesAgentDisplayValue} />
-								</Form.Item>
-							</Col>
-						)
-						: null}
-				</Row>
-
-				<TopRightAlert
-					alertKey="performance-missing-period-alert"
-					type="error"
-					open={shouldShowMissingPeriodError}
-					message={hasNoContractsForCompany
-						? t("performance.messages.noContractForCompany")
-						: t("performance.messages.noYearMonthForCompany")}
-				/>
-				<TopRightAlert
-					alertKey="performance-no-monthly-contract-alert"
-					type="error"
-					open={shouldShowNoMonthlyContractAlert}
-					message={t("performance.messages.noActiveContractForMonth")}
-				/>
-
-				{shouldShowPeriodSelectors
-					? (
-						<Row gutter={16}>
-							<Col span={12}>
-								<RHFSelect<PerformanceFormValues, "year", number | null>
-									name="year"
-									label={t("performance.labels.contractYear")}
-									loading={isDateOptionsLoading}
-									options={yearOptions}
-									selectProps={{
-										allowClear: true,
-										placeholder: t("performance.placeholders.year"),
-									}}
-								/>
-							</Col>
-							<Col span={12}>
-								<RHFSelect<PerformanceFormValues, "month", number | null>
-									name="month"
-									label={t("performance.labels.contractMonth")}
-									loading={isDateOptionsLoading}
-									options={monthOptions}
-									selectProps={{
-										allowClear: true,
-										placeholder: year == null ? t("performance.placeholders.selectYearFirst") : t("performance.placeholders.month"),
-										disabled: year == null,
-									}}
-								/>
-							</Col>
-							{usesMonthlyStatus && year != null && month != null && monthlyStatus.data
-								? (
-									<Col span={24}>
-										<div className="flex gap-2 flex-wrap">
-											{monthlyStatus.data.used_addendum
-												? <Tag color="gold">{t("performance.badges.usedAddendum")}</Tag>
-												: null}
-											{serviceCode === "openapi" && monthlyStatusOpenApiContractModel
-												? (
-													<Tag color="blue">
-														{t(`performance.contractModel.${monthlyStatusOpenApiContractModel}`)}
-													</Tag>
-												)
-												: null}
-											{isTrafficSingleMode
-												? (
-													<Tag color={trafficHasCountyContract ? "green" : "default"}>
-														{trafficHasCountyContract
-															? t("performance.badges.hasCountyContract")
-															: t("performance.badges.noCountyContract")}
-													</Tag>
-												)
-												: null}
-										</div>
-									</Col>
-								)
-								: null}
-						</Row>
-					)
-					: null}
-			</BasicContent>
-		</Card>
+					{children ? <div className="mt-4">{children}</div> : null}
+				</div>
+			</ContractFormSection>
+		</>
 	);
 }

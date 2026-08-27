@@ -1,6 +1,6 @@
 import type { PerformanceFormValues } from "../../model/performance.form.types";
+import { PerformanceFieldCard } from "#src/features/performance/shared/ui/form/components/PerformanceFieldCard";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
-import { Card } from "antd";
 import { useTranslation } from "react-i18next";
 
 const sf = (path: string) => `serviceFields.${path}` as const;
@@ -9,26 +9,35 @@ export function PspPerformanceFields() {
 	const { t } = useTranslation();
 
 	return (
-		<Card variant="outlined" className="rounded-lg">
-			<div
-				className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3"
-			>
+		<div className="performance-field-grid">
+			<PerformanceFieldCard title={t("performance.fields.psp.performanceValue")}>
 				<RHFProNumber<PerformanceFormValues, any>
 					name={sf("performanceValue") as any}
-					label={t("performance.fields.psp.performanceValue")}
-					inputProps={{ placeholder: t("performance.placeholders.pspValue") }}
+					label=""
+					inputProps={{
+						"placeholder": t("performance.placeholders.pspValue"),
+						"aria-label": t("performance.fields.psp.performanceValue"),
+					}}
+					formItemProps={{ className: "mb-0" }}
 					enableGrouping
 					enableWordsTooltip
 				/>
+			</PerformanceFieldCard>
 
+			<PerformanceFieldCard title={t("performance.fields.psp.monthlyRevenue")}>
 				<RHFProNumber<PerformanceFormValues, any>
 					name={sf("monthlyRevenue") as any}
-					label={t("performance.fields.psp.monthlyRevenue")}
-					inputProps={{ placeholder: t("performance.placeholders.example10000000") }}
+					label=""
+					inputProps={{
+						"placeholder": t("performance.placeholders.example10000000"),
+						"aria-label": t("performance.fields.psp.monthlyRevenue"),
+						"addonAfter": t("performance.columns.rial"),
+					}}
+					formItemProps={{ className: "contract-type-currency-field mb-0" }}
 					enableGrouping
 					enableWordsTooltip
 				/>
-			</div>
-		</Card>
+			</PerformanceFieldCard>
+		</div>
 	);
 }
