@@ -3,8 +3,8 @@ import type { ContractFormValues } from "../../../shared/model/contract.form.typ
 import { ContractAddendaSection } from "#src/features/contract/components/addenda/ContractAddendaSection.js";
 import { RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro/fields/RHFProNumber.js";
-import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import { Button, Card, Col, Collapse, Row } from "antd";
+import { DeleteOutlined } from "@ant-design/icons";
+import { Button, Card, Col, Row } from "antd";
 import React, { useMemo, useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { ContractTypeSection } from "../../../components/contract-type/ContractTypeSection";
@@ -15,14 +15,33 @@ import "./openapi.fields.css";
 const sf = (path: string) => `serviceFields.${path}` as any;
 
 const CONTRACT_MODEL_OPTIONS = [
-	{ label: "Package (بسته‌ای)", value: "package" },
-	{ label: "Legacy (قدیمی)", value: "legacy" },
+	{ label: "قدیمی", value: "legacy" },
+	{ label: "تفکیکی", value: "separated" },
 ];
 
-const PACKAGE_MODE_OPTIONS = [
-	{ label: "OR", value: "OR" },
-	{ label: "AND", value: "AND" },
-];
+function SeparatedPricingFields() {
+	return (
+		<div className="flex w-full flex-col">
+			<RHFProNumber
+				name={sf("separatedPricing.walletChargeDiscountPercent")}
+				label="درصد تخفیف شارژ کیف‌پول"
+				inputProps={{ addonAfter: "%", placeholder: "مثلاً 20" } as any}
+			/>
+			<ContractTypeSection title="استعلام قبض میان‌دوره" name={sf("separatedPricing.midPeriodBillInquiry")} tone="purple" />
+			<ContractTypeSection title="استعلام قبض پایان‌دوره" name={sf("separatedPricing.endPeriodBillInquiry")} tone="purple" />
+			<ContractTypeSection title="ثبت وصولی متصل" name={sf("separatedPricing.connectedReceiptRegister")} tone="purple" />
+			<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+				<RHFProNumber name={sf("separatedPricing.connectedKarashabSharePercent")} label="درصد سهم کاراشاب" inputProps={{ addonAfter: "%", placeholder: "مثلاً 20" } as any} />
+				<RHFProNumber name={sf("separatedPricing.connectedPartnerSharePercent")} label="درصد سهم طرف قرارداد" inputProps={{ addonAfter: "%", placeholder: "مثلاً 20" } as any} />
+			</div>
+			<ContractTypeSection title="ثبت وصولی غیرمتصل" name={sf("separatedPricing.disconnectedReceiptRegister")} tone="purple" />
+			<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+				<RHFProNumber name={sf("separatedPricing.disconnectedKarashabSharePercent")} label="درصد سهم کاراشاب" inputProps={{ addonAfter: "%", placeholder: "مثلاً 20" } as any} />
+				<RHFProNumber name={sf("separatedPricing.disconnectedPartnerSharePercent")} label="درصد سهم طرف قرارداد" inputProps={{ addonAfter: "%", placeholder: "مثلاً 20" } as any} />
+			</div>
+		</div>
+	);
+}
 
 function OpenApiPackagePlanPanel({ idx }: { idx: number }) {
 	const smsLabelStyle = useContractAlignedLabelWidth(["حداقل پیامک", "حداکثر پیامک", "نرخ فروش پیامک"]);
@@ -229,17 +248,19 @@ export function OpenApiFields() {
 		trafficProfitPercent: number | null
 		trafficPartnerSharePercent: number | null
 	}>>([]);
-	const [activeKey, setActiveKey] = useState<string>("0");
+	const [_activeKey, setActiveKey] = useState<string>("0");
 
-	const contractModel = "legacy" as "package" | "legacy" | null;
+	const contractModel = useWatch({ control, name: sf("contractModel") }) as "legacy" | "separated" | null;
 
 	React.useEffect(() => {
 		register(sf("contractModel"));
-		setValue(sf("contractModel"), "legacy" as any, {
-			shouldDirty: false,
-			shouldTouch: false,
-			shouldValidate: false,
-		});
+		if (!getValues(sf("contractModel"))) {
+			setValue(sf("contractModel"), "legacy" as any, {
+				shouldDirty: false,
+				shouldTouch: false,
+				shouldValidate: false,
+			});
+		}
 		setValue(sf("packageMode"), null as any, {
 			shouldDirty: false,
 			shouldTouch: false,
@@ -258,7 +279,7 @@ export function OpenApiFields() {
 			}
 			setValue(sf("packageMode"), null as any, { shouldDirty: true, shouldValidate: true });
 		}
-		else if (contractModel === "package") {
+		else if (contractModel === "separated") {
 			setValue(sf("legacyPricing"), undefined as any, {
 				shouldDirty: true,
 				shouldValidate: true,
@@ -267,7 +288,7 @@ export function OpenApiFields() {
 	}, [contractModel, setValue, getValues]);
 
 	React.useEffect(() => {
-		if (contractModel !== "package")
+		if (contractModel !== "separated")
 			return;
 		if (fields.length > 0)
 			return;
@@ -445,7 +466,7 @@ export function OpenApiFields() {
 		}));
 	}, [plans, setValue]);
 
-	function addPlan() {
+	function _addPlan() {
 		const nextIndex = fields.length;
 		const prevPlan = (nextIndex > 0 ? getValues(sf(`plans.${nextIndex - 1}`)) : null) as {
 			smsMax: number | null
@@ -466,7 +487,7 @@ export function OpenApiFields() {
 		setActiveKey(next);
 	}
 
-	const collapseItems = fields.map((_, idx) => ({
+	const _collapseItems = fields.map((_, idx) => ({
 		key: String(idx),
 		label: (
 			<div
@@ -493,7 +514,7 @@ export function OpenApiFields() {
 
 	return (
 		<div className="w-full">
-			<Row gutter={24} justify="space-between" style={{ display: "none" }}>
+			<Row gutter={24} justify="space-between">
 				<Col span={12}>
 					<RHFSelect
 						name={sf("contractModel")}
@@ -503,18 +524,7 @@ export function OpenApiFields() {
 					/>
 				</Col>
 
-				<Col span={12}>
-					{contractModel === "package"
-						? (
-							<RHFSelect
-								name={sf("packageMode")}
-								label="حالت بسته"
-								options={PACKAGE_MODE_OPTIONS}
-								selectProps={{ placeholder: "انتخاب کنید" }}
-							/>
-						)
-						: null}
-				</Col>
+				<Col span={12} />
 			</Row>
 
 			<div className="w-full">
@@ -534,30 +544,8 @@ export function OpenApiFields() {
 						</div>
 					)
 					: null}
+				{contractModel === "separated" ? <SeparatedPricingFields /> : null}
 
-				{contractModel === "package"
-					? (
-						<Card
-							bordered
-
-							className="mt-3 rounded-2xl"
-							title="پلن‌ها"
-							extra={(
-								<Button icon={<PlusOutlined />} onClick={addPlan}>
-									افزودن پلن جدید
-								</Button>
-							)}
-						>
-							<Collapse
-								accordion
-								activeKey={activeKey}
-								onChange={k =>
-									setActiveKey(Array.isArray(k) ? String(k[0] ?? "0") : String(k ?? "0"))}
-								items={collapseItems as any}
-							/>
-						</Card>
-					)
-					: null}
 			</div>
 
 			{showAddenda
