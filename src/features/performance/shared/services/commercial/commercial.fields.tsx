@@ -1,6 +1,7 @@
 import type { UploadProps } from "antd";
 import type { PerformanceFormValues } from "../../model/performance.form.types";
-import { Card, Form, Upload } from "antd";
+import { PerformanceFieldCard } from "#src/features/performance/shared/ui/form/components/PerformanceFieldCard";
+import { Form, Upload } from "antd";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
@@ -27,7 +28,7 @@ function UploadCard({
 			name={name as any}
 			control={control}
 			render={({ field, fieldState, formState }) => (
-				<Card variant="outlined" title={title} className="rounded-lg">
+				<PerformanceFieldCard title={title}>
 					<Form.Item
 						help={(formState.isSubmitted || fieldState.isTouched)
 							? fieldState.error?.message
@@ -46,7 +47,7 @@ function UploadCard({
 							<p className="m-0 mt-2">{t("performance.labels.allowedFormatsXls")}</p>
 						</Upload.Dragger>
 					</Form.Item>
-				</Card>
+				</PerformanceFieldCard>
 			)}
 		/>
 	);
@@ -56,22 +57,19 @@ export function CommercialPerformanceFields() {
 	const { t } = useTranslation();
 
 	return (
-		<Card
-			bordered
-			className="rounded-lg"
-			title={t("performance.commercial.title")}
-		>
-			<div className="mb-3 opacity-80">
+		<div className="performance-field-group">
+			<div className="performance-field-group__header">
+				<h3 className="performance-field-group__title">{t("performance.commercial.title")}</h3>
+			</div>
+			<div className="performance-field-card__hint">
 				{t("performance.commercial.uploadOnlyDescription")}
 			</div>
 
-			<div
-				className="grid grid-cols-[repeat(3,minmax(0,1fr))] gap-3"
-			>
+			<div className="performance-field-grid performance-field-grid--three">
 				<UploadCard title={t("performance.commercial.servicesFile")} name={sf("servicesFile")} />
 				<UploadCard title={t("performance.commercial.provinceCodeFile")} name={sf("provinceCodeFile")} />
 				<UploadCard title={t("performance.commercial.monthlyPerformanceFile")} name={sf("monthlyPerformanceFile")} />
 			</div>
-		</Card>
+		</div>
 	);
 }

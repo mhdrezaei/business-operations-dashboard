@@ -2,9 +2,10 @@ import type { TrafficExcelImportResponse } from "#src/features/performance/api/p
 import type { UploadProps } from "antd";
 import type { PerformanceFormValues } from "../../model/performance.form.types";
 import { downloadPerformanceTemplate, uploadTrafficExcelImport } from "#src/features/performance/api/performances.api";
+import { PerformanceFieldCard } from "#src/features/performance/shared/ui/form/components/PerformanceFieldCard";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
-import { CloudUploadOutlined, DeleteOutlined, DownloadOutlined, InfoCircleOutlined } from "@ant-design/icons";
-import { Button, Card, Col, Form, Modal, Row, Tag, theme, Upload } from "antd";
+import { CloudUploadOutlined, DeleteOutlined, DownloadOutlined, InboxOutlined, InfoCircleOutlined } from "@ant-design/icons";
+import { Button, Form, Modal, theme, Upload } from "antd";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -57,6 +58,36 @@ function UploadRejectedRow({
 	);
 }
 
+interface TrafficMetricFieldProps {
+	name: string
+	label: string
+	placeholder: string
+	decimal?: boolean
+}
+
+function TrafficMetricField({ name, label, placeholder, decimal }: TrafficMetricFieldProps) {
+	const inputId = `performance-traffic-${name}`;
+
+	return (
+		<div className="performance-traffic-location__field">
+			<label className="performance-traffic-location__label" htmlFor={inputId}>{label}</label>
+			<RHFProNumber<PerformanceFormValues, any>
+				name={sf(name) as any}
+				label=""
+				inputProps={{
+					"id": inputId,
+					"placeholder": placeholder,
+					"aria-label": label,
+				}}
+				formItemProps={{ className: "mb-0" }}
+				decimal={decimal}
+				enableGrouping={!decimal}
+				enableWordsTooltip={!decimal}
+			/>
+		</div>
+	);
+}
+
 export function TrafficPerformanceFields() {
 	const { t } = useTranslation();
 	const { token } = theme.useToken();
@@ -83,10 +114,6 @@ export function TrafficPerformanceFields() {
 		() => Object.entries(uploadResult?.rejected_by_reason ?? {}),
 		[uploadResult],
 	);
-	const cardTitle = (submitMode ?? "template") === "template"
-		? t("performance.traffic.excelTitle")
-		: t("performance.traffic.singleEntry");
-
 	const uploadProps: Omit<UploadProps, "fileList" | "onChange"> = {
 		beforeUpload: () => false,
 		maxCount: 1,
@@ -151,23 +178,15 @@ export function TrafficPerformanceFields() {
 
 	return (
 		<>
-			<Card
-				bordered
-				className="rounded-lg"
-				title={cardTitle}
-			>
-				<div className="flex gap-2 flex-wrap mb-3">
-					<Tag color="blue">{`${t("performance.columns.companyType")}: ${companyType ?? "-"}`}</Tag>
-					<Tag color="blue">{`${t("performance.columns.year")}: ${year ?? "-"}`}</Tag>
-					<Tag color="blue">{`${t("performance.columns.month")}: ${month ?? "-"}`}</Tag>
-				</div>
-
+			<div className="performance-field-group">
 				{(submitMode ?? "template") === "template"
 					? (
-						<div
-							className="grid grid-cols-[320px_1fr] gap-3 items-start"
-						>
-							<div className="grid gap-2.5">
+						<div className="performance-traffic-steps">
+							<div className="performance-traffic-step">
+								<div className="performance-traffic-step__number">۱</div>
+								<div className="performance-traffic-step__content">
+									<div className="performance-traffic-step__title">دانلود فایل تمپلیت</div>
+								</div>
 								<Button
 									icon={<DownloadOutlined />}
 									disabled={!canDownloadTemplate}
@@ -192,7 +211,43 @@ export function TrafficPerformanceFields() {
 								>
 									{t("performance.traffic.downloadTemplate")}
 								</Button>
+							</div>
 
+							<div className="performance-traffic-step performance-traffic-step--upload">
+								<div className="performance-traffic-step__number">۲</div>
+								<div className="performance-traffic-step__content">
+									<div className="performance-traffic-step__title">آپلود فایل عملکرد</div>
+								</div>
+								<Controller
+									name={sf("monthlyPerformanceFile") as any}
+									control={control}
+									render={({ field, fieldState, formState }) => (
+										<Form.Item
+											help={(formState.isSubmitted || fieldState.isTouched) ? fieldState.error?.message : undefined}
+											validateStatus={(formState.isSubmitted || fieldState.isTouched) && fieldState.error?.message ? "error" : undefined}
+											className="performance-traffic-step__dropzone mb-0"
+										>
+											<Upload.Dragger
+												{...uploadProps}
+												fileList={field.value ?? []}
+												onChange={info => field.onChange(info.fileList.slice(-1))}
+											>
+												<p className="performance-traffic-upload__icon">
+													<InboxOutlined />
+												</p>
+												<p className="performance-traffic-upload__title">{t("performance.labels.selectOrDropExcel")}</p>
+												<p className="performance-traffic-upload__hint">{t("performance.labels.allowedFormatsXls")}</p>
+											</Upload.Dragger>
+										</Form.Item>
+									)}
+								/>
+							</div>
+
+							<div className="performance-traffic-step">
+								<div className="performance-traffic-step__number">۳</div>
+								<div className="performance-traffic-step__content">
+									<div className="performance-traffic-step__title">ایمپورت مقادیر</div>
+								</div>
 								<Button
 									type="primary"
 									icon={<CloudUploadOutlined />}
@@ -202,84 +257,34 @@ export function TrafficPerformanceFields() {
 								>
 									{t("performance.traffic.templateUpload")}
 								</Button>
-
-								<div className="opacity-80 text-xs leading-[1.8]">
-									{t("performance.traffic.preUploadHint")}
-								</div>
 							</div>
-
-							<Controller
-								name={sf("monthlyPerformanceFile") as any}
-								control={control}
-								render={({ field, fieldState, formState }) => (
-									<Form.Item
-										help={(formState.isSubmitted || fieldState.isTouched)
-											? fieldState.error?.message
-											: undefined}
-										validateStatus={(formState.isSubmitted || fieldState.isTouched) && fieldState.error?.message
-											? "error"
-											: undefined}
-									>
-										<Upload.Dragger
-											{...uploadProps}
-											fileList={field.value ?? []}
-											onChange={info => field.onChange(info.fileList.slice(-1))}
-										>
-											<p className="m-0 text-lg">{t("performance.labels.selectOrDropExcel")}</p>
-											<p className="m-0 mt-2">{t("performance.labels.allowedFormatsXls")}</p>
-										</Upload.Dragger>
-									</Form.Item>
-								)}
-							/>
 						</div>
 					)
 					: (
-						<div className="grid gap-3">
-							<Card variant="outlined" title={t("performance.traffic.tehranPerformance")} className="rounded-[10px]">
-								<Row gutter={16}>
-									{isUnitVisible && tehranUnit && (
-										<Col span={24}>
-											<div className="mb-3 rounded-lg border border-[rgba(255,255,255,0.15)] px-4 py-2 text-right text-sm">
-												{t("performance.traffic.tehranContractUnit")}
-												{": "}
-												<strong>{tehranUnit}</strong>
-											</div>
-										</Col>
-									)}
-									<Col span={12}>
-										<RHFProNumber
-											name={sf("tehranValue") as any}
-											label={t("performance.fields.traffic.tehranValue")}
-											inputProps={{ placeholder: t("performance.placeholders.example100") }}
-										/>
-									</Col>
-									<Col span={12}>
-										<RHFProNumber
-											name={sf("tehranValueReceive") as any}
-											label={t("performance.fields.traffic.tehranValueReceive")}
-											inputProps={{ placeholder: t("performance.placeholders.example10000") }}
-										/>
-									</Col>
-									{isCp && (
-										<Col span={12}>
-											<RHFProNumber
-												name={sf("tehranConversionRatio") as any}
-												label={t("performance.fields.traffic.tehranConversionRatio")}
-												inputProps={{ placeholder: "مثلاً 1.5" }}
-												decimal
-											/>
-										</Col>
-									)}
-								</Row>
-							</Card>
-
+						<div className="performance-traffic-locations">
+							<PerformanceFieldCard
+								title={t("performance.traffic.tehranPerformance")}
+								className="performance-traffic-location"
+							>
+								{isUnitVisible && tehranUnit
+									? (
+										<div className="performance-traffic-location__unit">
+											{`${t("performance.traffic.tehranContractUnit")}: ${tehranUnit}`}
+										</div>
+									)
+									: null}
+								<div className="performance-traffic-location__fields">
+									<TrafficMetricField name="tehranValue" label={t("performance.fields.traffic.tehranValue")} placeholder={t("performance.placeholders.example100")} />
+									<TrafficMetricField name="tehranValueReceive" label={t("performance.fields.traffic.tehranValueReceive")} placeholder={t("performance.placeholders.example10000")} />
+									{isCp ? <TrafficMetricField name="tehranConversionRatio" label={t("performance.fields.traffic.tehranConversionRatio")} placeholder="مثلاً 1.5" decimal /> : null}
+								</div>
+							</PerformanceFieldCard>
 							{countyEnabled
 								? (
-									<Card
-										bordered
+									<PerformanceFieldCard
 										title={t("performance.traffic.countyPerformance")}
-										className="rounded-[10px]"
-										extra={(
+										className="performance-traffic-location"
+										headerExtra={(
 											<Button
 												size="small"
 												danger
@@ -294,47 +299,24 @@ export function TrafficPerformanceFields() {
 											</Button>
 										)}
 									>
-										<Row gutter={16}>
-											{isUnitVisible && countyUnit && (
-												<Col span={24}>
-													<div className="mb-3 rounded-lg border border-[rgba(255,255,255,0.15)] px-4 py-2 text-right text-sm">
-														{t("performance.traffic.countyContractUnit")}
-														{": "}
-														<strong>{countyUnit}</strong>
-													</div>
-												</Col>
-											)}
-											<Col span={12}>
-												<RHFProNumber
-													name={sf("countyValue") as any}
-													label={t("performance.fields.traffic.countyValue")}
-													inputProps={{ placeholder: t("performance.placeholders.example100") }}
-												/>
-											</Col>
-											<Col span={12}>
-												<RHFProNumber
-													name={sf("countyValueReceive") as any}
-													label={t("performance.fields.traffic.countyValueReceive")}
-													inputProps={{ placeholder: t("performance.placeholders.example10000") }}
-												/>
-											</Col>
-											{isCp && (
-												<Col span={12}>
-													<RHFProNumber
-														name={sf("countyConversionRatio") as any}
-														label={t("performance.fields.traffic.countyConversionRatio")}
-														inputProps={{ placeholder: "مثلاً 1.5" }}
-														decimal
-													/>
-												</Col>
-											)}
-										</Row>
-									</Card>
+										{isUnitVisible && countyUnit
+											? (
+												<div className="performance-traffic-location__unit">
+													{`${t("performance.traffic.countyContractUnit")}: ${countyUnit}`}
+												</div>
+											)
+											: null}
+										<div className="performance-traffic-location__fields">
+											<TrafficMetricField name="countyValue" label={t("performance.fields.traffic.countyValue")} placeholder={t("performance.placeholders.example100")} />
+											<TrafficMetricField name="countyValueReceive" label={t("performance.fields.traffic.countyValueReceive")} placeholder={t("performance.placeholders.example10000")} />
+											{isCp ? <TrafficMetricField name="countyConversionRatio" label={t("performance.fields.traffic.countyConversionRatio")} placeholder="مثلاً 1.5" decimal /> : null}
+										</div>
+									</PerformanceFieldCard>
 								)
 								: null}
 						</div>
 					)}
-			</Card>
+			</div>
 			<Modal
 				open={!!uploadResult}
 				onCancel={handleCloseUploadResult}

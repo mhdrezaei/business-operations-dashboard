@@ -1,15 +1,19 @@
 import type { ParamsType, ProTableProps } from "@ant-design/pro-components";
 
 import type { TablePaginationConfig } from "antd";
+import type { CSSProperties, ReactNode } from "react";
 
+import ContractFilterSearchIcon from "#src/assets/svg/header/contract-filter-search.svg?react";
+import TableHeaderIcon from "#src/assets/svg/header/table.svg?react";
 import { footerHeight as layoutFooterHeight } from "#src/layout/constants";
+
 import { usePreferencesStore } from "#src/store";
 import { cn, isObject, isUndefined } from "#src/utils";
-
-import { LoadingOutlined } from "@ant-design/icons";
+import { DownOutlined, LoadingOutlined, UpOutlined } from "@ant-design/icons";
 import { ProTable } from "@ant-design/pro-components";
 import { useSize } from "ahooks";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { ConfigProvider, theme } from "antd";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { BASIC_TABLE_ROOT_CLASS_NAME } from "./constants";
@@ -25,6 +29,16 @@ export interface BasicTableProps<D, U, V> extends ProTableProps<D, U, V> {
 		offsetBottom?: number
 	}
 	autoSearchDebounceTime?: number
+	/** عنوان هدر فیلتر؛ در صورت عدم تعیین از headerTitle ساخته می‌شود */
+	filterTitle?: string
+	/** توضیح کوتاه هدر فیلتر */
+	filterSubtitle?: string
+	/** عنوان هدر جدول؛ در صورت عدم تعیین از headerTitle استفاده می‌شود */
+	tableTitle?: ReactNode
+	/** توضیح کوتاه هدر جدول */
+	tableSubtitle?: ReactNode
+	/** آیکن هدر جدول */
+	tableIcon?: ReactNode
 }
 
 export function BasicTable<
@@ -35,8 +49,27 @@ export function BasicTable<
 	props: BasicTableProps<DataType, Params, ValueType>,
 ) {
 	const classes = useStyles();
+	const { token } = theme.useToken();
+	const antdContext = useContext(ConfigProvider.ConfigContext);
+	const configuredCardRadius = antdContext.theme?.components?.Card?.borderRadiusLG;
+	const filterRadius = typeof configuredCardRadius === "number" ? configuredCardRadius : token.borderRadiusLG;
 	const { t } = useTranslation();
 	const { adaptive } = props;
+	const filterTitle = props.filterTitle ?? (typeof props.headerTitle === "string" ? `جستجوی ${props.headerTitle}` : "جستجو");
+	const filterSubtitle = props.filterSubtitle ?? "برای جستجو و فیلتر، معیارهای موردنظر را انتخاب کنید.";
+	const tableTitle = props.tableTitle ?? props.headerTitle ?? "لیست موارد";
+	const tableSubtitle = props.tableSubtitle ?? "موارد ثبت‌شده را مشاهده و مدیریت کنید.";
+	const tableIcon = props.tableIcon ?? <TableHeaderIcon />;
+	const tableHeader = (
+		<div className="basic-table-toolbar-heading">
+			<span className="basic-table-toolbar-heading__icon" aria-hidden="true">{tableIcon}</span>
+			<span className="basic-table-toolbar-heading__copy">
+				<span className="basic-table-toolbar-heading__title">{tableTitle}</span>
+				<span className="basic-table-toolbar-heading__subtitle">{tableSubtitle}</span>
+			</span>
+		</div>
+	);
+	const [filterCollapsed, setFilterCollapsed] = useState(false);
 	const autoSearchDebounceTime = Math.max(0, props.autoSearchDebounceTime ?? 0);
 	const tableWrapperRef = useRef<HTMLDivElement>(null);
 	const size = useSize(tableWrapperRef);
@@ -190,7 +223,10 @@ export function BasicTable<
 			labelWidth: "auto" as const,
 			span: 8,
 			layout: "vertical" as const,
+			defaultCollapsed: false,
 			...props.search,
+			collapsed: false,
+			collapseRender: () => null,
 		};
 	};
 
@@ -225,18 +261,96 @@ export function BasicTable<
 	};
 
 	return (
-		<div className="h-full" ref={tableWrapperRef}>
+		<div
+			className={cn("basic-table-shell h-full", filterCollapsed && "basic-table-shell--collapsed")}
+			ref={tableWrapperRef}
+			style={{
+				"--basic-table-filter-title": JSON.stringify(filterTitle),
+				"--basic-table-filter-subtitle": JSON.stringify(filterSubtitle),
+				"--basic-table-filter-margin": `${token.marginLG}px`,
+				"--basic-table-filter-padding": `${token.paddingLG}px`,
+				"--basic-table-filter-padding-top": `${token.paddingLG + token.controlHeightLG + token.marginSM}px`,
+				"--basic-table-filter-border": `${token.lineWidth}px solid ${token.colorBorderSecondary}`,
+				"--basic-table-filter-radius": `${filterRadius}px`,
+				"--basic-table-filter-background": token.colorBgContainer,
+				"--basic-table-filter-shadow": token.boxShadowTertiary,
+				"--basic-table-filter-heading": token.colorTextHeading,
+				"--basic-table-filter-secondary": token.colorTextTertiary,
+				"--basic-table-filter-text": token.colorText,
+				"--basic-table-filter-split": token.colorSplit,
+				"--basic-table-filter-fill": token.colorFillSecondary,
+				"--basic-table-filter-primary": token.colorPrimary,
+				"--basic-table-filter-primary-bg": token.colorPrimaryBg,
+				"--basic-table-filter-control-radius": `${token.borderRadius}px`,
+				"--basic-table-filter-line-width": `${token.lineWidth}px`,
+				"--basic-table-filter-dash-length": `${Math.max(token.sizeXS - token.lineWidthBold, 1)}px`,
+				"--basic-table-filter-dash-gap": `${token.paddingXXS}px`,
+				"--basic-table-filter-label-weight": token.fontWeightStrong,
+				"--basic-table-border": `${token.lineWidth}px solid ${token.colorBorderSecondary}`,
+				"--basic-table-radius": `${filterRadius}px`,
+				"--basic-table-background": token.colorBgContainer,
+				"--basic-table-header-background": `color-mix(in srgb, ${token.colorBgContainer} 88%, ${token.colorPrimary} 12%)`,
+				"--basic-table-header-color": token.colorTextHeading,
+				"--basic-table-row-background": token.colorBgContainer,
+				"--basic-table-row-hover": token.colorFillTertiary,
+				"--basic-table-split": token.colorSplit,
+				"--basic-table-toolbar-padding": `${token.paddingMD}px`,
+				"--basic-table-toolbar-gap": `${token.marginMD}px`,
+				"--basic-table-heading-icon-size": `${token.controlHeightLG + token.paddingSM}px`,
+				"--basic-table-heading-icon-radius": `${token.borderRadiusLG}px`,
+				"--basic-table-heading-icon-background": `color-mix(in srgb, ${token.colorPrimary} 22%, ${token.colorBgContainer})`,
+				"--basic-table-heading-icon-color": token.colorInfo,
+				"--basic-table-heading-color": token.colorTextHeading,
+				"--basic-table-subtitle-color": token.colorTextTertiary,
+				"--basic-table-table-radius": `${filterRadius}px`,
+				"--basic-table-cell-padding-inline": `${token.paddingMD}px`,
+				"--basic-table-cell-padding-block": `${token.paddingSM}px`,
+			} as CSSProperties}
+		>
+			<div
+				className="basic-table-filter-heading"
+				role="button"
+				tabIndex={0}
+				aria-expanded={!filterCollapsed}
+				onClick={() => setFilterCollapsed(current => !current)}
+				onKeyDown={(event) => {
+					if (event.key === "Enter" || event.key === " ") {
+						event.preventDefault();
+						setFilterCollapsed(current => !current);
+					}
+				}}
+			>
+				<span className="basic-table-filter-heading__icon"><ContractFilterSearchIcon /></span>
+				<div className="basic-table-filter-heading__copy">
+					<div className="basic-table-filter-heading__title">{filterTitle}</div>
+					<div className="basic-table-filter-heading__subtitle">{filterSubtitle}</div>
+				</div>
+				<button
+					type="button"
+					className="basic-table-filter-toggle"
+					aria-label={filterCollapsed ? "باز کردن فیلترها" : "بستن فیلترها"}
+					aria-expanded={!filterCollapsed}
+					onClick={(event) => {
+						event.stopPropagation();
+						setFilterCollapsed(current => !current);
+					}}
+				>
+					{filterCollapsed ? <DownOutlined /> : <UpOutlined />}
+				</button>
+			</div>
 			<ProTable
 				cardBordered
 				rowKey="id"
 				dateFormatter="string"
 				{...props}
+				headerTitle={tableHeader}
 				options={{
 					fullScreen: true,
 					...props.options,
 				}}
 				rootClassName={cn(BASIC_TABLE_ROOT_CLASS_NAME, props.rootClassName)}
 				className={cn(classes.basicTable, props.className)}
+				tableClassName={cn("basic-table-grid", props.tableClassName)}
 				scroll={{ y: scrollY, x: "max-content", ...props.scroll }}
 				loading={getLoadingProps()}
 				pagination={getPaginationProps()}
