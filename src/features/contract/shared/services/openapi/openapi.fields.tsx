@@ -294,7 +294,6 @@ export function OpenApiFields() {
 			return;
 
 		append(structuredClone(defaultOpenApiPlan) as any);
-		setActiveKey("0");
 	}, [contractModel, fields.length, append]);
 
 	React.useEffect(() => {
