@@ -448,7 +448,7 @@ function mapTrafficAddenda(
 	const normalizedCompanyType = String(companyType ?? "").trim().toUpperCase();
 	const hasTrafficUnit = ["CP", "PREMIUM", "IXP", "TCI"].includes(normalizedCompanyType);
 	const isPremium = normalizedCompanyType === "PREMIUM";
-	const basedTire = normalizedCompanyType === "IXP" ? true : undefined;
+	const isIxp = normalizedCompanyType === "IXP";
 
 	return list.map((item) => {
 		const row = (item ?? {}) as Record<string, any>;
@@ -468,10 +468,10 @@ function mapTrafficAddenda(
 		}
 		const locations = [
 			mainLocations.tehran
-				? mapTrafficLocationPayload("TEHRAN", row.tehranPricing, hasTrafficUnit ? row.tehranUnit : null, basedTire, isPremium ? row.tehranRevenuePercent : null)
+				? mapTrafficLocationPayload("TEHRAN", row.tehranPricing, hasTrafficUnit ? row.tehranUnit : null, isIxp ? row.tehranBasedTire ?? true : undefined, isPremium ? row.tehranRevenuePercent : null)
 				: null,
 			mainLocations.province
-				? mapTrafficLocationPayload("COUNTY", row.provincePricing, hasTrafficUnit ? row.provinceUnit : null, basedTire, isPremium ? row.provinceRevenuePercent : null)
+				? mapTrafficLocationPayload("COUNTY", row.provincePricing, hasTrafficUnit ? row.provinceUnit : null, isIxp ? row.provinceBasedTire ?? true : undefined, isPremium ? row.provinceRevenuePercent : null)
 				: null,
 		].filter(Boolean);
 
@@ -725,10 +725,10 @@ async function formValuesToApiPayload(values: ContractFormValues) {
 		const normalizedCompanyType = String(values.companyType ?? "").trim().toUpperCase();
 		const isUnitCompanyType = ["CP", "PREMIUM", "IXP", "TCI"].includes(normalizedCompanyType);
 		const isPremiumCompanyType = normalizedCompanyType === "PREMIUM";
-		const basedTire = normalizedCompanyType === "IXP" ? true : undefined;
+		const isIxp = normalizedCompanyType === "IXP";
 		const locations = [
-			mapTrafficLocationPayload("TEHRAN", serviceFields.tehranPricing, isUnitCompanyType ? serviceFields.tehranUnit : null, basedTire, isPremiumCompanyType ? serviceFields.tehranRevenuePercent : null),
-			mapTrafficLocationPayload("COUNTY", serviceFields.provincePricing, isUnitCompanyType ? serviceFields.provinceUnit : null, basedTire, isPremiumCompanyType ? serviceFields.provinceRevenuePercent : null),
+			mapTrafficLocationPayload("TEHRAN", serviceFields.tehranPricing, isUnitCompanyType ? serviceFields.tehranUnit : null, isIxp ? serviceFields.tehranBasedTire ?? true : undefined, isPremiumCompanyType ? serviceFields.tehranRevenuePercent : null),
+			mapTrafficLocationPayload("COUNTY", serviceFields.provincePricing, isUnitCompanyType ? serviceFields.provinceUnit : null, isIxp ? serviceFields.provinceBasedTire ?? true : undefined, isPremiumCompanyType ? serviceFields.provinceRevenuePercent : null),
 		].filter(Boolean);
 
 		payload.is_signed = isOfficial;

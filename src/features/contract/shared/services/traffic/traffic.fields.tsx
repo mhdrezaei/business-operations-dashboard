@@ -7,7 +7,7 @@ import { ContractFormSection } from "#src/features/contract/shared/ui/form/compo
 import { RHFProCheckbox, RHFProNumber, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { Button } from "antd";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import "./traffic.fields.css";
 
@@ -25,6 +25,8 @@ interface TrafficPricingFieldsProps {
 	revenuePercentLabel: string
 	showUnitSelector: boolean
 	showPremiumRevenuePercent: boolean
+	basedTireName: string
+	showBasedTire: boolean
 }
 
 function TrafficPricingFields({
@@ -34,6 +36,8 @@ function TrafficPricingFields({
 	revenuePercentLabel,
 	showUnitSelector,
 	showPremiumRevenuePercent,
+	basedTireName,
+	showBasedTire,
 }: TrafficPricingFieldsProps) {
 	return (
 		<div className="traffic-pricing-fields">
@@ -61,6 +65,15 @@ function TrafficPricingFields({
 								/>
 							)
 							: null}
+						{showBasedTire
+							? (
+								<RHFProCheckbox
+									name={basedTireName as any}
+									label=""
+									checkboxLabel="محاسبه پله بر اساس پله بالاتر انجام شود"
+								/>
+							)
+							: null}
 					</div>
 				)
 				: null}
@@ -77,9 +90,11 @@ function TrafficPricingFields({
 
 export function TrafficFields() {
 	const { control, getValues, setValue } = useFormContext<ContractFormValues>();
+	const hasInitializedTehranPricing = useRef(false);
 	const isOfficial = useWatch({ control, name: sf("isOfficial") as any }) as boolean | undefined;
 	const companyType = useWatch({ control, name: "companyType" });
 	const isCollocation = String(companyType ?? "").trim().toUpperCase() === "COLLOCATION";
+	const isIxp = String(companyType ?? "").trim().toUpperCase() === "IXP";
 	const tehranPricing = useWatch({ control, name: sf("tehranPricing") as any });
 	const provincePricing = useWatch({ control, name: sf("provincePricing") as any });
 	const startYear = useWatch({ control, name: "startYear" });
@@ -120,6 +135,33 @@ export function TrafficFields() {
 	function removeProvince() {
 		setValue(sf("provincePricing") as any, undefined, { shouldDirty: true, shouldValidate: true });
 	}
+
+	useEffect(() => {
+		if (!showPricingUi || isCollocation) {
+			hasInitializedTehranPricing.current = false;
+			return;
+		}
+		if (hasInitializedTehranPricing.current)
+			return;
+
+		if (!tehranPricing) {
+			setValue(sf("tehranPricing") as any, structuredClone(defaultContractTypeValue), {
+				shouldDirty: false,
+				shouldValidate: false,
+			});
+		}
+		hasInitializedTehranPricing.current = true;
+	}, [isCollocation, setValue, showPricingUi, tehranPricing]);
+
+	useEffect(() => {
+		if (!isIxp)
+			return;
+
+		if (getValues(sf("tehranBasedTire") as any) == null)
+			setValue(sf("tehranBasedTire") as any, true, { shouldDirty: false, shouldValidate: false });
+		if (getValues(sf("provinceBasedTire") as any) == null)
+			setValue(sf("provinceBasedTire") as any, true, { shouldDirty: false, shouldValidate: false });
+	}, [getValues, isIxp, setValue]);
 
 	useEffect(() => {
 		if (isOfficial !== false)
@@ -228,6 +270,8 @@ export function TrafficFields() {
 											revenuePercentLabel="درصد سهم درآمد (تهران)"
 											showUnitSelector={showUnitSelector}
 											showPremiumRevenuePercent={showPremiumRevenuePercent}
+											basedTireName={sf("tehranBasedTire")}
+											showBasedTire={isIxp}
 										/>
 									)
 									: (
@@ -257,6 +301,8 @@ export function TrafficFields() {
 											revenuePercentLabel="درصد سهم درآمد (مراکز استان‌ها)"
 											showUnitSelector={showUnitSelector}
 											showPremiumRevenuePercent={showPremiumRevenuePercent}
+											basedTireName={sf("provinceBasedTire")}
+											showBasedTire={isIxp}
 										/>
 									)
 									: (
@@ -289,6 +335,8 @@ export function TrafficFields() {
 												revenuePercentLabel="درصد سهم درآمد (تهران)"
 												showUnitSelector={showUnitSelector}
 												showPremiumRevenuePercent={showPremiumRevenuePercent}
+												basedTireName={`${base}.tehranBasedTire`}
+												showBasedTire={isIxp}
 											/>
 										</ContractFormSection>
 									)
@@ -304,6 +352,8 @@ export function TrafficFields() {
 												revenuePercentLabel="درصد سهم درآمد (مراکز استان‌ها)"
 												showUnitSelector={showUnitSelector}
 												showPremiumRevenuePercent={showPremiumRevenuePercent}
+												basedTireName={`${base}.provinceBasedTire`}
+												showBasedTire={isIxp}
 											/>
 										</ContractFormSection>
 									)
