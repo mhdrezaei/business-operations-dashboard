@@ -1,3 +1,4 @@
+import { FormActionBar } from "#src/shared/ui/form-action-bar";
 import { HistoryOutlined, UploadOutlined } from "@ant-design/icons";
 import { Button } from "antd";
 import { useTranslation } from "react-i18next";
@@ -26,32 +27,33 @@ export function ActionSection({
 	const { t } = useTranslation();
 
 	return (
-		<div
-			className="flex justify-between items-center gap-3 flex-wrap"
-		>
-			<div className="flex gap-2 flex-wrap">
-				{showSmsGatewayImport
-					? (
-						<>
-							<Button type="primary" icon={<UploadOutlined />} onClick={onSmsGatewayImport}>ثبت عملکرد از Gateway پیامک</Button>
-							<Button type="primary" icon={<HistoryOutlined />} onClick={onSmsGatewayImportHistory}>تاریخچه دریافت‌های Gateway پیامک</Button>
-						</>
-					)
-					: null}
-				<Button onClick={onReset}>{t("performance.actions.clearForm")}</Button>
-			</div>
-
-			<div className="flex gap-2 flex-wrap">
-				<Button loading={!!submitting} onClick={onSubmit}>
-					{t("performance.actions.submit")}
-				</Button>
-				<Button loading={!!submitting} onClick={onSubmitAndCreateAnother}>
-					{t("performance.actions.submitAndCreateAnother")}
-				</Button>
-				<Button loading={!!submitting} type="primary" onClick={onSubmitAndEdit}>
-					{t("performance.actions.submitAndEdit")}
-				</Button>
-			</div>
-		</div>
+		<FormActionBar
+			secondaryActions={(
+				<>
+					{showSmsGatewayImport
+						? (
+							<>
+								<Button icon={<UploadOutlined />} onClick={onSmsGatewayImport}>ثبت عملکرد از Gateway پیامک</Button>
+								<Button icon={<HistoryOutlined />} onClick={onSmsGatewayImportHistory}>تاریخچه دریافت‌های Gateway پیامک</Button>
+							</>
+						)
+						: null}
+					<Button danger onClick={onReset}>{t("performance.actions.clearForm")}</Button>
+				</>
+			)}
+			primaryActions={(
+				<>
+					<Button loading={!!submitting} onClick={onSubmitAndCreateAnother}>
+						{t("performance.actions.submitAndCreateAnother")}
+					</Button>
+					<Button loading={!!submitting} onClick={onSubmitAndEdit}>
+						{t("performance.actions.submitAndEdit")}
+					</Button>
+					<Button type="primary" loading={!!submitting} onClick={onSubmit}>
+						{t("performance.actions.submit")}
+					</Button>
+				</>
+			)}
+		/>
 	);
 }

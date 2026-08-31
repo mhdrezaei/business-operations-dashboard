@@ -1,3 +1,4 @@
+import { FormActionBar } from "#src/shared/ui/form-action-bar";
 import { Button } from "antd";
 
 interface Props {
@@ -20,22 +21,21 @@ export function ActionSection({
 	onReset,
 }: Props) {
 	return (
-		<div
-			className="w-full flex justify-between items-center gap-3 flex-wrap"
-		>
-			<Button onClick={onReset}>پاکسازی فرم</Button>
-
-			<div className="flex gap-2 flex-wrap">
-				<Button loading={!!submitting} disabled={disabled || submitting} onClick={onSubmit}>
-					{submitText}
-				</Button>
-				<Button loading={!!submitting} disabled={disabled || submitting} onClick={onSubmitAndCreateAnother}>
-					ثبت و ایجاد قرارداد جدید
-				</Button>
-				<Button loading={!!submitting} disabled={disabled || submitting} type="primary" onClick={onSubmitAndEdit}>
-					ثبت و ویرایش
-				</Button>
-			</div>
-		</div>
+		<FormActionBar
+			secondaryActions={<Button danger onClick={onReset}>پاکسازی فرم</Button>}
+			primaryActions={(
+				<>
+					<Button loading={!!submitting} disabled={disabled || submitting} onClick={onSubmitAndCreateAnother}>
+						ثبت و ایجاد قرارداد جدید
+					</Button>
+					<Button loading={!!submitting} disabled={disabled || submitting} onClick={onSubmitAndEdit}>
+						ثبت و ویرایش
+					</Button>
+					<Button type="primary" loading={!!submitting} disabled={disabled || submitting} onClick={onSubmit}>
+						{submitText}
+					</Button>
+				</>
+			)}
+		/>
 	);
 }

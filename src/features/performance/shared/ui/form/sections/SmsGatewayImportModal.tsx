@@ -1,8 +1,9 @@
 import type { SmsGatewayImportOperator, SmsGatewayManualImportResponse } from "#src/features/performance/api/performances.api";
+import SelectPerformanceEmptyState from "#src/assets/svg/select-performance.svg?react";
 import { importSmsGatewayPerformance } from "#src/features/performance/api/performances.api";
 import { CheckCircleOutlined, EyeOutlined, ReloadOutlined, UploadOutlined } from "@ant-design/icons";
-import { Button, Checkbox, Empty, Modal, Select, Spin, Tag } from "antd";
-import { useState } from "react";
+import { Button, Checkbox, ConfigProvider, Empty, Modal, Select, Spin, Tag, theme } from "antd";
+import { useContext, useState } from "react";
 
 const YEAR_OPTIONS = Array.from({ length: 10 }, (_, index) => {
 	const year = 1404 + index;
@@ -53,9 +54,14 @@ function getCount(response: Record<string, unknown>, keys: string[], fallback = 
 interface Props {
 	open: boolean
 	onClose: () => void
+	inline?: boolean
 }
 
-export function SmsGatewayImportModal({ open, onClose }: Props) {
+export function SmsGatewayImportModal({ open, onClose, inline = false }: Props) {
+	const { token } = theme.useToken();
+	const antdContext = useContext(ConfigProvider.ConfigContext);
+	const configuredCardRadius = antdContext.theme?.components?.Card?.borderRadiusLG;
+	const itemRadius = typeof configuredCardRadius === "number" ? configuredCardRadius : token.borderRadiusLG;
 	const [year, setYear] = useState<number | null>(null);
 	const [month, setMonth] = useState<number | null>(null);
 	const [preview, setPreview] = useState<SmsGatewayManualImportResponse | null>(null);
@@ -63,6 +69,8 @@ export function SmsGatewayImportModal({ open, onClose }: Props) {
 	const [loading, setLoading] = useState(false);
 	const [confirming, setConfirming] = useState(false);
 	const [successSummary, setSuccessSummary] = useState<Record<string, unknown> | null>(null);
+	const selectedYear = year;
+	const selectedMonth = month;
 	const monthOptions = year === MIN_IMPORT_YEAR
 		? MONTH_OPTIONS.filter(item => item.value >= MIN_IMPORT_MONTH)
 		: MONTH_OPTIONS;
@@ -74,12 +82,12 @@ export function SmsGatewayImportModal({ open, onClose }: Props) {
 		onClose();
 	};
 
-	const loadPreview = async () => {
-		if (!year || !month)
+	const loadPreviewForPeriod = async (targetYear: number | null, targetMonth: number | null) => {
+		if (!targetYear || !targetMonth)
 			return;
 		setLoading(true);
 		try {
-			const response = await importSmsGatewayPerformance(year, month, false);
+			const response = await importSmsGatewayPerformance(targetYear, targetMonth, false);
 			setPreview(response);
 			setSelected([]);
 		}
@@ -88,12 +96,14 @@ export function SmsGatewayImportModal({ open, onClose }: Props) {
 		}
 	};
 
+	const loadPreview = () => loadPreviewForPeriod(selectedYear, selectedMonth);
+
 	const confirm = async () => {
-		if (!year || !month || selected.length === 0)
+		if (!selectedYear || !selectedMonth || selected.length === 0)
 			return;
 		setConfirming(true);
 		try {
-			const response = await importSmsGatewayPerformance(year, month, true);
+			const response = await importSmsGatewayPerformance(selectedYear, selectedMonth, true);
 			setSuccessSummary(response as unknown as Record<string, unknown>);
 		}
 		finally {
@@ -116,6 +126,8 @@ export function SmsGatewayImportModal({ open, onClose }: Props) {
 	const handleMonthChange = (value: number) => {
 		setMonth(value);
 		setPreview(null);
+		if (inline)
+			void loadPreviewForPeriod(year, value);
 	};
 
 	const successRows = successSummary
@@ -128,118 +140,155 @@ export function SmsGatewayImportModal({ open, onClose }: Props) {
 		]
 		: [];
 
-	return (
-		<>
-			<Modal
-				open={open}
-				onCancel={close}
-				footer={null}
-				width="min(1040px, calc(100vw - 32px))"
-				className="sms-gateway-import-modal"
-				styles={{ body: { maxHeight: "calc(100vh - 150px)", overflowY: "auto", overflowX: "hidden" } }}
-				destroyOnClose
-				title={(
-					<span>
-						<UploadOutlined />
-						{" "}
-						ثبت عملکرد از Gateway پیامک
-					</span>
-				)}
-			>
-				<div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-5 min-h-[460px]" dir="rtl">
-					<div className="border-l-0 lg:border-l border-solid border-slate-200 pl-0 lg:pl-5 space-y-3">
-						<div className="font-medium">انتخاب دوره</div>
+	const content = (
+		<div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-5 min-h-[460px]" dir="rtl">
+			<div className="border-l-0 lg:border-l border-solid border-slate-200 pl-0 lg:pl-5 space-y-3">
+				<div className="sms-gateway-period-controls">
+					<div className="sms-gateway-period-controls__field">
 						<label className="block text-sm">سال شمسی</label>
 						<Select className="w-full" value={year} options={YEAR_OPTIONS} placeholder="انتخاب سال" onChange={handleYearChange} />
+					</div>
+					<div className="sms-gateway-period-controls__field">
 						<label className="block text-sm">ماه شمسی</label>
 						<Select className="w-full" value={month} options={monthOptions} placeholder="ابتدا سال را انتخاب کنید" disabled={!year} onChange={handleMonthChange} />
-						<Button className="w-full" type="primary" icon={preview ? <ReloadOutlined /> : <EyeOutlined />} disabled={!year || !month} loading={loading} onClick={loadPreview}>
-							{preview ? "به‌روزرسانی پیش‌نمایش" : "پیش‌نمایش"}
-						</Button>
-						{preview
-							? (
-								<div className="flex flex-wrap gap-1 pt-2">
-									{Object.entries(preview.summary).map(([status, count]) => (
-										<Tag key={status} color={STATUS_META[status]?.color}>
-											{STATUS_META[status]?.label}
-											:
-											{" "}
-											{formatNumber(count)}
-										</Tag>
-									))}
-								</div>
-							)
-							: null}
-						<Button className="w-full mt-auto" type="primary" icon={<UploadOutlined />} disabled={selected.length === 0} loading={confirming} onClick={confirm}>تأیید و ثبت</Button>
-					</div>
-					<div className="sms-gateway-import-scrollbar max-h-[min(620px,calc(100vh-260px))] overflow-y-auto pl-1">
-						{loading
-							? <div className="h-full min-h-[360px] flex justify-center items-center"><Spin /></div>
-							: !preview
-								? <Empty className="mt-28" image={<EyeOutlined className="text-4xl text-slate-400" />} description="سال و ماه را انتخاب کنید، سپس پیش‌نمایش را دریافت کنید" />
-								: (
-									<>
-										<div className="font-medium mb-3">
-											نتیجه پیش‌نمایش
-											<span className="text-sm font-normal text-slate-500">
-												(
-												{formatNumber(preview.items.length)}
-												{" "}
-												مورد)
-											</span>
-										</div>
-										<div className="space-y-3">
-											{preview.items.map((item, index) => {
-												const selectable = item.status === "will_create" || item.status === "will_update";
-												const meta = STATUS_META[item.status] ?? { label: item.status, color: "default" };
-												return (
-													<div
-														key={`${item.gateway_customer_name}-${item.company_id ?? "unmapped"}`}
-														className={`rounded-lg border border-solid p-3 bg-slate-50/70 dark:bg-slate-800/40 ${selected.includes(index) ? "border-blue-500 ring-1 ring-blue-500" : "border-slate-200 dark:border-slate-700"} ${selectable ? "cursor-pointer hover:border-blue-400" : ""}`}
-														onClick={selectable ? () => toggleItem(index) : undefined}
-													>
-														<div className="flex items-start justify-between gap-3 mb-2">
-															<div>
-																<b>{item.company_name ?? item.gateway_customer_name}</b>
-																{item.company_name
-																	? (
-																		<span className="text-xs text-slate-500 mr-2">
-																			Gateway:
-																			{item.gateway_customer_name}
-																		</span>
-																	)
-																	: null}
-															</div>
-															<div className="flex gap-2 items-center">
-																<Tag color={meta.color}>{meta.label}</Tag>
-																{selectable
-																	? (
-																		<Checkbox
-																			checked={selected.includes(index)}
-																			onClick={event => event.stopPropagation()}
-																			onChange={() => toggleItem(index)}
-																		/>
-																	)
-																	: null}
-															</div>
-														</div>
-														<div className="grid grid-cols-2 gap-1 text-xs">
-															{item.operators.map(operator => (
-																<div key={`${operator.operator}-${operator.language}`} className="flex justify-between rounded bg-slate-50 px-2 py-1">
-																	<span>{operatorLabel(operator)}</span>
-																	<b>{formatNumber(operator.value)}</b>
-																</div>
-															))}
-														</div>
-													</div>
-												);
-											})}
-										</div>
-									</>
-								)}
 					</div>
 				</div>
-			</Modal>
+				{inline
+					? null
+					: (
+						<Button className="w-full" type="primary" icon={preview ? <ReloadOutlined /> : <EyeOutlined />} disabled={!selectedYear || !selectedMonth} loading={loading} onClick={loadPreview}>
+							{preview ? "به‌روزرسانی پیش‌نمایش" : "پیش‌نمایش"}
+						</Button>
+					)}
+				{preview
+					? (
+						<div className="flex flex-wrap gap-1 pt-2">
+							{Object.entries(preview.summary).map(([status, count]) => (
+								<Tag key={status} color={STATUS_META[status]?.color}>
+									{STATUS_META[status]?.label}
+									:
+									{" "}
+									{formatNumber(count)}
+								</Tag>
+							))}
+						</div>
+					)
+					: null}
+				<Button className="w-full mt-auto" type="primary" icon={<UploadOutlined />} disabled={selected.length === 0} loading={confirming} onClick={confirm}>تأیید و ثبت</Button>
+			</div>
+			<div className="sms-gateway-import-scrollbar max-h-[min(620px,calc(100vh-260px))] overflow-y-auto pl-1">
+				{loading
+					? <div className="h-full min-h-[360px] flex justify-center items-center"><Spin /></div>
+					: !preview
+						? (
+							<Empty
+								className="h-full"
+								style={{ minHeight: 360, marginBlock: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}
+								styles={{ image: { width: 125, height: 107, overflow: "visible" } }}
+								image={<SelectPerformanceEmptyState aria-hidden="true" />}
+								description={(
+									<span style={{ color: token.colorTextTertiary }}>
+										{inline ? "سال و ماه را انتخاب کنید تا اطلاعات به‌صورت خودکار نمایش داده شود" : "سال و ماه را انتخاب کنید، سپس پیش‌نمایش را دریافت کنید"}
+									</span>
+								)}
+							/>
+						)
+						: (
+							<>
+								<div className="font-medium mb-3">
+									نتیجه پیش‌نمایش
+									<span className="text-sm font-normal text-slate-500">
+										(
+										{formatNumber(preview.items.length)}
+										{" "}
+										مورد)
+									</span>
+								</div>
+								<div className="space-y-3">
+									{preview.items.map((item, index) => {
+										const selectable = item.status === "will_create" || item.status === "will_update";
+										const meta = STATUS_META[item.status] ?? { label: item.status, color: "default" };
+										return (
+											<div
+												key={`${item.gateway_customer_name}-${item.company_id ?? "unmapped"}`}
+												className={`sms-gateway-item ${selected.includes(index) ? "sms-gateway-item--selected" : ""} ${selectable ? "sms-gateway-item--selectable" : ""}`}
+												style={{
+													border: `1px solid ${selected.includes(index) ? token.colorPrimary : token.colorBorderSecondary}`,
+													borderRadius: itemRadius,
+													background: selected.includes(index) ? token.colorPrimaryBg : token.colorBgLayout,
+													boxShadow: selected.includes(index) ? `inset 0 0 0 ${token.lineWidth}px ${token.colorPrimary}` : undefined,
+												}}
+												onClick={selectable ? () => toggleItem(index) : undefined}
+											>
+												<div className="mb-2 flex items-start justify-between gap-3">
+													<div className="flex items-center gap-2">
+														{selectable
+															? (
+																<Checkbox
+																	checked={selected.includes(index)}
+																	onClick={event => event.stopPropagation()}
+																	onChange={() => toggleItem(index)}
+																/>
+															)
+															: null}
+														<Tag bordered={false} style={{ background: token.colorPrimaryBgHover, color: token.colorText }}>
+															{item.company_name ?? "شرکت تطبیق داده نشده"}
+														</Tag>
+													</div>
+													<Tag color={meta.color}>{meta.label}</Tag>
+												</div>
+												<div className="mb-1 grid grid-cols-1 gap-1 text-xs sm:grid-cols-2">
+													<div className="sms-gateway-item__identity flex justify-between" style={{ borderRadius: token.borderRadius, background: token.colorPrimaryBgHover, color: token.colorText, padding: `${token.paddingXS}px ${token.paddingSM}px` }}>
+														<span>نام Gateway</span>
+														<b>{item.gateway_customer_name || "—"}</b>
+													</div>
+													<div className="sms-gateway-item__identity flex justify-between" style={{ borderRadius: token.borderRadius, background: token.colorPrimaryBgHover, color: token.colorText, padding: `${token.paddingXS}px ${token.paddingSM}px` }}>
+														<span>نوع</span>
+														<b>{item.company_type || "—"}</b>
+													</div>
+												</div>
+												<div className="grid grid-cols-2 gap-1 text-xs">
+													{item.operators.map(operator => (
+														<div key={`${operator.operator}-${operator.language}`} className="sms-gateway-item__operator flex justify-between" style={{ border: 0, borderRadius: token.borderRadius, background: token.colorBgContainer, color: token.colorText, padding: `${token.paddingXS}px ${token.paddingSM}px` }}>
+															<span>{operatorLabel(operator)}</span>
+															<b>{formatNumber(operator.value)}</b>
+														</div>
+													))}
+												</div>
+											</div>
+										);
+									})}
+								</div>
+							</>
+						)}
+			</div>
+		</div>
+	);
+
+	return (
+		<>
+			{inline
+				? <div className="sms-gateway-import-inline">{content}</div>
+				: (
+					<Modal
+						open={open}
+						onCancel={close}
+						footer={null}
+						width="min(1040px, calc(100vw - 32px))"
+						className="sms-gateway-import-modal"
+						styles={{ body: { maxHeight: "calc(100vh - 150px)", overflowY: "auto", overflowX: "hidden" } }}
+						destroyOnClose
+						title={(
+							<span>
+								<UploadOutlined />
+								{" "}
+								ثبت عملکرد از Gateway پیامک
+							</span>
+						)}
+					>
+						{content}
+					</Modal>
+				)}
 			<Modal open={!!successSummary} className="sms-gateway-success-modal" closable={false} footer={null} onCancel={close} width={460} centered>
 				<div className="text-center py-5" dir="rtl">
 					<CheckCircleOutlined className="sms-gateway-success-icon text-5xl" />

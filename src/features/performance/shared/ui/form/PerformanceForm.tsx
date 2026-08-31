@@ -1,9 +1,9 @@
 import type { Resolver, UseFormReturn } from "react-hook-form";
 import type { PerformanceFormValues } from "../../model/performance.form.types";
 import { notification } from "#src/utils";
-import { HistoryOutlined, UploadOutlined } from "@ant-design/icons";
+import { HistoryOutlined } from "@ant-design/icons";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "antd";
+import { Button, Radio } from "antd";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
@@ -14,6 +14,8 @@ import { ActionSection } from "./sections/ActionSection";
 import { FixedStartSection } from "./sections/FixedStartSection";
 import { SmsGatewayImportHistoryModal } from "./sections/SmsGatewayImportHistoryModal";
 import { SmsGatewayImportModal } from "./sections/SmsGatewayImportModal";
+import "#src/features/contract/shared/ui/form/contract-form.css";
+import "./performance-form.css";
 
 export type PerformanceSubmitIntent = "submit" | "submit_and_create_another" | "submit_and_edit";
 
@@ -185,12 +187,13 @@ export function PerformanceForm({
 	const module = serviceCode ? performanceServiceRegistry[serviceCode] : undefined;
 	const requiresMonthlyStatusContract = serviceCode === "openapi" || (serviceCode === "traffic" && trafficSubmitMode === "single");
 	const canShowServiceForm = year != null	&& month != null && (!requiresMonthlyStatusContract || contractId != null);
-	const showActionSection = canShowServiceForm && !(serviceCode === "traffic" && trafficSubmitMode === "template");
+	const [smsGatewayMode, setSmsGatewayMode] = useState<"manual" | "gateway">("manual");
 
 	const submitIntentRef = useRef<PerformanceSubmitIntent>("submit");
-	const [isSmsGatewayImportOpen, setIsSmsGatewayImportOpen] = useState(false);
 	const [isSmsGatewayImportHistoryOpen, setIsSmsGatewayImportHistoryOpen] = useState(false);
 	const isSmsGatewayImportSupported = serviceCode === "sms" || serviceCode === "sms-commission" || serviceCode === "sms_commission";
+	const isSmsGatewayMode = isSmsGatewayImportSupported && smsGatewayMode === "gateway";
+	const showActionSection = canShowServiceForm && !isSmsGatewayMode && !(serviceCode === "traffic" && trafficSubmitMode === "template");
 
 	const submit = form.handleSubmit(
 		async (values) => {
@@ -230,11 +233,12 @@ export function PerformanceForm({
 
 	const resetForm = () => {
 		form.reset(defaultValues);
+		setSmsGatewayMode("manual");
 	};
 
 	return (
 		<FormProvider {...form}>
-			<div className="w-full flex flex-col justify-center items-center gap-2">
+			<div className="contract-form performance-form w-full flex flex-col justify-center items-center gap-2">
 				<input type="hidden" {...form.register("serviceCode")} />
 				<input type="hidden" {...form.register("contractId")} />
 				<input type="hidden" {...form.register("contractModel")} />
@@ -242,33 +246,46 @@ export function PerformanceForm({
 				<input type="hidden" {...form.register("year")} />
 				<input type="hidden" {...form.register("month")} />
 
-				<FixedStartSection />
-
-				{isSmsGatewayImportSupported && !canShowServiceForm
-					? (
-						<div className="w-full flex flex-wrap gap-2">
-							<Button type="primary" icon={<UploadOutlined />} onClick={() => setIsSmsGatewayImportOpen(true)}>ثبت عملکرد از Gateway پیامک</Button>
-							<Button type="primary" icon={<HistoryOutlined />} onClick={() => setIsSmsGatewayImportHistoryOpen(true)}>تاریخچه دریافت‌های Gateway پیامک</Button>
-						</div>
-					)
-					: null}
-
-				<AnimatePresence mode="wait">
-					{module?.Fields && canShowServiceForm
+				<FixedStartSection
+					hideManualPeriod={isSmsGatewayMode}
+					periodModeToggle={isSmsGatewayImportSupported
 						? (
-							<motion.div
-								key={module.code}
-								initial={{ opacity: 0, y: 8 }}
-								animate={{ opacity: 1, y: 0 }}
-								exit={{ opacity: 0, y: -8 }}
-								transition={{ duration: 0.2 }}
-								className="w-full"
-							>
-								<module.Fields />
-							</motion.div>
+							<div className="flex flex-wrap items-center justify-between gap-3">
+								<Radio.Group
+									optionType="button"
+									buttonStyle="solid"
+									value={smsGatewayMode}
+									onChange={event => setSmsGatewayMode(event.target.value)}
+									options={[
+										{ label: "ثبت دستی عملکرد", value: "manual" },
+										{ label: "ثبت عملکرد از Gateway پیامک", value: "gateway" },
+									]}
+								/>
+								<Button icon={<HistoryOutlined />} onClick={() => setIsSmsGatewayImportHistoryOpen(true)}>تاریخچه دریافت‌های Gateway پیامک</Button>
+							</div>
 						)
 						: null}
-				</AnimatePresence>
+				>
+					<AnimatePresence mode="wait">
+						{module?.Fields && canShowServiceForm && !isSmsGatewayMode
+							? (
+								<motion.div
+									key={module.code}
+									initial={{ opacity: 0, y: 8 }}
+									animate={{ opacity: 1, y: 0 }}
+									exit={{ opacity: 0, y: -8 }}
+									transition={{ duration: 0.2 }}
+									className="w-full"
+								>
+									<module.Fields />
+								</motion.div>
+							)
+							: null}
+					</AnimatePresence>
+					{isSmsGatewayMode
+						? <SmsGatewayImportModal inline open onClose={() => setSmsGatewayMode("manual")} />
+						: null}
+				</FixedStartSection>
 
 				{showActionSection
 					? (
@@ -279,15 +296,13 @@ export function PerformanceForm({
 								onSubmitAndCreateAnother={() => triggerSubmit("submit_and_create_another")}
 								onSubmitAndEdit={() => triggerSubmit("submit_and_edit")}
 								onReset={resetForm}
-								showSmsGatewayImport={isSmsGatewayImportSupported && canShowServiceForm}
-								onSmsGatewayImport={() => setIsSmsGatewayImportOpen(true)}
+								showSmsGatewayImport={false}
 								onSmsGatewayImportHistory={() => setIsSmsGatewayImportHistoryOpen(true)}
 							/>
 						</div>
 					)
 					: null}
 
-				<SmsGatewayImportModal open={isSmsGatewayImportOpen} onClose={() => setIsSmsGatewayImportOpen(false)} />
 				<SmsGatewayImportHistoryModal open={isSmsGatewayImportHistoryOpen} onClose={() => setIsSmsGatewayImportHistoryOpen(false)} />
 			</div>
 		</FormProvider>

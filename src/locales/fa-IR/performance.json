@@ -133,6 +133,8 @@
 		"example450": "مثلاً 450"
 	},
 	"labels": {
+		"baseInformation": "اطلاعات پایه عملکرد",
+		"performanceValue": "مقدار عملکرد",
 		"serviceName": "نام سرویس",
 		"companyName": "نام شرکت",
 		"companyType": "نوع شرکت",
@@ -169,6 +171,7 @@
 		"registerSuccess": "عملکرد با موفقیت ثبت شد",
 		"updateSuccess": "عملکرد با موفقیت ویرایش شد",
 		"selectReportFiltersFirst": "ابتدا سرویس، سال و ماه های گزارش را انتخاب کنید",
+		"selectYearAndMonth": "لطفاً مقادیر سال و ماه را انتخاب نمایید",
 		"noReportData": "داده ای برای گزارش وجود ندارد",
 		"popupBlocked": "پنجره دانلود PDF توسط مرورگر مسدود شد"
 	},
@@ -275,7 +278,7 @@
 	"fields": {
 		"psp": {
 			"performanceValue": "مقدار عملکرد",
-			"monthlyRevenue": "درآمد این ماه (تومان)"
+			"monthlyRevenue": "درآمد این ماه"
 		},
 		"shahkar": {
 			"performanceValue": "مقدار عملکرد"

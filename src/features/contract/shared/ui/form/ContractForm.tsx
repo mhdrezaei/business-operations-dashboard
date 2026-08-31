@@ -1,6 +1,7 @@
 import type { Resolver, UseFormReturn } from "react-hook-form";
 import type { ContractFormValues, ContractServiceCode } from "../../model/contract.form.types";
 import { BasicContent } from "#src/components/index.js";
+import { FormActionBar } from "#src/shared/ui/form-action-bar";
 import { notification } from "#src/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, ConfigProvider, Empty } from "antd";
@@ -276,9 +277,13 @@ export function ContractForm({
 														/>
 													)
 													: (
-														<Button type="primary" onClick={() => triggerSubmit("submit")} loading={!!submitting} disabled={submitDisabled}>
-															{submitText}
-														</Button>
+														<FormActionBar
+															primaryActions={(
+																<Button type="primary" onClick={() => triggerSubmit("submit")} loading={!!submitting} disabled={submitDisabled}>
+																	{submitText}
+																</Button>
+															)}
+														/>
 													)}
 											</div>
 										)}
