@@ -5,7 +5,7 @@ import { BasicContent } from "#src/components";
 import { createSmsOperatorInvoice, createSmsOperatorInvoiceMonthlyReport, deleteSmsOperatorInvoice, fetchSmsOperatorInvoiceMonthlyReportStatus, fetchSmsOperatorInvoices, updateSmsOperatorInvoice } from "#src/features/performance/api/performances.api";
 import { BarChartOutlined, CheckCircleOutlined, DeleteOutlined, EditOutlined, ExclamationCircleOutlined, FileAddOutlined, FilePdfOutlined, FileTextOutlined, ReloadOutlined } from "@ant-design/icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Alert, Button, Card, Form, InputNumber, message, Modal, Popconfirm, Select, Space, Spin, Table, Tag, theme, Typography } from "antd";
+import { Alert, Button, Card, Form, InputNumber, Modal, Popconfirm, Select, Space, Spin, Table, Tag, Typography } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 /* eslint-disable style/max-statements-per-line -- This page keeps closely related request state transitions together. */
@@ -32,7 +32,6 @@ function print(report: SmsOperatorInvoiceMonthlyReport, onError: (content: strin
 }
 
 export function SmsGatewayOperatorInvoicesPage() {
-	const { token } = theme.useToken();
 	const [form] = Form.useForm<SmsOperatorInvoicePayload>(); const [reportForm] = Form.useForm<{ sh_year?: number, sh_month?: number }>(); const client = useQueryClient();
 	const invoices = useQuery({ queryKey: ["sms-gateway", "operator-invoices"], queryFn: fetchSmsOperatorInvoices });
 	const [saving, setSaving] = useState(false); const [loadingReport, setLoadingReport] = useState(false); const [report, setReport] = useState<SmsOperatorInvoiceMonthlyReport>();
@@ -41,7 +40,7 @@ export function SmsGatewayOperatorInvoicesPage() {
 	const [filterYear, setFilterYear] = useState<number>(); const [filterMonth, setFilterMonth] = useState<number>(); const [filterOperator, setFilterOperator] = useState<SmsOperatorCode>();
 	const year = Form.useWatch("sh_year", form); const month = Form.useWatch("sh_month", form);
 	const isReportProcessing = loadingReport && (!report || ["PENDING", "RUNNING"].includes(report.status));
-	const showMessage = (type: "error" | "success" | "warning", content: string) => message[type]({ content, style: { color: token.colorTextLightSolid } });
+	const showMessage = (type: "error" | "success" | "warning", content: string) => window.$message?.[type](content);
 	const selectNumberInput = (event: FocusEvent<HTMLInputElement>) => event.currentTarget.select();
 	const filtered = useMemo(() => (invoices.data ?? []).filter(x => (!filterYear || x.sh_year === filterYear) && (!filterMonth || x.sh_month === filterMonth) && (!filterOperator || x.operator === filterOperator)), [invoices.data, filterYear, filterMonth, filterOperator]);
 	const availableMonths = useMemo(() => !year ? monthOptions : monthOptions.filter(({ value }) => new Set((invoices.data ?? []).filter(x => x.sh_year === year && x.sh_month === value).map(x => x.operator)).size < OPS.length), [invoices.data, year]);
