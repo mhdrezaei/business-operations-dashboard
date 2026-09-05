@@ -37,7 +37,6 @@ export function SmsGatewayOperatorInvoicesPage() {
 	const invoices = useQuery({ queryKey: ["sms-gateway", "operator-invoices"], queryFn: fetchSmsOperatorInvoices });
 	const [saving, setSaving] = useState(false); const [loadingReport, setLoadingReport] = useState(false); const [report, setReport] = useState<SmsOperatorInvoiceMonthlyReport>();
 	const [editing, setEditing] = useState<SmsOperatorInvoice>(); const [editForm] = Form.useForm<SmsOperatorInvoicePayload>(); const [updating, setUpdating] = useState(false);
-	const [registeredInvoice, setRegisteredInvoice] = useState<SmsOperatorInvoicePayload>();
 	const reportRequestId = useRef(0);
 	const [filterYear, setFilterYear] = useState<number>(); const [filterMonth, setFilterMonth] = useState<number>(); const [filterOperator, setFilterOperator] = useState<SmsOperatorCode>();
 	const year = Form.useWatch("sh_year", form); const month = Form.useWatch("sh_month", form);
@@ -71,7 +70,7 @@ export function SmsGatewayOperatorInvoicesPage() {
 			form.setFieldValue("operator", undefined);
 	}, [month, year]);
 	const save = async (values: SmsOperatorInvoicePayload) => {
-		setSaving(true); try { const payload = { ...values, fa_count: Number(values.fa_count), en_count: Number(values.en_count), fa_cost: Number(values.fa_cost), en_cost: Number(values.en_cost) }; await createSmsOperatorInvoice(payload); setRegisteredInvoice(payload); form.resetFields(); await client.invalidateQueries({ queryKey: ["sms-gateway", "operator-invoices"] }); }
+		setSaving(true); try { const payload = { ...values, fa_count: Number(values.fa_count), en_count: Number(values.en_count), fa_cost: Number(values.fa_cost), en_cost: Number(values.en_cost) }; await createSmsOperatorInvoice(payload); window.$message?.success("فاکتور ارسالی اپراتور با موفقیت ثبت شد."); form.resetFields(); await client.invalidateQueries({ queryKey: ["sms-gateway", "operator-invoices"] }); }
 		catch (e) { const response = (e as { response?: Response }).response; showMessage("error", response ? `ثبت فاکتور ناموفق بود (کد ${response.status}).` : "ارتباط با سرور برقرار نشد."); }
 		finally { setSaving(false); }
 	};
@@ -245,38 +244,6 @@ export function SmsGatewayOperatorInvoicesPage() {
 							<Form.Item name="en_cost" label="هزینه انگلیسی (ریال)"><InputNumber min={0} precision={0} className="w-full" onFocus={selectNumberInput} /></Form.Item>
 						</div>
 					</Form>
-				</Modal>
-				<Modal
-					centered
-					className="sms-gateway-success-modal"
-					closable={false}
-					footer={null}
-					onCancel={() => setRegisteredInvoice(undefined)}
-					open={Boolean(registeredInvoice)}
-					width={460}
-				>
-					{registeredInvoice && (
-						<div className="py-5 text-center" dir="rtl">
-							<CheckCircleOutlined className="sms-gateway-success-icon text-5xl" />
-							<h3 className="mb-1 mt-5 text-lg font-bold">موفقیت‌آمیز</h3>
-							<p className="mb-5 text-sm opacity-70">فاکتور ارسالی اپراتور با موفقیت ثبت شد.</p>
-							<div className="space-y-2 text-right">
-								<div className="sms-gateway-success-row flex items-center justify-between rounded-lg px-3 py-2 text-sm">
-									<span>اپراتور</span>
-									<b>{name(registeredInvoice.operator)}</b>
-								</div>
-								<div className="sms-gateway-success-row flex items-center justify-between rounded-lg px-3 py-2 text-sm">
-									<span>دوره</span>
-									<b>
-										{MONTHS[registeredInvoice.sh_month - 1]}
-										{" "}
-										{registeredInvoice.sh_year}
-									</b>
-								</div>
-							</div>
-							<Button className="mt-5" type="primary" onClick={() => setRegisteredInvoice(undefined)}>باشه</Button>
-						</div>
-					)}
 				</Modal>
 			</Space>
 		</BasicContent>
