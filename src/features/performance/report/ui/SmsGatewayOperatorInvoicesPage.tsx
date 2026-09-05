@@ -6,7 +6,7 @@ import { createSmsOperatorInvoice, createSmsOperatorInvoiceMonthlyReport, delete
 import { TableActionEditIcon, TableActionTrashIcon } from "#src/icons";
 import { BarChartOutlined, CheckCircleOutlined, ExclamationCircleOutlined, FileAddOutlined, FilePdfOutlined } from "@ant-design/icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Alert, Button, Card, Form, InputNumber, message, Modal, Popconfirm, Select, Space, Spin, Table, Tag, theme, Typography } from "antd";
+import { Alert, Button, Card, Form, InputNumber, message, Modal, Popconfirm, Select, Space, Spin, Tag, theme, Typography } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 /* eslint-disable style/max-statements-per-line -- This page keeps closely related request state transitions together. */
@@ -18,6 +18,8 @@ const number = (v: number | null | undefined) => Number(v ?? 0).toLocaleString("
 const name = (v: SmsOperatorCode) => OPS.find(x => x.value === v)?.label ?? v;
 const yearOptions = YEARS.map(value => ({ label: String(value), value }));
 const monthOptions = MONTHS.map((label, i) => ({ label, value: i + 1 }));
+type SmsOperatorInvoiceMonthlyTotal = NonNullable<SmsOperatorInvoiceMonthlyReport["operator_totals"]>[number];
+type SmsOperatorInvoiceMonthlyRow = NonNullable<SmsOperatorInvoiceMonthlyReport["rows"]>[number];
 
 function invoiceStatus(invoice: { invoice_registered: boolean, message?: string }) {
 	return invoice.invoice_registered
@@ -212,55 +214,46 @@ export function SmsGatewayOperatorInvoicesPage() {
 								سال
 								{report.sh_year}
 							</Typography.Text>
-							<div className="mb-5 grid grid-cols-1 gap-3 lg:grid-cols-3">
-								{(report.operator_totals ?? []).map((item) => {
-									const difference = Number(item.manual_invoice.count ?? 0) - Number(item.internal_system.total ?? 0);
-									const diffClass = difference === 0 ? "text-green-500" : difference > 0 ? "text-yellow-500" : "text-red-400";
-
-									return (
-										<Card
-											key={item.operator}
-											size="small"
-											title={(
-												<div className="flex items-center justify-between">
-													<b>{name(item.operator)}</b>
-													{invoiceStatus(item.manual_invoice)}
-												</div>
-											)}
-										>
-											<div className="grid grid-cols-3 pb-2 text-center text-xs text-secondary">
-												<span />
-												<span>تعداد</span>
-												<span>هزینه (ریال)</span>
-											</div>
-											<div className="text-sm">
-												<div className="grid grid-cols-3 border-t border-[var(--ant-color-border-secondary)] py-2">
-													<span>فاکتور ارسالی اپراتور</span>
-													<b className="text-center">{number(item.manual_invoice.count)}</b>
-													<b className="text-center">{number(item.manual_invoice.cost)}</b>
-												</div>
-												<div className="grid grid-cols-3 border-t border-[var(--ant-color-border-secondary)] py-2">
-													<span>سامانه نگاه</span>
-													<b className="text-center">{number(item.internal_system.total)}</b>
-													<b className="text-center">{number(item.internal_system.cost)}</b>
-												</div>
-												<div className="grid grid-cols-3 border-t border-[var(--ant-color-border-secondary)] py-2">
-													<span>سامانه Gateway</span>
-													<b className="text-center">{number(item.gateway_total)}</b>
-													<span className="text-center">—</span>
-												</div>
-												<div className="grid grid-cols-3 border-t border-[var(--ant-color-border-secondary)] pt-2">
-													<span>اختلاف فاکتور و نگاه</span>
-													<b className={`text-center ${diffClass}`}>{number(difference)}</b>
-													<span className="text-center">—</span>
-												</div>
-											</div>
-										</Card>
-									);
-								})}
-							</div>
-							<Typography.Text strong className="mb-2 block">به تفکیک اپراتور و زبان</Typography.Text>
-							<Table size="small" pagination={false} scroll={{ x: 1300 }} rowKey={r => `${r.operator}-${r.language}`} dataSource={report.rows ?? []} columns={[{ title: "اپراتور", dataIndex: "operator", render: name }, { title: "زبان", dataIndex: "language", render: v => v === "FA" ? "فارسی" : "انگلیسی" }, { title: "وضعیت فاکتور ارسالی اپراتور", dataIndex: "manual_invoice", render: invoiceStatus }, { title: "تعداد فاکتور ارسالی اپراتور", dataIndex: ["manual_invoice", "count"], render: number }, { title: "هزینه فاکتور ارسالی اپراتور (ریال)", dataIndex: ["manual_invoice", "cost"], render: number }, { title: "تعداد سامانه نگاه", dataIndex: "internal_system_total", render: number }, { title: "هزینه سامانه نگاه (ریال)", dataIndex: "internal_system_cost", render: number }, { title: "تعداد سامانه Gateway", dataIndex: "gateway_total", render: number }]} />
+							<BasicTable<SmsOperatorInvoiceMonthlyTotal>
+								rowKey="operator"
+								search={false}
+								pagination={false}
+								filterTitle="گزارش مقایسه‌ای ماهانه"
+								filterSubtitle="جمع کل فاکتور ارسالی، سامانه نگاه و Gateway برای هر اپراتور."
+								tableTitle="جمع کل هر اپراتور (فارسی + انگلیسی)"
+								tableSubtitle={`دوره گزارش: ${MONTHS[report.sh_month - 1]} ماه سال ${report.sh_year}`}
+								dataSource={report.operator_totals ?? []}
+								columns={[
+									{ title: "اپراتور", dataIndex: "operator", render: (_, item) => <Tag color="blue">{name(item.operator)}</Tag> },
+									{ title: "وضعیت فاکتور", dataIndex: "manual_invoice", render: (_, item) => invoiceStatus(item.manual_invoice) },
+									{ title: "تعداد فاکتور", dataIndex: ["manual_invoice", "count"], render: (_, item) => number(item.manual_invoice.count) },
+									{ title: "هزینه فاکتور (ریال)", dataIndex: ["manual_invoice", "cost"], render: (_, item) => number(item.manual_invoice.cost) },
+									{ title: "تعداد سامانه نگاه", dataIndex: ["internal_system", "total"], render: (_, item) => number(item.internal_system.total) },
+									{ title: "هزینه سامانه نگاه (ریال)", dataIndex: ["internal_system", "cost"], render: (_, item) => number(item.internal_system.cost) },
+									{ title: "تعداد Gateway", dataIndex: "gateway_total", render: (_, item) => number(item.gateway_total) },
+									{ title: "اختلاف تعداد", key: "difference", render: (_, item) => number(Number(item.manual_invoice.count ?? 0) - Number(item.internal_system.total ?? 0)) },
+								]}
+							/>
+							<BasicTable<SmsOperatorInvoiceMonthlyRow>
+								rowKey={item => `${item.operator}-${item.language}`}
+								search={false}
+								pagination={false}
+								filterTitle="گزارش تفکیکی اپراتور و زبان"
+								filterSubtitle="جزئیات فاکتور ارسالی هر اپراتور به تفکیک زبان."
+								tableTitle="به تفکیک اپراتور و زبان"
+								tableSubtitle="مقایسه فاکتور ارسالی اپراتور با سامانه نگاه و Gateway."
+								dataSource={report.rows ?? []}
+								columns={[
+									{ title: "اپراتور", dataIndex: "operator", render: (_, item) => name(item.operator) },
+									{ title: "زبان", dataIndex: "language", render: (_, item) => item.language === "FA" ? "فارسی" : "انگلیسی" },
+									{ title: "وضعیت فاکتور ارسالی اپراتور", dataIndex: "manual_invoice", render: (_, item) => invoiceStatus(item.manual_invoice) },
+									{ title: "تعداد فاکتور ارسالی اپراتور", dataIndex: ["manual_invoice", "count"], render: (_, item) => number(item.manual_invoice.count) },
+									{ title: "هزینه فاکتور ارسالی اپراتور (ریال)", dataIndex: ["manual_invoice", "cost"], render: (_, item) => number(item.manual_invoice.cost) },
+									{ title: "تعداد سامانه نگاه", dataIndex: "internal_system_total", render: (_, item) => number(item.internal_system_total) },
+									{ title: "هزینه سامانه نگاه (ریال)", dataIndex: "internal_system_cost", render: (_, item) => number(item.internal_system_cost) },
+									{ title: "تعداد سامانه Gateway", dataIndex: "gateway_total", render: (_, item) => number(item.gateway_total) },
+								]}
+							/>
 						</>
 					)}
 				</Card>
