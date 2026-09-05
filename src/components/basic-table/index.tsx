@@ -33,6 +33,8 @@ export interface BasicTableProps<D, U, V> extends ProTableProps<D, U, V> {
 	filterTitle?: string
 	/** توضیح کوتاه هدر فیلتر */
 	filterSubtitle?: string
+	/** نمایش سربرگ فیلتر؛ برای جدول‌های بدون جستجو قابل غیرفعال‌سازی است */
+	showFilterHeading?: boolean
 	/** عنوان هدر جدول؛ در صورت عدم تعیین از headerTitle استفاده می‌شود */
 	tableTitle?: ReactNode
 	/** توضیح کوتاه هدر جدول */
@@ -57,6 +59,7 @@ export function BasicTable<
 	const { adaptive } = props;
 	const filterTitle = props.filterTitle ?? (typeof props.headerTitle === "string" ? `جستجوی ${props.headerTitle}` : "جستجو");
 	const filterSubtitle = props.filterSubtitle ?? "برای جستجو و فیلتر، معیارهای موردنظر را انتخاب کنید.";
+	const showFilterHeading = props.showFilterHeading ?? true;
 	const tableTitle = props.tableTitle ?? props.headerTitle ?? "لیست موارد";
 	const tableSubtitle = props.tableSubtitle ?? "موارد ثبت‌شده را مشاهده و مدیریت کنید.";
 	const tableIcon = props.tableIcon ?? <TableHeaderIcon />;
@@ -307,37 +310,39 @@ export function BasicTable<
 				"--basic-table-cell-padding-block": `${token.paddingSM}px`,
 			} as CSSProperties}
 		>
-			<div
-				className="basic-table-filter-heading"
-				role="button"
-				tabIndex={0}
-				aria-expanded={!filterCollapsed}
-				onClick={() => setFilterCollapsed(current => !current)}
-				onKeyDown={(event) => {
-					if (event.key === "Enter" || event.key === " ") {
-						event.preventDefault();
-						setFilterCollapsed(current => !current);
-					}
-				}}
-			>
-				<span className="basic-table-filter-heading__icon"><ContractFilterSearchIcon /></span>
-				<div className="basic-table-filter-heading__copy">
-					<div className="basic-table-filter-heading__title">{filterTitle}</div>
-					<div className="basic-table-filter-heading__subtitle">{filterSubtitle}</div>
-				</div>
-				<button
-					type="button"
-					className="basic-table-filter-toggle"
-					aria-label={filterCollapsed ? "باز کردن فیلترها" : "بستن فیلترها"}
+			{showFilterHeading && (
+				<div
+					className="basic-table-filter-heading"
+					role="button"
+					tabIndex={0}
 					aria-expanded={!filterCollapsed}
-					onClick={(event) => {
-						event.stopPropagation();
-						setFilterCollapsed(current => !current);
+					onClick={() => setFilterCollapsed(current => !current)}
+					onKeyDown={(event) => {
+						if (event.key === "Enter" || event.key === " ") {
+							event.preventDefault();
+							setFilterCollapsed(current => !current);
+						}
 					}}
 				>
-					{filterCollapsed ? <DownOutlined /> : <UpOutlined />}
-				</button>
-			</div>
+					<span className="basic-table-filter-heading__icon"><ContractFilterSearchIcon /></span>
+					<div className="basic-table-filter-heading__copy">
+						<div className="basic-table-filter-heading__title">{filterTitle}</div>
+						<div className="basic-table-filter-heading__subtitle">{filterSubtitle}</div>
+					</div>
+					<button
+						type="button"
+						className="basic-table-filter-toggle"
+						aria-label={filterCollapsed ? "باز کردن فیلترها" : "بستن فیلترها"}
+						aria-expanded={!filterCollapsed}
+						onClick={(event) => {
+							event.stopPropagation();
+							setFilterCollapsed(current => !current);
+						}}
+					>
+						{filterCollapsed ? <DownOutlined /> : <UpOutlined />}
+					</button>
+				</div>
+			)}
 			<ProTable
 				cardBordered
 				rowKey="id"

@@ -8,6 +8,7 @@ import { BarChartOutlined, CheckCircleOutlined, ExclamationCircleOutlined, FileA
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert, Button, Card, Form, InputNumber, Modal, Popconfirm, Select, Space, Spin, Tag, Typography } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { openSmsOperatorInvoicesPdfPrint } from "./operator-invoices-pdf";
 
 /* eslint-disable style/max-statements-per-line -- This page keeps closely related request state transitions together. */
 
@@ -25,13 +26,6 @@ function invoiceStatus(invoice: { invoice_registered: boolean, message?: string 
 	return invoice.invoice_registered
 		? <Tag color="success" icon={<CheckCircleOutlined />}>ثبت شده</Tag>
 		: <Tag color="warning" icon={<ExclamationCircleOutlined />}>{invoice.message ?? "ثبت نشده"}</Tag>;
-}
-
-function print(report: SmsOperatorInvoiceMonthlyReport, onError: (content: string) => void) {
-	const title = `گزارش مقایسه‌ای ماهانه — ${MONTHS[report.sh_month - 1]} ${report.sh_year}`;
-	const body = (report.rows ?? []).map(r => `<tr><td>${name(r.operator)}</td><td>${r.language === "FA" ? "فارسی" : "انگلیسی"}</td><td>${number(r.gateway_total)}</td><td>${number(r.manual_invoice.count)}</td><td>${number(r.manual_invoice.cost)}</td><td>${number(r.internal_system_total)}</td><td>${number(r.internal_system_cost)}</td></tr>`).join("");
-	const win = window.open("", "_blank"); if (!win) { onError("باز شدن پنجره PDF مسدود شده است."); return; }
-	win.document.write(`<!doctype html><html dir="rtl"><head><meta charset="utf-8"><title>${title}</title><style>body{font-family:Tahoma;padding:28px}table{border-collapse:collapse;width:100%;margin-top:24px}th,td{border:1px solid #aaa;padding:8px;text-align:center}th{background:#eee}</style></head><body><h2>${title}</h2><table><tr><th>اپراتور</th><th>زبان</th><th>Gateway</th><th>تعداد فاکتور</th><th>هزینه فاکتور</th><th>تعداد سیستم داخلی</th><th>هزینه سیستم داخلی</th></tr>${body}</table></body></html>`); win.document.close(); win.print();
 }
 
 export function SmsGatewayOperatorInvoicesPage() {
@@ -193,7 +187,22 @@ export function SmsGatewayOperatorInvoicesPage() {
 							<Form.Item name="sh_month" label="ماه (شمسی)"><Select options={monthOptions} placeholder="انتخاب کنید" /></Form.Item>
 							<div className="flex items-end gap-2 pb-6">
 								<Button type="primary" icon={<BarChartOutlined />} htmlType="submit" loading={isReportProcessing}>نمایش گزارش</Button>
-								<Button icon={<FilePdfOutlined />} disabled={report?.status !== "SUCCESS"} onClick={() => report && print(report, content => showMessage("error", content))}>دانلود PDF</Button>
+								<Button
+									icon={<FilePdfOutlined />}
+									disabled={report?.status !== "SUCCESS"}
+									onClick={() => {
+										if (!report)
+											return;
+										try {
+											openSmsOperatorInvoicesPdfPrint({ report, monthLabel: MONTHS[report.sh_month - 1], operatorName: name, formatNumber: number });
+										}
+										catch (error) {
+											showMessage("error", error instanceof Error && error.message === "POPUP_BLOCKED" ? "پاپ‌آپ مرورگر مسدود است. لطفاً آن را فعال کنید." : "ساخت PDF ناموفق بود.");
+										}
+									}}
+								>
+									دانلود PDF
+								</Button>
 							</div>
 						</div>
 					</Form>
@@ -216,9 +225,8 @@ export function SmsGatewayOperatorInvoicesPage() {
 							<BasicTable<SmsOperatorInvoiceMonthlyTotal>
 								rowKey="operator"
 								search={false}
+								showFilterHeading={false}
 								pagination={false}
-								filterTitle="گزارش مقایسه‌ای ماهانه"
-								filterSubtitle="جمع کل فاکتور ارسالی، سامانه نگاه و Gateway برای هر اپراتور."
 								tableTitle="جمع کل هر اپراتور (فارسی + انگلیسی)"
 								tableSubtitle={`دوره گزارش: ${MONTHS[report.sh_month - 1]} ماه سال ${report.sh_year}`}
 								dataSource={report.operator_totals ?? []}
@@ -236,9 +244,8 @@ export function SmsGatewayOperatorInvoicesPage() {
 							<BasicTable<SmsOperatorInvoiceMonthlyRow>
 								rowKey={item => `${item.operator}-${item.language}`}
 								search={false}
+								showFilterHeading={false}
 								pagination={false}
-								filterTitle="گزارش تفکیکی اپراتور و زبان"
-								filterSubtitle="جزئیات فاکتور ارسالی هر اپراتور به تفکیک زبان."
 								tableTitle="به تفکیک اپراتور و زبان"
 								tableSubtitle="مقایسه فاکتور ارسالی اپراتور با سامانه نگاه و Gateway."
 								dataSource={report.rows ?? []}
