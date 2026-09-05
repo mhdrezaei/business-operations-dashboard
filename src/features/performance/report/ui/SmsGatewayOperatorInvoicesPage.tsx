@@ -150,8 +150,8 @@ export function SmsGatewayOperatorInvoicesPage() {
 					rowKey="id"
 					columns={invoiceColumns}
 					actionRef={invoicesTableActionRef}
-					filterTitle="جستجوی فاکتورهای ارسالی اپراتور"
-					filterSubtitle="برای مشاهده فاکتورهای هر اپراتور، سال و ماه را انتخاب کنید."
+					search={false}
+					showFilterHeading={false}
 					tableTitle="لیست فاکتورهای ارسالی اپراتور"
 					tableSubtitle="فاکتورهای ثبت‌شده را مشاهده، ویرایش یا حذف کنید."
 					request={async (params) => {
