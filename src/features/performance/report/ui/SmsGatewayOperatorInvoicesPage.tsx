@@ -1,9 +1,10 @@
 import type { SmsOperatorCode, SmsOperatorInvoice, SmsOperatorInvoiceMonthlyReport, SmsOperatorInvoicePayload } from "#src/features/performance/api/performances.api";
-import type { ColumnsType } from "antd/es/table";
-import type { FocusEvent } from "react";
-import { BasicContent } from "#src/components";
+import type { ActionType, ProColumns, ProCoreActionType } from "@ant-design/pro-components";
+import type { FocusEvent, KeyboardEvent } from "react";
+import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import { createSmsOperatorInvoice, createSmsOperatorInvoiceMonthlyReport, deleteSmsOperatorInvoice, fetchSmsOperatorInvoiceMonthlyReportStatus, fetchSmsOperatorInvoices, updateSmsOperatorInvoice } from "#src/features/performance/api/performances.api";
-import { BarChartOutlined, CheckCircleOutlined, DeleteOutlined, EditOutlined, ExclamationCircleOutlined, FileAddOutlined, FilePdfOutlined, FileTextOutlined, ReloadOutlined } from "@ant-design/icons";
+import { TableActionEditIcon, TableActionTrashIcon } from "#src/icons";
+import { BarChartOutlined, CheckCircleOutlined, ExclamationCircleOutlined, FileAddOutlined, FilePdfOutlined } from "@ant-design/icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert, Button, Card, Form, InputNumber, message, Modal, Popconfirm, Select, Space, Spin, Table, Tag, theme, Typography } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -35,15 +36,20 @@ export function SmsGatewayOperatorInvoicesPage() {
 	const { token } = theme.useToken();
 	const [form] = Form.useForm<SmsOperatorInvoicePayload>(); const [reportForm] = Form.useForm<{ sh_year?: number, sh_month?: number }>(); const client = useQueryClient();
 	const invoices = useQuery({ queryKey: ["sms-gateway", "operator-invoices"], queryFn: fetchSmsOperatorInvoices });
+	const invoicesTableActionRef = useRef<ActionType>(null);
 	const [saving, setSaving] = useState(false); const [loadingReport, setLoadingReport] = useState(false); const [report, setReport] = useState<SmsOperatorInvoiceMonthlyReport>();
 	const [editing, setEditing] = useState<SmsOperatorInvoice>(); const [editForm] = Form.useForm<SmsOperatorInvoicePayload>(); const [updating, setUpdating] = useState(false);
 	const reportRequestId = useRef(0);
-	const [filterYear, setFilterYear] = useState<number>(); const [filterMonth, setFilterMonth] = useState<number>(); const [filterOperator, setFilterOperator] = useState<SmsOperatorCode>();
 	const year = Form.useWatch("sh_year", form); const month = Form.useWatch("sh_month", form);
 	const isReportProcessing = loadingReport && (!report || ["PENDING", "RUNNING"].includes(report.status));
 	const showMessage = (type: "error" | "success" | "warning", content: string) => message[type]({ content, style: { color: token.colorTextLightSolid } });
 	const selectNumberInput = (event: FocusEvent<HTMLInputElement>) => event.currentTarget.select();
-	const filtered = useMemo(() => (invoices.data ?? []).filter(x => (!filterYear || x.sh_year === filterYear) && (!filterMonth || x.sh_month === filterMonth) && (!filterOperator || x.operator === filterOperator)), [invoices.data, filterYear, filterMonth, filterOperator]);
+	const preventNonNumericInput = (event: KeyboardEvent<HTMLInputElement>) => {
+		if (event.ctrlKey || event.metaKey || ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab", "Home", "End"].includes(event.key))
+			return;
+		if (!/^\d$/.test(event.key))
+			event.preventDefault();
+	};
 	const availableMonths = useMemo(() => !year ? monthOptions : monthOptions.filter(({ value }) => new Set((invoices.data ?? []).filter(x => x.sh_year === year && x.sh_month === value).map(x => x.operator)).size < OPS.length), [invoices.data, year]);
 	const activeOps = useMemo(() => !year || !month ? [] : OPS.filter(op => !(invoices.data ?? []).some(x => x.sh_year === year && x.sh_month === month && x.operator === op.value)), [invoices.data, month, year]);
 	const createReport = async (values: { sh_year?: number, sh_month?: number }) => {
@@ -70,27 +76,44 @@ export function SmsGatewayOperatorInvoicesPage() {
 			form.setFieldValue("operator", undefined);
 	}, [month, year]);
 	const save = async (values: SmsOperatorInvoicePayload) => {
-		setSaving(true); try { const payload = { ...values, fa_count: Number(values.fa_count), en_count: Number(values.en_count), fa_cost: Number(values.fa_cost), en_cost: Number(values.en_cost) }; await createSmsOperatorInvoice(payload); window.$message?.success("فاکتور ارسالی اپراتور با موفقیت ثبت شد."); form.resetFields(); await client.invalidateQueries({ queryKey: ["sms-gateway", "operator-invoices"] }); }
+		setSaving(true); try { const payload = { ...values, fa_count: Number(values.fa_count), en_count: Number(values.en_count), fa_cost: Number(values.fa_cost), en_cost: Number(values.en_cost) }; await createSmsOperatorInvoice(payload); window.$message?.success("فاکتور ارسالی اپراتور با موفقیت ثبت شد."); form.resetFields(); await client.invalidateQueries({ queryKey: ["sms-gateway", "operator-invoices"] }); await invoicesTableActionRef.current?.reload?.(); }
 		catch (e) { const response = (e as { response?: Response }).response; showMessage("error", response ? `ثبت فاکتور ناموفق بود (کد ${response.status}).` : "ارتباط با سرور برقرار نشد."); }
 		finally { setSaving(false); }
 	};
-	const remove = async (item: SmsOperatorInvoice) => {
-		try { await deleteSmsOperatorInvoice(item.id); showMessage("success", "فاکتور حذف شد."); await client.invalidateQueries({ queryKey: ["sms-gateway", "operator-invoices"] }); }
+	const remove = async (item: SmsOperatorInvoice, action?: ProCoreActionType<object>) => {
+		try { await deleteSmsOperatorInvoice(item.id); showMessage("success", "فاکتور حذف شد."); await client.invalidateQueries({ queryKey: ["sms-gateway", "operator-invoices"] }); await action?.reload?.(); }
 		catch { showMessage("error", "حذف فاکتور ناموفق بود."); }
 	};
 	const openEdit = (item: SmsOperatorInvoice) => { setEditing(item); editForm.setFieldsValue(item); };
 	const update = async (values: SmsOperatorInvoicePayload) => {
 		if (!editing)
-			return; setUpdating(true); try { await updateSmsOperatorInvoice(editing.id, { ...values, fa_count: Number(values.fa_count), en_count: Number(values.en_count), fa_cost: Number(values.fa_cost), en_cost: Number(values.en_cost) }); showMessage("success", "فاکتور ویرایش شد."); setEditing(undefined); await client.invalidateQueries({ queryKey: ["sms-gateway", "operator-invoices"] }); }
+			return; setUpdating(true); try { await updateSmsOperatorInvoice(editing.id, { ...values, fa_count: Number(values.fa_count), en_count: Number(values.en_count), fa_cost: Number(values.fa_cost), en_cost: Number(values.en_cost) }); showMessage("success", "فاکتور ویرایش شد."); setEditing(undefined); await client.invalidateQueries({ queryKey: ["sms-gateway", "operator-invoices"] }); await invoicesTableActionRef.current?.reload?.(); }
 		catch { showMessage("error", "ویرایش فاکتور ناموفق بود."); }
 		finally { setUpdating(false); }
 	};
-	const invoiceColumns: ColumnsType<SmsOperatorInvoice> = [{ title: "اپراتور", dataIndex: "operator", render: v => <Tag color="blue">{name(v)}</Tag> }, { title: "سال", dataIndex: "sh_year", align: "center", render: v => String(v) }, { title: "ماه", dataIndex: "sh_month", align: "center", render: v => MONTHS[Number(v) - 1] }, { title: "تعداد فارسی", dataIndex: "fa_count", render: number }, { title: "تعداد انگلیسی", dataIndex: "en_count", render: number }, { title: <Typography.Text type="success">هزینه فارسی (ریال)</Typography.Text>, dataIndex: "fa_cost", render: value => <Typography.Text type="success">{number(value)}</Typography.Text> }, { title: <Typography.Text type="success">هزینه انگلیسی (ریال)</Typography.Text>, dataIndex: "en_cost", render: value => <Typography.Text type="success">{number(value)}</Typography.Text> }, { title: "عملیات", key: "actions", align: "center", render: (_, item) => (
-		<Space>
-			<Button type="text" icon={<EditOutlined />} onClick={() => openEdit(item)} aria-label="ویرایش" />
-			<Popconfirm title="فاکتور حذف شود؟" okText="حذف" cancelText="انصراف" onConfirm={() => remove(item)}><Button type="text" danger icon={<DeleteOutlined />} aria-label="حذف" /></Popconfirm>
-		</Space>
-	) }];
+	const invoiceColumns: ProColumns<SmsOperatorInvoice>[] = [
+		{ title: "اپراتور", dataIndex: "operator", valueType: "select", valueEnum: Object.fromEntries(OPS.map(({ label, value }) => [value, { text: label }])), render: (_, item) => <Tag color="blue">{name(item.operator)}</Tag> },
+		{ title: "سال", dataIndex: "sh_year", align: "center", valueType: "select", valueEnum: Object.fromEntries(yearOptions.map(({ label, value }) => [value, { text: label }])), render: (_, item) => String(item.sh_year) },
+		{ title: "ماه", dataIndex: "sh_month", align: "center", valueType: "select", valueEnum: Object.fromEntries(monthOptions.map(({ label, value }) => [value, { text: label }])), render: (_, item) => MONTHS[item.sh_month - 1] },
+		{ title: "تعداد فارسی", dataIndex: "fa_count", search: false, render: (_, item) => number(item.fa_count) },
+		{ title: "تعداد انگلیسی", dataIndex: "en_count", search: false, render: (_, item) => number(item.en_count) },
+		{ title: "هزینه فارسی (ریال)", dataIndex: "fa_cost", search: false, render: (_, item) => <Typography.Text type="success">{number(item.fa_cost)}</Typography.Text> },
+		{ title: "هزینه انگلیسی (ریال)", dataIndex: "en_cost", search: false, render: (_, item) => <Typography.Text type="success">{number(item.en_cost)}</Typography.Text> },
+		{
+			title: "عملیات",
+			valueType: "option",
+			key: "actions",
+			width: 120,
+			fixed: "right",
+			align: "center",
+			render: (_, item, __, action) => [
+				<BasicButton key="edit" type="link" size="large" title="ویرایش فاکتور" icon={<TableActionEditIcon />} onClick={() => openEdit(item)} />,
+				<Popconfirm key="delete" title="فاکتور حذف شود؟" okText="حذف" cancelText="انصراف" onConfirm={() => remove(item, action)}>
+					<BasicButton type="link" size="large" title="حذف فاکتور" icon={<TableActionTrashIcon />} />
+				</Popconfirm>,
+			],
+		},
+	];
 	return (
 		<BasicContent className="h-full overflow-y-auto">
 			<Space direction="vertical" size={16} className="w-full">
@@ -105,7 +128,7 @@ export function SmsGatewayOperatorInvoicesPage() {
 					</Space>
 				)}
 				>
-					<Form form={form} layout="vertical" onFinish={save} initialValues={{ fa_count: 0, en_count: 0, fa_cost: 0, en_cost: 0 }}>
+					<Form form={form} layout="vertical" onFinish={save} initialValues={{ fa_cost: 0, en_cost: 0 }}>
 						<div className="grid grid-cols-1 gap-x-4 md:grid-cols-3">
 							<Form.Item name="sh_year" label="سال (شمسی)" rules={[{ required: true }]}><Select options={yearOptions} placeholder="انتخاب کنید" /></Form.Item>
 							<Form.Item name="sh_month" label="ماه (شمسی)" rules={[{ required: true }]}><Select options={availableMonths} placeholder={!year ? "ابتدا سال را انتخاب کنید" : "انتخاب کنید"} disabled={!year} /></Form.Item>
@@ -114,37 +137,48 @@ export function SmsGatewayOperatorInvoicesPage() {
 						<div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
 							<Card size="small" title="تعداد پیامک">
 								<div className="grid grid-cols-2 gap-4">
-									<Form.Item name="fa_count" label="فارسی"><InputNumber min={0} precision={0} className="w-full" onFocus={selectNumberInput} /></Form.Item>
-									<Form.Item name="en_count" label="انگلیسی"><InputNumber min={0} precision={0} className="w-full" onFocus={selectNumberInput} /></Form.Item>
+									<Form.Item name="fa_count" label="فارسی" rules={[{ required: true, validator: (_, value) => value == null || value === "" ? Promise.reject(new Error("تعداد پیامک فارسی الزامی است.")) : Promise.resolve() }]}><InputNumber min={0} precision={0} placeholder="0" className="w-full" onFocus={selectNumberInput} onKeyDown={preventNonNumericInput} /></Form.Item>
+									<Form.Item name="en_count" label="انگلیسی" rules={[{ required: true, validator: (_, value) => value == null || value === "" ? Promise.reject(new Error("تعداد پیامک انگلیسی الزامی است.")) : Promise.resolve() }]}><InputNumber min={0} precision={0} placeholder="0" className="w-full" onFocus={selectNumberInput} onKeyDown={preventNonNumericInput} /></Form.Item>
 								</div>
 							</Card>
 							<Card size="small" title="هزینه پیامک (ریال)">
 								<div className="grid grid-cols-2 gap-4">
-									<Form.Item name="fa_cost" label="فارسی"><InputNumber min={0} precision={0} className="w-full" onFocus={selectNumberInput} /></Form.Item>
-									<Form.Item name="en_cost" label="انگلیسی"><InputNumber min={0} precision={0} className="w-full" onFocus={selectNumberInput} /></Form.Item>
+									<Form.Item name="fa_cost" label="فارسی"><InputNumber min={0} precision={0} className="w-full" onFocus={selectNumberInput} onKeyDown={preventNonNumericInput} /></Form.Item>
+									<Form.Item name="en_cost" label="انگلیسی"><InputNumber min={0} precision={0} className="w-full" onFocus={selectNumberInput} onKeyDown={preventNonNumericInput} /></Form.Item>
 								</div>
 							</Card>
 						</div>
 						<div className="mt-2 flex justify-end"><Button type="primary" htmlType="submit" loading={saving} disabled={activeOps.length === 0}>ثبت فاکتور</Button></div>
 					</Form>
 				</Card>
-				<Card
-					title={(
-						<Space>
-							<FileTextOutlined />
-							لیست فاکتورهای ارسالی اپراتور
-						</Space>
-					)}
-					extra={<Button icon={<ReloadOutlined />} onClick={() => invoices.refetch()}>به‌روزرسانی</Button>}
-				>
-					<div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-						<Select allowClear options={yearOptions} placeholder="فیلتر سال" onChange={setFilterYear} />
-						<Select allowClear options={monthOptions} placeholder="فیلتر ماه" onChange={setFilterMonth} />
-						<Select allowClear options={OPS} placeholder="فیلتر اپراتور" onChange={setFilterOperator} />
-					</div>
-					{invoices.isError && <Alert className="mb-4" type="error" showIcon message="دریافت فاکتورها ناموفق بود." />}
-					<Table rowKey="id" columns={invoiceColumns} dataSource={filtered} loading={invoices.isLoading} scroll={{ x: 900 }} />
-				</Card>
+				<BasicTable<SmsOperatorInvoice>
+					rowKey="id"
+					columns={invoiceColumns}
+					actionRef={invoicesTableActionRef}
+					filterTitle="جستجوی فاکتورهای ارسالی اپراتور"
+					filterSubtitle="برای مشاهده فاکتورهای هر اپراتور، سال و ماه را انتخاب کنید."
+					tableTitle="لیست فاکتورهای ارسالی اپراتور"
+					tableSubtitle="فاکتورهای ثبت‌شده را مشاهده، ویرایش یا حذف کنید."
+					request={async (params) => {
+						const responseData = await fetchSmsOperatorInvoices();
+						const shYear = Number(params.sh_year) || undefined;
+						const shMonth = Number(params.sh_month) || undefined;
+						const operator = params.operator as SmsOperatorCode | undefined;
+						const data = responseData.filter(item =>
+							(!shYear || item.sh_year === shYear)
+							&& (!shMonth || item.sh_month === shMonth)
+							&& (!operator || item.operator === operator),
+						);
+						const current = Number(params.current) || 1;
+						const pageSize = Number(params.pageSize) || 10;
+
+						return {
+							data: data.slice((current - 1) * pageSize, current * pageSize),
+							total: data.length,
+							success: true,
+						};
+					}}
+				/>
 				<Card title={(
 					<Space>
 						<BarChartOutlined />
