@@ -6,7 +6,7 @@ import { createSmsOperatorInvoice, createSmsOperatorInvoiceMonthlyReport, delete
 import { TableActionEditIcon, TableActionTrashIcon } from "#src/icons";
 import { BarChartOutlined, CheckCircleOutlined, ExclamationCircleOutlined, FileAddOutlined, FilePdfOutlined } from "@ant-design/icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Alert, Button, Card, Form, InputNumber, message, Modal, Popconfirm, Select, Space, Spin, Table, Tag, theme, Typography } from "antd";
+import { Alert, Button, Card, Form, InputNumber, Modal, Popconfirm, Select, Space, Spin, Table, Tag, Typography } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 /* eslint-disable style/max-statements-per-line -- This page keeps closely related request state transitions together. */
@@ -33,7 +33,6 @@ function print(report: SmsOperatorInvoiceMonthlyReport, onError: (content: strin
 }
 
 export function SmsGatewayOperatorInvoicesPage() {
-	const { token } = theme.useToken();
 	const [form] = Form.useForm<SmsOperatorInvoicePayload>(); const [reportForm] = Form.useForm<{ sh_year?: number, sh_month?: number }>(); const client = useQueryClient();
 	const invoices = useQuery({ queryKey: ["sms-gateway", "operator-invoices"], queryFn: fetchSmsOperatorInvoices });
 	const invoicesTableActionRef = useRef<ActionType>(null);
@@ -42,7 +41,7 @@ export function SmsGatewayOperatorInvoicesPage() {
 	const reportRequestId = useRef(0);
 	const year = Form.useWatch("sh_year", form); const month = Form.useWatch("sh_month", form);
 	const isReportProcessing = loadingReport && (!report || ["PENDING", "RUNNING"].includes(report.status));
-	const showMessage = (type: "error" | "success" | "warning", content: string) => message[type]({ content, style: { color: token.colorTextLightSolid } });
+	const showMessage = (type: "error" | "success" | "warning", content: string) => window.$message?.[type](content);
 	const selectNumberInput = (event: FocusEvent<HTMLInputElement>) => event.currentTarget.select();
 	const preventNonNumericInput = (event: KeyboardEvent<HTMLInputElement>) => {
 		if (event.ctrlKey || event.metaKey || ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab", "Home", "End"].includes(event.key))
