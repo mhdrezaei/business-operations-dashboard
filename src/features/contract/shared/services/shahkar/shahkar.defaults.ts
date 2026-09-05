@@ -2,5 +2,6 @@ import { defaultContractTypeValue } from "#src/features/contract/components/cont
 
 export const defaultShahkarServiceFields = {
 	contractPricing: structuredClone(defaultContractTypeValue),
+	hasNewCustomerRate: false,
 	addenda: [],
 } as const;

@@ -700,9 +700,18 @@ async function formValuesToApiPayload(values: ContractFormValues) {
 
 	if (serviceCode === "shahkar") {
 		const shahkarPricing = mapShahkarPricingPayload(serviceFields.contractPricing);
+		const hasNewCustomerRate = serviceFields.hasNewCustomerRate === true;
+		const newCustomerPricing = hasNewCustomerRate
+			? mapShahkarPricingPayload(serviceFields.newCustomerPricing)
+			: null;
 		payload.is_signed = serviceFields.isSigned ?? false;
 		payload.calculation_type = shahkarPricing.calculation_type;
 		payload.tiers = shahkarPricing.tiers;
+		payload.has_new_customer_rate = hasNewCustomerRate;
+		if (newCustomerPricing) {
+			payload.new_customer_calculation_type = newCustomerPricing.calculation_type;
+			payload.new_customer_tiers = newCustomerPricing.tiers;
+		}
 		payload.addenda = mapShahkarAddenda(addenda);
 		return payload;
 	}

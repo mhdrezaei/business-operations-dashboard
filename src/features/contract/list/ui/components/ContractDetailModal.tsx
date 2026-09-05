@@ -1008,10 +1008,19 @@ function normalizeShahkarServiceFields(dto: any) {
 		calculation_type: dto?.calculation_type ?? dto?.calculationType ?? null,
 		tiers: dto?.tiers ?? null,
 	} as any);
+	const hasNewCustomerRate = dto?.has_new_customer_rate ?? dto?.hasNewCustomerRate ?? false;
+	const newCustomerPricing = hasNewCustomerRate
+		? apiPricingToContractType({
+			calculation_type: dto?.new_customer_calculation_type ?? dto?.newCustomerCalculationType ?? null,
+			tiers: dto?.new_customer_tiers ?? dto?.newCustomerTiers ?? null,
+		} as any)
+		: undefined;
 
 	return {
 		isSigned: dto?.is_signed ?? dto?.isSigned ?? false,
 		contractPricing: pricing ?? null,
+		hasNewCustomerRate,
+		newCustomerPricing,
 		addenda: normalizeShahkarAddendaFromDto(dto?.addenda),
 	};
 }
@@ -1330,9 +1339,18 @@ async function formValuesToApiPayload(values: ContractFormValues) {
 
 	if (serviceCode === "shahkar") {
 		const pricing = contractTypeToApiPricing((serviceFields.contractPricing ?? null) as any);
+		const hasNewCustomerRate = serviceFields.hasNewCustomerRate === true;
+		const newCustomerPricing = hasNewCustomerRate
+			? contractTypeToApiPricing((serviceFields.newCustomerPricing ?? null) as any)
+			: null;
 		payload.is_signed = serviceFields.isSigned ?? false;
 		payload.calculation_type = pricing?.calculation_type ?? null;
 		payload.tiers = pricing?.tiers ?? [];
+		payload.has_new_customer_rate = hasNewCustomerRate;
+		if (newCustomerPricing) {
+			payload.new_customer_calculation_type = newCustomerPricing.calculation_type;
+			payload.new_customer_tiers = newCustomerPricing.tiers;
+		}
 		payload.addenda = mapShahkarAddenda(addenda);
 		return payload;
 	}
