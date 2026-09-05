@@ -815,6 +815,12 @@ export function createSmsGatewayTrafficReport(filters: SmsGatewayTrafficReportFi
 	}).json<SmsGatewayTrafficReportResult>();
 }
 
+export function fetchSmsGatewayTrafficReport() {
+	return request
+		.get("sms-gateway/traffic-report/", { suppressErrorNotification: true })
+		.json<SmsGatewayTrafficReportResult>();
+}
+
 export function fetchSmsGatewayTrafficReportStatus(jobId: number, page = 1, pageSize = 20) {
 	return request
 		.get(`sms-gateway/traffic-report/status/${jobId}/`, { searchParams: { page, page_size: pageSize } })
