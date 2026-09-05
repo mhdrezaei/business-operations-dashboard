@@ -6,8 +6,9 @@ import { createSmsOperatorInvoice, createSmsOperatorInvoiceMonthlyReport, delete
 import { TableActionEditIcon, TableActionTrashIcon } from "#src/icons";
 import { BarChartOutlined, CheckCircleOutlined, ExclamationCircleOutlined, FileAddOutlined, FilePdfOutlined } from "@ant-design/icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Alert, Button, Card, Form, InputNumber, message, Modal, Popconfirm, Select, Space, Spin, Table, Tag, theme, Typography } from "antd";
+import { Alert, Button, Card, Form, InputNumber, Modal, Popconfirm, Select, Space, Spin, Tag, Typography } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { openSmsOperatorInvoicesPdfPrint } from "./operator-invoices-pdf";
 
 /* eslint-disable style/max-statements-per-line -- This page keeps closely related request state transitions together. */
 
@@ -18,6 +19,8 @@ const number = (v: number | null | undefined) => Number(v ?? 0).toLocaleString("
 const name = (v: SmsOperatorCode) => OPS.find(x => x.value === v)?.label ?? v;
 const yearOptions = YEARS.map(value => ({ label: String(value), value }));
 const monthOptions = MONTHS.map((label, i) => ({ label, value: i + 1 }));
+type SmsOperatorInvoiceMonthlyTotal = NonNullable<SmsOperatorInvoiceMonthlyReport["operator_totals"]>[number];
+type SmsOperatorInvoiceMonthlyRow = NonNullable<SmsOperatorInvoiceMonthlyReport["rows"]>[number];
 
 function invoiceStatus(invoice: { invoice_registered: boolean, message?: string }) {
 	return invoice.invoice_registered
@@ -25,15 +28,7 @@ function invoiceStatus(invoice: { invoice_registered: boolean, message?: string 
 		: <Tag color="warning" icon={<ExclamationCircleOutlined />}>{invoice.message ?? "ثبت نشده"}</Tag>;
 }
 
-function print(report: SmsOperatorInvoiceMonthlyReport, onError: (content: string) => void) {
-	const title = `گزارش مقایسه‌ای ماهانه — ${MONTHS[report.sh_month - 1]} ${report.sh_year}`;
-	const body = (report.rows ?? []).map(r => `<tr><td>${name(r.operator)}</td><td>${r.language === "FA" ? "فارسی" : "انگلیسی"}</td><td>${number(r.gateway_total)}</td><td>${number(r.manual_invoice.count)}</td><td>${number(r.manual_invoice.cost)}</td><td>${number(r.internal_system_total)}</td><td>${number(r.internal_system_cost)}</td></tr>`).join("");
-	const win = window.open("", "_blank"); if (!win) { onError("باز شدن پنجره PDF مسدود شده است."); return; }
-	win.document.write(`<!doctype html><html dir="rtl"><head><meta charset="utf-8"><title>${title}</title><style>body{font-family:Tahoma;padding:28px}table{border-collapse:collapse;width:100%;margin-top:24px}th,td{border:1px solid #aaa;padding:8px;text-align:center}th{background:#eee}</style></head><body><h2>${title}</h2><table><tr><th>اپراتور</th><th>زبان</th><th>Gateway</th><th>تعداد فاکتور</th><th>هزینه فاکتور</th><th>تعداد سیستم داخلی</th><th>هزینه سیستم داخلی</th></tr>${body}</table></body></html>`); win.document.close(); win.print();
-}
-
 export function SmsGatewayOperatorInvoicesPage() {
-	const { token } = theme.useToken();
 	const [form] = Form.useForm<SmsOperatorInvoicePayload>(); const [reportForm] = Form.useForm<{ sh_year?: number, sh_month?: number }>(); const client = useQueryClient();
 	const invoices = useQuery({ queryKey: ["sms-gateway", "operator-invoices"], queryFn: fetchSmsOperatorInvoices });
 	const invoicesTableActionRef = useRef<ActionType>(null);
@@ -42,7 +37,7 @@ export function SmsGatewayOperatorInvoicesPage() {
 	const reportRequestId = useRef(0);
 	const year = Form.useWatch("sh_year", form); const month = Form.useWatch("sh_month", form);
 	const isReportProcessing = loadingReport && (!report || ["PENDING", "RUNNING"].includes(report.status));
-	const showMessage = (type: "error" | "success" | "warning", content: string) => message[type]({ content, style: { color: token.colorTextLightSolid } });
+	const showMessage = (type: "error" | "success" | "warning", content: string) => window.$message?.[type](content);
 	const selectNumberInput = (event: FocusEvent<HTMLInputElement>) => event.currentTarget.select();
 	const preventNonNumericInput = (event: KeyboardEvent<HTMLInputElement>) => {
 		if (event.ctrlKey || event.metaKey || ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab", "Home", "End"].includes(event.key))
@@ -192,7 +187,22 @@ export function SmsGatewayOperatorInvoicesPage() {
 							<Form.Item name="sh_month" label="ماه (شمسی)"><Select options={monthOptions} placeholder="انتخاب کنید" /></Form.Item>
 							<div className="flex items-end gap-2 pb-6">
 								<Button type="primary" icon={<BarChartOutlined />} htmlType="submit" loading={isReportProcessing}>نمایش گزارش</Button>
-								<Button icon={<FilePdfOutlined />} disabled={report?.status !== "SUCCESS"} onClick={() => report && print(report, content => showMessage("error", content))}>دانلود PDF</Button>
+								<Button
+									icon={<FilePdfOutlined />}
+									disabled={report?.status !== "SUCCESS"}
+									onClick={() => {
+										if (!report)
+											return;
+										try {
+											openSmsOperatorInvoicesPdfPrint({ report, monthLabel: MONTHS[report.sh_month - 1], operatorName: name, formatNumber: number });
+										}
+										catch (error) {
+											showMessage("error", error instanceof Error && error.message === "POPUP_BLOCKED" ? "پاپ‌آپ مرورگر مسدود است. لطفاً آن را فعال کنید." : "ساخت PDF ناموفق بود.");
+										}
+									}}
+								>
+									دانلود PDF
+								</Button>
 							</div>
 						</div>
 					</Form>
@@ -212,55 +222,44 @@ export function SmsGatewayOperatorInvoicesPage() {
 								سال
 								{report.sh_year}
 							</Typography.Text>
-							<div className="mb-5 grid grid-cols-1 gap-3 lg:grid-cols-3">
-								{(report.operator_totals ?? []).map((item) => {
-									const difference = Number(item.manual_invoice.count ?? 0) - Number(item.internal_system.total ?? 0);
-									const diffClass = difference === 0 ? "text-green-500" : difference > 0 ? "text-yellow-500" : "text-red-400";
-
-									return (
-										<Card
-											key={item.operator}
-											size="small"
-											title={(
-												<div className="flex items-center justify-between">
-													<b>{name(item.operator)}</b>
-													{invoiceStatus(item.manual_invoice)}
-												</div>
-											)}
-										>
-											<div className="grid grid-cols-3 pb-2 text-center text-xs text-secondary">
-												<span />
-												<span>تعداد</span>
-												<span>هزینه (ریال)</span>
-											</div>
-											<div className="text-sm">
-												<div className="grid grid-cols-3 border-t border-[var(--ant-color-border-secondary)] py-2">
-													<span>فاکتور ارسالی اپراتور</span>
-													<b className="text-center">{number(item.manual_invoice.count)}</b>
-													<b className="text-center">{number(item.manual_invoice.cost)}</b>
-												</div>
-												<div className="grid grid-cols-3 border-t border-[var(--ant-color-border-secondary)] py-2">
-													<span>سامانه نگاه</span>
-													<b className="text-center">{number(item.internal_system.total)}</b>
-													<b className="text-center">{number(item.internal_system.cost)}</b>
-												</div>
-												<div className="grid grid-cols-3 border-t border-[var(--ant-color-border-secondary)] py-2">
-													<span>سامانه Gateway</span>
-													<b className="text-center">{number(item.gateway_total)}</b>
-													<span className="text-center">—</span>
-												</div>
-												<div className="grid grid-cols-3 border-t border-[var(--ant-color-border-secondary)] pt-2">
-													<span>اختلاف فاکتور و نگاه</span>
-													<b className={`text-center ${diffClass}`}>{number(difference)}</b>
-													<span className="text-center">—</span>
-												</div>
-											</div>
-										</Card>
-									);
-								})}
-							</div>
-							<Typography.Text strong className="mb-2 block">به تفکیک اپراتور و زبان</Typography.Text>
-							<Table size="small" pagination={false} scroll={{ x: 1300 }} rowKey={r => `${r.operator}-${r.language}`} dataSource={report.rows ?? []} columns={[{ title: "اپراتور", dataIndex: "operator", render: name }, { title: "زبان", dataIndex: "language", render: v => v === "FA" ? "فارسی" : "انگلیسی" }, { title: "وضعیت فاکتور ارسالی اپراتور", dataIndex: "manual_invoice", render: invoiceStatus }, { title: "تعداد فاکتور ارسالی اپراتور", dataIndex: ["manual_invoice", "count"], render: number }, { title: "هزینه فاکتور ارسالی اپراتور (ریال)", dataIndex: ["manual_invoice", "cost"], render: number }, { title: "تعداد سامانه نگاه", dataIndex: "internal_system_total", render: number }, { title: "هزینه سامانه نگاه (ریال)", dataIndex: "internal_system_cost", render: number }, { title: "تعداد سامانه Gateway", dataIndex: "gateway_total", render: number }]} />
+							<BasicTable<SmsOperatorInvoiceMonthlyTotal>
+								rowKey="operator"
+								search={false}
+								showFilterHeading={false}
+								pagination={false}
+								tableTitle="جمع کل هر اپراتور (فارسی + انگلیسی)"
+								tableSubtitle={`دوره گزارش: ${MONTHS[report.sh_month - 1]} ماه سال ${report.sh_year}`}
+								dataSource={report.operator_totals ?? []}
+								columns={[
+									{ title: "اپراتور", dataIndex: "operator", render: (_, item) => <Tag color="blue">{name(item.operator)}</Tag> },
+									{ title: "وضعیت فاکتور", dataIndex: "manual_invoice", render: (_, item) => invoiceStatus(item.manual_invoice) },
+									{ title: "تعداد فاکتور", dataIndex: ["manual_invoice", "count"], render: (_, item) => number(item.manual_invoice.count) },
+									{ title: "هزینه فاکتور (ریال)", dataIndex: ["manual_invoice", "cost"], render: (_, item) => number(item.manual_invoice.cost) },
+									{ title: "تعداد سامانه نگاه", dataIndex: ["internal_system", "total"], render: (_, item) => number(item.internal_system.total) },
+									{ title: "هزینه سامانه نگاه (ریال)", dataIndex: ["internal_system", "cost"], render: (_, item) => number(item.internal_system.cost) },
+									{ title: "تعداد Gateway", dataIndex: "gateway_total", render: (_, item) => number(item.gateway_total) },
+									{ title: "اختلاف تعداد", key: "difference", render: (_, item) => number(Number(item.manual_invoice.count ?? 0) - Number(item.internal_system.total ?? 0)) },
+								]}
+							/>
+							<BasicTable<SmsOperatorInvoiceMonthlyRow>
+								rowKey={item => `${item.operator}-${item.language}`}
+								search={false}
+								showFilterHeading={false}
+								pagination={false}
+								tableTitle="به تفکیک اپراتور و زبان"
+								tableSubtitle="مقایسه فاکتور ارسالی اپراتور با سامانه نگاه و Gateway."
+								dataSource={report.rows ?? []}
+								columns={[
+									{ title: "اپراتور", dataIndex: "operator", render: (_, item) => name(item.operator) },
+									{ title: "زبان", dataIndex: "language", render: (_, item) => item.language === "FA" ? "فارسی" : "انگلیسی" },
+									{ title: "وضعیت فاکتور ارسالی اپراتور", dataIndex: "manual_invoice", render: (_, item) => invoiceStatus(item.manual_invoice) },
+									{ title: "تعداد فاکتور ارسالی اپراتور", dataIndex: ["manual_invoice", "count"], render: (_, item) => number(item.manual_invoice.count) },
+									{ title: "هزینه فاکتور ارسالی اپراتور (ریال)", dataIndex: ["manual_invoice", "cost"], render: (_, item) => number(item.manual_invoice.cost) },
+									{ title: "تعداد سامانه نگاه", dataIndex: "internal_system_total", render: (_, item) => number(item.internal_system_total) },
+									{ title: "هزینه سامانه نگاه (ریال)", dataIndex: "internal_system_cost", render: (_, item) => number(item.internal_system_cost) },
+									{ title: "تعداد سامانه Gateway", dataIndex: "gateway_total", render: (_, item) => number(item.gateway_total) },
+								]}
+							/>
 						</>
 					)}
 				</Card>
