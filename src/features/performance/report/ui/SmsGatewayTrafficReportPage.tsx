@@ -2,7 +2,7 @@ import type { SmsGatewayTrafficReportFilters, SmsGatewayTrafficReportResult } fr
 import type { Dayjs } from "#src/shared/lib/dayjs-jalali";
 import { fetchCompaniesByService, fetchServices } from "#src/api/common/common.api";
 import { BasicContent } from "#src/components";
-import { createSmsGatewayTrafficReport, fetchSmsGatewayTrafficReportStatus } from "#src/features/performance/api/performances.api";
+import { createSmsGatewayTrafficReport, fetchSmsGatewayTrafficReport, fetchSmsGatewayTrafficReportStatus } from "#src/features/performance/api/performances.api";
 import { BarChartOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Alert, Button, Card, Collapse, Descriptions, Empty, Select, Space, Spin, Statistic, Tag, Typography } from "antd";
@@ -107,6 +107,17 @@ export function SmsGatewayTrafficReportPage() {
 		catch (caught) { setError(await getRequestErrorMessage(caught)); }
 		finally { setLoading(false); }
 	}, []);
+	const loadLatestReport = useCallback(async () => {
+		activeJobId.current = null;
+		setLoading(true);
+		setError(null);
+		setResult(null);
+		try {
+			setResult(await fetchSmsGatewayTrafficReport());
+		}
+		catch (caught) { setError(await getRequestErrorMessage(caught)); }
+		finally { setLoading(false); }
+	}, []);
 	const apply = () => requestReport({
 		...filters,
 		start_date: formatJalaliDate(startDate),
@@ -117,15 +128,13 @@ export function SmsGatewayTrafficReportPage() {
 		if (hasLoadedDefaultReport.current)
 			return;
 		hasLoadedDefaultReport.current = true;
-		void requestReport({});
-	}, [requestReport]);
+		void loadLatestReport();
+	}, [loadLatestReport]);
 	const clear = () => {
-		activeJobId.current = null;
 		setFilters({});
 		setStartDate(null);
 		setEndDate(null);
-		setResult(null);
-		setError(null);
+		void loadLatestReport();
 	};
 	const isProcessing = result && ["PENDING", "RUNNING"].includes(result.status);
 

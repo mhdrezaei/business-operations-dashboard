@@ -1,104 +1,39 @@
 import type { PerformanceFormValues } from "../../model/performance.form.types";
-import {
-	ContractAlignedField,
-	useContractAlignedLabelWidth,
-} from "#src/features/contract/shared/ui/form/components/ContractAlignedField";
+import { PerformanceFieldCard } from "#src/features/performance/shared/ui/form/components/PerformanceFieldCard";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
-import { Card } from "antd";
 import { useTranslation } from "react-i18next";
-import "#src/features/contract/shared/ui/form/contract-form.css";
 
 const sf = (path: string) => `serviceFields.${path}` as const;
-const SMS_LABELS = ["مقدار عملکرد پیامک"];
+
+const SMS_PERFORMANCE_FIELDS = [
+	{ key: "irancellFa", label: "ایرانسل - فارسی", tone: "gold" },
+	{ key: "irancellEn", label: "ایرانسل - انگلیسی", tone: "gold" },
+	{ key: "mciFa", label: "همراه اول - فارسی", tone: "blue" },
+	{ key: "mciEn", label: "همراه اول - انگلیسی", tone: "blue" },
+	{ key: "otherFa", label: "سایر - فارسی", tone: "geekblue" },
+	{ key: "otherEn", label: "سایر - انگلیسی", tone: "geekblue" },
+] as const;
 
 export function SmsPerformanceFields() {
 	const { t } = useTranslation();
-	const alignedLabelStyle = useContractAlignedLabelWidth(SMS_LABELS);
 
 	return (
-		<Card variant="outlined" className="rounded-lg">
-			<div
-				className="contract-form-aligned-grid contract-form-aligned-grid--two"
-				style={{ gap: 12, ...alignedLabelStyle }}
-			>
-				<ContractAlignedField label="مقدار عملکرد پیامک">
+		<div className="performance-field-grid">
+			{SMS_PERFORMANCE_FIELDS.map(field => (
+				<PerformanceFieldCard key={field.key} title={field.label} tone={field.tone}>
 					<RHFProNumber<PerformanceFormValues, any>
-						name={sf("irancellFa") as any}
+						name={sf(field.key) as any}
 						label=""
 						inputProps={{
-							placeholder: t("performance.placeholders.example100000"),
-							addonAfter: "ایرانسل - فارسی",
+							"placeholder": t("performance.placeholders.example100000"),
+							"aria-label": `${t("performance.labels.performanceValue")} ${field.label}`,
 						}}
+						formItemProps={{ className: "mb-0" }}
 						enableGrouping
 						enableWordsTooltip
 					/>
-				</ContractAlignedField>
-
-				<ContractAlignedField label="مقدار عملکرد پیامک">
-					<RHFProNumber<PerformanceFormValues, any>
-						name={sf("irancellEn") as any}
-						label=""
-						inputProps={{
-							placeholder: t("performance.placeholders.example100000"),
-							addonAfter: "ایرانسل - انگلیسی",
-						}}
-						enableGrouping
-						enableWordsTooltip
-					/>
-				</ContractAlignedField>
-
-				<ContractAlignedField label="مقدار عملکرد پیامک">
-					<RHFProNumber<PerformanceFormValues, any>
-						name={sf("mciFa") as any}
-						label=""
-						inputProps={{
-							placeholder: t("performance.placeholders.example100000"),
-							addonAfter: "همراه اول - فارسی",
-						}}
-						enableGrouping
-						enableWordsTooltip
-					/>
-				</ContractAlignedField>
-
-				<ContractAlignedField label="مقدار عملکرد پیامک">
-					<RHFProNumber<PerformanceFormValues, any>
-						name={sf("mciEn") as any}
-						label=""
-						inputProps={{
-							placeholder: t("performance.placeholders.example100000"),
-							addonAfter: "همراه اول - انگلیسی",
-						}}
-						enableGrouping
-						enableWordsTooltip
-					/>
-				</ContractAlignedField>
-
-				<ContractAlignedField label="مقدار عملکرد پیامک">
-					<RHFProNumber<PerformanceFormValues, any>
-						name={sf("otherFa") as any}
-						label=""
-						inputProps={{
-							placeholder: t("performance.placeholders.example100000"),
-							addonAfter: "سایر - فارسی",
-						}}
-						enableGrouping
-						enableWordsTooltip
-					/>
-				</ContractAlignedField>
-
-				<ContractAlignedField label="مقدار عملکرد پیامک">
-					<RHFProNumber<PerformanceFormValues, any>
-						name={sf("otherEn") as any}
-						label=""
-						inputProps={{
-							placeholder: t("performance.placeholders.example100000"),
-							addonAfter: "سایر - انگلیسی",
-						}}
-						enableGrouping
-						enableWordsTooltip
-					/>
-				</ContractAlignedField>
-			</div>
-		</Card>
+				</PerformanceFieldCard>
+			))}
+		</div>
 	);
 }

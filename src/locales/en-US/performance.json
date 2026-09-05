@@ -132,6 +132,8 @@
 		"example450": "e.g. 450"
 	},
 	"labels": {
+		"baseInformation": "Base Performance Information",
+		"performanceValue": "Performance Value",
 		"serviceName": "Service Name",
 		"companyName": "Company Name",
 		"companyType": "Company Type",
@@ -180,6 +182,7 @@
 		"invalidFormInputs": "Form inputs are invalid",
 		"selectServiceFirst": "Select service first",
 		"selectReportFiltersFirst": "Select service, year and report months first",
+		"selectYearAndMonth": "Please select the year and month",
 		"noDeleteAccess": "You do not have permission to delete performance.",
 		"noActiveContractForMonth": "No active contract found for selected month.",
 		"salesAgentAutoSelected": "Sales agent will be selected automatically.",
@@ -274,7 +277,7 @@
 	"fields": {
 		"psp": {
 			"performanceValue": "Performance Value",
-			"monthlyRevenue": "Monthly Revenue (IRR)"
+			"monthlyRevenue": "Monthly Revenue"
 		},
 		"shahkar": {
 			"performanceValue": "Performance Value"

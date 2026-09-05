@@ -46,7 +46,8 @@
 		"unregisteredPerformances": "Unregistered Performances",
 		"performanceReports": "Performance Reports",
 		"predictionsSummaryReport": "Performance and Prediction Summary Report",
-		"smsGatewayTrafficReport": "SMS Gateway Traffic Report"
+		"smsGatewayTrafficReport": "SMS Gateway Traffic Report",
+		"smsGatewayOperatorInvoices": "SMS Operator Invoices"
 	},
 	"appLoading": "Loading Resources...",
 	"back": "Back",

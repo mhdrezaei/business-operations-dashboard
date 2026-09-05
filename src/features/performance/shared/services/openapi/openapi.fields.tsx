@@ -1,32 +1,45 @@
 import type { PerformanceFormValues } from "../../model/performance.form.types";
-import {
-	ContractAlignedField,
-	useContractAlignedLabelWidth,
-} from "#src/features/contract/shared/ui/form/components/ContractAlignedField";
+import { PerformanceFieldCard } from "#src/features/performance/shared/ui/form/components/PerformanceFieldCard";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
-import { Card } from "antd";
+import { Tag } from "antd";
 import { useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import "#src/features/contract/shared/ui/form/contract-form.css";
 
 const sf = (path: string) => `serviceFields.${path}` as const;
 
-const OPENAPI_PACKAGE_LABELS = [
-	"مقدار عملکرد استعلام قبض",
-	"درآمد ترافیک",
-	"تعداد بسته ترافیکی",
-	"مقدار عملکرد پیامک",
-];
+interface MetricNumberCardProps {
+	name: string
+	label: string
+	placeholder: string
+	currencyLabel?: string
+}
 
-function FieldGrid({ children }: { children: React.ReactNode }) {
+const OPENAPI_SMS_FIELDS = [
+	{ key: "irancellFa", label: "ایرانسل - فارسی" },
+	{ key: "irancellEn", label: "ایرانسل - انگلیسی" },
+	{ key: "mciFa", label: "همراه اول - فارسی" },
+	{ key: "mciEn", label: "همراه اول - انگلیسی" },
+	{ key: "otherFa", label: "سایر - فارسی" },
+	{ key: "otherEn", label: "سایر - انگلیسی" },
+] as const;
+
+function MetricNumberCard({ name, label, placeholder, currencyLabel }: MetricNumberCardProps) {
 	return (
-		<div
-			className="contract-form-aligned-grid contract-form-aligned-grid--two gap-3"
-
-		>
-			{children}
-		</div>
+		<PerformanceFieldCard title={label}>
+			<RHFProNumber<PerformanceFormValues, any>
+				name={sf(name) as any}
+				label=""
+				inputProps={{
+					"placeholder": placeholder,
+					"aria-label": label,
+					...(currencyLabel ? { addonAfter: currencyLabel } : {}),
+				}}
+				formItemProps={{ className: currencyLabel ? "contract-type-currency-field mb-0" : "mb-0" }}
+				enableGrouping
+				enableWordsTooltip
+			/>
+		</PerformanceFieldCard>
 	);
 }
 
@@ -34,7 +47,6 @@ export function OpenApiPerformanceFields() {
 	const { t } = useTranslation();
 	const { control } = useFormContext<PerformanceFormValues>();
 	const contractModel = useWatch({ control, name: "contractModel" });
-	const alignedLabelStyle = useContractAlignedLabelWidth(OPENAPI_PACKAGE_LABELS);
 
 	const modelLabel = useMemo(() => {
 		if (contractModel === "legacy")
@@ -46,162 +58,66 @@ export function OpenApiPerformanceFields() {
 
 	if (!contractModel) {
 		return (
-			<Card variant="outlined" className="rounded-lg">
-				<div className="opacity-80">
+			<PerformanceFieldCard title={t("performance.labels.openapiContractModel")}>
+				<p className="performance-field-card__hint m-0">
 					{t("performance.messages.noActiveContractForMonth")}
-				</div>
-			</Card>
+				</p>
+			</PerformanceFieldCard>
 		);
 	}
 
 	return (
-		<Card
-			bordered
-			className="rounded-lg"
-			title={(
-				<div className="flex gap-2">
+		<div className="performance-field-group">
+			<div className="performance-field-group__header">
+				<div className="flex items-center gap-2">
 					<span>{t("performance.labels.openapiContractModel")}</span>
-					<strong>{modelLabel}</strong>
+					<Tag color="purple" bordered={false}>{modelLabel}</Tag>
 				</div>
-			)}
-		>
-			{contractModel === "legacy"
-				? (
-					<FieldGrid>
-						<RHFProNumber<PerformanceFormValues, any>
-							name={sf("billInquiryValue") as any}
-							label={t("performance.fields.openapi.billInquiryValue")}
-							inputProps={{ placeholder: t("performance.placeholders.example60000") }}
-							enableGrouping
-							enableWordsTooltip
-						/>
+			</div>
 
-						<RHFProNumber<PerformanceFormValues, any>
-							name={sf("receiptRegisterValue") as any}
+			<div className="performance-field-grid">
+				<MetricNumberCard
+					name="billInquiryValue"
+					label={t("performance.fields.openapi.billInquiryValue")}
+					placeholder={t("performance.placeholders.example60000")}
+				/>
+
+				{contractModel === "legacy"
+					? (
+						<MetricNumberCard
+							name="receiptRegisterValue"
 							label={t("performance.fields.openapi.receiptRegisterValue")}
-							inputProps={{ placeholder: t("performance.placeholders.example80000") }}
-							enableGrouping
-							enableWordsTooltip
+							placeholder={t("performance.placeholders.example80000")}
 						/>
-					</FieldGrid>
-				)
-				: null}
+					)
+					: null}
 
-			{contractModel === "package"
-				? (
-					<div style={alignedLabelStyle}>
-						<FieldGrid>
-							<ContractAlignedField label={t("performance.fields.openapi.billInquiryValue")}>
-								<RHFProNumber<PerformanceFormValues, any>
-									name={sf("billInquiryValue") as any}
-									label=""
-									inputProps={{ placeholder: t("performance.placeholders.example60000") }}
-									enableGrouping
-									enableWordsTooltip
+				{contractModel === "package"
+					? (
+						<>
+							<MetricNumberCard
+								name="trafficRevenue"
+								label={t("performance.fields.openapi.trafficRevenue")}
+								placeholder={t("performance.placeholders.example120000000")}
+								currencyLabel={t("performance.columns.rial")}
+							/>
+							<MetricNumberCard
+								name="trafficPackageCount"
+								label={t("performance.fields.openapi.trafficPackageCount")}
+								placeholder={t("performance.placeholders.example450")}
+							/>
+							{OPENAPI_SMS_FIELDS.map(field => (
+								<MetricNumberCard
+									key={field.key}
+									name={field.key}
+									label={field.label}
+									placeholder={t("performance.placeholders.example100000")}
 								/>
-							</ContractAlignedField>
-
-							<ContractAlignedField label={t("performance.fields.openapi.trafficRevenue")}>
-								<RHFProNumber<PerformanceFormValues, any>
-									name={sf("trafficRevenue") as any}
-									label=""
-									inputProps={{ placeholder: t("performance.placeholders.example120000000") }}
-									enableGrouping
-									enableWordsTooltip
-								/>
-							</ContractAlignedField>
-
-							<ContractAlignedField label={t("performance.fields.openapi.trafficPackageCount")}>
-								<RHFProNumber<PerformanceFormValues, any>
-									name={sf("trafficPackageCount") as any}
-									label=""
-									inputProps={{ placeholder: t("performance.placeholders.example450") }}
-									enableGrouping
-									enableWordsTooltip
-								/>
-							</ContractAlignedField>
-
-							<ContractAlignedField label="مقدار عملکرد پیامک">
-								<RHFProNumber<PerformanceFormValues, any>
-									name={sf("irancellFa") as any}
-									label=""
-									inputProps={{
-										placeholder: t("performance.placeholders.example100000"),
-										addonAfter: "ایرانسل - فارسی",
-									}}
-									enableGrouping
-									enableWordsTooltip
-								/>
-							</ContractAlignedField>
-
-							<ContractAlignedField label="مقدار عملکرد پیامک">
-								<RHFProNumber<PerformanceFormValues, any>
-									name={sf("irancellEn") as any}
-									label=""
-									inputProps={{
-										placeholder: t("performance.placeholders.example100000"),
-										addonAfter: "ایرانسل - انگلیسی",
-									}}
-									enableGrouping
-									enableWordsTooltip
-								/>
-							</ContractAlignedField>
-
-							<ContractAlignedField label="مقدار عملکرد پیامک">
-								<RHFProNumber<PerformanceFormValues, any>
-									name={sf("mciFa") as any}
-									label=""
-									inputProps={{
-										placeholder: t("performance.placeholders.example100000"),
-										addonAfter: "همراه اول - فارسی",
-									}}
-									enableGrouping
-									enableWordsTooltip
-								/>
-							</ContractAlignedField>
-
-							<ContractAlignedField label="مقدار عملکرد پیامک">
-								<RHFProNumber<PerformanceFormValues, any>
-									name={sf("mciEn") as any}
-									label=""
-									inputProps={{
-										placeholder: t("performance.placeholders.example100000"),
-										addonAfter: "همراه اول - انگلیسی",
-									}}
-									enableGrouping
-									enableWordsTooltip
-								/>
-							</ContractAlignedField>
-
-							<ContractAlignedField label="مقدار عملکرد پیامک">
-								<RHFProNumber<PerformanceFormValues, any>
-									name={sf("otherFa") as any}
-									label=""
-									inputProps={{
-										placeholder: t("performance.placeholders.example100000"),
-										addonAfter: "سایر - فارسی",
-									}}
-									enableGrouping
-									enableWordsTooltip
-								/>
-							</ContractAlignedField>
-
-							<ContractAlignedField label="مقدار عملکرد پیامک">
-								<RHFProNumber<PerformanceFormValues, any>
-									name={sf("otherEn") as any}
-									label=""
-									inputProps={{
-										placeholder: t("performance.placeholders.example100000"),
-										addonAfter: "سایر - انگلیسی",
-									}}
-									enableGrouping
-									enableWordsTooltip
-								/>
-							</ContractAlignedField>
-						</FieldGrid>
-					</div>
-				)
-				: null}
-		</Card>
+							))}
+						</>
+					)
+					: null}
+			</div>
+		</div>
 	);
 }
