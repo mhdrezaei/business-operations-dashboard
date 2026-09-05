@@ -1,5 +1,5 @@
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
-import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
+import { DeleteOutlined, PlusOutlined, QuestionCircleOutlined } from "@ant-design/icons";
 import { Button, Card, Tooltip } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
@@ -8,6 +8,8 @@ interface Props {
 	name: string
 	currencyAddon?: React.ReactNode
 	variant?: "card" | "embedded"
+	showRatePercentage?: boolean
+	ratePercentageHelpText?: React.ReactNode
 }
 
 interface TierToFieldProps {
@@ -56,7 +58,7 @@ function TierToField({ name, showHint }: TierToFieldProps): React.JSX.Element {
 	);
 }
 
-export function ContractTierTable({ name, currencyAddon, variant = "card" }: Props) {
+export function ContractTierTable({ name, currencyAddon, variant = "card", showRatePercentage = false, ratePercentageHelpText }: Props) {
 	const { control, setValue } = useFormContext();
 	const { fields, append, remove } = useFieldArray({ control, name });
 
@@ -64,11 +66,30 @@ export function ContractTierTable({ name, currencyAddon, variant = "card" }: Pro
 
 	const header = useMemo(
 		() => [
-			{ key: "from", title: "شروع بازه" },
-			{ key: "to", title: "پایان بازه" },
-			{ key: "fee", title: "مبلغ هر واحد" },
+			{ key: "from", title: showRatePercentage ? "بازه اول" : "شروع بازه" },
+			{ key: "to", title: showRatePercentage ? "بازه دوم" : "پایان بازه" },
+			{ key: "fee", title: showRatePercentage ? "مقدار فی (ریال)" : "مبلغ هر واحد" },
+			...(showRatePercentage
+				? [{
+					key: "ratePercentage",
+					title: (
+						<span className="inline-flex items-center gap-1">
+							درصد نرخ
+							<Tooltip title={ratePercentageHelpText}>
+								<button
+									type="button"
+									aria-label="توضیحات درصد نرخ"
+									className="inline-flex cursor-help border-0 bg-transparent p-0 text-warning"
+								>
+									<QuestionCircleOutlined />
+								</button>
+							</Tooltip>
+						</span>
+					),
+				}]
+				: []),
 		],
-		[],
+		[ratePercentageHelpText, showRatePercentage],
 	);
 
 	useEffect(() => {
@@ -94,12 +115,12 @@ export function ContractTierTable({ name, currencyAddon, variant = "card" }: Pro
 
 	function handleAddRow() {
 		if (!rows || rows.length === 0) {
-			append({ from: null, to: null, fee: null } as any);
+			append({ from: null, to: null, fee: null, ratePercentage: null } as any);
 			return;
 		}
 
 		const previousTo = rows[rows.length - 1]?.to ?? null;
-		append({ from: previousTo, to: null, fee: null } as any);
+		append({ from: previousTo, to: null, fee: null, ratePercentage: null } as any);
 	}
 
 	const content = (
@@ -107,8 +128,8 @@ export function ContractTierTable({ name, currencyAddon, variant = "card" }: Pro
 			{variant === "card" ? <div className="font-semibold mb-3">تعریف بازه‌ها و نرخ</div> : null}
 
 			<div className={variant === "embedded" ? "overflow-x-auto" : "overflow-hidden"}>
-				<div className={variant === "embedded" ? "min-w-[640px]" : undefined}>
-					<div className="grid grid-cols-[1fr_1fr_1fr_64px] gap-4">
+				<div className={variant === "embedded" ? (showRatePercentage ? "min-w-[800px]" : "min-w-[640px]") : undefined}>
+					<div className={`grid ${showRatePercentage ? "grid-cols-[1fr_1fr_1fr_1fr_64px]" : "grid-cols-[1fr_1fr_1fr_64px]"} gap-4`}>
 						{header.map(item => (
 							<div
 								key={item.key}
@@ -123,7 +144,7 @@ export function ContractTierTable({ name, currencyAddon, variant = "card" }: Pro
 					{fields.map((field, index) => (
 						<div
 							key={field.id}
-							className="mt-3 grid grid-cols-[1fr_1fr_1fr_64px] gap-4"
+							className={`mt-3 grid ${showRatePercentage ? "grid-cols-[1fr_1fr_1fr_1fr_64px]" : "grid-cols-[1fr_1fr_1fr_64px]"} gap-4`}
 						>
 							<div className={variant === "embedded" ? "" : "p-3"}>
 								<RHFProNumber
@@ -162,6 +183,21 @@ export function ContractTierTable({ name, currencyAddon, variant = "card" }: Pro
 								/>
 							</div>
 
+							{showRatePercentage
+								? (
+									<div className={variant === "embedded" ? "" : "p-3"}>
+										<RHFProNumber
+											name={`${name}.${index}.ratePercentage` as any}
+											label=""
+											enableGrouping={false}
+											enableWordsTooltip={false}
+											inputProps={{ placeholder: "درصد", inputMode: "numeric" } as any}
+											formItemProps={{ className: "mb-0" }}
+										/>
+									</div>
+								)
+								: null}
+
 							<div className={`flex items-center justify-center ${variant === "embedded" ? "" : "p-3"}`}>
 								<Tooltip title="حذف بازه">
 									<Button
@@ -179,7 +215,7 @@ export function ContractTierTable({ name, currencyAddon, variant = "card" }: Pro
 					<div className={variant === "embedded" ? "mt-3" : "p-3"}>
 						<Tooltip title="مقدار شروع بازه جدید به‌طور خودکار تنظیم می‌شود.">
 							<Button className="contract-dashed-action" icon={<PlusOutlined />} onClick={handleAddRow}>
-								افزودن بازه
+								{showRatePercentage ? "افزودن ردیف" : "افزودن بازه"}
 							</Button>
 						</Tooltip>
 					</div>

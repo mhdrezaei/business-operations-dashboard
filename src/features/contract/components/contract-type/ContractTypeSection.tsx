@@ -3,8 +3,8 @@ import { getContractSectionToneColors } from "#src/features/contract/shared/ui/f
 import { ContractSectionToneContext } from "#src/features/contract/shared/ui/form/components/contract-section-tone-context";
 import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import { RHFProNumber, RHFSegmentedSwitch, RHFSelect } from "#src/shared/ui/rhf-pro";
-import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import { Button, Card, theme } from "antd";
+import { DeleteOutlined, PlusOutlined, QuestionCircleOutlined } from "@ant-design/icons";
+import { Button, Card, theme, Tooltip } from "antd";
 import React, { useEffect, useRef } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { BLENDED_MODE_OPTIONS, CONTRACT_TYPE_OPTIONS } from "./contract-type.options";
@@ -16,6 +16,8 @@ interface Props {
 	topAside?: React.ReactNode
 	tone?: ContractSectionTone
 	variant?: "default" | "embedded" | "sms-operator"
+	showRatePercentage?: boolean
+	ratePercentageHelpText?: React.ReactNode
 }
 
 function createDefaultRows() {
@@ -34,7 +36,7 @@ function createDefaultSection(firstRowFrom: number | null = null) {
 	};
 }
 
-export function ContractTypeSection({ title, name, topAside, tone = "primary", variant = "default" }: Props) {
+export function ContractTypeSection({ title, name, topAside, tone = "primary", variant = "default", showRatePercentage = false, ratePercentageHelpText }: Props) {
 	const { control, getValues, setValue } = useFormContext();
 	const inheritedTone = React.useContext(ContractSectionToneContext);
 	const resolvedTone = inheritedTone ?? tone;
@@ -192,11 +194,34 @@ export function ContractTypeSection({ title, name, topAside, tone = "primary", v
 		const fixedAmount = (
 			<RHFProNumber
 				name={`${name}.fixedAmount` as any}
-				label="مبلغ هر واحد"
+				label={showRatePercentage ? "مبلغ ثابت (ریال)" : "مبلغ هر واحد"}
 				enableGrouping
 				enableWordsTooltip
 				inputProps={{ placeholder: "برای مثال ۱۲۰", inputMode: "numeric", addonAfter: "ریال" } as any}
 				formItemProps={{ className: "contract-type-currency-field mb-0" }}
+			/>
+		);
+		const ratePercentage = (
+			<RHFProNumber
+				name={`${name}.ratePercentage` as any}
+				label={(
+					<span className="inline-flex items-center gap-1">
+						درصد نرخ
+						<Tooltip title={ratePercentageHelpText}>
+							<button
+								type="button"
+								aria-label="توضیحات درصد نرخ"
+								className="inline-flex cursor-help border-0 bg-transparent p-0 text-warning"
+							>
+								<QuestionCircleOutlined />
+							</button>
+						</Tooltip>
+					</span>
+				)}
+				enableGrouping={false}
+				enableWordsTooltip={false}
+				inputProps={{ placeholder: "بین 0 تا 100", inputMode: "numeric" } as any}
+				formItemProps={{ className: "mb-0" }}
 			/>
 		);
 
@@ -216,6 +241,9 @@ export function ContractTypeSection({ title, name, topAside, tone = "primary", v
 				</div>
 				{type === "fixed"
 					? <div className="contract-type-standard-fields__amount min-w-0">{fixedAmount}</div>
+					: null}
+				{type === "fixed" && showRatePercentage
+					? <div className="contract-type-standard-fields__amount min-w-0">{ratePercentage}</div>
 					: null}
 				{topAside
 					? <div className="contract-type-standard-fields__aside min-w-0">{topAside}</div>
@@ -249,6 +277,8 @@ export function ContractTypeSection({ title, name, topAside, tone = "primary", v
 								name={`${name}.rows`}
 								variant="embedded"
 								currencyAddon="ریال"
+								showRatePercentage={showRatePercentage}
+								ratePercentageHelpText={ratePercentageHelpText}
 							/>
 						</Card>
 					</div>
@@ -293,6 +323,8 @@ export function ContractTypeSection({ title, name, topAside, tone = "primary", v
 										name={`${name}.sections.${sectionIndex}.rows`}
 										variant="embedded"
 										currencyAddon="ریال"
+										showRatePercentage={showRatePercentage}
+										ratePercentageHelpText={ratePercentageHelpText}
 									/>
 								</div>
 							</Card>

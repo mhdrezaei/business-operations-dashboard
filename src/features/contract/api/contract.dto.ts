@@ -3,6 +3,7 @@ export interface ApiTier {
 	min_inclusive: string | null
 	max_exclusive: string | null
 	rate_per_unit: string
+	rate_percentage?: string | null
 }
 
 export interface ApiPricing {

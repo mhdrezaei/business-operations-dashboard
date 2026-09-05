@@ -7,7 +7,7 @@ import { ContractFormSection } from "#src/features/contract/shared/ui/form/compo
 import { RHFProCheckbox, RHFProNumber, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { Button } from "antd";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import "./traffic.fields.css";
 
@@ -17,6 +17,10 @@ const TRAFFIC_UNIT_OPTIONS = [
 	{ label: "GB/month", value: "GB/month" },
 	{ label: "Mbps", value: "Mbps" },
 ];
+const IXP_CONTRACT_MODEL_OPTIONS = [
+	{ label: "قدیمی", value: "LEGACY" },
+	{ label: "جدول متغیر", value: "VARIABLE_TABLE" },
+];
 
 interface TrafficPricingFieldsProps {
 	pricingName: string
@@ -25,6 +29,10 @@ interface TrafficPricingFieldsProps {
 	revenuePercentLabel: string
 	showUnitSelector: boolean
 	showPremiumRevenuePercent: boolean
+	basedTireName: string
+	showBasedTire: boolean
+	contractModelName: string
+	showContractModel: boolean
 }
 
 function TrafficPricingFields({
@@ -34,10 +42,19 @@ function TrafficPricingFields({
 	revenuePercentLabel,
 	showUnitSelector,
 	showPremiumRevenuePercent,
+	basedTireName,
+	showBasedTire,
+	contractModelName,
+	showContractModel,
 }: TrafficPricingFieldsProps) {
+	const { control } = useFormContext<ContractFormValues>();
+	const contractModel = useWatch({ control, name: contractModelName as any });
+	const ratePercentageHelpText = contractModel === "VARIABLE_TABLE"
+		? "مقدار فی بر اساس ضرب مقدار فی که وارد کرده‌اید در درصد نرخ محاسبه می‌شود."
+		: "در مدل قرارداد قدیمی، درصد نرخ اختیاری است و محاسبات مالی بر اساس مقدار فی (ریال) نمایش داده می‌شود؛ این درصد هیچ تاثیری بر روی محاسبات مالی ندارد.";
 	return (
 		<div className="traffic-pricing-fields">
-			{showUnitSelector || showPremiumRevenuePercent
+			{showUnitSelector || showPremiumRevenuePercent || showContractModel
 				? (
 					<div className="traffic-pricing-meta-fields">
 						{showUnitSelector
@@ -61,6 +78,25 @@ function TrafficPricingFields({
 								/>
 							)
 							: null}
+						{showBasedTire
+							? (
+								<RHFProCheckbox
+									name={basedTireName as any}
+									label=""
+									checkboxLabel="محاسبه پله بر اساس پله بالاتر انجام شود"
+								/>
+							)
+							: null}
+						{showContractModel
+							? (
+								<RHFSelect
+									name={contractModelName as any}
+									label="مدل قرارداد"
+									options={IXP_CONTRACT_MODEL_OPTIONS}
+									selectProps={{ placeholder: "انتخاب مدل قرارداد", allowClear: false }}
+								/>
+							)
+							: null}
 					</div>
 				)
 				: null}
@@ -70,6 +106,8 @@ function TrafficPricingFields({
 				name={pricingName}
 				tone={TRAFFIC_SECTION_TONE}
 				variant="embedded"
+				showRatePercentage={showContractModel}
+				ratePercentageHelpText={ratePercentageHelpText}
 			/>
 		</div>
 	);
@@ -77,9 +115,11 @@ function TrafficPricingFields({
 
 export function TrafficFields() {
 	const { control, getValues, setValue } = useFormContext<ContractFormValues>();
+	const hasInitializedTehranPricing = useRef(false);
 	const isOfficial = useWatch({ control, name: sf("isOfficial") as any }) as boolean | undefined;
 	const companyType = useWatch({ control, name: "companyType" });
 	const isCollocation = String(companyType ?? "").trim().toUpperCase() === "COLLOCATION";
+	const isIxp = String(companyType ?? "").trim().toUpperCase() === "IXP";
 	const tehranPricing = useWatch({ control, name: sf("tehranPricing") as any });
 	const provincePricing = useWatch({ control, name: sf("provincePricing") as any });
 	const startYear = useWatch({ control, name: "startYear" });
@@ -122,6 +162,37 @@ export function TrafficFields() {
 	}
 
 	useEffect(() => {
+		if (!showPricingUi || isCollocation) {
+			hasInitializedTehranPricing.current = false;
+			return;
+		}
+		if (hasInitializedTehranPricing.current)
+			return;
+
+		if (!tehranPricing) {
+			setValue(sf("tehranPricing") as any, structuredClone(defaultContractTypeValue), {
+				shouldDirty: false,
+				shouldValidate: false,
+			});
+		}
+		hasInitializedTehranPricing.current = true;
+	}, [isCollocation, setValue, showPricingUi, tehranPricing]);
+
+	useEffect(() => {
+		if (!isIxp)
+			return;
+
+		if (getValues(sf("tehranBasedTire") as any) == null)
+			setValue(sf("tehranBasedTire") as any, true, { shouldDirty: false, shouldValidate: false });
+		if (getValues(sf("provinceBasedTire") as any) == null)
+			setValue(sf("provinceBasedTire") as any, true, { shouldDirty: false, shouldValidate: false });
+		if (getValues(sf("tehranContractModel") as any) == null)
+			setValue(sf("tehranContractModel") as any, "LEGACY", { shouldDirty: false, shouldValidate: false });
+		if (getValues(sf("provinceContractModel") as any) == null)
+			setValue(sf("provinceContractModel") as any, "LEGACY", { shouldDirty: false, shouldValidate: false });
+	}, [getValues, isIxp, setValue]);
+
+	useEffect(() => {
 		if (isOfficial !== false)
 			return;
 
@@ -130,6 +201,8 @@ export function TrafficFields() {
 		setValue(sf("addenda") as any, undefined, { shouldDirty: true, shouldValidate: true });
 		setValue(sf("tehranRevenuePercent") as any, undefined, { shouldDirty: true, shouldValidate: true });
 		setValue(sf("provinceRevenuePercent") as any, undefined, { shouldDirty: true, shouldValidate: true });
+		setValue(sf("tehranContractModel") as any, undefined, { shouldDirty: true, shouldValidate: true });
+		setValue(sf("provinceContractModel") as any, undefined, { shouldDirty: true, shouldValidate: true });
 	}, [isOfficial, setValue]);
 
 	useEffect(() => {
@@ -156,7 +229,7 @@ export function TrafficFields() {
 			}
 
 			if (!tehranPricing) {
-				for (const key of ["tehranPricing", "tehranUnit", "tehranRevenuePercent"]) {
+				for (const key of ["tehranPricing", "tehranUnit", "tehranRevenuePercent", "tehranContractModel"]) {
 					if (key in next) {
 						delete next[key];
 						changed = true;
@@ -164,7 +237,7 @@ export function TrafficFields() {
 				}
 			}
 			if (!provincePricing) {
-				for (const key of ["provincePricing", "provinceUnit", "provinceRevenuePercent"]) {
+				for (const key of ["provincePricing", "provinceUnit", "provinceRevenuePercent", "provinceContractModel"]) {
 					if (key in next) {
 						delete next[key];
 						changed = true;
@@ -228,6 +301,10 @@ export function TrafficFields() {
 											revenuePercentLabel="درصد سهم درآمد (تهران)"
 											showUnitSelector={showUnitSelector}
 											showPremiumRevenuePercent={showPremiumRevenuePercent}
+											basedTireName={sf("tehranBasedTire")}
+											showBasedTire={isIxp}
+											contractModelName={sf("tehranContractModel")}
+											showContractModel={isIxp}
 										/>
 									)
 									: (
@@ -257,6 +334,10 @@ export function TrafficFields() {
 											revenuePercentLabel="درصد سهم درآمد (مراکز استان‌ها)"
 											showUnitSelector={showUnitSelector}
 											showPremiumRevenuePercent={showPremiumRevenuePercent}
+											basedTireName={sf("provinceBasedTire")}
+											showBasedTire={isIxp}
+											contractModelName={sf("provinceContractModel")}
+											showContractModel={isIxp}
 										/>
 									)
 									: (
@@ -289,6 +370,10 @@ export function TrafficFields() {
 												revenuePercentLabel="درصد سهم درآمد (تهران)"
 												showUnitSelector={showUnitSelector}
 												showPremiumRevenuePercent={showPremiumRevenuePercent}
+												basedTireName={`${base}.tehranBasedTire`}
+												showBasedTire={isIxp}
+												contractModelName={`${base}.tehranContractModel`}
+												showContractModel={isIxp}
 											/>
 										</ContractFormSection>
 									)
@@ -304,6 +389,10 @@ export function TrafficFields() {
 												revenuePercentLabel="درصد سهم درآمد (مراکز استان‌ها)"
 												showUnitSelector={showUnitSelector}
 												showPremiumRevenuePercent={showPremiumRevenuePercent}
+												basedTireName={`${base}.provinceBasedTire`}
+												showBasedTire={isIxp}
+												contractModelName={`${base}.provinceContractModel`}
+												showContractModel={isIxp}
 											/>
 										</ContractFormSection>
 									)

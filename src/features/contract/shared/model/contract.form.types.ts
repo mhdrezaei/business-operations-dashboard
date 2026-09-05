@@ -8,10 +8,12 @@ export interface FormTierRow {
 	from: number | null
 	to: number | null
 	fee: number | null
+	ratePercentage?: number | null
 }
 export interface ContractTypeValue {
 	type: "fixed" | "tier_fixed" | "tier_variable" | "tier_blended" | null
 	fixedAmount: number | null
+	ratePercentage?: number | null
 	rows: FormTierRow[]
 	sections: Array<{ mode: "fixed" | "variable" | null, rows: FormTierRow[] }>
 }

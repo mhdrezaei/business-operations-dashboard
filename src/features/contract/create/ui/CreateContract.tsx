@@ -363,7 +363,7 @@ function normalizeTrafficLocation(location: unknown) {
 	return null;
 }
 
-function mapTrafficLocationPayload(location: "TEHRAN" | "COUNTY", pricingValue: unknown, unit?: string | null, basedTire?: boolean, incomePercentage?: unknown) {
+function mapTrafficLocationPayload(location: "TEHRAN" | "COUNTY", pricingValue: unknown, unit?: string | null, basedTire?: boolean, incomePercentage?: unknown, contractModel?: unknown) {
 	const pricing = contractTypeToApiPricing((pricingValue ?? null) as any);
 	if (!pricing)
 		return null;
@@ -376,6 +376,7 @@ function mapTrafficLocationPayload(location: "TEHRAN" | "COUNTY", pricingValue: 
 		tiers: pricing.tiers ?? [],
 		...(typeof basedTire === "boolean" ? { based_tire: basedTire } : {}),
 		...(normalizedIncomePercentage != null ? { income_percentage: normalizedIncomePercentage } : {}),
+		...(contractModel != null ? { contract_model: contractModel } : {}),
 	};
 }
 
@@ -448,7 +449,7 @@ function mapTrafficAddenda(
 	const normalizedCompanyType = String(companyType ?? "").trim().toUpperCase();
 	const hasTrafficUnit = ["CP", "PREMIUM", "IXP", "TCI"].includes(normalizedCompanyType);
 	const isPremium = normalizedCompanyType === "PREMIUM";
-	const basedTire = normalizedCompanyType === "IXP" ? true : undefined;
+	const isIxp = normalizedCompanyType === "IXP";
 
 	return list.map((item) => {
 		const row = (item ?? {}) as Record<string, any>;
@@ -468,10 +469,10 @@ function mapTrafficAddenda(
 		}
 		const locations = [
 			mainLocations.tehran
-				? mapTrafficLocationPayload("TEHRAN", row.tehranPricing, hasTrafficUnit ? row.tehranUnit : null, basedTire, isPremium ? row.tehranRevenuePercent : null)
+				? mapTrafficLocationPayload("TEHRAN", row.tehranPricing, hasTrafficUnit ? row.tehranUnit : null, isIxp ? row.tehranBasedTire ?? true : undefined, isPremium ? row.tehranRevenuePercent : null, isIxp ? row.tehranContractModel ?? "LEGACY" : undefined)
 				: null,
 			mainLocations.province
-				? mapTrafficLocationPayload("COUNTY", row.provincePricing, hasTrafficUnit ? row.provinceUnit : null, basedTire, isPremium ? row.provinceRevenuePercent : null)
+				? mapTrafficLocationPayload("COUNTY", row.provincePricing, hasTrafficUnit ? row.provinceUnit : null, isIxp ? row.provinceBasedTire ?? true : undefined, isPremium ? row.provinceRevenuePercent : null, isIxp ? row.provinceContractModel ?? "LEGACY" : undefined)
 				: null,
 		].filter(Boolean);
 
@@ -725,10 +726,10 @@ async function formValuesToApiPayload(values: ContractFormValues) {
 		const normalizedCompanyType = String(values.companyType ?? "").trim().toUpperCase();
 		const isUnitCompanyType = ["CP", "PREMIUM", "IXP", "TCI"].includes(normalizedCompanyType);
 		const isPremiumCompanyType = normalizedCompanyType === "PREMIUM";
-		const basedTire = normalizedCompanyType === "IXP" ? true : undefined;
+		const isIxp = normalizedCompanyType === "IXP";
 		const locations = [
-			mapTrafficLocationPayload("TEHRAN", serviceFields.tehranPricing, isUnitCompanyType ? serviceFields.tehranUnit : null, basedTire, isPremiumCompanyType ? serviceFields.tehranRevenuePercent : null),
-			mapTrafficLocationPayload("COUNTY", serviceFields.provincePricing, isUnitCompanyType ? serviceFields.provinceUnit : null, basedTire, isPremiumCompanyType ? serviceFields.provinceRevenuePercent : null),
+			mapTrafficLocationPayload("TEHRAN", serviceFields.tehranPricing, isUnitCompanyType ? serviceFields.tehranUnit : null, isIxp ? serviceFields.tehranBasedTire ?? true : undefined, isPremiumCompanyType ? serviceFields.tehranRevenuePercent : null, isIxp ? serviceFields.tehranContractModel ?? "LEGACY" : undefined),
+			mapTrafficLocationPayload("COUNTY", serviceFields.provincePricing, isUnitCompanyType ? serviceFields.provinceUnit : null, isIxp ? serviceFields.provinceBasedTire ?? true : undefined, isPremiumCompanyType ? serviceFields.provinceRevenuePercent : null, isIxp ? serviceFields.provinceContractModel ?? "LEGACY" : undefined),
 		].filter(Boolean);
 
 		payload.is_signed = isOfficial;
