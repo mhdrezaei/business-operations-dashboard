@@ -1493,6 +1493,8 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													selectProps={{
 														"allowClear": true,
 														"placeholder": "سال",
+														"placement": "bottomRight",
+														"dropdownAlign": { overflow: { adjustY: false } },
 														"aria-labelledby": "contract-form-label-start-year-telecom",
 													} as any}
 												/>
@@ -1508,6 +1510,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 														"allowClear": true,
 														"placeholder": "ماه",
 														"placement": "bottomRight",
+														"dropdownAlign": { overflow: { adjustY: false } },
 														"aria-labelledby": "contract-form-label-start-month-telecom",
 													} as any}
 												/>
@@ -1522,6 +1525,8 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													selectProps={{
 														"allowClear": true,
 														"placeholder": "سال",
+														"placement": "bottomRight",
+														"dropdownAlign": { overflow: { adjustY: false } },
 														"aria-labelledby": "contract-form-label-end-year-telecom",
 													} as any}
 												/>
@@ -1537,6 +1542,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 														"allowClear": true,
 														"placeholder": "ماه",
 														"placement": "bottomRight",
+														"dropdownAlign": { overflow: { adjustY: false } },
 														"aria-labelledby": "contract-form-label-end-month-telecom",
 													} as any}
 												/>
@@ -1636,6 +1642,8 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													selectProps={{
 														"allowClear": true,
 														"placeholder": "سال",
+														"placement": "bottomRight",
+														"dropdownAlign": { overflow: { adjustY: false } },
 														"aria-labelledby": "contract-form-label-start-year",
 													} as any}
 												/>
@@ -1651,6 +1659,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 														"allowClear": true,
 														"placeholder": "ماه",
 														"placement": "bottomRight",
+														"dropdownAlign": { overflow: { adjustY: false } },
 														"aria-labelledby": "contract-form-label-start-month",
 													} as any}
 												/>
@@ -1665,6 +1674,8 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													selectProps={{
 														"allowClear": true,
 														"placeholder": "سال",
+														"placement": "bottomRight",
+														"dropdownAlign": { overflow: { adjustY: false } },
 														"aria-labelledby": "contract-form-label-end-year",
 													} as any}
 												/>
@@ -1680,6 +1691,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 														"allowClear": true,
 														"placeholder": "ماه",
 														"placement": "bottomRight",
+														"dropdownAlign": { overflow: { adjustY: false } },
 														"aria-labelledby": "contract-form-label-end-month",
 													} as any}
 												/>
@@ -1988,6 +2000,8 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 							selectProps={{
 								"allowClear": true,
 								"placeholder": "انتخاب سال",
+								"placement": "bottomRight",
+								"dropdownAlign": { overflow: { adjustY: false } },
 								"aria-labelledby": "contract-form-label-start-year",
 							} as any}
 						/>
@@ -2003,6 +2017,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 								"allowClear": true,
 								"placeholder": "انتخاب ماه",
 								"placement": "bottomRight",
+								"dropdownAlign": { overflow: { adjustY: false } },
 								"aria-labelledby": "contract-form-label-start-month",
 							} as any}
 						/>
@@ -2017,6 +2032,8 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 							selectProps={{
 								"allowClear": true,
 								"placeholder": "انتخاب سال",
+								"placement": "bottomRight",
+								"dropdownAlign": { overflow: { adjustY: false } },
 								"aria-labelledby": "contract-form-label-end-year",
 							} as any}
 						/>
@@ -2032,6 +2049,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 								"allowClear": true,
 								"placeholder": "انتخاب ماه",
 								"placement": "bottomRight",
+								"dropdownAlign": { overflow: { adjustY: false } },
 								"aria-labelledby": "contract-form-label-end-month",
 							} as any}
 						/>

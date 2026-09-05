@@ -5,6 +5,7 @@ export interface TierRow {
 	from: number | null
 	to: number | null
 	fee: number | null
+	ratePercentage?: number | null
 }
 
 export type BlendedSectionMode = "fixed" | "variable";
@@ -19,6 +20,7 @@ export interface ContractTypeValue {
 
 	// ثابت
 	fixedAmount: number | null
+	ratePercentage?: number | null
 
 	// پلکانی ثابت/متغیر
 	rows: TierRow[]

@@ -17,6 +17,10 @@ const TRAFFIC_UNIT_OPTIONS = [
 	{ label: "GB/month", value: "GB/month" },
 	{ label: "Mbps", value: "Mbps" },
 ];
+const IXP_CONTRACT_MODEL_OPTIONS = [
+	{ label: "قدیمی", value: "LEGACY" },
+	{ label: "جدول متغیر", value: "VARIABLE_TABLE" },
+];
 
 interface TrafficPricingFieldsProps {
 	pricingName: string
@@ -27,6 +31,8 @@ interface TrafficPricingFieldsProps {
 	showPremiumRevenuePercent: boolean
 	basedTireName: string
 	showBasedTire: boolean
+	contractModelName: string
+	showContractModel: boolean
 }
 
 function TrafficPricingFields({
@@ -38,10 +44,17 @@ function TrafficPricingFields({
 	showPremiumRevenuePercent,
 	basedTireName,
 	showBasedTire,
+	contractModelName,
+	showContractModel,
 }: TrafficPricingFieldsProps) {
+	const { control } = useFormContext<ContractFormValues>();
+	const contractModel = useWatch({ control, name: contractModelName as any });
+	const ratePercentageHelpText = contractModel === "VARIABLE_TABLE"
+		? "مقدار فی بر اساس ضرب مقدار فی که وارد کرده‌اید در درصد نرخ محاسبه می‌شود."
+		: "در مدل قرارداد قدیمی، درصد نرخ اختیاری است و محاسبات مالی بر اساس مقدار فی (ریال) نمایش داده می‌شود؛ این درصد هیچ تاثیری بر روی محاسبات مالی ندارد.";
 	return (
 		<div className="traffic-pricing-fields">
-			{showUnitSelector || showPremiumRevenuePercent
+			{showUnitSelector || showPremiumRevenuePercent || showContractModel
 				? (
 					<div className="traffic-pricing-meta-fields">
 						{showUnitSelector
@@ -74,6 +87,16 @@ function TrafficPricingFields({
 								/>
 							)
 							: null}
+						{showContractModel
+							? (
+								<RHFSelect
+									name={contractModelName as any}
+									label="مدل قرارداد"
+									options={IXP_CONTRACT_MODEL_OPTIONS}
+									selectProps={{ placeholder: "انتخاب مدل قرارداد", allowClear: false }}
+								/>
+							)
+							: null}
 					</div>
 				)
 				: null}
@@ -83,6 +106,8 @@ function TrafficPricingFields({
 				name={pricingName}
 				tone={TRAFFIC_SECTION_TONE}
 				variant="embedded"
+				showRatePercentage={showContractModel}
+				ratePercentageHelpText={ratePercentageHelpText}
 			/>
 		</div>
 	);
@@ -161,6 +186,10 @@ export function TrafficFields() {
 			setValue(sf("tehranBasedTire") as any, true, { shouldDirty: false, shouldValidate: false });
 		if (getValues(sf("provinceBasedTire") as any) == null)
 			setValue(sf("provinceBasedTire") as any, true, { shouldDirty: false, shouldValidate: false });
+		if (getValues(sf("tehranContractModel") as any) == null)
+			setValue(sf("tehranContractModel") as any, "LEGACY", { shouldDirty: false, shouldValidate: false });
+		if (getValues(sf("provinceContractModel") as any) == null)
+			setValue(sf("provinceContractModel") as any, "LEGACY", { shouldDirty: false, shouldValidate: false });
 	}, [getValues, isIxp, setValue]);
 
 	useEffect(() => {
@@ -172,6 +201,8 @@ export function TrafficFields() {
 		setValue(sf("addenda") as any, undefined, { shouldDirty: true, shouldValidate: true });
 		setValue(sf("tehranRevenuePercent") as any, undefined, { shouldDirty: true, shouldValidate: true });
 		setValue(sf("provinceRevenuePercent") as any, undefined, { shouldDirty: true, shouldValidate: true });
+		setValue(sf("tehranContractModel") as any, undefined, { shouldDirty: true, shouldValidate: true });
+		setValue(sf("provinceContractModel") as any, undefined, { shouldDirty: true, shouldValidate: true });
 	}, [isOfficial, setValue]);
 
 	useEffect(() => {
@@ -198,7 +229,7 @@ export function TrafficFields() {
 			}
 
 			if (!tehranPricing) {
-				for (const key of ["tehranPricing", "tehranUnit", "tehranRevenuePercent"]) {
+				for (const key of ["tehranPricing", "tehranUnit", "tehranRevenuePercent", "tehranContractModel"]) {
 					if (key in next) {
 						delete next[key];
 						changed = true;
@@ -206,7 +237,7 @@ export function TrafficFields() {
 				}
 			}
 			if (!provincePricing) {
-				for (const key of ["provincePricing", "provinceUnit", "provinceRevenuePercent"]) {
+				for (const key of ["provincePricing", "provinceUnit", "provinceRevenuePercent", "provinceContractModel"]) {
 					if (key in next) {
 						delete next[key];
 						changed = true;
@@ -272,6 +303,8 @@ export function TrafficFields() {
 											showPremiumRevenuePercent={showPremiumRevenuePercent}
 											basedTireName={sf("tehranBasedTire")}
 											showBasedTire={isIxp}
+											contractModelName={sf("tehranContractModel")}
+											showContractModel={isIxp}
 										/>
 									)
 									: (
@@ -303,6 +336,8 @@ export function TrafficFields() {
 											showPremiumRevenuePercent={showPremiumRevenuePercent}
 											basedTireName={sf("provinceBasedTire")}
 											showBasedTire={isIxp}
+											contractModelName={sf("provinceContractModel")}
+											showContractModel={isIxp}
 										/>
 									)
 									: (
@@ -337,6 +372,8 @@ export function TrafficFields() {
 												showPremiumRevenuePercent={showPremiumRevenuePercent}
 												basedTireName={`${base}.tehranBasedTire`}
 												showBasedTire={isIxp}
+												contractModelName={`${base}.tehranContractModel`}
+												showContractModel={isIxp}
 											/>
 										</ContractFormSection>
 									)
@@ -354,6 +391,8 @@ export function TrafficFields() {
 												showPremiumRevenuePercent={showPremiumRevenuePercent}
 												basedTireName={`${base}.provinceBasedTire`}
 												showBasedTire={isIxp}
+												contractModelName={`${base}.provinceContractModel`}
+												showContractModel={isIxp}
 											/>
 										</ContractFormSection>
 									)

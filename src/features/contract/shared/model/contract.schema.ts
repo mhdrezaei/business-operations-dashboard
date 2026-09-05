@@ -425,6 +425,57 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 						}
 					}
 
+					if (isOfficial && trafficCompanyType === "IXP") {
+						const validateRatePercentages = (pricing: any, contractModel: unknown, path: Array<string | number>) => {
+							if (contractModel !== "VARIABLE_TABLE")
+								return;
+							if (pricing?.type === "fixed") {
+								if (isBlankContractValue(pricing.ratePercentage)) {
+									ctx.addIssue({
+										code: "custom",
+										path: [...path, "ratePercentage"],
+										message: "درصد نرخ الزامی است",
+									});
+								}
+								return;
+							}
+
+							const validateRows = (rows: any[], rowsPath: Array<string | number>) => {
+								rows.forEach((row, index) => {
+									if (isBlankContractValue(row?.ratePercentage)) {
+										ctx.addIssue({
+											code: "custom",
+											path: [...rowsPath, index, "ratePercentage"],
+											message: "درصد نرخ الزامی است",
+										});
+									}
+								});
+							};
+
+							if (pricing?.type === "tier_blended") {
+								(pricing.sections ?? []).forEach((section: any, index: number) =>
+									validateRows(section?.rows ?? [], [...path, "sections", index, "rows"]),
+								);
+							}
+							else if (["tier_fixed", "tier_variable"].includes(pricing?.type)) {
+								validateRows(pricing.rows ?? [], [...path, "rows"]);
+							}
+						};
+
+						const validateLocations = (fields: any, path: Array<string | number>) => {
+							validateRatePercentages(fields?.tehranPricing, fields?.tehranContractModel, [...path, "tehranPricing"]);
+							validateRatePercentages(fields?.provincePricing, fields?.provinceContractModel, [...path, "provincePricing"]);
+							(fields?.addenda ?? []).forEach((addendum: any, index: number) =>
+								validateLocations(addendum, [...path, "addenda", index]),
+							);
+							(fields?.children ?? []).forEach((child: any, index: number) =>
+								validateLocations(child, [...path, "children", index]),
+							);
+						};
+
+						validateLocations(val.serviceFields, ["serviceFields"]);
+					}
+
 					if (isOfficial && val.companyType === "PREMIUM") {
 						const tehranPricing = (val.serviceFields as any)?.tehranPricing;
 						const provincePricing = (val.serviceFields as any)?.provincePricing;
