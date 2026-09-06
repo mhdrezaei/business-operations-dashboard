@@ -41,17 +41,11 @@ function CompanyProfilesPageInner() {
 			</div>
 
 			{/* آکاردئون فقط وقتی company انتخاب شد */}
-			{companyId
-				? (
-					<div className="mt-4">
-						<CompanyProfileAccordion />
-					</div>
-				)
-				: (
-					<div className="mt-4 opacity-80">
-						راهنما: ابتدا سرویس و سپس شرکت را انتخاب کنید.
-					</div>
-				)}
+			{companyId && (
+				<div className="mt-4">
+					<CompanyProfileAccordion />
+				</div>
+			)}
 		</div>
 	);
 }

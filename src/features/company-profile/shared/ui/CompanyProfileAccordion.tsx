@@ -1,6 +1,7 @@
+import type { CSSProperties } from "react";
 import type { CompanyProfileFormValues } from "../../model/company-profile.form.types";
 import { useAccess } from "#src/hooks";
-import { Collapse } from "antd";
+import { Empty, Tabs, theme } from "antd";
 import React from "react";
 import { useWatch } from "react-hook-form";
 import BankAccountsPanel from "../../sections/bank-accounts/ui/BankAccountsPanel";
@@ -8,8 +9,10 @@ import CompanyProfileAccordionPanel from "../../sections/company-info/ui/Company
 import CompanyDocumentsPanel from "../../sections/documents/ui/CompanyDocumentsPanel";
 import CompanyPeoplePanel from "../../sections/key-people/ui/CompanyPeoplePanel";
 import ShareholdersPanel from "../../sections/shareholders/ui/ShareholdersPanel";
+import "./company-profile-tabs.css";
 
 export default function CompanyProfileAccordion() {
+	const { token } = theme.useToken();
 	const { hasCompanyCardAccess } = useAccess();
 	const companyId = useWatch<CompanyProfileFormValues, "companyId">({ name: "companyId" });
 
@@ -24,7 +27,7 @@ export default function CompanyProfileAccordion() {
 	const canSeeBankAccounts = hasCompanyCardAccess("company_bank_accounts");
 	const canSeeDocuments = hasCompanyCardAccess("company_documents");
 
-	const items = [] as NonNullable<React.ComponentProps<typeof Collapse>["items"]>;
+	const items = [] as NonNullable<React.ComponentProps<typeof Tabs>["items"]>;
 
 	if (canSeeCompanyInfo) {
 		items.push({
@@ -61,13 +64,18 @@ export default function CompanyProfileAccordion() {
 	}
 
 	if (!items.length) {
-		return <div className="opacity-80">هیچ کارت مجازی برای این کاربر فعال نیست.</div>;
+		return <Empty description="بخشی برای نمایش به این کاربر فعال نیست." />;
 	}
 
 	return (
-		<Collapse
-			defaultActiveKey={[String(items[0]?.key ?? "company-info")]}
-			accordion
+		<Tabs
+			className="company-profile-tabs"
+			defaultActiveKey={String(items[0]?.key ?? "company-info")}
+			style={{
+				"--company-profile-tabs-background": token.colorBgLayout,
+				"--company-profile-tabs-border": token.colorSplit,
+			} as CSSProperties}
+			tabBarGutter={16}
 			items={items}
 		/>
 	);

@@ -1,5 +1,6 @@
 import type { PublicProfileDto, UpsertPublicProfilePayload } from "#src/features/company-profile/api/company-profile.api";
 import type { SocialLinkItem } from "../company-info.types";
+import { normalizeMapCoordinate } from "../company-map-coordinate";
 
 function cleanArray(v: unknown): string[] {
 	if (!v)
@@ -98,8 +99,8 @@ export function publicFormToPayload(values: PublicProfileFormValues): UpsertPubl
 		legal_address: values.legal_address.trim() || null,
 		postal_code: values.postal_code.trim() || null,
 		map_address: values.map_address.trim() || null,
-		map_latitude: values.map_latitude.trim() || null,
-		map_longitude: values.map_longitude.trim() || null,
+		map_latitude: normalizeMapCoordinate(values.map_latitude),
+		map_longitude: normalizeMapCoordinate(values.map_longitude),
 
 		phone: values.phone.map(x => x.trim()).filter(Boolean),
 		mobile: values.mobile.map(x => x.trim()).filter(Boolean),

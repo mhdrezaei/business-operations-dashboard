@@ -1,4 +1,5 @@
 import type { CompanyInfoFormValues, CompanyProfileDto, SocialLinkItem } from "./company-info.types";
+import { normalizeMapCoordinate } from "./company-map-coordinate";
 
 function splitMulti(v: unknown): string[] {
 	if (v == null)
@@ -158,8 +159,8 @@ export function companyInfoFormToPayload(values: CompanyInfoFormValues): Partial
 		postal_code: values.postal_code.trim() || null,
 
 		map_address: values.map_address.trim() || null,
-		map_latitude: values.map_latitude.trim() || null,
-		map_longitude: values.map_longitude.trim() || null,
+		map_latitude: normalizeMapCoordinate(values.map_latitude),
+		map_longitude: normalizeMapCoordinate(values.map_longitude),
 
 		phone: joinMulti(values.phone),
 		mobile: joinMulti(values.mobile),

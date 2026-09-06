@@ -47,7 +47,7 @@ export default function CompanyInfoForm({ defaultValues, onSubmit }: Props) {
 				<Card variant="outlined" title="اطلاعات پایه" className="bg-bgMask">
 					<div className="grid grid-cols-2 gap-x-4">
 						<RHFProText name="legal_name" label="نام حقوقی" inputProps={{ placeholder: "نام حقوقی" }} />
-						<RHFProText name="brand_name" label="نام برند" inputProps={{ placeholder: "نام برند" }} />
+						<RHFProText name="brand_name" label="نام تجاری (برند)" inputProps={{ placeholder: "نام تجاری (برند)" }} />
 
 						<RHFProText name="national_id" label="شناسه ملی" inputProps={{ placeholder: "شناسه ملی" }} />
 						<RHFSelect
@@ -73,7 +73,7 @@ export default function CompanyInfoForm({ defaultValues, onSubmit }: Props) {
 					</div>
 				</Card>
 
-				<Card variant="outlined" title="آدرس و نقشه" className="bg-bgMask">
+				<Card variant="outlined" title="آدرس" className="bg-bgMask">
 					<div className=" grid grid-cols-2 gap-x-4">
 						<RHFProText name="postal_code" label="کد پستی" inputProps={{ placeholder: "کد پستی" }} />
 						<RHFProText name="map_address" label="آدرس روی نقشه" inputProps={{ placeholder: "آدرس روی نقشه" }} />
