@@ -2,7 +2,7 @@ import type { SmsOperatorCode, SmsOperatorInvoice, SmsOperatorInvoiceMonthlyRepo
 import type { ActionType, ProColumns, ProCoreActionType } from "@ant-design/pro-components";
 import type { FocusEvent, KeyboardEvent } from "react";
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
-import { createSmsOperatorInvoice, createSmsOperatorInvoiceMonthlyReport, deleteSmsOperatorInvoice, fetchSmsOperatorInvoiceMonthlyReportStatus, fetchSmsOperatorInvoices, updateSmsOperatorInvoice } from "#src/features/performance/api/performances.api";
+import { createSmsOperatorInvoice, createSmsOperatorInvoiceMonthlyReport, deleteSmsOperatorInvoice, fetchLatestSmsOperatorInvoiceMonthlyReport, fetchSmsOperatorInvoiceMonthlyReportStatus, fetchSmsOperatorInvoices, updateSmsOperatorInvoice } from "#src/features/performance/api/performances.api";
 import { TableActionEditIcon, TableActionTrashIcon } from "#src/icons";
 import { BarChartOutlined, CheckCircleOutlined, ExclamationCircleOutlined, FileAddOutlined, FilePdfOutlined } from "@ant-design/icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -32,7 +32,7 @@ export function SmsGatewayOperatorInvoicesPage() {
 	const [form] = Form.useForm<SmsOperatorInvoicePayload>(); const [reportForm] = Form.useForm<{ sh_year?: number, sh_month?: number }>(); const client = useQueryClient();
 	const invoices = useQuery({ queryKey: ["sms-gateway", "operator-invoices"], queryFn: fetchSmsOperatorInvoices });
 	const invoicesTableActionRef = useRef<ActionType>(null);
-	const [saving, setSaving] = useState(false); const [loadingReport, setLoadingReport] = useState(false); const [report, setReport] = useState<SmsOperatorInvoiceMonthlyReport>();
+	const [saving, setSaving] = useState(false); const [loadingReport, setLoadingReport] = useState(true); const [report, setReport] = useState<SmsOperatorInvoiceMonthlyReport>();
 	const [editing, setEditing] = useState<SmsOperatorInvoice>(); const [editForm] = Form.useForm<SmsOperatorInvoicePayload>(); const [updating, setUpdating] = useState(false);
 	const reportRequestId = useRef(0);
 	const year = Form.useWatch("sh_year", form); const month = Form.useWatch("sh_month", form);
@@ -54,6 +54,18 @@ export function SmsGatewayOperatorInvoicesPage() {
 		}
 		catch { if (requestId === reportRequestId.current) { setLoadingReport(false); showMessage("error", "دریافت گزارش ناموفق بود."); } }
 	};
+	useEffect(() => {
+		const requestId = ++reportRequestId.current;
+		void fetchLatestSmsOperatorInvoiceMonthlyReport()
+			.then((next) => {
+				if (requestId === reportRequestId.current)
+					setReport(next);
+			})
+			.catch(() => {
+				if (requestId === reportRequestId.current)
+					setLoadingReport(false);
+			});
+	}, []);
 	useEffect(() => {
 		if (!report?.job_id || !["PENDING", "RUNNING"].includes(report.status))
 			return;

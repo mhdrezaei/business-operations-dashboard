@@ -898,6 +898,10 @@ export function createSmsOperatorInvoiceMonthlyReport(sh_year: number, sh_month:
 	}).json<SmsOperatorInvoiceMonthlyReport>();
 }
 
+export function fetchLatestSmsOperatorInvoiceMonthlyReport() {
+	return request.get("sms-gateway/operator-invoices/monthly-report/latest/", { suppressErrorNotification: true }).json<SmsOperatorInvoiceMonthlyReport>();
+}
+
 export function fetchSmsOperatorInvoiceMonthlyReportStatus(jobId: number) {
 	return request.get(`sms-gateway/operator-invoices/monthly-report/status/${jobId}/`, { suppressErrorNotification: true }).json<SmsOperatorInvoiceMonthlyReport>();
 }
