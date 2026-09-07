@@ -5,7 +5,6 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import { Button, Input, theme } from "antd";
 import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 
-import { PaginationPlus } from "tiptap-pagination-plus";
 import { getEditorExtensions } from "../core/editor-extensions";
 
 const PAGE_HEIGHT_PX = 1123;
@@ -15,18 +14,7 @@ const TOTAL_STEP_PX = PAGE_HEIGHT_PX + PAGE_GAP_PX;
 
 export function useTemplateEditor({ initialContent = "" } = {}) {
 	return useEditor({
-		extensions: [
-			...getEditorExtensions(),
-			PaginationPlus.configure({
-				pageHeight: PAGE_HEIGHT_PX,
-				pageWidth: PAGE_WIDTH_PX,
-				pageGap: PAGE_GAP_PX,
-				marginTop: 96,
-				marginBottom: 96,
-				marginLeft: 72,
-				marginRight: 72,
-			}),
-		],
+		extensions: [...getEditorExtensions()],
 		content: initialContent,
 		editorProps: {
 			attributes: { dir: "rtl" },
@@ -217,6 +205,16 @@ const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasPro
                     background: transparent !important;
                     color: #1a1a1a;
                     font-family: 'Vazirmatn', Tahoma, sans-serif;
+                    padding: 96px 72px;
+                    box-sizing: border-box;
+                    width: ${PAGE_WIDTH_PX}px;
+                    background-image: repeating-linear-gradient(
+                        to bottom,
+                        #ffffff 0px,
+                        #ffffff ${PAGE_HEIGHT_PX}px,
+                        #d4d4d4 ${PAGE_HEIGHT_PX}px,
+                        #d4d4d4 ${TOTAL_STEP_PX}px
+                    ) !important;
                 }
 
                 .ms-word-editor .ProseMirror p {
@@ -225,7 +223,6 @@ const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasPro
                     text-align: justify;
                 }
 
-                /* رفع باگ استایل‌دهی: اسپَن‌ها باید فونت‌فمیلی خودشان (که تولبار تعیین میکند) را دریافت کنند */
                 .ms-word-editor .ProseMirror span {
                     font-family: inherit;
                 }
@@ -234,8 +231,52 @@ const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasPro
                     cursor: text;
                 }
 
-                .ms-word-editor [data-rm-pagination] {
-                    background-color: #ffffff !important;
+				/* Table styles - no pagination plugin interference */
+                .ms-word-editor .ProseMirror table {
+                    display: table !important;
+                    border-collapse: collapse;
+                    width: 100%;
+                    margin: 1rem 0;
+                    table-layout: fixed;
+                }
+                .ms-word-editor .ProseMirror table tbody {
+                    display: table-row-group !important;
+                }
+                .ms-word-editor .ProseMirror table tr {
+                    display: table-row !important;
+                    page-break-inside: avoid;
+                    break-inside: avoid;
+                }
+                .ms-word-editor .ProseMirror table td,
+                .ms-word-editor .ProseMirror table th {
+                    display: table-cell !important;
+                    border: 1px solid #cbd5e1;
+                    padding: 8px;
+                    vertical-align: top;
+                    box-sizing: border-box;
+                    min-width: 1em;
+                    word-break: break-word;
+                }
+                .ms-word-editor .ProseMirror table th {
+                    font-weight: bold;
+                    background-color: #f8fafc;
+                }
+                .ms-word-editor .ProseMirror .selectedCell:after {
+                    z-index: 2;
+                    position: absolute;
+                    content: "";
+                    left: 0; right: 0; top: 0; bottom: 0;
+                    background: rgba(99,102,241,0.2);
+                    pointer-events: none;
+                }
+                .ms-word-editor .ProseMirror .column-resize-handle {
+                    position: absolute;
+                    right: -2px;
+                    top: 0; bottom: -2px;
+                    width: 4px;
+                    background-color: #6366f1;
+                    pointer-events: none;
+                    z-index: 20;
                 }
             `}
 			</style>
@@ -244,7 +285,7 @@ const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasPro
 
 			<div className="flex-1 w-full flex justify-center py-6 overflow-hidden bg-black/5 dark:bg-black/20">
 				<div
-					className="ms-word-editor relative shadow-2xl rounded-sm bg-white"
+					className="ms-word-editor relative shadow-2xl rounded-sm"
 					onClick={handleCanvasClick}
 					onScroll={e => e.currentTarget.scrollTop = 0}
 					style={{
@@ -254,6 +295,7 @@ const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasPro
 						maxHeight: `${PAGE_HEIGHT_PX}px`,
 						overflow: "hidden",
 						boxSizing: "border-box",
+						backgroundColor: "#ffffff",
 					}}
 				>
 					<div

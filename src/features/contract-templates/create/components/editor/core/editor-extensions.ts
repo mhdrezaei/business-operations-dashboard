@@ -83,6 +83,22 @@ export const Direction = Extension.create({
 	},
 });
 
+export const NodeStyle = Extension.create({
+	name: "nodeStyle",
+	addGlobalAttributes() {
+		return [{
+			types: ["table", "tableRow", "tableCell", "tableHeader", "paragraph", "heading"],
+			attributes: {
+				style: {
+					default: null,
+					parseHTML: el => el.getAttribute("style"),
+					renderHTML: attrs => (attrs.style ? { style: attrs.style } : {}),
+				},
+			},
+		}];
+	},
+});
+
 export function getEditorExtensions() {
 	return [
 		StarterKit,
@@ -94,6 +110,7 @@ export function getEditorExtensions() {
 		FontSize,
 		Direction,
 		VariableNode,
+		NodeStyle,
 		Highlight.configure({ multicolor: true }),
 		TextAlign.configure({ types: ["heading", "paragraph"], defaultAlignment: "right" }),
 		Table.configure({ resizable: true, HTMLAttributes: { class: "custom-table" } }),
