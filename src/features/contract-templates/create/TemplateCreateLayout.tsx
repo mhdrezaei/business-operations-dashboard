@@ -1,6 +1,7 @@
-// src/features/contract-templates/create/TemplateCreateLayout.tsx
-import { Card, message, Spin, theme } from "antd";
-import React, { useEffect, useState } from "react";
+import { ExclamationCircleFilled } from "@ant-design/icons";
+import { Button, Card, message, Spin, theme } from "antd";
+import { AnimatePresence, motion } from "framer-motion";
+import React, { useEffect, useRef, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { TemplateCreateApi } from "../api/api";
 import { useServicesListQuery } from "../queries/template-create.queries";
@@ -50,6 +51,11 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 	const [isLoadingTemplate, setIsLoadingTemplate] = useState(false);
 	const [isInitialDataLoaded, setIsInitialDataLoaded] = useState(false);
 
+	const [isDirty, setIsDirty] = useState(false);
+	const [showExitConfirm, setShowExitConfirm] = useState(false);
+	const isReadyRef = useRef(false);
+	const initialHeaderRef = useRef<string | null>(null);
+
 	const editor = useTemplateEditor({ initialContent: editorContent });
 	const { customFonts, headerData, fetchFonts } = useTemplateStore();
 
@@ -59,6 +65,97 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 		if (!editor)
 			return;
 		exportEditorToWord(editor.getHTML(), methods.getValues("name") || "قالب-قرارداد");
+	};
+
+	useEffect(() => {
+		if (!templateId) {
+			const t = setTimeout(() => {
+				isReadyRef.current = true;
+				initialHeaderRef.current = JSON.stringify(headerData);
+			}, 400);
+			return () => clearTimeout(t);
+		}
+		else if (isInitialDataLoaded) {
+			const t = setTimeout(() => {
+				isReadyRef.current = true;
+				initialHeaderRef.current = JSON.stringify(headerData);
+			}, 400);
+			return () => clearTimeout(t);
+		}
+	}, [templateId, isInitialDataLoaded]);
+
+	useEffect(() => {
+		if (!editor)
+			return;
+		const onUpdate = () => {
+			if (isReadyRef.current) {
+				setIsDirty(true);
+			}
+		};
+		editor.on("update", onUpdate);
+		return () => {
+			editor.off("update", onUpdate);
+		};
+	}, [editor]);
+
+	useEffect(() => {
+		const subscription = methods.watch(() => {
+			if (isReadyRef.current) {
+				setIsDirty(true);
+			}
+		});
+		return () => subscription.unsubscribe();
+	}, [methods]);
+
+	useEffect(() => {
+		if (isReadyRef.current && initialHeaderRef.current !== null) {
+			if (JSON.stringify(headerData) !== initialHeaderRef.current) {
+				setIsDirty(true);
+			}
+		}
+	}, [headerData]);
+
+	useEffect(() => {
+		const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+			if (isDirty) {
+				e.preventDefault();
+				e.returnValue = "";
+				return "";
+			}
+		};
+		window.addEventListener("beforeunload", handleBeforeUnload);
+		return () => {
+			window.removeEventListener("beforeunload", handleBeforeUnload);
+		};
+	}, [isDirty]);
+
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (isPreviewOpen)
+				return;
+			if (e.key === "Escape") {
+				if (showExitConfirm) {
+					setShowExitConfirm(false);
+				}
+				else if (isDirty) {
+					setShowExitConfirm(true);
+				}
+				else {
+					onClose();
+				}
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [isDirty, showExitConfirm, isPreviewOpen, onClose]);
+
+	const handleRequestClose = () => {
+		if (isDirty) {
+			setShowExitConfirm(true);
+		}
+		else {
+			onClose();
+		}
 	};
 
 	useEffect(() => {
@@ -168,6 +265,9 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 				message.success("قالب با موفقیت ذخیره شد!");
 			}
 
+			setIsDirty(false);
+			setShowExitConfirm(false);
+
 			if (onSuccess)
 				onSuccess();
 			setTimeout(() => onClose(), 1500);
@@ -244,7 +344,7 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 				>
 					<div className="flex-shrink-0">
 						<TemplateCreateHeader
-							onClose={onClose}
+							onClose={handleRequestClose}
 							onOpenPrintPreview={() => setIsPreviewOpen(true)}
 							onExportWord={handleExportWord}
 							onSaveTemplate={handleSaveTemplate}
@@ -278,6 +378,79 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 				onClose={() => setIsPreviewOpen(false)}
 				editor={editor}
 			/>
+
+			<AnimatePresence>
+				{showExitConfirm && (
+					<div className="fixed inset-0 z-[100001] flex items-center justify-center p-4">
+						<motion.div
+							initial={{ opacity: 0 }}
+							animate={{ opacity: 1 }}
+							exit={{ opacity: 0 }}
+							transition={{ duration: 0.2 }}
+							className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+							onClick={() => setShowExitConfirm(false)}
+						/>
+
+						<motion.div
+							initial={{ scale: 0.92, opacity: 0, y: 15 }}
+							animate={{ scale: 1, opacity: 1, y: 0 }}
+							exit={{ scale: 0.95, opacity: 0, y: 10 }}
+							transition={{ type: "spring", duration: 0.35, bounce: 0.15 }}
+							className="relative z-10 w-full max-w-md rounded-2xl p-6 shadow-2xl border"
+							style={{
+								backgroundColor: token.colorBgElevated,
+								borderColor: token.colorBorderSecondary,
+								color: token.colorText,
+							}}
+							dir="rtl"
+						>
+							<div className="flex items-start gap-4">
+								<div
+									className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl"
+									style={{
+										backgroundColor: token.colorWarningBg,
+										border: `1px solid ${token.colorWarningBorder}`,
+									}}
+								>
+									<ExclamationCircleFilled style={{ fontSize: 24, color: token.colorWarning }} />
+								</div>
+
+								<div className="flex-1 min-w-0">
+									<h3 className="text-base font-bold m-0" style={{ color: token.colorText }}>
+										تغییرات ذخیره نشده است
+									</h3>
+									<p className="mt-2 mb-0 text-xs leading-relaxed" style={{ color: token.colorTextSecondary }}>
+										شما تغییراتی در قالب قرارداد ایجاد کرده‌اید که هنوز ذخیره نشده‌اند. آیا اطمینان دارید که می‌خواهید صفحه را ببندید؟ در صورت خروج، تغییرات اعمال‌شده ذخیره نخواهند شد.
+									</p>
+								</div>
+							</div>
+
+							<div className="mt-6 flex justify-end gap-3">
+								<Button
+									size="middle"
+									onClick={() => setShowExitConfirm(false)}
+									className="rounded-lg text-xs font-medium px-4"
+								>
+									انصراف و ادامه ویرایش
+								</Button>
+								<Button
+									danger
+									type="primary"
+									size="middle"
+									onClick={() => {
+										setIsDirty(false);
+										setShowExitConfirm(false);
+										onClose();
+									}}
+									className="rounded-lg text-xs font-medium px-4 shadow-sm"
+								>
+									بستن صفحه بدون ذخیره
+								</Button>
+							</div>
+						</motion.div>
+					</div>
+				)}
+			</AnimatePresence>
 		</FormProvider>
 	);
 }
