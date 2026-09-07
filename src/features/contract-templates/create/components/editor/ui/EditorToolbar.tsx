@@ -41,8 +41,79 @@ const TABLE_ACTION_OPTIONS = [
 	{ value: "toggleHeaderRow", label: "ردیف سرستون" },
 ];
 
+function getActiveHeading(e: any): "p" | "1" | "2" | "3" {
+	const { $head } = e.state.selection;
+	if (e.isActive("heading", { level: 1 }) || $head?.parent?.attrs?.level === 1)
+		return "1";
+	if (e.isActive("heading", { level: 2 }) || $head?.parent?.attrs?.level === 2)
+		return "2";
+	if (e.isActive("heading", { level: 3 }) || $head?.parent?.attrs?.level === 3)
+		return "3";
+	if (e.isActive("heading")) {
+		const lvl = e.getAttributes("heading")?.level || $head?.parent?.attrs?.level;
+		if (lvl === 1 || lvl === 2 || lvl === 3)
+			return String(lvl) as any;
+	}
+	return "p";
+}
+
+function getActiveFontSize(e: any, headingValue: string): string {
+	const { state } = e;
+	const { $from, empty } = state.selection;
+
+	let explicitSize: string | null = null;
+	if (!empty) {
+		explicitSize = e.getAttributes("textStyle")?.fontSize || null;
+	}
+	else {
+		const textStyleType = state.schema.marks.textStyle;
+		if (textStyleType) {
+			if (state.storedMarks) {
+				const mark = state.storedMarks.find((m: any) => m.type === textStyleType);
+				if (mark?.attrs?.fontSize)
+					explicitSize = mark.attrs.fontSize;
+			}
+			if (!explicitSize) {
+				const mark = $from.marks().find((m: any) => m.type === textStyleType);
+				if (mark?.attrs?.fontSize)
+					explicitSize = mark.attrs.fontSize;
+			}
+			if (!explicitSize && $from.nodeBefore?.isText) {
+				const mark = $from.nodeBefore.marks.find((m: any) => m.type === textStyleType);
+				if (mark?.attrs?.fontSize)
+					explicitSize = mark.attrs.fontSize;
+			}
+			if (!explicitSize && $from.nodeAfter?.isText) {
+				const mark = $from.nodeAfter.marks.find((m: any) => m.type === textStyleType);
+				if (mark?.attrs?.fontSize)
+					explicitSize = mark.attrs.fontSize;
+			}
+		}
+	}
+
+	if (explicitSize)
+		return explicitSize;
+
+	switch (headingValue) {
+		case "1":
+			return "24pt";
+		case "2":
+			return "18pt";
+		case "3":
+			return "14pt";
+		default:
+			return "11pt";
+	}
+}
+
 function uniformBlockAttr(state: any, attr: string, fallback: any = null) {
-	const { from, to } = state.selection;
+	const { from, to, empty } = state.selection;
+	if (empty) {
+		const { $head } = state.selection;
+		if ($head?.parent && ($head.parent.type.name === "paragraph" || $head.parent.type.name === "heading")) {
+			return $head.parent.attrs[attr] ?? fallback;
+		}
+	}
 	let value: any;
 	state.doc.nodesBetween(from, to, (node: any) => {
 		if (node.type.name !== "paragraph" && node.type.name !== "heading")
@@ -53,7 +124,7 @@ function uniformBlockAttr(state: any, attr: string, fallback: any = null) {
 		else if (v !== value)
 			value = null;
 	});
-	return value ?? null;
+	return value ?? fallback;
 }
 
 function ToolbarBtn({ onClick, active = false, title, disabled = false, icon }: { onClick: () => void, active?: boolean, title: string, disabled?: boolean, icon: React.ReactNode }) {
@@ -103,7 +174,11 @@ export default function EditorToolbar({ editor }: { editor: Editor | null, custo
 				return null;
 			const align = uniformBlockAttr(e.state, "textAlign", "right");
 			const dir = uniformBlockAttr(e.state, "dir", "rtl");
+			const heading = getActiveHeading(e);
+			const fontSize = getActiveFontSize(e, heading);
 			return {
+				heading,
+				fontSize,
 				bold: e.isActive("bold"),
 				italic: e.isActive("italic"),
 				underline: e.isActive("underline"),
@@ -118,22 +193,26 @@ export default function EditorToolbar({ editor }: { editor: Editor | null, custo
 				inTable: e.isActive("table"),
 				tableBorderless: e.getAttributes("table").borderless === true,
 				fontFamily: e.getAttributes("textStyle").fontFamily || "default",
-				fontSize: e.getAttributes("textStyle").fontSize || "default",
 				color: e.getAttributes("textStyle").color || token.colorText,
 				bgColor: e.getAttributes("highlight").color || "transparent",
-				heading1: e.isActive("heading", { level: 1 }),
-				heading2: e.isActive("heading", { level: 2 }),
-				heading3: e.isActive("heading", { level: 3 }),
 				canUndo: e.can().undo(),
 				canRedo: e.can().redo(),
 			};
 		},
 	});
 
+	const fontSizeOptions = useMemo(() => {
+		const baseOptions = [...FONT_SIZES];
+		if (state?.fontSize && !baseOptions.some(o => o.value === state.fontSize)) {
+			baseOptions.push({ value: state.fontSize, label: state.fontSize });
+			baseOptions.sort((a, b) => (Number.parseFloat(a.value) || 0) - (Number.parseFloat(b.value) || 0));
+		}
+		return baseOptions;
+	}, [state?.fontSize]);
+
 	if (!editor || !state)
 		return null;
 	const chain = () => editor.chain().focus();
-	const headingValue = state.heading1 ? "1" : state.heading2 ? "2" : state.heading3 ? "3" : "p";
 
 	const getPopupContainer = (trigger: HTMLElement) => trigger.parentNode as HTMLElement;
 	const groupStyle = { backgroundColor: token.colorBgContainer, borderColor: token.colorBorder };
@@ -147,7 +226,7 @@ export default function EditorToolbar({ editor }: { editor: Editor | null, custo
 			</Space.Compact>
 			<Divider type="vertical" className="m-0 h-6" style={{ borderColor: token.colorBorder }} />
 			<Space.Compact>
-				<Select size="small" value={headingValue} options={HEADING_OPTIONS} getPopupContainer={getPopupContainer} onChange={val => val === "p" ? chain().setParagraph().run() : chain().toggleHeading({ level: Number(val) as any }).run()} className="w-28 font-medium" />
+				<Select size="small" value={state.heading} options={HEADING_OPTIONS} getPopupContainer={getPopupContainer} onChange={val => val === "p" ? chain().setParagraph().run() : chain().toggleHeading({ level: Number(val) as any }).run()} className="w-28 font-medium" />
 
 				{/* 🔴 اعمال فونت انتخاب شده روی ویرایشگر با setFontFamily */}
 				<Select
@@ -159,7 +238,7 @@ export default function EditorToolbar({ editor }: { editor: Editor | null, custo
 					className="w-32"
 				/>
 
-				<Select size="small" value={state.fontSize} options={[{ value: "default", label: "اندازه" }, ...FONT_SIZES]} getPopupContainer={getPopupContainer} onChange={val => val === "default" ? chain().unsetFontSize().run() : chain().setFontSize(val).run()} className="w-20" />
+				<Select size="small" value={state.fontSize} options={fontSizeOptions} getPopupContainer={getPopupContainer} onChange={val => chain().setFontSize(val).run()} className="w-20" />
 			</Space.Compact>
 			<Divider type="vertical" className="m-0 h-6" style={{ borderColor: token.colorBorder }} />
 			<Space.Compact className="rounded-md border" style={groupStyle}>

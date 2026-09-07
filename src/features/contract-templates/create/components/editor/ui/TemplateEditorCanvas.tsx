@@ -165,7 +165,7 @@ const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasPro
 		if (!editor)
 			return;
 		const target = e.target as HTMLElement;
-		if (!target.closest(".ProseMirror p, .ProseMirror h1, .ProseMirror table, .ProseMirror span")) {
+		if (!target.closest(".ProseMirror")) {
 			editor.chain().focus("end").run();
 		}
 	};
