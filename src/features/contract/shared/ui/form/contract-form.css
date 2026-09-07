@@ -110,6 +110,22 @@
 	flex: 0 1 420px;
 }
 
+.contract-type-standard-fields--compact {
+	flex-direction: column;
+	align-items: stretch;
+	justify-content: flex-start;
+}
+
+.contract-type-standard-fields--compact .contract-type-standard-fields__switch {
+	flex: 0 0 auto;
+	align-self: flex-start;
+}
+
+.contract-type-standard-fields--compact .contract-type-standard-fields__amount {
+	flex: 0 0 auto;
+	width: 100%;
+}
+
 .contract-type-currency-field .ant-input-group-addon {
 	border-color: var(--contract-section-currency-border-color);
 	background-color: var(--contract-section-currency-bg);
@@ -129,6 +145,10 @@
 	border-color: transparent;
 	border-radius: var(--contract-blended-radius);
 	background: var(--contract-section-nested-bg);
+}
+
+.contract-blended-card--openapi.ant-card > .ant-card-body {
+	padding: 24px;
 }
 
 .contract-dashed-border {

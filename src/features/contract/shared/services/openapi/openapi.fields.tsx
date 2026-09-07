@@ -517,11 +517,15 @@ export function OpenApiFields() {
 								title="بهای ثبت وصولی"
 								name={sf("legacyPricing.paymentRegistration")}
 								tone="purple"
+								compactCalculationModel
+								blendedModePlaceholder="انتخاب نوع پلکانی در این بخش"
 							/>
 							<ContractTypeSection
 								title="بهای استعلام قبض"
 								name={sf("legacyPricing.billInquiry")}
 								tone="purple"
+								compactCalculationModel
+								blendedModePlaceholder="انتخاب نوع پلکانی در این بخش"
 							/>
 						</div>
 					)}
@@ -544,11 +548,15 @@ export function OpenApiFields() {
 										title="بهای ثبت وصولی"
 										name={`${base}.legacyPricing.paymentRegistration` as any}
 										tone="purple"
+										compactCalculationModel
+										blendedModePlaceholder="انتخاب نوع پلکانی در این بخش"
 									/>
 									<ContractTypeSection
 										title="بهای استعلام قبض"
 										name={`${base}.legacyPricing.billInquiry` as any}
 										tone="purple"
+										compactCalculationModel
+										blendedModePlaceholder="انتخاب نوع پلکانی در این بخش"
 									/>
 								</div>
 							)}
