@@ -1,4 +1,4 @@
-import { ExclamationCircleFilled } from "@ant-design/icons";
+import { CheckCircleFilled, ExclamationCircleFilled } from "@ant-design/icons";
 import { Button, Card, message, Spin, theme } from "antd";
 import { AnimatePresence, motion } from "framer-motion";
 import React, { useEffect, useRef, useState } from "react";
@@ -50,9 +50,12 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 
 	const [isLoadingTemplate, setIsLoadingTemplate] = useState(false);
 	const [isInitialDataLoaded, setIsInitialDataLoaded] = useState(false);
+	const [currentTemplateId, setCurrentTemplateId] = useState<number | null>(templateId || null);
 
 	const [isDirty, setIsDirty] = useState(false);
 	const [showExitConfirm, setShowExitConfirm] = useState(false);
+	const [showSavedToast, setShowSavedToast] = useState(false);
+	const savedToastTimerRef = useRef<NodeJS.Timeout | null>(null);
 	const isReadyRef = useRef(false);
 	const initialHeaderRef = useRef<string | null>(null);
 
@@ -130,7 +133,27 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 	}, [isDirty]);
 
 	useEffect(() => {
+		return () => {
+			if (savedToastTimerRef.current) {
+				clearTimeout(savedToastTimerRef.current);
+			}
+		};
+	}, []);
+
+	const saveTemplateRef = useRef<(closeAfterSave?: boolean) => void>(() => {});
+
+	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
+			// میانبر Ctrl + S یا Cmd + S برای کیبوردهای فارسی و انگلیسی
+			if ((e.ctrlKey || e.metaKey) && (e.code === "KeyS" || e.key === "s" || e.key === "S" || e.key === "س")) {
+				e.preventDefault();
+				e.stopPropagation();
+				if (!isSaving) {
+					saveTemplateRef.current(false);
+				}
+				return;
+			}
+
 			if (isPreviewOpen)
 				return;
 			if (e.key === "Escape") {
@@ -147,7 +170,7 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 		};
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [isDirty, showExitConfirm, isPreviewOpen, onClose]);
+	}, [isDirty, showExitConfirm, isPreviewOpen, isSaving, onClose]);
 
 	const handleRequestClose = () => {
 		if (isDirty) {
@@ -202,7 +225,7 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 		loadTemplateData();
 	}, [templateId, editor, servicesData, isInitialDataLoaded, methods]);
 
-	const handleSaveTemplate = methods.handleSubmit(async (formValues) => {
+	const handleSaveTemplate = (closeAfterSave = true) => methods.handleSubmit(async (formValues) => {
 		let hasFrontendError = false;
 		methods.clearErrors();
 
@@ -256,21 +279,35 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 				font_ids: customFonts.map(font => font.id),
 			};
 
-			if (templateId) {
-				await TemplateCreateApi.updateTemplate(templateId, payload);
-				message.success("قالب با موفقیت ویرایش شد!");
+			const targetId = currentTemplateId || templateId;
+			if (targetId) {
+				await TemplateCreateApi.updateTemplate(targetId, payload);
 			}
 			else {
-				await TemplateCreateApi.createTemplate(payload);
-				message.success("قالب با موفقیت ذخیره شد!");
+				const res = await TemplateCreateApi.createTemplate(payload) as any;
+				const createdId = res?.id || res?.data?.id;
+				if (createdId) {
+					setCurrentTemplateId(createdId);
+				}
 			}
+
+			if (savedToastTimerRef.current) {
+				clearTimeout(savedToastTimerRef.current);
+			}
+			setShowSavedToast(true);
+			savedToastTimerRef.current = setTimeout(() => {
+				setShowSavedToast(false);
+			}, 2400);
 
 			setIsDirty(false);
 			setShowExitConfirm(false);
 
 			if (onSuccess)
 				onSuccess();
-			setTimeout(() => onClose(), 1500);
+
+			if (closeAfterSave) {
+				setTimeout(() => onClose(), 1500);
+			}
 		}
 		catch (error: any) {
 			const serverErrors = error?.response?.data || error?.data || error?.json;
@@ -288,7 +325,9 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 		finally {
 			setIsSaving(false);
 		}
-	});
+	})();
+
+	saveTemplateRef.current = handleSaveTemplate;
 
 	useEffect(() => {
 		fetchFonts();
@@ -313,6 +352,11 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
                     height: 100%;
                     display: flex;
                     flex-direction: column;
+                }
+                
+                /* 🔴 نمایش پیام‌های نوتیفیکیشن روی مودال فول‌اسکرین */
+                .ant-message {
+                    z-index: 100005 !important;
                 }
                 
                 ${customFonts.map(f => `
@@ -446,6 +490,45 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 								>
 									بستن صفحه بدون ذخیره
 								</Button>
+							</div>
+						</motion.div>
+					</div>
+				)}
+			</AnimatePresence>
+
+			{/* 🔴 پیام شخصی‌سازی‌شده و شیک ذخیره در وسط صفحه و سینک با Ant Design */}
+			<AnimatePresence>
+				{showSavedToast && (
+					<div className="fixed inset-0 pointer-events-none flex items-center justify-center z-[100005]">
+						<motion.div
+							initial={{ opacity: 0, scale: 0.85, y: 15 }}
+							animate={{ opacity: 1, scale: 1, y: 0 }}
+							exit={{ opacity: 0, scale: 0.9, y: -10 }}
+							transition={{ type: "spring", stiffness: 450, damping: 28 }}
+							className="flex items-center gap-4 px-6 py-4 rounded-2xl shadow-2xl border backdrop-blur-md"
+							style={{
+								backgroundColor: token.colorBgElevated,
+								borderColor: token.colorSuccessBorder,
+								boxShadow: `0 20px 45px -10px rgba(0, 0, 0, 0.25), 0 0 0 1px ${token.colorSuccessBorder}`,
+							}}
+							dir="rtl"
+						>
+							<div
+								className="flex items-center justify-center w-11 h-11 rounded-full shrink-0 shadow-inner"
+								style={{
+									backgroundColor: token.colorSuccessBg,
+									border: `1px solid ${token.colorSuccessBorder}`,
+								}}
+							>
+								<CheckCircleFilled style={{ fontSize: 24, color: token.colorSuccess }} />
+							</div>
+							<div className="flex flex-col select-none">
+								<span className="text-sm font-bold leading-tight" style={{ color: token.colorText }}>
+									قالب با موفقیت ذخیره شد
+								</span>
+								<span className="text-xs mt-1 leading-normal" style={{ color: token.colorTextSecondary }}>
+									تمام تغییرات با موفقیت در سیستم ثبت گردید.
+								</span>
 							</div>
 						</motion.div>
 					</div>

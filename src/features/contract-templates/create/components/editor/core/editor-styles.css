@@ -61,3 +61,8 @@
     pointer-events: none;
     z-index: 20;
 }
+
+/* نمایش پیام‌ها و نوتیفیکیشن‌های آنتد روی مودال */
+.ant-message {
+    z-index: 100005 !important;
+}
