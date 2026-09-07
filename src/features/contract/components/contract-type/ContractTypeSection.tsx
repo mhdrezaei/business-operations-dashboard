@@ -331,7 +331,7 @@ export function ContractTypeSection({ title, name, topAside, tone = "primary", v
 						))}
 
 						<Button className="contract-dashed-action" icon={<PlusOutlined />} onClick={addSection}>
-							افزودن بخش
+							افزودن مدل محاسبه
 						</Button>
 					</div>
 				)
