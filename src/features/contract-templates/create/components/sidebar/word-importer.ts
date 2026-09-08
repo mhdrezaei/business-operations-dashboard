@@ -18,26 +18,22 @@ function collectTextNodes(el: Element, marks: any[] = []): any[] {
 	else if (el.nodeName === "SPAN") {
 		const spanMarks = [...marks];
 		const style = (el as HTMLElement).style;
-		const cssClass = (el as HTMLElement).className;
 
-		if (style.color) {
-			spanMarks.push({ type: "textStyle", attrs: { color: style.color } });
+		const textStyleAttrs: any = {};
+		if (style.color)
+			textStyleAttrs.color = style.color;
+		if (style.fontSize)
+			textStyleAttrs.fontSize = style.fontSize;
+		if (style.fontFamily)
+			textStyleAttrs.fontFamily = style.fontFamily;
+
+		if (Object.keys(textStyleAttrs).length > 0) {
+			spanMarks.push({ type: "textStyle", attrs: textStyleAttrs });
 		}
+
 		if (style.backgroundColor) {
 			spanMarks.push({ type: "highlight", attrs: { color: style.backgroundColor } });
 		}
-
-		const fontSizeMatch = cssClass.match(/font-size-(\d+)/);
-		if (fontSizeMatch) {
-			spanMarks.push({ type: "textStyle", attrs: { fontSize: `${fontSizeMatch[1]}pt` } });
-		}
-
-		const fontFamilyMatch = cssClass.match(/font-family-(\S+)/);
-		if (fontFamilyMatch) {
-			const fontName = fontFamilyMatch[1].replace(/_/g, " ");
-			spanMarks.push({ type: "textStyle", attrs: { fontFamily: fontName } });
-		}
-
 		marks = spanMarks;
 	}
 
@@ -64,21 +60,21 @@ function collectTextNodes(el: Element, marks: any[] = []): any[] {
 			}
 			else if (childEl.nodeName === "SPAN") {
 				const style = (childEl as HTMLElement).style;
-				const cssClass = (childEl as HTMLElement).className;
-				if (style.color) {
-					childMarks.push({ type: "textStyle", attrs: { color: style.color } });
+
+				const textStyleAttrs: any = {};
+				if (style.color)
+					textStyleAttrs.color = style.color;
+				if (style.fontSize)
+					textStyleAttrs.fontSize = style.fontSize;
+				if (style.fontFamily)
+					textStyleAttrs.fontFamily = style.fontFamily;
+
+				if (Object.keys(textStyleAttrs).length > 0) {
+					childMarks.push({ type: "textStyle", attrs: textStyleAttrs });
 				}
+
 				if (style.backgroundColor) {
 					childMarks.push({ type: "highlight", attrs: { color: style.backgroundColor } });
-				}
-				const fontSizeMatch = cssClass.match(/font-size-(\d+)/);
-				if (fontSizeMatch) {
-					childMarks.push({ type: "textStyle", attrs: { fontSize: `${fontSizeMatch[1]}pt` } });
-				}
-				const fontFamilyMatch = cssClass.match(/font-family-(\S+)/);
-				if (fontFamilyMatch) {
-					const fontName = fontFamilyMatch[1].replace(/_/g, " ");
-					childMarks.push({ type: "textStyle", attrs: { fontFamily: fontName } });
 				}
 			}
 			nodes.push(...collectTextNodes(childEl, childMarks));
@@ -334,8 +330,36 @@ export async function importWordToEditor(
 		let fontToApply: string | null = null;
 		const fontCounts: Record<string, number> = {};
 
+		const sizeSet = new Set<string>();
+		const colorSet = new Set<string>();
+		const highlightSet = new Set<string>();
+
 		if (docXmlFile) {
 			const xmlStr = await docXmlFile.async("string");
+
+			// Parse font sizes
+			const szRegex = /<w:sz\s+w:val="(\d+)"\s*\/?>/g;
+			let szMatch;
+			// eslint-disable-next-line no-cond-assign
+			while ((szMatch = szRegex.exec(xmlStr)) !== null) {
+				const pt = (Number.parseInt(szMatch[1], 10) / 2).toString();
+				sizeSet.add(pt);
+			}
+			// Parse colors
+			const colorRegex = /<w:color\s+w:val="([A-Fa-f0-9]+)"\s*\/?>/g;
+			let colorMatch;
+			// eslint-disable-next-line no-cond-assign
+			while ((colorMatch = colorRegex.exec(xmlStr)) !== null) {
+				colorSet.add(colorMatch[1]);
+			}
+
+			// Parse highlights
+			const highlightRegex = /<w:highlight\s+w:val="([^"]+)"\s*\/?>/g;
+			let highlightMatch;
+			// eslint-disable-next-line no-cond-assign
+			while ((highlightMatch = highlightRegex.exec(xmlStr)) !== null) {
+				highlightSet.add(highlightMatch[1]);
+			}
 
 			// eslint-disable-next-line regexp/no-super-linear-backtracking
 			const fontRegex = /<w:rFonts\s+([^>]+)>/g;
@@ -468,6 +492,8 @@ export async function importWordToEditor(
 		}
 
 		const styleMap: string[] = [
+			"u => u",
+			"strike => s",
 			"p[style-name=\'Heading 1\'] => h1:fresh",
 			"p[style-name=\'Heading 2\'] => h2:fresh",
 			"p[style-name=\'Heading 3\'] => h3:fresh",
@@ -484,10 +510,19 @@ export async function importWordToEditor(
 			"p[style-name=\'h3-align-center\'] => h3.align-center:fresh",
 			"p[style-name=\'h3-align-right\'] => h3.align-right:fresh",
 		];
-		for (let sz = 8; sz <= 72; sz++) styleMap.push(`r[style-name=\'fontSize-${sz}\'] => span.font-size-${sz}`);
+		sizeSet.forEach((sz) => {
+			const szStr = sz.replace(".", "_");
+			styleMap.push(`r[style-name='fontSize-${szStr}'] => span.font-size-${szStr}`);
+		});
+		colorSet.forEach((c) => {
+			styleMap.push(`r[style-name='color-${c}'] => span.color-${c}`);
+		});
+		highlightSet.forEach((h) => {
+			styleMap.push(`r[style-name='highlight-${h}'] => span.highlight-${h}`);
+		});
 		Object.keys(fontCounts).forEach((font) => {
 			const cleanFont = font.replace(/\s+/g, "_");
-			styleMap.push(`r[style-name=\'fontFamily-${cleanFont}\'] => span.font-family-${cleanFont}`);
+			styleMap.push(`r[style-name='fontFamily-${cleanFont}'] => span.font-family-${cleanFont}`);
 		});
 
 		function transformElement(el: any): any {
@@ -497,12 +532,22 @@ export async function importWordToEditor(
 			if (el.type === "break" && el.breakType === "page")
 				return { type: "text", value: "[[PAGE_BREAK]]" };
 			if (el.type === "run") {
-				if (el.fontSize)
-					newEl.styleName = `${newEl.styleName ? `${newEl.styleName} ` : ""}fontSize-${Math.round(el.fontSize)}`;
+				let currentEl = { ...el, children: el.children ? el.children.map(transformElement) : [] };
+				if (el.fontSize) {
+					const szStr = el.fontSize.toString().replace(".", "_");
+					currentEl = { type: "run", styleName: `fontSize-${szStr}`, children: [currentEl] };
+				}
 				if (el.font) {
 					const cleanFont = el.font.replace(/\s+/g, "_");
-					newEl.styleName = `${newEl.styleName ? `${newEl.styleName} ` : ""}fontFamily-${cleanFont}`;
+					currentEl = { type: "run", styleName: `fontFamily-${cleanFont}`, children: [currentEl] };
 				}
+				if (el.color) {
+					currentEl = { type: "run", styleName: `color-${el.color}`, children: [currentEl] };
+				}
+				if (el.highlight) {
+					currentEl = { type: "run", styleName: `highlight-${el.highlight}`, children: [currentEl] };
+				}
+				return currentEl;
 			}
 			if (el.type === "paragraph") {
 				const align = el.alignment;

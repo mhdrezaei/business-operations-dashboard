@@ -305,6 +305,7 @@ export default function SidebarSettingsTab({ editor }: { editor: Editor | null }
 						: null}
 			</Modal>
 			<input ref={missingFontInputRef} type="file" accept=".ttf,.woff,.woff2,.otf" className="hidden" onChange={handleMissingFontUpload} />
+
 		</div>
 	);
 }
