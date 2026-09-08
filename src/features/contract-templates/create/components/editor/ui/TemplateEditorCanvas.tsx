@@ -5,6 +5,7 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import { Button, Input, theme } from "antd";
 import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 
+import { useTemplateStore } from "../../../../store/useTemplateStore";
 import { getEditorExtensions } from "../core/editor-extensions";
 
 const PAGE_HEIGHT_PX = 1123;
@@ -47,6 +48,8 @@ const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasPro
 	const [jumpValue, setJumpValue] = useState("");
 	const scrollRef = useRef<HTMLDivElement>(null);
 	const pageCountRef = useRef(1);
+	const { headerData } = useTemplateStore();
+	const [headerOffsets, setHeaderOffsets] = useState<number[]>([0]);
 
 	useEffect(() => {
 		pageCountRef.current = pageCount;
@@ -58,14 +61,15 @@ const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasPro
 		const dom = editor.view.dom as HTMLElement;
 
 		const updatePagination = () => {
-			const hrs = dom.querySelectorAll("hr");
+			const hrs = Array.from(dom.querySelectorAll("hr"));
 			const hrCount = hrs.length;
 			const heightCount = Math.max(1, Math.ceil(dom.scrollHeight / PAGE_HEIGHT_PX));
 			const newCount = Math.max(hrCount + 1, heightCount);
 			if (newCount !== pageCountRef.current)
 				setPageCount(newCount);
+			const offsets = [0, ...hrs.map(hr => (hr as HTMLElement).offsetTop + (hr as HTMLElement).offsetHeight)];
+			setHeaderOffsets(offsets);
 		};
-
 		editor.on("update", updatePagination);
 		setTimeout(updatePagination, 150);
 
@@ -206,6 +210,27 @@ const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasPro
 		</div>
 	);
 
+	const renderHeaderOverlay = (top: number) => {
+		const defaultLogo = "/karashab-logo.png";
+		const logo = headerData?.logo_url || headerData?.logo_data_url || defaultLogo;
+		const showContractNo = headerData?.show_contract_number !== false;
+		const text = headerData?.extra_text || "";
+		return (
+			<div className="absolute left-0 right-0 px-[72px] pointer-events-none select-none flex justify-between items-start z-10" style={{ top: `${top + 20}px`, height: "80px", direction: "rtl" }}>
+				<div className="flex flex-col items-start">
+					<img src={logo} style={{ maxHeight: "45px", objectFit: "contain", marginBottom: "12px", maxWidth: "250px" }} alt="logo" />
+					{text && <div style={{ fontSize: "13px", fontWeight: "normal", color: "#000" }}>{text}</div>}
+				</div>
+				{showContractNo && (
+					<div className="flex flex-col items-center pt-2.5" style={{ width: "180px" }}>
+						<div style={{ fontWeight: "bold", fontSize: "13px", marginBottom: "8px", color: "#000" }}>شماره قرارداد : ۱۴۰۳/۱۲۳۴</div>
+						<div style={{ width: "100%", height: "14px", backgroundColor: "#465b8e", clipPath: "polygon(15px 0, 100% 0, 100% 100%, 0% 100%)" }}></div>
+					</div>
+				)}
+			</div>
+		);
+	};
+
 	return (
 		<div className="flex flex-col h-full w-full relative" style={{ backgroundColor: token.colorBgLayout }}>
 
@@ -245,7 +270,7 @@ const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasPro
 					display: block;
 					border: none;
 					height: 36px;
-					margin: 36px -72px;
+					margin: 36px -72px 100px -72px;
 					background: #e2e8f0;
 					border-top: 1px solid #cbd5e1;
 					border-bottom: 1px solid #cbd5e1;
@@ -371,6 +396,7 @@ const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasPro
 						backgroundColor: "#ffffff",
 					}}
 				>
+					{headerOffsets.map((y, idx) => <React.Fragment key={idx}>{renderHeaderOverlay(y)}</React.Fragment>)}
 					<EditorContent editor={editor} />
 				</div>
 			</div>

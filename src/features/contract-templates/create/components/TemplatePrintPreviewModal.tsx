@@ -61,7 +61,7 @@ export default function TemplatePrintPreviewModal({ isOpen, onClose, editor }: T
         `;
 	}, [headerData]);
 
-	const processedHTML = useMemo(() => {
+	const rawContentHTML = useMemo(() => {
 		if (!isOpen || !editor)
 			return "";
 
@@ -98,6 +98,24 @@ export default function TemplatePrintPreviewModal({ isOpen, onClose, editor }: T
 			return editor.getHTML();
 		}
 	}, [isOpen, editor, variableLabelsMap]);
+
+	const previewHTML = useMemo(() => {
+		if (!rawContentHTML)
+			return "";
+		const pageBreakVisual = `
+			<div style="height: 20px; background: #f0f2f5; margin: 40px -2cm; border-top: 1px dashed #ccc; border-bottom: 1px dashed #ccc; position: relative; display: flex; justify-content: center; align-items: center;">
+				<span style="background: #f0f2f5; padding: 0 10px; font-size: 12px; color: #888;">پایان صفحه</span>
+			</div>
+			<div style="margin-top: 40px;">${headerHTML}</div>
+		`;
+		return headerHTML + rawContentHTML.replace(/\[\[PAGE_BREAK\]\]/g, pageBreakVisual);
+	}, [rawContentHTML, headerHTML]);
+
+	const printContentHTML = useMemo(() => {
+		if (!rawContentHTML)
+			return "";
+		return rawContentHTML.replace(/\[\[PAGE_BREAK\]\]/g, "<div style=\"page-break-after: always; clear: both;\"></div>");
+	}, [rawContentHTML]);
 
 	const handlePrint = (isPDF: boolean = false) => {
 		const printWindow = window.open("", "_blank");
@@ -148,10 +166,24 @@ export default function TemplatePrintPreviewModal({ isOpen, onClose, editor }: T
             </style>
         `);
 		printWindow.document.write(`
-            <div class="print-container">
-                ${headerHTML}
-                ${processedHTML}
-            </div>
+            <table style="width: 100%; border-collapse: collapse; border: none;">
+                <thead>
+                    <tr>
+                        <td style="border: none; padding-bottom: 10px;">
+                            ${headerHTML}
+                        </td>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="border: none;">
+                            <div class="print-container">
+                                ${printContentHTML}
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         `);
 		printWindow.document.close();
 		printWindow.focus();
@@ -167,8 +199,9 @@ export default function TemplatePrintPreviewModal({ isOpen, onClose, editor }: T
 			title="پیش‌نمایش چاپ قرارداد"
 			open={isOpen}
 			onCancel={onClose}
-			width={850}
+			width={900}
 			zIndex={10000}
+			styles={{ body: { backgroundColor: token.colorBgLayout, padding: "24px", borderRadius: "8px" } }}
 			footer={[
 				<Button key="back" onClick={onClose}>
 					بستن
@@ -181,18 +214,22 @@ export default function TemplatePrintPreviewModal({ isOpen, onClose, editor }: T
 				</Button>,
 			]}
 		>
-			<div
-				className="max-h-[65vh] overflow-y-auto p-8 rounded-lg border shadow-inner my-4 custom-scrollbar"
-				style={{
-					backgroundColor: "#ffffff",
-					color: "#000000",
-					borderColor: token.colorBorderSecondary,
-					lineHeight: "2.2",
-					textAlign: "justify",
-				}}
-			>
-				<div dangerouslySetInnerHTML={{ __html: headerHTML }} />
-				<div dangerouslySetInnerHTML={{ __html: processedHTML }} />
+			<div className="flex justify-center max-h-[65vh] overflow-y-auto custom-scrollbar rounded-md">
+				<div
+					className="bg-white shadow-lg"
+					style={{
+						width: "100%",
+						maxWidth: "21cm",
+						minHeight: "29.7cm",
+						padding: "1.5cm 2cm",
+						color: "#000000",
+						lineHeight: "2.2",
+						textAlign: "justify",
+						direction: "rtl",
+					}}
+				>
+					<div dangerouslySetInnerHTML={{ __html: previewHTML }} />
+				</div>
 			</div>
 		</Modal>
 	);
