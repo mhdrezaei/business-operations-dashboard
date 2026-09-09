@@ -17,6 +17,7 @@ export interface CompanyPersonDto {
 	phone: string[] | null
 	email: string[] | null
 	is_signatory: boolean
+	contract_order: number
 	created_at: string
 	updated_at: string
 }
@@ -32,9 +33,10 @@ export interface CompanyPersonPayload {
 	full_name: string
 	national_id: string | null
 	title: string | null
-	phone: string[]
-	email: string[]
+	phone: string[] | null
+	email: string[] | null
 	is_signatory: boolean
+	contract_order: number
 }
 
 export interface ListCompanyPeopleParams {

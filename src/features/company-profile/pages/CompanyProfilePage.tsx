@@ -1,5 +1,5 @@
 import type { CompanyProfileFormValues } from "../model/company-profile.form.types";
-import React from "react";
+import React, { useState } from "react";
 
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import CompanyProfileAccordion from "../shared/ui/CompanyProfileAccordion";
@@ -27,6 +27,7 @@ export default function CompanyProfilesPage() {
 
 function CompanyProfilesPageInner() {
 	const companyId = useWatch<CompanyProfileFormValues, "companyId">({ name: "companyId" });
+	const [profileRevision, setProfileRevision] = useState(0);
 
 	return (
 		<div>
@@ -36,14 +37,14 @@ function CompanyProfilesPageInner() {
 
 				{/* ✅ کارت یکپارچه سرویس + شرکت + لود پروفایل */}
 				<div>
-					<ServiceCompanyLoaderSection />
+					<ServiceCompanyLoaderSection onCompanyDataCopied={() => setProfileRevision(current => current + 1)} />
 				</div>
 			</div>
 
 			{/* آکاردئون فقط وقتی company انتخاب شد */}
 			{companyId && (
 				<div className="mt-4">
-					<CompanyProfileAccordion />
+					<CompanyProfileAccordion revision={profileRevision} />
 				</div>
 			)}
 		</div>

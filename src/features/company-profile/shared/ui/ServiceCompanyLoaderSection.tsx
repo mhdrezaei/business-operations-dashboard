@@ -1,10 +1,11 @@
 import type { CSSProperties } from "react";
 import type { CompanyProfileFormValues } from "../../model/company-profile.form.types";
+import type { CompanyCopySectionKey } from "../../sections/company-data-copy/model/company-data-copy.types";
 
 import ContractFilterSearchIcon from "#src/assets/svg/header/contract-filter-search.svg?react";
 import { useAccess } from "#src/hooks";
 import { RHFSelect } from "#src/shared/ui/rhf-pro";
-import { DownOutlined, EditOutlined, PlusOutlined, UpOutlined } from "@ant-design/icons";
+import { CopyOutlined, DownOutlined, EditOutlined, PlusOutlined, UpOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Button, ConfigProvider, Form, theme } from "antd";
 
@@ -12,19 +13,29 @@ import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
 import { companiesByServiceQuery, servicesQuery } from "../../queries/company-profile.queries";
+import CompanyDataCopyModal from "../../sections/company-data-copy/ui/CompanyDataCopyModal";
 import { companyTypeMatches } from "../utils";
 
 import CompanyCreateModal from "./CompanyCreateModal";
 import CompanyRenameModal from "./CompanyRenameModal";
 import "./service-company-loader-section.css";
 
-export function ServiceCompanyLoaderSection() {
+interface ServiceCompanyLoaderSectionProps {
+	onCompanyDataCopied?: () => void
+}
+
+export function ServiceCompanyLoaderSection({ onCompanyDataCopied }: ServiceCompanyLoaderSectionProps) {
 	const antdContext = useContext(ConfigProvider.ConfigContext);
 	const { token } = theme.useToken();
 	const configuredCardRadius = antdContext.theme?.components?.Card?.borderRadiusLG;
 	const filterRadius = typeof configuredCardRadius === "number" ? configuredCardRadius : token.borderRadiusLG;
 	const { setValue, control } = useFormContext<CompanyProfileFormValues>();
-	const { getPermittedCompanyTypes, getPermittedServiceIds, hasDomainPermissionByServiceId } = useAccess();
+	const {
+		getPermittedCompanyTypes,
+		getPermittedServiceIds,
+		hasCompanyCardAccess,
+		hasDomainPermissionByServiceId,
+	} = useAccess();
 
 	const serviceId = useWatch({ control, name: "serviceId" }) || 0;
 	const companyType = useWatch({ control, name: "companyType" });
@@ -51,7 +62,18 @@ export function ServiceCompanyLoaderSection() {
 
 	const [createOpen, setCreateOpen] = useState(false);
 	const [renameOpen, setRenameOpen] = useState(false);
+	const [copyOpen, setCopyOpen] = useState(false);
 	const [filtersCollapsed, setFiltersCollapsed] = useState(false);
+
+	const copyableSections: CompanyCopySectionKey[] = [
+		...(hasCompanyCardAccess("company_public_profiles") ? ["public" as const] : []),
+		...(hasCompanyCardAccess("company_legal_profiles") ? ["legal" as const] : []),
+		...(hasCompanyCardAccess("company_finance_profiles") ? ["finance" as const] : []),
+		...(hasCompanyCardAccess("company_internal_profiles") ? ["internal" as const] : []),
+		...(hasCompanyCardAccess("company_people") ? ["people" as const] : []),
+		...(hasCompanyCardAccess("company_bank_accounts") ? ["bankAccounts" as const] : []),
+		...(hasCompanyCardAccess("company_shareholders") ? ["shareholders" as const] : []),
+	];
 
 	const prevServiceIdRef = useRef<typeof serviceId>(undefined);
 	const prevCompanyTypeRef = useRef<typeof companyType>(undefined);
@@ -103,8 +125,9 @@ export function ServiceCompanyLoaderSection() {
 		if (prev === undefined)
 			return;
 
-		if (prev !== companyId)
+		if (prev !== companyId) {
 			setValue("companyProfile", null as any, { shouldDirty: true, shouldValidate: true });
+		}
 	}, [companyId, setValue]);
 
 	const serviceOptions = useMemo(
@@ -277,6 +300,15 @@ export function ServiceCompanyLoaderSection() {
 							>
 								ویرایش نام شرکت
 							</Button>
+
+							<Button
+								type="default"
+								icon={<CopyOutlined />}
+								disabled={!companyId || !(canCreateCompany || canUpdateCompany) || copyableSections.length === 0}
+								onClick={() => setCopyOpen(true)}
+							>
+								کپی اطلاعات
+							</Button>
 						</div>
 					</Form>
 				)}
@@ -315,6 +347,22 @@ export function ServiceCompanyLoaderSection() {
 					setRenameOpen(false);
 				}}
 			/>
+
+			{companyId && serviceId
+				? (
+					<CompanyDataCopyModal
+						key={`${serviceId}-${companyId}`}
+						open={copyOpen}
+						destinationCompanyId={companyId}
+						destinationCompanyName={selectedCompanyName}
+						destinationServiceId={serviceId}
+						serviceOptions={serviceOptions}
+						sections={copyableSections}
+						onClose={() => setCopyOpen(false)}
+						onCopied={() => onCompanyDataCopied?.()}
+					/>
+				)
+				: null}
 		</div>
 	);
 }
