@@ -1,0 +1,226 @@
+.report-company-picker {
+	--report-company-bg: var(--basic-table-filter-background, #151b31);
+	--report-company-border: var(--basic-table-filter-split, #2c4065);
+	--report-company-text: var(--basic-table-filter-text, #d5d9e4);
+	--report-company-heading: var(--basic-table-filter-heading, #f0f2f7);
+	--report-company-muted: var(--basic-table-filter-secondary, #9aa3b5);
+	--report-company-primary: var(--basic-table-filter-primary, #2f75ff);
+	--report-company-input-bg: color-mix(in srgb, var(--report-company-primary) 14%, var(--report-company-bg));
+
+	position: relative;
+	width: 100%;
+	border-radius: 28px;
+	background: color-mix(in srgb, var(--report-company-bg) 82%, #000 18%);
+	overflow: hidden;
+}
+
+.performance-report-table > .ant-pro-card:not(.ant-pro-table-search) > .ant-pro-card-header {
+	padding: 24px 24px 0;
+	border-block-end: 0;
+}
+
+.performance-report-table > .ant-pro-card:not(.ant-pro-table-search) > .ant-pro-card-header .ant-pro-card-title {
+	width: 100%;
+	overflow: visible;
+	white-space: normal;
+}
+
+.performance-report-table .basic-table-toolbar-heading__icon {
+	width: 50px;
+	height: 50px;
+	border-radius: 10px;
+	background: transparent;
+	overflow: visible;
+}
+
+.performance-report-table .basic-table-toolbar-heading__icon > svg {
+	width: 50px;
+	height: 50px;
+}
+
+.performance-report-table .basic-table-toolbar-heading__icon > svg path {
+	fill: #17e7fe;
+}
+
+.performance-report-table-heading-content {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+}
+
+.report-company-picker > .contract-dashed-border {
+	position: absolute;
+	z-index: 0;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	overflow: visible;
+	pointer-events: none;
+}
+
+.report-company-picker__content {
+	position: relative;
+	z-index: 1;
+	padding: 18px 22px;
+}
+
+.report-company-picker__heading,
+.report-company-picker__title {
+	display: flex;
+	align-items: center;
+}
+
+.report-company-picker__heading {
+	justify-content: space-between;
+	gap: 16px;
+}
+
+.report-company-picker__title {
+	gap: 10px;
+	color: var(--report-company-heading);
+	font-weight: 700;
+}
+
+.report-company-picker__search-icon {
+	display: grid;
+	place-items: center;
+	width: 32px;
+	height: 32px;
+	border-radius: 8px;
+	background: color-mix(in srgb, var(--report-company-primary) 20%, var(--report-company-bg));
+	color: var(--report-company-primary);
+	font-size: 17px;
+}
+
+.report-company-picker__toggle {
+	display: grid;
+	place-items: center;
+	width: 32px;
+	height: 32px;
+	padding: 0;
+	border: 0;
+	border-radius: 8px;
+	background: transparent;
+	color: var(--report-company-primary);
+	cursor: pointer;
+}
+
+.report-company-picker__toggle:hover {
+	background: color-mix(in srgb, var(--report-company-primary) 10%, transparent);
+}
+
+.report-company-picker__toggle:focus-visible {
+	outline: 2px solid var(--report-company-primary);
+	outline-offset: 2px;
+}
+
+.report-company-picker__body {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	margin-block-start: 12px;
+}
+
+.report-company-picker__body[hidden] {
+	display: none;
+}
+
+.report-company-picker__search.ant-input-affix-wrapper {
+	border-color: var(--report-company-border);
+	background-color: var(--report-company-input-bg) !important;
+}
+
+.report-company-picker__search.ant-input-affix-wrapper:hover:not(.ant-input-affix-wrapper-disabled) {
+	border-color: color-mix(in srgb, var(--report-company-primary) 58%, var(--report-company-border));
+}
+
+.report-company-picker__search.ant-input-affix-wrapper:focus,
+.report-company-picker__search.ant-input-affix-wrapper:focus-within,
+.report-company-picker__search.ant-input-affix-wrapper-focused {
+	border-color: var(--report-company-primary);
+	background-color: var(--report-company-input-bg) !important;
+	box-shadow: none;
+}
+
+.report-company-picker__search .ant-input {
+	background: transparent;
+	color: var(--report-company-heading);
+}
+
+.report-company-picker__search .ant-input::placeholder {
+	color: var(--report-company-muted);
+	opacity: 1;
+}
+
+.report-company-picker__search.ant-input-affix-wrapper-disabled {
+	background-color: color-mix(in srgb, var(--report-company-input-bg) 72%, var(--report-company-bg)) !important;
+	opacity: 0.72;
+}
+
+.report-company-picker__options {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	max-height: 152px;
+	overflow-y: auto;
+	scrollbar-color: var(--report-company-border) transparent;
+	scrollbar-width: thin;
+}
+
+.report-company-picker__option.ant-checkbox-wrapper {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	min-height: 34px;
+	padding: 5px 10px;
+	border: 1px solid var(--report-company-border);
+	border-radius: 8px;
+	background: transparent;
+	color: var(--report-company-text);
+	cursor: pointer;
+	transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+.report-company-picker__option.ant-checkbox-wrapper:hover,
+.report-company-picker__option.ant-checkbox-wrapper:has(.ant-checkbox-checked) {
+	border-color: var(--report-company-primary);
+}
+
+.report-company-picker__option.ant-checkbox-wrapper:has(.ant-checkbox-checked) {
+	background: color-mix(in srgb, var(--report-company-primary) 9%, transparent);
+}
+
+.report-company-picker__option--all.ant-checkbox-wrapper {
+	font-weight: 600;
+}
+
+.report-company-picker__empty {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	width: 100%;
+	min-height: 38px;
+	color: var(--report-company-muted);
+	text-align: center;
+}
+
+@media (max-width: 640px) {
+	.performance-report-table > .ant-pro-card:not(.ant-pro-table-search) > .ant-pro-card-header {
+		padding: 12px 12px 0;
+	}
+
+	.report-company-picker__content {
+		padding: 14px;
+	}
+
+	.report-company-picker__options {
+		max-height: 220px;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.report-company-picker__option.ant-checkbox-wrapper {
+		transition: none;
+	}
+}

@@ -1,7 +1,10 @@
 {
 	"titles": {
 		"performanceList": "Performance List",
-		"performanceReport": "Performance Report"
+		"performanceReport": "Performance Report",
+		"performanceReportResults": "Report Results",
+		"performanceReportResultsSubtitle": "Report results appear after selecting the filters.",
+		"performanceReportPeriodCount": "{{periodCount}} periods"
 	},
 	"actions": {
 		"clearForm": "Clear Form",

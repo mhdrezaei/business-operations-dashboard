@@ -4,7 +4,7 @@ import type { PerformanceReportRow } from "../model/performance.report.types";
 import type { ReportFinancialColumnKey } from "./export";
 import { pickCompanyTypeToken } from "#src/features/performance/shared/model/performance.helpers";
 import { MONTH_OPTIONS } from "#src/features/performance/shared/ui/form/constants/jalali-date-options";
-import { Checkbox, Divider, InputNumber, Radio, Select, Typography } from "antd";
+import { InputNumber, Radio, Typography } from "antd";
 
 export interface ReportSelectOption {
 	label: string
@@ -161,21 +161,11 @@ export function getReportServiceLayout(serviceCode: string | null | undefined): 
 export interface GetPerformanceReportColumnsArgs {
 	t: TFunction<"translation", undefined>
 	selectedServiceCode: string | null
-	selectedServiceId: number | null
 	selectedServiceName: string | null
 	serviceOptions: ReportServiceOption[]
-	yearOptions: ReportSelectOption[]
-	periodOptions: ReportSelectOption[]
-	companyOptions: ReportSelectOption[]
 	companyTypeOptions: ReportSelectOption[]
 	contractTypeOptions: ReportSelectOption[]
 	smsReportTypeOptions: ReportSelectOption[]
-	periodTypeOptions: ReportSelectOption[]
-	financialColumnOptions: ReportSelectOption[]
-	auditColumnOptions: ReportSelectOption[]
-	aggregationOptions: ReportSelectOption[]
-	selectedPeriods: string[]
-	selectedCompanyIds: number[]
 	selectedFinancialColumns: ReportFinancialColumnKey[]
 	selectedAuditColumns: ReportAuditColumnKey[]
 	defaultConversionRatio: number | null
@@ -186,24 +176,14 @@ export interface GetPerformanceReportColumnsArgs {
 	selectedPeriodType: PeriodType
 	selectedCompanyType: CompanyType | null
 	isSmsService: boolean
-	isSmsCommissionService: boolean
 	isTrafficService: boolean
 	supportsOperatorLanguageAggregation: boolean
 	requiresCompanyType: boolean
-	isPeriodDisabled: boolean
-	isCompanyDisabled: boolean
 	onServiceChange: (serviceId: number | null, serviceCode: string | null) => void
-	onYearChange: (year: number | null) => void
-	onPeriodsChange: (periods: string[]) => void
-	onCompanyIdsChange: (companyIds: number[]) => void
 	onCompanyTypeChange: (value: CompanyType | null) => void
 	onContractTypeChange: (value: SmsContractTypeFilter) => void
 	onSmsReportTypeChange: (value: SmsReportType) => void
-	onPeriodTypeChange: (value: PeriodType) => void
-	onFinancialColumnsChange: (columns: ReportFinancialColumnKey[]) => void
-	onAuditColumnsChange: (columns: ReportAuditColumnKey[]) => void
 	onDefaultConversionRatioChange: (value: number | null) => void
-	onAggregationChange: (values: ReportAggregationKey[]) => void
 }
 
 function createOperationTypeLabels(t: TFunction<"translation", undefined>) {
@@ -241,74 +221,6 @@ function formatMoney(value: unknown, showRial: boolean) {
 	return (showRial ? numeric : numeric / 10).toLocaleString("en-US");
 }
 
-function normalizePeriods(values: Array<string | number> | undefined | null) {
-	if (!Array.isArray(values))
-		return [];
-	return values
-		.map(item => String(item ?? "").trim())
-		.filter(Boolean);
-}
-
-function normalizeFinancialColumns(values: Array<string | number> | undefined | null) {
-	if (!Array.isArray(values))
-		return [];
-
-	const allowed = new Set<ReportFinancialColumnKey>([
-		"income",
-		"expense",
-		"profit",
-		"total",
-		"contractType",
-		"showBaseUnit",
-		"rial",
-		"unitPrice",
-		"karashabIncome",
-		"karashabExpense",
-		"karashabProfit",
-		"telecomIncome",
-		"firstPartyIncome",
-		"regionIncome",
-		"salesAgentIncome",
-	]);
-	const dedup = new Set<ReportFinancialColumnKey>();
-	values.forEach((item) => {
-		const value = String(item ?? "").trim() as ReportFinancialColumnKey;
-		if (allowed.has(value))
-			dedup.add(value);
-	});
-
-	return Array.from(dedup);
-}
-
-export function normalizeAuditColumns(values: Array<string | number> | undefined | null) {
-	if (!Array.isArray(values))
-		return [];
-
-	const allowed = new Set<ReportAuditColumnKey>(ALL_AUDIT_COLUMN_KEYS);
-	const dedup = new Set<ReportAuditColumnKey>();
-	values.forEach((item) => {
-		const value = String(item ?? "").trim() as ReportAuditColumnKey;
-		if (allowed.has(value))
-			dedup.add(value);
-	});
-
-	return ALL_AUDIT_COLUMN_KEYS.filter(key => dedup.has(key));
-}
-
-function normalizeNumberList(values: Array<string | number> | undefined | null) {
-	if (!Array.isArray(values))
-		return [];
-
-	const dedup = new Set<number>();
-	values.forEach((item) => {
-		const numeric = Number(item);
-		if (Number.isInteger(numeric) && numeric > 0)
-			dedup.add(numeric);
-	});
-
-	return Array.from(dedup);
-}
-
 function createOperatorLabels(t: TFunction<"translation", undefined>) {
 	return {
 		IRANCELL: t("performance.operator.irancell"),
@@ -326,21 +238,6 @@ function getLanguageLabel(t: TFunction<"translation", undefined>, value: unknown
 	if (normalized === "EN")
 		return t("performance.language.en");
 	return String(value);
-}
-
-function normalizeAggregationKeys(values: unknown, allowedKeys: ReportAggregationKey[]): ReportAggregationKey[] {
-	if (!Array.isArray(values))
-		return [];
-
-	const allowed = new Set<ReportAggregationKey>(allowedKeys);
-	const dedup = new Set<ReportAggregationKey>();
-	values.forEach((item) => {
-		const value = String(item ?? "").trim() as ReportAggregationKey;
-		if (allowed.has(value))
-			dedup.add(value);
-	});
-
-	return allowedKeys.filter(key => dedup.has(key));
 }
 
 export function buildReportAggregationParams(selectedAggregation: ReportAggregationKey[]) {
@@ -1316,21 +1213,11 @@ function buildReportTableColumns(
 export function getPerformanceReportColumns({
 	t,
 	selectedServiceCode,
-	selectedServiceId,
 	selectedServiceName,
 	serviceOptions,
-	yearOptions,
-	periodOptions,
-	companyOptions,
 	companyTypeOptions,
 	contractTypeOptions,
 	smsReportTypeOptions,
-	periodTypeOptions,
-	financialColumnOptions,
-	auditColumnOptions,
-	aggregationOptions,
-	selectedPeriods,
-	selectedCompanyIds,
 	selectedFinancialColumns,
 	selectedAuditColumns,
 	defaultConversionRatio,
@@ -1344,20 +1231,11 @@ export function getPerformanceReportColumns({
 	isTrafficService,
 	supportsOperatorLanguageAggregation,
 	requiresCompanyType,
-	isPeriodDisabled,
-	isCompanyDisabled,
 	onServiceChange,
-	onYearChange,
-	onPeriodsChange,
-	onCompanyIdsChange,
 	onCompanyTypeChange,
 	onContractTypeChange,
 	onSmsReportTypeChange,
-	onPeriodTypeChange,
-	onFinancialColumnsChange,
-	onAuditColumnsChange,
 	onDefaultConversionRatioChange,
-	onAggregationChange,
 }: GetPerformanceReportColumnsArgs): ProColumns<PerformanceReportRow>[] {
 	const operationTypeLabels = createOperationTypeLabels(t);
 	const operatorLabels = createOperatorLabels(t);
@@ -1367,7 +1245,6 @@ export function getPerformanceReportColumns({
 	}, {});
 	const financialColumns = new Set(selectedFinancialColumns);
 	const reportServiceLayout = getReportServiceLayout(selectedServiceCode);
-	const allowedAggregationKeys = aggregationOptions.map(option => String(option.value) as ReportAggregationKey);
 	const trafficLayout = isTrafficService
 		? getTrafficReportLayout(selectedCompanyType)
 		: getTrafficReportLayout(null);
@@ -1387,8 +1264,6 @@ export function getPerformanceReportColumns({
 		aggregateByLanguage: selectedAggregation.includes("by_language"),
 		showRial: financialColumns.has("rial"),
 	};
-
-	const isServiceFiltersDisabled = !selectedServiceId;
 
 	const tableColumns = appendReportAuditColumns(
 		buildReportTableColumns(
@@ -1474,167 +1349,6 @@ export function getPerformanceReportColumns({
 			},
 		},
 		{
-			title: t("performance.labels.periodType"),
-			dataIndex: "period_type",
-			hideInTable: true,
-			valueType: "select",
-			valueEnum: createValueEnum(periodTypeOptions),
-			fieldProps: {
-				allowClear: false,
-				value: selectedPeriodType,
-				placeholder: t("performance.placeholders.select"),
-				onChange: (value: string | number) => {
-					onPeriodTypeChange(String(value) as PeriodType);
-				},
-			},
-		},
-		{
-			title: t("performance.columns.year"),
-			dataIndex: "sh_year",
-			hideInTable: true,
-			valueType: "select",
-			valueEnum: createValueEnum(yearOptions),
-			fieldProps: {
-				allowClear: true,
-				placeholder: t("performance.placeholders.selectYear"),
-				onChange: (value: string | number | null) => {
-					const year = value == null || value === "" ? null : Number(value);
-					onYearChange(Number.isFinite(year as number) ? Number(year) : null);
-				},
-			},
-		},
-		{
-			title: t("performance.columns.month"),
-			dataIndex: "sh_periods",
-			hideInTable: true,
-			renderFormItem: (_, config) => {
-				const allValues = periodOptions.map(option => String(option.value));
-				const allSelected = allValues.length > 0 && allValues.every(value => selectedPeriods.includes(value));
-				const applyChange = (values: Array<string | number>) => {
-					const normalized = normalizePeriods(values);
-					config.onChange?.(normalized);
-					onPeriodsChange(normalized);
-				};
-				return (
-					<Select
-						mode="multiple"
-						maxTagCount="responsive"
-						allowClear
-						disabled={isPeriodDisabled}
-						value={selectedPeriods}
-						placeholder={isPeriodDisabled ? t("performance.placeholders.selectYearFirst") : t("performance.placeholders.selectMonths")}
-						options={periodOptions.map(option => ({ label: option.label, value: String(option.value) }))}
-						onChange={(values: Array<string | number>) => applyChange(values)}
-						popupRender={menu => (
-							<>
-								<div style={{ padding: "4px 12px" }}>
-									<Checkbox
-										checked={allSelected}
-										indeterminate={!allSelected && selectedPeriods.length > 0}
-										disabled={allValues.length === 0}
-										onChange={event => applyChange(event.target.checked ? allValues : [])}
-									>
-										{t("performance.labels.selectAll")}
-									</Checkbox>
-								</div>
-								<Divider style={{ margin: "4px 0" }} />
-								{menu}
-							</>
-						)}
-					/>
-				);
-			},
-		},
-		{
-			title: t("performance.columns.company"),
-			dataIndex: "company_ids",
-			hideInTable: true,
-			valueType: "select",
-			valueEnum: createValueEnum(companyOptions),
-			fieldProps: {
-				options: companyOptions.map(option => ({
-					label: option.label,
-					value: option.value,
-				})),
-				mode: "multiple",
-				maxTagCount: "responsive",
-				allowClear: true,
-				disabled: isCompanyDisabled,
-				value: selectedCompanyIds,
-				placeholder: isCompanyDisabled ? t("performance.placeholders.selectMonthFirst") : t("performance.placeholders.selectCompanies"),
-				onChange: (values: Array<string | number>) => {
-					onCompanyIdsChange(normalizeNumberList(values));
-				},
-			},
-		},
-		{
-			title: t("performance.labels.aggregateTotal"),
-			dataIndex: "aggregation",
-			hideInTable: true,
-			renderFormItem: (_, config) => {
-				const isAggregationDisabled = isServiceFiltersDisabled;
-				const allValues = aggregationOptions.map(option => String(option.value));
-				const allSelected = allValues.length > 0 && allValues.every(value => selectedAggregation.includes(value as ReportAggregationKey));
-				const applyChange = (values: Array<string | number>) => {
-					if (isAggregationDisabled)
-						return;
-					const normalized = normalizeAggregationKeys(values, allowedAggregationKeys);
-					config.onChange?.(normalized);
-					onAggregationChange(normalized);
-				};
-				return (
-					<Select
-						mode="multiple"
-						maxTagCount="responsive"
-						allowClear
-						disabled={isAggregationDisabled}
-						value={selectedAggregation}
-						placeholder={t("performance.placeholders.select")}
-						options={aggregationOptions.map(option => ({ label: option.label, value: String(option.value) }))}
-						onChange={(values: Array<string | number>) => applyChange(values)}
-						popupRender={menu => (
-							<>
-								<div style={{ padding: "4px 12px" }}>
-									<Checkbox
-										checked={allSelected}
-										indeterminate={!allSelected && selectedAggregation.length > 0}
-										disabled={isAggregationDisabled || allValues.length === 0}
-										onChange={event => applyChange(event.target.checked ? allValues : [])}
-									>
-										{t("performance.labels.selectAll")}
-									</Checkbox>
-								</div>
-								<Divider style={{ margin: "4px 0" }} />
-								{menu}
-							</>
-						)}
-					/>
-				);
-			},
-		},
-		{
-			title: t("performance.labels.financialColumns"),
-			dataIndex: "financial_columns",
-			hideInTable: true,
-			hideInSearch: !selectedServiceCode,
-			renderFormItem: () => (
-				<Select
-					mode="multiple"
-					maxTagCount="responsive"
-					allowClear={false}
-					placeholder={t("performance.placeholders.selectFinancialColumns")}
-					value={selectedFinancialColumns.map(String)}
-					onChange={(values) => {
-						onFinancialColumnsChange(normalizeFinancialColumns(values));
-					}}
-					options={financialColumnOptions.map(option => ({
-						label: option.label,
-						value: String(option.value),
-					}))}
-				/>
-			),
-		},
-		{
 			title: t("performance.columns.conversionRatio"),
 			dataIndex: "default_conversion_ratio",
 			hideInTable: true,
@@ -1663,54 +1377,6 @@ export function getPerformanceReportColumns({
 					)}
 				</div>
 			),
-		},
-		{
-			title: t("performance.labels.auditColumns"),
-			dataIndex: "audit_columns",
-			hideInTable: true,
-			renderFormItem: (_, config) => {
-				const isDisabled = isServiceFiltersDisabled || isAuditColumnsDisabled;
-				const allValues = auditColumnOptions.map(option => String(option.value));
-				const allSelected = allValues.length > 0 && allValues.every(value => selectedAuditColumns.includes(value as ReportAuditColumnKey));
-				const applyChange = (values: Array<string | number>) => {
-					if (isDisabled)
-						return;
-					const normalized = normalizeAuditColumns(values);
-					config.onChange?.(normalized);
-					onAuditColumnsChange(normalized);
-				};
-				return (
-					<Select
-						mode="multiple"
-						maxTagCount="responsive"
-						allowClear
-						disabled={isDisabled}
-						value={isDisabled ? [] : selectedAuditColumns}
-						placeholder={t("performance.placeholders.select")}
-						options={auditColumnOptions.map(option => ({
-							label: option.label,
-							value: String(option.value),
-						}))}
-						onChange={(values: Array<string | number>) => applyChange(values)}
-						popupRender={menu => (
-							<>
-								<div style={{ padding: "4px 12px" }}>
-									<Checkbox
-										checked={allSelected}
-										indeterminate={!allSelected && selectedAuditColumns.length > 0}
-										disabled={isDisabled || allValues.length === 0}
-										onChange={event => applyChange(event.target.checked ? allValues : [])}
-									>
-										{t("performance.labels.selectAll")}
-									</Checkbox>
-								</div>
-								<Divider style={{ margin: "4px 0" }} />
-								{menu}
-							</>
-						)}
-					/>
-				);
-			},
 		},
 	];
 }

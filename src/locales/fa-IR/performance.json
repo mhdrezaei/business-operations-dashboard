@@ -1,7 +1,10 @@
 {
 	"titles": {
 		"performanceList": "لیست عملکردها",
-		"performanceReport": "گزارش عملکردها"
+		"performanceReport": "گزارش عملکردها",
+		"performanceReportResults": "نتایج گزارش",
+		"performanceReportResultsSubtitle": "پس از انتخاب فیلترها، نتایج گزارش نمایش داده می‌شود.",
+		"performanceReportPeriodCount": "{{periodCount}} بازه"
 	},
 	"actions": {
 		"clearForm": "پاکسازی فرم",

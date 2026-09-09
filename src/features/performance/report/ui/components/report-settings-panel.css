@@ -1,0 +1,207 @@
+.performance-report-extra-panels {
+	display: flex;
+	flex-direction: column;
+	gap: var(--basic-table-filter-margin, 24px);
+}
+
+.report-settings-panel {
+	--report-settings-bg: var(--basic-table-filter-background, #151b31);
+	--report-settings-border: var(--basic-table-filter-split, #2c4065);
+	--report-settings-text: var(--basic-table-filter-text, #d5d9e4);
+	--report-settings-heading: var(--basic-table-filter-heading, #f0f2f7);
+	--report-settings-primary: var(--basic-table-filter-primary, #2f75ff);
+
+	width: 100%;
+	border: var(--basic-table-filter-border, 1px solid #2c4065);
+	border-radius: var(--basic-table-filter-radius, 16px);
+	background: var(--report-settings-bg);
+	box-shadow: var(--basic-table-filter-shadow, 0 8px 24px rgb(0 0 0 / 12%));
+	overflow: hidden;
+}
+
+.report-settings-panel__accordion-header {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	width: 100%;
+	min-height: 68px;
+	padding: 18px 24px;
+	border: 0;
+	background: transparent;
+	color: var(--report-settings-text);
+	cursor: pointer;
+	font: inherit;
+	text-align: start;
+}
+
+.report-settings-panel__accordion-header:focus-visible {
+	outline: 2px solid var(--report-settings-primary);
+	outline-offset: -4px;
+}
+
+.report-settings-panel__badge {
+	flex: 0 0 auto;
+	padding: 5px 10px;
+	border-radius: 8px;
+	background: color-mix(in srgb, var(--report-settings-primary) 32%, var(--report-settings-bg));
+	color: var(--report-settings-heading);
+	font-size: 13px;
+	font-weight: 500;
+}
+
+.report-settings-panel__divider {
+	flex: 1 1 auto;
+	height: 1px;
+	background-image: repeating-linear-gradient(to right, var(--report-settings-border) 0, var(--report-settings-border) 4px, transparent 4px, transparent 9px);
+}
+
+.report-settings-panel__toggle {
+	display: grid;
+	flex: 0 0 auto;
+	place-items: center;
+	width: 32px;
+	height: 32px;
+	color: var(--report-settings-primary);
+}
+
+.report-settings-panel__body {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	grid-template-rows: minmax(0, 1fr);
+	gap: 16px;
+	padding: 0 24px 24px;
+	direction: ltr;
+}
+
+.report-settings-panel__body[hidden] {
+	display: none;
+}
+
+.report-settings-panel__card {
+	position: relative;
+	min-width: 0;
+	border-radius: 28px;
+	background: color-mix(in srgb, var(--report-settings-bg) 82%, #000 18%);
+	direction: rtl;
+	overflow: hidden;
+}
+
+.report-settings-panel__body > .report-settings-panel__card {
+	grid-column: 2;
+	grid-row: 1;
+}
+
+.report-settings-panel__card > .contract-dashed-border {
+	position: absolute;
+	z-index: 0;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	overflow: visible;
+	pointer-events: none;
+}
+
+.report-settings-panel__card-content {
+	position: relative;
+	z-index: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	min-height: 100%;
+	padding: 20px 24px;
+}
+
+.report-settings-panel__card[aria-disabled="true"] .report-settings-panel__card-content {
+	opacity: 0.58;
+}
+
+.report-settings-panel__card-title {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	color: var(--report-settings-heading);
+	font-weight: 600;
+}
+
+.report-settings-panel__card-title svg {
+	flex: 0 0 32px;
+	width: 32px;
+	height: 32px;
+}
+
+.report-settings-panel__rows {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.report-settings-panel__row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	min-height: 24px;
+	color: var(--report-settings-text);
+	cursor: pointer;
+}
+
+.report-settings-panel__row:has(.ant-switch-disabled) {
+	cursor: not-allowed;
+}
+
+.report-settings-panel__row--all {
+	font-weight: 500;
+}
+
+.report-settings-panel__footer-rows {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin-block-start: 2px;
+	padding-block-start: 14px;
+	border-block-start: 1px dashed var(--report-settings-border);
+}
+
+.report-settings-panel__side {
+	display: grid;
+	grid-column: 1;
+	grid-row: 1;
+	grid-template-rows: minmax(0, 1fr) auto;
+	gap: 16px;
+	min-width: 0;
+}
+
+@media (max-width: 900px) {
+	.report-settings-panel__body {
+		grid-template-columns: 1fr;
+	}
+
+	.report-settings-panel__body > .report-settings-panel__card,
+	.report-settings-panel__side {
+		grid-column: 1;
+	}
+
+	.report-settings-panel__body > .report-settings-panel__card {
+		grid-row: 1;
+	}
+
+	.report-settings-panel__side {
+		grid-row: 2;
+	}
+}
+
+@media (max-width: 640px) {
+	.report-settings-panel__accordion-header {
+		min-height: 60px;
+		padding: 14px 16px;
+	}
+
+	.report-settings-panel__body {
+		gap: 12px;
+		padding: 0 12px 16px;
+	}
+
+	.report-settings-panel__card-content {
+		padding: 16px;
+	}
+}

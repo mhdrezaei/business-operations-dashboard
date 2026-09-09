@@ -94,8 +94,13 @@ export interface PerformanceReportAvailability {
 	service_id: number
 	service_code: string
 	overall_sms_performance: boolean
+	period_type?: PerformanceReportPeriodType
 	periods: string[]
 	company_ids: number[]
+	companies?: Array<{
+		id: number
+		name: string
+	}>
 }
 
 export interface PerformanceReportListItem {
