@@ -15,13 +15,15 @@ const OPERATORS = [
 	{ label: "ایرانسل (MTN)", value: "MTN" },
 	{ label: "رایتل (RTL)", value: "RTL" },
 	{ label: "رایتل (RIGHTEL)", value: "RIGHTEL" },
+	{ label: "اپراتورهای ناشناخته", value: "UNKNOWN_OPERATOR" },
 ];
-const STATUSES = ["DELIVRD", "Pending", "EXPIRED", "REJECTD", "UNDELIV"];
+const STATUSES = ["DELIVRD", "Pending", "EXPIRED", "REJECTD", "UNDELIV", "FAILED"];
 const ALLOWED_COMPANY_NAMES = [
 	"فرهنگ و توسعه کندو",
 	"test sms",
 	"پیک آسا",
 	"شرکت شبکه گستران آریا سامانه (نواتل)",
+	"منطقه تهران",
 ];
 const number = (value?: number | null) => Number(value ?? 0).toLocaleString("fa-IR");
 const statusColor = (status: string) => status === "DELIVRD" || status === "SUCCESSFUL" ? "success" : status === "Pending" ? "warning" : "error";
@@ -222,12 +224,12 @@ export function SmsGatewayTrafficReportPage() {
 							</div>
 						</Card>
 						<Card title="جزئیات شرکت‌ها">
-							{(result.results ?? []).filter(item => ["test sms", "پیک آسا"].includes(String(item.company_name).trim().toLowerCase() === "test sms" ? "test sms" : String(item.company_name).trim())).length === 0
+							{(result.results ?? []).length === 0
 								? <Empty description="داده‌ای برای نمایش وجود ندارد." />
 								: (
 									<Collapse
 										className="sms-gateway-company-collapse"
-										items={(result.results ?? []).filter(item => ["test sms", "پیک آسا"].includes(String(item.company_name).trim().toLowerCase() === "test sms" ? "test sms" : String(item.company_name).trim())).map((item, index) => ({
+										items={(result.results ?? []).map((item, index) => ({
 											key: `${item.company_id}-${index}`,
 											label: (
 												<div className="flex w-full items-center justify-between gap-4">
