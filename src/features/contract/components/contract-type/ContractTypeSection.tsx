@@ -38,7 +38,7 @@ function createDefaultSection(firstRowFrom: number | null = null) {
 	};
 }
 
-export function ContractTypeSection({ title, name, topAside, tone = "primary", variant = "default", showRatePercentage = false, ratePercentageHelpText, compactCalculationModel = false, blendedModePlaceholder = "انتخاب نوع محاسبه" }: Props) {
+export function ContractTypeSection({ title, name, topAside, tone = "primary", variant = "default", showRatePercentage = false, ratePercentageHelpText, compactCalculationModel = true, blendedModePlaceholder = "انتخاب نوع محاسبه" }: Props) {
 	const { control, getValues, setValue } = useFormContext();
 	const inheritedTone = React.useContext(ContractSectionToneContext);
 	const resolvedTone = inheritedTone ?? tone;
