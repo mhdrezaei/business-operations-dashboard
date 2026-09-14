@@ -811,6 +811,28 @@ function buildLayoutExportColumns(args: {
 			});
 		}
 
+		if (trafficLayout === "mixed-collocation") {
+			if (args.financialColumnTitles.income) {
+				columns.push({
+					title: args.incomeTitle,
+					getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.income]), showRial),
+				});
+			}
+			if (args.financialColumnTitles.expense) {
+				columns.push({
+					title: args.expenseTitle,
+					getValue: row => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.expense]), showRial),
+				});
+			}
+			if (args.financialColumnTitles.contractType) {
+				columns.push({
+					title: args.contractTypeTitle,
+					getValue: row => args.contractTypeLabelByValue(row.is_official),
+				});
+			}
+			return columns;
+		}
+
 		if (trafficLayout === "collocation") {
 			columns.push(
 				{
@@ -1010,6 +1032,12 @@ function buildLayoutExportColumns(args: {
 		columns.push({
 			title: args.companyNameTitle,
 			getValue: row => String(row.company_name ?? "-"),
+		});
+	}
+	if (args.layout === "sms") {
+		columns.push({
+			title: args.companyTypeTitle,
+			getValue: row => args.companyTypeLabelByValue(row.company_type),
 		});
 	}
 

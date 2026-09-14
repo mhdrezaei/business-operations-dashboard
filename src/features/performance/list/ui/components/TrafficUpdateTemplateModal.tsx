@@ -1,5 +1,6 @@
 import type { TrafficExcelUpdateResponse } from "#src/features/performance/api/performances.api";
 import type { UploadProps } from "antd";
+import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import {
 	downloadTrafficUpdateTemplate,
 	updateTrafficExcelImport,
@@ -7,11 +8,13 @@ import {
 import { buildMonthsByYearMap } from "#src/features/performance/shared/model/performance.helpers";
 import { performanceGapsQuery } from "#src/features/performance/shared/queries/performance.queries";
 import { MONTH_OPTIONS } from "#src/features/performance/shared/ui/form/constants/jalali-date-options";
-import { CloudUploadOutlined, DownloadOutlined, InfoCircleOutlined } from "@ant-design/icons";
+import { CloudUploadOutlined, DownloadOutlined, InboxOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
-import { Button, Card, Col, Modal, Row, Select, Upload } from "antd";
+import { Button, Modal, Select, Upload } from "antd";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import "#src/features/contract/shared/ui/form/contract-form.css";
+import "#src/features/performance/shared/ui/form/performance-form.css";
 
 function getMonthLabel(month: number) {
 	const found = MONTH_OPTIONS.find(option => option.value === month);
@@ -68,7 +71,8 @@ export interface TrafficUpdateTemplateModalProps {
 	open: boolean
 	serviceId: number | null
 	companyTypeOptions: Array<{ label: string, value: string }>
-	onClose: () => void
+	onClose?: () => void
+	embedded?: boolean
 }
 
 export function TrafficUpdateTemplateModal({
@@ -76,6 +80,7 @@ export function TrafficUpdateTemplateModal({
 	serviceId,
 	companyTypeOptions,
 	onClose,
+	embedded = false,
 }: TrafficUpdateTemplateModalProps) {
 	const { t } = useTranslation();
 
@@ -162,7 +167,7 @@ export function TrafficUpdateTemplateModal({
 
 	function handleClose() {
 		resetState();
-		onClose();
+		onClose?.();
 	}
 
 	async function handleDownload() {
@@ -211,170 +216,149 @@ export function TrafficUpdateTemplateModal({
 		}
 	}
 
+	if (!open)
+		return null;
+
+	const content = uploadResult
+		? (
+			<div className="traffic-update-template-result">
+				<div className="traffic-update-template-result__icon"><InfoCircleOutlined /></div>
+				<div className="traffic-update-template-stats">
+					<UploadStatCard label="کل ردیف‌ها" value={uploadResult.total_rows_in_file} />
+					<UploadStatCard label="ردیف‌های پر شده" value={uploadResult.filled_rows} />
+					<UploadStatCard label="ویرایش شده" value={uploadResult.updated} />
+					<UploadStatCard label="رد شده" value={uploadResult.rejected} danger />
+				</div>
+				<div className="grid gap-2.5">
+					<div className="font-bold">دلایل رد</div>
+					<div className="grid gap-2">
+						{rejectionReasons.length > 0
+							? rejectionReasons.map(([reason, count]) => (
+								<div key={reason} className="traffic-update-template-result__row">
+									<span>{reason}</span>
+									<strong>{count.toLocaleString("fa-IR")}</strong>
+								</div>
+							))
+							: <div className="traffic-update-template-result__row">موردی برای نمایش وجود ندارد.</div>}
+					</div>
+				</div>
+				<div className="grid gap-2.5">
+					<div className="font-bold">ردیف‌های رد شده</div>
+					<div className="traffic-update-template-rejections">
+						<div className="traffic-update-template-rejections__header">
+							<div>ردیف</div>
+							<div>نام شرکت</div>
+							<div>دلیل</div>
+						</div>
+						{uploadResult.rejected_items.length > 0
+							? uploadResult.rejected_items.map((item, index) => (
+								// eslint-disable-next-line react/no-array-index-key
+								<UploadRejectedRow key={`${item.row_no}-${index}`} item={item} index={index} />
+							))
+							: <div className="p-[18px] opacity-80">ردیفی رد نشده است.</div>}
+					</div>
+				</div>
+				<div className="flex justify-end">
+					<Button type="primary" onClick={resetState}>{t("common.confirm")}</Button>
+				</div>
+			</div>
+		)
+		: (
+			<div className="traffic-update-template-editor">
+				<div className="traffic-update-template-hint">{t("performance.traffic.editTemplate.hint")}</div>
+				<div className="traffic-update-template-period">
+					<label className="performance-edit-filter">
+						<span>{t("performance.columns.companyType")}</span>
+						<Select
+							allowClear
+							placeholder={t("performance.placeholders.selectCompanyType")}
+							value={companyType ?? undefined}
+							onChange={value => handleCompanyTypeChange(value ?? null)}
+							options={companyTypeOptions}
+						/>
+					</label>
+					<label className="performance-edit-filter">
+						<span>{t("performance.columns.year")}</span>
+						<Select
+							allowClear
+							loading={isDateOptionsLoading}
+							disabled={!companyType}
+							placeholder={t("performance.placeholders.year")}
+							value={year ?? undefined}
+							onChange={value => handleYearChange(value ?? null)}
+							options={yearOptions}
+						/>
+					</label>
+					<label className="performance-edit-filter">
+						<span>{t("performance.columns.month")}</span>
+						<Select
+							allowClear
+							loading={isDateOptionsLoading}
+							disabled={year == null}
+							placeholder={year == null ? t("performance.placeholders.selectYearFirst") : t("performance.placeholders.month")}
+							value={month ?? undefined}
+							onChange={value => setMonth(value ?? null)}
+							options={monthOptions}
+						/>
+					</label>
+				</div>
+
+				<div className="performance-traffic-steps">
+					<div className="performance-traffic-step">
+						<div className="performance-traffic-step__number">۱</div>
+						<div className="performance-traffic-step__content">
+							<div className="performance-traffic-step__title">دانلود فایل تمپلیت عملکرد ماهیانه</div>
+						</div>
+						<Button icon={<DownloadOutlined />} disabled={!canDownload} loading={downloading} onClick={() => void handleDownload()}>
+							{t("performance.traffic.editTemplate.download")}
+						</Button>
+					</div>
+
+					<div className="performance-traffic-step performance-traffic-step--upload">
+						<div className="performance-traffic-step__number">۲</div>
+						<div className="performance-traffic-step__content">
+							<div className="performance-traffic-step__title">آپلود فایل اکسل عملکرد ترافیک</div>
+						</div>
+						<div className="performance-traffic-step__dropzone">
+							<Upload.Dragger {...uploadProps} fileList={fileList ?? []} onChange={info => setFileList(info.fileList.slice(-1))}>
+								<p className="performance-traffic-upload__icon"><InboxOutlined /></p>
+								<p className="performance-traffic-upload__title">{t("performance.labels.selectOrDropExcel")}</p>
+								<p className="performance-traffic-upload__hint">{t("performance.labels.allowedFormatsXls")}</p>
+							</Upload.Dragger>
+						</div>
+					</div>
+
+					<div className="performance-traffic-step">
+						<div className="performance-traffic-step__number">۳</div>
+						<div className="performance-traffic-step__content">
+							<div className="performance-traffic-step__title">ایمپورت مقادیر فایل اکسل برای عملکرد</div>
+						</div>
+						<Button type="primary" icon={<CloudUploadOutlined />} disabled={!canUpload} loading={uploading} onClick={() => void handleUpload()}>
+							{t("performance.traffic.editTemplate.upload")}
+						</Button>
+					</div>
+				</div>
+			</div>
+		);
+
+	if (embedded) {
+		return (
+			<ContractFormSection title="ویرایش گروهی عملکرد ترافیک" tone="traffic" defaultExpanded>
+				{content}
+			</ContractFormSection>
+		);
+	}
+
 	return (
 		<Modal
-			open={open}
+			open
 			onCancel={handleClose}
 			footer={null}
 			width={920}
 			destroyOnHidden
-			title={uploadResult
-				? t("performance.traffic.editTemplate.resultTitle")
-				: t("performance.traffic.editTemplate.modalTitle")}
+			title={uploadResult ? t("performance.traffic.editTemplate.resultTitle") : t("performance.traffic.editTemplate.modalTitle")}
 		>
-			{uploadResult
-				? (
-					<>
-						<Card>
-							<div className="grid gap-5">
-								<div className="grid justify-items-center gap-3">
-									<div className="grid h-[72px] w-[72px] place-items-center rounded-full border-4 border-[#40c4ff] text-[34px] text-[#40c4ff]">
-										<InfoCircleOutlined />
-									</div>
-								</div>
-
-								<div className="grid grid-cols-4 gap-2.5">
-									<UploadStatCard label="کل ردیف‌ها" value={uploadResult.total_rows_in_file} />
-									<UploadStatCard label="ردیف‌های پر شده" value={uploadResult.filled_rows} />
-									<UploadStatCard label="ویرایش شده" value={uploadResult.updated} />
-									<UploadStatCard label="رد شده" value={uploadResult.rejected} danger />
-								</div>
-
-								<div className="grid gap-2.5">
-									<div className="font-bold">دلایل رد</div>
-									<div className="grid gap-2">
-										{rejectionReasons.length > 0
-											? rejectionReasons.map(([reason, count]) => (
-												<div
-													key={reason}
-													className="flex justify-between gap-4 rounded-xl border border-[rgba(255,255,255,0.12)] px-4 py-3"
-												>
-													<span>{reason}</span>
-													<strong>{count.toLocaleString("fa-IR")}</strong>
-												</div>
-											))
-											: (
-												<div className="rounded-xl border border-[rgba(255,255,255,0.12)] px-4 py-3">
-													موردی برای نمایش وجود ندارد.
-												</div>
-											)}
-									</div>
-								</div>
-
-								<div className="grid gap-2.5">
-									<div className="font-bold">ردیف‌های رد شده</div>
-									<div className="overflow-hidden rounded-2xl border border-[rgba(255,255,255,0.12)]">
-										<div className="grid grid-cols-[140px_minmax(0,1fr)_minmax(220px,1.2fr)] gap-3 bg-[rgba(255,255,255,0.06)] px-[18px] py-4 font-bold">
-											<div>ردیف</div>
-											<div>نام شرکت</div>
-											<div>دلیل</div>
-										</div>
-
-										{uploadResult.rejected_items.length > 0
-											? uploadResult.rejected_items.map((item, index) => (
-												// eslint-disable-next-line react/no-array-index-key
-												<UploadRejectedRow key={`${item.row_no}-${index}`} item={item} index={index} />
-											))
-											: (
-												<div className="p-[18px] opacity-80">
-													ردیفی رد نشده است.
-												</div>
-											)}
-									</div>
-								</div>
-							</div>
-						</Card>
-
-						<div className="flex justify-end mt-2 gap-2">
-							<Button type="primary" onClick={handleClose}>
-								{t("common.confirm")}
-							</Button>
-						</div>
-					</>
-				)
-				: (
-					<>
-						<Card>
-							<div className="grid gap-4">
-								<div className="opacity-80 text-xs leading-[1.8]">
-									{t("performance.traffic.editTemplate.hint")}
-								</div>
-
-								<Row gutter={[16, 16]}>
-									<Col span={8}>
-										<div className="mb-1 text-sm opacity-80">{t("performance.columns.companyType")}</div>
-										<Select
-											className="w-full"
-											allowClear
-											placeholder={t("performance.placeholders.select")}
-											value={companyType ?? undefined}
-											onChange={value => handleCompanyTypeChange(value ?? null)}
-											options={companyTypeOptions}
-										/>
-									</Col>
-									<Col span={8}>
-										<div className="mb-1 text-sm opacity-80">{t("performance.columns.year")}</div>
-										<Select
-											className="w-full"
-											allowClear
-											loading={isDateOptionsLoading}
-											disabled={!companyType}
-											placeholder={t("performance.placeholders.year")}
-											value={year ?? undefined}
-											onChange={value => handleYearChange(value ?? null)}
-											options={yearOptions}
-										/>
-									</Col>
-									<Col span={8}>
-										<div className="mb-1 text-sm opacity-80">{t("performance.columns.month")}</div>
-										<Select
-											className="w-full"
-											allowClear
-											loading={isDateOptionsLoading}
-											disabled={year == null}
-											placeholder={year == null
-												? t("performance.placeholders.selectYearFirst")
-												: t("performance.placeholders.month")}
-											value={month ?? undefined}
-											onChange={value => setMonth(value ?? null)}
-											options={monthOptions}
-										/>
-									</Col>
-								</Row>
-
-								<Upload.Dragger
-									{...uploadProps}
-									fileList={fileList ?? []}
-									onChange={info => setFileList(info.fileList.slice(-1))}
-								>
-									<p className="m-0 text-lg">{t("performance.labels.selectOrDropExcel")}</p>
-									<p className="m-0 mt-2">{t("performance.labels.allowedFormatsXls")}</p>
-								</Upload.Dragger>
-							</div>
-						</Card>
-
-						<div className="flex justify-end mt-2 gap-2">
-							<Button onClick={handleClose}>{t("common.cancel")}</Button>
-							<Button
-								icon={<DownloadOutlined />}
-								disabled={!canDownload}
-								loading={downloading}
-								onClick={() => void handleDownload()}
-							>
-								{t("performance.traffic.editTemplate.download")}
-							</Button>
-							<Button
-								type="primary"
-								icon={<CloudUploadOutlined />}
-								disabled={!canUpload}
-								loading={uploading}
-								onClick={() => void handleUpload()}
-							>
-								{t("performance.traffic.editTemplate.upload")}
-							</Button>
-						</div>
-					</>
-				)}
+			{content}
 		</Modal>
 	);
 }

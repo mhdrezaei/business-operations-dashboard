@@ -1,0 +1,48 @@
+.company-info-map .leaflet-container {
+	background: #dce5ef;
+	font-family: inherit;
+}
+
+.company-info-map--dark .leaflet-container {
+	background: #111827;
+}
+
+.company-info-map .leaflet-control-zoom {
+	border: 1px solid rgba(44, 103, 240, 0.35) !important;
+	box-shadow: 0 8px 24px rgba(15, 23, 42, 0.14) !important;
+}
+
+.company-info-map .leaflet-control-zoom a {
+	border-color: rgba(44, 103, 240, 0.18) !important;
+	color: #2867f0;
+}
+
+.company-info-map--dark .leaflet-control-zoom a {
+	background: #17223d;
+	color: #7aa2ff;
+}
+
+.company-map-pin {
+	align-items: center;
+	background: #2867f0;
+	border: 3px solid #fff;
+	border-radius: 50% 50% 50% 0;
+	box-shadow: 0 6px 18px rgba(20, 74, 190, 0.45);
+	display: flex;
+	height: 30px;
+	justify-content: center;
+	transform: rotate(-45deg);
+	width: 30px;
+}
+
+.company-map-pin::after {
+	background: #fff;
+	border-radius: 50%;
+	content: "";
+	height: 8px;
+	width: 8px;
+}
+
+.company-info-map .leaflet-control-attribution {
+	display: none;
+}

@@ -1,13 +1,12 @@
 import type { CompanyDto } from "#src/api/common/common.types";
 import type { PerformanceServicePath } from "#src/features/performance/api/performances.api";
+import type { UnregisteredPerformancePreset } from "#src/features/performance/shared/model/performance-registration-preset";
+import type { PerformanceServiceCode } from "#src/features/performance/shared/model/performance.form.types";
 import type { ActionType, ProColumns, ProFormInstance } from "@ant-design/pro-components";
 import type { PerformanceListRow } from "../model/performance.list.types";
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
-import {
-	fetchMonthlyContractStatus,
-	fetchSmsCommissionAgents,
-	fetchUnregisteredPerformanceList,
-} from "#src/features/performance/api/performances.api";
+import { fetchUnregisteredPerformanceList } from "#src/features/performance/api/performances.api";
+import { buildUnregisteredPerformanceSearch } from "#src/features/performance/shared/model/performance-registration-preset";
 import { normalizePerformanceRecord, resolvePerformanceServicePath } from "#src/features/performance/shared/model/performance.helpers";
 import {
 	companiesByServiceQuery,
@@ -15,15 +14,14 @@ import {
 	smsCommissionAgentsQuery,
 } from "#src/features/performance/shared/queries/performance.queries";
 import { useAccess } from "#src/hooks";
-import { TableActionEditIcon } from "#src/icons";
 import { PlusCircleOutlined } from "@ant-design/icons";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { Button } from "antd";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
-import { PerformanceDetailModal } from "./components/PerformanceDetailModal";
 import { getPerformanceColumns } from "./constants";
+import "./unregistered-performance-list.css";
 
 function isSmsCommissionServicePath(service: PerformanceServicePath | null) {
 	return service === "sms-commission";
@@ -86,9 +84,6 @@ export default function UnregisteredPerformanceList() {
 
 	const [selectedServiceIds, setSelectedServiceIds] = useState<number[]>([]);
 	const [selectedServiceCode, setSelectedServiceCode] = useState<string | null>(null);
-	const [openDetail, setOpenDetail] = useState(false);
-	const [selectedRow, setSelectedRow] = useState<PerformanceListRow | null>(null);
-	const [openingRowKey, setOpeningRowKey] = useState<string | null>(null);
 	const applySelectedServicesState = useCallback((serviceIds: number[], serviceCode: string | null) => {
 		setSelectedServiceIds(serviceIds);
 		setSelectedServiceCode(serviceCode);
@@ -114,11 +109,6 @@ export default function UnregisteredPerformanceList() {
 		() => resolvePerformanceServicePath(selectedServiceCode as any),
 		[selectedServiceCode],
 	);
-	const selectedRowServicePath = useMemo(() => {
-		const serviceCode = String(selectedRow?.service_code ?? selectedServiceCode ?? "").trim().toLowerCase();
-		return resolvePerformanceServicePath(serviceCode as any);
-	}, [selectedRow, selectedServiceCode]);
-
 	const isSmsCommission = isSmsCommissionServicePath(selectedServicePath);
 	const smsCommissionAgents = useQuery(smsCommissionAgentsQuery(isSmsCommission));
 	const permittedCompanyTypeOptions = useMemo(
@@ -222,59 +212,17 @@ export default function UnregisteredPerformanceList() {
 		return hasDomainPermissionByServiceId("performances", "create", selectedServiceId) || hasDomainPermissionByServiceId("contracts", "create", selectedServiceId);
 	}, [selectedServiceId, hasDomainPermissionByServiceId]);
 
-	const refreshTable = () => {
-		actionRef.current?.reload?.();
-	};
-
-	const openPerformanceDetail = useCallback(async (record: PerformanceListRow) => {
-		const rowServiceCode = String((record as any).service_code ?? selectedServiceCode ?? "").trim().toLowerCase();
-		const rowServicePath = resolvePerformanceServicePath(rowServiceCode as any);
-		const rowKey = getUnregisteredPerformanceRowKey(record);
-
-		if (rowServicePath !== "traffic") {
-			if (rowServicePath === "sms-commission") {
-				const normalized = normalizePerformanceRecord(record);
-				if (normalized.companyId == null) {
-					window.$message?.error(t("performance.errors.baseFormIncomplete"));
-					return;
-				}
-
-				setOpeningRowKey(rowKey);
-				try {
-					const agents = await fetchSmsCommissionAgents();
-					const selectedAgent = (agents.results ?? [])
-						.find(agent => Number(agent.company) === Number(normalized.companyId));
-
-					if (!selectedAgent) {
-						window.$message?.error(t("performance.messages.salesAgentNotFound"));
-						return;
-					}
-
-					setSelectedRow({
-						...record,
-						sales_agent: selectedAgent.id,
-						sales_agent_id: selectedAgent.id,
-						sales_agent_name: selectedAgent.name,
-					});
-					setOpenDetail(true);
-				}
-				catch {
-					window.$message?.error(t("performance.messages.unknownError"));
-				}
-				finally {
-					setOpeningRowKey(null);
-				}
-				return;
-			}
-
-			setSelectedRow(record);
-			setOpenDetail(true);
-			return;
-		}
-
+	const openPerformanceRegistration = useCallback((record: PerformanceListRow) => {
 		const normalized = normalizePerformanceRecord(record);
+		const serviceOption = serviceOptions.find(option => option.value === normalized.serviceId);
+		const rowServiceCode = String((record as any).service_code ?? serviceOption?.code ?? selectedServiceCode ?? "")
+			.trim()
+			.toLowerCase();
+		const rowServicePath = resolvePerformanceServicePath(rowServiceCode as PerformanceServiceCode);
+
 		if (
-			normalized.serviceId == null
+			!rowServicePath
+			|| normalized.serviceId == null
 			|| normalized.companyId == null
 			|| normalized.year == null
 			|| normalized.month == null
@@ -282,32 +230,25 @@ export default function UnregisteredPerformanceList() {
 			window.$message?.error(t("performance.errors.baseFormIncomplete"));
 			return;
 		}
+		const preset: UnregisteredPerformancePreset = {
+			serviceId: normalized.serviceId,
+			serviceCode: rowServiceCode as PerformanceServiceCode,
+			companyId: normalized.companyId,
+			companyType: normalized.companyType,
+			salesAgentId: normalized.salesAgentId,
+			year: normalized.year,
+			month: normalized.month,
+		};
 
-		setOpeningRowKey(rowKey);
-		try {
-			const status = await fetchMonthlyContractStatus({
-				serviceId: normalized.serviceId,
-				companyId: normalized.companyId,
-				year: normalized.year,
-				month: normalized.month,
-				companyType: normalized.companyType,
-			});
-
-			setSelectedRow({
-				...record,
-				traffic: status.traffic ?? null,
-				traffic_has_county_contract: status.traffic?.has_county_contract ?? null,
-				traffic_location_units: status.traffic?.location_units ?? null,
-			});
-			setOpenDetail(true);
-		}
-		catch {
-			window.$message?.error(t("performance.messages.unknownError"));
-		}
-		finally {
-			setOpeningRowKey(null);
-		}
-	}, [selectedServiceCode, t]);
+		navigate({
+			pathname: "/performances/new",
+			search: buildUnregisteredPerformanceSearch(preset, getUnregisteredPerformanceRowKey(record)),
+		}, {
+			state: {
+				unregisteredPreset: preset,
+			},
+		});
+	}, [navigate, selectedServiceCode, serviceOptions, t]);
 
 	const baseColumns = useMemo(
 		() =>
@@ -354,16 +295,14 @@ export default function UnregisteredPerformanceList() {
 					);
 
 					if (canCreateRow) {
-						const rowKey = getUnregisteredPerformanceRowKey(record);
 						actions.push(
 							<BasicButton
 								key="add"
 								type="link"
 								size="large"
-								loading={openingRowKey === rowKey}
 								title={t("performance.actions.submitPerformance")}
-								icon={<TableActionEditIcon />}
-								onClick={() => void openPerformanceDetail(record)}
+								icon={<PlusCircleOutlined />}
+								onClick={() => openPerformanceRegistration(record)}
 							/>,
 						);
 					}
@@ -372,12 +311,12 @@ export default function UnregisteredPerformanceList() {
 				},
 			},
 		];
-	}, [baseColumns, t, openingRowKey, openPerformanceDetail]);
+	}, [baseColumns, t, openPerformanceRegistration]);
 
 	return (
 		<BasicContent className="h-full">
 			<BasicTable<PerformanceListRow>
-				adaptive
+				className="unregistered-performance-table"
 				rowKey={getUnregisteredPerformanceRowKey}
 				columns={columns}
 				actionRef={actionRef}
@@ -442,18 +381,6 @@ export default function UnregisteredPerformanceList() {
 						</Button>,
 					];
 				}}
-			/>
-
-			<PerformanceDetailModal
-				open={openDetail}
-				service={selectedRowServicePath}
-				companies={companyItems}
-				record={selectedRow}
-				onClose={() => {
-					setOpenDetail(false);
-					setSelectedRow(null);
-				}}
-				onUpdated={refreshTable}
 			/>
 		</BasicContent>
 	);

@@ -1,0 +1,558 @@
+.performance-edit-page {
+	min-height: 100%;
+	height: auto !important;
+	min-height: 0;
+	overflow-y: auto !important;
+	overflow-x: hidden;
+}
+
+.performance-edit-page__layout {
+	display: grid;
+	grid-template-columns: minmax(320px, 380px) minmax(0, 1fr);
+	grid-template-areas: "sidebar main";
+	align-items: start;
+	gap: var(--ant-margin-lg);
+}
+
+.performance-edit-sidebar {
+	position: sticky;
+	top: var(--ant-margin);
+	grid-area: sidebar;
+	display: grid;
+	gap: var(--ant-margin);
+	min-width: 0;
+	margin-block-start: 0;
+}
+
+.performance-edit-main {
+	grid-area: main;
+	display: grid;
+	gap: var(--ant-margin);
+	min-width: 0;
+	min-height: max-content;
+	padding-block-end: var(--ant-padding-xl);
+}
+
+/* Performance controls use the same compact action language as the contract cards. */
+.performance-edit-page :where(.ant-btn) {
+	border-radius: 6px;
+}
+
+.performance-edit-filter-stack {
+	display: grid;
+	gap: var(--ant-margin);
+}
+
+.performance-edit-filter {
+	display: grid;
+	gap: var(--ant-margin-xs);
+	color: var(--ant-colorText);
+	font-weight: 500;
+}
+
+.performance-edit-filter > .ant-select {
+	width: 100%;
+}
+
+.performance-edit-year-filter {
+	margin-bottom: var(--ant-margin-lg);
+}
+
+.performance-edit-list-heading {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--ant-margin-sm);
+	margin-bottom: var(--ant-margin-sm);
+}
+
+.performance-edit-list-heading .ant-tag {
+	margin: 0;
+	font-variant-numeric: tabular-nums;
+}
+
+.performance-edit-list {
+	display: grid;
+	gap: var(--ant-margin-sm);
+	max-height: min(48vh, 560px);
+	padding-inline-end: 2px;
+	overflow-y: auto;
+	scrollbar-color: var(--ant-colorBorder) transparent;
+	scrollbar-width: thin;
+}
+
+.performance-edit-list-item {
+	display: grid;
+	gap: var(--ant-margin-sm);
+	width: 100%;
+	padding: var(--ant-padding-sm) var(--ant-padding-md);
+	border: 1px solid var(--performance-list-border, #2f4770);
+	border-radius: var(--ant-border-radius-lg);
+	background: var(--performance-list-bg, #12172b);
+	color: var(--ant-colorText);
+	font: inherit;
+	text-align: start;
+	cursor: pointer;
+	transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.performance-edit-list-item:hover:not(:disabled) {
+	border-color: var(--performance-list-hover-border, var(--ant-colorTextSecondary, #d9d9d9));
+	background: var(--performance-list-hover-bg, var(--ant-colorBgLayout, #12172b));
+}
+
+.performance-edit-list-item:focus-visible {
+	outline: 2px solid var(--ant-colorPrimary);
+	outline-offset: 2px;
+}
+
+.performance-edit-list-item:disabled {
+	cursor: not-allowed;
+	opacity: 0.66;
+}
+
+.performance-edit-list-item--selected {
+	border-color: var(--performance-list-border);
+	background: var(--performance-list-bg);
+	box-shadow: 0 8px 24px color-mix(in srgb, var(--ant-colorPrimary) 16%, transparent);
+}
+
+.performance-edit-list-item--selected:hover:not(:disabled) {
+	border-color: var(--performance-list-hover-border, var(--ant-colorPrimary));
+	background: var(--performance-list-hover-bg, var(--ant-colorPrimaryBgHover));
+}
+
+.performance-edit-list-item__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--ant-margin-sm);
+}
+
+.performance-edit-list-item__header strong,
+.performance-edit-list-item__summary b {
+	font-variant-numeric: tabular-nums;
+}
+
+.performance-edit-list-item__header > span {
+	color: var(--ant-colorTextSecondary);
+	font-size: var(--ant-font-size-sm);
+}
+
+.performance-edit-list-item__summary {
+	display: grid;
+	gap: var(--ant-margin-xs);
+	padding-top: var(--ant-padding-xs);
+	border-top: 1px solid var(--ant-colorSplit);
+	color: var(--ant-colorTextSecondary);
+	font-size: var(--ant-font-size-sm);
+}
+
+.performance-edit-list-item__summary > span {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: var(--ant-margin-sm);
+}
+
+.performance-edit-list-item__summary b {
+	color: var(--ant-colorText);
+}
+
+.performance-edit-list-item__readonly {
+	color: var(--ant-colorTextTertiary);
+	font-size: var(--ant-font-size-sm);
+}
+
+.performance-edit-main__empty {
+	position: relative;
+	display: grid;
+	min-height: clamp(360px, 58vh, 680px);
+	place-items: center;
+	padding: var(--ant-padding-xl);
+	border: 1px solid var(--ant-colorSplit, #2f4770);
+	border-radius: 16px;
+	background: var(--ant-colorBgContainer, #171c32);
+}
+
+.performance-edit-main__empty-badge {
+	position: absolute;
+	inset-block-start: var(--ant-padding-lg);
+	inset-inline-end: var(--ant-padding-lg);
+	padding: 4px 12px;
+	border-radius: var(--ant-border-radius-sm);
+	background: var(--ant-colorPrimaryBg, #1f3b7a);
+	color: var(--ant-colorText, #f2f4ff);
+	font-size: var(--ant-font-size-sm);
+	font-weight: 600;
+}
+
+.performance-edit-main__empty-inner {
+	display: grid;
+	justify-items: center;
+	gap: var(--ant-margin-lg);
+	max-width: 520px;
+	text-align: center;
+}
+
+.performance-edit-main__empty-image {
+	display: block;
+	width: clamp(110px, 18vw, 150px);
+	height: auto;
+	opacity: 0.72;
+}
+
+.performance-edit-main__empty-copy {
+	margin: 0;
+	color: var(--ant-colorTextSecondary, #c6cada);
+	font-size: var(--ant-font-size-sm);
+	line-height: 2;
+}
+
+.traffic-update-template-editor,
+.traffic-update-template-result {
+	display: grid;
+	gap: var(--ant-margin-lg);
+}
+
+.traffic-update-template-hint {
+	color: var(--ant-colorTextSecondary);
+	font-size: var(--ant-font-size-sm);
+	line-height: 1.8;
+}
+
+.traffic-update-template-period {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: var(--ant-margin);
+}
+
+.traffic-update-template-result__icon {
+	display: grid;
+	width: 72px;
+	height: 72px;
+	place-items: center;
+	justify-self: center;
+	border: 4px solid var(--ant-colorInfo);
+	border-radius: 50%;
+	color: var(--ant-colorInfo);
+	font-size: 34px;
+}
+
+.traffic-update-template-stats {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: var(--ant-margin-sm);
+}
+
+.traffic-update-template-result__row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--ant-margin);
+	padding: var(--ant-padding-sm) var(--ant-padding-md);
+	border: 1px solid var(--ant-colorSplit);
+	border-radius: var(--ant-border-radius-lg);
+}
+
+.traffic-update-template-rejections {
+	overflow-x: auto;
+	border: 1px solid var(--ant-colorSplit);
+	border-radius: var(--ant-border-radius-lg);
+}
+
+.traffic-update-template-rejections__header {
+	display: grid;
+	grid-template-columns: 140px minmax(180px, 1fr) minmax(220px, 1.2fr);
+	gap: var(--ant-margin-sm);
+	min-width: 620px;
+	padding: var(--ant-padding-md) 18px;
+	background: var(--ant-colorFillSecondary);
+	font-weight: 700;
+}
+
+.performance-detail-inline,
+.performance-detail-inline__spinner,
+.performance-detail-inline__spinner > .ant-spin-container {
+	display: block;
+	width: 100%;
+}
+
+.performance-detail-inline__card.ant-card {
+	border: 0;
+	border-radius: var(--ant-border-radius-lg);
+	background: transparent;
+	overflow: visible;
+	height: auto;
+	min-height: 0;
+}
+
+.performance-detail-inline__card > .ant-card-body {
+	padding: 0;
+}
+
+.performance-detail-sections {
+	display: grid;
+	gap: var(--ant-margin);
+	min-height: 0;
+}
+
+.performance-detail-section > .ant-card-head .ant-card-head-wrapper {
+	width: 100%;
+}
+
+.performance-detail-section > .ant-card-head .ant-card-extra {
+	flex: 1 1 0;
+	min-width: 0;
+}
+
+.performance-detail-section > .ant-card-head .ant-card-extra::before {
+	display: block;
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.performance-detail-section > .ant-card-body {
+	/* Form controls can expose a label/control stack taller than Ant's
+	   measured row. Keep a consistent safety area inside every service card. */
+	padding: var(--ant-padding-md);
+	padding-block-end: calc(var(--ant-padding-md) + 32px);
+}
+
+.performance-detail-section.ant-card {
+	height: auto;
+	min-height: 0;
+	overflow: visible;
+}
+
+.performance-detail-section__edit-actions {
+	display: flex;
+	align-items: center;
+	gap: var(--ant-margin-xs);
+}
+
+.performance-traffic-edit-location {
+	position: relative;
+	display: grid;
+	gap: var(--ant-margin);
+	padding: var(--ant-padding-lg);
+	padding-block-end: calc(var(--ant-padding-lg) + 24px);
+	border-radius: calc(var(--ant-padding-lg) + var(--ant-border-radius-sm));
+	background: var(--ant-colorBgLayout, #111427);
+}
+
+.performance-traffic-edit-location__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--ant-margin);
+}
+
+.performance-traffic-edit-location__header .ant-tag {
+	margin: 0;
+	border-radius: var(--ant-border-radius-sm);
+	background: var(--ant-colorPrimaryBgHover);
+	color: var(--ant-colorText);
+}
+
+.performance-traffic-edit-location__unit {
+	border: 1px solid #30497a;
+	border-radius: 8px;
+	background: #243761;
+	color: var(--ant-colorTextSecondary, #c6cada);
+}
+
+/* Aligned performance fields keep their label above the control at every breakpoint. */
+.performance-detail-inline .contract-form-field {
+	grid-template-columns: minmax(0, 1fr);
+	align-items: stretch;
+	row-gap: var(--ant-margin-xs);
+}
+
+.performance-detail-inline .contract-form-field__label {
+	justify-content: flex-start;
+	min-height: auto;
+}
+
+.performance-detail-inline .contract-form-field__label-text {
+	text-align: start;
+}
+
+.performance-detail-inline .ant-form-item-row {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+}
+
+.performance-detail-inline .ant-form-item-label {
+	padding-block-end: var(--ant-margin-xs);
+	text-align: start;
+}
+
+.performance-detail-inline .ant-form-item-label > label::after {
+	display: none;
+}
+
+.performance-detail-inline .contract-form-aligned-grid {
+	row-gap: var(--ant-margin-sm);
+}
+
+/* Ant form items expose their label and control as a stacked pair. Keep enough
+   vertical rhythm between SMS rows so the next label never sits on the prior input. */
+.performance-detail-inline .performance-detail-sms-grid {
+	row-gap: 32px;
+}
+
+.performance-detail-inline .performance-detail-sms-grid > .ant-form-item {
+	/* The stacked label is visually taller than Ant's measured control row. */
+	margin-block-end: 24px !important;
+}
+
+.performance-detail-inline .contract-form-aligned-grid > .contract-form-field {
+	margin-block-end: 8px;
+}
+
+.performance-detail-section__body {
+	display: grid;
+	gap: var(--ant-margin);
+	min-height: max-content;
+	overflow: visible;
+}
+
+.performance-detail-section__body > .contract-form-aligned-grid,
+.performance-detail-section__body > .grid {
+	min-height: max-content;
+	align-content: start;
+}
+
+.performance-detail-value-rows {
+	display: grid;
+}
+
+.performance-detail-value-row {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	column-gap: calc(var(--ant-margin-lg) * 2);
+	border-bottom: var(--performance-detail-divider-width, 1px) solid var(--performance-detail-divider-color, #2b3b60);
+}
+
+.performance-detail-value-row:last-child {
+	border-bottom: 0;
+}
+
+.performance-detail-value-row .performance-detail-value {
+	min-height: var(--ant-control-height-lg);
+	border-bottom: 0;
+}
+
+.performance-detail-value {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: var(--ant-margin-sm);
+	min-width: 0;
+	padding-block: var(--ant-padding-xs);
+	border-bottom: 1px solid var(--ant-colorSplit);
+}
+
+.performance-detail-value:nth-last-child(-n+2) {
+	border-bottom: 0;
+}
+
+.performance-detail-value__label {
+	color: var(--ant-colorTextSecondary);
+	font-size: var(--ant-font-size-sm);
+}
+
+.performance-detail-value__content {
+	color: var(--ant-colorText);
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+	text-align: end;
+}
+
+.performance-detail-metric-card {
+	position: relative;
+	display: grid;
+	gap: var(--ant-margin-md);
+	padding: var(--ant-padding-lg);
+	border-radius: var(--performance-detail-metric-radius);
+	background: var(--performance-detail-metric-bg);
+}
+
+.performance-detail-metric-card__tag.ant-tag {
+	display: inline-flex;
+	justify-self: start;
+	margin: 0;
+	padding: 2px var(--ant-padding-sm);
+	border-radius: var(--performance-detail-metric-tag-radius);
+	background: var(--performance-detail-metric-tag-bg);
+	color: var(--performance-detail-metric-tag-color);
+	font-weight: 600;
+}
+
+.performance-detail-metric-card__rows {
+	display: grid;
+	gap: 0;
+}
+
+.performance-detail-metric-card__rows .performance-detail-value {
+	border-bottom: var(--performance-detail-divider-width, 1px) solid var(--performance-detail-divider-color, #2b3b60);
+}
+
+.performance-detail-metric-card__rows .performance-detail-value:last-child {
+	border-bottom: 0;
+}
+
+.performance-detail-inline__card .grid.grid-cols-\[repeat\(2\,minmax\(0\,1fr\)\)\] {
+	column-gap: var(--ant-margin-lg);
+	row-gap: var(--ant-margin-sm);
+}
+
+@media (max-width: 1200px) {
+	.performance-edit-page__layout {
+		grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+	}
+}
+
+@media (max-width: 992px) {
+	.performance-edit-page__layout {
+		grid-template-columns: minmax(0, 1fr);
+		grid-template-areas:
+			"sidebar"
+			"main";
+	}
+
+	.performance-edit-sidebar {
+		position: static;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		margin-block-start: 0;
+	}
+
+	.performance-edit-list {
+		max-height: 360px;
+	}
+}
+
+@media (max-width: 768px) {
+	.performance-edit-sidebar {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.traffic-update-template-period,
+	.traffic-update-template-stats {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.performance-detail-inline__card .grid.grid-cols-\[repeat\(2\,minmax\(0\,1fr\)\)\] {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.performance-detail-value-row {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.performance-detail-value-row .performance-detail-value + .performance-detail-value {
+		border-top: var(--performance-detail-divider-width, 1px) solid var(--performance-detail-divider-color, #2b3b60);
+	}
+}

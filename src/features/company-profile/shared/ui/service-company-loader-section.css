@@ -1,0 +1,25 @@
+.company-profile-filter-content {
+	margin: 0;
+	padding: var(--company-profile-filter-content-padding, 24px);
+}
+
+.company-profile-filter-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+	gap: var(--company-profile-filter-grid-gap, 24px);
+}
+
+.company-profile-filter-actions {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: var(--company-profile-filter-action-gap, 12px);
+	padding-block-start: var(--company-profile-filter-action-offset, 24px);
+}
+
+@media (max-width: 575px) {
+	.company-profile-filter-actions > .ant-btn {
+		flex: 1 1 100%;
+		min-height: 44px;
+	}
+}

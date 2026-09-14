@@ -58,10 +58,17 @@ interface FixedStartSectionProps {
 	periodActions?: ReactNode
 	periodModeToggle?: ReactNode
 	hideManualPeriod?: boolean
+	lockPrerequisites?: boolean
 	children?: ReactNode
 }
 
-export function FixedStartSection({ periodActions, periodModeToggle, hideManualPeriod = false, children }: FixedStartSectionProps) {
+export function FixedStartSection({
+	periodActions,
+	periodModeToggle,
+	hideManualPeriod = false,
+	lockPrerequisites = false,
+	children,
+}: FixedStartSectionProps) {
 	const { t } = useTranslation();
 	const { control, setValue, getValues } = useFormContext<PerformanceFormValues>();
 	const { getPermittedCompanyTypes, getPermittedServiceIds } = useAccess();
@@ -128,6 +135,7 @@ export function FixedStartSection({ periodActions, periodModeToggle, hideManualP
 	const prevCompanyIdRef = useRef<typeof companyId>(undefined);
 	const prevYearRef = useRef<typeof year>(undefined);
 	const prevCompanyTypeRef = useRef<typeof companyType>(undefined);
+	const prevTrafficSubmitModeRef = useRef<typeof trafficSubmitMode>(undefined);
 
 	useEffect(() => {
 		const prevServiceId = prevServiceIdRef.current;
@@ -232,6 +240,8 @@ export function FixedStartSection({ periodActions, periodModeToggle, hideManualP
 		}
 
 		const selected = (services.data?.results ?? []).find(service => service.id === serviceId);
+		if (!selected)
+			return;
 		const code = typeof selected?.code === "string" ? selected.code.trim().toLowerCase() : "";
 		const nextServiceCode = (code || null) as any;
 		if (getValues("serviceCode") !== nextServiceCode) {
@@ -240,6 +250,10 @@ export function FixedStartSection({ periodActions, periodModeToggle, hideManualP
 	}, [serviceId, services.data, setValue, getValues, permittedCreateServiceIdList.join(",")]);
 
 	useEffect(() => {
+		const previousSubmitMode = prevTrafficSubmitModeRef.current;
+		prevTrafficSubmitModeRef.current = trafficSubmitMode;
+		if (lockPrerequisites && previousSubmitMode === undefined)
+			return;
 		if (!isTraffic)
 			return;
 
@@ -254,7 +268,7 @@ export function FixedStartSection({ periodActions, periodModeToggle, hideManualP
 		if (trafficSubmitMode === "template") {
 			setValue("companyId", null, { shouldDirty: true, shouldValidate: false });
 		}
-	}, [isTraffic, trafficSubmitMode, setValue]);
+	}, [isTraffic, trafficSubmitMode, setValue, lockPrerequisites]);
 
 	const serviceOptions = useMemo(
 		() =>

@@ -4,21 +4,26 @@ import type {
 	PredictionSummaryResponse,
 	PredictionSummarySelectedPeriod,
 } from "#src/features/performance/api/performances.api";
+import type { CSSProperties } from "react";
 import type { PredictionSummaryDisplayRow, PredictionSummarySection } from "./predictions-summary-export";
+import ContractFilterSearchIcon from "#src/assets/svg/header/contract-filter-search.svg?react";
+import ReportResultsIcon from "#src/assets/svg/performance/report-results.svg?react";
 import { BasicContent } from "#src/components";
 import { fetchPredictionPerformanceSummary } from "#src/features/performance/api/performances.api";
 import { normalizeServiceCode } from "#src/features/performance/shared/model/performance.helpers";
 import { servicesQuery } from "#src/features/performance/shared/queries/performance.queries";
 import { useAccess } from "#src/hooks";
-import { DeleteOutlined, FileExcelOutlined, FilePdfOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons";
+import { DownOutlined, FileExcelOutlined, FilePdfOutlined, SearchOutlined, UpOutlined } from "@ant-design/icons";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Alert, Button, Card, Checkbox, Empty, InputNumber, Select, Space, Switch, Table, Tag, Typography } from "antd";
-import { useMemo, useState } from "react";
+import { Alert, Button, Card, Checkbox, ConfigProvider, Empty, Form, InputNumber, Select, Space, Switch, Table, Tag, theme, Typography } from "antd";
+import { useContext, useMemo, useState } from "react";
+import { ReportPeriodPicker } from "./components/ReportPeriodPicker";
 import { getReportDisplayMonth } from "./constants";
 import {
 	downloadPredictionSummaryExcel,
 	openPredictionSummaryPdfPrint,
 } from "./predictions-summary-export";
+import "./predictions-summary-report.css";
 
 type ReportMode = "separated" | "total";
 type OutputMode = "classic" | "single-table";
@@ -556,6 +561,11 @@ function createPeriodSelection(year: number): PeriodSelection {
 
 export function PredictionsSummaryReportPage() {
 	const { getPermittedServiceIds } = useAccess();
+	const { token } = theme.useToken();
+	const antdContext = useContext(ConfigProvider.ConfigContext);
+	const configuredCardRadius = antdContext.theme?.components?.Card?.borderRadiusLG;
+	const filterRadius = typeof configuredCardRadius === "number" ? configuredCardRadius : token.borderRadiusLG;
+	const [filterCollapsed, setFilterCollapsed] = useState(false);
 	const [serviceCodes, setServiceCodes] = useState<string[]>([]);
 	const [periodMode, setPeriodMode] = useState<PredictionSummaryPeriodMode>("shamsi_months");
 	const [reportMode, setReportMode] = useState<ReportMode>("separated");
@@ -585,13 +595,11 @@ export function PredictionsSummaryReportPage() {
 	const hasTrafficService = serviceCodes.includes("traffic");
 
 	const periodValueOptions = useMemo(() => getPeriodValueOptions(periodMode), [periodMode]);
-	const selectedYears = useMemo(() => new Set(periodSelections.map(selection => selection.year)), [periodSelections]);
-	const availableYearOptions = useMemo(() => {
-		return YEAR_OPTIONS.map(option => ({
-			...option,
-			disabled: selectedYears.has(option.value),
-		}));
-	}, [selectedYears]);
+	const summaryPeriodOptions = useMemo(() => YEAR_OPTIONS.flatMap(year => periodValueOptions.map(value => ({
+		label: `${year.label} - ${value.label}`,
+		value: `${year.value}-${value.value}`,
+	}))), [periodValueOptions]);
+	const selectedPeriodValues = useMemo(() => periodSelections.flatMap(selection => selection.values.map(value => `${selection.year}-${value}`)), [periodSelections]);
 
 	const mutation = useMutation({
 		mutationFn: fetchPredictionPerformanceSummary,
@@ -658,19 +666,24 @@ export function PredictionsSummaryReportPage() {
 		mutation.mutate(query);
 	};
 
-	const addPeriodYear = () => {
-		const nextYear = YEAR_OPTIONS.find(option => !selectedYears.has(option.value))?.value;
-		if (!nextYear)
-			return;
-		setPeriodSelections(prev => [...prev, createPeriodSelection(nextYear)]);
-	};
-
-	const updatePeriodSelection = (id: string, patch: Partial<PeriodSelection>) => {
-		setPeriodSelections(prev => prev.map(selection => selection.id === id ? { ...selection, ...patch } : selection));
-	};
-
-	const removePeriodSelection = (id: string) => {
-		setPeriodSelections(prev => prev.filter(selection => selection.id !== id));
+	const handleSelectedPeriodValuesChange = (values: string[]) => {
+		const existingIds = new Map(periodSelections.map(selection => [selection.year, selection.id]));
+		const groupedValues = new Map<number, number[]>();
+		values.forEach((value) => {
+			const [yearRaw, periodRaw] = value.split("-");
+			const year = Number(yearRaw);
+			const period = Number(periodRaw);
+			if (!Number.isInteger(year) || !Number.isInteger(period))
+				return;
+			groupedValues.set(year, [...(groupedValues.get(year) ?? []), period]);
+		});
+		setPeriodSelections([...groupedValues.entries()]
+			.sort(([firstYear], [secondYear]) => firstYear - secondYear)
+			.map(([year, selectedValues]) => ({
+				id: existingIds.get(year) ?? `summary-period-${year}`,
+				year,
+				values: [...selectedValues].sort((first, second) => first - second),
+			})));
 	};
 
 	const metricColumns = [
@@ -758,6 +771,7 @@ export function PredictionsSummaryReportPage() {
 														</Typography.Text>
 													)}
 													<Table
+														className="predictions-summary-results__table basic-table-grid"
 														size="small"
 														rowKey="key"
 														columns={tableColumns}
@@ -785,149 +799,186 @@ export function PredictionsSummaryReportPage() {
 					گزارش تجمیعی عملکرد و پیش‌بینی
 				</Typography.Title>
 
-				<Card title="فیلترهای گزارش">
-					<Space direction="vertical" size={16} className="w-full">
-						<div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-							<div>
-								<Typography.Text className="mb-2 block">سرویس‌ها</Typography.Text>
-								<Select
-									mode="multiple"
-									allowClear
-									maxTagCount="responsive"
-									loading={services.isLoading}
-									value={serviceCodes}
-									options={serviceOptions}
-									placeholder="سرویس‌ها را انتخاب کنید"
-									className="w-full"
-									onChange={values => setServiceCodes(values)}
-									popupRender={(menu) => {
-										const allValues = serviceOptions.map(option => option.value);
-										const allSelected = allValues.length > 0 && allValues.every(value => serviceCodes.includes(value));
-										return (
-											<>
-												<div className="px-3 py-1">
-													<Checkbox
-														checked={allSelected}
-														indeterminate={!allSelected && serviceCodes.length > 0}
-														onChange={event => setServiceCodes(event.target.checked ? allValues : [])}
-													>
-														انتخاب همه
-													</Checkbox>
-												</div>
-												{menu}
-											</>
-										);
+				<section
+					className={`basic-table-shell predictions-summary-filter ${filterCollapsed ? "basic-table-shell--collapsed" : ""}`}
+					style={{
+						"--basic-table-filter-margin": `${token.marginLG}px`,
+						"--basic-table-filter-padding": `${token.paddingLG}px`,
+						"--basic-table-filter-padding-top": `${token.paddingLG + token.controlHeightLG + token.marginSM}px`,
+						"--basic-table-filter-border": `${token.lineWidth}px solid ${token.colorBorderSecondary}`,
+						"--basic-table-filter-radius": `${filterRadius}px`,
+						"--basic-table-filter-background": token.colorBgContainer,
+						"--basic-table-filter-shadow": token.boxShadowTertiary,
+						"--basic-table-filter-heading": token.colorTextHeading,
+						"--basic-table-filter-secondary": token.colorTextTertiary,
+						"--basic-table-filter-text": token.colorText,
+						"--basic-table-filter-split": token.colorSplit,
+						"--basic-table-filter-fill": token.colorFillSecondary,
+						"--basic-table-filter-primary": token.colorPrimary,
+						"--basic-table-filter-primary-bg": token.colorPrimaryBg,
+						"--basic-table-filter-control-radius": `${token.borderRadius}px`,
+						"--basic-table-filter-line-width": `${token.lineWidth}px`,
+						"--basic-table-filter-dash-length": `${Math.max(token.sizeXS - token.lineWidthBold, 1)}px`,
+						"--basic-table-filter-dash-gap": `${token.paddingXXS}px`,
+						"--basic-table-filter-label-weight": token.fontWeightStrong,
+						"--basic-table-heading-icon-size": `${token.controlHeightLG + token.paddingSM}px`,
+						"--basic-table-heading-icon-radius": `${token.borderRadiusLG}px`,
+					} as CSSProperties}
+				>
+					<div
+						className="basic-table-filter-heading"
+						role="button"
+						tabIndex={0}
+						aria-expanded={!filterCollapsed}
+						onClick={() => setFilterCollapsed(current => !current)}
+						onKeyDown={(event) => {
+							if (event.key === "Enter" || event.key === " ") {
+								event.preventDefault();
+								setFilterCollapsed(current => !current);
+							}
+						}}
+					>
+						<span className="basic-table-filter-heading__icon"><ContractFilterSearchIcon /></span>
+						<div className="basic-table-filter-heading__copy">
+							<div className="basic-table-filter-heading__title">فیلترهای گزارش</div>
+							<div className="basic-table-filter-heading__subtitle">سرویس‌ها، نوع گزارش و دوره‌های موردنظر را انتخاب کنید.</div>
+						</div>
+						<button
+							type="button"
+							className="basic-table-filter-toggle"
+							aria-label={filterCollapsed ? "باز کردن فیلترها" : "بستن فیلترها"}
+							aria-expanded={!filterCollapsed}
+							onClick={(event) => {
+								event.stopPropagation();
+								setFilterCollapsed(current => !current);
+							}}
+						>
+							{filterCollapsed ? <DownOutlined /> : <UpOutlined />}
+						</button>
+					</div>
+					<div className="ant-pro-table-search" style={{ marginBlockEnd: 0 }}>
+						<div className="ant-pro-query-filter">
+							<Space direction="vertical" size={20} className="predictions-summary-filter__content w-full">
+								<div className="predictions-summary-filter__fields grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+									<Form.Item label="سرویس‌ها" className="!mb-0">
+										<Select
+											mode="multiple"
+											allowClear
+											maxTagCount="responsive"
+											loading={services.isLoading}
+											value={serviceCodes}
+											options={serviceOptions}
+											placeholder="سرویس‌ها را انتخاب کنید"
+											className="w-full"
+											onChange={values => setServiceCodes(values)}
+											popupRender={(menu) => {
+												const allValues = serviceOptions.map(option => option.value);
+												const allSelected = allValues.length > 0 && allValues.every(value => serviceCodes.includes(value));
+												return (
+													<>
+														<div className="px-3 py-1">
+															<Checkbox
+																checked={allSelected}
+																indeterminate={!allSelected && serviceCodes.length > 0}
+																onChange={event => setServiceCodes(event.target.checked ? allValues : [])}
+															>
+																انتخاب همه
+															</Checkbox>
+														</div>
+														{menu}
+													</>
+												);
+											}}
+										/>
+									</Form.Item>
+
+									<Form.Item label="حالت گزارش" className="!mb-0">
+										<Select
+											value={reportMode}
+											className="w-full"
+											onChange={setReportMode}
+											options={[
+												{ label: "تفکیکی", value: "separated" },
+												{ label: "تجمیعی", value: "total" },
+											]}
+										/>
+									</Form.Item>
+
+									<Form.Item label="نوع خروجی فایل" className="!mb-0">
+										<Select
+											value={outputMode}
+											className="w-full"
+											onChange={setOutputMode}
+											options={[
+												{ label: "کلاسیک", value: "classic" },
+												{ label: "تجمیعی - یک جدول", value: "single-table" },
+											]}
+										/>
+									</Form.Item>
+								</div>
+
+								<ReportPeriodPicker
+									key={periodMode}
+									yearOptions={YEAR_OPTIONS}
+									periodOptions={summaryPeriodOptions}
+									periodTypeOptions={PERIOD_MODE_OPTIONS}
+									selectedPeriodType={periodMode}
+									selectedPeriods={selectedPeriodValues}
+									valueOptions={periodValueOptions}
+									defaultDraftYear={1405}
+									embedded
+									copy={{
+										sectionLabel: isQuarterMode(periodMode) ? "سال و کوارترهای گزارش" : "سال و ماه‌های گزارش",
+										valueLabel: isQuarterMode(periodMode) ? "انتخاب کوارتر" : "انتخاب ماه",
+										selectedLabel: isQuarterMode(periodMode) ? "کوارترهای انتخاب‌شده" : "ماه‌های انتخاب‌شده",
+										selectedUnit: isQuarterMode(periodMode) ? "کوارتر" : "ماه",
+										emptyText: isQuarterMode(periodMode)
+											? "سال و کوارتر را انتخاب کنید، سپس «افزودن تاریخ» را بزنید."
+											: "سال و ماه را انتخاب کنید، سپس «افزودن تاریخ» را بزنید.",
 									}}
+									onPeriodTypeChange={handlePeriodModeChange}
+									onPeriodsChange={handleSelectedPeriodValuesChange}
 								/>
-							</div>
 
-							<div>
-								<Typography.Text className="mb-2 block">نوع دوره</Typography.Text>
-								<Select value={periodMode} options={PERIOD_MODE_OPTIONS} className="w-full" onChange={handlePeriodModeChange} />
-							</div>
-
-							<div>
-								<Typography.Text className="mb-2 block">حالت گزارش</Typography.Text>
-								<Select
-									value={reportMode}
-									className="w-full"
-									onChange={setReportMode}
-									options={[
-										{ label: "تفکیکی", value: "separated" },
-										{ label: "تجمیعی", value: "total" },
-									]}
-								/>
-							</div>
-
-							<div>
-								<Typography.Text className="mb-2 block">نوع خروجی فایل</Typography.Text>
-								<Select
-									value={outputMode}
-									className="w-full"
-									onChange={setOutputMode}
-									options={[
-										{ label: "کلاسیک", value: "classic" },
-										{ label: "تجمیعی - یک جدول", value: "single-table" },
-									]}
-								/>
-							</div>
-						</div>
-
-						<Card size="small" title={isQuarterMode(periodMode) ? "سال و کوارترها" : "سال و ماه‌ها"}>
-							<Space direction="vertical" size={12} className="w-full">
-								{periodSelections.map((selection) => {
-									const allValues = periodValueOptions.map(option => option.value);
-									const allSelected = allValues.every(value => selection.values.includes(value));
-									return (
-										<div key={selection.id} className="grid grid-cols-1 gap-3 md:grid-cols-[180px_1fr_auto_auto]">
-											<Select
-												value={selection.year}
-												options={availableYearOptions.map(option => ({
-													...option,
-													disabled: option.disabled && option.value !== selection.year,
-												}))}
-												onChange={year => updatePeriodSelection(selection.id, { year })}
+								{hasTrafficService && (
+									<div className="grid grid-cols-1 gap-x-4 md:grid-cols-2">
+										<div className="predictions-summary-filter__conversion">
+											<Typography.Text strong>ضریب تبدیل پیش‌فرض</Typography.Text>
+											<InputNumber
+												min={0}
+												step={0.01}
+												precision={4}
+												value={defaultConversionRatio ?? undefined}
+												placeholder="مثال: 1.25"
+												className="w-full"
+												onChange={(value) => {
+													const numeric = value == null ? null : Number(value);
+													setDefaultConversionRatio(Number.isFinite(numeric as number) ? Number(numeric) : null);
+												}}
 											/>
-											<Select
-												mode="multiple"
-												allowClear
-												maxTagCount="responsive"
-												value={selection.values}
-												options={periodValueOptions}
-												optionLabelProp="label"
-												placeholder={isQuarterMode(periodMode) ? "کوارترها را انتخاب کنید" : "ماه‌ها را انتخاب کنید"}
-												onChange={values => updatePeriodSelection(selection.id, { values })}
-											/>
-											<Button onClick={() => updatePeriodSelection(selection.id, { values: allSelected ? [] : allValues })}>
-												{allSelected ? "حذف همه" : "انتخاب همه"}
-											</Button>
-											<Button danger icon={<DeleteOutlined />} disabled={periodSelections.length === 1} onClick={() => removePeriodSelection(selection.id)} />
+											<Typography.Text type="secondary">
+												اگر رکوردهای CP ضریب تبدیل نداشته باشند، از این مقدار به عنوان fallback استفاده می‌شود.
+											</Typography.Text>
 										</div>
-									);
-								})}
+									</div>
+								)}
 
-								<Button icon={<PlusOutlined />} onClick={addPeriodYear} disabled={periodSelections.length >= YEAR_OPTIONS.length}>
-									افزودن سال
-								</Button>
+								<div className="predictions-summary-filter__actions flex flex-wrap items-center justify-between gap-3">
+									<Space>
+										<Switch checked={showRial} onChange={setShowRial} />
+										<Typography.Text>نمایش مبالغ به ریال</Typography.Text>
+									</Space>
+
+									<Button type="primary" icon={<SearchOutlined />} loading={mutation.isPending} onClick={handleApplyReport}>
+										اعمال گزارش
+									</Button>
+								</div>
+
+								{validationError && <Alert type="warning" showIcon message={validationError} />}
 							</Space>
-						</Card>
-
-						{hasTrafficService && (
-							<Card size="small" title="ضریب تبدیل پیش‌فرض">
-								<Space direction="vertical" size={8} className="w-full">
-									<InputNumber
-										min={0}
-										step={0.01}
-										precision={4}
-										value={defaultConversionRatio ?? undefined}
-										placeholder="مثال: 1.25"
-										className="w-full"
-										onChange={(value) => {
-											const numeric = value == null ? null : Number(value);
-											setDefaultConversionRatio(Number.isFinite(numeric as number) ? Number(numeric) : null);
-										}}
-									/>
-									<Typography.Text type="secondary">
-										اگر رکوردهای CP ضریب تبدیل نداشته باشند، از این مقدار به عنوان fallback استفاده می‌شود.
-									</Typography.Text>
-								</Space>
-							</Card>
-						)}
-
-						<div className="flex flex-wrap items-center justify-between gap-3">
-							<Space>
-								<Switch checked={showRial} onChange={setShowRial} />
-								<Typography.Text>نمایش مبالغ به ریال</Typography.Text>
-							</Space>
-
-							<Button type="primary" icon={<SearchOutlined />} loading={mutation.isPending} onClick={handleApplyReport}>
-								اعمال گزارش
-							</Button>
 						</div>
-
-						{validationError && <Alert type="warning" showIcon message={validationError} />}
-					</Space>
-				</Card>
+					</div>
+				</section>
 
 				{mutation.isError && (
 					<Alert
@@ -939,7 +990,29 @@ export function PredictionsSummaryReportPage() {
 				)}
 
 				<Card
-					title={`نتایج گزارش (${showRial ? "ریال" : "تومان"})`}
+					className="predictions-summary-results basic-table-shell"
+					style={{
+						"--basic-table-border": `${token.lineWidth}px solid ${token.colorBorderSecondary}`,
+						"--basic-table-background": token.colorBgContainer,
+						"--basic-table-table-radius": `${filterRadius}px`,
+						"--basic-table-row-background": token.colorBgContainer,
+						"--basic-table-header-background": `color-mix(in srgb, ${token.colorBgContainer} 88%, ${token.colorPrimary} 12%)`,
+						"--basic-table-header-color": token.colorTextHeading,
+						"--basic-table-row-hover": token.colorFillTertiary,
+						"--basic-table-heading-color": token.colorTextHeading,
+						"--basic-table-subtitle-color": token.colorTextTertiary,
+						"--basic-table-cell-padding-inline": `${token.paddingMD}px`,
+						"--basic-table-cell-padding-block": `${token.paddingSM}px`,
+					} as CSSProperties}
+					title={(
+						<div className="basic-table-toolbar-heading">
+							<span className="basic-table-toolbar-heading__icon" aria-hidden="true"><ReportResultsIcon /></span>
+							<span className="basic-table-toolbar-heading__copy">
+								<span className="basic-table-toolbar-heading__title">{`نتایج گزارش (${showRial ? "ریال" : "تومان"})`}</span>
+								<span className="basic-table-toolbar-heading__subtitle">نتایج عملکرد و پیش‌بینی بر اساس سرویس‌ها و دوره‌های انتخاب‌شده</span>
+							</span>
+						</div>
+					)}
 					loading={mutation.isPending}
 					extra={(
 						<Space wrap>
