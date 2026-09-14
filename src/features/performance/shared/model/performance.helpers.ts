@@ -304,6 +304,7 @@ export function aggregatePerformanceRows(
 				language: null,
 				location: service === "traffic" ? null : row.location,
 				traffic_locations: service === "traffic" ? [row] : undefined,
+				performance_items: service === "traffic" ? undefined : [row],
 			});
 			return;
 		}
@@ -313,6 +314,12 @@ export function aggregatePerformanceRows(
 				? (existing as Record<string, unknown>).traffic_locations as PerformanceListItem[]
 				: [];
 			(existing as Record<string, unknown>).traffic_locations = [...trafficLocations, row];
+		}
+		else {
+			const performanceItems = Array.isArray((existing as Record<string, unknown>).performance_items)
+				? (existing as Record<string, unknown>).performance_items as PerformanceListItem[]
+				: [];
+			(existing as Record<string, unknown>).performance_items = [...performanceItems, row];
 		}
 
 		existing.income = sumPerformanceField(existing.income, row.income);
