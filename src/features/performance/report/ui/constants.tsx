@@ -2,9 +2,9 @@ import type { ProColumns } from "@ant-design/pro-components";
 import type { TFunction } from "i18next";
 import type { PerformanceReportRow } from "../model/performance.report.types";
 import type { ReportFinancialColumnKey } from "./export";
-import { pickCompanyTypeToken } from "#src/features/performance/shared/model/performance.helpers";
 import { MONTH_OPTIONS } from "#src/features/performance/shared/ui/form/constants/jalali-date-options";
 import { InputNumber, Radio, Typography } from "antd";
+import { getReportCompanyTypeLabel, hasMixedCompanyTypeIncluding, isOnlyCompanyType } from "./company-type";
 
 export interface ReportSelectOption {
 	label: string
@@ -19,6 +19,7 @@ export interface ReportServiceOption extends ReportSelectOption {
 export type SmsReportType = "normal" | "finance" | "summary";
 export type SmsContractTypeFilter = "all" | "official" | "unofficial";
 export type CompanyType = string;
+export type CompanyTypeSelection = CompanyType | CompanyType[] | null;
 export type PeriodType = "sh" | "fiscal";
 
 export const REPORT_FIELD_KEYS = {
@@ -128,10 +129,17 @@ export function filterAggregationKeys(values: ReportAggregationKey[], allowedKey
 	return allowedKeys.filter(key => values.includes(key) && allowed.has(key));
 }
 
-export type TrafficReportLayout = "tci-ixp" | "cp" | "collocation";
+export type TrafficReportLayout = "tci-ixp" | "cp" | "collocation" | "mixed-collocation";
 
-export function getTrafficReportLayout(companyType: string | null | undefined): TrafficReportLayout {
-	const token = String(companyType ?? "").trim().toUpperCase();
+export function getTrafficReportLayout(companyType: CompanyTypeSelection | undefined): TrafficReportLayout {
+	const tokens = (Array.isArray(companyType) ? companyType : String(companyType ?? "").split(","))
+		.map(value => String(value).trim().toUpperCase())
+		.filter(Boolean);
+	if (hasMixedCompanyTypeIncluding(tokens, "COLLOCATION"))
+		return "mixed-collocation";
+	if (tokens.length > 1)
+		return "tci-ixp";
+	const [token = ""] = tokens;
 	if (token === "TCI" || token === "IXP" || token === "PREMIUM")
 		return "tci-ixp";
 	if (token === "COLLOCATION")
@@ -174,13 +182,13 @@ export interface GetPerformanceReportColumnsArgs {
 	selectedAggregation: ReportAggregationKey[]
 	selectedSmsReportType: SmsReportType
 	selectedPeriodType: PeriodType
-	selectedCompanyType: CompanyType | null
+	selectedCompanyType: CompanyTypeSelection
 	isSmsService: boolean
 	isTrafficService: boolean
 	supportsOperatorLanguageAggregation: boolean
 	requiresCompanyType: boolean
 	onServiceChange: (serviceId: number | null, serviceCode: string | null) => void
-	onCompanyTypeChange: (value: CompanyType | null) => void
+	onCompanyTypeChange: (value: CompanyTypeSelection) => void
 	onContractTypeChange: (value: SmsContractTypeFilter) => void
 	onSmsReportTypeChange: (value: SmsReportType) => void
 	onDefaultConversionRatioChange: (value: number | null) => void
@@ -278,7 +286,7 @@ interface ReportTableColumnContext {
 	t: TFunction<"translation", undefined>
 	operationTypeLabels: Record<string, string>
 	operatorLabels: Record<string, string>
-	companyTypeLabelByKey: Record<string, string>
+	companyTypeOptions: ReportSelectOption[]
 	serviceNameFallback: string | null
 	periodType: PeriodType
 	trafficLayout: TrafficReportLayout
@@ -751,19 +759,14 @@ function appendTrafficFinancialColumns(
 
 function createReportCompanyTypeColumn(
 	t: TFunction<"translation", undefined>,
-	companyTypeLabelByKey: Record<string, string>,
+	companyTypeOptions: ReportSelectOption[],
 ): ProColumns<PerformanceReportRow> {
 	return {
 		title: t("performance.columns.companyType"),
 		dataIndex: "company_type",
 		search: false,
 		width: 140,
-		render: (_, row) => {
-			const companyType = pickCompanyTypeToken(row.company_type);
-			if (!companyType)
-				return "-";
-			return companyTypeLabelByKey[companyType] ?? companyType;
-		},
+		render: (_, row) => getReportCompanyTypeLabel(row.company_type, companyTypeOptions),
 	};
 }
 
@@ -771,9 +774,12 @@ function appendSharedDimensionColumns(
 	tableColumns: ProColumns<PerformanceReportRow>[],
 	ctx: ReportTableColumnContext,
 	includeOperatorLanguage: boolean,
+	includeCompanyType = false,
 ) {
 	if (!ctx.aggregateByCompany)
 		tableColumns.push(createReportCompanyNameColumn(ctx.t));
+	if (includeCompanyType)
+		tableColumns.push(createReportCompanyTypeColumn(ctx.t, ctx.companyTypeOptions));
 
 	appendFiscalYearColumns(tableColumns, ctx);
 
@@ -821,7 +827,7 @@ function buildSmsReportTableColumns(
 		createReportIdColumn(ctx.t),
 	];
 
-	appendSharedDimensionColumns(tableColumns, ctx, true);
+	appendSharedDimensionColumns(tableColumns, ctx, true, true);
 
 	tableColumns.push(
 		createReportCountColumn(ctx.t),
@@ -983,12 +989,22 @@ function buildTrafficReportTableColumns(
 		tableColumns.push(createReportCompanyNameColumn(ctx.t));
 
 	tableColumns.push(
-		createReportCompanyTypeColumn(ctx.t, ctx.companyTypeLabelByKey),
+		createReportCompanyTypeColumn(ctx.t, ctx.companyTypeOptions),
 	);
 	appendFiscalYearColumns(tableColumns, ctx, yearTitle);
 
 	if (!ctx.aggregateByMonth)
 		tableColumns.push(createReportMonthColumn(ctx.t, ctx.periodType, monthTitle));
+
+	if (ctx.trafficLayout === "mixed-collocation") {
+		if (financialColumns.has("income"))
+			tableColumns.push(createReportIncomeColumn(ctx.t, ctx.showRial));
+		if (financialColumns.has("expense"))
+			tableColumns.push(createReportExpenseColumn(ctx.t, ctx.showRial));
+		if (financialColumns.has("contractType"))
+			tableColumns.push(createReportContractTypeColumn(ctx.t));
+		return tableColumns;
+	}
 
 	if (ctx.trafficLayout === "collocation") {
 		tableColumns.push(
@@ -1047,7 +1063,7 @@ function buildPspReportTableColumns(
 	const tableColumns: ProColumns<PerformanceReportRow>[] = [
 		createReportIndexColumn(ctx.t),
 		createReportIdColumn(ctx.t),
-		createReportCompanyTypeColumn(ctx.t, ctx.companyTypeLabelByKey),
+		createReportCompanyTypeColumn(ctx.t, ctx.companyTypeOptions),
 	];
 	appendFiscalYearColumns(tableColumns, ctx);
 	tableColumns.push(createReportCountColumn(ctx.t));
@@ -1239,22 +1255,18 @@ export function getPerformanceReportColumns({
 }: GetPerformanceReportColumnsArgs): ProColumns<PerformanceReportRow>[] {
 	const operationTypeLabels = createOperationTypeLabels(t);
 	const operatorLabels = createOperatorLabels(t);
-	const companyTypeLabelByKey = companyTypeOptions.reduce<Record<string, string>>((acc, option) => {
-		acc[String(option.value)] = option.label;
-		return acc;
-	}, {});
 	const financialColumns = new Set(selectedFinancialColumns);
 	const reportServiceLayout = getReportServiceLayout(selectedServiceCode);
 	const trafficLayout = isTrafficService
 		? getTrafficReportLayout(selectedCompanyType)
 		: getTrafficReportLayout(null);
-	const isTrafficCp = isTrafficService && String(selectedCompanyType ?? "").trim().toUpperCase() === "CP";
+	const isTrafficCp = isTrafficService && isOnlyCompanyType(selectedCompanyType, "CP");
 	const isBaseUnitVisible = financialColumns.has("showBaseUnit");
 	const tableColumnContext: ReportTableColumnContext = {
 		t,
 		operationTypeLabels,
 		operatorLabels,
-		companyTypeLabelByKey,
+		companyTypeOptions,
 		serviceNameFallback: selectedServiceName,
 		periodType: selectedPeriodType,
 		trafficLayout,
@@ -1327,9 +1339,12 @@ export function getPerformanceReportColumns({
 			valueEnum: createValueEnum(companyTypeOptions),
 			fieldProps: {
 				allowClear: true,
+				mode: isTrafficService ? "multiple" : undefined,
 				placeholder: t("performance.placeholders.select"),
-				onChange: (value: string | number | null) => {
-					const nextValue = value == null || value === "" ? null : String(value) as CompanyType;
+				onChange: (value: string | number | Array<string | number> | null) => {
+					const nextValue: CompanyTypeSelection = isTrafficService
+						? (Array.isArray(value) && value.length > 0 ? value.map(String) : null)
+						: (value == null || value === "" ? null : String(value));
 					onCompanyTypeChange(nextValue);
 				},
 			},

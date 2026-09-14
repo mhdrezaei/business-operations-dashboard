@@ -6,6 +6,10 @@ export const useStyles = createUseStyles(({ token }) => ({
 	menuBackgroundColor: {
 		"& .ant-menu-submenu-selected .ant-menu-submenu-title": {
 			backgroundColor: token.Menu?.itemSelectedBg ?? token.colorPrimaryBg,
+			color: `${sidebarActiveColor} !important`,
+		},
+		"& .ant-menu-submenu-selected > .ant-menu-submenu-title .ant-menu-title-content, & .ant-menu-submenu-selected > .ant-menu-submenu-title .ant-menu-item-icon, & .ant-menu-submenu-selected > .ant-menu-submenu-title .ant-menu-submenu-arrow": {
+			color: `${sidebarActiveColor} !important`,
 		},
 	},
 	sidebarMenu: {
@@ -68,11 +72,11 @@ export const useStyles = createUseStyles(({ token }) => ({
 		"& .ant-menu-submenu-arrow": {
 			color: "inherit",
 		},
-		"& .ant-menu-item-selected, & .ant-menu-submenu-selected > .ant-menu-submenu-title": {
+		"& .ant-menu-item-selected": {
 			backgroundColor: `${token.Menu?.itemSelectedBg ?? token.colorPrimaryBg} !important`,
 			color: `${sidebarActiveColor} !important`,
 		},
-		"& .ant-menu-item-selected .ant-menu-title-content, & .ant-menu-item-selected .ant-menu-item-icon, & .ant-menu-item-selected .ant-menu-submenu-arrow, & .ant-menu-submenu-selected > .ant-menu-submenu-title .ant-menu-title-content, & .ant-menu-submenu-selected > .ant-menu-submenu-title .ant-menu-item-icon, & .ant-menu-submenu-selected > .ant-menu-submenu-title .ant-menu-submenu-arrow": {
+		"& .ant-menu-item-selected .ant-menu-title-content, & .ant-menu-item-selected .ant-menu-item-icon, & .ant-menu-item-selected .ant-menu-submenu-arrow": {
 			color: `${sidebarActiveColor} !important`,
 		},
 	},

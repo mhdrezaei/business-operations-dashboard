@@ -12,14 +12,27 @@ interface ParsedPeriod {
 	value: string
 }
 
-interface ReportPeriodPickerProps {
+interface ReportPeriodPickerCopy {
+	sectionLabel?: string
+	valueLabel?: string
+	selectedLabel?: string
+	selectedUnit?: string
+	emptyText?: string
+	addLabel?: string
+}
+
+interface ReportPeriodPickerProps<TPeriodType extends string = PeriodType> {
 	yearOptions: ReportSelectOption[]
 	periodOptions: ReportSelectOption[]
 	periodTypeOptions: ReportSelectOption[]
-	selectedPeriodType: PeriodType
+	selectedPeriodType: TPeriodType
 	selectedPeriods: string[]
+	valueOptions?: ReportSelectOption[]
+	defaultDraftYear?: number
+	copy?: ReportPeriodPickerCopy
+	embedded?: boolean
 	disabled?: boolean
-	onPeriodTypeChange: (value: PeriodType) => void
+	onPeriodTypeChange: (value: TPeriodType) => void
 	onPeriodsChange: (values: string[]) => void
 }
 
@@ -57,18 +70,22 @@ function sortPeriods(values: string[]) {
 	});
 }
 
-export function ReportPeriodPicker({
+export function ReportPeriodPicker<TPeriodType extends string = PeriodType>({
 	yearOptions,
 	periodOptions,
 	periodTypeOptions,
 	selectedPeriodType,
 	selectedPeriods,
+	valueOptions,
+	defaultDraftYear,
+	copy,
+	embedded = false,
 	disabled = false,
 	onPeriodTypeChange,
 	onPeriodsChange,
-}: ReportPeriodPickerProps) {
+}: ReportPeriodPickerProps<TPeriodType>) {
 	const [collapsed, setCollapsed] = useState(false);
-	const [draftYear, setDraftYear] = useState<number | null>(null);
+	const [draftYear, setDraftYear] = useState<number | null>(defaultDraftYear ?? null);
 	const [draftMonths, setDraftMonths] = useState<number[]>([]);
 
 	const parsedOptions = useMemo(
@@ -90,6 +107,19 @@ export function ReportPeriodPicker({
 			return labels;
 		}, {});
 	}, [periodOptions]);
+	const displayedValueOptions = useMemo(
+		() => valueOptions ?? MONTH_NAMES.map((fallbackName, index) => ({
+			label: monthLabels[index + 1] ?? fallbackName,
+			value: index + 1,
+		})),
+		[valueOptions, monthLabels],
+	);
+	const sectionLabel = copy?.sectionLabel ?? "دوره و بازه گزارش";
+	const valueLabel = copy?.valueLabel ?? "انتخاب ماه";
+	const selectedLabel = copy?.selectedLabel ?? "دوره‌های انتخاب‌شده";
+	const selectedUnit = copy?.selectedUnit ?? "دوره";
+	const emptyText = copy?.emptyText ?? "سال و ماه را انتخاب کنید، سپس «افزودن تاریخ» را بزنید.";
+	const addLabel = copy?.addLabel ?? "افزودن تاریخ";
 
 	const validDraftYear = useMemo(() => {
 		const allowedYears = new Set(yearOptions.map(option => Number(option.value)));
@@ -141,22 +171,24 @@ export function ReportPeriodPicker({
 	};
 
 	return (
-		<section className="report-period-picker" aria-label="انتخاب دوره و بازه گزارش">
-			<button
-				type="button"
-				className="report-period-picker__accordion-header"
-				aria-expanded={!collapsed}
-				aria-controls="report-period-picker-content"
-				onClick={() => setCollapsed(current => !current)}
-			>
-				<span className="report-period-picker__badge">دوره و بازه گزارش</span>
-				<span className="report-period-picker__divider" aria-hidden="true" />
-				<span className="report-period-picker__toggle" aria-hidden="true">
-					{collapsed ? <DownOutlined /> : <UpOutlined />}
-				</span>
-			</button>
+		<section className={`report-period-picker ${embedded ? "report-period-picker--embedded" : ""}`} aria-label={sectionLabel}>
+			{!embedded && (
+				<button
+					type="button"
+					className="report-period-picker__accordion-header"
+					aria-expanded={!collapsed}
+					aria-controls="report-period-picker-content"
+					onClick={() => setCollapsed(current => !current)}
+				>
+					<span className="report-period-picker__badge">{sectionLabel}</span>
+					<span className="report-period-picker__divider" aria-hidden="true" />
+					<span className="report-period-picker__toggle" aria-hidden="true">
+						{collapsed ? <DownOutlined /> : <UpOutlined />}
+					</span>
+				</button>
+			)}
 
-			<div id="report-period-picker-content" className="report-period-picker__body" hidden={collapsed}>
+			<div id="report-period-picker-content" className="report-period-picker__body" hidden={!embedded && collapsed}>
 				<div className="report-period-picker__controls">
 					<div className="report-period-picker__fields">
 						<label className="report-period-picker__field">
@@ -165,7 +197,7 @@ export function ReportPeriodPicker({
 								value={selectedPeriodType}
 								options={periodTypeOptions}
 								disabled={disabled}
-								onChange={value => onPeriodTypeChange(String(value) as PeriodType)}
+								onChange={value => onPeriodTypeChange(String(value) as TPeriodType)}
 							/>
 						</label>
 						<label className="report-period-picker__field">
@@ -184,9 +216,9 @@ export function ReportPeriodPicker({
 						</label>
 					</div>
 
-					<div className="report-period-picker__months" aria-label="انتخاب ماه">
+					<div className="report-period-picker__months" aria-label={valueLabel}>
 						<div className="report-period-picker__months-heading">
-							<span className="report-period-picker__months-label">انتخاب ماه</span>
+							<span className="report-period-picker__months-label">{valueLabel}</span>
 							<Button
 								type="link"
 								size="small"
@@ -198,14 +230,14 @@ export function ReportPeriodPicker({
 							</Button>
 						</div>
 						<div className="report-period-picker__month-grid">
-							{MONTH_NAMES.map((fallbackName, index) => {
-								const month = index + 1;
-								const name = monthLabels[month] ?? fallbackName;
+							{displayedValueOptions.map((option) => {
+								const month = Number(option.value);
+								const name = option.label;
 								const monthAvailable = validDraftYear != null && parsedOptions.some(period => period.year === validDraftYear && period.month === month);
 								const selected = validDraftMonths.includes(month);
 								return (
 									<button
-										key={name}
+										key={String(option.value)}
 										type="button"
 										className="report-period-picker__month"
 										aria-pressed={selected}
@@ -220,7 +252,7 @@ export function ReportPeriodPicker({
 					</div>
 
 					<Button className="report-period-picker__add" type="primary" icon={<PlusOutlined />} disabled={addablePeriods.length === 0} onClick={addPeriods}>
-						افزودن تاریخ
+						{addLabel}
 					</Button>
 				</div>
 
@@ -230,8 +262,8 @@ export function ReportPeriodPicker({
 						<div className="report-period-picker__selection-title">
 							<SelectedMonthIcon aria-hidden="true" />
 							<div className="report-period-picker__selection-copy">
-								<Typography.Text strong>دوره‌های انتخاب‌شده</Typography.Text>
-								<Typography.Text type="secondary">{selectedPeriods.length > 0 ? `${selectedPeriods.length} دوره` : "هنوز دوره‌ای اضافه نشده است"}</Typography.Text>
+								<Typography.Text strong>{selectedLabel}</Typography.Text>
+								<Typography.Text type="secondary">{selectedPeriods.length > 0 ? `${selectedPeriods.length} ${selectedUnit}` : `هنوز ${selectedUnit}‌ای اضافه نشده است`}</Typography.Text>
 							</div>
 						</div>
 						{selectedPeriods.length > 0 && (
@@ -257,7 +289,7 @@ export function ReportPeriodPicker({
 						: (
 							<div className="report-period-picker__empty">
 								<CalendarOutlined aria-hidden="true" />
-								<span>سال و ماه را انتخاب کنید، سپس «افزودن تاریخ» را بزنید.</span>
+								<span>{emptyText}</span>
 							</div>
 						)}
 				</div>

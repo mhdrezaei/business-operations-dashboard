@@ -1,0 +1,11 @@
+.unregistered-performance-table > .ant-pro-table-search {
+	padding-block-end: 16px;
+}
+
+.unregistered-performance-table > .ant-pro-table-search > .ant-pro-card-body {
+	padding: 0 !important;
+}
+
+.unregistered-performance-table .ant-pro-table-search .ant-form-item {
+	margin-block-end: 0;
+}

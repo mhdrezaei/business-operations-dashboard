@@ -1,0 +1,125 @@
+.predictions-summary-filter > .ant-pro-table-search {
+	padding-block-start: calc(var(--basic-table-filter-padding-top, 96px) + 32px);
+}
+
+.predictions-summary-filter__content {
+	gap: 20px !important;
+}
+
+.predictions-summary-filter__fields {
+	column-gap: 24px;
+	row-gap: 18px;
+}
+
+.predictions-summary-filter .report-period-picker {
+	margin-block-start: 0;
+	border: 0;
+	background: transparent;
+	box-shadow: none;
+	overflow: visible;
+}
+
+.predictions-summary-filter .report-period-picker__body {
+	padding: 28px 0 0;
+}
+
+.predictions-summary-filter .ant-form-item-row {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	gap: 8px;
+}
+
+.predictions-summary-filter .ant-form-item-label {
+	flex: none;
+	padding: 0;
+	text-align: start;
+}
+
+.predictions-summary-filter .ant-form-item-label > label {
+	height: auto;
+	line-height: 1.6;
+}
+
+.predictions-summary-filter .ant-form-item-control {
+	width: 100%;
+	max-width: none;
+}
+
+.predictions-summary-filter .ant-form-item-control-input {
+	min-height: var(--ant-controlHeight, 32px);
+}
+
+.predictions-summary-filter__conversion {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	width: 100%;
+}
+
+.predictions-summary-filter__conversion .ant-typography {
+	line-height: 1.8;
+}
+
+.predictions-summary-filter__actions {
+	margin-block-start: 8px;
+}
+
+.predictions-summary-results__table .ant-table-cell {
+	font-variant-numeric: tabular-nums;
+}
+
+.predictions-summary-results > .ant-card-head .ant-card-head-title {
+	overflow: visible;
+	white-space: normal;
+}
+
+.predictions-summary-results > .ant-card-head {
+	padding-block: 16px;
+	border-block-end: 0;
+	background: var(--basic-table-background) !important;
+}
+
+.predictions-summary-results.ant-card,
+.predictions-summary-results > .ant-card-body {
+	background: var(--basic-table-background) !important;
+}
+
+.predictions-summary-results.ant-card {
+	border: var(--basic-table-border) !important;
+}
+
+.predictions-summary-results .basic-table-toolbar-heading__icon {
+	width: 50px;
+	height: 50px;
+	border-radius: 10px;
+	background: transparent;
+	overflow: visible;
+}
+
+.predictions-summary-results .basic-table-toolbar-heading__icon > svg {
+	width: 50px;
+	height: 50px;
+}
+
+.predictions-summary-results .basic-table-toolbar-heading__icon > svg path {
+	fill: #17e7fe;
+}
+
+@media (max-width: 640px) {
+	.predictions-summary-filter > .ant-pro-table-search {
+		padding-block-start: calc(var(--basic-table-filter-padding-top, 96px) + 20px);
+	}
+
+	.predictions-summary-filter__fields {
+		row-gap: 14px;
+	}
+
+	.predictions-summary-filter .report-period-picker {
+		margin-block-start: 0;
+	}
+
+	.predictions-summary-filter .report-period-picker__body {
+		padding-block-start: 20px;
+	}
+}

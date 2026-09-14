@@ -23,7 +23,7 @@ interface Props {
 export default function CompanyInfoMapField({ disabled = false }: Props) {
 	const { isDark } = usePreferences();
 	const { token } = theme.useToken();
-	const { control, setValue } = useFormContext();
+	const { control, register, setValue } = useFormContext();
 	const latitude = useWatch({ control, name: "map_latitude" });
 	const longitude = useWatch({ control, name: "map_longitude" });
 	const mapElementRef = useRef<HTMLDivElement>(null);
@@ -231,10 +231,8 @@ export default function CompanyInfoMapField({ disabled = false }: Props) {
 
 	return (
 		<div className={`company-info-map ${isDark ? "company-info-map--dark" : ""}`}>
-			<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-				<RHFProText name="map_latitude" label="عرض جغرافیایی (LAT)" inputProps={{ disabled, inputMode: "decimal" }} />
-				<RHFProText name="map_longitude" label="طول جغرافیایی (LON)" inputProps={{ disabled, inputMode: "decimal" }} />
-			</div>
+			<input type="hidden" {...register("map_latitude")} />
+			<input type="hidden" {...register("map_longitude")} />
 
 			<div className="relative mt-3">
 				<Input
@@ -258,7 +256,7 @@ export default function CompanyInfoMapField({ disabled = false }: Props) {
 				{isResultsOpen && query.trim().length >= 2 && (
 					<div
 						className="absolute inset-x-0 top-[48px] z-[1001] max-h-64 overflow-y-auto rounded-xl border p-2 shadow-2xl"
-						style={{ backgroundColor: token.colorBgElevated, borderColor: token.colorBorderSecondary }}
+						style={{ backgroundColor: token.colorBgElevated, borderColor: token.colorBorderSecondary, color: token.colorText }}
 					>
 						{isSearching && <div className="flex min-h-20 items-center justify-center"><Spin size="small" /></div>}
 						{!isSearching && searchError && <div className="px-3 py-4 text-center text-sm text-red-500">{searchError}</div>}
@@ -267,10 +265,10 @@ export default function CompanyInfoMapField({ disabled = false }: Props) {
 							<button
 								key={result.place_id}
 								type="button"
-								className="flex w-full items-start gap-2 rounded-lg px-3 py-2 text-right text-sm transition-colors hover:bg-[rgba(44,103,240,0.12)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2867f0]"
+								className="flex w-full cursor-pointer items-start gap-2 rounded-lg border-0 bg-transparent px-3 py-2 text-right text-sm text-colorText transition-colors hover:bg-colorFillSecondary focus-visible:bg-colorFillSecondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
 								onClick={() => selectResult(result)}
 							>
-								<EnvironmentOutlined className="mt-1 shrink-0 text-[#2867f0]" />
+								<EnvironmentOutlined className="mt-1 shrink-0 text-primary" />
 								<span>{result.display_name}</span>
 							</button>
 						))}
@@ -303,6 +301,19 @@ export default function CompanyInfoMapField({ disabled = false }: Props) {
 						برای انتخاب موقعیت روی نقشه کلیک کنید
 					</div>
 				)}
+			</div>
+
+			<div className="mt-4 grid grid-cols-1 gap-x-4 md:grid-cols-2">
+				<RHFProText
+					name="postal_code"
+					label="کد پستی"
+					inputProps={{ placeholder: "کد پستی", disabled }}
+				/>
+				<RHFProText
+					name="map_address"
+					label="آدرس روی نقشه"
+					inputProps={{ placeholder: "آدرس روی نقشه", disabled }}
+				/>
 			</div>
 		</div>
 	);

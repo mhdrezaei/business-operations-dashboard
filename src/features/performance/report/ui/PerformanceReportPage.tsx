@@ -1,11 +1,11 @@
 import type { ActionType, ProColumns, ProFormInstance } from "@ant-design/pro-components";
 import type { PerformanceReportRow, PerformanceReportSummary } from "../model/performance.report.types";
-import type { CompanyType, PeriodType, ReportAggregationKey, ReportAuditColumnKey, ReportSelectOption, ReportServiceOption, SmsContractTypeFilter, SmsReportType } from "./constants";
+import type { CompanyTypeSelection, PeriodType, ReportAggregationKey, ReportAuditColumnKey, ReportSelectOption, ReportServiceOption, SmsContractTypeFilter, SmsReportType } from "./constants";
 import type { ReportFinancialColumnKey } from "./export";
 import ReportResultsIcon from "#src/assets/svg/performance/report-results.svg?react";
 import { BasicContent, BasicTable } from "#src/components";
 import { fetchPerformanceReport } from "#src/features/performance/api/performances.api";
-import { normalizeServiceCode, pickCompanyTypeToken } from "#src/features/performance/shared/model/performance.helpers";
+import { normalizeServiceCode } from "#src/features/performance/shared/model/performance.helpers";
 import {
 	companiesByServiceQuery,
 	performanceReportAvailabilityQuery,
@@ -18,6 +18,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button, Space } from "antd";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ALL_COMPANY_TYPES, getReportCompanyTypeLabel, isOnlyCompanyType, normalizeCompanyTypeFilter } from "./company-type";
 import { ReportCompanyPicker } from "./components/ReportCompanyPicker";
 import { ReportPeriodPicker } from "./components/ReportPeriodPicker";
 import { ReportSettingsPanel } from "./components/ReportSettingsPanel";
@@ -184,7 +185,7 @@ export function PerformanceReportPage() {
 	const [selectedCompanyIds, setSelectedCompanyIds] = useState<number[]>([]);
 	const [selectedSmsReportType, setSelectedSmsReportType] = useState<SmsReportType>("normal");
 	const [selectedPeriodType, setSelectedPeriodType] = useState<PeriodType>("sh");
-	const [selectedCompanyType, setSelectedCompanyType] = useState<CompanyType | null>(null);
+	const [selectedCompanyType, setSelectedCompanyType] = useState<CompanyTypeSelection>(null);
 	const [selectedContractType, setSelectedContractType] = useState<SmsContractTypeFilter>("all");
 	const [selectedFinancialColumns, setSelectedFinancialColumns] = useState<ReportFinancialColumnKey[]>(DEFAULT_FINANCIAL_COLUMNS);
 	const [selectedAuditColumns, setSelectedAuditColumns] = useState<ReportAuditColumnKey[]>([]);
@@ -206,14 +207,15 @@ export function PerformanceReportPage() {
 
 	const normalizedSelectedServiceCode = normalizeServiceCode(selectedServiceCode);
 	const availabilityRequiresCompanyType = normalizedSelectedServiceCode === "sms" || normalizedSelectedServiceCode === "psp" || normalizedSelectedServiceCode === "traffic";
-	const hasRequiredAvailabilityFilters = !!selectedServiceId && (!availabilityRequiresCompanyType || !!selectedCompanyType);
+	const hasSelectedCompanyType = Array.isArray(selectedCompanyType) ? selectedCompanyType.length > 0 : !!selectedCompanyType;
+	const hasRequiredAvailabilityFilters = !!selectedServiceId && (!availabilityRequiresCompanyType || hasSelectedCompanyType);
 
 	const services = useQuery(servicesQuery());
 	const companies = useQuery(companiesByServiceQuery(selectedServiceId));
 	const availabilityBase = useQuery({
 		...performanceReportAvailabilityQuery({
 			serviceId: selectedServiceId,
-			companyType: selectedCompanyType,
+			companyType: normalizeCompanyTypeFilter(selectedCompanyType),
 			periodType: selectedPeriodType,
 		}),
 		enabled: hasRequiredAvailabilityFilters,
@@ -222,7 +224,7 @@ export function PerformanceReportPage() {
 		...performanceReportAvailabilityQuery({
 			serviceId: selectedServiceId,
 			shPeriods: selectedPeriods,
-			companyType: selectedCompanyType,
+			companyType: normalizeCompanyTypeFilter(selectedCompanyType),
 			periodType: selectedPeriodType,
 		}),
 		enabled: hasRequiredAvailabilityFilters && selectedPeriods.length > 0,
@@ -292,7 +294,7 @@ export function PerformanceReportPage() {
 	const requiresCompanyType = isSmsService || isPspService || isTrafficService;
 	const supportsContractType = isSmsService || isTrafficService;
 	const isAuditColumnsDisabled = selectedAggregation.length > 0;
-	const isTrafficCp = isTrafficService && String(selectedCompanyType ?? "").trim().toUpperCase() === "CP";
+	const isTrafficCp = isTrafficService && isOnlyCompanyType(selectedCompanyType, "CP");
 	const isBaseUnitHidden = !selectedFinancialColumns.includes("showBaseUnit");
 	const hasDefaultConversionRatio = defaultConversionRatio != null;
 	const isDefaultConversionRatioInvalid = isTrafficCp && isBaseUnitHidden && hasDefaultConversionRatio && !isValidDefaultConversionRatio(defaultConversionRatio);
@@ -350,17 +352,22 @@ export function PerformanceReportPage() {
 			if (!requiresCompanyType || !selectedServiceId)
 				return [];
 
-			return getPermittedCompanyTypes("performances", "view", selectedServiceId)
+			const permittedOptions = getPermittedCompanyTypes("performances", "view", selectedServiceId)
 				.map(item => ({ label: item.value, value: item.key }));
+
+			return isSmsService
+				? [{ label: t("performance.labels.selectAll"), value: ALL_COMPANY_TYPES }, ...permittedOptions]
+				: permittedOptions;
 		},
-		[requiresCompanyType, selectedServiceId, getPermittedCompanyTypes],
+		[requiresCompanyType, selectedServiceId, getPermittedCompanyTypes, isSmsService, t],
 	);
 
 	useEffect(() => {
-		if (!requiresCompanyType || !selectedCompanyType)
+		if (!requiresCompanyType || !hasSelectedCompanyType)
 			return;
 
-		if (companyTypeOptions.some(option => String(option.value) === selectedCompanyType))
+		const selectedTypes = Array.isArray(selectedCompanyType) ? selectedCompanyType : [selectedCompanyType];
+		if (selectedTypes.every(selectedType => companyTypeOptions.some(option => String(option.value) === selectedType)))
 			return;
 
 		setSelectedCompanyType(null);
@@ -370,7 +377,7 @@ export function PerformanceReportPage() {
 			company_type: undefined,
 			company_ids: undefined,
 		});
-	}, [requiresCompanyType, selectedCompanyType, companyTypeOptions]);
+	}, [requiresCompanyType, hasSelectedCompanyType, selectedCompanyType, companyTypeOptions]);
 
 	const companyOptions = useMemo(() => {
 		if (!selectedServiceId)
@@ -760,7 +767,7 @@ export function PerformanceReportPage() {
 		});
 	};
 
-	const handleCompanyTypeChange = (value: CompanyType | null) => {
+	const handleCompanyTypeChange = (value: CompanyTypeSelection) => {
 		setSelectedCompanyType(value);
 		setSelectedCompanyIds([]);
 		setSummary(null);
@@ -851,7 +858,7 @@ export function PerformanceReportPage() {
 	};
 
 	const isPeriodDisabled = !selectedServiceId || availabilityBase.isLoading;
-	const isCompanyDisabled = !selectedServiceId || selectedPeriods.length === 0 || companies.isLoading || (selectedPeriods.length > 0 && availabilityByPeriods.isFetching) || (requiresCompanyType && !selectedCompanyType);
+	const isCompanyDisabled = !selectedServiceId || selectedPeriods.length === 0 || companies.isLoading || (selectedPeriods.length > 0 && availabilityByPeriods.isFetching) || (requiresCompanyType && !hasSelectedCompanyType);
 
 	const columns: ProColumns<PerformanceReportRow>[] = useMemo(() => {
 		return getPerformanceReportColumns({
@@ -943,9 +950,7 @@ export function PerformanceReportPage() {
 			return null;
 
 		const companyIds = normalizeNumberList(formValues?.company_ids ?? selectedCompanyIds);
-		const companyType = requiresCompanyType
-			? (formValues?.company_type == null || formValues.company_type === "" ? undefined : String(formValues.company_type))
-			: undefined;
+		const companyType = requiresCompanyType ? normalizeCompanyTypeFilter(formValues?.company_type) : undefined;
 		const contractType = String(formValues?.is_official ?? selectedContractType ?? "all") as SmsContractTypeFilter;
 		const isOfficial = contractType === "official" ? true : contractType === "unofficial" ? false : undefined;
 		const ratioRaw = formValues?.default_conversion_ratio ?? defaultConversionRatio;
@@ -1000,10 +1005,7 @@ export function PerformanceReportPage() {
 	}, [t]);
 
 	const getCompanyTypeLabel = useCallback((companyType: unknown) => {
-		const token = pickCompanyTypeToken(companyType);
-		if (!token)
-			return "-";
-		return companyTypeOptions.find(option => String(option.value) === token)?.label ?? token;
+		return getReportCompanyTypeLabel(companyType, companyTypeOptions);
 	}, [companyTypeOptions]);
 
 	const getTrafficLocationLabel = useCallback((location: unknown) => {
@@ -1289,7 +1291,7 @@ export function PerformanceReportPage() {
 					title: (
 						<div className="performance-report-table-heading-content">
 							<ReportCompanyPicker
-								key={`${selectedServiceId ?? "no-service"}-${selectedCompanyType ?? "no-type"}-${selectedPeriods.join(",")}`}
+								key={`${selectedServiceId ?? "no-service"}-${Array.isArray(selectedCompanyType) ? selectedCompanyType.join(",") : selectedCompanyType ?? "no-type"}-${selectedPeriods.join(",")}`}
 								options={companyOptions}
 								selectedCompanyIds={selectedCompanyIds}
 								disabled={isCompanyDisabled}
@@ -1332,7 +1334,7 @@ export function PerformanceReportPage() {
 						};
 					}
 
-					if (requiresCompanyType && !selectedCompanyType) {
+					if (requiresCompanyType && !hasSelectedCompanyType) {
 						setSummary(null);
 						return {
 							data: [],
@@ -1342,7 +1344,7 @@ export function PerformanceReportPage() {
 					}
 
 					const companyIds = normalizeNumberList(selectedCompanyIds);
-					const companyType = requiresCompanyType ? selectedCompanyType ?? undefined : undefined;
+					const companyType = requiresCompanyType ? normalizeCompanyTypeFilter(selectedCompanyType) : undefined;
 					const contractType = selectedContractType;
 					const isOfficial = contractType === "official" ? true : contractType === "unofficial" ? false : undefined;
 					const isBaseUnitHidden = !selectedFinancialColumns.includes("showBaseUnit");

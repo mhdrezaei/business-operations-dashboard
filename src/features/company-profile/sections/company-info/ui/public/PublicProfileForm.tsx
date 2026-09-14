@@ -75,17 +75,6 @@ export default function PublicProfileForm({ disabled, submitDisabled, hasProfile
 
 				<ContractFormSection title={"\u0622\u062F\u0631\u0633 \u0648 \u0646\u0642\u0634\u0647"} tone="purple" className="company-profile-section company-profile-section--address">
 					<div className="grid grid-cols-1 gap-x-4 md:grid-cols-2">
-						<RHFProText
-							name="postal_code"
-							label={"\u06A9\u062F \u067E\u0633\u062A\u06CC"}
-							inputProps={{ placeholder: "\u06A9\u062F \u067E\u0633\u062A\u06CC", disabled }}
-						/>
-						<RHFProText
-							name="map_address"
-							label={"\u0622\u062F\u0631\u0633 \u0631\u0648\u06CC \u0646\u0642\u0634\u0647"}
-							inputProps={{ placeholder: "\u0622\u062F\u0631\u0633 \u0631\u0648\u06CC \u0646\u0642\u0634\u0647", disabled }}
-						/>
-
 						<div className="md:col-span-2">
 							<RHFProTextArea
 								name="legal_address"

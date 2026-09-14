@@ -116,6 +116,7 @@ export interface PerformanceReportListItem {
 	value: number
 	operation_type: string
 	company_name: string
+	company_type?: string | Record<string, string> | null
 	is_official?: boolean | null
 	income_financial: number
 	expense_financial: number

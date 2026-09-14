@@ -343,7 +343,7 @@ export function TrafficUpdateTemplateModal({
 
 	if (embedded) {
 		return (
-			<ContractFormSection title="ویرایش گروهی عملکرد ترافیک" tone="traffic" defaultExpanded={false}>
+			<ContractFormSection title="ویرایش گروهی عملکرد ترافیک" tone="traffic" defaultExpanded>
 				{content}
 			</ContractFormSection>
 		);

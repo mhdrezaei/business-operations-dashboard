@@ -75,9 +75,6 @@ export default function CompanyInfoForm({ defaultValues, onSubmit }: Props) {
 
 				<Card variant="outlined" title="آدرس" className="bg-bgMask">
 					<div className=" grid grid-cols-2 gap-x-4">
-						<RHFProText name="postal_code" label="کد پستی" inputProps={{ placeholder: "کد پستی" }} />
-						<RHFProText name="map_address" label="آدرس روی نقشه" inputProps={{ placeholder: "آدرس روی نقشه" }} />
-
 						<div className="col-span-2">
 							<RHFProTextArea name="legal_address" label="آدرس حقوقی" />
 						</div>
