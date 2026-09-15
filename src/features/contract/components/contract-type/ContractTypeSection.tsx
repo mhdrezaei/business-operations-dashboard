@@ -193,7 +193,7 @@ export function ContractTypeSection({ title, name, topAside, tone = "primary", v
 				name={typePath}
 				label={compactCalculationModel ? "" : "مدل محاسبه"}
 				options={CONTRACT_TYPE_OPTIONS}
-				segmentedProps={{ block: !compactCalculationModel }}
+				segmentedProps={{ block: true }}
 				formItemProps={{ className: "mb-0" }}
 			/>
 		);
