@@ -1,12 +1,17 @@
 import type { CompanyDto } from "#src/api/common/common.types.js";
+import type { ContractSectionTone } from "#src/features/contract/shared/ui/form/components/contract-form-section-tone";
 import type { PerformanceListItem, PerformanceServicePath } from "#src/features/performance/api/performances.api";
 import type { OpenApiContractModel } from "#src/features/performance/shared/model/performance.form.types";
+import type { CSSProperties, ReactNode } from "react";
 import type { PerformanceListRow } from "../../model/performance.list.types";
 import { MONTH_OPTIONS } from "#src/features/contract/constant/jalali-date-options.js";
+import { getContractSectionToneColors } from "#src/features/contract/shared/ui/form/components/contract-form-section-tone";
 import {
 	ContractAlignedField,
 	useContractAlignedLabelWidth,
 } from "#src/features/contract/shared/ui/form/components/ContractAlignedField";
+import { ContractDashedBorder } from "#src/features/contract/shared/ui/form/components/ContractDashedBorder";
+import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import {
 	fetchPerformanceContracts,
 	fetchPerformanceDetail,
@@ -23,7 +28,8 @@ import {
 	toNullableNumber,
 } from "#src/features/performance/shared/model/performance.helpers";
 import { RHFProNumber, RHFProText } from "#src/shared/ui/rhf-pro";
-import { Button, Card, Modal, Spin } from "antd";
+import { DeleteOutlined, EditOutlined, ReloadOutlined } from "@ant-design/icons";
+import { Button, Card, Modal, Popconfirm, Spin, Tag, theme } from "antd";
 import i18next from "i18next";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
@@ -136,7 +142,10 @@ interface Props {
 	record: PerformanceListRow | null
 	onClose: () => void
 	onUpdated?: () => void
+	onDelete?: (target?: PerformanceListRow) => void
+	deleting?: boolean
 	mode?: "default" | "unregistered"
+	embedded?: boolean
 }
 
 function isEmptyValue(value: unknown) {
@@ -576,9 +585,80 @@ function getTrafficHasCountyContract(
 
 function ReadOnlyBlock({ label, value }: { label: string, value: unknown }) {
 	return (
-		<div className="flex items-center gap-2">
-			<span className="font-bold">{label}</span>
-			<span dir="ltr">{value == null || value === "" ? "-" : String(value)}</span>
+		<div className="performance-detail-value">
+			<span className="performance-detail-value__label">{label}</span>
+			<span className="performance-detail-value__content" dir="ltr">{value == null || value === "" ? "-" : String(value)}</span>
+		</div>
+	);
+}
+
+function DetailValueRows({ fields }: { fields: DetailField[] }) {
+	const { token } = theme.useToken();
+	const rows = Array.from(
+		{ length: Math.ceil(fields.length / 2) },
+		(_, index) => fields.slice(index * 2, index * 2 + 2),
+	);
+	const style = {
+		"--performance-detail-divider-color": token.colorSplit,
+		"--performance-detail-divider-width": `${token.lineWidth}px`,
+	} as CSSProperties;
+
+	return (
+		<div className="performance-detail-value-rows" style={style}>
+			{rows.map(row => (
+				<div key={row.map(field => field.key).join("-")} className="performance-detail-value-row">
+					{row.map(field => (
+						<ReadOnlyBlock key={field.key} label={field.label} value={field.value} />
+					))}
+				</div>
+			))}
+		</div>
+	);
+}
+
+function DetailSection({ title, children, tone, extra, collapsible = true }: { title: string, children: ReactNode, tone?: "success", extra?: ReactNode, collapsible?: boolean }) {
+	return (
+		<ContractFormSection
+			title={title}
+			tone={tone === "success" ? "addenda" : "primary"}
+			className="performance-detail-section"
+			extra={extra}
+			collapsible={collapsible}
+		>
+			<div className="performance-detail-section__body">{children}</div>
+		</ContractFormSection>
+	);
+}
+
+function resolveMetricCardTone(key: string, title: string): ContractSectionTone {
+	const value = `${key} ${title}`.toUpperCase();
+	if (value.includes("IRANCELL") || value.includes("ایرانسل"))
+		return "gold";
+	if (value.includes("MCI") || value.includes("HAMRAH") || value.includes("همراه اول"))
+		return "blue";
+	if (value.includes("RIGHTEL") || value.includes("رایتل"))
+		return "purple";
+	return "geekblue";
+}
+
+function DetailMetricCard({ cardKey, title, children }: { cardKey: string, title: string, children: ReactNode }) {
+	const { token } = theme.useToken();
+	const toneColors = getContractSectionToneColors(token, resolveMetricCardTone(cardKey, title));
+	const style = {
+		"--performance-detail-metric-radius": `${token.paddingLG + token.borderRadiusSM}px`,
+		"--performance-detail-metric-bg": token.colorBgLayout,
+		"--performance-detail-metric-tag-bg": toneColors.background,
+		"--performance-detail-metric-tag-color": toneColors.text,
+		"--performance-detail-metric-tag-radius": `${token.borderRadiusSM}px`,
+		"--performance-detail-divider-color": token.colorSplit,
+		"--performance-detail-divider-width": `${token.lineWidth}px`,
+	} as CSSProperties;
+
+	return (
+		<div className="performance-detail-metric-card" style={style}>
+			<ContractDashedBorder />
+			<Tag bordered={false} className="performance-detail-metric-card__tag">{title}</Tag>
+			<div className="performance-detail-metric-card__rows">{children}</div>
 		</div>
 	);
 }
@@ -590,7 +670,10 @@ export function PerformanceDetailModal({
 	record,
 	onClose,
 	onUpdated,
+	onDelete,
+	deleting = false,
 	mode = "default",
+	embedded = false,
 }: Props) {
 	const { t } = useTranslation();
 	const isUnregisteredMode = mode === "unregistered";
@@ -616,7 +699,6 @@ export function PerformanceDetailModal({
 		t("performance.fields.openapi.trafficPackageCount"),
 		OPENAPI_PACKAGE_PERFORMANCE_LABEL,
 	]);
-	const smsAlignedLabelStyle = useContractAlignedLabelWidth([OPENAPI_PACKAGE_PERFORMANCE_LABEL]);
 	const pspAlignedLabelStyle = useContractAlignedLabelWidth([
 		t("performance.fields.psp.performanceValue"),
 		t("performance.fields.psp.monthlyRevenue"),
@@ -961,7 +1043,6 @@ export function PerformanceDetailModal({
 				};
 			});
 	}, [service, mergedDetail, record, trafficPerformances, visibleTrafficLocations, t]);
-
 	const readonlyDetailFields = useMemo<DetailField[]>(() => {
 		if (!service || !config)
 			return [];
@@ -1574,12 +1655,352 @@ export function PerformanceDetailModal({
 
 			window.$message?.success(isUnregisteredMode ? i18next.t("performance.messages.registerSuccess") : i18next.t("performance.messages.updateSuccess"));
 			onUpdated?.();
-			onClose();
+			if (!embedded)
+				onClose();
 		}
 		finally {
 			setSaving(false);
 		}
 	});
+	const resetChanges = () => form.reset(initialFormValuesRef.current);
+	const sectionActions = (
+		<div className="performance-detail-section__edit-actions">
+			{onDelete
+				? (
+					<Popconfirm
+						title={t("common.confirmDelete")}
+						okText={t("common.confirm")}
+						cancelText={t("common.cancel")}
+						onConfirm={() => onDelete()}
+					>
+						<Button size="small" danger loading={deleting} icon={<DeleteOutlined />}>
+							حذف
+						</Button>
+					</Popconfirm>
+				)
+				: null}
+			{hasMeaningfulChanges
+				? (
+					<Button size="small" icon={<ReloadOutlined />} onClick={resetChanges}>
+						بازنشانی
+					</Button>
+				)
+				: null}
+			{visibleEditableFields.length > 0
+				? (
+					<Button
+						size="small"
+						type="primary"
+						icon={<EditOutlined />}
+						loading={saving}
+						disabled={!hasMeaningfulChanges || saving}
+						onClick={() => void handleSubmit()}
+					>
+						ویرایش
+					</Button>
+				)
+				: null}
+		</div>
+	);
+	const plainBreakdownFields = service === "traffic" || isSmsLikeService
+		? []
+		: [
+			...(service === "openapi" ? openApiSummaryFields : []),
+			...(service === "shahkar" ? shahkarSummaryFields : []),
+			...(service === "psp" ? pspSummaryFields : []),
+			...readonlyDetailFields,
+		].map(field => ({ ...field, label: `${field.label}:` }));
+
+	const content = !service || !record || !config
+		? null
+		: (
+			<Spin spinning={loading} className={embedded ? "performance-detail-inline__spinner" : undefined}>
+				<FormProvider {...form}>
+					<Card bordered={!embedded} className={embedded ? "performance-detail-inline__card" : undefined}>
+						<div className="performance-detail-sections">
+							<DetailSection title="اطلاعات پایه">
+								<DetailValueRows
+									fields={[
+										{ key: "service", label: `${t("performance.columns.service")}:`, value: resolveServiceDisplayName(service, mergedDetail.service_name ?? service) },
+										{ key: "company", label: `${t("performance.columns.company")}:`, value: selectedCompany },
+										...(service === "sms"
+											? [{ key: "companyType", label: `${t("performance.columns.companyType")}:`, value: selectedCompanyType ?? "-" }]
+											: []),
+										{ key: "year", label: `${t("performance.columns.year")}:`, value: mergedDetail.sh_year ?? "-" },
+										{ key: "month", label: `${t("performance.columns.month")}:`, value: resolveMonthLabel(mergedDetail.sh_month) },
+									]}
+								/>
+							</DetailSection>
+
+							<DetailSection title="ریز هزینه‌ها و درآمدها">
+
+								{plainBreakdownFields.length > 0
+									? <DetailValueRows fields={plainBreakdownFields} />
+									: null}
+
+								{service === "traffic" && trafficSummaryCards.length > 0
+									? (
+										<div
+											className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3"
+										>
+											{trafficSummaryCards.map(card => (
+												<DetailMetricCard key={card.key} cardKey={card.key} title={card.title}>
+													<ReadOnlyBlock label={`${t("performance.fields.traffic.sentTraffic")}:`} value={card.value} />
+													<ReadOnlyBlock label={`${t("performance.fields.traffic.receivedTraffic")}:`} value={card.valueReceive} />
+													<ReadOnlyBlock label={`${t("performance.columns.income")}:`} value={card.income} />
+													<ReadOnlyBlock label={`${t("performance.columns.expense")}:`} value={card.expense} />
+													<ReadOnlyBlock label={`${t("performance.columns.profit")}:`} value={card.profit} />
+												</DetailMetricCard>
+											))}
+										</div>
+									)
+									: null}
+
+								{!isUnregisteredMode && isSmsLikeService && smsBreakdownCards.length > 0
+									? (
+										<div
+											className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3"
+										>
+											{smsBreakdownCards.map(card => (
+												<DetailMetricCard key={card.key} cardKey={card.key} title={card.title}>
+													{service === "sms-commission"
+														? (
+															<>
+																<ReadOnlyBlock label={`${smsCommissionSummaryLabels.value}:`} value={formatNumberLike(card.value)} />
+																<ReadOnlyBlock label={`${smsCommissionSummaryLabels.price}:`} value={formatNumberLike(card.price)} />
+																<ReadOnlyBlock label={`${smsCommissionSummaryLabels.income}:`} value={formatNumberLike(card.incomeOperator)} />
+																<ReadOnlyBlock label={`${smsCommissionSummaryLabels.profit}:`} value={formatNumberLike(card.profit)} />
+																<ReadOnlyBlock label={`${smsCommissionSummaryLabels.expense}:`} value={formatNumberLike(card.expenseOperator)} />
+																<ReadOnlyBlock label={`${smsCommissionSummaryLabels.incomeTci}:`} value={formatNumberLike(card.incomeTci)} />
+																<ReadOnlyBlock label={`${smsCommissionSummaryLabels.incomeFirstSide}:`} value={formatNumberLike(card.incomeFirstSide)} />
+																<ReadOnlyBlock label={`${smsCommissionSummaryLabels.incomeArea}:`} value={formatNumberLike(card.incomeArea)} />
+																<ReadOnlyBlock label={`${smsCommissionSummaryLabels.incomeSalesAgent}:`} value={formatNumberLike(card.incomeSalesAgent)} />
+															</>
+														)
+														: (
+															<>
+																<ReadOnlyBlock label={`${t("performance.columns.value")}:`} value={formatNumberLike(card.value)} />
+																<ReadOnlyBlock label={`${t("performance.modal.labels.operatorIncome")}:`} value={formatNumberLike(card.incomeOperator)} />
+																<ReadOnlyBlock label={`${t("performance.modal.labels.governmentIncome")}:`} value={formatNumberLike(card.incomeGovernment)} />
+																<ReadOnlyBlock label={`${t("performance.modal.labels.unitPrice")}:`} value={formatNumberLike(card.price)} />
+																<ReadOnlyBlock label={`${t("performance.columns.profit")}:`} value={formatNumberLike(card.profit)} />
+																<ReadOnlyBlock label={`${t("performance.modal.labels.operatorExpense")}:`} value={formatNumberLike(card.expenseOperator)} />
+																<ReadOnlyBlock label={`${t("performance.modal.labels.governmentExpense")}:`} value={formatNumberLike(card.expenseGovernment)} />
+															</>
+														)}
+												</DetailMetricCard>
+											))}
+										</div>
+									)
+									: null}
+
+							</DetailSection>
+
+							<DetailSection title="مقدار عملکرد" tone="success" extra={sectionActions} collapsible={false}>
+								{visibleEditableFields.length > 0
+									? (
+										isTrafficEditLayout
+											? (
+												<div className="grid gap-3">
+													{visibleTrafficLocations.has("TEHRAN") && (
+														<div className="performance-traffic-edit-location">
+															<ContractDashedBorder />
+															<div className="performance-traffic-edit-location__header">
+																<Tag bordered={false}>عملکرد تهران</Tag>
+															</div>
+															{isTrafficUnitVisible && trafficContractUnits.tehran && (
+																<div className="performance-traffic-edit-location__unit mb-3 px-4 py-2 text-right text-sm">
+																	{t("performance.traffic.tehranContractUnit")}
+																	{": "}
+																	<strong>{trafficContractUnits.tehran}</strong>
+																</div>
+															)}
+															<div className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3">
+																{visibleEditableFields
+																	.filter(f => getTrafficFieldLocation(f.key) === "TEHRAN")
+																	.map(field => (
+																		<RHFProNumber<EditFormValues, any>
+																			key={field.key}
+																			name={field.key as any}
+																			label={field.label}
+																			inputProps={field.key.includes("ConversionRatio")
+																				? { placeholder: "مثلاً 1.5" } as any
+																				: { placeholder: t("performance.modal.placeholders.enterNumber") } as any}
+																			decimal={field.key.includes("ConversionRatio")}
+																			enableGrouping={!field.key.includes("ConversionRatio")}
+																			enableWordsTooltip={!field.key.includes("ConversionRatio")}
+																		/>
+																	))}
+															</div>
+														</div>
+													)}
+													{visibleTrafficLocations.has("COUNTY") && (
+														<div className="performance-traffic-edit-location">
+															<ContractDashedBorder />
+															<div className="performance-traffic-edit-location__header">
+																<Tag bordered={false}>عملکرد مراکز استان</Tag>
+															</div>
+															{isTrafficUnitVisible && trafficContractUnits.county && (
+																<div className="performance-traffic-edit-location__unit mb-3 px-4 py-2 text-right text-sm">
+																	{t("performance.traffic.countyContractUnit")}
+																	{": "}
+																	<strong>{trafficContractUnits.county}</strong>
+																</div>
+															)}
+															<div className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3">
+																{visibleEditableFields
+																	.filter(f => getTrafficFieldLocation(f.key) === "COUNTY")
+																	.map(field => (
+																		<RHFProNumber<EditFormValues, any>
+																			key={field.key}
+																			name={field.key as any}
+																			label={field.label}
+																			inputProps={field.key.includes("ConversionRatio")
+																				? { placeholder: "مثلاً 1.5" } as any
+																				: { placeholder: t("performance.modal.placeholders.enterNumber") } as any}
+																			decimal={field.key.includes("ConversionRatio")}
+																			enableGrouping={!field.key.includes("ConversionRatio")}
+																			enableWordsTooltip={!field.key.includes("ConversionRatio")}
+																		/>
+																	))}
+															</div>
+														</div>
+													)}
+												</div>
+											)
+											: isPspEditLayout
+												? (
+													<div style={pspAlignedLabelStyle}>
+														<div className="contract-form-aligned-grid contract-form-aligned-grid--two gap-3">
+															<ContractAlignedField label={t("performance.fields.psp.performanceValue")}>
+																<RHFProNumber<EditFormValues, any>
+																	name={"value" as any}
+																	label=""
+																	formItemProps={{ className: "mb-0" }}
+																	inputProps={{ placeholder: t("performance.modal.placeholders.enterNumber"), inputMode: "numeric" } as any}
+																	enableGrouping
+																	enableWordsTooltip
+																/>
+															</ContractAlignedField>
+
+															<ContractAlignedField label={t("performance.fields.psp.monthlyRevenue")}>
+																<RHFProNumber<EditFormValues, any>
+																	name={"income" as any}
+																	label=""
+																	formItemProps={{ className: "contract-type-currency-field mb-0" }}
+																	inputProps={{ placeholder: t("performance.modal.placeholders.enterNumber"), inputMode: "numeric", addonAfter: t("performance.columns.rial") } as any}
+																	enableGrouping
+																	enableWordsTooltip
+																/>
+															</ContractAlignedField>
+														</div>
+													</div>
+												)
+												: isOpenApiPackageEditLayout || isSmsEditAlignedLayout
+													? (
+														<div style={isOpenApiPackageEditLayout ? openApiPackageAlignedLabelStyle : undefined}>
+															<div
+																className={`contract-form-aligned-grid contract-form-aligned-grid--two gap-3${isSmsEditAlignedLayout ? " performance-detail-sms-grid" : ""}`}
+															>
+																{visibleEditableFields.map((field) => {
+																	const smsAddon = getSmsPerformanceFieldAddon(field.key);
+																	const isCurrencyField = field.key === "traffic_income" || field.key === "trafficRevenue";
+																	const addonAfter = isSmsEditAlignedLayout
+																		? undefined
+																		: (isCurrencyField ? t("performance.columns.rial") : undefined);
+																	const alignedLabel = smsAddon
+																		? `${t("performance.labels.performanceValue")} ${smsAddon}`
+																		: field.label;
+
+																	if (isSmsEditAlignedLayout) {
+																		return (
+																			<RHFProNumber<EditFormValues, any>
+																				key={field.key}
+																				name={field.key as any}
+																				label={alignedLabel}
+																				formItemProps={{ className: "mb-0" }}
+																				inputProps={{
+																					placeholder: t("performance.modal.placeholders.enterNumber"),
+																					inputMode: "numeric",
+																				} as any}
+																				enableGrouping
+																				enableWordsTooltip
+																			/>
+																		);
+																	}
+
+																	return (
+																		<ContractAlignedField key={field.key} label={alignedLabel}>
+																			<RHFProNumber<EditFormValues, any>
+																				name={field.key as any}
+																				label=""
+																				formItemProps={{ className: isCurrencyField ? "contract-type-currency-field mb-0" : "mb-0" }}
+																				inputProps={{
+																					placeholder: t("performance.modal.placeholders.enterNumber"),
+																					inputMode: "numeric",
+																					...(addonAfter ? { addonAfter } : {}),
+																				} as any}
+																				enableGrouping
+																				enableWordsTooltip
+																			/>
+																		</ContractAlignedField>
+																	);
+																})}
+															</div>
+														</div>
+													)
+													: (
+														<div
+															className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3"
+														>
+															{visibleEditableFields.map((field) => {
+																if (field.type === "number") {
+																	return (
+																		<RHFProNumber<EditFormValues, any>
+																			key={field.key}
+																			name={field.key as any}
+																			label={field.label}
+																			inputProps={{ placeholder: t("performance.modal.placeholders.enterNumber"), inputMode: "numeric" } as any}
+																			enableGrouping
+																			enableWordsTooltip
+																		/>
+																	);
+																}
+
+																return (
+																	<RHFProText<EditFormValues, any>
+																		key={field.key}
+																		name={field.key as any}
+																		label={field.label}
+																		inputProps={{ placeholder: t("performance.modal.placeholders.enterValue") }}
+																	/>
+																);
+															})}
+														</div>
+													))
+									: null}
+							</DetailSection>
+						</div>
+					</Card>
+					<div
+						className="flex justify-end mt-2 gap-2"
+					>
+						{!embedded ? <Button onClick={onClose}>{t("common.cancel")}</Button> : null}
+						{visibleEditableFields.length > 0 && hasMeaningfulChanges && !embedded
+							? <Button type="primary" onClick={() => void handleSubmit()}>{t("performance.actions.editPerformance")}</Button>
+							: null}
+					</div>
+				</FormProvider>
+			</Spin>
+		);
+
+	if (embedded) {
+		return (
+			<section className="performance-detail-inline" aria-label={config?.title ?? t("performance.modal.editPerformance")}>
+				{content}
+			</section>
+		);
+	}
 
 	return (
 		<Modal
@@ -1590,342 +2011,7 @@ export function PerformanceDetailModal({
 			width={920}
 			destroyOnHidden
 		>
-			{!service || !record || !config
-				? null
-				: (
-					<Spin spinning={loading}>
-						<FormProvider {...form}>
-							<Card>
-								<div className="grid gap-3">
-									<div
-										className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-2"
-									>
-										<ReadOnlyBlock label={`${t("performance.columns.service")}:`} value={resolveServiceDisplayName(service, mergedDetail.service_name ?? service)} />
-										<ReadOnlyBlock label={`${t("performance.columns.company")}:`} value={selectedCompany} />
-										{service === "sms"
-											? <ReadOnlyBlock label={`${t("performance.columns.companyType")}:`} value={selectedCompanyType ?? "-"} />
-											: null}
-										<ReadOnlyBlock label={`${t("performance.columns.year")}:`} value={mergedDetail.sh_year ?? "-"} />
-										<ReadOnlyBlock label={`${t("performance.columns.month")}:`} value={resolveMonthLabel(mergedDetail.sh_month)} />
-									</div>
-
-									{service === "openapi"
-										? (
-											<div
-												className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-2"
-											>
-												{openApiSummaryFields.map(field => (
-													<ReadOnlyBlock
-														key={field.key}
-														label={`${field.label}:`}
-														value={field.value}
-													/>
-												))}
-											</div>
-										)
-										: null}
-
-									{service === "shahkar"
-										? (
-											<div
-												className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-2"
-											>
-												{shahkarSummaryFields.map(field => (
-													<ReadOnlyBlock
-														key={field.key}
-														label={`${field.label}:`}
-														value={field.value}
-													/>
-												))}
-											</div>
-										)
-										: null}
-
-									{service === "psp"
-										? (
-											<div
-												className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-2"
-											>
-												{pspSummaryFields.map(field => (
-													<ReadOnlyBlock
-														key={field.key}
-														label={`${field.label}:`}
-														value={field.value}
-													/>
-												))}
-											</div>
-										)
-										: null}
-
-									{service === "traffic" && trafficSummaryCards.length > 0
-										? (
-											<div
-												className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3"
-											>
-												{trafficSummaryCards.map(card => (
-													<div
-														key={card.key}
-														style={{
-															border: "1px solid rgba(255,255,255,0.12)",
-															borderRadius: 12,
-															padding: 12,
-															display: "grid",
-															gap: 6,
-														}}
-													>
-														<div className="font-bold">{card.title}</div>
-														<ReadOnlyBlock label={`${t("performance.fields.traffic.sentTraffic")}:`} value={card.value} />
-														<ReadOnlyBlock label={`${t("performance.fields.traffic.receivedTraffic")}:`} value={card.valueReceive} />
-														<ReadOnlyBlock label={`${t("performance.columns.income")}:`} value={card.income} />
-														<ReadOnlyBlock label={`${t("performance.columns.expense")}:`} value={card.expense} />
-														<ReadOnlyBlock label={`${t("performance.columns.profit")}:`} value={card.profit} />
-													</div>
-												))}
-											</div>
-										)
-										: null}
-
-									{!isUnregisteredMode && isSmsLikeService && smsBreakdownCards.length > 0
-										? (
-											<div
-												className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3"
-											>
-												{smsBreakdownCards.map(card => (
-													<div
-														key={card.key}
-														style={{
-															border: "1px solid rgba(255,255,255,0.12)",
-															borderRadius: 12,
-															padding: 12,
-															display: "grid",
-															gap: 6,
-														}}
-													>
-														<div className="font-bold">{card.title}</div>
-														{service === "sms-commission"
-															? (
-																<>
-																	<ReadOnlyBlock label={`${smsCommissionSummaryLabels.value}:`} value={formatNumberLike(card.value)} />
-																	<ReadOnlyBlock label={`${smsCommissionSummaryLabels.price}:`} value={formatNumberLike(card.price)} />
-																	<ReadOnlyBlock label={`${smsCommissionSummaryLabels.income}:`} value={formatNumberLike(card.incomeOperator)} />
-																	<ReadOnlyBlock label={`${smsCommissionSummaryLabels.profit}:`} value={formatNumberLike(card.profit)} />
-																	<ReadOnlyBlock label={`${smsCommissionSummaryLabels.expense}:`} value={formatNumberLike(card.expenseOperator)} />
-																	<ReadOnlyBlock label={`${smsCommissionSummaryLabels.incomeTci}:`} value={formatNumberLike(card.incomeTci)} />
-																	<ReadOnlyBlock label={`${smsCommissionSummaryLabels.incomeFirstSide}:`} value={formatNumberLike(card.incomeFirstSide)} />
-																	<ReadOnlyBlock label={`${smsCommissionSummaryLabels.incomeArea}:`} value={formatNumberLike(card.incomeArea)} />
-																	<ReadOnlyBlock label={`${smsCommissionSummaryLabels.incomeSalesAgent}:`} value={formatNumberLike(card.incomeSalesAgent)} />
-																</>
-															)
-															: (
-																<>
-																	<ReadOnlyBlock label={`${t("performance.columns.value")}:`} value={formatNumberLike(card.value)} />
-																	<ReadOnlyBlock label={`${t("performance.modal.labels.operatorIncome")}:`} value={formatNumberLike(card.incomeOperator)} />
-																	<ReadOnlyBlock label={`${t("performance.modal.labels.governmentIncome")}:`} value={formatNumberLike(card.incomeGovernment)} />
-																	<ReadOnlyBlock label={`${t("performance.modal.labels.unitPrice")}:`} value={formatNumberLike(card.price)} />
-																	<ReadOnlyBlock label={`${t("performance.columns.profit")}:`} value={formatNumberLike(card.profit)} />
-																	<ReadOnlyBlock label={`${t("performance.modal.labels.operatorExpense")}:`} value={formatNumberLike(card.expenseOperator)} />
-																	<ReadOnlyBlock label={`${t("performance.modal.labels.governmentExpense")}:`} value={formatNumberLike(card.expenseGovernment)} />
-																</>
-															)}
-													</div>
-												))}
-											</div>
-										)
-										: null}
-
-									{readonlyDetailFields.length > 0
-										? (
-											<div
-												className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-2"
-											>
-												{readonlyDetailFields.map(field => (
-													<ReadOnlyBlock
-														key={field.key}
-														label={`${field.label}:`}
-														value={field.value}
-													/>
-												))}
-											</div>
-										)
-										: null}
-
-									{visibleEditableFields.length > 0
-										? (
-											isTrafficEditLayout
-												? (
-													<div className="grid gap-3">
-														{visibleTrafficLocations.has("TEHRAN") && (
-															<div>
-																{isTrafficUnitVisible && trafficContractUnits.tehran && (
-																	<div className="mb-3 rounded-lg border border-[rgba(255,255,255,0.15)] px-4 py-2 text-right text-sm">
-																		{t("performance.traffic.tehranContractUnit")}
-																		{": "}
-																		<strong>{trafficContractUnits.tehran}</strong>
-																	</div>
-																)}
-																<div className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3">
-																	{visibleEditableFields
-																		.filter(f => getTrafficFieldLocation(f.key) === "TEHRAN")
-																		.map(field => (
-																			<RHFProNumber<EditFormValues, any>
-																				key={field.key}
-																				name={field.key as any}
-																				label={field.label}
-																				inputProps={field.key.includes("ConversionRatio")
-																					? { placeholder: "مثلاً 1.5" } as any
-																					: { placeholder: t("performance.modal.placeholders.enterNumber") } as any}
-																				decimal={field.key.includes("ConversionRatio")}
-																				enableGrouping={!field.key.includes("ConversionRatio")}
-																				enableWordsTooltip={!field.key.includes("ConversionRatio")}
-																			/>
-																		))}
-																</div>
-															</div>
-														)}
-														{visibleTrafficLocations.has("COUNTY") && (
-															<div>
-																{isTrafficUnitVisible && trafficContractUnits.county && (
-																	<div className="mb-3 rounded-lg border border-[rgba(255,255,255,0.15)] px-4 py-2 text-right text-sm">
-																		{t("performance.traffic.countyContractUnit")}
-																		{": "}
-																		<strong>{trafficContractUnits.county}</strong>
-																	</div>
-																)}
-																<div className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3">
-																	{visibleEditableFields
-																		.filter(f => getTrafficFieldLocation(f.key) === "COUNTY")
-																		.map(field => (
-																			<RHFProNumber<EditFormValues, any>
-																				key={field.key}
-																				name={field.key as any}
-																				label={field.label}
-																				inputProps={field.key.includes("ConversionRatio")
-																					? { placeholder: "مثلاً 1.5" } as any
-																					: { placeholder: t("performance.modal.placeholders.enterNumber") } as any}
-																				decimal={field.key.includes("ConversionRatio")}
-																				enableGrouping={!field.key.includes("ConversionRatio")}
-																				enableWordsTooltip={!field.key.includes("ConversionRatio")}
-																			/>
-																		))}
-																</div>
-															</div>
-														)}
-													</div>
-												)
-												: isPspEditLayout
-													? (
-														<div style={pspAlignedLabelStyle}>
-															<div className="contract-form-aligned-grid contract-form-aligned-grid--two gap-3">
-																<ContractAlignedField label={t("performance.fields.psp.performanceValue")}>
-																	<RHFProNumber<EditFormValues, any>
-																		name={"value" as any}
-																		label=""
-																		formItemProps={{ className: "mb-0" }}
-																		inputProps={{ placeholder: t("performance.modal.placeholders.enterNumber"), inputMode: "numeric" } as any}
-																		enableGrouping
-																		enableWordsTooltip
-																	/>
-																</ContractAlignedField>
-
-																<ContractAlignedField label={t("performance.fields.psp.monthlyRevenue")}>
-																	<RHFProNumber<EditFormValues, any>
-																		name={"income" as any}
-																		label=""
-																		formItemProps={{ className: "contract-type-currency-field mb-0" }}
-																		inputProps={{ placeholder: t("performance.modal.placeholders.enterNumber"), inputMode: "numeric", addonAfter: t("performance.columns.rial") } as any}
-																		enableGrouping
-																		enableWordsTooltip
-																	/>
-																</ContractAlignedField>
-															</div>
-														</div>
-													)
-													: isOpenApiPackageEditLayout || isSmsEditAlignedLayout
-														? (
-															<div style={isOpenApiPackageEditLayout ? openApiPackageAlignedLabelStyle : smsAlignedLabelStyle}>
-																<div
-																	className="contract-form-aligned-grid contract-form-aligned-grid--two gap-3"
-
-																>
-																	{visibleEditableFields.map((field) => {
-																		const smsAddon = getSmsPerformanceFieldAddon(field.key);
-																		const isCurrencyField = field.key === "traffic_income" || field.key === "trafficRevenue";
-																		const addonAfter = smsAddon ?? (isCurrencyField ? t("performance.columns.rial") : undefined);
-																		const alignedLabel = smsAddon
-																			? OPENAPI_PACKAGE_PERFORMANCE_LABEL
-																			: field.label;
-																		return (
-																			<ContractAlignedField key={field.key} label={alignedLabel}>
-																				<RHFProNumber<EditFormValues, any>
-																					name={field.key as any}
-																					label=""
-																					formItemProps={{ className: isCurrencyField ? "contract-type-currency-field mb-0" : "mb-0" }}
-																					inputProps={{
-																						placeholder: t("performance.modal.placeholders.enterNumber"),
-																						inputMode: "numeric",
-																						...(addonAfter ? { addonAfter } : {}),
-																					} as any}
-																					enableGrouping
-																					enableWordsTooltip
-																				/>
-																			</ContractAlignedField>
-																		);
-																	})}
-																</div>
-															</div>
-														)
-														: (
-															<div
-																className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3"
-															>
-																{visibleEditableFields.map((field) => {
-																	if (field.type === "number") {
-																		return (
-																			<RHFProNumber<EditFormValues, any>
-																				key={field.key}
-																				name={field.key as any}
-																				label={field.label}
-																				inputProps={{ placeholder: t("performance.modal.placeholders.enterNumber"), inputMode: "numeric" } as any}
-																				enableGrouping
-																				enableWordsTooltip
-																			/>
-																		);
-																	}
-
-																	return (
-																		<RHFProText<EditFormValues, any>
-																			key={field.key}
-																			name={field.key as any}
-																			label={field.label}
-																			inputProps={{ placeholder: t("performance.modal.placeholders.enterValue") }}
-																		/>
-																	);
-																})}
-															</div>
-														))
-										: null}
-								</div>
-							</Card>
-							<div
-								className="flex justify-end mt-2 gap-2"
-							>
-								<Button onClick={onClose}>{t("common.cancel")}</Button>
-								{visibleEditableFields.length > 0
-									? (
-										<Button
-											type="primary"
-											loading={saving}
-											disabled={!hasMeaningfulChanges || saving}
-											onClick={() => void handleSubmit()}
-										>
-											{t("performance.actions.editPerformance")}
-										</Button>
-									)
-									: null}
-							</div>
-						</FormProvider>
-					</Spin>
-				)}
+			{content}
 		</Modal>
 	);
 }

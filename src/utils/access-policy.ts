@@ -20,6 +20,11 @@ const ALL_TRAFFIC_COMPANY_TYPES: CompanyTypeOption[] = [
 
 export type AdminAccessTarget = "users" | "roles" | "policies" | "audit_logs";
 
+function normalizeServiceId(value: unknown): number | null {
+	const normalized = Number(value);
+	return Number.isFinite(normalized) ? normalized : null;
+}
+
 export function normalizeAccessKey(value?: string | null): string {
 	return (value ?? "").trim().toLowerCase();
 }
@@ -185,7 +190,7 @@ export function hasDomainPermissionForServices(
 	const normalizedServiceCode = normalizeAccessKey(options.serviceCode);
 
 	return services.some((service) => {
-		if (options.serviceId != null && service.id !== options.serviceId) {
+		if (options.serviceId != null && normalizeServiceId(service.id) !== normalizeServiceId(options.serviceId)) {
 			return false;
 		}
 		if (normalizedServiceCode && normalizeAccessKey(service.code) !== normalizedServiceCode) {
@@ -213,7 +218,8 @@ export function getPermittedServiceIdsForDomain(
 
 	return services
 		.filter(service => hasDomainPermissionForServices(services, normalizedDomain, action, { serviceId: service.id }))
-		.map(service => service.id);
+		.map(service => normalizeServiceId(service.id))
+		.filter((serviceId): serviceId is number => serviceId != null);
 }
 
 export function getPermittedServiceCodesForDomain(
@@ -241,7 +247,7 @@ export function getPermittedCompanyTypesForDomain(
 	serviceId?: number | null,
 ): CompanyTypeOption[] {
 	const targetServices = (services ?? []).filter(service =>
-		(serviceId == null || service.id === serviceId)
+		(serviceId == null || normalizeServiceId(service.id) === normalizeServiceId(serviceId))
 		&& Boolean(getDomainPermission(service.permissions, domain ?? "")?.[action]),
 	);
 

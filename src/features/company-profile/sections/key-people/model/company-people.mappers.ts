@@ -47,5 +47,6 @@ export function companyPersonFormToPayload(
 		title: values.title.trim() || null,
 		phone: cleanMultiValue(values.phone),
 		email: cleanMultiValue(values.email),
+		contract_order: 1,
 	};
 }

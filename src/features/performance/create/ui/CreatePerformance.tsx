@@ -1,11 +1,13 @@
 import type { PerformanceListRow } from "../../list/model/performance.list.types";
+import type { UnregisteredPerformancePreset } from "../../shared/model/performance-registration-preset";
 import type { PerformanceFormValues } from "../../shared/model/performance.form.types";
 import type { resolvePerformanceServicePath } from "../../shared/model/performance.helpers";
 import type { PerformanceSubmitIntent } from "../../shared/ui/form/PerformanceForm";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { fetchPerformanceList } from "../../api/performances.api";
+import { parseUnregisteredPerformanceSearch } from "../../shared/model/performance-registration-preset";
 import { PerformanceForm } from "../../shared/ui/form/PerformanceForm";
 import { submitPerformance } from "./performance.submit";
 
@@ -106,11 +108,33 @@ async function loadCreatedPerformanceRecord(
 function CreatePerformance() {
 	const { t } = useTranslation();
 	const navigate = useNavigate();
+	const location = useLocation();
 	const [submitting, setSubmitting] = useState(false);
+	const unregisteredPreset = (location.state as {
+		unregisteredPreset?: UnregisteredPerformancePreset
+	} | null)?.unregisteredPreset;
+	const presetInitialValues = useMemo<Partial<PerformanceFormValues> | null>(() => {
+		const preset = parseUnregisteredPerformanceSearch(location.search) ?? unregisteredPreset;
+		if (!preset)
+			return null;
+
+		return {
+			serviceId: preset.serviceId,
+			serviceCode: preset.serviceCode,
+			companyId: preset.companyId,
+			companyType: preset.companyType,
+			salesAgentId: preset.salesAgentId,
+			year: preset.year,
+			month: preset.month,
+			serviceFields: preset.serviceCode === "traffic" ? { submitMode: "single" } : {},
+		};
+	}, [location.search, unregisteredPreset]);
 
 	return (
 		<>
 			<PerformanceForm
+				initialValues={presetInitialValues}
+				lockPrerequisites={presetInitialValues != null}
 				submitting={submitting}
 				onSubmit={async (values, intent, form) => {
 					setSubmitting(true);

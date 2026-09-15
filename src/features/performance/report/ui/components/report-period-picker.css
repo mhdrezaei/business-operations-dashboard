@@ -1,0 +1,393 @@
+.performance-report-table > .ant-pro-table-extra {
+	margin-block-end: var(--basic-table-filter-margin, 24px);
+}
+
+/* The report uses the same accordion grammar for its general and period filters. */
+.basic-table-shell:has(> .performance-report-table) > .basic-table-filter-heading {
+	gap: 12px;
+}
+
+.basic-table-shell:has(> .performance-report-table) > .basic-table-filter-heading .basic-table-filter-heading__icon {
+	display: none;
+}
+
+.basic-table-shell:has(> .performance-report-table) > .basic-table-filter-heading .basic-table-filter-heading__copy {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 0;
+}
+
+.basic-table-shell:has(> .performance-report-table) > .basic-table-filter-heading .basic-table-filter-heading__copy::after {
+	position: static;
+	flex: 1 1 auto;
+	min-width: 24px;
+}
+
+.basic-table-shell:has(> .performance-report-table) > .basic-table-filter-heading .basic-table-filter-heading__title {
+	flex: 0 0 auto;
+	padding: 5px 10px;
+	border-radius: 8px;
+	background: color-mix(in srgb, var(--basic-table-filter-primary) 32%, var(--basic-table-filter-background));
+	color: var(--basic-table-filter-heading);
+	font-size: 13px;
+	font-weight: 500;
+}
+
+.basic-table-shell:has(> .performance-report-table) > .basic-table-filter-heading .basic-table-filter-heading__subtitle {
+	display: none;
+}
+
+/* Keep the first filter accordion aligned with the report accordions when collapsed. */
+.basic-table-shell.basic-table-shell--collapsed:has(> .performance-report-table) > .performance-report-table > .ant-pro-table-search {
+	min-height: 68px !important;
+	padding: 0 !important;
+}
+
+.basic-table-shell.basic-table-shell--collapsed:has(> .performance-report-table) > .basic-table-filter-heading {
+	inset-block-start: 0;
+	height: 68px;
+}
+
+.basic-table-shell.basic-table-shell--collapsed:has(> .performance-report-table) > .basic-table-filter-heading .basic-table-filter-heading__copy::after {
+	display: block;
+}
+
+.report-period-picker {
+	--report-period-bg: var(--basic-table-filter-background, #151b31);
+	--report-period-border: var(--basic-table-filter-split, #2c4065);
+	--report-period-text: var(--basic-table-filter-text, #d5d9e4);
+	--report-period-heading: var(--basic-table-filter-heading, #f0f2f7);
+	--report-period-muted: var(--basic-table-filter-secondary, #9aa3b5);
+	--report-period-fill: var(--basic-table-filter-fill, #202a46);
+	--report-period-primary: var(--basic-table-filter-primary, #2f75ff);
+	--report-period-primary-bg: var(--basic-table-filter-primary-bg, #18294d);
+
+	width: 100%;
+	border: var(--basic-table-filter-border, 1px solid #2c4065);
+	border-radius: var(--basic-table-filter-radius, 16px);
+	background: var(--report-period-bg);
+	box-shadow: var(--basic-table-filter-shadow, 0 8px 24px rgb(0 0 0 / 12%));
+	overflow: hidden;
+}
+
+.report-period-picker__accordion-header {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	width: 100%;
+	min-height: 68px;
+	padding: 18px 24px;
+	border: 0;
+	background: transparent;
+	color: var(--report-period-text);
+	cursor: pointer;
+	font: inherit;
+	text-align: start;
+}
+
+.report-period-picker__accordion-header:focus-visible {
+	outline: 2px solid var(--report-period-primary);
+	outline-offset: -4px;
+}
+
+.report-period-picker__badge {
+	flex: 0 0 auto;
+	padding: 5px 10px;
+	border-radius: 8px;
+	background: color-mix(in srgb, var(--report-period-primary) 32%, var(--report-period-bg));
+	color: var(--report-period-heading);
+	font-size: 13px;
+	font-weight: 500;
+}
+
+.report-period-picker__divider {
+	flex: 1 1 auto;
+	height: 1px;
+	background-image: repeating-linear-gradient(
+		to right,
+		var(--report-period-border) 0,
+		var(--report-period-border) 4px,
+		transparent 4px,
+		transparent 9px
+	);
+}
+
+.report-period-picker__toggle {
+	display: grid;
+	flex: 0 0 auto;
+	place-items: center;
+	width: 32px;
+	height: 32px;
+	color: var(--report-period-primary);
+}
+
+.report-period-picker__body {
+	display: grid;
+	grid-template-columns: minmax(320px, 0.95fr) minmax(0, 1.05fr);
+	gap: 16px;
+	padding: 0 24px 24px;
+}
+
+.report-period-picker__body[hidden] {
+	display: none;
+}
+
+.report-period-picker__controls,
+.report-period-picker__selection {
+	min-width: 0;
+}
+
+.report-period-picker__controls {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 14px;
+	padding: 18px;
+}
+
+.report-period-picker__fields {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: 16px;
+	width: 100%;
+}
+
+.report-period-picker__field {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	color: var(--report-period-text);
+	font-weight: 600;
+}
+
+.report-period-picker__field .ant-select {
+	width: 100%;
+}
+
+.report-period-picker__months {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	width: 100%;
+}
+
+.report-period-picker__months-label {
+	color: var(--report-period-text);
+	font-weight: 600;
+}
+
+.report-period-picker__months-heading {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.report-period-picker__select-all.ant-btn {
+	height: auto;
+	padding: 0;
+}
+
+.report-period-picker__month-grid {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 8px;
+}
+
+.report-period-picker__month {
+	min-height: 36px;
+	padding: 6px 10px;
+	border: 1px solid var(--report-period-border);
+	border-radius: var(--ant-border-radius, 8px);
+	background: transparent;
+	color: var(--report-period-text);
+	cursor: pointer;
+	font: inherit;
+	transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
+}
+
+.report-period-picker__month:hover:not(:disabled) {
+	border-color: var(--report-period-primary);
+	color: var(--report-period-primary);
+}
+
+.report-period-picker__month[aria-pressed="true"] {
+	border-color: var(--report-period-primary);
+	background: var(--report-period-primary-bg);
+	color: var(--report-period-primary);
+	font-weight: 700;
+}
+
+.report-period-picker__month:focus-visible,
+.report-period-picker__chip button:focus-visible {
+	outline: 2px solid var(--report-period-primary);
+	outline-offset: 2px;
+}
+
+.report-period-picker__month:disabled {
+	background: var(--report-period-fill);
+	color: var(--report-period-muted);
+	cursor: not-allowed;
+}
+
+.report-period-picker__add.ant-btn {
+	align-self: flex-end;
+}
+
+.report-period-picker__selection {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	min-height: 276px;
+	padding: 20px;
+	border: 0;
+	border-radius: 28px;
+	background: color-mix(in srgb, var(--report-period-bg) 82%, #000 18%);
+	overflow: hidden;
+}
+
+.report-period-picker__selection > .contract-dashed-border {
+	position: absolute;
+	z-index: 0;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	overflow: visible;
+	pointer-events: none;
+}
+
+.report-period-picker__selection > :not(.contract-dashed-border) {
+	position: relative;
+	z-index: 1;
+}
+
+.report-period-picker__selection-heading {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.report-period-picker__selection-title {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+}
+
+.report-period-picker__selection-title > svg {
+	flex: 0 0 32px;
+	width: 32px;
+	height: 32px;
+}
+
+.report-period-picker__selection-copy {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.report-period-picker__selection-heading .ant-typography-secondary {
+	font-size: 12px;
+}
+
+.report-period-picker__chips {
+	display: flex;
+	flex-wrap: wrap;
+	align-content: flex-start;
+	gap: 10px 14px;
+	margin-block-start: 20px;
+}
+
+.report-period-picker__chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	min-height: 34px;
+	padding: 5px 10px 5px 5px;
+	border: 1px solid var(--report-period-primary);
+	border-radius: 8px;
+	background: transparent;
+	color: var(--report-period-text);
+	font-variant-numeric: tabular-nums;
+}
+
+.report-period-picker__chip button {
+	display: grid;
+	place-items: center;
+	width: 24px;
+	height: 24px;
+	padding: 0;
+	border: 0;
+	border-radius: 6px;
+	background: transparent;
+	color: var(--report-period-muted);
+	cursor: pointer;
+}
+
+.report-period-picker__chip button:hover {
+	background: rgb(255 77 79 / 12%);
+	color: #ff7875;
+}
+
+.report-period-picker__empty {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	padding: 24px;
+	color: var(--report-period-muted);
+	text-align: center;
+}
+
+.report-period-picker__empty .anticon {
+	font-size: 26px;
+	color: var(--report-period-primary);
+}
+
+@media (max-width: 1100px) {
+	.report-period-picker__body {
+		grid-template-columns: 1fr;
+	}
+
+	.report-period-picker__selection {
+		min-height: 160px;
+	}
+}
+
+@media (max-width: 640px) {
+	.report-period-picker__accordion-header {
+		min-height: 60px;
+		padding: 14px 16px;
+	}
+
+	.report-period-picker__body {
+		gap: 12px;
+		padding: 0 12px 16px;
+	}
+
+	.report-period-picker__controls,
+	.report-period-picker__selection {
+		padding: 14px;
+	}
+
+	.report-period-picker__fields {
+		grid-template-columns: 1fr;
+	}
+
+	.report-period-picker__month-grid {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+
+	.report-period-picker__selection-heading {
+		align-items: center;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.report-period-picker__month {
+		transition: none;
+	}
+}

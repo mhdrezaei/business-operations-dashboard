@@ -21,6 +21,7 @@ export type PerformanceSubmitIntent = "submit" | "submit_and_create_another" | "
 
 interface Props {
 	initialValues?: Partial<PerformanceFormValues> | null
+	lockPrerequisites?: boolean
 	onSubmit?: (
 		values: PerformanceFormValues,
 		intent: PerformanceSubmitIntent,
@@ -76,6 +77,7 @@ function extractFirstErrorMessage(value: unknown): string | null {
 
 export function PerformanceForm({
 	initialValues,
+	lockPrerequisites = false,
 	onSubmit: onSubmitProp,
 	submitting,
 }: Props) {
@@ -232,7 +234,7 @@ export function PerformanceForm({
 	};
 
 	const resetForm = () => {
-		form.reset(defaultValues);
+		form.reset(lockPrerequisites ? mergedInitialValues : defaultValues);
 		setSmsGatewayMode("manual");
 	};
 
@@ -248,6 +250,7 @@ export function PerformanceForm({
 
 				<FixedStartSection
 					hideManualPeriod={isSmsGatewayMode}
+					lockPrerequisites={lockPrerequisites}
 					periodModeToggle={isSmsGatewayImportSupported
 						? (
 							<div className="flex flex-wrap items-center justify-between gap-3">
@@ -296,6 +299,7 @@ export function PerformanceForm({
 								onSubmitAndCreateAnother={() => triggerSubmit("submit_and_create_another")}
 								onSubmitAndEdit={() => triggerSubmit("submit_and_edit")}
 								onReset={resetForm}
+								showSubmitAndCreateAnother={!lockPrerequisites}
 								showSmsGatewayImport={false}
 								onSmsGatewayImportHistory={() => setIsSmsGatewayImportHistoryOpen(true)}
 							/>

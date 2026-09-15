@@ -1,0 +1,226 @@
+.sms-gateway {
+	color: var(--sms-gateway-text);
+}
+
+.sms-gateway__workspace {
+	display: grid;
+	grid-template-columns: minmax(320px, 1fr) minmax(360px, 1fr);
+	gap: var(--sms-gateway-gap);
+	align-items: start;
+}
+
+.sms-gateway__workspace > .contract-form-section {
+	min-width: 0;
+}
+
+.sms-gateway__customers-section > .ant-card-body,
+.sms-gateway__mapping-section > .ant-card-body {
+	display: grid;
+	gap: var(--contract-section-body-padding);
+}
+
+.sms-gateway__customer-list {
+	display: grid;
+	max-height: 560px;
+	gap: 8px;
+	overflow-y: auto;
+	padding-inline-end: 4px;
+	scrollbar-color: var(--sms-gateway-border) transparent;
+	scrollbar-width: thin;
+}
+
+.sms-gateway__customer {
+	position: relative;
+	display: flex;
+	min-height: 68px;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 12px 14px;
+	border: 0;
+	border-radius: var(--contract-section-control-radius);
+	background: var(--sms-gateway-surface);
+	color: var(--sms-gateway-text);
+	cursor: pointer;
+	font: inherit;
+	text-align: start;
+	transition: border-color 160ms ease-out, background-color 160ms ease-out;
+}
+
+.sms-gateway__customer:hover {
+	background: var(--sms-gateway-primary-bg);
+}
+
+.sms-gateway__dashed-border {
+	position: absolute;
+	z-index: 1;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	overflow: visible;
+	color: var(--sms-gateway-border);
+	pointer-events: none;
+}
+
+.sms-gateway__customer:hover .sms-gateway__dashed-border,
+.sms-gateway__customer--selected .sms-gateway__dashed-border {
+	color: var(--sms-gateway-primary);
+}
+
+.sms-gateway__customer:focus-visible {
+	outline: 2px solid var(--sms-gateway-primary);
+	outline-offset: 2px;
+}
+
+.sms-gateway__customer--mapped {
+	background: color-mix(in srgb, var(--sms-gateway-success-bg) 55%, transparent);
+}
+
+.sms-gateway__customer--mapped .sms-gateway__dashed-border {
+	color: color-mix(in srgb, var(--sms-gateway-success) 65%, var(--sms-gateway-border));
+}
+
+.sms-gateway__customer--selected {
+	background: var(--sms-gateway-primary-bg);
+}
+
+.sms-gateway__customer--selected .sms-gateway__dashed-border {
+	color: var(--sms-gateway-primary);
+}
+
+.sms-gateway__customer-copy {
+	position: relative;
+	z-index: 2;
+	display: grid;
+	min-width: 0;
+	gap: 3px;
+}
+
+.sms-gateway__customer-copy strong,
+.sms-gateway__customer-copy small {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.sms-gateway__customer-copy small {
+	color: var(--sms-gateway-text-secondary);
+}
+
+.sms-gateway__form {
+	display: grid;
+	gap: 18px;
+}
+
+.sms-gateway__selected-customer {
+	position: relative;
+	display: grid;
+	gap: 6px;
+	padding: 12px 14px;
+	border: 0;
+	border-radius: var(--contract-section-control-radius);
+	background: var(--sms-gateway-surface);
+}
+
+.sms-gateway__selected-customer > :not(.sms-gateway__dashed-border) {
+	position: relative;
+	z-index: 2;
+}
+
+.sms-gateway__customer > .ant-tag {
+	position: relative;
+	z-index: 2;
+}
+
+.sms-gateway__selected-customer span,
+.sms-gateway__mapping-check {
+	color: var(--sms-gateway-text-secondary);
+	font-size: 13px;
+}
+
+.sms-gateway__mapping-check {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.sms-gateway__field {
+	display: grid;
+	gap: 8px;
+	font-weight: 600;
+}
+
+.sms-gateway__field .ant-select {
+	width: 100%;
+	font-weight: 400;
+}
+
+.sms-gateway__related-mappings {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	padding: 10px 12px;
+	border-radius: var(--contract-section-control-radius);
+	background: var(--sms-gateway-warning-bg);
+	color: var(--sms-gateway-warning-text);
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 1.8;
+}
+
+.sms-gateway__related-mappings > .anticon {
+	flex: 0 0 auto;
+	margin-block-start: 4px;
+	color: var(--sms-gateway-warning);
+}
+
+.sms-gateway__related-mappings strong {
+	font-weight: 700;
+}
+
+.sms-gateway__actions {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding-block-start: 16px;
+	background-image: repeating-linear-gradient(
+		to right,
+		var(--sms-gateway-border) 0,
+		var(--sms-gateway-border) var(--contract-section-dash-length),
+		transparent var(--contract-section-dash-length),
+		transparent calc(var(--contract-section-dash-length) + var(--contract-section-dash-gap))
+	);
+	background-repeat: repeat-x;
+	background-position: top;
+	background-size: auto var(--contract-section-line-width);
+}
+
+@media (max-width: 900px) {
+	.sms-gateway__workspace {
+		grid-template-columns: 1fr;
+	}
+
+	.sms-gateway__customer-list {
+		max-height: 420px;
+	}
+}
+
+@media (max-width: 575px) {
+	.sms-gateway__workspace {
+		gap: 12px;
+	}
+
+	.sms-gateway__customer {
+		min-height: 76px;
+		align-items: flex-start;
+	}
+
+	.sms-gateway__actions {
+		align-items: stretch;
+		flex-direction: column;
+	}
+
+	.sms-gateway__actions > .ant-btn {
+		min-height: 44px;
+	}
+}

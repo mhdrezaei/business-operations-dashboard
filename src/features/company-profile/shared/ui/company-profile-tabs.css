@@ -1,0 +1,104 @@
+.company-profile-tabs > .ant-tabs-nav {
+	position: sticky;
+	z-index: 8;
+	inset-block-start: 0;
+	margin-block-end: var(--ant-marginSM, 12px);
+	padding-block: var(--ant-paddingXXS, 4px);
+	padding-inline-start: var(--ant-paddingMD, 16px);
+	border-block-end: 1px solid var(--company-profile-tabs-border, #2e3d63);
+	background-color: var(--company-profile-tabs-background, #111427);
+}
+
+.company-profile-tabs > .ant-tabs-nav::before {
+	border-block-end: 0;
+}
+
+.company-profile-tabs > .ant-tabs-nav .ant-tabs-tab {
+	min-height: 40px;
+	padding-block: var(--ant-paddingXS, 8px);
+}
+
+.company-profile-tabs > .ant-tabs-content-holder {
+	min-width: 0;
+}
+
+.company-profile-tabs .company-profile-sections {
+	display: grid;
+	gap: var(--ant-marginMD, 16px);
+}
+
+.company-profile-tabs .company-profile-panel {
+	display: grid;
+	gap: var(--ant-marginSM, 12px);
+}
+
+.company-profile-section {
+	--company-profile-section-tag-bg: rgba(44, 103, 240, 0.27);
+}
+
+.company-profile-section > .ant-card-head .contract-form-section__tag.ant-tag {
+	border-radius: var(--contract-section-control-radius, 6px);
+	background-color: var(--company-profile-section-tag-bg);
+	color: var(--company-profile-section-tag-color, var(--contract-section-tag-color));
+}
+
+.company-profile-section--general {
+	--company-profile-section-tag-bg: rgba(44, 103, 240, 0.27);
+}
+
+.company-profile-section--address {
+	--company-profile-section-tag-bg: rgba(220, 68, 93, 0.27);
+}
+
+.company-profile-section--contact {
+	--company-profile-section-tag-bg: rgba(44, 233, 240, 0.27);
+}
+
+.company-profile-section--legal {
+	--company-profile-section-tag-bg: rgba(146, 84, 222, 0.27);
+}
+
+.company-profile-section--finance {
+	--company-profile-section-tag-bg: rgba(250, 173, 20, 0.27);
+}
+
+.company-profile-section--internal {
+	--company-profile-section-tag-bg: rgba(82, 196, 26, 0.27);
+}
+
+html:not(.dark) .company-profile-section--general {
+	--company-profile-section-tag-bg: rgba(44, 103, 240, 0.14);
+	--company-profile-section-tag-color: #174ea6;
+}
+
+html:not(.dark) .company-profile-section--address {
+	--company-profile-section-tag-bg: rgba(220, 68, 93, 0.15);
+	--company-profile-section-tag-color: #9f1239;
+}
+
+html:not(.dark) .company-profile-section--contact {
+	--company-profile-section-tag-bg: rgba(13, 148, 136, 0.15);
+	--company-profile-section-tag-color: #0f6f68;
+}
+
+html:not(.dark) .company-profile-section--legal {
+	--company-profile-section-tag-bg: rgba(146, 84, 222, 0.14);
+	--company-profile-section-tag-color: #6b21a8;
+}
+
+html:not(.dark) .company-profile-section--finance {
+	--company-profile-section-tag-bg: rgba(250, 173, 20, 0.18);
+	--company-profile-section-tag-color: #854d0e;
+}
+
+html:not(.dark) .company-profile-section--internal {
+	--company-profile-section-tag-bg: rgba(82, 196, 26, 0.16);
+	--company-profile-section-tag-color: #3f6212;
+}
+
+@media (max-width: 768px) {
+	.company-profile-tabs > .ant-tabs-nav .ant-tabs-nav-wrap {
+		overflow-x: auto;
+		scrollbar-width: thin;
+	}
+}

@@ -1,10 +1,11 @@
 import type { ActionType, ProColumns, ProFormInstance } from "@ant-design/pro-components";
 import type { PerformanceReportRow, PerformanceReportSummary } from "../model/performance.report.types";
-import type { CompanyType, PeriodType, ReportAggregationKey, ReportAuditColumnKey, ReportSelectOption, ReportServiceOption, SmsContractTypeFilter, SmsReportType } from "./constants";
+import type { CompanyTypeSelection, PeriodType, ReportAggregationKey, ReportAuditColumnKey, ReportSelectOption, ReportServiceOption, SmsContractTypeFilter, SmsReportType } from "./constants";
 import type { ReportFinancialColumnKey } from "./export";
+import ReportResultsIcon from "#src/assets/svg/performance/report-results.svg?react";
 import { BasicContent, BasicTable } from "#src/components";
 import { fetchPerformanceReport } from "#src/features/performance/api/performances.api";
-import { companyTypeMatches, normalizeServiceCode, pickCompanyTypeToken } from "#src/features/performance/shared/model/performance.helpers";
+import { normalizeServiceCode } from "#src/features/performance/shared/model/performance.helpers";
 import {
 	companiesByServiceQuery,
 	performanceReportAvailabilityQuery,
@@ -14,9 +15,14 @@ import { MONTH_OPTIONS } from "#src/features/performance/shared/ui/form/constant
 import { useAccess } from "#src/hooks";
 import { FileExcelOutlined, FilePdfOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
-import { Button, Space, Typography } from "antd";
+import { Button, Space } from "antd";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ALL_COMPANY_TYPES, getReportCompanyTypeLabel, isOnlyCompanyType, normalizeCompanyTypeFilter } from "./company-type";
+import { ReportCompanyPicker } from "./components/ReportCompanyPicker";
+import { ReportPeriodPicker } from "./components/ReportPeriodPicker";
+import { ReportSettingsPanel } from "./components/ReportSettingsPanel";
+import { ReportSummaryCards } from "./components/ReportSummaryCards";
 import {
 	buildReportAggregationParams,
 	filterAggregationKeys,
@@ -167,7 +173,7 @@ function getSmsFinancialDefaults(reportType: SmsReportType) {
 }
 
 export function PerformanceReportPage() {
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 	const { getPermittedCompanyTypes, getPermittedServiceIds } = useAccess();
 
 	const actionRef = useRef<ActionType>(null);
@@ -175,12 +181,11 @@ export function PerformanceReportPage() {
 
 	const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
 	const [selectedServiceCode, setSelectedServiceCode] = useState<string | null>(null);
-	const [selectedYear, setSelectedYear] = useState<number | null>(null);
 	const [selectedPeriods, setSelectedPeriods] = useState<string[]>([]);
 	const [selectedCompanyIds, setSelectedCompanyIds] = useState<number[]>([]);
 	const [selectedSmsReportType, setSelectedSmsReportType] = useState<SmsReportType>("normal");
 	const [selectedPeriodType, setSelectedPeriodType] = useState<PeriodType>("sh");
-	const [selectedCompanyType, setSelectedCompanyType] = useState<CompanyType | null>(null);
+	const [selectedCompanyType, setSelectedCompanyType] = useState<CompanyTypeSelection>(null);
 	const [selectedContractType, setSelectedContractType] = useState<SmsContractTypeFilter>("all");
 	const [selectedFinancialColumns, setSelectedFinancialColumns] = useState<ReportFinancialColumnKey[]>(DEFAULT_FINANCIAL_COLUMNS);
 	const [selectedAuditColumns, setSelectedAuditColumns] = useState<ReportAuditColumnKey[]>([]);
@@ -202,14 +207,15 @@ export function PerformanceReportPage() {
 
 	const normalizedSelectedServiceCode = normalizeServiceCode(selectedServiceCode);
 	const availabilityRequiresCompanyType = normalizedSelectedServiceCode === "sms" || normalizedSelectedServiceCode === "psp" || normalizedSelectedServiceCode === "traffic";
-	const hasRequiredAvailabilityFilters = !!selectedServiceId && (!availabilityRequiresCompanyType || !!selectedCompanyType);
+	const hasSelectedCompanyType = Array.isArray(selectedCompanyType) ? selectedCompanyType.length > 0 : !!selectedCompanyType;
+	const hasRequiredAvailabilityFilters = !!selectedServiceId && (!availabilityRequiresCompanyType || hasSelectedCompanyType);
 
 	const services = useQuery(servicesQuery());
 	const companies = useQuery(companiesByServiceQuery(selectedServiceId));
 	const availabilityBase = useQuery({
 		...performanceReportAvailabilityQuery({
 			serviceId: selectedServiceId,
-			companyType: selectedCompanyType,
+			companyType: normalizeCompanyTypeFilter(selectedCompanyType),
 			periodType: selectedPeriodType,
 		}),
 		enabled: hasRequiredAvailabilityFilters,
@@ -218,7 +224,7 @@ export function PerformanceReportPage() {
 		...performanceReportAvailabilityQuery({
 			serviceId: selectedServiceId,
 			shPeriods: selectedPeriods,
-			companyType: selectedCompanyType,
+			companyType: normalizeCompanyTypeFilter(selectedCompanyType),
 			periodType: selectedPeriodType,
 		}),
 		enabled: hasRequiredAvailabilityFilters && selectedPeriods.length > 0,
@@ -245,7 +251,6 @@ export function PerformanceReportPage() {
 
 		setSelectedServiceId(null);
 		setSelectedServiceCode(null);
-		setSelectedYear(null);
 		setSelectedPeriods([]);
 		setSelectedCompanyIds([]);
 		setSelectedSmsReportType("normal");
@@ -289,7 +294,7 @@ export function PerformanceReportPage() {
 	const requiresCompanyType = isSmsService || isPspService || isTrafficService;
 	const supportsContractType = isSmsService || isTrafficService;
 	const isAuditColumnsDisabled = selectedAggregation.length > 0;
-	const isTrafficCp = isTrafficService && String(selectedCompanyType ?? "").trim().toUpperCase() === "CP";
+	const isTrafficCp = isTrafficService && isOnlyCompanyType(selectedCompanyType, "CP");
 	const isBaseUnitHidden = !selectedFinancialColumns.includes("showBaseUnit");
 	const hasDefaultConversionRatio = defaultConversionRatio != null;
 	const isDefaultConversionRatioInvalid = isTrafficCp && isBaseUnitHidden && hasDefaultConversionRatio && !isValidDefaultConversionRatio(defaultConversionRatio);
@@ -320,12 +325,9 @@ export function PerformanceReportPage() {
 	}, [availablePeriods]);
 
 	const periodOptions = useMemo<ReportSelectOption[]>(() => {
-		if (!selectedYear)
-			return [];
-
 		return availablePeriods.reduce<ReportSelectOption[]>((acc, period) => {
 			const parsed = parsePeriod(period);
-			if (!parsed || parsed.year !== selectedYear)
+			if (!parsed)
 				return acc;
 
 			const displayMonth = getReportDisplayMonth(parsed.month, selectedPeriodType);
@@ -336,7 +338,7 @@ export function PerformanceReportPage() {
 			});
 			return acc;
 		}, []);
-	}, [availablePeriods, selectedYear, selectedPeriodType, t]);
+	}, [availablePeriods, selectedPeriodType, t]);
 
 	const availableCompanyIds = useMemo(() => {
 		if (selectedPeriods.length > 0) {
@@ -350,17 +352,22 @@ export function PerformanceReportPage() {
 			if (!requiresCompanyType || !selectedServiceId)
 				return [];
 
-			return getPermittedCompanyTypes("performances", "view", selectedServiceId)
+			const permittedOptions = getPermittedCompanyTypes("performances", "view", selectedServiceId)
 				.map(item => ({ label: item.value, value: item.key }));
+
+			return isSmsService
+				? [{ label: t("performance.labels.selectAll"), value: ALL_COMPANY_TYPES }, ...permittedOptions]
+				: permittedOptions;
 		},
-		[requiresCompanyType, selectedServiceId, getPermittedCompanyTypes],
+		[requiresCompanyType, selectedServiceId, getPermittedCompanyTypes, isSmsService, t],
 	);
 
 	useEffect(() => {
-		if (!requiresCompanyType || !selectedCompanyType)
+		if (!requiresCompanyType || !hasSelectedCompanyType)
 			return;
 
-		if (companyTypeOptions.some(option => String(option.value) === selectedCompanyType))
+		const selectedTypes = Array.isArray(selectedCompanyType) ? selectedCompanyType : [selectedCompanyType];
+		if (selectedTypes.every(selectedType => companyTypeOptions.some(option => String(option.value) === selectedType)))
 			return;
 
 		setSelectedCompanyType(null);
@@ -370,21 +377,38 @@ export function PerformanceReportPage() {
 			company_type: undefined,
 			company_ids: undefined,
 		});
-	}, [requiresCompanyType, selectedCompanyType, companyTypeOptions]);
+	}, [requiresCompanyType, hasSelectedCompanyType, selectedCompanyType, companyTypeOptions]);
 
 	const companyOptions = useMemo(() => {
 		if (!selectedServiceId)
 			return [];
-		if (selectedPeriods.length > 0 && !availabilityByPeriods.data)
+
+		const availability = selectedPeriods.length > 0
+			? availabilityByPeriods.data
+			: availabilityBase.data;
+		if (!availability)
 			return [];
-		if (selectedPeriods.length === 0 && !availabilityBase.data)
-			return [];
+
+		if (availability.companies?.length) {
+			const seenCompanyIds = new Set<number>();
+			return availability.companies.reduce<ReportSelectOption[]>((options, company) => {
+				const companyId = Number(company.id);
+				if (!Number.isInteger(companyId) || companyId <= 0 || seenCompanyIds.has(companyId))
+					return options;
+
+				seenCompanyIds.add(companyId);
+				options.push({
+					label: String(company.name ?? "").trim() || String(companyId),
+					value: companyId,
+				});
+				return options;
+			}, []);
+		}
 
 		const companiesList = companies.data?.results ?? [];
 		const availableSet = new Set(availableCompanyIds.map(id => Number(id)));
 		return companiesList
 			.filter(company => availableSet.has(Number(company.id)))
-			.filter(company => !requiresCompanyType || !selectedCompanyType || companyTypeMatches(company.company_type, selectedCompanyType))
 			.map(company => ({
 				label: company.name,
 				value: company.id,
@@ -396,8 +420,6 @@ export function PerformanceReportPage() {
 		availabilityByPeriods.data,
 		companies.data,
 		availableCompanyIds.join(","),
-		requiresCompanyType,
-		selectedCompanyType,
 	]);
 
 	const contractTypeOptions = useMemo<ReportSelectOption[]>(() => ([
@@ -616,6 +638,66 @@ export function PerformanceReportPage() {
 		return titles;
 	}, [selectedFinancialColumns, t]);
 
+	const reportSummaryItems = useMemo(() => {
+		if (!selectedFinancialColumns.includes("total") || !summary)
+			return [];
+
+		const showRial = selectedFinancialColumns.includes("rial");
+		const items: Array<{ key: string, label: string, value: string }> = [];
+		if (selectedFinancialColumnTitles.total) {
+			items.push({
+				key: "total",
+				label: selectedFinancialColumnTitles.total,
+				value: formatSummaryNumber(summary.value),
+			});
+		}
+		if (selectedFinancialColumnTitles.income) {
+			items.push({
+				key: "income",
+				label: selectedFinancialColumnTitles.income,
+				value: formatSummaryMoney(summary.income_financial, showRial),
+			});
+		}
+		if (selectedFinancialColumnTitles.expense) {
+			items.push({
+				key: "expense",
+				label: selectedFinancialColumnTitles.expense,
+				value: formatSummaryMoney(summary.expense_financial, showRial),
+			});
+		}
+		if (selectedFinancialColumnTitles.profit) {
+			items.push({
+				key: "profit",
+				label: selectedFinancialColumnTitles.profit,
+				value: formatSummaryMoney(summary.profit_financial, showRial),
+			});
+		}
+
+		const extendedFields: Array<{
+			key: ReportFinancialColumnKey
+			title?: string
+			keys: readonly string[]
+		}> = [
+			{ key: "karashabIncome", title: selectedFinancialColumnTitles.karashabIncome, keys: REPORT_FIELD_KEYS.karashabIncome },
+			{ key: "karashabExpense", title: selectedFinancialColumnTitles.karashabExpense, keys: REPORT_FIELD_KEYS.karashabExpense },
+			{ key: "karashabProfit", title: selectedFinancialColumnTitles.karashabProfit, keys: REPORT_FIELD_KEYS.karashabProfit },
+			{ key: "telecomIncome", title: selectedFinancialColumnTitles.telecomIncome, keys: REPORT_FIELD_KEYS.telecomIncome },
+			{ key: "firstPartyIncome", title: selectedFinancialColumnTitles.firstPartyIncome, keys: REPORT_FIELD_KEYS.firstPartyIncome },
+			{ key: "regionIncome", title: selectedFinancialColumnTitles.regionIncome, keys: REPORT_FIELD_KEYS.regionIncome },
+			{ key: "salesAgentIncome", title: selectedFinancialColumnTitles.salesAgentIncome, keys: REPORT_FIELD_KEYS.salesAgentIncome },
+		];
+		extendedFields.forEach((field) => {
+			if (!field.title || !selectedFinancialColumns.includes(field.key))
+				return;
+			const value = pickSummaryValue(summary, field.keys);
+			if (value == null)
+				return;
+			items.push({ key: field.key, label: field.title, value: formatSummaryMoney(value, showRial) });
+		});
+
+		return items;
+	}, [selectedFinancialColumnTitles, selectedFinancialColumns, summary]);
+
 	const setSelectedService = (serviceId: number | null, serviceCode: string | null) => {
 		const normalizedServiceCode = serviceCode ? normalizeServiceCode(serviceCode) : null;
 		const nextIsSmsService = normalizedServiceCode === "sms";
@@ -641,7 +723,6 @@ export function PerformanceReportPage() {
 
 		setSelectedServiceId(serviceId);
 		setSelectedServiceCode(normalizedServiceCode);
-		setSelectedYear(null);
 		setSelectedPeriods([]);
 		setSelectedCompanyIds([]);
 		setSelectedSmsReportType(nextSmsReportType);
@@ -668,18 +749,6 @@ export function PerformanceReportPage() {
 		});
 	};
 
-	const handleYearChange = (year: number | null) => {
-		setSelectedYear(year);
-		setSelectedPeriods([]);
-		setSelectedCompanyIds([]);
-		setSummary(null);
-		formRef.current?.setFieldsValue({
-			sh_year: year ?? undefined,
-			sh_periods: undefined,
-			company_ids: undefined,
-		});
-	};
-
 	const handlePeriodsChange = (periods: string[]) => {
 		setSelectedPeriods(periods);
 		setSelectedCompanyIds([]);
@@ -698,7 +767,7 @@ export function PerformanceReportPage() {
 		});
 	};
 
-	const handleCompanyTypeChange = (value: CompanyType | null) => {
+	const handleCompanyTypeChange = (value: CompanyTypeSelection) => {
 		setSelectedCompanyType(value);
 		setSelectedCompanyIds([]);
 		setSummary(null);
@@ -727,7 +796,6 @@ export function PerformanceReportPage() {
 
 	const handlePeriodTypeChange = (value: PeriodType) => {
 		setSelectedPeriodType(value);
-		setSelectedYear(null);
 		setSelectedPeriods([]);
 		setSelectedCompanyIds([]);
 		setSummary(null);
@@ -789,28 +857,18 @@ export function PerformanceReportPage() {
 		});
 	};
 
-	const isPeriodDisabled = !selectedServiceId || !selectedYear || availabilityBase.isLoading;
-	const isCompanyDisabled = !selectedServiceId || selectedPeriods.length === 0 || companies.isLoading || (selectedPeriods.length > 0 && availabilityByPeriods.isFetching) || (requiresCompanyType && !selectedCompanyType);
+	const isPeriodDisabled = !selectedServiceId || availabilityBase.isLoading;
+	const isCompanyDisabled = !selectedServiceId || selectedPeriods.length === 0 || companies.isLoading || (selectedPeriods.length > 0 && availabilityByPeriods.isFetching) || (requiresCompanyType && !hasSelectedCompanyType);
 
 	const columns: ProColumns<PerformanceReportRow>[] = useMemo(() => {
 		return getPerformanceReportColumns({
 			t,
 			selectedServiceCode,
-			selectedServiceId,
 			selectedServiceName,
 			serviceOptions,
-			yearOptions,
-			periodOptions,
-			companyOptions,
 			companyTypeOptions,
 			contractTypeOptions,
 			smsReportTypeOptions,
-			periodTypeOptions,
-			financialColumnOptions,
-			auditColumnOptions,
-			aggregationOptions,
-			selectedPeriods,
-			selectedCompanyIds,
 			selectedFinancialColumns,
 			selectedAuditColumns,
 			defaultConversionRatio,
@@ -821,24 +879,14 @@ export function PerformanceReportPage() {
 			selectedPeriodType,
 			selectedCompanyType,
 			isSmsService,
-			isSmsCommissionService,
 			isTrafficService,
 			supportsOperatorLanguageAggregation: supportsOperatorLanguageAggregationFilter,
 			requiresCompanyType,
-			isPeriodDisabled,
-			isCompanyDisabled,
 			onServiceChange: setSelectedService,
-			onYearChange: handleYearChange,
-			onPeriodsChange: handlePeriodsChange,
-			onCompanyIdsChange: handleCompanyIdsChange,
 			onCompanyTypeChange: handleCompanyTypeChange,
 			onContractTypeChange: handleContractTypeChange,
 			onSmsReportTypeChange: handleSmsReportTypeChange,
-			onPeriodTypeChange: handlePeriodTypeChange,
-			onFinancialColumnsChange: handleFinancialColumnsChange,
-			onAuditColumnsChange: handleAuditColumnsChange,
 			onDefaultConversionRatioChange: setDefaultConversionRatio,
-			onAggregationChange: handleAggregationChange,
 		});
 	}, [
 		t,
@@ -902,9 +950,7 @@ export function PerformanceReportPage() {
 			return null;
 
 		const companyIds = normalizeNumberList(formValues?.company_ids ?? selectedCompanyIds);
-		const companyType = requiresCompanyType
-			? (formValues?.company_type == null || formValues.company_type === "" ? undefined : String(formValues.company_type))
-			: undefined;
+		const companyType = requiresCompanyType ? normalizeCompanyTypeFilter(formValues?.company_type) : undefined;
 		const contractType = String(formValues?.is_official ?? selectedContractType ?? "all") as SmsContractTypeFilter;
 		const isOfficial = contractType === "official" ? true : contractType === "unofficial" ? false : undefined;
 		const ratioRaw = formValues?.default_conversion_ratio ?? defaultConversionRatio;
@@ -959,10 +1005,7 @@ export function PerformanceReportPage() {
 	}, [t]);
 
 	const getCompanyTypeLabel = useCallback((companyType: unknown) => {
-		const token = pickCompanyTypeToken(companyType);
-		if (!token)
-			return "-";
-		return companyTypeOptions.find(option => String(option.value) === token)?.label ?? token;
+		return getReportCompanyTypeLabel(companyType, companyTypeOptions);
 	}, [companyTypeOptions]);
 
 	const getTrafficLocationLabel = useCallback((location: unknown) => {
@@ -1192,10 +1235,18 @@ export function PerformanceReportPage() {
 	const reportTitle = selectedServiceName
 		? `${t("performance.titles.performanceReport")} - ${selectedServiceName}`
 		: t("performance.titles.performanceReport");
+	const reportTableSubtitle = selectedServiceName
+		? selectedPeriods.length > 0
+			? `${selectedServiceName} | ${t("performance.titles.performanceReportPeriodCount", {
+				periodCount: selectedPeriods.length.toLocaleString(i18n.resolvedLanguage ?? i18n.language),
+			})}`
+			: selectedServiceName
+		: t("performance.titles.performanceReportResultsSubtitle");
 
 	return (
 		<BasicContent className="h-full">
 			<BasicTable<PerformanceReportRow>
+				className="performance-report-table"
 				rowKey={record => String(record.id)}
 				columns={columns}
 				actionRef={actionRef}
@@ -1203,6 +1254,53 @@ export function PerformanceReportPage() {
 				autoSearchDebounceTime={800}
 				search={{
 					defaultCollapsed: false,
+					span: 12,
+					optionRender: false,
+				}}
+				filterTitle="اطلاعات سرویس و گزارش"
+				filterSubtitle=""
+				tableExtraRender={() => (
+					<div className="performance-report-extra-panels">
+						<ReportPeriodPicker
+							key={`${selectedServiceId ?? "no-service"}-${selectedPeriodType}`}
+							yearOptions={yearOptions}
+							periodOptions={periodOptions}
+							periodTypeOptions={periodTypeOptions}
+							selectedPeriodType={selectedPeriodType}
+							selectedPeriods={selectedPeriods}
+							disabled={isPeriodDisabled}
+							onPeriodTypeChange={handlePeriodTypeChange}
+							onPeriodsChange={handlePeriodsChange}
+						/>
+						<ReportSettingsPanel
+							financialOptions={financialColumnOptions}
+							aggregationOptions={aggregationOptions}
+							auditOptions={auditColumnOptions}
+							selectedFinancialColumns={selectedFinancialColumns}
+							selectedAggregation={selectedAggregation}
+							selectedAuditColumns={selectedAuditColumns}
+							disabled={!selectedServiceId}
+							auditDisabled={isAuditColumnsDisabled}
+							onFinancialColumnsChange={handleFinancialColumnsChange}
+							onAggregationChange={handleAggregationChange}
+							onAuditColumnsChange={handleAuditColumnsChange}
+						/>
+					</div>
+				)}
+				cardProps={{
+					title: (
+						<div className="performance-report-table-heading-content">
+							<ReportCompanyPicker
+								key={`${selectedServiceId ?? "no-service"}-${Array.isArray(selectedCompanyType) ? selectedCompanyType.join(",") : selectedCompanyType ?? "no-type"}-${selectedPeriods.join(",")}`}
+								options={companyOptions}
+								selectedCompanyIds={selectedCompanyIds}
+								disabled={isCompanyDisabled}
+								loading={!!selectedServiceId && selectedPeriods.length > 0 && (companies.isLoading || availabilityByPeriods.isFetching)}
+								onChange={handleCompanyIdsChange}
+							/>
+							<ReportSummaryCards items={reportSummaryItems} />
+						</div>
+					),
 				}}
 				form={{
 					initialValues: {
@@ -1236,7 +1334,7 @@ export function PerformanceReportPage() {
 						};
 					}
 
-					if (requiresCompanyType && !selectedCompanyType) {
+					if (requiresCompanyType && !hasSelectedCompanyType) {
 						setSummary(null);
 						return {
 							data: [],
@@ -1246,7 +1344,7 @@ export function PerformanceReportPage() {
 					}
 
 					const companyIds = normalizeNumberList(selectedCompanyIds);
-					const companyType = requiresCompanyType ? selectedCompanyType ?? undefined : undefined;
+					const companyType = requiresCompanyType ? normalizeCompanyTypeFilter(selectedCompanyType) : undefined;
 					const contractType = selectedContractType;
 					const isOfficial = contractType === "official" ? true : contractType === "unofficial" ? false : undefined;
 					const isBaseUnitHidden = !selectedFinancialColumns.includes("showBaseUnit");
@@ -1285,69 +1383,11 @@ export function PerformanceReportPage() {
 					};
 				}}
 				headerTitle={reportTitle}
+				tableTitle={t("performance.titles.performanceReportResults")}
+				tableSubtitle={reportTableSubtitle}
+				tableIcon={<ReportResultsIcon />}
 				toolBarRender={() => {
 					const items: React.ReactNode[] = [];
-					const showReportSummary = selectedFinancialColumns.includes("total") && summary;
-					const showRial = selectedFinancialColumns.includes("rial");
-
-					if (showReportSummary) {
-						const summaryFields: React.ReactNode[] = [];
-
-						if (selectedFinancialColumnTitles.total) {
-							summaryFields.push(
-								<Typography.Text key="total">{`${selectedFinancialColumnTitles.total}: ${formatSummaryNumber(summary.value)}`}</Typography.Text>,
-							);
-						}
-						if (selectedFinancialColumnTitles.income) {
-							summaryFields.push(
-								<Typography.Text key="income">{`${selectedFinancialColumnTitles.income}: ${formatSummaryMoney(summary.income_financial, showRial)}`}</Typography.Text>,
-							);
-						}
-						if (selectedFinancialColumnTitles.expense) {
-							summaryFields.push(
-								<Typography.Text key="expense">{`${selectedFinancialColumnTitles.expense}: ${formatSummaryMoney(summary.expense_financial, showRial)}`}</Typography.Text>,
-							);
-						}
-						if (selectedFinancialColumnTitles.profit) {
-							summaryFields.push(
-								<Typography.Text key="profit">{`${selectedFinancialColumnTitles.profit}: ${formatSummaryMoney(summary.profit_financial, showRial)}`}</Typography.Text>,
-							);
-						}
-						const extendedSummaryFields: Array<{
-							key: ReportFinancialColumnKey
-							title?: string
-							keys: readonly string[]
-						}> = [
-							{ key: "karashabIncome", title: selectedFinancialColumnTitles.karashabIncome, keys: REPORT_FIELD_KEYS.karashabIncome },
-							{ key: "karashabExpense", title: selectedFinancialColumnTitles.karashabExpense, keys: REPORT_FIELD_KEYS.karashabExpense },
-							{ key: "karashabProfit", title: selectedFinancialColumnTitles.karashabProfit, keys: REPORT_FIELD_KEYS.karashabProfit },
-							{ key: "telecomIncome", title: selectedFinancialColumnTitles.telecomIncome, keys: REPORT_FIELD_KEYS.telecomIncome },
-							{ key: "firstPartyIncome", title: selectedFinancialColumnTitles.firstPartyIncome, keys: REPORT_FIELD_KEYS.firstPartyIncome },
-							{ key: "regionIncome", title: selectedFinancialColumnTitles.regionIncome, keys: REPORT_FIELD_KEYS.regionIncome },
-							{ key: "salesAgentIncome", title: selectedFinancialColumnTitles.salesAgentIncome, keys: REPORT_FIELD_KEYS.salesAgentIncome },
-						];
-
-						extendedSummaryFields.forEach((field) => {
-							if (!field.title || !selectedFinancialColumns.includes(field.key))
-								return;
-
-							const value = pickSummaryValue(summary, field.keys);
-							if (value == null)
-								return;
-
-							summaryFields.push(
-								<Typography.Text key={field.key}>{`${field.title}: ${formatSummaryMoney(value, showRial)}`}</Typography.Text>,
-							);
-						});
-
-						if (summaryFields.length > 0) {
-							items.push(
-								<Space key="summary" size={16} wrap>
-									{summaryFields}
-								</Space>,
-							);
-						}
-					}
 
 					items.push(
 						<Space key="exports" size={8} wrap>

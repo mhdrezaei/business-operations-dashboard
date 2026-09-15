@@ -4,7 +4,7 @@ import { RHFProText } from "#src/shared/ui/rhf-pro";
 import { request } from "#src/utils/request/";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { Button, Form, Modal } from "antd";
+import { App, Button, Form, Modal } from "antd";
 import React, { useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 
@@ -44,6 +44,7 @@ export default function CompanyRenameModal({
 	onDeleted,
 }: Props) {
 	const qc = useQueryClient();
+	const { modal } = App.useApp();
 	const [saving, setSaving] = useState(false);
 	const [deleting, setDeleting] = useState(false);
 
@@ -101,7 +102,7 @@ export default function CompanyRenameModal({
 		if (!companyId)
 			return;
 
-		Modal.confirm({
+		modal.confirm({
 			title: "حذف شرکت",
 			content: "آیا از حذف این شرکت مطمئن هستید؟",
 			okText: "حذف",
