@@ -37,18 +37,21 @@ export default function TemplatePrintPreviewModal({ isOpen, onClose, editor }: T
 		const defaultLogo = "/karashab-logo.png";
 		const logo = headerData?.logo_url || headerData?.logo_data_url || defaultLogo;
 		const showContractNo = headerData?.show_contract_number !== false;
+		const contractNumber = "[شماره قرارداد / الحاقیه]";
 		const text = headerData?.extra_text || "";
+		const fontFamily = headerData?.header_font_family ? `'${headerData.header_font_family}', sans-serif` : "inherit";
+		const fontSize = headerData?.header_font_size ? `${headerData.header_font_size}px` : "13px";
 
 		return `
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 35px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 35px; font-family: ${fontFamily};">
                 <div style="display: flex; flex-direction: column; align-items: flex-start;">
                     <img src="${logo}" style="max-height: 45px; object-fit: contain; margin-bottom: 12px; max-width: 250px;" />
-                    ${text ? `<div style="font-size: 13px; font-weight: normal; color: #000;">${text}</div>` : ""}
+                    ${text ? `<div style="font-size: ${fontSize}; font-weight: normal; color: #000;">${text}</div>` : ""}
                 </div>
                 ${showContractNo
 					? `
                 <div style="display: flex; flex-direction: column; align-items: center; width: 180px; padding-top: 10px;">
-                    <div style="font-weight: bold; font-size: 13px; margin-bottom: 8px; color: #000;">شماره قرارداد : ۱۴۰۳/۱۲۳۴</div>
+                    <div style="font-weight: bold; font-size: 13px; margin-bottom: 8px; color: #000;">شماره قرارداد : ${contractNumber}</div>
                     <div style="width: 100%; height: 14px; background-color: #465b8e; clip-path: polygon(15px 0, 100% 0, 100% 100%, 0% 100%);"></div>
                 </div>
                 `
@@ -56,7 +59,6 @@ export default function TemplatePrintPreviewModal({ isOpen, onClose, editor }: T
             </div>
         `;
 	}, [headerData]);
-
 	const rawContentHTML = useMemo(() => {
 		if (!isOpen || !editor)
 			return "";

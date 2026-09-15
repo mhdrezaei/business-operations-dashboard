@@ -311,7 +311,7 @@ export async function importWordToEditor(
 	onComplete?: () => void,
 	onMissingFonts?: (fontNames: string[]) => Promise<void>,
 ) {
-	message.loading({ content: "?? ??? ?????? ????...", key: "import-word", duration: 0 });
+	message.loading({ content: "در حال بارگذاری...", key: "import-word", duration: 0 });
 	await new Promise(resolve => setTimeout(resolve, 100));
 
 	try {
