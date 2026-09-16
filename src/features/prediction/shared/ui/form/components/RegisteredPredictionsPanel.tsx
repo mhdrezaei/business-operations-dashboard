@@ -82,7 +82,7 @@ export function RegisteredPredictionsPanel({
 					<ContractDashedBorder />
 					<div className="prediction-registered-item__quarters">
 						{quarterValues.map((value, index) => (
-							<span key={index}>
+							<span key={`q${index + 1}`}>
 								Q
 								{index + 1}
 								:

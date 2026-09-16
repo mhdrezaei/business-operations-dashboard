@@ -63,8 +63,8 @@
 }
 
 .prediction-registered-panel.ant-card {
-	border-radius: var(--ant-border-radius-lg, 8px);
-	background: var(--ant-color-bg-container);
+	border-radius: var(--ant-borderRadiusLG, 8px);
+	background: var(--ant-colorBgContainer);
 }
 
 .prediction-registered-panel > .ant-card-head {
@@ -79,8 +79,8 @@
 
 .prediction-registered-panel__title .ant-tag {
 	margin: 0;
-	background: var(--ant-color-primary-bg);
-	color: var(--ant-color-primary-text);
+	background: var(--ant-colorPrimaryBg);
+	color: var(--ant-colorPrimaryText);
 	font-weight: 700;
 }
 
@@ -99,9 +99,9 @@
 .prediction-registered-list .ant-collapse-item {
 	overflow: hidden;
 	margin-block-end: var(--ant-marginSM, 12px);
-	border: var(--ant-line-width, 1px) solid var(--ant-color-border);
-	border-radius: var(--ant-border-radius-lg, 8px);
-	background: var(--ant-color-bg-elevated);
+	border: var(--ant-lineWidth, 1px) solid var(--ant-colorBorder);
+	border-radius: var(--ant-borderRadiusLG, 8px);
+	background: var(--ant-colorBgElevated);
 }
 
 .prediction-registered-list .ant-collapse-item:last-child {
@@ -136,12 +136,12 @@
 
 .prediction-registered-item__icons {
 	gap: var(--ant-marginSM, 12px);
-	color: var(--ant-color-primary);
+	color: var(--ant-colorPrimary);
 }
 
 .prediction-registered-item__details {
-	color: var(--ant-color-text-secondary);
-	font-size: var(--ant-font-size-sm, 12px);
+	color: var(--ant-colorTextSecondary);
+	font-size: var(--ant-fontSizeSM, 12px);
 }
 
 .prediction-registered-item__quarters {
@@ -153,7 +153,7 @@
 
 .prediction-registered-item__details p {
 	margin: var(--ant-marginSM, 12px) 0 0;
-	color: var(--ant-color-text);
+	color: var(--ant-colorText);
 	line-height: 1.9;
 }
 

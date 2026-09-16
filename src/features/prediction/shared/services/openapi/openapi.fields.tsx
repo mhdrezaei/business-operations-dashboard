@@ -7,14 +7,16 @@ import type {
 	PredictionMetricCode,
 	PredictionShareSectionValue,
 } from "../../model/prediction.form.types";
-import { RHFProNumber, RHFSelect } from "#src/shared/ui/rhf-pro";
+import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
+import { RHFProNumber, RHFSegmentedSwitch, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
-import { Button, Card, Form, Segmented, Select, Typography } from "antd";
+import { Button, Card, Form, Select, Typography } from "antd";
 import { useEffect, useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { predictionCompaniesByServiceQuery } from "../../queries/prediction.queries";
+import { PredictionDashedCard } from "../../ui/form/components/PredictionDashedCard";
 import { QuarterDistributionSection } from "../../ui/form/sections/QuarterDistributionSection";
 import {
 	getOpenApiOperationSections,
@@ -111,13 +113,6 @@ function CompanyShareEditor({
 		});
 	}
 
-	function handleModeChange(mode: string | number) {
-		updateShareState({
-			...shareState,
-			mode: mode === "manual" ? "manual" : "auto",
-		});
-	}
-
 	function handleCompanyIdsChange(companyIds: number[]) {
 		const uniqueIds = Array.from(new Set(companyIds.map(Number)))
 			.filter(companyId => Number.isInteger(companyId) && companyId > 0);
@@ -142,19 +137,15 @@ function CompanyShareEditor({
 	}
 
 	return (
-		<Card
-			bordered
-			className="rounded-xl [&_.ant-pro-card-body]:flex [&_.ant-pro-card-body]:flex-col [&_.ant-pro-card-body]:gap-4 [&_.ant-pro-card-header]:min-h-12"
-			title={metricTitle}
-		>
-			<Segmented
-				block
-				value={shareState.mode}
-				onChange={handleModeChange}
+		<PredictionDashedCard title={metricTitle}>
+			<RHFSegmentedSwitch
+				name={`${fieldPath}.mode` as any}
+				label="نحوه تخصیص"
 				options={[
 					{ label: t("prediction.shareModes.auto"), value: "auto" },
 					{ label: t("prediction.shareModes.manual"), value: "manual" },
 				]}
+				formItemProps={{ className: "mb-0" }}
 			/>
 
 			{shareState.mode === "auto"
@@ -209,7 +200,7 @@ function CompanyShareEditor({
 						</Typography.Text>
 					</div>
 				)}
-		</Card>
+		</PredictionDashedCard>
 	);
 }
 
@@ -285,11 +276,10 @@ export function OpenApiPredictionFields() {
 			<QuarterDistributionSection />
 
 			{activeSections.map(section => (
-				<Card
+				<ContractFormSection
 					key={section.key}
-					bordered
-					className="rounded-2xl"
 					title={t(section.titleKey)}
+					tone="purple"
 				>
 					<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
 						<RHFProNumber<PredictionFormValues, any>
@@ -314,24 +304,18 @@ export function OpenApiPredictionFields() {
 							enableWordsTooltip
 						/>
 					</div>
-				</Card>
+				</ContractFormSection>
 			))}
 
-			<Card
-				bordered
-				className="rounded-2xl"
-				title={t("prediction.sections.companyShares")}
-			>
+			<ContractFormSection title={t("prediction.sections.companyShares")} tone="blue">
 				<div className="flex flex-col gap-4">
 					<Typography.Paragraph className="mb-0 opacity-80">
 						{t("prediction.messages.companySharesDescription")}
 					</Typography.Paragraph>
 
 					{activeSections.map(section => (
-						<Card
+						<PredictionDashedCard
 							key={`${section.key}-shares`}
-							bordered
-							className="rounded-2xl [&_.ant-pro-card-body]:flex [&_.ant-pro-card-body]:flex-col [&_.ant-pro-card-body]:gap-4"
 							title={t(section.titleKey)}
 						>
 							<div className="prediction-share-editor-grid grid gap-4 xl:grid-cols-3">
@@ -346,14 +330,12 @@ export function OpenApiPredictionFields() {
 									/>
 								))}
 							</div>
-						</Card>
+						</PredictionDashedCard>
 					))}
 
 					{activeModel === "PACKAGE"
 						? (
-							<Card
-								bordered
-								className="rounded-2xl [&_.ant-pro-card-body]:flex [&_.ant-pro-card-body]:flex-col [&_.ant-pro-card-body]:gap-4"
+							<PredictionDashedCard
 								title={t("prediction.openapi.sections.channels", { defaultValue: "کانال‌ها" })}
 							>
 								<div className="grid gap-4 xl:grid-cols-3">
@@ -376,11 +358,11 @@ export function OpenApiPredictionFields() {
 										total: channelTotal,
 									})}
 								</Typography.Text>
-							</Card>
+							</PredictionDashedCard>
 						)
 						: null}
 				</div>
-			</Card>
+			</ContractFormSection>
 		</div>
 	);
 }

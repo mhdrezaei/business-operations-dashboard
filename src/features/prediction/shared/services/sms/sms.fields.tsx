@@ -4,10 +4,10 @@ import type {
 	PredictionShareSectionValue,
 } from "../../model/prediction.form.types";
 import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
-import { RHFProNumber } from "#src/shared/ui/rhf-pro";
+import { RHFProNumber, RHFSegmentedSwitch } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
-import { Button, Form, Segmented, Select, Typography } from "antd";
+import { Button, Form, Select, Typography } from "antd";
 import { useEffect, useMemo, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -111,14 +111,14 @@ function SmsShareEditor({
 
 	return (
 		<PredictionDashedCard title={title}>
-			<Segmented
-				block
-				value={shareState.mode}
-				onChange={mode => updateShareState({ ...shareState, mode: mode === "manual" ? "manual" : "auto" })}
+			<RHFSegmentedSwitch
+				name={`${fieldPath}.mode` as any}
+				label="نحوه تخصیص"
 				options={[
 					{ label: t("prediction.shareModes.auto"), value: "auto" },
 					{ label: t("prediction.shareModes.manual"), value: "manual" },
 				]}
+				formItemProps={{ className: "mb-0" }}
 			/>
 
 			{shareState.mode === "auto"

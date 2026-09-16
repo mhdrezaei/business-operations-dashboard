@@ -49,7 +49,7 @@ export function ActionSection({
 					<Button loading={!!submitting} disabled={disabled || submitting} onClick={onSubmitAndEdit}>
 						{t("prediction.actions.submitAndEdit")}
 					</Button>
-					<Button loading={!!submitting} disabled={disabled || submitting} onClick={onSubmit}>
+					<Button type="primary" loading={!!submitting} disabled={disabled || submitting} onClick={onSubmit}>
 						{t("prediction.actions.submit")}
 					</Button>
 				</>
