@@ -15,9 +15,5 @@ export default function BankAccountsPanel() {
 		);
 	}
 
-	return (
-		<Card>
-			<BankAccountsTable serviceId={serviceId} companyId={companyId} />
-		</Card>
-	);
+	return <BankAccountsTable serviceId={serviceId} companyId={companyId} />;
 }

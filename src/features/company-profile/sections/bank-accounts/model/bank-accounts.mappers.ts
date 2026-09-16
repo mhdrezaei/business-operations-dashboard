@@ -23,7 +23,7 @@ export function dtoToBankAccountForm(dto: BankAccountDto): BankAccountFormValues
 
 export function bankAccountFormToPayload(
 	values: BankAccountFormValues,
-	meta: { serviceId: number, companyId: number },
+	meta: { serviceId: number, companyId: number, contractOrder?: number | null },
 ) {
 	const cardNumber = normalizeCardNumber(values.card_number);
 	const detectedBankName = detectBankNameByCardNumber(cardNumber);
@@ -36,5 +36,19 @@ export function bankAccountFormToPayload(
 		iban: normalizeIban(values.iban),
 		card_number: cardNumber,
 		account_holder_name: values.account_holder_name.trim(),
+		contract_order: meta.contractOrder ?? null,
+	};
+}
+
+export function bankAccountDtoToPayload(dto: BankAccountDto, serviceId: number, contractOrder: number | null) {
+	return {
+		service: serviceId,
+		company: dto.company,
+		bank_name: dto.bank_name,
+		account_number: dto.account_number || "",
+		iban: dto.iban || "",
+		card_number: dto.card_number || "",
+		account_holder_name: dto.account_holder_name,
+		contract_order: contractOrder,
 	};
 }

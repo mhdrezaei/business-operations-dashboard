@@ -36,6 +36,7 @@ export function companyPersonFormToPayload(
 	companyId: number,
 	serviceId: number,
 	values: CompanyPersonFormValues,
+	contractOrder: number | null = null,
 ): CompanyPersonPayload {
 	return {
 		company: companyId,
@@ -47,6 +48,25 @@ export function companyPersonFormToPayload(
 		title: values.title.trim() || null,
 		phone: cleanMultiValue(values.phone),
 		email: cleanMultiValue(values.email),
-		contract_order: 1,
+		contract_order: contractOrder,
+	};
+}
+
+export function companyPersonDtoToPayload(
+	dto: CompanyPersonDto,
+	serviceId: number,
+	contractOrder: number | null,
+): CompanyPersonPayload {
+	return {
+		company: dto.company,
+		service: serviceId,
+		role: dto.role,
+		full_name: dto.full_name,
+		national_id: dto.national_id,
+		title: dto.title,
+		phone: dto.phone ?? [],
+		email: dto.email ?? [],
+		is_signatory: dto.is_signatory,
+		contract_order: contractOrder,
 	};
 }

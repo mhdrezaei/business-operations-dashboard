@@ -43,7 +43,11 @@ export default function BankAccountModal({ open, serviceId, companyId, editing, 
 					}
 					setSaving(true);
 					try {
-						const payload = bankAccountFormToPayload(values, { serviceId, companyId });
+						const payload = bankAccountFormToPayload(values, {
+							serviceId,
+							companyId,
+							contractOrder: editing?.contract_order ?? null,
+						});
 
 						if (editing) {
 							await updateBankAccount(editing.id, payload);

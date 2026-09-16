@@ -3,15 +3,17 @@ import type {
 	PredictionFormValues,
 	PredictionShareSectionValue,
 } from "../../model/prediction.form.types";
+import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
-import { Button, Card, Form, Segmented, Select, Typography } from "antd";
+import { Button, Form, Segmented, Select, Typography } from "antd";
 import { useEffect, useMemo, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { companyTypeMatches } from "../../model/company-type.helpers";
 import { predictionCompaniesByServiceQuery } from "../../queries/prediction.queries";
+import { PredictionDashedCard } from "../../ui/form/components/PredictionDashedCard";
 import { QuarterDistributionSection } from "../../ui/form/sections/QuarterDistributionSection";
 import { createEmptyYearlyValueIncomeManualShares } from "./psp.config";
 
@@ -108,11 +110,7 @@ function YearlyValueIncomeShareEditor({
 	}
 
 	return (
-		<Card
-			bordered
-			className="rounded-xl [&_.ant-pro-card-body]:flex [&_.ant-pro-card-body]:flex-col [&_.ant-pro-card-body]:gap-4"
-			title={title}
-		>
+		<PredictionDashedCard title={title}>
 			<Segmented
 				block
 				value={shareState.mode}
@@ -175,7 +173,7 @@ function YearlyValueIncomeShareEditor({
 						</Typography.Text>
 					</div>
 				)}
-		</Card>
+		</PredictionDashedCard>
 	);
 }
 
@@ -219,11 +217,7 @@ export function YearlyValueIncomePredictionFields({ operationTitleKey, requiresC
 		<div className="flex flex-col gap-4">
 			<QuarterDistributionSection />
 
-			<Card
-				bordered
-				className="rounded-2xl"
-				title={t(operationTitleKey)}
-			>
+			<ContractFormSection title={t(operationTitleKey)} tone="purple">
 				<div className="grid gap-3 md:grid-cols-2">
 					<RHFProNumber<PredictionFormValues, any>
 						name={sf("valueYear") as any}
@@ -240,14 +234,9 @@ export function YearlyValueIncomePredictionFields({ operationTitleKey, requiresC
 						enableWordsTooltip
 					/>
 				</div>
-			</Card>
+			</ContractFormSection>
 
-			<Card
-				bordered
-
-				className="rounded-2xl"
-				title={t("prediction.sections.companyShares")}
-			>
+			<ContractFormSection title={t("prediction.sections.companyShares")} tone="blue">
 				<div className="flex flex-col gap-4">
 					<Typography.Paragraph className="mb-0 opacity-80">
 						{t("prediction.messages.companySharesDescription")}
@@ -266,7 +255,7 @@ export function YearlyValueIncomePredictionFields({ operationTitleKey, requiresC
 						/>
 					</div>
 				</div>
-			</Card>
+			</ContractFormSection>
 		</div>
 	);
 }

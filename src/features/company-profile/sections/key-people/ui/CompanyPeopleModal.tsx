@@ -72,7 +72,14 @@ export default function CompanyPeopleModal({ open, companyId, serviceId, personI
 						onSubmit={async (values) => {
 							setSaving(true);
 							try {
-								const payload = companyPersonFormToPayload(companyId, serviceId, values);
+								const payload = companyPersonFormToPayload(
+									companyId,
+									serviceId,
+									values,
+									personId && detail.data?.role === values.role
+										? (detail.data.contract_order ?? null)
+										: null,
+								);
 								if (personId) {
 									await updateCompanyPerson(personId, payload);
 								}

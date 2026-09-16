@@ -12,6 +12,7 @@ import CompanyDocumentsPanel from "../../sections/documents/ui/CompanyDocumentsP
 import CompanyPeoplePanel from "../../sections/key-people/ui/CompanyPeoplePanel";
 import ShareholdersPanel from "../../sections/shareholders/ui/ShareholdersPanel";
 import SmsGatewayMappingPanel from "../../sections/sms-gateway/ui/SmsGatewayMappingPanel";
+import { useCompanyTabsScroll } from "./use-company-tabs-scroll";
 import "./company-profile-tabs.css";
 
 interface CompanyProfileAccordionProps {
@@ -91,20 +92,25 @@ export default function CompanyProfileAccordion({ revision = 0 }: CompanyProfile
 		});
 	}
 
+	const { containerRef, resetTabScroll } = useCompanyTabsScroll(items.length > 0);
+
 	if (!items.length) {
 		return <Empty description="بخشی برای نمایش به این کاربر فعال نیست." />;
 	}
 
 	return (
-		<Tabs
-			className="company-profile-tabs"
-			defaultActiveKey={String(items[0]?.key ?? "company-info")}
-			style={{
-				"--company-profile-tabs-background": token.colorBgLayout,
-				"--company-profile-tabs-border": token.colorSplit,
-			} as CSSProperties}
-			tabBarGutter={16}
-			items={items}
-		/>
+		<div ref={containerRef} className="company-profile-tabs-container">
+			<Tabs
+				className="company-profile-tabs"
+				defaultActiveKey={String(items[0]?.key ?? "company-info")}
+				style={{
+					"--company-profile-tabs-background": token.colorBgLayout,
+					"--company-profile-tabs-border": token.colorSplit,
+				} as CSSProperties}
+				tabBarGutter={16}
+				items={items}
+				onChange={resetTabScroll}
+			/>
+		</div>
 	);
 }

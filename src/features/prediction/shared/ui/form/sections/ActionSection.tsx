@@ -1,3 +1,4 @@
+import { FormActionBar } from "#src/shared/ui/form-action-bar";
 import { Button } from "antd";
 import { useTranslation } from "react-i18next";
 
@@ -26,36 +27,33 @@ export function ActionSection({
 
 	if (mode === "edit") {
 		return (
-			<div
-				className="flex justify-end items-center gap-3 flex-wrap"
-			>
-				{onCancel
-					? <Button onClick={onCancel}>{t("common.cancel")}</Button>
-					: null}
-				<Button loading={!!submitting} disabled={disabled || submitting} type="primary" onClick={onSubmit}>
-					{t("prediction.actions.saveChanges")}
-				</Button>
-			</div>
+			<FormActionBar
+				secondaryActions={onCancel ? <Button onClick={onCancel}>{t("common.cancel")}</Button> : undefined}
+				primaryActions={(
+					<Button loading={!!submitting} disabled={disabled || submitting} type="primary" onClick={onSubmit}>
+						{t("prediction.actions.saveChanges")}
+					</Button>
+				)}
+			/>
 		);
 	}
 
 	return (
-		<div
-			className="flex justify-between items-center gap-3 flex-wrap"
-		>
-			<Button onClick={onReset}>{t("prediction.actions.clearForm")}</Button>
-
-			<div className="flex gap-2 flex-wrap">
-				<Button loading={!!submitting} disabled={disabled || submitting} onClick={onSubmit}>
-					{t("prediction.actions.submit")}
-				</Button>
-				<Button loading={!!submitting} disabled={disabled || submitting} onClick={onSubmitAndCreateAnother}>
-					{t("prediction.actions.submitAndCreateAnother")}
-				</Button>
-				<Button loading={!!submitting} disabled={disabled || submitting} type="primary" onClick={onSubmitAndEdit}>
-					{t("prediction.actions.submitAndEdit")}
-				</Button>
-			</div>
-		</div>
+		<FormActionBar
+			secondaryActions={<Button danger onClick={onReset}>{t("prediction.actions.clearForm")}</Button>}
+			primaryActions={(
+				<>
+					<Button loading={!!submitting} disabled={disabled || submitting} onClick={onSubmitAndCreateAnother}>
+						{t("prediction.actions.submitAndCreateAnother")}
+					</Button>
+					<Button loading={!!submitting} disabled={disabled || submitting} onClick={onSubmitAndEdit}>
+						{t("prediction.actions.submitAndEdit")}
+					</Button>
+					<Button loading={!!submitting} disabled={disabled || submitting} onClick={onSubmit}>
+						{t("prediction.actions.submit")}
+					</Button>
+				</>
+			)}
+		/>
 	);
 }

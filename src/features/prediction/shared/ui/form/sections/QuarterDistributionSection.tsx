@@ -1,6 +1,8 @@
 import type { PredictionFormValues } from "../../../model/prediction.form.types";
+import { ContractAlignedField, useContractAlignedLabelWidth } from "#src/features/contract/shared/ui/form/components/ContractAlignedField";
+import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
-import { Card, Typography } from "antd";
+import { Typography } from "antd";
 import { useEffect } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -34,6 +36,13 @@ export function QuarterDistributionSection() {
 		name => getFieldState(name as any, formState).isTouched,
 	);
 	const shouldShowQuarterError = !!quarterError && (formState.isSubmitted || allInputQuarterFieldsTouched);
+	const quarterLabels = [
+		t("prediction.quarters.q1"),
+		t("prediction.quarters.q2"),
+		t("prediction.quarters.q3"),
+		t("prediction.quarters.q4"),
+	];
+	const alignedLabelStyle = useContractAlignedLabelWidth(quarterLabels);
 
 	useEffect(() => {
 		const firstThree = [q1Percent, q2Percent, q3Percent];
@@ -81,40 +90,44 @@ export function QuarterDistributionSection() {
 	}, [allInputQuarterFieldsTouched, formState.isSubmitted, q1Percent, q2Percent, q3Percent, q4Percent, trigger]);
 
 	return (
-		<Card
-			bordered
-			className="rounded-2xl"
-			title={t("prediction.sections.quarters")}
-		>
-			<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-				<RHFProNumber<PredictionFormValues, any>
-					name={sf("q1Percent") as any}
-					label={t("prediction.quarters.q1")}
-					hideError
-					inputProps={{ placeholder: t("prediction.placeholders.percentExample"), addonAfter: "%", maxLength: 3 }}
-				/>
-				<RHFProNumber<PredictionFormValues, any>
-					name={sf("q2Percent") as any}
-					label={t("prediction.quarters.q2")}
-					hideError
-					inputProps={{ placeholder: t("prediction.placeholders.percentExample"), addonAfter: "%", maxLength: 3 }}
-				/>
-				<RHFProNumber<PredictionFormValues, any>
-					name={sf("q3Percent") as any}
-					label={t("prediction.quarters.q3")}
-					hideError
-					inputProps={{ placeholder: t("prediction.placeholders.percentExample"), addonAfter: "%", maxLength: 3 }}
-				/>
-				<RHFProNumber<PredictionFormValues, any>
-					name={sf("q4Percent") as any}
-					label={t("prediction.quarters.q4")}
-					hideError
-					inputProps={{
-						placeholder: t("prediction.placeholders.percentExample"),
-						addonAfter: "%",
-						disabled: true,
-					}}
-				/>
+		<ContractFormSection title={t("prediction.sections.quarters")} tone="gold">
+			<div className="contract-form-aligned-grid contract-form-aligned-grid--four" style={alignedLabelStyle}>
+				<ContractAlignedField label={quarterLabels[0]} labelId="prediction-quarter-q1">
+					<RHFProNumber<PredictionFormValues, any>
+						name={sf("q1Percent") as any}
+						label=""
+						hideError
+						inputProps={{ placeholder: t("prediction.placeholders.percentExample"), addonAfter: "%", maxLength: 3 }}
+					/>
+				</ContractAlignedField>
+				<ContractAlignedField label={quarterLabels[1]} labelId="prediction-quarter-q2">
+					<RHFProNumber<PredictionFormValues, any>
+						name={sf("q2Percent") as any}
+						label=""
+						hideError
+						inputProps={{ placeholder: t("prediction.placeholders.percentExample"), addonAfter: "%", maxLength: 3 }}
+					/>
+				</ContractAlignedField>
+				<ContractAlignedField label={quarterLabels[2]} labelId="prediction-quarter-q3">
+					<RHFProNumber<PredictionFormValues, any>
+						name={sf("q3Percent") as any}
+						label=""
+						hideError
+						inputProps={{ placeholder: t("prediction.placeholders.percentExample"), addonAfter: "%", maxLength: 3 }}
+					/>
+				</ContractAlignedField>
+				<ContractAlignedField label={quarterLabels[3]} labelId="prediction-quarter-q4">
+					<RHFProNumber<PredictionFormValues, any>
+						name={sf("q4Percent") as any}
+						label=""
+						hideError
+						inputProps={{
+							placeholder: t("prediction.placeholders.percentExample"),
+							addonAfter: "%",
+							disabled: true,
+						}}
+					/>
+				</ContractAlignedField>
 			</div>
 
 			{shouldShowQuarterError
@@ -127,6 +140,6 @@ export function QuarterDistributionSection() {
 					</Typography.Text>
 				)
 				: null}
-		</Card>
+		</ContractFormSection>
 	);
 }

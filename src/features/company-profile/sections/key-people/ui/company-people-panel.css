@@ -1,0 +1,172 @@
+.company-people-panel {
+	display: grid;
+	gap: var(--ant-marginMD, 16px);
+}
+
+.company-people-toolbar > .ant-card-body {
+	display: grid;
+	gap: var(--contract-section-body-padding, 24px);
+}
+
+.company-people-filters {
+	display: grid;
+	grid-template-columns: minmax(180px, 1fr) auto;
+	align-items: center;
+	gap: var(--ant-marginSM, 12px);
+}
+
+.company-people-filters__switch {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--ant-marginXS, 8px);
+	min-height: var(--ant-control-height, 32px);
+	padding-inline: var(--contract-section-control-padding-inline, 12px);
+	border-radius: var(--contract-section-control-radius, 6px);
+	background: var(--contract-section-control-bg);
+	white-space: nowrap;
+}
+
+.company-people-role__count {
+	color: var(--ant-colorTextSecondary);
+	font-size: var(--ant-fontSizeSM, 12px);
+	font-variant-numeric: tabular-nums;
+}
+
+.company-people-role__list,
+.company-people-unassigned__list {
+	display: grid;
+	gap: var(--ant-marginSM, 12px);
+}
+
+.company-people-unassigned__description {
+	margin-block: 0 var(--ant-marginMD, 16px);
+	color: var(--ant-colorTextSecondary);
+}
+
+.company-person-card {
+	position: relative;
+	overflow: hidden;
+	min-width: 0;
+	border: var(--contract-section-line-width, 1px) solid transparent;
+	border-radius: calc(var(--contract-section-body-padding, 24px) + var(--contract-section-tag-radius, 4px));
+	background: var(--contract-section-nested-bg);
+	transition: opacity 160ms ease-out, background-color 160ms ease-out;
+}
+
+.company-person-card--dragging {
+	z-index: 10;
+	background: var(--contract-section-control-bg);
+	opacity: 0.82;
+}
+
+.company-person-card__content {
+	position: relative;
+	z-index: 2;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: var(--ant-marginMD, 16px);
+	padding: var(--contract-section-body-padding, 24px);
+}
+
+.company-person-row__main {
+	min-width: 0;
+}
+
+.company-person-row__identity,
+.company-person-row__actions,
+.company-person-row__order,
+.company-person-row__add {
+	display: flex;
+	align-items: center;
+	gap: var(--ant-marginXS, 8px);
+	flex-wrap: wrap;
+}
+
+.company-person-row__identity strong {
+	color: var(--ant-colorText);
+	font-weight: 700;
+}
+
+.company-person-row__details {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--ant-marginXXS, 4px) var(--ant-marginMD, 16px);
+	margin-block-start: var(--ant-marginSM, 12px);
+	color: var(--ant-colorTextTertiary);
+	font-size: var(--ant-fontSizeSM, 12px);
+}
+
+.company-person-row__details b {
+	color: var(--ant-colorText);
+	font-weight: 600;
+}
+
+.company-person-row__actions {
+	align-self: start;
+	justify-content: flex-end;
+}
+
+.company-person-row__order,
+.company-person-row__add {
+	grid-column: 1 / -1;
+	padding-block-start: var(--ant-paddingSM, 12px);
+	border-block-start: var(--contract-section-line-width, 1px) solid var(--contract-section-border-color);
+}
+
+.company-person-row__handle.ant-btn,
+.company-person-row__priority {
+	display: inline-flex;
+	flex: 0 0 auto;
+	align-items: center;
+	justify-content: center;
+	width: var(--ant-control-height, 32px);
+	height: var(--ant-control-height, 32px);
+	border: var(--contract-section-line-width, 1px) solid var(--contract-section-border-color);
+	border-radius: var(--contract-section-control-radius, 6px);
+}
+
+.company-person-row__handle.ant-btn {
+	cursor: grab;
+}
+
+.company-person-row__handle.ant-btn:active {
+	cursor: grabbing;
+}
+
+.company-person-row__priority {
+	background: var(--contract-section-control-bg);
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+}
+
+.company-person-row__order-label {
+	margin-inline-end: auto;
+	color: var(--ant-colorTextSecondary);
+}
+
+.company-person-row__add .ant-btn,
+.company-person-row__order > .ant-btn-dangerous {
+	border: var(--contract-section-line-width, 1px) dashed var(--contract-section-border-color);
+	border-radius: var(--contract-section-tag-radius, 4px);
+	background: transparent;
+}
+
+@media (max-width: 768px) {
+	.company-people-filters {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.company-person-card__content {
+		grid-template-columns: minmax(0, 1fr);
+		padding: var(--ant-paddingMD, 16px);
+	}
+
+	.company-person-row__actions {
+		justify-content: flex-start;
+	}
+
+	.company-person-row__order-label {
+		width: calc(100% - 80px);
+		margin-inline-end: 0;
+	}
+}

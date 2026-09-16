@@ -17,7 +17,9 @@ export interface CompanyPersonDto {
 	phone: string[] | null
 	email: string[] | null
 	is_signatory: boolean
-	contract_order: number
+	contract_order: number | null
+	role_slot_index?: number | null
+	role_slot_group?: string | null
 	created_at: string
 	updated_at: string
 }
@@ -36,7 +38,7 @@ export interface CompanyPersonPayload {
 	phone: string[] | null
 	email: string[] | null
 	is_signatory: boolean
-	contract_order: number
+	contract_order: number | null
 }
 
 export interface ListCompanyPeopleParams {

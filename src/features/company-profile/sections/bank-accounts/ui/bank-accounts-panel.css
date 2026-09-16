@@ -1,0 +1,145 @@
+.bank-accounts-panel {
+	display: grid;
+	gap: var(--ant-marginMD, 16px);
+}
+
+.bank-accounts-toolbar > .ant-card-body {
+	display: grid;
+	gap: var(--contract-section-body-padding, 24px);
+}
+
+.bank-accounts-section__count {
+	color: var(--ant-colorTextSecondary);
+	font-size: var(--ant-fontSizeSM, 12px);
+	font-variant-numeric: tabular-nums;
+}
+
+.bank-accounts-list {
+	display: grid;
+	gap: var(--ant-marginSM, 12px);
+}
+
+.bank-accounts-unassigned__description {
+	margin-block: 0 var(--ant-marginMD, 16px);
+	color: var(--ant-colorTextSecondary);
+}
+
+.bank-account-card {
+	position: relative;
+	overflow: hidden;
+	min-width: 0;
+	border: var(--contract-section-line-width, 1px) solid transparent;
+	border-radius: calc(var(--contract-section-body-padding, 24px) + var(--contract-section-tag-radius, 4px));
+	background: var(--contract-section-nested-bg);
+	transition: opacity 160ms ease-out, background-color 160ms ease-out;
+}
+
+.bank-account-card--dragging {
+	z-index: 10;
+	background: var(--contract-section-control-bg);
+	opacity: 0.82;
+}
+
+.bank-account-card__content {
+	position: relative;
+	z-index: 2;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: var(--ant-marginMD, 16px);
+	padding: var(--contract-section-body-padding, 24px);
+}
+
+.bank-account-card__main {
+	min-width: 0;
+}
+
+.bank-account-card__title {
+	color: var(--ant-colorText);
+	font-weight: 700;
+}
+
+.bank-account-card__details {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--ant-marginXXS, 4px) var(--ant-marginMD, 16px);
+	margin-block-start: var(--ant-marginSM, 12px);
+	color: var(--ant-colorTextTertiary);
+	font-size: var(--ant-fontSizeSM, 12px);
+}
+
+.bank-account-card__details b {
+	color: var(--ant-colorTextSecondary);
+	font-weight: 600;
+}
+
+.bank-account-card__actions,
+.bank-account-card__order,
+.bank-account-card__add {
+	display: flex;
+	align-items: center;
+	gap: var(--ant-marginXS, 8px);
+	flex-wrap: wrap;
+}
+
+.bank-account-card__actions {
+	align-self: start;
+	justify-content: flex-end;
+}
+
+.bank-account-card__order,
+.bank-account-card__add {
+	grid-column: 1 / -1;
+	padding-block-start: var(--ant-paddingSM, 12px);
+	border-block-start: var(--contract-section-line-width, 1px) solid var(--contract-section-border-color);
+}
+
+.bank-account-card__handle.ant-btn,
+.bank-account-card__priority {
+	display: inline-flex;
+	flex: 0 0 auto;
+	align-items: center;
+	justify-content: center;
+	width: var(--ant-control-height, 32px);
+	height: var(--ant-control-height, 32px);
+	border: var(--contract-section-line-width, 1px) solid var(--contract-section-border-color);
+	border-radius: var(--contract-section-control-radius, 6px);
+}
+
+.bank-account-card__handle.ant-btn {
+	cursor: grab;
+}
+
+.bank-account-card__handle.ant-btn:active {
+	cursor: grabbing;
+}
+
+.bank-account-card__priority {
+	background: var(--contract-section-control-bg);
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+}
+
+.bank-account-card__order-label {
+	margin-inline-end: auto;
+	color: var(--ant-colorTextSecondary);
+}
+
+.bank-account-card__add .ant-btn {
+	margin-inline-start: auto;
+}
+
+@media (max-width: 768px) {
+	.bank-account-card__content {
+		grid-template-columns: minmax(0, 1fr);
+		padding: var(--ant-paddingMD, 16px);
+	}
+
+	.bank-account-card__actions {
+		justify-content: flex-start;
+	}
+
+	.bank-account-card__order-label {
+		width: 100%;
+		margin-inline-end: 0;
+	}
+}
