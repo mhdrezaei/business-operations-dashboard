@@ -821,6 +821,12 @@ export function createSmsGatewayTrafficReport(filters: SmsGatewayTrafficReportFi
 	}).json<SmsGatewayTrafficReportResult>();
 }
 
+export function fetchSmsGatewayTrafficReport() {
+	return request
+		.get("sms-gateway/traffic-report/", { suppressErrorNotification: true })
+		.json<SmsGatewayTrafficReportResult>();
+}
+
 export function fetchSmsGatewayTrafficReportStatus(jobId: number, page = 1, pageSize = 20) {
 	return request
 		.get(`sms-gateway/traffic-report/status/${jobId}/`, { searchParams: { page, page_size: pageSize } })
@@ -896,6 +902,10 @@ export function createSmsOperatorInvoiceMonthlyReport(sh_year: number, sh_month:
 		json: { sh_year, sh_month },
 		suppressErrorNotification: true,
 	}).json<SmsOperatorInvoiceMonthlyReport>();
+}
+
+export function fetchLatestSmsOperatorInvoiceMonthlyReport() {
+	return request.get("sms-gateway/operator-invoices/monthly-report/", { suppressErrorNotification: true }).json<SmsOperatorInvoiceMonthlyReport>();
 }
 
 export function fetchSmsOperatorInvoiceMonthlyReportStatus(jobId: number) {

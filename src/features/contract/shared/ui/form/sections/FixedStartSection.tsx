@@ -50,6 +50,68 @@ const REAL_START_TRIGGER_YEAR = 1404;
 const REAL_START_TRIGGER_MONTH = 4;
 const BEHESHTI_DATACENTER_TAG = "DEFAULT_BEHESHTI";
 
+const IXP_COMPANY_NAMES = new Set([
+	"TEST IXP",
+	"آپارات",
+	"آترین",
+	"آسیاتک",
+	"ابر آروان",
+	"ارتباطات ثابت پارسیان",
+	"افرانت",
+	"افزارسا",
+	"ایتا",
+	"ایرانسل",
+	"پادیز داده رسان",
+	"پارس آنلاین",
+	"پارس فنون",
+	"پتایک",
+	"پژوهشگاه بنیادی (فیزیک نظری)",
+	"پیام رسان بله",
+	"پیشگامان",
+	"تبیان",
+	"تست آرمان 2",
+	"توسعه فناوری ارتباطات پاسارگاد آریان",
+	"حسابگر پرداز غرب",
+	"داده امین",
+	"داده گستر عصر نوین(پارس آنلاین + های وب)",
+	"رایان هم افزا",
+	"رایتل",
+	"رهام داتک",
+	"زی تل",
+	"سازمان فناوری اطلاعات سیدخندان",
+	"سازمان فناوری شهرداری تهران",
+	"سپنتا",
+	"سرزمین هوشمند",
+	"سروش رسانه",
+	"شاتل",
+	"شبدیز",
+	"صدا سیما",
+	"صفر و یک",
+	"فرزانگان پارس",
+	"فرهنگ آزما",
+	"فن آوا",
+	"گرین وب",
+	"لایزر",
+	"ماهانت",
+	"مبنا",
+	"مبین نت",
+	"مهر و وطن",
+	"ندا گستر صبا",
+	"نورنت",
+	"های وب",
+	"هلما گستر عصر تلکام",
+	"همراه اول( به همراه شاد)",
+].map(normalizeCompanyName));
+
+function normalizeCompanyName(value: unknown) {
+	return String(value ?? "")
+		.replaceAll("ي", "ی")
+		.replaceAll("ك", "ک")
+		.replaceAll(/\s+/g, " ")
+		.trim()
+		.toLocaleLowerCase("fa-IR");
+}
+
 function isSmsCommissionCode(code: string | null | undefined) {
 	const normalized = typeof code === "string" ? code.trim().toLowerCase() : "";
 	return normalized === "sms-commission" || normalized === "sms_commission";
@@ -541,12 +603,15 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 				.map(service => ({ label: service.name, value: service.id })),
 		[services.data, permittedCreateServiceIdList.join(",")],
 	);
-	const companyTypeOptions = useMemo(
-		() => requiresCompanyType && shouldSelectCompany && serviceId
-			? getPermittedCompanyTypes("contracts", permissionAction, serviceId).map(item => ({ label: item.value, value: item.key }))
-			: [],
-		[requiresCompanyType, shouldSelectCompany, serviceId, permissionAction, getPermittedCompanyTypes],
-	);
+	const companyTypeOptions = useMemo(() => {
+		if (!requiresCompanyType || !shouldSelectCompany || !serviceId)
+			return [];
+
+		const options = getPermittedCompanyTypes("contracts", permissionAction, serviceId).map(item => ({ label: item.value, value: item.key }));
+		if (isTraffic && !options.some(option => String(option.value).toUpperCase() === "IXP"))
+			options.push({ label: "IXP", value: "IXP" });
+		return options;
+	}, [requiresCompanyType, shouldSelectCompany, serviceId, permissionAction, getPermittedCompanyTypes, isTraffic]);
 	const collocationCompanyTypeOptions = useMemo(() => {
 		const allowedValues = new Set(COLLOCATION_COMPANY_TYPE_FALLBACK_OPTIONS.map(option => option.value));
 		const permittedOptions = companyTypeOptions
@@ -577,8 +642,11 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 		const list = companies.data?.results ?? [];
 		if (!companyType)
 			return [];
+		const normalizedCompanyType = String(companyType).trim().toUpperCase();
 		return list
-			.filter((c: any) => companyTypeMatches(c.company_type, companyType))
+			.filter((c: any) => normalizedCompanyType === "IXP"
+				? IXP_COMPANY_NAMES.has(normalizeCompanyName(c.name))
+				: companyTypeMatches(c.company_type, companyType))
 			.map((c: any) => ({ label: c.name, value: c.id }));
 	}, [companies.data, companyType]);
 	const collocationCompanyOptions = useMemo(() => {
@@ -1425,6 +1493,8 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													selectProps={{
 														"allowClear": true,
 														"placeholder": "سال",
+														"placement": "bottomRight",
+														"dropdownAlign": { overflow: { adjustY: false } },
 														"aria-labelledby": "contract-form-label-start-year-telecom",
 													} as any}
 												/>
@@ -1439,6 +1509,8 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													selectProps={{
 														"allowClear": true,
 														"placeholder": "ماه",
+														"placement": "bottomRight",
+														"dropdownAlign": { overflow: { adjustY: false } },
 														"aria-labelledby": "contract-form-label-start-month-telecom",
 													} as any}
 												/>
@@ -1453,6 +1525,8 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													selectProps={{
 														"allowClear": true,
 														"placeholder": "سال",
+														"placement": "bottomRight",
+														"dropdownAlign": { overflow: { adjustY: false } },
 														"aria-labelledby": "contract-form-label-end-year-telecom",
 													} as any}
 												/>
@@ -1467,6 +1541,8 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													selectProps={{
 														"allowClear": true,
 														"placeholder": "ماه",
+														"placement": "bottomRight",
+														"dropdownAlign": { overflow: { adjustY: false } },
 														"aria-labelledby": "contract-form-label-end-month-telecom",
 													} as any}
 												/>
@@ -1566,6 +1642,8 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													selectProps={{
 														"allowClear": true,
 														"placeholder": "سال",
+														"placement": "bottomRight",
+														"dropdownAlign": { overflow: { adjustY: false } },
 														"aria-labelledby": "contract-form-label-start-year",
 													} as any}
 												/>
@@ -1580,6 +1658,8 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													selectProps={{
 														"allowClear": true,
 														"placeholder": "ماه",
+														"placement": "bottomRight",
+														"dropdownAlign": { overflow: { adjustY: false } },
 														"aria-labelledby": "contract-form-label-start-month",
 													} as any}
 												/>
@@ -1594,6 +1674,8 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													selectProps={{
 														"allowClear": true,
 														"placeholder": "سال",
+														"placement": "bottomRight",
+														"dropdownAlign": { overflow: { adjustY: false } },
 														"aria-labelledby": "contract-form-label-end-year",
 													} as any}
 												/>
@@ -1608,6 +1690,8 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													selectProps={{
 														"allowClear": true,
 														"placeholder": "ماه",
+														"placement": "bottomRight",
+														"dropdownAlign": { overflow: { adjustY: false } },
 														"aria-labelledby": "contract-form-label-end-month",
 													} as any}
 												/>
@@ -1916,6 +2000,8 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 							selectProps={{
 								"allowClear": true,
 								"placeholder": "انتخاب سال",
+								"placement": "bottomRight",
+								"dropdownAlign": { overflow: { adjustY: false } },
 								"aria-labelledby": "contract-form-label-start-year",
 							} as any}
 						/>
@@ -1930,6 +2016,8 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 							selectProps={{
 								"allowClear": true,
 								"placeholder": "انتخاب ماه",
+								"placement": "bottomRight",
+								"dropdownAlign": { overflow: { adjustY: false } },
 								"aria-labelledby": "contract-form-label-start-month",
 							} as any}
 						/>
@@ -1944,6 +2032,8 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 							selectProps={{
 								"allowClear": true,
 								"placeholder": "انتخاب سال",
+								"placement": "bottomRight",
+								"dropdownAlign": { overflow: { adjustY: false } },
 								"aria-labelledby": "contract-form-label-end-year",
 							} as any}
 						/>
@@ -1958,6 +2048,8 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 							selectProps={{
 								"allowClear": true,
 								"placeholder": "انتخاب ماه",
+								"placement": "bottomRight",
+								"dropdownAlign": { overflow: { adjustY: false } },
 								"aria-labelledby": "contract-form-label-end-month",
 							} as any}
 						/>

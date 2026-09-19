@@ -6,6 +6,7 @@ const tierRowSchema = z.object({
 	from: zNullableNumberFa(),
 	to: zNullableNumberFa(),
 	fee: zNullableNumberFa(),
+	ratePercentage: zNullableNumberFa(),
 });
 
 const contractTypeEnum = z.preprocess(
@@ -24,6 +25,7 @@ export const contractTypeSchema: z.ZodType<ContractTypeValue> = z
 
 		// ✅ مهم: این جلوی expected number received undefined را می‌گیرد
 		fixedAmount: zNullableNumberFa(),
+		ratePercentage: zNullableNumberFa(),
 
 		// ✅ همیشه آرایه
 		rows: zNullableArrayFa(tierRowSchema),

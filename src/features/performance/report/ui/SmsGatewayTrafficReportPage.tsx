@@ -2,7 +2,7 @@ import type { SmsGatewayTrafficReportFilters, SmsGatewayTrafficReportResult } fr
 import type { Dayjs } from "#src/shared/lib/dayjs-jalali";
 import { fetchCompaniesByService, fetchServices } from "#src/api/common/common.api";
 import { BasicContent } from "#src/components";
-import { createSmsGatewayTrafficReport, fetchSmsGatewayTrafficReportStatus } from "#src/features/performance/api/performances.api";
+import { createSmsGatewayTrafficReport, fetchSmsGatewayTrafficReport, fetchSmsGatewayTrafficReportStatus } from "#src/features/performance/api/performances.api";
 import { BarChartOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Alert, Button, Card, Collapse, Descriptions, Empty, Select, Space, Spin, Statistic, Tag, Typography } from "antd";
@@ -15,13 +15,15 @@ const OPERATORS = [
 	{ label: "ایرانسل (MTN)", value: "MTN" },
 	{ label: "رایتل (RTL)", value: "RTL" },
 	{ label: "رایتل (RIGHTEL)", value: "RIGHTEL" },
+	{ label: "اپراتورهای ناشناخته", value: "UNKNOWN_OPERATOR" },
 ];
-const STATUSES = ["DELIVRD", "Pending", "EXPIRED", "REJECTD", "UNDELIV"];
+const STATUSES = ["DELIVRD", "Pending", "EXPIRED", "REJECTD", "UNDELIV", "FAILED"];
 const ALLOWED_COMPANY_NAMES = [
 	"فرهنگ و توسعه کندو",
 	"test sms",
 	"پیک آسا",
 	"شرکت شبکه گستران آریا سامانه (نواتل)",
+	"منطقه تهران",
 ];
 const number = (value?: number | null) => Number(value ?? 0).toLocaleString("fa-IR");
 const statusColor = (status: string) => status === "DELIVRD" || status === "SUCCESSFUL" ? "success" : status === "Pending" ? "warning" : "error";
@@ -107,6 +109,17 @@ export function SmsGatewayTrafficReportPage() {
 		catch (caught) { setError(await getRequestErrorMessage(caught)); }
 		finally { setLoading(false); }
 	}, []);
+	const loadLatestReport = useCallback(async () => {
+		activeJobId.current = null;
+		setLoading(true);
+		setError(null);
+		setResult(null);
+		try {
+			setResult(await fetchSmsGatewayTrafficReport());
+		}
+		catch (caught) { setError(await getRequestErrorMessage(caught)); }
+		finally { setLoading(false); }
+	}, []);
 	const apply = () => requestReport({
 		...filters,
 		start_date: formatJalaliDate(startDate),
@@ -117,15 +130,13 @@ export function SmsGatewayTrafficReportPage() {
 		if (hasLoadedDefaultReport.current)
 			return;
 		hasLoadedDefaultReport.current = true;
-		void requestReport({});
-	}, [requestReport]);
+		void loadLatestReport();
+	}, [loadLatestReport]);
 	const clear = () => {
-		activeJobId.current = null;
 		setFilters({});
 		setStartDate(null);
 		setEndDate(null);
-		setResult(null);
-		setError(null);
+		void loadLatestReport();
 	};
 	const isProcessing = result && ["PENDING", "RUNNING"].includes(result.status);
 
@@ -213,12 +224,12 @@ export function SmsGatewayTrafficReportPage() {
 							</div>
 						</Card>
 						<Card title="جزئیات شرکت‌ها">
-							{(result.results ?? []).filter(item => ["test sms", "پیک آسا"].includes(String(item.company_name).trim().toLowerCase() === "test sms" ? "test sms" : String(item.company_name).trim())).length === 0
+							{(result.results ?? []).length === 0
 								? <Empty description="داده‌ای برای نمایش وجود ندارد." />
 								: (
 									<Collapse
 										className="sms-gateway-company-collapse"
-										items={(result.results ?? []).filter(item => ["test sms", "پیک آسا"].includes(String(item.company_name).trim().toLowerCase() === "test sms" ? "test sms" : String(item.company_name).trim())).map((item, index) => ({
+										items={(result.results ?? []).map((item, index) => ({
 											key: `${item.company_id}-${index}`,
 											label: (
 												<div className="flex w-full items-center justify-between gap-4">

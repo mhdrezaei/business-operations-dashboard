@@ -16,6 +16,7 @@ export function apiTiersToRows(tiers?: ApiTier[]): FormTierRow[] {
 		from: s2n(t.min_inclusive),
 		to: s2n(t.max_exclusive),
 		fee: s2n(t.rate_per_unit),
+		ratePercentage: s2n(t.rate_percentage),
 	}));
 }
 
@@ -24,5 +25,6 @@ export function rowsToApiTiers(rows: FormTierRow[]): ApiTier[] {
 		min_inclusive: String(r.from ?? 0),
 		max_exclusive: r.to == null ? null : String(r.to),
 		rate_per_unit: String(r.fee ?? 0),
+		...(r.ratePercentage != null ? { rate_percentage: String(r.ratePercentage) } : {}),
 	}));
 }

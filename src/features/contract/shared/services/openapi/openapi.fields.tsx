@@ -1,10 +1,10 @@
 import type { ArrayPath, Path } from "react-hook-form";
 import type { ContractFormValues } from "../../../shared/model/contract.form.types";
 import { ContractAddendaSection } from "#src/features/contract/components/addenda/ContractAddendaSection.js";
-import { RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
+import { RHFProText } from "#src/shared/ui/rhf-pro";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro/fields/RHFProNumber.js";
 import { DeleteOutlined } from "@ant-design/icons";
-import { Button, Card, Col, Row } from "antd";
+import { Button, Card } from "antd";
 import React, { useMemo, useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { ContractTypeSection } from "../../../components/contract-type/ContractTypeSection";
@@ -13,11 +13,6 @@ import { defaultLegacyPricing, defaultOpenApiPlan } from "./openapi.types";
 import "./openapi.fields.css";
 
 const sf = (path: string) => `serviceFields.${path}` as any;
-
-const CONTRACT_MODEL_OPTIONS = [
-	{ label: "قدیمی", value: "legacy" },
-	{ label: "تفکیکی", value: "separated" },
-];
 
 function SeparatedPricingFields() {
 	return (
@@ -513,37 +508,27 @@ export function OpenApiFields() {
 
 	return (
 		<div className="w-full">
-			<Row gutter={24} justify="space-between">
-				<Col span={12}>
-					<RHFSelect
-						name={sf("contractModel")}
-						label="مدل قرارداد OpenAPI"
-						options={CONTRACT_MODEL_OPTIONS}
-						selectProps={{ placeholder: "انتخاب نوع محاسبه" }}
-					/>
-				</Col>
-
-				<Col span={12} />
-			</Row>
-
 			<div className="w-full">
-				{contractModel === "legacy"
-					? (
+				{contractModel === "separated"
+					? <SeparatedPricingFields />
+					: (
 						<div className="flex w-full flex-col">
 							<ContractTypeSection
 								title="بهای ثبت وصولی"
 								name={sf("legacyPricing.paymentRegistration")}
 								tone="purple"
+								compactCalculationModel
+								blendedModePlaceholder="انتخاب نوع پلکانی در این بخش"
 							/>
 							<ContractTypeSection
 								title="بهای استعلام قبض"
 								name={sf("legacyPricing.billInquiry")}
 								tone="purple"
+								compactCalculationModel
+								blendedModePlaceholder="انتخاب نوع پلکانی در این بخش"
 							/>
 						</div>
-					)
-					: null}
-				{contractModel === "separated" ? <SeparatedPricingFields /> : null}
+					)}
 
 			</div>
 
@@ -563,11 +548,15 @@ export function OpenApiFields() {
 										title="بهای ثبت وصولی"
 										name={`${base}.legacyPricing.paymentRegistration` as any}
 										tone="purple"
+										compactCalculationModel
+										blendedModePlaceholder="انتخاب نوع پلکانی در این بخش"
 									/>
 									<ContractTypeSection
 										title="بهای استعلام قبض"
 										name={`${base}.legacyPricing.billInquiry` as any}
 										tone="purple"
+										compactCalculationModel
+										blendedModePlaceholder="انتخاب نوع پلکانی در این بخش"
 									/>
 								</div>
 							)}

@@ -3,8 +3,8 @@ import { getContractSectionToneColors } from "#src/features/contract/shared/ui/f
 import { ContractSectionToneContext } from "#src/features/contract/shared/ui/form/components/contract-section-tone-context";
 import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import { RHFProNumber, RHFSegmentedSwitch, RHFSelect } from "#src/shared/ui/rhf-pro";
-import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import { Button, Card, theme } from "antd";
+import { DeleteOutlined, PlusOutlined, QuestionCircleOutlined } from "@ant-design/icons";
+import { Button, Card, theme, Tooltip } from "antd";
 import React, { useEffect, useRef } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { BLENDED_MODE_OPTIONS, CONTRACT_TYPE_OPTIONS } from "./contract-type.options";
@@ -16,6 +16,10 @@ interface Props {
 	topAside?: React.ReactNode
 	tone?: ContractSectionTone
 	variant?: "default" | "embedded" | "sms-operator"
+	showRatePercentage?: boolean
+	ratePercentageHelpText?: React.ReactNode
+	compactCalculationModel?: boolean
+	blendedModePlaceholder?: string
 }
 
 function createDefaultRows() {
@@ -34,7 +38,7 @@ function createDefaultSection(firstRowFrom: number | null = null) {
 	};
 }
 
-export function ContractTypeSection({ title, name, topAside, tone = "primary", variant = "default" }: Props) {
+export function ContractTypeSection({ title, name, topAside, tone = "primary", variant = "default", showRatePercentage = false, ratePercentageHelpText, compactCalculationModel = true, blendedModePlaceholder = "انتخاب نوع محاسبه" }: Props) {
 	const { control, getValues, setValue } = useFormContext();
 	const inheritedTone = React.useContext(ContractSectionToneContext);
 	const resolvedTone = inheritedTone ?? tone;
@@ -47,6 +51,9 @@ export function ContractTypeSection({ title, name, topAside, tone = "primary", v
 	const smsDashLength = token.sizeXS - token.lineWidthBold;
 	const smsDashGap = token.paddingXXS;
 	const smsBorderColor = token.colorSplit;
+	const blendedCardRadius = compactCalculationModel ? 30 : smsBlendedRadius;
+	const blendedDashLength = compactCalculationModel ? 6 : smsDashLength;
+	const blendedDashGap = compactCalculationModel ? 6 : smsDashGap;
 	const toneColors = getContractSectionToneColors(token, resolvedTone);
 	const smsCardStyle = isSmsOperator
 		? {
@@ -66,7 +73,7 @@ export function ContractTypeSection({ title, name, topAside, tone = "primary", v
 		} as React.CSSProperties
 		: undefined;
 
-	function renderDashedBorder(radius: number) {
+	function renderDashedBorder(radius: number, dashLength = smsDashLength, dashGap = smsDashGap) {
 		return (
 			<svg className="contract-dashed-border" aria-hidden="true">
 				<rect
@@ -78,7 +85,7 @@ export function ContractTypeSection({ title, name, topAside, tone = "primary", v
 					fill="none"
 					stroke={smsBorderColor}
 					strokeWidth={smsBorderWidth}
-					strokeDasharray={`${smsDashLength} ${smsDashGap}`}
+					strokeDasharray={`${dashLength} ${dashGap}`}
 				/>
 			</svg>
 		);
@@ -184,19 +191,43 @@ export function ContractTypeSection({ title, name, topAside, tone = "primary", v
 		const typeSwitch = (
 			<RHFSegmentedSwitch
 				name={typePath}
-				label="مدل محاسبه"
+				label={compactCalculationModel ? "" : "مدل محاسبه"}
 				options={CONTRACT_TYPE_OPTIONS}
+				segmentedProps={{ block: true }}
 				formItemProps={{ className: "mb-0" }}
 			/>
 		);
 		const fixedAmount = (
 			<RHFProNumber
 				name={`${name}.fixedAmount` as any}
-				label="مبلغ هر واحد"
+				label={showRatePercentage ? "مبلغ ثابت (ریال)" : "مبلغ هر واحد"}
 				enableGrouping
 				enableWordsTooltip
 				inputProps={{ placeholder: "برای مثال ۱۲۰", inputMode: "numeric", addonAfter: "ریال" } as any}
 				formItemProps={{ className: "contract-type-currency-field mb-0" }}
+			/>
+		);
+		const ratePercentage = (
+			<RHFProNumber
+				name={`${name}.ratePercentage` as any}
+				label={(
+					<span className="inline-flex items-center gap-1">
+						درصد نرخ
+						<Tooltip title={ratePercentageHelpText}>
+							<button
+								type="button"
+								aria-label="توضیحات درصد نرخ"
+								className="inline-flex cursor-help border-0 bg-transparent p-0 text-warning"
+							>
+								<QuestionCircleOutlined />
+							</button>
+						</Tooltip>
+					</span>
+				)}
+				enableGrouping={false}
+				enableWordsTooltip={false}
+				inputProps={{ placeholder: "بین 0 تا 100", inputMode: "numeric" } as any}
+				formItemProps={{ className: "mb-0" }}
 			/>
 		);
 
@@ -210,12 +241,15 @@ export function ContractTypeSection({ title, name, topAside, tone = "primary", v
 		}
 
 		return (
-			<div className="contract-type-standard-fields">
+			<div className={`contract-type-standard-fields ${compactCalculationModel ? "contract-type-standard-fields--compact" : ""}`}>
 				<div className="contract-type-standard-fields__switch min-w-0">
 					{typeSwitch}
 				</div>
 				{type === "fixed"
 					? <div className="contract-type-standard-fields__amount min-w-0">{fixedAmount}</div>
+					: null}
+				{type === "fixed" && showRatePercentage
+					? <div className="contract-type-standard-fields__amount min-w-0">{ratePercentage}</div>
 					: null}
 				{topAside
 					? <div className="contract-type-standard-fields__aside min-w-0">{topAside}</div>
@@ -249,6 +283,8 @@ export function ContractTypeSection({ title, name, topAside, tone = "primary", v
 								name={`${name}.rows`}
 								variant="embedded"
 								currencyAddon="ریال"
+								showRatePercentage={showRatePercentage}
+								ratePercentageHelpText={ratePercentageHelpText}
 							/>
 						</Card>
 					</div>
@@ -262,10 +298,10 @@ export function ContractTypeSection({ title, name, topAside, tone = "primary", v
 							<Card
 								key={sectionField.id}
 								bordered
-								style={{ "--contract-blended-radius": `${smsBlendedRadius}px` } as React.CSSProperties}
-								className="contract-blended-card mb-3 w-full [&_.ant-pro-card-body]:p-4"
+								style={{ "--contract-blended-radius": `${blendedCardRadius}px` } as React.CSSProperties}
+								className={`contract-blended-card ${compactCalculationModel ? "contract-blended-card--openapi" : ""} mb-3 w-full [&_.ant-pro-card-body]:p-4`}
 							>
-								{renderDashedBorder(smsBlendedRadius)}
+								{renderDashedBorder(blendedCardRadius, blendedDashLength, blendedDashGap)}
 								<div className="contract-blended-card__toolbar">
 									<span className="contract-blended-index-badge">{sectionIndex + 1}</span>
 									<div className="min-w-0 flex-1">
@@ -273,7 +309,7 @@ export function ContractTypeSection({ title, name, topAside, tone = "primary", v
 											name={`${name}.sections.${sectionIndex}.mode` as any}
 											label=""
 											options={BLENDED_MODE_OPTIONS}
-											selectProps={{ placeholder: "انتخاب نوع محاسبه", allowClear: true }}
+											selectProps={{ placeholder: blendedModePlaceholder, allowClear: true }}
 											formItemProps={{ className: "mb-0" }}
 										/>
 									</div>
@@ -293,13 +329,15 @@ export function ContractTypeSection({ title, name, topAside, tone = "primary", v
 										name={`${name}.sections.${sectionIndex}.rows`}
 										variant="embedded"
 										currencyAddon="ریال"
+										showRatePercentage={showRatePercentage}
+										ratePercentageHelpText={ratePercentageHelpText}
 									/>
 								</div>
 							</Card>
 						))}
 
 						<Button className="contract-dashed-action" icon={<PlusOutlined />} onClick={addSection}>
-							افزودن بخش
+							افزودن مدل محاسبه
 						</Button>
 					</div>
 				)

@@ -49,6 +49,10 @@ export const trafficServiceFieldsSchema = z
 		// PREMIUM conpany type
 		tehranRevenuePercent: premiumRevenuePercentSchema,
 		provinceRevenuePercent: premiumRevenuePercentSchema,
+		tehranBasedTire: z.boolean().optional(),
+		provinceBasedTire: z.boolean().optional(),
+		tehranContractModel: z.enum(["LEGACY", "VARIABLE_TABLE"]).optional(),
+		provinceContractModel: z.enum(["LEGACY", "VARIABLE_TABLE"]).optional(),
 
 		tehranUnit: z.enum(["GB/month", "Mbps"]).nullable().optional(),
 		provinceUnit: z.enum(["GB/month", "Mbps"]).nullable().optional(),

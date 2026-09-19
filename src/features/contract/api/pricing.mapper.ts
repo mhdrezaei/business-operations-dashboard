@@ -66,6 +66,7 @@ export function apiPricingToContractType(p: ApiPricing | null | undefined): Cont
 		return {
 			type: "fixed",
 			fixedAmount: Number.isFinite(firstRate) ? firstRate : null,
+			ratePercentage: Array.isArray(tiers) ? (tiers[0]?.rate_percentage == null ? null : Number(tiers[0].rate_percentage)) : null,
 			rows: defaultRows,
 			sections: [],
 		};
@@ -103,6 +104,7 @@ export function contractTypeToApiPricing(v: ContractTypeValue): ApiPricing | nul
 				min_inclusive: null,
 				max_exclusive: null,
 				rate_per_unit: String(v.fixedAmount ?? 0),
+				...(v.ratePercentage != null ? { rate_percentage: String(v.ratePercentage) } : {}),
 			}],
 		};
 	}
