@@ -8,7 +8,7 @@
 	},
 	"actions": {
 		"clearForm": "پاکسازی فرم",
-		"submit": "ثبت پیش‌بینی",
+		"submit": "ثبت",
 		"submitAndCreateAnother": "ثبت و ایجاد یکی دیگر",
 		"submitAndEdit": "ثبت و ویرایش",
 		"removeCompanyShare": "حذف شرکت",
@@ -55,12 +55,14 @@
 	"metrics": {
 		"value": "مقدار",
 		"valueReceive": "مقدار دریافتی",
+		"trafficSentVolume": "حجم ارسالی",
+		"trafficReceivedVolume": "حجم دریافتی",
 		"income": "درآمد",
 		"expense": "هزینه"
 	},
 	"locations": {
 		"tehran": "تهران",
-		"province": "مراکز استانی"
+		"province": "مراکز استان"
 	},
 	"shareModes": {
 		"auto": "اتومات",

@@ -17,17 +17,13 @@ import { FixedStartSection } from "./sections/FixedStartSection";
 import "#src/features/contract/shared/ui/form/contract-form.css";
 import "./prediction-form.css";
 
-export type PredictionSubmitIntent = "submit" | "submit_and_create_another" | "submit_and_edit";
-
 interface Props {
 	initialValues?: Partial<PredictionFormValues> | null
 	mode?: "create" | "edit"
 	titleKey?: string
 	baseFieldsDisabled?: boolean
-	onCancel?: () => void
 	onSubmit?: (
 		values: PredictionFormValues,
-		intent: PredictionSubmitIntent,
 		form: UseFormReturn<PredictionFormValues>,
 	) => void | Promise<void>
 	submitting?: boolean
@@ -126,7 +122,6 @@ export function PredictionForm({
 	mode = "create",
 	titleKey,
 	baseFieldsDisabled = false,
-	onCancel,
 	onSubmit: onSubmitProp,
 	submitting,
 }: Props) {
@@ -221,6 +216,7 @@ export function PredictionForm({
 	const module = serviceCode ? predictionServiceRegistry[serviceCode] : undefined;
 	const requiresCompanyType = serviceCode === "sms" || serviceCode === "psp" || serviceCode === "traffic";
 	const canShowServiceForm = !!serviceCode && fiscalYear != null && (!requiresCompanyType || !!companyType);
+	const canShowRegisteredPredictions = !!serviceId && !!serviceCode && !!module && (!requiresCompanyType || !!companyType);
 	const baseSelectionKey = `${mode}:${serviceId ?? ""}:${fiscalYear ?? ""}`;
 	const hasMeaningfulChange = useMemo(() => {
 		if (interaction?.baseKey !== baseSelectionKey)
@@ -237,15 +233,13 @@ export function PredictionForm({
 		interactionRef.current = nextInteraction;
 		setInteraction(nextInteraction);
 	};
-	const submitIntentRef = useRef<PredictionSubmitIntent>("submit");
-
 	const submit = form.handleSubmit(
 		async (values) => {
 			if (!onSubmitProp)
 				return;
 
 			try {
-				await onSubmitProp(values, submitIntentRef.current, form);
+				await onSubmitProp(values, form);
 				interactionRef.current = null;
 				setInteraction(null);
 			}
@@ -270,15 +264,8 @@ export function PredictionForm({
 		},
 	);
 
-	function triggerSubmit(intent: PredictionSubmitIntent) {
-		submitIntentRef.current = intent;
+	function triggerSubmit() {
 		void submit();
-	}
-
-	function resetForm() {
-		form.reset(defaultValues);
-		interactionRef.current = null;
-		setInteraction(null);
 	}
 
 	function selectRegisteredPrediction(record: unknown) {
@@ -307,7 +294,7 @@ export function PredictionForm({
 		<FormProvider {...form}>
 			<BasicContent>
 				<div
-					className="prediction-form prediction-form-layout"
+					className="contract-form prediction-form prediction-form-layout"
 					onChangeCapture={captureBaseline}
 					onKeyDownCapture={captureBaseline}
 					onPointerDownCapture={captureBaseline}
@@ -315,13 +302,31 @@ export function PredictionForm({
 					<input type="hidden" {...form.register("recordId")} />
 					<input type="hidden" {...form.register("serviceCode")} />
 
-					<main className="prediction-form-main">
+					<div className="prediction-form-filters">
 						<FixedStartSection
 							titleKey={titleKey}
 							disabled={baseFieldsDisabled}
 							autoHydrateBySelection={mode !== "edit"}
 							hideMatchedRecordAlert={mode === "edit"}
 						/>
+					</div>
+
+					{canShowRegisteredPredictions && serviceId && serviceCode
+						? (
+							<aside className="prediction-form-sidebar">
+								<RegisteredPredictionsPanel
+									serviceId={serviceId}
+									serviceCode={serviceCode}
+									serviceLabel={String(serviceCode).toUpperCase()}
+									companyType={typeof companyType === "string" ? companyType : null}
+									currentRecordId={recordId}
+									onSelect={selectRegisteredPrediction}
+								/>
+							</aside>
+						)
+						: null}
+
+					<main className="prediction-form-main">
 
 						<AnimatePresence mode="wait">
 							{module?.Fields && canShowServiceForm
@@ -344,34 +349,14 @@ export function PredictionForm({
 								<>
 									<ProseNote />
 									<ActionSection
-										mode={mode}
 										submitting={submitting}
 										disabled={!hasMeaningfulChange}
-										onSubmit={() => triggerSubmit("submit")}
-										onSubmitAndCreateAnother={() => triggerSubmit("submit_and_create_another")}
-										onSubmitAndEdit={() => triggerSubmit("submit_and_edit")}
-										onReset={resetForm}
-										onCancel={onCancel}
+										onSubmit={triggerSubmit}
 									/>
 								</>
 							)
 							: null}
 					</main>
-
-					{serviceId && serviceCode && module
-						? (
-							<aside className="prediction-form-sidebar">
-								<RegisteredPredictionsPanel
-									serviceId={serviceId}
-									serviceCode={serviceCode}
-									serviceLabel={String(serviceCode).toUpperCase()}
-									companyType={typeof companyType === "string" ? companyType : null}
-									currentRecordId={recordId}
-									onSelect={selectRegisteredPrediction}
-								/>
-							</aside>
-						)
-						: null}
 				</div>
 			</BasicContent>
 		</FormProvider>

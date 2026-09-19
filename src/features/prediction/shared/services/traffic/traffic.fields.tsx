@@ -7,8 +7,8 @@ import type {
 	TrafficPredictionMetricCode,
 } from "../../model/prediction.form.types";
 import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
-import { RHFProNumber, RHFSegmentedSwitch, RHFSelect } from "#src/shared/ui/rhf-pro";
-import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
+import { RHFProNumber, RHFSegmentedSwitch } from "#src/shared/ui/rhf-pro";
+import { DeleteOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Form, Select, Typography } from "antd";
 import { useEffect, useMemo, useRef } from "react";
@@ -19,7 +19,6 @@ import { predictionCompaniesByServiceQuery } from "../../queries/prediction.quer
 import { PredictionDashedCard } from "../../ui/form/components/PredictionDashedCard";
 import { QuarterDistributionSection } from "../../ui/form/sections/QuarterDistributionSection";
 import {
-	createEmptyTrafficLocation,
 	createEmptyTrafficManualShares,
 	isTrafficLocationCode,
 	normalizeTrafficLocationCode,
@@ -124,30 +123,24 @@ function TrafficShareEditor({
 	}
 
 	return (
-		<PredictionDashedCard title={metricTitle}>
-			<RHFSegmentedSwitch
-				name={`${fieldPath}.mode` as any}
-				label="نحوه تخصیص"
-				options={[
-					{ label: t("prediction.shareModes.auto"), value: "auto" },
-					{ label: t("prediction.shareModes.manual"), value: "manual" },
-				]}
-				formItemProps={{ className: "mb-0" }}
-			/>
-
-			{shareState.mode === "auto"
-				? (
-					<Typography.Paragraph className="mb-0 opacity-[0.78]">
-						{t("prediction.messages.autoShareDescription")}
-					</Typography.Paragraph>
-				)
-				: (
-					<div className="flex flex-col gap-4">
+		<PredictionDashedCard title={metricTitle} className="prediction-share-editor">
+			<div className="prediction-share-editor__controls">
+				<RHFSegmentedSwitch
+					name={`${fieldPath}.mode` as any}
+					label="نحوه تخصیص"
+					options={[
+						{ label: t("prediction.shareModes.auto"), value: "auto" },
+						{ label: t("prediction.shareModes.manual"), value: "manual" },
+					]}
+					formItemProps={{ className: "mb-0" }}
+				/>
+				{shareState.mode === "manual"
+					? (
 						<Form.Item
 							label={t("prediction.labels.companySelect")}
 							validateStatus={shareError ? "error" : undefined}
 							help={shareError}
-							className="mb-0"
+							className="prediction-share-editor__company-select mb-0"
 						>
 							<Select<number[]>
 								mode="multiple"
@@ -159,18 +152,23 @@ function TrafficShareEditor({
 								showSearch
 							/>
 						</Form.Item>
+					)
+					: null}
+			</div>
 
+			{shareState.mode === "auto"
+				? (
+					<Typography.Paragraph className="prediction-share-editor__hint">
+						{t("prediction.messages.autoShareDescription")}
+					</Typography.Paragraph>
+				)
+				: (
+					<div className="prediction-share-editor__companies">
 						{selectedCompanies.map(company => (
 							<div
 								key={company.value}
-								className="grid grid-cols-[auto_minmax(0,1fr)] gap-3 items-end"
+								className="prediction-share-editor__company"
 							>
-								<Button
-									aria-label={t("prediction.actions.removeCompanyShare")}
-									icon={<DeleteOutlined />}
-									onClick={() => removeCompany(company.value)}
-								/>
-
 								<RHFProNumber<PredictionFormValues, any>
 									name={`${fieldPath}.shares.${company.value}` as any}
 									label={company.label}
@@ -178,6 +176,13 @@ function TrafficShareEditor({
 										placeholder: t("prediction.placeholders.percentExample"),
 										addonAfter: "%",
 									}}
+								/>
+
+								<Button
+									danger
+									aria-label={t("prediction.actions.removeCompanyShare")}
+									icon={<DeleteOutlined />}
+									onClick={() => removeCompany(company.value)}
 								/>
 							</div>
 						))}
@@ -214,7 +219,7 @@ export function TrafficPredictionFields() {
 	const companyType = useWatch({ control, name: sf("companyType") as any });
 	const locations = normalizeLocations(useWatch({ control, name: sf("locations") as any }));
 	const companies = useQuery(predictionCompaniesByServiceQuery(serviceId));
-	const { fields, append, remove } = useFieldArray({
+	const { fields } = useFieldArray({
 		control: control as any,
 		name: sf("locations") as never,
 	});
@@ -254,11 +259,6 @@ export function TrafficPredictionFields() {
 		[locations],
 	);
 
-	const availableLocations = useMemo(
-		() => TRAFFIC_LOCATION_OPTIONS.filter(option => !selectedLocationCodes.includes(option.value)),
-		[selectedLocationCodes],
-	);
-
 	const locationTitles = useMemo(
 		() => Object.fromEntries(
 			TRAFFIC_LOCATION_OPTIONS.map(option => [option.value, t(option.labelKey)]),
@@ -273,10 +273,6 @@ export function TrafficPredictionFields() {
 		[t],
 	);
 
-	function handleAddLocation() {
-		append(createEmptyTrafficLocation(availableLocations[0]?.value ?? null) as never);
-	}
-
 	return (
 		<div className="flex flex-col gap-4">
 			<QuarterDistributionSection />
@@ -284,15 +280,6 @@ export function TrafficPredictionFields() {
 			<ContractFormSection
 				title={t("prediction.operations.traffic")}
 				tone="traffic"
-				extra={(
-					<Button
-						icon={<PlusOutlined />}
-						onClick={handleAddLocation}
-						disabled={availableLocations.length < 1}
-					>
-						{t("prediction.actions.addLocation")}
-					</Button>
-				)}
 			>
 				<div className="flex flex-col gap-4">
 					{fields.map((field, index) => {
@@ -305,29 +292,8 @@ export function TrafficPredictionFields() {
 							<PredictionDashedCard
 								key={field.id}
 								title={title}
-								extra={fields.length > 1
-									? (
-										<Button
-											danger
-											icon={<DeleteOutlined />}
-											onClick={() => remove(index)}
-										/>
-									)
-									: undefined}
 							>
-								<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-									<RHFSelect<PredictionFormValues, any, any>
-										name={sf(`locations.${index}.location`) as any}
-										label={t("prediction.labels.trafficLocation")}
-										options={TRAFFIC_LOCATION_OPTIONS.map(option => ({
-											label: t(option.labelKey),
-											value: option.value,
-										}))}
-										selectProps={{
-											allowClear: true,
-											placeholder: t("prediction.placeholders.selectLocation"),
-										}}
-									/>
+								<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
 									<RHFProNumber<PredictionFormValues, any>
 										name={sf(`locations.${index}.valueYear`) as any}
 										label={t("prediction.labels.annualValue")}
@@ -373,8 +339,9 @@ export function TrafficPredictionFields() {
 						<PredictionDashedCard
 							key={locationCode}
 							title={locationTitles[locationCode]}
+							collapsible
 						>
-							<div className="grid gap-4 xl:grid-cols-2">
+							<div className="prediction-share-editor-grid grid gap-3">
 								{TRAFFIC_METRICS.map(metric => (
 									<TrafficShareEditor
 										key={`${locationCode}-${metric.key}`}

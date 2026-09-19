@@ -1,8 +1,7 @@
 import type { PredictionServiceCode } from "../../../model/prediction.form.types";
-import { ContractDashedBorder } from "#src/features/contract/shared/ui/form/components/ContractDashedBorder";
-import { DownOutlined, EditOutlined } from "@ant-design/icons";
+import { RecordListPanel } from "#src/shared/ui/record-list-panel";
+import { DownOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
-import { Alert, Card, Collapse, Empty, Spin, Tag } from "antd";
 import { useMemo } from "react";
 import { predictionServiceRegistry } from "../../../services/registry";
 
@@ -22,6 +21,15 @@ function formatFaNumber(value: unknown) {
 	if (!Number.isFinite(number))
 		return String(value);
 	return new Intl.NumberFormat("fa-IR").format(number);
+}
+
+function formatFaYear(value: unknown) {
+	if (value == null || value === "")
+		return "—";
+	const number = Number(value);
+	if (!Number.isFinite(number))
+		return String(value);
+	return new Intl.NumberFormat("fa-IR", { useGrouping: false }).format(number);
 }
 
 function readRecordValue(record: unknown, key: string) {
@@ -65,80 +73,55 @@ export function RegisteredPredictionsPanel({
 			key: String(id),
 			showArrow: false,
 			label: (
-				<div className="prediction-registered-item__label">
-					<span>
+				<div className="flex min-w-0 items-center justify-between gap-3">
+					<span className="max-w-full truncate rounded-lg bg-primaryBgHover px-2.5 py-1 font-medium text-text">
 						پیش‌بینی سال
 						{" "}
-						{formatFaNumber(fiscalYear)}
+						{formatFaYear(fiscalYear)}
 					</span>
-					<div className="prediction-registered-item__icons">
-						<EditOutlined />
-						<DownOutlined className={isCurrent ? "rotate-180" : ""} />
-					</div>
+					<DownOutlined
+						className={`shrink-0 text-primary transition-transform ${isCurrent ? "rotate-180" : ""}`}
+					/>
 				</div>
 			),
 			children: (
-				<div className="prediction-registered-item__details">
-					<ContractDashedBorder />
-					<div className="prediction-registered-item__quarters">
-						{quarterValues.map((value, index) => (
-							<span key={`q${index + 1}`}>
-								Q
-								{index + 1}
-								:
+				<div className="grid gap-2.5 text-sm">
+					{quarterValues.map((value, index) => (
+						<div key={`q${index + 1}`} className="flex justify-between gap-4">
+							<span className="font-medium text-textSecondary">
+								کوارتر
 								{" "}
+								{formatFaNumber(index + 1)}
+							</span>
+							<span className="text-text" dir="ltr">
 								{value}
 								%
 							</span>
-						))}
+						</div>
+					))}
+					<div className="flex justify-between gap-4">
+						<span className="shrink-0 font-medium text-textSecondary">جزئیات</span>
+						<span className="min-w-0 text-start leading-7 text-text">{row.preview}</span>
 					</div>
-					<p>{row.preview}</p>
 				</div>
 			),
 		};
 	});
 
 	return (
-		<Card
-			size="small"
-			title={(
-				<div className="prediction-registered-panel__title">
-					<Tag bordered={false}>پیش‌بینی‌های ثبت‌شده</Tag>
-					<span>
-						(
-						{formatFaNumber(records.length)}
-						)
-					</span>
-				</div>
-			)}
-			className="prediction-registered-panel"
-		>
-			{predictionsQuery.isLoading || predictionsQuery.isFetching
-				? (
-					<div className="prediction-registered-panel__loading">
-						<Spin />
-					</div>
-				)
-				: predictionsQuery.isError
-					? <Alert type="error" showIcon message="دریافت پیش‌بینی‌های ثبت‌شده ناموفق بود" />
-					: items.length === 0
-						? <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="پیش‌بینی ثبت‌شده‌ای یافت نشد" />
-						: (
-							<Collapse
-								accordion
-								items={items}
-								activeKey={currentRecordId ? String(currentRecordId) : undefined}
-								className="prediction-registered-list"
-								onChange={(key) => {
-									const nextKey = Array.isArray(key) ? key[0] : key;
-									if (!nextKey)
-										return;
-									const record = recordByKey.get(String(nextKey));
-									if (record)
-										onSelect(record);
-								}}
-							/>
-						)}
-		</Card>
+		<RecordListPanel
+			title={`پیش‌بینی‌های ثبت‌شده (${formatFaNumber(records.length)})`}
+			items={items}
+			activeKey={currentRecordId ? String(currentRecordId) : undefined}
+			loading={predictionsQuery.isLoading || predictionsQuery.isFetching}
+			error={predictionsQuery.isError}
+			errorMessage="دریافت پیش‌بینی‌های ثبت‌شده ناموفق بود"
+			emptyDescription="پیش‌بینی ثبت‌شده‌ای یافت نشد"
+			onSelect={(key) => {
+				const record = recordByKey.get(key);
+				if (record)
+					onSelect(record);
+			}}
+		/>
 	);
 }

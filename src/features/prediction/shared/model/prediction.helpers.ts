@@ -14,6 +14,29 @@ export function resolvePredictionServiceCode(code: PredictionServiceCode | null)
 	return normalized ? normalized as PredictionServiceCode : null;
 }
 
+const SUPPORTED_PREDICTION_SERVICE_CODES = new Set([
+	"openapi",
+	"psp",
+	"shahkar",
+	"sms",
+	"traffic",
+]);
+
+export function isSupportedPredictionService(code: unknown) {
+	return typeof code === "string" && SUPPORTED_PREDICTION_SERVICE_CODES.has(normalizePredictionServiceCode(code));
+}
+
+export function isAvailablePredictionCompanyType(serviceCode: unknown, companyType: unknown) {
+	const normalizedServiceCode = typeof serviceCode === "string"
+		? normalizePredictionServiceCode(serviceCode)
+		: "";
+	const normalizedCompanyType = typeof companyType === "string"
+		? companyType.trim().toUpperCase()
+		: "";
+
+	return normalizedServiceCode !== "traffic" || normalizedCompanyType !== "COLLOCATION";
+}
+
 function normalizePersianDigits(value: string) {
 	// eslint-disable-next-line regexp/no-obscure-range
 	return value.replace(/[۰-۹]/g, digit => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)));

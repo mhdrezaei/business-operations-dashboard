@@ -1,5 +1,5 @@
 import type { PredictionFormValues } from "../../../model/prediction.form.types";
-import { ContractAlignedField, useContractAlignedLabelWidth } from "#src/features/contract/shared/ui/form/components/ContractAlignedField";
+import { ContractAlignedField } from "#src/features/contract/shared/ui/form/components/ContractAlignedField";
 import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import { useAccess } from "#src/hooks";
 import { RHFSelect } from "#src/shared/ui/rhf-pro";
@@ -9,7 +9,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { getCompanyTypeToken } from "../../../model/company-type.helpers";
-import { buildFiscalYearOptions } from "../../../model/prediction.helpers";
+import { buildFiscalYearOptions, isAvailablePredictionCompanyType, isSupportedPredictionService } from "../../../model/prediction.helpers";
 import { predictionCompaniesByServiceQuery, predictionServicesQuery } from "../../../queries/prediction.queries";
 import { predictionServiceRegistry } from "../../../services/registry";
 
@@ -43,6 +43,7 @@ export function FixedStartSection({
 	const permittedServiceIds = getPermittedServiceIds("predictions", permissionAction);
 	const serviceOptions = useMemo(() => {
 		return (services.data?.results ?? [])
+			.filter(service => isSupportedPredictionService(service.code))
 			.filter((service) => {
 				if (permittedServiceIds.length > 0)
 					return permittedServiceIds.includes(service.id);
@@ -114,6 +115,7 @@ export function FixedStartSection({
 				return [];
 
 			const permissionOptions = getPermittedCompanyTypes("predictions", permissionAction, serviceId)
+				.filter(item => isAvailablePredictionCompanyType(serviceCode, item.key))
 				.map(item => ({ label: item.value, value: item.key }));
 			if (permissionOptions.length > 0)
 				return permissionOptions;
@@ -122,14 +124,15 @@ export function FixedStartSection({
 				new Set(
 					(companies.data?.results ?? [])
 						.map(company => getCompanyTypeToken(company.company_type))
-						.filter((type): type is string => Boolean(type)),
+						.filter((type): type is string => Boolean(type))
+						.filter(type => isAvailablePredictionCompanyType(serviceCode, type)),
 				),
 			).map(type => ({
 				label: type,
 				value: type,
 			}));
 		},
-		[companies.data, permissionAction, requiresCompanyType, serviceId, getPermittedCompanyTypes],
+		[companies.data, permissionAction, requiresCompanyType, serviceCode, serviceId, getPermittedCompanyTypes],
 	);
 	const companyTypeLabel = serviceCode === "traffic"
 		? t("prediction.labels.trafficCompanyType")
@@ -217,16 +220,10 @@ export function FixedStartSection({
 	}, [existingYearRecords]);
 	const companyTypePlaceholder = t("prediction.placeholders.selectTrafficCompanyType");
 	const selectCompanyTypeFirstText = "ابتدا نوع شرکت را انتخاب کنید";
-	const alignedLabelStyle = useContractAlignedLabelWidth([
-		t("prediction.labels.service"),
-		companyTypeLabel,
-		t("prediction.labels.fiscalYear"),
-	]);
-
 	return (
 		<div className="flex flex-col gap-4">
 			<ContractFormSection title={t(titleKey)} tone="primary" collapsible={false}>
-				<div className="contract-form-aligned-grid contract-form-aligned-grid--two" style={alignedLabelStyle}>
+				<div className="contract-form-aligned-grid contract-form-aligned-grid--two">
 					<ContractAlignedField label={t("prediction.labels.service")} labelId="prediction-form-label-service">
 						<RHFSelect<PredictionFormValues, "serviceId", number | null>
 							name="serviceId"

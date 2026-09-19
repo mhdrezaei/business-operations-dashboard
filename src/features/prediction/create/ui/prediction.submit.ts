@@ -60,8 +60,3 @@ export async function submitPrediction(values: PredictionFormValues) {
 		throw error;
 	}
 }
-
-export function getReturnedRecordId(record: unknown) {
-	const recordId = Number((record as { id?: unknown } | null | undefined)?.id);
-	return Number.isInteger(recordId) && recordId > 0 ? recordId : null;
-}

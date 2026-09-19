@@ -22,8 +22,8 @@ export const TRAFFIC_LOCATION_OPTIONS = [
 ] as const satisfies Array<{ labelKey: string, value: TrafficLocationCode }>;
 
 export const TRAFFIC_METRICS = [
-	{ key: "value", titleKey: "prediction.metrics.value" },
-	{ key: "valueReceive", titleKey: "prediction.metrics.valueReceive" },
+	{ key: "value", titleKey: "prediction.metrics.trafficSentVolume" },
+	{ key: "valueReceive", titleKey: "prediction.metrics.trafficReceivedVolume" },
 	{ key: "income", titleKey: "prediction.metrics.income" },
 	{ key: "expense", titleKey: "prediction.metrics.expense" },
 ] as const satisfies Array<{ key: TrafficPredictionMetricCode, titleKey: string }>;
@@ -93,7 +93,10 @@ export function createEmptyTrafficFields(
 		q2Percent: null,
 		q3Percent: null,
 		q4Percent: null,
-		locations: [createEmptyTrafficLocation()],
+		locations: [
+			createEmptyTrafficLocation("TEHRAN"),
+			createEmptyTrafficLocation("COUNTY"),
+		],
 		manualShares: createEmptyTrafficManualShares(),
 	};
 }

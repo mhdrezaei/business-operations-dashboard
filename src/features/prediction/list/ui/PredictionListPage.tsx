@@ -8,12 +8,11 @@ import { useQuery } from "@tanstack/react-query";
 import { Button, Popconfirm } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useLocation, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { deletePrediction } from "../../api/predictions.api";
-import { buildFiscalYearOptions } from "../../shared/model/prediction.helpers";
+import { buildFiscalYearOptions, isAvailablePredictionCompanyType, isSupportedPredictionService } from "../../shared/model/prediction.helpers";
 import { predictionServicesQuery } from "../../shared/queries/prediction.queries";
 import { predictionServiceRegistry } from "../../shared/services/registry";
-import { PredictionEditModal } from "./components/PredictionEditModal";
 
 const ORDERING_OPTIONS = [
 	{ labelKey: "prediction.list.ordering.updatedAtDesc", value: "-updated_at" },
@@ -38,7 +37,6 @@ function formatDateTime(value: string | null) {
 export default function PredictionListPage() {
 	const { t } = useTranslation();
 	const navigate = useNavigate();
-	const location = useLocation();
 	const { getPermittedCompanyTypes, getPermittedServiceIds, hasDomainPermissionByServiceId } = useAccess();
 
 	const actionRef = useRef<ActionType>(null);
@@ -46,18 +44,6 @@ export default function PredictionListPage() {
 
 	const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
 	const [selectedServiceCode, setSelectedServiceCode] = useState<PredictionListRow["serviceCode"] | null>(null);
-	const [selectedRow, setSelectedRow] = useState<PredictionListRow | null>(null);
-	const [modalOpen, setModalOpen] = useState(false);
-
-	useEffect(() => {
-		const directEdit = (location.state as { directEdit?: PredictionListRow } | null)?.directEdit;
-		if (!directEdit)
-			return;
-
-		setSelectedRow(directEdit);
-		setModalOpen(true);
-		navigate(location.pathname, { replace: true, state: null });
-	}, [location.pathname, location.state, navigate]);
 
 	const permittedViewServiceIdsList = getPermittedServiceIds("predictions", "view");
 	const permittedCreateServiceIdsList = getPermittedServiceIds("predictions", "create");
@@ -70,6 +56,7 @@ export default function PredictionListPage() {
 
 	const serviceOptions = useMemo(() => {
 		return (services.data?.results ?? [])
+			.filter(service => isSupportedPredictionService(service.code))
 			.filter(service => permittedViewServiceIds.has(Number(service.id)))
 			.map(service => ({
 				label: service.name,
@@ -85,15 +72,23 @@ export default function PredictionListPage() {
 	const selectedServiceRequiresCompanyType = selectedServiceCode === "sms" || selectedServiceCode === "psp" || selectedServiceCode === "traffic";
 	const companyTypeOptions = useMemo(
 		() => selectedServiceRequiresCompanyType && selectedServiceId
-			? getPermittedCompanyTypes("predictions", "view", selectedServiceId).map(item => ({ label: item.value, value: item.key }))
+			? getPermittedCompanyTypes("predictions", "view", selectedServiceId)
+				.filter(item => isAvailablePredictionCompanyType(selectedServiceCode, item.key))
+				.map(item => ({ label: item.value, value: item.key }))
 			: [],
-		[selectedServiceRequiresCompanyType, selectedServiceId, getPermittedCompanyTypes],
+		[selectedServiceCode, selectedServiceRequiresCompanyType, selectedServiceId, getPermittedCompanyTypes],
+	);
+	const hasCreatablePredictionService = useMemo(
+		() => (services.data?.results ?? []).some(service =>
+			permittedCreateServiceIdsList.includes(Number(service.id))
+			&& isSupportedPredictionService(service.code)),
+		[permittedCreateServiceIdsList.join(","), services.data],
 	);
 
 	useEffect(() => {
 		if (!selectedServiceId)
 			return;
-		if (permittedViewServiceIds.has(selectedServiceId))
+		if (serviceOptions.some(option => option.value === selectedServiceId))
 			return;
 
 		setSelectedServiceId(null);
@@ -104,7 +99,7 @@ export default function PredictionListPage() {
 			fiscal_year: undefined,
 			ordering: undefined,
 		});
-	}, [permittedViewServiceIdsList.join(","), selectedServiceId]);
+	}, [selectedServiceId, serviceOptions]);
 
 	const fiscalYearOptions = useMemo(
 		() => buildFiscalYearOptions([]).map(option => ({
@@ -115,13 +110,7 @@ export default function PredictionListPage() {
 	);
 
 	function handleOpenEdit(row: PredictionListRow) {
-		setSelectedRow(row);
-		setModalOpen(true);
-	}
-
-	function handleCloseModal() {
-		setModalOpen(false);
-		setSelectedRow(null);
+		navigate("/predictions/new", { state: { editPrediction: row } });
 	}
 
 	function refreshTable() {
@@ -334,7 +323,7 @@ export default function PredictionListPage() {
 				}}
 				headerTitle={t("prediction.titles.list")}
 				toolBarRender={() => {
-					if (permittedCreateServiceIdsList.length < 1) {
+					if (!hasCreatablePredictionService) {
 						return [];
 					}
 
@@ -349,13 +338,6 @@ export default function PredictionListPage() {
 						</Button>,
 					];
 				}}
-			/>
-
-			<PredictionEditModal
-				open={modalOpen}
-				row={selectedRow}
-				onClose={handleCloseModal}
-				onUpdated={refreshTable}
 			/>
 		</BasicContent>
 	);

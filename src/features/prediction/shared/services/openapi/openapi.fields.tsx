@@ -137,30 +137,24 @@ function CompanyShareEditor({
 	}
 
 	return (
-		<PredictionDashedCard title={metricTitle}>
-			<RHFSegmentedSwitch
-				name={`${fieldPath}.mode` as any}
-				label="نحوه تخصیص"
-				options={[
-					{ label: t("prediction.shareModes.auto"), value: "auto" },
-					{ label: t("prediction.shareModes.manual"), value: "manual" },
-				]}
-				formItemProps={{ className: "mb-0" }}
-			/>
-
-			{shareState.mode === "auto"
-				? (
-					<Typography.Paragraph className="mb-0 opacity-[0.78]">
-						{t("prediction.messages.autoShareDescription")}
-					</Typography.Paragraph>
-				)
-				: (
-					<div className="flex flex-col gap-4">
+		<PredictionDashedCard title={metricTitle} className="prediction-share-editor">
+			<div className="prediction-share-editor__controls">
+				<RHFSegmentedSwitch
+					name={`${fieldPath}.mode` as any}
+					label="نحوه تخصیص"
+					options={[
+						{ label: t("prediction.shareModes.auto"), value: "auto" },
+						{ label: t("prediction.shareModes.manual"), value: "manual" },
+					]}
+					formItemProps={{ className: "mb-0" }}
+				/>
+				{shareState.mode === "manual"
+					? (
 						<Form.Item
 							label={t("prediction.labels.companySelect")}
 							validateStatus={shareError ? "error" : undefined}
 							help={shareError}
-							className="mb-0"
+							className="prediction-share-editor__company-select mb-0"
 						>
 							<Select<number[]>
 								mode="multiple"
@@ -172,18 +166,23 @@ function CompanyShareEditor({
 								showSearch
 							/>
 						</Form.Item>
+					)
+					: null}
+			</div>
 
+			{shareState.mode === "auto"
+				? (
+					<Typography.Paragraph className="prediction-share-editor__hint">
+						{t("prediction.messages.autoShareDescription")}
+					</Typography.Paragraph>
+				)
+				: (
+					<div className="prediction-share-editor__companies">
 						{selectedCompanies.map(company => (
 							<div
 								key={company.value}
-								className="grid grid-cols-[auto_minmax(0,1fr)] gap-3 items-end"
+								className="prediction-share-editor__company"
 							>
-								<Button
-									aria-label={t("prediction.actions.removeCompanyShare")}
-									icon={<DeleteOutlined />}
-									onClick={() => removeCompany(company.value)}
-								/>
-
 								<RHFProNumber<PredictionFormValues, any>
 									name={`${fieldPath}.shares.${company.value}` as any}
 									label={company.label}
@@ -191,6 +190,13 @@ function CompanyShareEditor({
 										placeholder: t("prediction.placeholders.percentExample"),
 										addonAfter: "%",
 									}}
+								/>
+
+								<Button
+									danger
+									aria-label={t("prediction.actions.removeCompanyShare")}
+									icon={<DeleteOutlined />}
+									onClick={() => removeCompany(company.value)}
 								/>
 							</div>
 						))}
@@ -317,8 +323,9 @@ export function OpenApiPredictionFields() {
 						<PredictionDashedCard
 							key={`${section.key}-shares`}
 							title={t(section.titleKey)}
+							collapsible
 						>
-							<div className="prediction-share-editor-grid grid gap-4 xl:grid-cols-3">
+							<div className="prediction-share-editor-grid grid gap-3">
 								{OPENAPI_METRICS.map(metric => (
 									<CompanyShareEditor
 										key={`${section.key}-${metric.key}`}
