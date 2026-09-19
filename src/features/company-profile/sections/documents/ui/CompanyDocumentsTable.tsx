@@ -237,7 +237,6 @@ export default function CompanyDocumentsTable({ serviceId, companyId }: Props) {
 	return (
 		<BasicContent className="h-full">
 			<BasicTable<CompanyDocumentDto>
-				adaptive
 				rowKey="id"
 				columns={columns}
 				actionRef={actionRef}

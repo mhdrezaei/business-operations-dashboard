@@ -1,13 +1,15 @@
 import type { PredictionFormValues } from "../../../model/prediction.form.types";
+import { ContractAlignedField } from "#src/features/contract/shared/ui/form/components/ContractAlignedField";
+import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import { useAccess } from "#src/hooks";
 import { RHFSelect } from "#src/shared/ui/rhf-pro";
 import { useQuery } from "@tanstack/react-query";
-import { Alert, Card } from "antd";
+import { Alert } from "antd";
 import { useEffect, useMemo, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { getCompanyTypeToken } from "../../../model/company-type.helpers";
-import { buildFiscalYearOptions } from "../../../model/prediction.helpers";
+import { buildFiscalYearOptions, isAvailablePredictionCompanyType, isSupportedPredictionService } from "../../../model/prediction.helpers";
 import { predictionCompaniesByServiceQuery, predictionServicesQuery } from "../../../queries/prediction.queries";
 import { predictionServiceRegistry } from "../../../services/registry";
 
@@ -41,6 +43,7 @@ export function FixedStartSection({
 	const permittedServiceIds = getPermittedServiceIds("predictions", permissionAction);
 	const serviceOptions = useMemo(() => {
 		return (services.data?.results ?? [])
+			.filter(service => isSupportedPredictionService(service.code))
 			.filter((service) => {
 				if (permittedServiceIds.length > 0)
 					return permittedServiceIds.includes(service.id);
@@ -112,6 +115,7 @@ export function FixedStartSection({
 				return [];
 
 			const permissionOptions = getPermittedCompanyTypes("predictions", permissionAction, serviceId)
+				.filter(item => isAvailablePredictionCompanyType(serviceCode, item.key))
 				.map(item => ({ label: item.value, value: item.key }));
 			if (permissionOptions.length > 0)
 				return permissionOptions;
@@ -120,14 +124,15 @@ export function FixedStartSection({
 				new Set(
 					(companies.data?.results ?? [])
 						.map(company => getCompanyTypeToken(company.company_type))
-						.filter((type): type is string => Boolean(type)),
+						.filter((type): type is string => Boolean(type))
+						.filter(type => isAvailablePredictionCompanyType(serviceCode, type)),
 				),
 			).map(type => ({
 				label: type,
 				value: type,
 			}));
 		},
-		[companies.data, permissionAction, requiresCompanyType, serviceId, getPermittedCompanyTypes],
+		[companies.data, permissionAction, requiresCompanyType, serviceCode, serviceId, getPermittedCompanyTypes],
 	);
 	const companyTypeLabel = serviceCode === "traffic"
 		? t("prediction.labels.trafficCompanyType")
@@ -215,64 +220,65 @@ export function FixedStartSection({
 	}, [existingYearRecords]);
 	const companyTypePlaceholder = t("prediction.placeholders.selectTrafficCompanyType");
 	const selectCompanyTypeFirstText = "ابتدا نوع شرکت را انتخاب کنید";
-
 	return (
 		<div className="flex flex-col gap-4">
-			<Card
-				bordered
-				className="rounded-2xl"
-				title={t(titleKey)}
-			>
-				<div className="grid gap-3 md:grid-cols-2">
-					<RHFSelect<PredictionFormValues, "serviceId", number | null>
-						name="serviceId"
-						label={t("prediction.labels.service")}
-						options={serviceOptions.map(option => ({
-							label: option.label,
-							value: option.value,
-						}))}
-						loading={services.isLoading}
-						selectProps={{
-							disabled,
-							placeholder: t("prediction.placeholders.selectService"),
-							showSearch: true,
-							optionFilterProp: "label",
-						}}
-					/>
+			<ContractFormSection title={t(titleKey)} tone="primary" collapsible={false}>
+				<div className="contract-form-aligned-grid contract-form-aligned-grid--two">
+					<ContractAlignedField label={t("prediction.labels.service")} labelId="prediction-form-label-service">
+						<RHFSelect<PredictionFormValues, "serviceId", number | null>
+							name="serviceId"
+							label=""
+							options={serviceOptions.map(option => ({
+								label: option.label,
+								value: option.value,
+							}))}
+							loading={services.isLoading}
+							selectProps={{
+								disabled,
+								placeholder: t("prediction.placeholders.selectService"),
+								showSearch: true,
+								optionFilterProp: "label",
+							}}
+						/>
+					</ContractAlignedField>
 
 					{requiresCompanyType
 						? (
-							<RHFSelect<PredictionFormValues, any, string | null>
-								name={"serviceFields.companyType" as any}
-								label={companyTypeLabel}
-								options={companyTypeOptions}
-								selectProps={{
-									disabled,
-									allowClear: true,
-									placeholder: companyTypePlaceholder,
-									showSearch: true,
-									optionFilterProp: "label",
-								}}
-							/>
+							<ContractAlignedField label={companyTypeLabel} labelId="prediction-form-label-company-type">
+								<RHFSelect<PredictionFormValues, any, string | null>
+									name={"serviceFields.companyType" as any}
+									label=""
+									options={companyTypeOptions}
+									selectProps={{
+										disabled,
+										allowClear: true,
+										placeholder: companyTypePlaceholder,
+										showSearch: true,
+										optionFilterProp: "label",
+									}}
+								/>
+							</ContractAlignedField>
 						)
 						: null}
 
-					<RHFSelect<PredictionFormValues, "fiscalYear", number | null>
-						name="fiscalYear"
-						label={t("prediction.labels.fiscalYear")}
-						options={fiscalYearOptions}
-						loading={yearRecordsQuery.isLoading}
-						selectProps={{
-							disabled: disabled || (requiresCompanyType && !companyType),
-							placeholder: requiresCompanyType && !companyType
-								? selectCompanyTypeFirstText
-								: t("prediction.placeholders.selectFiscalYear"),
-							showSearch: true,
-							optionFilterProp: "label",
-						}}
-					/>
+					<ContractAlignedField label={t("prediction.labels.fiscalYear")} labelId="prediction-form-label-fiscal-year">
+						<RHFSelect<PredictionFormValues, "fiscalYear", number | null>
+							name="fiscalYear"
+							label=""
+							options={fiscalYearOptions}
+							loading={yearRecordsQuery.isLoading}
+							selectProps={{
+								disabled: disabled || (requiresCompanyType && !companyType),
+								placeholder: requiresCompanyType && !companyType
+									? selectCompanyTypeFirstText
+									: t("prediction.placeholders.selectFiscalYear"),
+								showSearch: true,
+								optionFilterProp: "label",
+							}}
+						/>
+					</ContractAlignedField>
 				</div>
-			</Card>
+			</ContractFormSection>
 
 			{matchedYearRecord && !hideMatchedRecordAlert
 				? (

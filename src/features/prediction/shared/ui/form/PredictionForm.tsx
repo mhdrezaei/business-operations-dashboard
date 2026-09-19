@@ -1,29 +1,29 @@
 import type { Resolver, UseFormReturn } from "react-hook-form";
 import type { PredictionFormValues } from "../../model/prediction.form.types";
+import { BasicContent } from "#src/components";
+import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import { RHFProTextArea } from "#src/shared/ui/rhf-pro";
 import { notification } from "#src/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Card } from "antd";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { buildPredictionSchema } from "../../model/prediction.schema";
 import { predictionServiceRegistry } from "../../services/registry";
+import { RegisteredPredictionsPanel } from "./components/RegisteredPredictionsPanel";
 import { ActionSection } from "./sections/ActionSection";
 import { FixedStartSection } from "./sections/FixedStartSection";
-
-export type PredictionSubmitIntent = "submit" | "submit_and_create_another" | "submit_and_edit";
+import "#src/features/contract/shared/ui/form/contract-form.css";
+import "./prediction-form.css";
 
 interface Props {
 	initialValues?: Partial<PredictionFormValues> | null
 	mode?: "create" | "edit"
 	titleKey?: string
 	baseFieldsDisabled?: boolean
-	onCancel?: () => void
 	onSubmit?: (
 		values: PredictionFormValues,
-		intent: PredictionSubmitIntent,
 		form: UseFormReturn<PredictionFormValues>,
 	) => void | Promise<void>
 	submitting?: boolean
@@ -122,7 +122,6 @@ export function PredictionForm({
 	mode = "create",
 	titleKey,
 	baseFieldsDisabled = false,
-	onCancel,
 	onSubmit: onSubmitProp,
 	submitting,
 }: Props) {
@@ -206,6 +205,10 @@ export function PredictionForm({
 		control: form.control,
 		name: "fiscalYear",
 	});
+	const recordId = useWatch({
+		control: form.control,
+		name: "recordId",
+	});
 	const companyType = useWatch({
 		control: form.control,
 		name: "serviceFields.companyType" as any,
@@ -213,6 +216,7 @@ export function PredictionForm({
 	const module = serviceCode ? predictionServiceRegistry[serviceCode] : undefined;
 	const requiresCompanyType = serviceCode === "sms" || serviceCode === "psp" || serviceCode === "traffic";
 	const canShowServiceForm = !!serviceCode && fiscalYear != null && (!requiresCompanyType || !!companyType);
+	const canShowRegisteredPredictions = !!serviceId && !!serviceCode && !!module && (!requiresCompanyType || !!companyType);
 	const baseSelectionKey = `${mode}:${serviceId ?? ""}:${fiscalYear ?? ""}`;
 	const hasMeaningfulChange = useMemo(() => {
 		if (interaction?.baseKey !== baseSelectionKey)
@@ -229,15 +233,13 @@ export function PredictionForm({
 		interactionRef.current = nextInteraction;
 		setInteraction(nextInteraction);
 	};
-	const submitIntentRef = useRef<PredictionSubmitIntent>("submit");
-
 	const submit = form.handleSubmit(
 		async (values) => {
 			if (!onSubmitProp)
 				return;
 
 			try {
-				await onSubmitProp(values, submitIntentRef.current, form);
+				await onSubmitProp(values, form);
 				interactionRef.current = null;
 				setInteraction(null);
 			}
@@ -262,70 +264,101 @@ export function PredictionForm({
 		},
 	);
 
-	function triggerSubmit(intent: PredictionSubmitIntent) {
-		submitIntentRef.current = intent;
+	function triggerSubmit() {
 		void submit();
 	}
 
-	function resetForm() {
-		form.reset(defaultValues);
+	function selectRegisteredPrediction(record: unknown) {
+		if (!module || !serviceCode || !serviceId)
+			return;
+		const selectedValues = module.toFormValues(record);
+		form.reset({
+			...defaultValues,
+			...form.getValues(),
+			...selectedValues,
+			serviceId,
+			serviceCode,
+			serviceFields: {
+				...module.createEmptyServiceFields(form.getValues("serviceFields")),
+				...(selectedValues.serviceFields ?? {}),
+			},
+		}, {
+			keepDirty: false,
+			keepTouched: false,
+		});
 		interactionRef.current = null;
 		setInteraction(null);
 	}
 
 	return (
 		<FormProvider {...form}>
-			<div
-				className="w-full flex flex-col gap-4"
-				onChangeCapture={captureBaseline}
-				onKeyDownCapture={captureBaseline}
-				onPointerDownCapture={captureBaseline}
-			>
-				<input type="hidden" {...form.register("recordId")} />
-				<input type="hidden" {...form.register("serviceCode")} />
+			<BasicContent>
+				<div
+					className="contract-form prediction-form prediction-form-layout"
+					onChangeCapture={captureBaseline}
+					onKeyDownCapture={captureBaseline}
+					onPointerDownCapture={captureBaseline}
+				>
+					<input type="hidden" {...form.register("recordId")} />
+					<input type="hidden" {...form.register("serviceCode")} />
 
-				<FixedStartSection
-					titleKey={titleKey}
-					disabled={baseFieldsDisabled}
-					autoHydrateBySelection={mode !== "edit"}
-					hideMatchedRecordAlert={mode === "edit"}
-				/>
+					<div className="prediction-form-filters">
+						<FixedStartSection
+							titleKey={titleKey}
+							disabled={baseFieldsDisabled}
+							autoHydrateBySelection={mode !== "edit"}
+							hideMatchedRecordAlert={mode === "edit"}
+						/>
+					</div>
 
-				<AnimatePresence mode="wait">
-					{module?.Fields && canShowServiceForm
+					{canShowRegisteredPredictions && serviceId && serviceCode
 						? (
-							<motion.div
-								key={module.code}
-								initial={{ opacity: 0, y: 8 }}
-								animate={{ opacity: 1, y: 0 }}
-								exit={{ opacity: 0, y: -8 }}
-								transition={{ duration: 0.2 }}
-							>
-								<module.Fields />
-							</motion.div>
+							<aside className="prediction-form-sidebar">
+								<RegisteredPredictionsPanel
+									serviceId={serviceId}
+									serviceCode={serviceCode}
+									serviceLabel={String(serviceCode).toUpperCase()}
+									companyType={typeof companyType === "string" ? companyType : null}
+									currentRecordId={recordId}
+									onSelect={selectRegisteredPrediction}
+								/>
+							</aside>
 						)
 						: null}
-				</AnimatePresence>
 
-				{canShowServiceForm
-					? (
-						<>
-							<ProseNote />
+					<main className="prediction-form-main">
 
-							<ActionSection
-								mode={mode}
-								submitting={submitting}
-								disabled={!hasMeaningfulChange}
-								onSubmit={() => triggerSubmit("submit")}
-								onSubmitAndCreateAnother={() => triggerSubmit("submit_and_create_another")}
-								onSubmitAndEdit={() => triggerSubmit("submit_and_edit")}
-								onReset={resetForm}
-								onCancel={onCancel}
-							/>
-						</>
-					)
-					: null}
-			</div>
+						<AnimatePresence mode="wait">
+							{module?.Fields && canShowServiceForm
+								? (
+									<motion.div
+										key={module.code}
+										initial={{ opacity: 0, y: 8 }}
+										animate={{ opacity: 1, y: 0 }}
+										exit={{ opacity: 0, y: -8 }}
+										transition={{ duration: 0.2 }}
+									>
+										<module.Fields />
+									</motion.div>
+								)
+								: null}
+						</AnimatePresence>
+
+						{canShowServiceForm
+							? (
+								<>
+									<ProseNote />
+									<ActionSection
+										submitting={submitting}
+										disabled={!hasMeaningfulChange}
+										onSubmit={triggerSubmit}
+									/>
+								</>
+							)
+							: null}
+					</main>
+				</div>
+			</BasicContent>
 		</FormProvider>
 	);
 }
@@ -334,20 +367,19 @@ function ProseNote() {
 	const { t } = useTranslation();
 
 	return (
-		<Card
-			bordered
-			className="rounded-xl"
-		>
-			<div>
+		<ContractFormSection title="اطلاعات تکمیلی" tone="blue">
+			<div className="contract-supplementary-control prediction-note-control">
+				<div className="contract-supplementary-control__label">{t("prediction.labels.note")}</div>
 				<RHFProTextArea<PredictionFormValues, "note">
 					name="note"
-					label={t("prediction.labels.note")}
+					label=""
+					formItemProps={{ className: "contract-supplementary-field mb-0" }}
 					textAreaProps={{
-						rows: 4,
+						autoSize: { minRows: 2, maxRows: 5 },
 						placeholder: t("prediction.placeholders.note"),
 					}}
 				/>
 			</div>
-		</Card>
+		</ContractFormSection>
 	);
 }

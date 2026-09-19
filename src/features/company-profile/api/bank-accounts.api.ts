@@ -1,4 +1,4 @@
-import type { BankAccountDto, Paginated } from "../sections/bank-accounts/model/bank-accounts.types";
+import type { BankAccountDto, BankAccountPayload, Paginated } from "../sections/bank-accounts/model/bank-accounts.types";
 import { request } from "#src/utils/request/";
 
 export interface ListBankAccountsParams {
@@ -25,15 +25,7 @@ export async function listBankAccounts(params: ListBankAccountsParams) {
 		.json<Paginated<BankAccountDto>>();
 }
 
-export async function createBankAccount(payload: {
-	service: number
-	company: number
-	bank_name: string
-	account_number: string
-	iban: string
-	card_number: string
-	account_holder_name: string
-}) {
+export async function createBankAccount(payload: BankAccountPayload) {
 	return request
 		.post("contracts/company/bank-accounts/", { json: payload })
 		.json<BankAccountDto>();
@@ -41,15 +33,7 @@ export async function createBankAccount(payload: {
 
 export async function updateBankAccount(
 	id: number,
-	payload: {
-		service: number
-		company: number
-		bank_name: string
-		account_number: string
-		iban: string
-		card_number: string
-		account_holder_name: string
-	},
+	payload: BankAccountPayload,
 ) {
 	return request
 		.put(`contracts/company/bank-accounts/${id}/`, { json: payload })

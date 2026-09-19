@@ -180,7 +180,7 @@ export function deletePrediction(service: "openapi" | "psp" | "shahkar" | "sms" 
 		openapi: `predictions/openapi/years/${id}/`,
 		psp: `predictions/psp/years/${id}/`,
 		shahkar: `predictions/shahkar/years/${id}/`,
-		sms: `prediction/sms/year/${id}/`,
+		sms: `predictions/sms/years/${id}/`,
 		traffic: `predictions/traffic/years/${id}/`,
 	};
 
@@ -325,7 +325,7 @@ export function listSmsPredictions(params: PredictionListParams) {
 
 export function fetchSmsPredictionDetail(id: number) {
 	return request
-		.get(`prediction/sms/year/${id}/`)
+		.get(`predictions/sms/years/${id}/`)
 		.json<SmsPredictionYearDto>();
 }
 
@@ -339,7 +339,7 @@ export function createSmsPrediction(payload: SmsPredictionPayload) {
 
 export function updateSmsPrediction(id: number, payload: SmsPredictionPayload) {
 	return request
-		.put(`prediction/sms/year/${id}/`, {
+		.put(`predictions/sms/years/${id}/`, {
 			json: payload,
 		})
 		.json<SmsPredictionYearDto>();

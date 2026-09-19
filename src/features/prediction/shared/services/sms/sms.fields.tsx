@@ -3,15 +3,17 @@ import type {
 	PredictionFormValues,
 	PredictionShareSectionValue,
 } from "../../model/prediction.form.types";
-import { RHFProNumber } from "#src/shared/ui/rhf-pro";
+import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
+import { RHFProNumber, RHFSegmentedSwitch } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
-import { Button, Card, Form, Segmented, Select, Typography } from "antd";
+import { Button, Form, Select, Typography } from "antd";
 import { useEffect, useMemo, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { companyTypeMatches } from "../../model/company-type.helpers";
 import { predictionCompaniesByServiceQuery } from "../../queries/prediction.queries";
+import { PredictionDashedCard } from "../../ui/form/components/PredictionDashedCard";
 import { QuarterDistributionSection } from "../../ui/form/sections/QuarterDistributionSection";
 import { createEmptySmsManualShares, SMS_CHANNEL_OPTIONS } from "./sms.config";
 
@@ -108,34 +110,24 @@ function SmsShareEditor({
 	}
 
 	return (
-		<Card
-			bordered
-			className="rounded-xl [&_.ant-pro-card-body]:flex [&_.ant-pro-card-body]:flex-col [&_.ant-pro-card-body]:gap-4"
-			title={title}
-		>
-			<Segmented
-				block
-				value={shareState.mode}
-				onChange={mode => updateShareState({ ...shareState, mode: mode === "manual" ? "manual" : "auto" })}
-				options={[
-					{ label: t("prediction.shareModes.auto"), value: "auto" },
-					{ label: t("prediction.shareModes.manual"), value: "manual" },
-				]}
-			/>
-
-			{shareState.mode === "auto"
-				? (
-					<Typography.Paragraph className="mb-0 opacity-[0.78]">
-						{t("prediction.messages.autoShareDescription")}
-					</Typography.Paragraph>
-				)
-				: (
-					<div className="flex flex-col gap-4">
+		<PredictionDashedCard title={title} className="prediction-share-editor">
+			<div className="prediction-share-editor__controls">
+				<RHFSegmentedSwitch
+					name={`${fieldPath}.mode` as any}
+					label="نحوه تخصیص"
+					options={[
+						{ label: t("prediction.shareModes.auto"), value: "auto" },
+						{ label: t("prediction.shareModes.manual"), value: "manual" },
+					]}
+					formItemProps={{ className: "mb-0" }}
+				/>
+				{shareState.mode === "manual"
+					? (
 						<Form.Item
 							label={t("prediction.labels.companySelect")}
 							validateStatus={shareError ? "error" : undefined}
 							help={shareError}
-							className="mb-0"
+							className="prediction-share-editor__company-select mb-0"
 						>
 							<Select<number[]>
 								mode="multiple"
@@ -147,18 +139,23 @@ function SmsShareEditor({
 								showSearch
 							/>
 						</Form.Item>
+					)
+					: null}
+			</div>
 
+			{shareState.mode === "auto"
+				? (
+					<Typography.Paragraph className="prediction-share-editor__hint">
+						{t("prediction.messages.autoShareDescription")}
+					</Typography.Paragraph>
+				)
+				: (
+					<div className="prediction-share-editor__companies">
 						{selectedCompanies.map(company => (
 							<div
 								key={company.value}
-								className="grid grid-cols-[auto_minmax(0,1fr)] gap-3 items-end"
+								className="prediction-share-editor__company"
 							>
-								<Button
-									aria-label={t("prediction.actions.removeCompanyShare")}
-									icon={<DeleteOutlined />}
-									onClick={() => removeCompany(company.value)}
-								/>
-
 								<RHFProNumber<PredictionFormValues, any>
 									name={`${fieldPath}.shares.${company.value}` as any}
 									label={company.label}
@@ -166,6 +163,13 @@ function SmsShareEditor({
 										placeholder: t("prediction.placeholders.percentExample"),
 										addonAfter: "%",
 									}}
+								/>
+
+								<Button
+									danger
+									aria-label={t("prediction.actions.removeCompanyShare")}
+									icon={<DeleteOutlined />}
+									onClick={() => removeCompany(company.value)}
 								/>
 							</div>
 						))}
@@ -175,7 +179,7 @@ function SmsShareEditor({
 						</Typography.Text>
 					</div>
 				)}
-		</Card>
+		</PredictionDashedCard>
 	);
 }
 
@@ -219,11 +223,7 @@ export function SmsPredictionFields() {
 		<div className="flex flex-col gap-4">
 			<QuarterDistributionSection />
 
-			<Card
-				bordered
-				className="rounded-2xl"
-				title={t("prediction.operations.sms")}
-			>
+			<ContractFormSection title={t("prediction.operations.sms")} tone="purple">
 				<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
 					<RHFProNumber<PredictionFormValues, any>
 						name={sf("valueYear") as any}
@@ -261,19 +261,15 @@ export function SmsPredictionFields() {
 						enableWordsTooltip
 					/>
 				</div>
-			</Card>
+			</ContractFormSection>
 
-			<Card
-				bordered
-				className="rounded-2xl"
-				title={t("prediction.sections.companyShares")}
-			>
+			<ContractFormSection title={t("prediction.sections.companyShares")} tone="blue">
 				<div className="flex flex-col gap-4">
 					<Typography.Paragraph className="mb-0 opacity-80">
 						{t("prediction.messages.companySharesDescription")}
 					</Typography.Paragraph>
 
-					<div className="prediction-share-editor-grid grid gap-4 xl:grid-cols-3">
+					<div className="prediction-share-editor-grid grid gap-3">
 						<SmsShareEditor
 							companyOptions={companyOptions}
 							fieldName="value"
@@ -291,11 +287,7 @@ export function SmsPredictionFields() {
 						/>
 					</div>
 
-					<Card
-						bordered
-						className="rounded-xl [&_.ant-pro-card-body]:flex [&_.ant-pro-card-body]:flex-col [&_.ant-pro-card-body]:gap-4"
-						title={t("prediction.sections.channels", { defaultValue: "کانال‌ها" })}
-					>
+					<PredictionDashedCard title={t("prediction.sections.channels", { defaultValue: "کانال‌ها" })}>
 						<div className="grid gap-4 xl:grid-cols-3">
 							{SMS_CHANNEL_OPTIONS.map(channel => (
 								<RHFProNumber<PredictionFormValues, any>
@@ -316,9 +308,9 @@ export function SmsPredictionFields() {
 								total: channelTotal,
 							})}
 						</Typography.Text>
-					</Card>
+					</PredictionDashedCard>
 				</div>
-			</Card>
+			</ContractFormSection>
 		</div>
 	);
 }

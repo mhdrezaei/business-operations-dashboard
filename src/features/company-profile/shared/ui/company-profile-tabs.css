@@ -1,3 +1,12 @@
+.company-profile-tabs-container {
+	/* Avoid scroll anchoring to a panel that disappears on a tab change. */
+	overflow-anchor: none;
+}
+
+.company-profile-tabs {
+	min-height: inherit;
+}
+
 .company-profile-tabs > .ant-tabs-nav {
 	position: sticky;
 	z-index: 8;

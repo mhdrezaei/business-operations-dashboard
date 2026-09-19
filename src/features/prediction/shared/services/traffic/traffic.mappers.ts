@@ -159,6 +159,10 @@ export function dtoToTrafficPredictionForm(record: TrafficPredictionYearDto): Pa
 	const normalizedLocations = (record.locations ?? [])
 		.map(location => normalizeLocation(location))
 		.filter((location): location is TrafficPredictionLocationFormValue => location != null);
+	const locations = empty.locations.map(defaultLocation => (
+		normalizedLocations.find(location => location.location === defaultLocation.location)
+		?? defaultLocation
+	));
 
 	return {
 		recordId: record.id,
@@ -171,7 +175,7 @@ export function dtoToTrafficPredictionForm(record: TrafficPredictionYearDto): Pa
 			q2Percent: toNullableNumber(record.q2_percent),
 			q3Percent: toNullableNumber(record.q3_percent),
 			q4Percent: toNullableNumber(record.q4_percent),
-			locations: normalizedLocations.length > 0 ? normalizedLocations : empty.locations,
+			locations,
 			manualShares: normalizeManualShares(record.manual_shares),
 		} satisfies TrafficPredictionServiceFields,
 	};

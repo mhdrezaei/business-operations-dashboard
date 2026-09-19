@@ -5,7 +5,7 @@ import { ELEMENT_ID_MAIN_CONTENT } from "#src/layout/constants";
 import { useAccessStore, usePreferencesStore, useTabsStore } from "#src/store";
 
 import KeepAlive, { useKeepAliveRef } from "keepalive-for-react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 
 import { useLocation, useOutlet } from "react-router";
 
@@ -23,6 +23,7 @@ export default function LayoutContent() {
 	const transitionEnable = usePreferencesStore(state => state.transitionEnable);
 	const enableFooter = usePreferencesStore(state => state.enableFooter);
 	const fixedFooter = usePreferencesStore(state => state.fixedFooter);
+	const scrollableRef = useRef<HTMLElement>(null);
 
 	/**
 	 * to distinguish different pages to cache
@@ -30,6 +31,15 @@ export default function LayoutContent() {
 	const cacheKey = useMemo(() => {
 		return pathname + search;
 	}, [pathname, search]);
+
+	useLayoutEffect(() => {
+		const scroller = scrollableRef.current;
+		if (!scroller)
+			return;
+
+		scroller.scrollTop = 0;
+		scroller.scrollLeft = 0;
+	}, [cacheKey]);
 
 	/**
 	 * هنگام استفاده از بستن تب فعلي/راست/چپ/ساير/همه، بايد کش اين تب پاک شود
@@ -89,7 +99,7 @@ export default function LayoutContent() {
 			ref={contentElement}
 			className="relative mx-3 flex-grow overflow-y-auto overflow-x-hidden rounded-md bg-transparent sm:mx-4 lg:mx-6"
 		>
-			<Scrollbar>
+			<Scrollbar ref={scrollableRef}>
 				<GlobalSpin>
 					<div className="flex flex-col min-h-full">
 						<div className="flex-1">

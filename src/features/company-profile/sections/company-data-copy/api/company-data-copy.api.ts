@@ -199,6 +199,7 @@ async function copyBankAccounts(source: CompanyDataSnapshot, destination: Compan
 			iban: account.iban,
 			card_number: account.card_number,
 			account_holder_name: account.account_holder_name,
+			contract_order: account.contract_order ?? null,
 		});
 	}
 }

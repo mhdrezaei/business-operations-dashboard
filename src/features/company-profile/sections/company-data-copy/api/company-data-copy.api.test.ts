@@ -118,6 +118,7 @@ describe("copyCompanyData", () => {
 			iban: "IR100",
 			card_number: "1",
 			account_holder_name: "مبدأ",
+			contract_order: null,
 		});
 	});
 

@@ -8,7 +8,7 @@
 	},
 	"actions": {
 		"clearForm": "Clear Form",
-		"submit": "Submit Prediction",
+		"submit": "Submit",
 		"submitAndCreateAnother": "Submit and Create Another",
 		"submitAndEdit": "Submit and Edit",
 		"removeCompanyShare": "Remove Company",
@@ -62,6 +62,8 @@
 	"metrics": {
 		"value": "Value",
 		"valueReceive": "Received Value",
+		"trafficSentVolume": "Sent Volume",
+		"trafficReceivedVolume": "Received Volume",
 		"income": "Income",
 		"expense": "Expense"
 	},

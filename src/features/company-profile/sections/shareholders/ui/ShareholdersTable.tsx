@@ -75,7 +75,6 @@ export default function ShareholdersTable({ serviceId, companyId }: Props) {
 	return (
 		<BasicContent className="h-full">
 			<BasicTable<ShareholderDto>
-				adaptive
 				rowKey="id"
 				columns={columns}
 				actionRef={actionRef}

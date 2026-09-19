@@ -1,7 +1,7 @@
 import type { ContractServicePath } from "../../../api/contracts.api";
+import { RecordListPanel } from "#src/shared/ui/record-list-panel";
 import { DownOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
-import { Alert, Card, Collapse, Empty, Spin } from "antd";
 import { useMemo } from "react";
 import { fetchCompanyContracts } from "../../../api/contracts.api";
 
@@ -69,9 +69,6 @@ export function CompanyContractsPanel({ companyId, companyType, currentContractI
 		return {
 			key: String(contract.id),
 			showArrow: false,
-			style: {
-				borderBottom: `1px solid var(${isCurrent ? "--ant-color-primary" : "--ant-color-border"})`,
-			},
 			label: (
 				<div className="flex min-w-0 items-center justify-between gap-3">
 					<span className="max-w-full truncate rounded-lg bg-primaryBgHover px-2.5 py-1 font-medium text-text">
@@ -104,39 +101,20 @@ export function CompanyContractsPanel({ companyId, companyType, currentContractI
 	});
 
 	return (
-		<Card
-			size="small"
+		<RecordListPanel
 			title="قراردادهای شرکت"
-			className="w-full !rounded-2xl !bg-bgContainer [&_.ant-card-body]:px-3 [&_.ant-card-body]:pb-4 [&_.ant-card-body]:pt-1 [&_.ant-card-head-title]:text-base [&_.ant-card-head-title]:font-semibold [&_.ant-card-head]:min-h-0 [&_.ant-card-head]:border-0 [&_.ant-card-head]:px-4 [&_.ant-card-head]:pb-2 [&_.ant-card-head]:pt-4"
-		>
-			{!service || !companyId
-				? <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="ابتدا سرویس و شرکت را انتخاب کنید" />
-				: contractsQuery.isLoading || contractsQuery.isFetching
-					? (
-						<div className="flex min-h-32 items-center justify-center">
-							<Spin />
-						</div>
-					)
-					: contractsQuery.isError
-						? <Alert type="error" showIcon message="دریافت قراردادهای شرکت ناموفق بود" />
-						: items.length === 0
-							? <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="قرارداد دیگری یافت نشد" />
-							: (
-								<Collapse
-									accordion
-									items={items}
-									activeKey={String(currentContractId)}
-									className="!border-0 !bg-transparent [&_.ant-collapse-content-box]:!px-4 [&_.ant-collapse-content-box]:!pb-4 [&_.ant-collapse-content-box]:!pt-0 [&_.ant-collapse-content]:!border-0 [&_.ant-collapse-content]:!bg-transparent [&_.ant-collapse-header]:!px-4 [&_.ant-collapse-header]:!py-4 [&_.ant-collapse-item.ant-collapse-item-active]:!border-primary [&_.ant-collapse-item]:mb-3 [&_.ant-collapse-item]:overflow-hidden [&_.ant-collapse-item]:!rounded-2xl [&_.ant-collapse-item]:border [&_.ant-collapse-item]:border-solid [&_.ant-collapse-item]:!border-[var(--ant-color-border)] [&_.ant-collapse-item]:!bg-bgElevated [&_.ant-collapse-item:last-child]:mb-0"
-									onChange={(key) => {
-										const nextKey = Array.isArray(key) ? key[0] : key;
-										if (!nextKey)
-											return;
-										const selectedContract = contractByKey.get(String(nextKey));
-										if (selectedContract && selectedContract.id !== currentContractId)
-											onSelect(selectedContract);
-									}}
-								/>
-							)}
-		</Card>
+			items={items}
+			activeKey={String(currentContractId)}
+			loading={contractsQuery.isLoading || contractsQuery.isFetching}
+			error={contractsQuery.isError}
+			errorMessage="دریافت قراردادهای شرکت ناموفق بود"
+			emptyDescription="قرارداد دیگری یافت نشد"
+			unavailableDescription={!service || !companyId ? "ابتدا سرویس و شرکت را انتخاب کنید" : undefined}
+			onSelect={(key) => {
+				const selectedContract = contractByKey.get(key);
+				if (selectedContract && selectedContract.id !== currentContractId)
+					onSelect(selectedContract);
+			}}
+		/>
 	);
 }

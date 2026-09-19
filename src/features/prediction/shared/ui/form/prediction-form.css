@@ -1,0 +1,216 @@
+.prediction-form {
+	width: 100%;
+}
+
+.prediction-form-layout {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+	align-items: start;
+	gap: var(--ant-marginMD, 16px);
+}
+
+.prediction-form-main {
+	grid-column: 1;
+	grid-row: 2;
+	display: grid;
+	min-width: 0;
+	gap: var(--ant-marginMD, 16px);
+}
+
+.prediction-form-filters {
+	grid-column: 1;
+	grid-row: 1;
+	min-width: 0;
+}
+
+.prediction-form-sidebar {
+	position: sticky;
+	top: 0;
+	grid-column: 2;
+	grid-row: 1 / span 2;
+	min-width: 0;
+}
+
+.prediction-form-section-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: var(--ant-marginMD, 16px);
+}
+
+.prediction-form-section-grid--four {
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.prediction-dashed-card {
+	position: relative;
+	overflow: hidden;
+	min-width: 0;
+	border-radius: calc(var(--contract-section-body-padding, 24px) + var(--contract-section-tag-radius, 4px));
+	background: var(--contract-section-nested-bg);
+}
+
+.prediction-dashed-card__content {
+	position: relative;
+	z-index: 1;
+	padding: var(--ant-paddingMD, 16px);
+}
+
+.prediction-dashed-card__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--ant-marginSM, 12px);
+	margin-block-end: var(--ant-marginMD, 16px);
+}
+
+.prediction-dashed-card__header strong {
+	font-weight: 700;
+}
+
+.prediction-share-editor > .prediction-dashed-card__content {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--ant-marginMD, 16px);
+	padding: var(--ant-paddingMD, 16px) var(--ant-paddingLG, 24px);
+}
+
+.prediction-share-editor > .prediction-dashed-card__content > .prediction-dashed-card__header {
+	margin-block-end: 0;
+}
+
+.prediction-share-editor > .prediction-dashed-card__content > .prediction-dashed-card__header strong {
+	display: inline-flex;
+	min-height: 32px;
+	align-items: center;
+	padding-inline: var(--ant-paddingSM, 12px);
+	border-radius: var(--contract-section-tag-radius, 6px);
+	background: var(--contract-section-accent-bg, var(--ant-colorPrimaryBg));
+	color: var(--contract-section-accent-color, var(--ant-colorPrimaryText));
+}
+
+.prediction-share-editor__controls {
+	display: grid;
+	grid-template-columns: minmax(260px, 0.8fr) minmax(320px, 1.2fr);
+	align-items: start;
+	gap: var(--ant-marginMD, 16px);
+}
+
+.prediction-share-editor__controls > .ant-form-item {
+	margin-block-end: 0;
+}
+
+.contract-form .prediction-share-editor__controls > .ant-form-item > .ant-form-item-row {
+	display: block;
+}
+
+.contract-form .prediction-share-editor__controls > .ant-form-item > .ant-form-item-row > .ant-form-item-label {
+	display: block;
+	max-width: none;
+	padding: 0 0 var(--contract-section-field-label-gap, var(--ant-marginXS, 8px));
+	text-align: start;
+}
+
+.contract-form .prediction-share-editor__controls > .ant-form-item > .ant-form-item-row > .ant-form-item-control {
+	width: 100%;
+	max-width: none;
+	min-width: 0;
+}
+
+.prediction-share-editor__companies {
+	min-width: 0;
+}
+
+.prediction-share-editor__companies {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	align-items: end;
+	gap: var(--ant-marginSM, 12px);
+	padding-block-start: var(--ant-paddingXS, 8px);
+	border-block-start: var(--ant-lineWidth, 1px) solid var(--ant-colorSplit);
+}
+
+.prediction-share-editor__company {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	align-items: end;
+	gap: var(--ant-marginSM, 12px);
+	min-width: 0;
+	padding: var(--ant-paddingSM, 12px);
+	border-radius: var(--ant-borderRadius, 8px);
+	background: var(--ant-colorFillAlter);
+}
+
+.prediction-share-editor__company > .ant-form-item {
+	min-width: 0;
+	margin-block-end: 0;
+}
+
+.prediction-share-editor__company > .ant-btn {
+	margin-block-end: 0;
+}
+
+.prediction-share-editor__companies > .ant-typography:last-child {
+	grid-column: 1 / -1;
+	padding: var(--ant-paddingXS, 8px) var(--ant-paddingSM, 12px);
+	border-radius: var(--ant-borderRadius, 8px);
+	background: var(--ant-colorFillAlter);
+}
+
+.prediction-share-editor__hint.ant-typography {
+	margin: 0;
+	padding: var(--ant-paddingSM, 12px) var(--ant-paddingMD, 16px);
+	border-radius: var(--ant-borderRadius, 8px);
+	background: var(--ant-colorFillAlter);
+	color: var(--ant-colorTextSecondary);
+}
+
+.prediction-share-editor__company-select .ant-select-selection-overflow {
+	max-height: 72px;
+	overflow-y: auto;
+	overflow-x: hidden;
+	scrollbar-width: thin;
+}
+
+@media (max-width: 1200px) {
+	.prediction-form-layout {
+		grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
+	}
+
+	.prediction-form-section-grid--four {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 900px) {
+	.prediction-form-layout {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.prediction-form-main,
+	.prediction-form-filters,
+	.prediction-form-sidebar {
+		position: static;
+		grid-column: 1;
+		grid-row: auto;
+	}
+
+	.prediction-share-editor > .prediction-dashed-card__content {
+		grid-template-columns: minmax(0, 1fr);
+		padding: var(--ant-paddingMD, 16px);
+	}
+
+	.prediction-share-editor__controls {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.prediction-share-editor__companies {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+@media (max-width: 640px) {
+	.prediction-form-section-grid,
+	.prediction-form-section-grid--four {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
