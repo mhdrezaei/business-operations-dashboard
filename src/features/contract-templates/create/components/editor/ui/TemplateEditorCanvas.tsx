@@ -185,15 +185,6 @@ const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasPro
 		},
 	}));
 
-	const handleCanvasClick = (e: React.MouseEvent) => {
-		if (!editor)
-			return;
-		const target = e.target as HTMLElement;
-		if (!target.closest(".ProseMirror")) {
-			editor.chain().focus("end").run();
-		}
-	};
-
 	const pager = (
 		<div
 			className="flex flex-wrap items-center justify-center gap-3 p-3 flex-shrink-0 z-10 shadow-sm border-b"
@@ -424,7 +415,6 @@ const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasPro
 			{pager}
 			<div
 				ref={scrollRef}
-				onClick={handleCanvasClick}
 				className="flex-1 w-full flex justify-center py-8 overflow-y-auto overflow-x-hidden bg-slate-100 dark:bg-slate-900"
 			>
 				<div
