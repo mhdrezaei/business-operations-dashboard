@@ -395,21 +395,7 @@ const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasPro
           width: 4px; background: #6366f1; pointer-events: none; z-index: 20;
         }
 
-        @media print {
-          .ms-word-editor .ProseMirror hr,
-          .ms-word-editor .ProseMirror .page-break {
-            display: block;
-            height: 0;
-            margin: 0;
-            border: none;
-            page-break-after: always;
-            break-after: page;
-          }
-          .ms-word-editor .ProseMirror hr::after,
-          .ms-word-editor .ProseMirror .page-break::after {
-            display: none;
-          }
-        }
+
       `}
 			</style>
 			{pager}

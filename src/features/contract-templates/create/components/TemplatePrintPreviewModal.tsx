@@ -107,6 +107,38 @@ export default function TemplatePrintPreviewModal({ isOpen, onClose, editor }: T
 		.tiptap-content h1 { font-size: 22px; font-weight: bold; margin-top: 1em; margin-bottom: 0.5em; }
 		.tiptap-content h2 { font-size: 18px; font-weight: bold; margin-top: 0.8em; margin-bottom: 0.4em; }
 		.tiptap-content h3 { font-size: 16px; font-weight: bold; margin-top: 0.6em; margin-bottom: 0.3em; }
+		
+		.tiptap-content hr,
+		.tiptap-content .page-break {
+			display: block;
+			border: none;
+			height: 36px;
+			margin: 36px -72px 100px -72px;
+			background: #e2e8f0;
+			border-top: 1px solid #cbd5e1;
+			border-bottom: 1px solid #cbd5e1;
+			position: relative;
+			clear: both;
+			cursor: default;
+			user-select: none;
+		}
+		.tiptap-content hr::after,
+		.tiptap-content .page-break::after {
+			content: "━━━ شکست صفحه (صفحه بعد) ━━━";
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			font-size: 11px;
+			font-weight: 500;
+			color: #64748b;
+			background: #ffffff;
+			padding: 2px 16px;
+			border-radius: 9999px;
+			border: 1px dashed #cbd5e1;
+			box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+			white-space: nowrap;
+		}
 	`;
 
 	// Split document into physical pages for beautiful preview
