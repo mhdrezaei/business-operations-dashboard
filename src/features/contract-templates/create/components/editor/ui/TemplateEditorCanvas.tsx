@@ -181,6 +181,36 @@ const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasPro
 		);
 	};
 
+	const renderPageHighlight = () => {
+		if (pageIndex < 0 || pageIndex >= pageCount)
+			return null;
+
+		const top = headerOffsets[pageIndex] || 0;
+		const nextTop = headerOffsets[pageIndex + 1];
+
+		const style: React.CSSProperties = {
+			position: "absolute",
+			left: 0,
+			right: 0,
+			top: `${top}px`,
+			pointerEvents: "none",
+			zIndex: 10,
+			// Outer glow for dark background, inner/outer solid border for clarity, subtle inner shadow
+			boxShadow: `0 0 0 2px ${token.colorPrimary}, 0 0 30px 5px ${token.colorPrimary}40, inset 0 0 0 2px ${token.colorPrimary}, inset 0 0 30px ${token.colorPrimary}15`,
+			borderRadius: "2px",
+			transition: "top 0.3s ease, height 0.3s ease, bottom 0.3s ease",
+		};
+
+		if (nextTop !== undefined) {
+			style.height = `${nextTop - top}px`;
+		}
+		else {
+			style.bottom = 0;
+		}
+
+		return <div style={style} />;
+	};
+
 	return (
 		<div className="flex flex-col h-full w-full relative" style={{ backgroundColor: token.colorBgLayout }}>
 			<style>
@@ -316,6 +346,7 @@ const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasPro
 					className="ms-word-editor relative shadow-2xl rounded-sm bg-white"
 					style={{ width: `${PAGE_WIDTH_PX}px`, minHeight: `${PAGE_HEIGHT_PX}px`, boxSizing: "border-box", backgroundColor: "#ffffff" }}
 				>
+					{renderPageHighlight()}
 					{fontsReady
 						? (
 							headerOffsets.map((y, idx) => (
