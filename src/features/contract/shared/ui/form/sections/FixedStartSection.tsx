@@ -1282,7 +1282,11 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 							formItemProps={compactFormItemStyle}
 							loading={services.isLoading}
 							options={serviceOptions}
-							onValueChange={() => setCollocationStep(0)}
+							// ارور شرکت یافت نشد با این خط حل شد
+							onValueChange={() => {
+								setValue("companyId", null, { shouldDirty: true, shouldValidate: false });
+								setCollocationStep(0);
+							}}
 							selectProps={{
 								"allowClear": true,
 								"placeholder": "سرویس را انتخاب کنید",
