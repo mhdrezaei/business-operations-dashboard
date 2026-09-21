@@ -3,9 +3,7 @@ import { message } from "antd";
 import JSZip from "jszip";
 import mammoth from "mammoth";
 
-function collectTextNodes(el: Element, marks: any[] = []): any[] {
-	const nodes: any[] = [];
-
+function collectTextNodes(el: Element, marks: any[] = [], outNodes: any[] = []): any[] {
 	if (el.nodeName === "STRONG" || el.nodeName === "B") {
 		marks = [...marks, { type: "bold" }];
 	}
@@ -43,7 +41,7 @@ function collectTextNodes(el: Element, marks: any[] = []): any[] {
 				const node: any = { type: "text", text: child.textContent };
 				if (marks.length > 0)
 					node.marks = marks;
-				nodes.push(node);
+				outNodes.push(node);
 			}
 		}
 		else if (child.nodeType === Node.ELEMENT_NODE) {
@@ -77,11 +75,11 @@ function collectTextNodes(el: Element, marks: any[] = []): any[] {
 					childMarks.push({ type: "highlight", attrs: { color: style.backgroundColor } });
 				}
 			}
-			nodes.push(...collectTextNodes(childEl, childMarks));
+			collectTextNodes(childEl, childMarks, outNodes);
 		}
 	});
 
-	return nodes;
+	return outNodes;
 }
 
 function cellToPmNode(cell: HTMLElement, cellType: "tableCell" | "tableHeader"): any {
@@ -309,7 +307,7 @@ export async function importWordToEditor(
 	file: File,
 	editor: Editor,
 	onComplete?: () => void,
-	onMissingFonts?: (fontNames: string[]) => Promise<void>,
+	onMissingFonts?: (fontNames: string[]) => Promise<Record<string, string> | void>,
 ) {
 	message.loading({ content: "در حال بارگذاری...", key: "import-word", duration: 0 });
 	await new Promise(resolve => setTimeout(resolve, 100));
@@ -329,6 +327,7 @@ export async function importWordToEditor(
 		let dominantFont: string | null = null;
 		let fontToApply: string | null = null;
 		const fontCounts: Record<string, number> = {};
+		let fontMapping: Record<string, string> = {};
 
 		const sizeSet = new Set<string>();
 		const colorSet = new Set<string>();
@@ -412,11 +411,17 @@ export async function importWordToEditor(
 
 			if (sortedFonts.length > 0 && onMissingFonts) {
 				const fontNames = sortedFonts.map(f => f[0]);
-				await onMissingFonts(fontNames);
+				const result = await onMissingFonts(fontNames);
+				if (result) {
+					fontMapping = result;
+				}
 			}
 			if (dominantFont) {
-				fontToApply = dominantFont;
+				fontToApply = fontMapping[dominantFont] || dominantFont;
 			}
+
+			// Yield before table parsing
+			await new Promise(resolve => setTimeout(resolve, 50));
 
 			const tblBlocks = xmlStr.split("</w:tbl>");
 			for (const tbl of tblBlocks) {
@@ -447,6 +452,9 @@ export async function importWordToEditor(
 				if (rowProps.length > 0)
 					tableProperties.push(rowProps);
 			}
+
+			// Yield before paragraph parsing
+			await new Promise(resolve => setTimeout(resolve, 50));
 
 			const pTags = xmlStr.split("</w:p>");
 			for (const p of pTags) {
@@ -491,6 +499,9 @@ export async function importWordToEditor(
 			}
 		}
 
+		// Yield before Mammoth conversion
+		await new Promise(resolve => setTimeout(resolve, 50));
+
 		const styleMap: string[] = [
 			"u => u",
 			"strike => s",
@@ -522,46 +533,49 @@ export async function importWordToEditor(
 		});
 		Object.keys(fontCounts).forEach((font) => {
 			const cleanFont = font.replace(/\s+/g, "_");
-			styleMap.push(`r[style-name='fontFamily-${cleanFont}'] => span.font-family-${cleanFont}`);
+			const mappedFont = fontMapping[font] || font;
+			const cleanMappedFont = mappedFont.replace(/\s+/g, "_");
+			styleMap.push(`r[style-name='fontFamily-${cleanFont}'] => span.font-family-${cleanMappedFont}`);
 		});
 
 		function transformElement(el: any): any {
-			const newEl = { ...el };
-			if (el.children)
-				newEl.children = el.children.map(transformElement);
+			if (el.children) {
+				for (let i = 0; i < el.children.length; i++) {
+					el.children[i] = transformElement(el.children[i]);
+				}
+			}
 			if (el.type === "break" && el.breakType === "page")
 				return { type: "text", value: "[[PAGE_BREAK]]" };
 			if (el.type === "run") {
-				let currentEl = { ...el, children: el.children ? el.children.map(transformElement) : [] };
 				if (el.fontSize) {
 					const szStr = el.fontSize.toString().replace(".", "_");
-					currentEl = { type: "run", styleName: `fontSize-${szStr}`, children: [currentEl] };
+					el = { type: "run", styleName: `fontSize-${szStr}`, children: [el] };
 				}
 				if (el.font) {
 					const cleanFont = el.font.replace(/\s+/g, "_");
-					currentEl = { type: "run", styleName: `fontFamily-${cleanFont}`, children: [currentEl] };
+					el = { type: "run", styleName: `fontFamily-${cleanFont}`, children: [el] };
 				}
 				if (el.color) {
-					currentEl = { type: "run", styleName: `color-${el.color}`, children: [currentEl] };
+					el = { type: "run", styleName: `color-${el.color}`, children: [el] };
 				}
 				if (el.highlight) {
-					currentEl = { type: "run", styleName: `highlight-${el.highlight}`, children: [currentEl] };
+					el = { type: "run", styleName: `highlight-${el.highlight}`, children: [el] };
 				}
-				return currentEl;
+				return el;
 			}
 			if (el.type === "paragraph") {
 				const align = el.alignment;
 				const name = (el.styleName || el.styleId || "").toLowerCase();
 				if (name.includes("heading 1") || name.includes("تیتر 1") || name === "h1")
-					newEl.styleName = align ? `h1-align-${align}` : "Heading 1";
+					el.styleName = align ? `h1-align-${align}` : "Heading 1";
 				else if (name.includes("heading 2") || name.includes("تیتر 2") || name === "h2")
-					newEl.styleName = align ? `h2-align-${align}` : "Heading 2";
+					el.styleName = align ? `h2-align-${align}` : "Heading 2";
 				else if (name.includes("heading 3") || name.includes("تیتر 3") || name === "h3")
-					newEl.styleName = align ? `h3-align-${align}` : "Heading 3";
+					el.styleName = align ? `h3-align-${align}` : "Heading 3";
 				else if (align)
-					newEl.styleName = `align-${align}`;
+					el.styleName = `align-${align}`;
 			}
-			return newEl;
+			return el;
 		}
 
 		const result = await mammoth.convertToHtml(
@@ -581,6 +595,9 @@ export async function importWordToEditor(
 
 		if (!result?.value)
 			throw new Error("EMPTY_FILE");
+
+		// Yield before DOM parsing and TipTap mapping
+		await new Promise(resolve => setTimeout(resolve, 50));
 
 		const tempParser = new DOMParser();
 		const tempDoc = tempParser.parseFromString(result.value, "text/html");
@@ -638,7 +655,14 @@ export async function importWordToEditor(
 			}
 		});
 
+		// Yield before final TipTap setContent (which can be very heavy)
+		await new Promise(resolve => setTimeout(resolve, 50));
+
 		const pmDoc = htmlToPmDoc(tempDoc.body.innerHTML);
+
+		// Yield again to allow UI to breathe before setting content
+		await new Promise(resolve => setTimeout(resolve, 50));
+
 		editor.commands.setContent(pmDoc, { emitUpdate: true });
 		if (fontToApply) {
 			setTimeout(() => {

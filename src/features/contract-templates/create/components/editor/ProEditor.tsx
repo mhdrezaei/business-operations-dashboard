@@ -26,7 +26,16 @@ export default function ProEditor({ editor, onChange }: ProEditorProps) {
 			</div>
 
 			<div className="flex-1 p-2">
-				<TemplateEditorCanvas editor={editor} onPageChange={(current, total) => setPageData({ current, total })} />
+				<TemplateEditorCanvas
+					editor={editor}
+					onPageChange={(current, total) => {
+						setPageData((prev) => {
+							if (prev.current === current && prev.total === total)
+								return prev;
+							return { current, total };
+						});
+					}}
+				/>
 			</div>
 		</div>
 	);

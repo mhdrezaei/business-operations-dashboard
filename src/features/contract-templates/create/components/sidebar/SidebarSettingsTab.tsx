@@ -1,7 +1,7 @@
 import type { Editor } from "@tiptap/react";
 import { DeleteOutlined, FileWordOutlined, UploadOutlined } from "@ant-design/icons";
-import { Button, message, Modal, Progress, theme, Typography } from "antd";
-import React, { useRef, useState } from "react";
+import { Button, message, Modal, Progress, Select, theme, Typography } from "antd";
+import React, { useMemo, useRef, useState } from "react";
 import { TemplateCreateApi } from "../../../api/api";
 import { useTemplateStore } from "../../../store/useTemplateStore";
 import HeaderEditor from "../editor/ui/HeaderEditor";
@@ -18,16 +18,32 @@ export default function SidebarSettingsTab({ editor }: { editor: Editor | null }
 	const [isUploadingFont, setIsUploadingFont] = useState(false);
 	const [isImportingWord, setIsImportingWord] = useState(false);
 
-	const missingFontsResolveRef = useRef<(() => void) | null>(null);
+	const missingFontsResolveRef = useRef<((mapping?: Record<string, string>) => void) | null>(null);
 	const [missingFontState, setMissingFontState] = useState<{
 		visible: boolean
 		queue: string[]
 		currentIndex: number
 		isUploading: boolean
 		progress: number
+		mapping: Record<string, string>
+		showMappingUi: boolean
+		selectedMappingFont?: string
 	} | null>(null);
 
 	const { customFonts, headerData, setHeaderData, fetchFonts } = useTemplateStore();
+
+	const fontFamilyOptions = useMemo(() => [
+		{ value: "Vazirmatn", label: <span style={{ fontFamily: "Vazirmatn" }}>وزیرمتن (پیش‌فرض)</span> },
+		{ value: "Tahoma", label: <span style={{ fontFamily: "Tahoma" }}>تاهوما</span> },
+		{ value: "B Nazanin", label: <span style={{ fontFamily: "B Nazanin" }}>بی نازنین</span> },
+		...(customFonts || []).map((font) => {
+			const familyName = font.family || font.name;
+			return {
+				value: familyName,
+				label: <span style={{ fontFamily: familyName }}>{font.name}</span>,
+			};
+		}),
+	], [customFonts]);
 
 	const handleFontUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
 		const file = event.target.files?.[0];
@@ -62,19 +78,24 @@ export default function SidebarSettingsTab({ editor }: { editor: Editor | null }
 		}
 	};
 
-	const handleCancelMissingFont = () => {
+	const advanceMissingFont = (newMapping?: Record<string, string>) => {
 		if (!missingFontState)
 			return;
+		const currentMapping = newMapping || missingFontState.mapping;
 		if (missingFontState.currentIndex + 1 < missingFontState.queue.length) {
-			setMissingFontState(prev => prev ? { ...prev, currentIndex: prev.currentIndex + 1, isUploading: false, progress: 0 } : null);
+			setMissingFontState(prev => prev ? { ...prev, currentIndex: prev.currentIndex + 1, isUploading: false, progress: 0, mapping: currentMapping, showMappingUi: false, selectedMappingFont: undefined } : null);
 		}
 		else {
 			if (missingFontsResolveRef.current) {
-				missingFontsResolveRef.current();
+				missingFontsResolveRef.current(currentMapping);
 				missingFontsResolveRef.current = null;
 			}
 			setMissingFontState(null);
 		}
+	};
+
+	const handleCancelMissingFont = () => {
+		advanceMissingFont();
 	};
 
 	const handleMissingFontUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -121,16 +142,7 @@ export default function SidebarSettingsTab({ editor }: { editor: Editor | null }
 			message.success("فونت با موفقیت آپلود شد.");
 			await fetchFonts();
 
-			if (missingFontState.currentIndex + 1 < missingFontState.queue.length) {
-				setMissingFontState(prev => prev ? { ...prev, currentIndex: prev.currentIndex + 1, isUploading: false, progress: 0 } : null);
-			}
-			else {
-				if (missingFontsResolveRef.current) {
-					missingFontsResolveRef.current();
-					missingFontsResolveRef.current = null;
-				}
-				setMissingFontState(null);
-			}
+			advanceMissingFont();
 		}
 		catch (error: any) {
 			if (typeof progressInterval !== "undefined")
@@ -164,7 +176,7 @@ export default function SidebarSettingsTab({ editor }: { editor: Editor | null }
 
 				message.destroy("import-word");
 
-				return new Promise<void>((resolve) => {
+				return new Promise<Record<string, string> | void>((resolve) => {
 					missingFontsResolveRef.current = resolve;
 					setMissingFontState({
 						visible: true,
@@ -172,6 +184,8 @@ export default function SidebarSettingsTab({ editor }: { editor: Editor | null }
 						currentIndex: 0,
 						isUploading: false,
 						progress: 0,
+						mapping: {},
+						showMappingUi: false,
 					});
 				});
 			});
@@ -270,7 +284,7 @@ export default function SidebarSettingsTab({ editor }: { editor: Editor | null }
 									{missingFontState.queue.length}
 									)
 								</h3>
-								<p className="mb-8 leading-relaxed px-4 opacity-90 text-sm">
+								<p className="mb-6 leading-relaxed px-4 opacity-90 text-sm">
 									فونت
 									<span
 										className="px-2 py-1 rounded-md mx-2 font-mono font-bold"
@@ -280,26 +294,62 @@ export default function SidebarSettingsTab({ editor }: { editor: Editor | null }
 									</span>
 									در این فایل ورد استفاده شده اما در پنل نصب نیست.
 									<br />
-									برای حفظ یکپارچگی ظاهری، پیشنهاد می‌کنیم آن را آپلود کنید.
+									برای حفظ یکپارچگی ظاهری، پیشنهاد می‌کنیم آن را آپلود کنید و یا از فونت‌های موجود جایگزین کنید.
 								</p>
-								<div className="flex w-full gap-3 mt-2">
-									<Button
-										className="flex-1 h-11 border-gray-400"
-										onClick={handleCancelMissingFont}
-									>
-										نادیده گرفتن و فونت بعدی
-									</Button>
-									<Button
-										type="primary"
-										className="flex-1 h-11 shadow-md"
-										icon={<UploadOutlined />}
-										onClick={() => missingFontInputRef.current?.click()}
-									>
-										آپلود فایل فونت (
-										{missingFontState.queue[missingFontState.currentIndex]}
-										)
-									</Button>
-								</div>
+
+								{missingFontState.showMappingUi
+									? (
+										<div className="flex flex-col w-full px-6 mb-2">
+											<Text className="mb-2 text-right">جایگزینی با فونت موجود:</Text>
+											<div className="flex gap-2">
+												<Select
+													className="flex-1 text-right"
+													placeholder="انتخاب فونت..."
+													options={fontFamilyOptions}
+													value={missingFontState.selectedMappingFont}
+													onChange={val => setMissingFontState(prev => prev ? { ...prev, selectedMappingFont: val } : null)}
+												/>
+												<Button
+													type="primary"
+													disabled={!missingFontState.selectedMappingFont}
+													onClick={() => {
+														const currentFont = missingFontState.queue[missingFontState.currentIndex];
+														const newMapping = { ...missingFontState.mapping, [currentFont]: missingFontState.selectedMappingFont! };
+														advanceMissingFont(newMapping);
+													}}
+												>
+													تایید و جایگزینی
+												</Button>
+											</div>
+											<Button type="link" className="mt-2 self-end" onClick={() => setMissingFontState(prev => prev ? { ...prev, showMappingUi: false } : null)}>
+												انصراف
+											</Button>
+										</div>
+									)
+									: (
+										<div className="flex w-full gap-2 px-2 mt-2">
+											<Button
+												className="flex-1 h-11 border-gray-400"
+												onClick={handleCancelMissingFont}
+											>
+												نادیده گرفتن
+											</Button>
+											<Button
+												className="flex-1 h-11"
+												onClick={() => setMissingFontState(prev => prev ? { ...prev, showMappingUi: true } : null)}
+											>
+												جایگزینی با موجود
+											</Button>
+											<Button
+												type="primary"
+												className="flex-1 h-11 shadow-md"
+												icon={<UploadOutlined />}
+												onClick={() => missingFontInputRef.current?.click()}
+											>
+												آپلود فونت
+											</Button>
+										</div>
+									)}
 							</div>
 						)
 						: null}
