@@ -54,7 +54,8 @@ const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasPro
 		const dom = editor.view.dom as HTMLElement;
 		const updatePagination = () => {
 			const hrs = Array.from(dom.querySelectorAll("hr, .page-break")) as HTMLElement[];
-			const offsets = [0, ...hrs.map(hr => hr.offsetTop + hr.offsetHeight)];
+			const editorRect = dom.getBoundingClientRect();
+			const offsets = [0, ...hrs.map(hr => hr.getBoundingClientRect().bottom - editorRect.top)];
 			setHeaderOffsets(offsets);
 
 			const heightBased = Math.max(1, Math.ceil(dom.scrollHeight / PAGE_HEIGHT_PX));
@@ -63,10 +64,16 @@ const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasPro
 			pageCountRef.current = newCount;
 		};
 		editor.on("update", updatePagination);
+
+		const resizeObserver = new ResizeObserver(() => {
+			updatePagination();
+		});
+		resizeObserver.observe(dom);
 		// initial calculation after a short delay to let content render
 		setTimeout(updatePagination, 150);
 		return () => {
 			editor.off("update", updatePagination);
+			resizeObserver.disconnect();
 		};
 	}, [editor]);
 
