@@ -1,8 +1,7 @@
 // src/features/contract-templates/create/components/editor/ui/TemplateEditorCanvas.tsx
 import type { Editor } from "@tiptap/react";
-import { LeftOutlined, RightOutlined } from "@ant-design/icons";
 import { EditorContent, useEditor } from "@tiptap/react";
-import { Button, Input, Spin, theme } from "antd";
+import { Spin, theme } from "antd";
 import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 
 import { useTemplateStore } from "../../../../store/useTemplateStore";
@@ -27,29 +26,17 @@ export interface EditorCanvasRef {
 
 interface TemplateEditorCanvasProps {
 	editor: Editor | null
-}
-
-function buildPageList(current: number, count: number) {
-	const pages = new Set([1, count, current, Math.max(1, current - 1), Math.min(count, current + 1)]);
-	const sorted = Array.from(pages).sort((a, b) => a - b);
-	const result: (number | string)[] = [];
-	sorted.forEach((page, index) => {
-		if (index > 0 && page - sorted[index - 1] > 1)
-			result.push(`ellipsis-${page}`);
-		result.push(page);
-	});
-	return result;
+	onPageChange?: (current: number, total: number) => void
 }
 
 const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasProps>((
-	{ editor },
+	{ editor, onPageChange },
 	ref,
 ) => {
 	const { token } = theme.useToken();
 	const scrollRef = useRef<HTMLDivElement>(null);
 	const [pageIndex, setPageIndex] = useState(0);
 	const [pageCount, setPageCount] = useState(1);
-	const [jumpValue, setJumpValue] = useState("");
 	const pageCountRef = useRef(1);
 	const { headerData, fetchFonts } = useTemplateStore();
 	const [headerOffsets, setHeaderOffsets] = useState<number[]>([0]);
@@ -97,7 +84,7 @@ const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasPro
 				let curr = 0;
 				for (let i = 0; i < hrs.length; i++) {
 					const rect = hrs[i].getBoundingClientRect();
-					if (rect.top - containerRect.top <= 200) {
+					if (rect.top - containerRect.top <= scrollContainer.clientHeight / 2) {
 						curr = i + 1;
 					}
 				}
@@ -105,7 +92,7 @@ const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasPro
 			}
 			else {
 				const scrollTop = scrollContainer.scrollTop;
-				const currentPage = Math.round(scrollTop / PAGE_HEIGHT_PX);
+				const currentPage = Math.floor((scrollTop + scrollContainer.clientHeight / 2) / PAGE_HEIGHT_PX);
 				setPageIndex(Math.min(Math.max(currentPage, 0), pageCountRef.current - 1));
 			}
 		};
@@ -116,45 +103,9 @@ const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasPro
 		return () => scrollContainer.removeEventListener("scroll", handleScroll);
 	}, [editor, pageCount]);
 
-	const scrollToPage = (index: number) => {
-		const clamped = Math.min(Math.max(index, 0), pageCount - 1);
-		setPageIndex(clamped);
-		if (!editor?.view?.dom)
-			return;
-		const scrollContainer = scrollRef.current?.closest(".custom-modal-scroll") || scrollRef.current;
-		if (!scrollContainer)
-			return;
-
-		const dom = editor.view.dom as HTMLElement;
-		const hrs = Array.from(dom.querySelectorAll("hr, .page-break")) as HTMLElement[];
-		const containerRect = scrollContainer.getBoundingClientRect();
-
-		if (clamped > 0 && hrs[clamped - 1]) {
-			const targetHr = hrs[clamped - 1];
-			const hrRect = targetHr.getBoundingClientRect();
-			// 90px offset accounts for the sticky toolbar and visual margin
-			const targetScroll = scrollContainer.scrollTop + (hrRect.top - containerRect.top) - 90;
-			scrollContainer.scrollTo({ top: Math.max(0, targetScroll), behavior: "smooth" });
-		}
-		else {
-			const domRect = dom.getBoundingClientRect();
-			const targetScroll = scrollContainer.scrollTop + (domRect.top - containerRect.top) - 90;
-			scrollContainer.scrollTo({ top: Math.max(0, targetScroll), behavior: "smooth" });
-		}
-	};
-
-	const goPrev = () => scrollToPage(pageIndex - 1);
-	const goNext = () => scrollToPage(pageIndex + 1);
-	const goToPage = (page: number) => scrollToPage(page - 1);
-
-	const submitJump = (e: React.FormEvent) => {
-		e.preventDefault();
-		const page = Number(jumpValue);
-		if (Number.isFinite(page) && page >= 1 && page <= pageCount) {
-			goToPage(page);
-		}
-		setJumpValue("");
-	};
+	useEffect(() => {
+		onPageChange?.(pageIndex + 1, pageCount);
+	}, [pageIndex, pageCount, onPageChange]);
 
 	useImperativeHandle(ref, () => ({
 		goToVariableKey(key: string) {
@@ -184,54 +135,6 @@ const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasPro
 			}
 		},
 	}));
-
-	const pager = (
-		<div
-			className="flex flex-wrap items-center justify-center gap-3 p-3 flex-shrink-0 z-10 shadow-sm border-b"
-			style={{ backgroundColor: token.colorBgContainer, borderColor: token.colorBorderSecondary }}
-			dir="rtl"
-		>
-			<Button size="small" onClick={goNext} disabled={pageIndex >= pageCount - 1} className="flex items-center gap-1 font-medium">
-				صفحه بعد
-				<LeftOutlined className="text-[10px]" />
-			</Button>
-			<div className="flex items-center gap-1">
-				{buildPageList(pageIndex + 1, pageCount).map(item =>
-					typeof item === "number"
-						? (
-							<Button key={item} size="small" type={item === pageIndex + 1 ? "primary" : "default"} onClick={() => goToPage(item)}>
-								{item}
-							</Button>
-						)
-						: (
-							<span key={item} className="px-1 text-xs" style={{ color: token.colorTextDescription }}>
-								…
-							</span>
-						),
-				)}
-			</div>
-			<Button size="small" onClick={goPrev} disabled={pageIndex === 0} className="flex items-center gap-1 font-medium">
-				<RightOutlined className="text-[10px]" />
-				صفحه قبل
-			</Button>
-			<form onSubmit={submitJump} className="flex items-center gap-1.5 mr-2">
-				<span className="text-xs font-medium" style={{ color: token.colorTextSecondary }}>
-					برو به صفحه
-				</span>
-				<Input
-					size="small"
-					type="number"
-					min={1}
-					max={pageCount}
-					value={jumpValue}
-					onChange={e => setJumpValue(e.target.value)}
-					placeholder={String(pageIndex + 1)}
-					className="w-14 text-center"
-					style={{ backgroundColor: token.colorBgLayout, color: token.colorText }}
-				/>
-			</form>
-		</div>
-	);
 
 	const renderHeaderOverlay = (top: number) => {
 		const defaultLogo = "/karashab-logo.png";
@@ -398,7 +301,6 @@ const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasPro
 
       `}
 			</style>
-			{pager}
 			<div
 				ref={scrollRef}
 				className="flex-1 w-full flex justify-center py-8 overflow-y-auto overflow-x-hidden bg-slate-100 dark:bg-slate-900"

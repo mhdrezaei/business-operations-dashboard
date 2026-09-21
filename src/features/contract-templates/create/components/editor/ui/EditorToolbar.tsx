@@ -149,7 +149,7 @@ function ToolbarBtn({ onClick, active = false, title, disabled = false, icon }: 
 	);
 }
 
-export default function EditorToolbar({ editor }: { editor: Editor | null, customFonts?: any[] }) {
+export default function EditorToolbar({ editor, pageData }: { editor: Editor | null, pageData?: { current: number, total: number } }) {
 	const { token } = theme.useToken();
 	const { customFonts } = useTemplateStore();
 
@@ -218,7 +218,22 @@ export default function EditorToolbar({ editor }: { editor: Editor | null, custo
 	const groupStyle = { backgroundColor: token.colorBgContainer, borderColor: token.colorBorder };
 
 	return (
-		<div className="flex flex-wrap justify-center items-center gap-2 p-2 px-3">
+		<div className="flex flex-wrap justify-center items-center gap-2 p-2 px-3 relative min-h-[48px]">
+			{pageData && (
+				<div
+					className="hidden xl:flex absolute left-4 items-center justify-center px-3 py-1 rounded border shadow-sm text-xs font-medium select-none"
+					style={{ backgroundColor: token.colorBgLayout, borderColor: token.colorBorderSecondary, color: token.colorTextSecondary }}
+					dir="rtl"
+				>
+					صفحه
+					{" "}
+					{pageData.current}
+					{" "}
+					از
+					{" "}
+					{pageData.total}
+				</div>
+			)}
 			<Space.Compact className="rounded-md border" style={groupStyle}>
 				<ToolbarBtn icon={<UndoOutlined />} onClick={() => chain().undo().run()} disabled={!state.canUndo} title="واگرد (Ctrl+Z)" />
 				<ToolbarBtn icon={<RedoOutlined />} onClick={() => chain().redo().run()} disabled={!state.canRedo} title="ازنو (Ctrl+Y)" />
