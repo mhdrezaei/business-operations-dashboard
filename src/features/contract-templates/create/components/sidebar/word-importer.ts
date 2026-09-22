@@ -1,7 +1,7 @@
 import type { Editor } from "@tiptap/react";
-import { message } from "antd";
 import JSZip from "jszip";
 import mammoth from "mammoth";
+import { customToast } from "../editor/ui/CustomToast";
 
 function collectTextNodes(el: Element, marks: any[] = [], outNodes: any[] = []): any[] {
 	if (el.nodeName === "STRONG" || el.nodeName === "B") {
@@ -309,7 +309,7 @@ export async function importWordToEditor(
 	onComplete?: () => void,
 	onMissingFonts?: (fontNames: string[]) => Promise<Record<string, string> | void>,
 ) {
-	message.loading({ content: "در حال بارگذاری...", key: "import-word", duration: 0 });
+	customToast.loading("در حال بارگذاری...", "import-word");
 	await new Promise(resolve => setTimeout(resolve, 100));
 
 	try {

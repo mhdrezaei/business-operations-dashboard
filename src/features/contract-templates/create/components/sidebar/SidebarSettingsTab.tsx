@@ -1,9 +1,10 @@
 import type { Editor } from "@tiptap/react";
 import { DeleteOutlined, FileWordOutlined, UploadOutlined } from "@ant-design/icons";
-import { Button, message, Modal, Progress, Select, theme, Typography } from "antd";
+import { Button, Modal, Progress, Select, theme, Typography } from "antd";
 import React, { useMemo, useRef, useState } from "react";
 import { TemplateCreateApi } from "../../../api/api";
 import { useTemplateStore } from "../../../store/useTemplateStore";
+import { customToast } from "../editor/ui/CustomToast";
 import HeaderEditor from "../editor/ui/HeaderEditor";
 import { importWordToEditor } from "./word-importer";
 
@@ -55,11 +56,11 @@ export default function SidebarSettingsTab({ editor }: { editor: Editor | null }
 		setIsUploadingFont(true);
 		try {
 			await TemplateCreateApi.uploadFont(file.name.replace(/\.[^/.]+$/, ""), file);
-			message.success("فونت با موفقیت آپلود شد.");
+			customToast.success("فونت با موفقیت آپلود شد.");
 			fetchFonts();
 		}
 		catch (error: any) {
-			message.error(error?.message || "خطا در آپلود فونت");
+			customToast.error(error?.message || "خطا در آپلود فونت");
 		}
 		finally {
 			setIsUploadingFont(false);
@@ -69,11 +70,11 @@ export default function SidebarSettingsTab({ editor }: { editor: Editor | null }
 	const handleDeleteFont = async (id: number) => {
 		try {
 			await TemplateCreateApi.deleteFont(id);
-			message.success("فونت حذف شد.");
+			customToast.success("فونت حذف شد.");
 			fetchFonts();
 		}
 		catch (error) {
-			message.error("خطا در حذف فونت");
+			customToast.error("خطا در حذف فونت");
 			console.warn(error);
 		}
 	};
@@ -139,7 +140,7 @@ export default function SidebarSettingsTab({ editor }: { editor: Editor | null }
 			setMissingFontState(prev => prev ? { ...prev, progress: 100 } : null);
 			await new Promise(res => setTimeout(res, 300)); // slight delay to show 100%
 
-			message.success("فونت با موفقیت آپلود شد.");
+			customToast.success("فونت با موفقیت آپلود شد.");
 			await fetchFonts();
 
 			advanceMissingFont();
@@ -147,7 +148,7 @@ export default function SidebarSettingsTab({ editor }: { editor: Editor | null }
 		catch (error: any) {
 			if (typeof progressInterval !== "undefined")
 				clearInterval(progressInterval);
-			message.error(error?.message || "خطا در آپلود فونت");
+			customToast.error(error?.message || "خطا در آپلود فونت");
 			setMissingFontState(prev => prev ? { ...prev, isUploading: false, progress: 0 } : null);
 		}
 	};
@@ -160,7 +161,7 @@ export default function SidebarSettingsTab({ editor }: { editor: Editor | null }
 			return;
 
 		if (!file.name.toLowerCase().endsWith(".docx")) {
-			message.error("فقط فایل‌های .docx پشتیبانی می‌شوند.");
+			customToast.error("فقط فایل‌های .docx پشتیبانی می‌شوند.");
 			return;
 		}
 
@@ -174,7 +175,7 @@ export default function SidebarSettingsTab({ editor }: { editor: Editor | null }
 				if (missing.length === 0)
 					return Promise.resolve();
 
-				message.destroy("import-word");
+				customToast.destroy("import-word");
 
 				return new Promise<Record<string, string> | void>((resolve) => {
 					missingFontsResolveRef.current = resolve;
@@ -189,19 +190,19 @@ export default function SidebarSettingsTab({ editor }: { editor: Editor | null }
 					});
 				});
 			});
-			message.success("فایل با موفقیت ایمپورت شد.");
+			customToast.success("فایل با موفقیت ایمپورت شد.");
 		}
 		catch (error: any) {
 			console.error("[Sidebar] Error caught in handleWordImportClick:", error);
 			if (error?.message === "EMPTY_FILE") {
-				message.warning("فایل ورد فاقد محتوای متنی است.");
+				customToast.warning("فایل ورد فاقد محتوای متنی است.");
 			}
 			else {
-				message.error("خطا در پردازش فایل ورد.");
+				customToast.error("خطا در پردازش فایل ورد.");
 			}
 		}
 		finally {
-			message.destroy("import-word");
+			customToast.destroy("import-word");
 			setIsImportingWord(false);
 		}
 	};
