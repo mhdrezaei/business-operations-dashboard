@@ -1,32 +1,18 @@
 // src/features/contract-templates/create/components/editor/ui/TemplateEditorCanvas.tsx
 import type { Editor } from "@tiptap/react";
-import { LeftOutlined, RightOutlined } from "@ant-design/icons";
 import { EditorContent, useEditor } from "@tiptap/react";
-import { Button, Input, theme } from "antd";
+import { Spin, theme } from "antd";
 import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 
-import { PaginationPlus } from "tiptap-pagination-plus";
+import { useTemplateStore } from "../../../../store/useTemplateStore";
 import { getEditorExtensions } from "../core/editor-extensions";
 
 const PAGE_HEIGHT_PX = 1123;
 const PAGE_WIDTH_PX = 794;
-const PAGE_GAP_PX = 40;
-const TOTAL_STEP_PX = PAGE_HEIGHT_PX + PAGE_GAP_PX;
 
 export function useTemplateEditor({ initialContent = "" } = {}) {
 	return useEditor({
-		extensions: [
-			...getEditorExtensions(),
-			PaginationPlus.configure({
-				pageHeight: PAGE_HEIGHT_PX,
-				pageWidth: PAGE_WIDTH_PX,
-				pageGap: PAGE_GAP_PX,
-				marginTop: 96,
-				marginBottom: 96,
-				marginLeft: 72,
-				marginRight: 72,
-			}),
-		],
+		extensions: [...getEditorExtensions()],
 		content: initialContent,
 		editorProps: {
 			attributes: { dir: "rtl" },
@@ -40,103 +26,97 @@ export interface EditorCanvasRef {
 
 interface TemplateEditorCanvasProps {
 	editor: Editor | null
+	onPageChange?: (current: number, total: number) => void
 }
 
-function buildPageList(current: number, count: number) {
-	const pages = new Set([1, count, current, Math.max(1, current - 1), Math.min(count, current + 1)]);
-	const sorted = Array.from(pages).sort((a, b) => a - b);
-	const result: (number | string)[] = [];
-	sorted.forEach((page, index) => {
-		if (index > 0 && page - sorted[index - 1] > 1)
-			result.push(`ellipsis-${page}`);
-		result.push(page);
-	});
-	return result;
-}
-
-const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasProps>(({ editor }, ref) => {
+const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasProps>((
+	{ editor, onPageChange },
+	ref,
+) => {
 	const { token } = theme.useToken();
+	const scrollRef = useRef<HTMLDivElement>(null);
 	const [pageIndex, setPageIndex] = useState(0);
 	const [pageCount, setPageCount] = useState(1);
-	const [jumpValue, setJumpValue] = useState("");
-
 	const pageCountRef = useRef(1);
-	useEffect(() => {
-		pageCountRef.current = pageCount;
-	}, [pageCount]);
+	const { headerData, fetchFonts } = useTemplateStore();
+	const [headerOffsets, setHeaderOffsets] = useState<number[]>([0]);
+	const [fontsReady, setFontsReady] = useState(false);
 
+	// Load custom fonts on mount
 	useEffect(() => {
-		if (!editor || !editor.view.dom)
+		fetchFonts().then(() => setFontsReady(true)).catch(() => setFontsReady(true));
+	}, []);
+
+	// Pagination effect – recompute offsets and page count when editor updates
+	useEffect(() => {
+		if (!editor)
 			return;
 		const dom = editor.view.dom as HTMLElement;
-
 		const updatePagination = () => {
-			const totalHeight = dom.scrollHeight;
-			const newCount = Math.max(1, Math.ceil(totalHeight / TOTAL_STEP_PX));
-			if (newCount !== pageCountRef.current) {
-				setPageCount(newCount);
-			}
+			const hrs = Array.from(dom.querySelectorAll("hr, .page-break")) as HTMLElement[];
+			const editorRect = dom.getBoundingClientRect();
+			const offsets = [0, ...hrs.map(hr => hr.getBoundingClientRect().bottom - editorRect.top)];
+			setHeaderOffsets(offsets);
+
+			const heightBased = Math.max(1, Math.ceil(dom.scrollHeight / PAGE_HEIGHT_PX));
+			const newCount = Math.max(hrs.length + 1, heightBased);
+			setPageCount(newCount);
+			pageCountRef.current = newCount;
 		};
-
-		let cursorTimer: any = null;
-
-		const followCursor = () => {
-			if (!editor.view.hasFocus())
-				return;
-
-			clearTimeout(cursorTimer);
-			cursorTimer = setTimeout(() => {
-				try {
-					const { head } = editor.state.selection;
-					const coords = editor.view.coordsAtPos(head);
-					const rect = dom.getBoundingClientRect();
-
-					const absoluteY = coords.top - rect.top;
-					const activePage = Math.floor(Math.max(0, absoluteY) / TOTAL_STEP_PX);
-
-					setPageIndex((prev) => {
-						if (activePage !== prev && activePage >= 0 && activePage < pageCountRef.current) {
-							return activePage;
-						}
-						return prev;
-					});
-				}
-				catch {}
-			}, 100);
-		};
-
 		editor.on("update", updatePagination);
-		editor.on("selectionUpdate", followCursor);
 
+		const resizeObserver = new ResizeObserver(() => {
+			updatePagination();
+		});
+		resizeObserver.observe(dom);
+		// initial calculation after a short delay to let content render
 		setTimeout(updatePagination, 150);
-
 		return () => {
-			clearTimeout(cursorTimer);
 			editor.off("update", updatePagination);
-			editor.off("selectionUpdate", followCursor);
+			resizeObserver.disconnect();
 		};
 	}, [editor]);
 
+	// Attach global scroll listener since the actual scrollbar is on .custom-modal-scroll
 	useEffect(() => {
-		if (pageIndex >= pageCount)
-			setPageIndex(Math.max(0, pageCount - 1));
-	}, [pageCount, pageIndex]);
+		const scrollContainer = scrollRef.current?.closest(".custom-modal-scroll") || scrollRef.current;
+		if (!scrollContainer || !editor)
+			return;
 
-	const goPrev = () => setPageIndex(i => Math.max(0, i - 1));
-	const goNext = () => setPageIndex(i => Math.min(pageCount - 1, i + 1));
-	const goToPage = (page: number) => setPageIndex(Math.min(Math.max(page - 1, 0), pageCount - 1));
+		const handleScroll = () => {
+			const dom = editor.view.dom as HTMLElement;
+			const hrs = Array.from(dom.querySelectorAll("hr, .page-break")) as HTMLElement[];
+			if (hrs.length > 0) {
+				const containerRect = scrollContainer.getBoundingClientRect();
+				let curr = 0;
+				for (let i = 0; i < hrs.length; i++) {
+					const rect = hrs[i].getBoundingClientRect();
+					if (rect.top - containerRect.top <= scrollContainer.clientHeight / 2) {
+						curr = i + 1;
+					}
+				}
+				setPageIndex(Math.min(curr, pageCountRef.current - 1));
+			}
+			else {
+				const scrollTop = scrollContainer.scrollTop;
+				const currentPage = Math.floor((scrollTop + scrollContainer.clientHeight / 2) / PAGE_HEIGHT_PX);
+				setPageIndex(Math.min(Math.max(currentPage, 0), pageCountRef.current - 1));
+			}
+		};
 
-	const submitJump = (e: React.FormEvent) => {
-		e.preventDefault();
-		const page = Number(jumpValue);
-		if (Number.isFinite(page) && page >= 1 && page <= pageCount)
-			goToPage(page);
-		setJumpValue("");
-	};
+		scrollContainer.addEventListener("scroll", handleScroll, { passive: true });
+		// initial check
+		handleScroll();
+		return () => scrollContainer.removeEventListener("scroll", handleScroll);
+	}, [editor, pageCount]);
+
+	useEffect(() => {
+		onPageChange?.(pageIndex + 1, pageCount);
+	}, [pageIndex, pageCount, onPageChange]);
 
 	useImperativeHandle(ref, () => ({
 		goToVariableKey(key: string) {
-			if (!editor)
+			if (!editor || !scrollRef.current)
 				return false;
 			let targetPos: number | null = null;
 			editor.state.doc.descendants((node, pos) => {
@@ -152,119 +132,233 @@ const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasPro
 				return false;
 			try {
 				const coords = editor.view.coordsAtPos(targetPos);
-				const rect = editor.view.dom.getBoundingClientRect();
-				const targetPage = Math.floor((coords.top - rect.top) / TOTAL_STEP_PX);
-				setPageIndex(Math.min(Math.max(targetPage, 0), pageCount - 1));
+				const containerRect = scrollRef.current.getBoundingClientRect();
+				const targetScroll = scrollRef.current.scrollTop + (coords.top - containerRect.top) - 100;
+				scrollRef.current.scrollTo({ top: Math.max(0, targetScroll), behavior: "smooth" });
 				return true;
 			}
-			catch { return false; }
+			catch {
+				return false;
+			}
 		},
 	}));
 
-	const handleCanvasClick = (e: React.MouseEvent) => {
-		if (!editor)
-			return;
-		const target = e.target as HTMLElement;
-		if (!target.closest(".ProseMirror p, .ProseMirror h1, .ProseMirror table, .ProseMirror span")) {
-			editor.chain().focus("end").run();
-		}
-	};
-
-	const pager = (
-		<div className="flex flex-wrap items-center justify-center gap-3 p-3 flex-shrink-0 z-10 shadow-sm border-b" style={{ backgroundColor: token.colorBgContainer, borderColor: token.colorBorderSecondary }} dir="rtl">
-			<Button size="small" onClick={goNext} disabled={pageIndex >= pageCount - 1} className="flex items-center gap-1 font-medium">
-				صفحه بعد
-				{" "}
-				<LeftOutlined className="text-[10px]" />
-			</Button>
-
-			<div className="flex items-center gap-1">
-				{buildPageList(pageIndex + 1, pageCount).map(item =>
-					typeof item === "number"
-						? (
-							<Button key={item} size="small" type={item === pageIndex + 1 ? "primary" : "default"} onClick={() => goToPage(item)}>
-								{item}
-							</Button>
-						)
-						: (
-							<span key={item} className="px-1 text-xs" style={{ color: token.colorTextDescription }}>…</span>
-						),
+	const renderHeaderOverlay = (top: number) => {
+		const defaultLogo = "/karashab-logo.png";
+		const logo = headerData?.logo_url || headerData?.logo_data_url || defaultLogo;
+		const showContractNo = headerData?.show_contract_number !== false;
+		const contractNumber = "[شماره قرارداد / الحاقیه]";
+		const text = headerData?.extra_text || "";
+		const fontFamily = headerData?.header_font_family ? `'${headerData.header_font_family}', sans-serif` : "inherit";
+		const fontSize = headerData?.header_font_size ? `${headerData.header_font_size}px` : "13px";
+		return (
+			<div
+				className="absolute left-0 right-0 px-[72px] pointer-events-none select-none flex justify-between items-start z-10"
+				style={{ top: `${top + 20}px`, height: "80px", direction: "rtl", fontFamily }}
+			>
+				<div className="flex flex-col items-start">
+					<img src={logo} style={{ maxHeight: "45px", objectFit: "contain", marginBottom: "12px", maxWidth: "250px" }} alt="logo" />
+					{text && <div style={{ fontSize, fontWeight: "normal", color: "#000" }}>{text}</div>}
+				</div>
+				{showContractNo && (
+					<div className="flex flex-col items-center pt-2.5" style={{ width: "180px" }}>
+						<div style={{ fontWeight: "bold", fontSize: "13px", marginBottom: "8px", color: "#000" }}>
+							شماره قرارداد :
+							{" "}
+							{contractNumber}
+						</div>
+						<div
+							style={{
+								width: "100%",
+								height: "14px",
+								backgroundColor: "#465b8e",
+								clipPath: "polygon(15px 0, 100% 0, 100% 100%, 0% 100%)",
+							}}
+						/>
+					</div>
 				)}
 			</div>
+		);
+	};
 
-			<Button size="small" onClick={goPrev} disabled={pageIndex === 0} className="flex items-center gap-1 font-medium">
-				<RightOutlined className="text-[10px]" />
-				{" "}
-				صفحه قبل
-			</Button>
+	const renderPageHighlight = () => {
+		if (pageIndex < 0 || pageIndex >= pageCount)
+			return null;
 
-			<form onSubmit={submitJump} className="flex items-center gap-1.5 mr-2">
-				<span className="text-xs font-medium" style={{ color: token.colorTextSecondary }}>برو به صفحه</span>
-				<Input size="small" type="number" min={1} max={pageCount} value={jumpValue} onChange={e => setJumpValue(e.target.value)} placeholder={String(pageIndex + 1)} className="w-14 text-center" style={{ backgroundColor: token.colorBgLayout, color: token.colorText }} />
-			</form>
-		</div>
-	);
+		const top = headerOffsets[pageIndex] || 0;
+		const nextTop = headerOffsets[pageIndex + 1];
+
+		const style: React.CSSProperties = {
+			position: "absolute",
+			left: 0,
+			right: 0,
+			top: `${top}px`,
+			pointerEvents: "none",
+			zIndex: 10,
+			// Outer glow for dark background, inner/outer solid border for clarity, subtle inner shadow
+			boxShadow: `0 0 0 2px ${token.colorPrimary}, 0 0 30px 5px ${token.colorPrimary}40, inset 0 0 0 2px ${token.colorPrimary}, inset 0 0 30px ${token.colorPrimary}15`,
+			borderRadius: "2px",
+			transition: "top 0.3s ease, height 0.3s ease, bottom 0.3s ease",
+		};
+
+		if (nextTop !== undefined) {
+			style.height = `${nextTop - top}px`;
+		}
+		else {
+			style.bottom = 0;
+		}
+
+		return <div style={style} />;
+	};
 
 	return (
 		<div className="flex flex-col h-full w-full relative" style={{ backgroundColor: token.colorBgLayout }}>
-
 			<style>
 				{`
-                .ms-word-editor .ProseMirror {
-                    outline: none !important;
-                    border: none !important;
-                    box-shadow: none !important;
-                    background: transparent !important;
-                    color: #1a1a1a;
-                    font-family: 'Vazirmatn', Tahoma, sans-serif;
-                }
+        /* ─── Editor core ─────────────────────────────────────── */
+        .ms-word-editor .ProseMirror {
+          outline: none !important;
+          border: none !important;
+          box-shadow: none !important;
+          color: #1a1a1a;
+          font-family: 'Vazirmatn', Tahoma, sans-serif;
+          font-size: 14.5px;
+          /* Top padding 110px ensures text doesn't overlap the 80px header at top:20px */
+          padding: 110px 72px 72px 72px;
+          box-sizing: border-box;
+          width: ${PAGE_WIDTH_PX}px;
+          min-width: ${PAGE_WIDTH_PX}px;
+          max-width: ${PAGE_WIDTH_PX}px;
+          min-height: ${PAGE_HEIGHT_PX}px;
+          background-color: #ffffff;
+        }
 
-                .ms-word-editor .ProseMirror p {
-                    line-height: 1.8; 
-                    margin-bottom: 14px;
-                    text-align: justify;
-                }
+        .ms-word-editor .ProseMirror p {
+          margin-top: 0;
+          margin-bottom: 0.5em;
+          line-height: 1.6;
+          min-height: 1.5em;
+        }
 
-                /* رفع باگ استایل‌دهی: اسپَن‌ها باید فونت‌فمیلی خودشان (که تولبار تعیین میکند) را دریافت کنند */
-                .ms-word-editor .ProseMirror span {
-                    font-family: inherit;
-                }
+        /* ─── Page Break Divider ─────────────────────────────── */
+        .ms-word-editor .ProseMirror hr,
+        .ms-word-editor .ProseMirror .page-break {
+          display: block;
+          border: none;
+          height: 36px;
+          margin: 36px -72px 100px -72px;
+          background: #e2e8f0;
+          border-top: 1px solid #cbd5e1;
+          border-bottom: 1px solid #cbd5e1;
+          position: relative;
+          clear: both;
+          cursor: default;
+          user-select: none;
+        }
+        .ms-word-editor .ProseMirror hr::after,
+        .ms-word-editor .ProseMirror .page-break::after {
+          content: "━━━ شکست صفحه (صفحه بعد) ━━━";
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          font-size: 11px;
+          font-weight: 500;
+          color: #64748b;
+          background: #ffffff;
+          padding: 2px 16px;
+          border-radius: 9999px;
+          border: 1px dashed #cbd5e1;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+          white-space: nowrap;
+        }
 
-                .ms-word-editor {
-                    cursor: text;
-                }
+        .ms-word-editor .ProseMirror span {
+          font-family: inherit;
+        }
 
-                .ms-word-editor [data-rm-pagination] {
-                    background-color: #ffffff !important;
-                }
-            `}
+        /* ─── Headings ───────────────────────────────────────── */
+        .ms-word-editor .ProseMirror h1 {
+          font-size: 22px;
+          font-weight: bold;
+          margin-top: 1em;
+          margin-bottom: 0.5em;
+        }
+        .ms-word-editor .ProseMirror h2 {
+          font-size: 18px;
+          font-weight: bold;
+          margin-top: 0.8em;
+          margin-bottom: 0.4em;
+        }
+        .ms-word-editor .ProseMirror h3 {
+          font-size: 16px;
+          font-weight: bold;
+          margin-top: 0.6em;
+          margin-bottom: 0.3em;
+        }
+
+        /* ─── Tables ─────────────────────────────────────────── */
+        .ms-word-editor .ProseMirror table {
+          display: table !important;
+          border-collapse: collapse;
+          width: 100%;
+          margin: 1rem 0;
+          table-layout: auto;
+        }
+        .ms-word-editor .ProseMirror table tbody {
+          display: table-row-group !important;
+        }
+        .ms-word-editor .ProseMirror table tr {
+          display: table-row !important;
+        }
+        .ms-word-editor .ProseMirror table td,
+        .ms-word-editor .ProseMirror table th {
+          display: table-cell !important;
+          border: 1px solid #94a3b8;
+          padding: 6px 10px;
+          vertical-align: top;
+          box-sizing: border-box;
+          min-width: 1em;
+          word-break: break-word;
+        }
+        .ms-word-editor .ProseMirror table th {
+          font-weight: bold;
+          background-color: #f1f5f9;
+        }
+        .ms-word-editor .ProseMirror .selectedCell:after {
+          z-index: 2; position: absolute; content: "";
+          left: 0; right: 0; top: 0; bottom: 0;
+          background: rgba(99,102,241,0.15); pointer-events: none;
+        }
+        .ms-word-editor .ProseMirror .column-resize-handle {
+          position: absolute; right: -2px; top: 0; bottom: -2px;
+          width: 4px; background: #6366f1; pointer-events: none; z-index: 20;
+        }
+
+
+      `}
 			</style>
-
-			{pager}
-
-			<div className="flex-1 w-full flex justify-center py-6 overflow-hidden bg-black/5 dark:bg-black/20">
+			<div
+				ref={scrollRef}
+				className="flex-1 w-full flex justify-center py-8 overflow-y-auto overflow-x-hidden bg-slate-100 dark:bg-slate-900"
+			>
 				<div
 					className="ms-word-editor relative shadow-2xl rounded-sm bg-white"
-					onClick={handleCanvasClick}
-					onScroll={e => e.currentTarget.scrollTop = 0}
-					style={{
-						width: `${PAGE_WIDTH_PX}px`,
-						height: `${PAGE_HEIGHT_PX}px`,
-						minHeight: `${PAGE_HEIGHT_PX}px`,
-						maxHeight: `${PAGE_HEIGHT_PX}px`,
-						overflow: "hidden",
-						boxSizing: "border-box",
-					}}
+					style={{ width: `${PAGE_WIDTH_PX}px`, minHeight: `${PAGE_HEIGHT_PX}px`, boxSizing: "border-box", backgroundColor: "#ffffff" }}
 				>
-					<div
-						style={{
-							transform: `translateY(-${pageIndex * TOTAL_STEP_PX}px)`,
-							transition: "transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)",
-							willChange: "transform",
-						}}
-					>
-						<EditorContent editor={editor} />
-					</div>
+					{renderPageHighlight()}
+					{fontsReady
+						? (
+							headerOffsets.map((y, idx) => (
+								<React.Fragment key={idx}>{renderHeaderOverlay(y)}</React.Fragment>
+							))
+						)
+						: (
+							<div className="absolute top-10 left-1/2 -translate-x-1/2 z-20">
+								<Spin tip="در حال بارگذاری..." />
+							</div>
+						)}
+					<EditorContent editor={editor} />
 				</div>
 			</div>
 		</div>

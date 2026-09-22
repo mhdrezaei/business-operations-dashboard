@@ -28,6 +28,7 @@ export const VariableNode = Node.create({
 	group: "inline",
 	inline: true,
 	atom: true,
+	marks: "",
 	addAttributes() {
 		return {
 			key: { default: "", parseHTML: el => el.getAttribute("data-variable") || "", renderHTML: attrs => ({ "data-variable": attrs.key }) },
@@ -35,9 +36,19 @@ export const VariableNode = Node.create({
 	},
 	parseHTML() { return [{ tag: "span[data-variable]" }]; },
 	renderHTML({ HTMLAttributes }) { return ["span", mergeAttributes(HTMLAttributes, { class: "tpl-variable" })]; },
-	addNodeView() { return ReactNodeViewRenderer(VariableChip); },
+	addNodeView() { return ReactNodeViewRenderer(VariableChip, { as: "span" }); },
 	addCommands() {
-		return { insertTemplateVariable: key => ({ commands }) => commands.insertContent({ type: this.name, attrs: { key } }) };
+		return {
+			insertTemplateVariable: key => ({ state, tr, dispatch }) => {
+				const { selection } = state;
+				const marks = state.storedMarks || selection.$from.marks();
+				if (dispatch) {
+					const node = state.schema.nodes.templateVariable.create({ key }, null, marks);
+					tr.replaceSelectionWith(node, false);
+				}
+				return true;
+			},
+		};
 	},
 });
 
@@ -83,6 +94,22 @@ export const Direction = Extension.create({
 	},
 });
 
+export const NodeStyle = Extension.create({
+	name: "nodeStyle",
+	addGlobalAttributes() {
+		return [{
+			types: ["table", "tableRow", "tableCell", "tableHeader", "paragraph", "heading"],
+			attributes: {
+				style: {
+					default: null,
+					parseHTML: el => el.getAttribute("style"),
+					renderHTML: attrs => (attrs.style ? { style: attrs.style } : {}),
+				},
+			},
+		}];
+	},
+});
+
 export function getEditorExtensions() {
 	return [
 		StarterKit,
@@ -94,6 +121,7 @@ export function getEditorExtensions() {
 		FontSize,
 		Direction,
 		VariableNode,
+		NodeStyle,
 		Highlight.configure({ multicolor: true }),
 		TextAlign.configure({ types: ["heading", "paragraph"], defaultAlignment: "right" }),
 		Table.configure({ resizable: true, HTMLAttributes: { class: "custom-table" } }),
