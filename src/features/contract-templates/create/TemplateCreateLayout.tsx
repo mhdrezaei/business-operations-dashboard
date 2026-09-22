@@ -140,7 +140,7 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 		};
 	}, []);
 
-	const saveTemplateRef = useRef<(closeAfterSave?: boolean) => void>(() => {});
+	const saveTemplateRef = useRef<(closeAfterSave?: boolean) => void>(() => { });
 
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
@@ -388,6 +388,7 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 				>
 					<div className="flex-shrink-0">
 						<TemplateCreateHeader
+							editor={editor}
 							onClose={handleRequestClose}
 							onOpenPrintPreview={() => setIsPreviewOpen(true)}
 							onExportWord={handleExportWord}
