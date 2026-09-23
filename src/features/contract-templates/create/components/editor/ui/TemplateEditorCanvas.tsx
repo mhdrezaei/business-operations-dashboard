@@ -65,6 +65,11 @@ const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasPro
 		};
 		editor.on("update", updatePagination);
 
+		// Also recalculate when fonts are ready
+		if (fontsReady) {
+			setTimeout(updatePagination, 50);
+		}
+
 		const resizeObserver = new ResizeObserver(() => {
 			updatePagination();
 		});
@@ -75,7 +80,7 @@ const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasPro
 			editor.off("update", updatePagination);
 			resizeObserver.disconnect();
 		};
-	}, [editor]);
+	}, [editor, fontsReady]);
 
 	// Attach global scroll listener since the actual scrollbar is on .custom-modal-scroll
 	useEffect(() => {
@@ -202,7 +207,7 @@ const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasPro
 		};
 
 		if (nextTop !== undefined) {
-			style.height = `${nextTop - top}px`;
+			style.height = `${Math.max(nextTop - top, PAGE_HEIGHT_PX)}px`;
 		}
 		else {
 			style.bottom = 0;
