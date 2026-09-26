@@ -425,6 +425,87 @@
 	align-content: start;
 }
 
+.performance-detail-section__body > .sales-agency-edit-fields {
+	min-width: 0;
+	font-weight: 400;
+}
+
+.sales-agency-edit-fields,
+.sales-agency-edit-fields__metrics,
+.sales-agency-edit-fields__costs {
+	display: grid;
+	min-width: 0;
+	gap: var(--ant-margin);
+}
+
+.sales-agency-edit-fields {
+	grid-template-columns: minmax(0, 1fr);
+	row-gap: 0;
+}
+
+.sales-agency-edit-fields__metrics {
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 40px;
+}
+
+.sales-agency-edit-fields__costs {
+	grid-template-columns: minmax(0, 1fr);
+	row-gap: var(--ant-margin);
+	padding: 0;
+}
+
+.sales-agency-edit-fields__metrics + .sales-agency-edit-fields__costs {
+	margin-block-start: calc(var(--ant-margin-lg) * 2);
+}
+
+.sales-agency-edit-fields__cost-row {
+	display: grid;
+	min-width: 0;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 40px;
+	align-items: start;
+	gap: var(--ant-margin);
+}
+
+.sales-agency-edit-fields .ant-form-item {
+	min-width: 0;
+	width: 100%;
+	margin-block-end: var(--ant-margin-sm);
+}
+
+.sales-agency-edit-fields__cost-row > .ant-form-item {
+	flex: 1 1 0;
+}
+
+.sales-agency-edit-fields .ant-form-item-label {
+	box-sizing: border-box;
+	height: 28px;
+	min-height: 28px;
+	white-space: nowrap;
+}
+
+.sales-agency-edit-fields__remove {
+	align-self: start;
+	margin-block-start: 32px;
+}
+
+.sales-agency-edit-fields__add {
+	justify-self: end;
+	margin-block-start: var(--ant-margin-sm);
+}
+
+@media (max-width: 768px) {
+	.sales-agency-edit-fields__metrics {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.sales-agency-edit-fields__cost-row {
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 40px;
+	}
+
+	.sales-agency-edit-fields__cost-row > .ant-form-item {
+		min-width: 0;
+	}
+}
+
 .performance-detail-value-rows {
 	display: grid;
 }

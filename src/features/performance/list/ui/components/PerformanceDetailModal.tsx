@@ -233,6 +233,10 @@ function resolveMonthLabel(value: unknown) {
 
 function resolveServiceDisplayName(service: PerformanceServicePath | null, value: unknown) {
 	const text = String(value ?? "").trim();
+	if (service === "sales-agency/outbound")
+		return "سرویس عاملیت فروش کشور";
+	if (service === "sales-agency/rep-management")
+		return "مدیریت نمایندگان فروش";
 	if (service === "openapi")
 		return "سرویس OpenAPI";
 	if (service === "psp")
@@ -1840,7 +1844,7 @@ export function PerformanceDetailModal({
 
 							<DetailSection title="مقدار عملکرد" tone="success" extra={sectionActions} collapsible={false}>
 								{service === "sales-agency/outbound" || service === "sales-agency/rep-management"
-									? <SalesAgencyPerformanceFields prefix="" companyType={selectedCompanyType} companyId={normalizedRecord.companyId} serviceId={normalizedRecord.serviceId} year={normalizedRecord.year} month={normalizedRecord.month} />
+									? <SalesAgencyPerformanceFields prefix="" companyType={selectedCompanyType} companyId={normalizedRecord.companyId} serviceId={normalizedRecord.serviceId} year={normalizedRecord.year} month={normalizedRecord.month} editLayout />
 									: null}
 								{visibleEditableFields.length > 0 && service !== "sales-agency/outbound" && service !== "sales-agency/rep-management"
 									? (
