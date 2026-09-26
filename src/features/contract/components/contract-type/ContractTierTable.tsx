@@ -1,7 +1,7 @@
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
-import { DeleteOutlined, PlusOutlined, QuestionCircleOutlined } from "@ant-design/icons";
+import { DeleteOutlined, ExclamationCircleOutlined, PlusOutlined, QuestionCircleOutlined } from "@ant-design/icons";
 import { Button, Card, Tooltip } from "antd";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 
 interface Props {
@@ -18,33 +18,9 @@ interface TierToFieldProps {
 }
 
 function TierToField({ name, showHint }: TierToFieldProps): React.JSX.Element {
-	const [open, setOpen] = useState(showHint);
-
-	useEffect(() => {
-		setOpen(showHint);
-	}, [showHint]);
-
-	function handleCloseHint() {
-		setOpen(false);
-	}
-
 	return (
-		<Tooltip
-			open={open}
-			trigger={[]}
-			placement="bottomRight"
-			destroyTooltipOnHide
-			title={(
-				<button
-					type="button"
-					onClick={handleCloseHint}
-					className="cursor-pointer border-0 bg-transparent p-0 text-right font-inherit leading-[1.6] text-inherit"
-				>
-					اگر این فیلد خالی بماند، بازه بدون محدودیت در نظر گرفته می‌شود.
-				</button>
-			)}
-		>
-			<div>
+		<div className="flex items-center gap-1">
+			<div className="min-w-0 flex-1">
 				<RHFProNumber
 					name={name as any}
 					label=""
@@ -54,7 +30,18 @@ function TierToField({ name, showHint }: TierToFieldProps): React.JSX.Element {
 					formItemProps={{ className: "mb-0" }}
 				/>
 			</div>
-		</Tooltip>
+			{showHint && (
+				<Tooltip title="اگر این فیلد خالی بماند، بازه بدون محدودیت در نظر گرفته می‌شود." placement="bottomRight">
+					<button
+						type="button"
+						aria-label="توضیحات پایان بازه"
+						className="inline-flex cursor-help border-0 bg-transparent p-0 text-warning"
+					>
+						<ExclamationCircleOutlined />
+					</button>
+				</Tooltip>
+			)}
+		</div>
 	);
 }
 
