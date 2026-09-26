@@ -64,7 +64,7 @@ export function buildPerformanceSchema(
 			const trafficSubmitMode = normalizedCode === "traffic"
 				? String(serviceFields.submitMode ?? "").trim().toLowerCase()
 				: "";
-			const requiresCompanyType = normalizedCode === "traffic" || normalizedCode === "psp" || normalizedCode === "sms";
+			const requiresCompanyType = normalizedCode === "traffic" || normalizedCode === "psp" || normalizedCode === "sms" || normalizedCode === "sales_agency";
 
 			requireNotNull(value.serviceId, ["serviceId"], i18next.t("performance.validation.base.serviceRequired"), ctx);
 			requireNotNull(value.serviceCode, ["serviceCode"], i18next.t("performance.validation.base.serviceCodeRequired"), ctx);

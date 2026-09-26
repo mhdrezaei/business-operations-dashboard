@@ -8,7 +8,9 @@ export type PerformanceContractServicePath = | "openapi"
   | "shahkar"
   | "sms/client"
   | "sms/vendor"
-  | "sms-commission";
+  | "sms-commission"
+  | "sales-agency/outbound"
+  | "sales-agency/rep-management";
 
 export type PerformanceServicePath = | "openapi"
   | "commercial"
@@ -16,7 +18,9 @@ export type PerformanceServicePath = | "openapi"
   | "psp"
   | "shahkar"
   | "sms"
-  | "sms-commission";
+  | "sms-commission"
+  | "sales-agency/outbound"
+  | "sales-agency/rep-management";
 
 export interface PerformanceListItem {
 	id?: number

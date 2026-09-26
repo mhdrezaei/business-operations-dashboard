@@ -27,6 +27,8 @@ import {
 	pickCompanyTypeToken,
 	toNullableNumber,
 } from "#src/features/performance/shared/model/performance.helpers";
+import { SalesAgencyPerformanceFields } from "#src/features/performance/shared/services/sales-agency/sales-agency.fields";
+import { salesAgencyFieldsSchema } from "#src/features/performance/shared/services/sales-agency/sales-agency.schema";
 import { RHFProNumber, RHFProText } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined, EditOutlined, ReloadOutlined } from "@ant-design/icons";
 import { Button, Card, Modal, Popconfirm, Spin, Tag, theme } from "antd";
@@ -82,6 +84,8 @@ const SERVICE_DETAIL_KEYS: Record<PerformanceServicePath, string[]> = {
 	"sms-commission": [],
 	"traffic": ["company_type", "is_official"],
 	"commercial": ["customer_name", "customer_nic", "province_code", "service_type", "value", "income", "expense", "profit"],
+	"sales-agency/outbound": ["company_type", "total_sales"],
+	"sales-agency/rep-management": ["company_type", "credit_total", "income", "cost_items"],
 };
 
 const HIDDEN_DETAIL_KEYS = new Set([
@@ -243,7 +247,7 @@ function resolveServiceDisplayName(service: PerformanceServicePath | null, value
 }
 
 function serviceRequiresCompanyType(service: PerformanceServicePath | null | undefined) {
-	return service === "sms" || service === "psp" || service === "traffic";
+	return service === "sms" || service === "psp" || service === "traffic" || service === "sales-agency/outbound" || service === "sales-agency/rep-management";
 }
 
 function toUpperText(value: unknown) {
@@ -760,6 +764,28 @@ export function PerformanceDetailModal({
 			};
 		}
 
+		if (service === "sales-agency/outbound") {
+			return {
+				title: "ویرایش عملکرد عاملیت فروش کشور",
+				readonlyKeys: ["company_type"],
+				editableFields: [{ key: "total_sales", label: "فروش کل ماه (ریال)", type: "number", required: true }],
+				payloadKeys: ["company_type", "total_sales"],
+			};
+		}
+
+		if (service === "sales-agency/rep-management") {
+			return {
+				title: "ویرایش عملکرد عاملیت فروش کشور",
+				readonlyKeys: ["company_type"],
+				editableFields: [
+					{ key: "credit_total", label: "اعتبار کل ماهیانه (ریال)", type: "number", required: true },
+					{ key: "income", label: "درآمد کل (ریال)", type: "number", required: true },
+					{ key: "cost_items", label: "هزینه‌ها", type: "text", required: true },
+				],
+				payloadKeys: ["company_type", "credit_total", "income", "cost_items"],
+			};
+		}
+
 		if (service === "shahkar") {
 			return {
 				title: t("performance.modal.titles.shahkar"),
@@ -901,11 +927,16 @@ export function PerformanceDetailModal({
 		return found?.name ?? String(mergedDetail.company_name ?? "-");
 	}, [companies, mergedDetail, record]);
 	const selectedCompanyType = useMemo(() => {
+		const salesAgencyType = service === "sales-agency/outbound"
+			? "OUTBOUND"
+			: service === "sales-agency/rep-management"
+				? "SALES_REP_MANAGEMENT"
+				: null;
 		const direct = pickCompanyTypeToken(
 			mergedDetail.company_type
 			?? mergedDetail.companyType
 			?? normalizedRecord.companyType,
-		);
+		) ?? salesAgencyType;
 		if (direct)
 			return direct;
 
@@ -914,7 +945,7 @@ export function PerformanceDetailModal({
 			return null;
 		const found = companies?.find(company => company.id === companyId) as Record<string, unknown> | undefined;
 		return pickCompanyTypeToken(found?.company_type);
-	}, [companies, mergedDetail, normalizedRecord.companyType, record]);
+	}, [companies, mergedDetail, normalizedRecord.companyType, record, service]);
 	const isTrafficUnitVisible = typeof selectedCompanyType === "string" && ["CP", "PREMIUM", "IXP", "TCI"].includes(selectedCompanyType.toUpperCase());
 	const visibleTrafficLocations = useMemo(() => {
 		if (service !== "traffic")
@@ -1497,6 +1528,17 @@ export function PerformanceDetailModal({
 			return;
 
 		form.clearErrors();
+		if (service === "sales-agency/outbound" || service === "sales-agency/rep-management") {
+			const result = salesAgencyFieldsSchema(selectedCompanyType).safeParse(values);
+			if (!result.success) {
+				result.error.issues.forEach((issue) => {
+					const fieldName = issue.path.join(".");
+					if (fieldName)
+						form.setError(fieldName as any, { type: "validation", message: issue.message });
+				});
+				return;
+			}
+		}
 
 		let hasError = false;
 		visibleEditableFields.forEach((field) => {
@@ -1797,7 +1839,10 @@ export function PerformanceDetailModal({
 							</DetailSection>
 
 							<DetailSection title="مقدار عملکرد" tone="success" extra={sectionActions} collapsible={false}>
-								{visibleEditableFields.length > 0
+								{service === "sales-agency/outbound" || service === "sales-agency/rep-management"
+									? <SalesAgencyPerformanceFields prefix="" companyType={selectedCompanyType} companyId={normalizedRecord.companyId} serviceId={normalizedRecord.serviceId} year={normalizedRecord.year} month={normalizedRecord.month} />
+									: null}
+								{visibleEditableFields.length > 0 && service !== "sales-agency/outbound" && service !== "sales-agency/rep-management"
 									? (
 										isTrafficEditLayout
 											? (
