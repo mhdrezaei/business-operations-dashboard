@@ -1,5 +1,5 @@
 import type { SmsOperatorCode, SmsOperatorInvoice, SmsOperatorInvoiceMonthlyReport, SmsOperatorInvoicePayload } from "#src/features/performance/api/performances.api";
-import type { ActionType, ProColumns, ProCoreActionType } from "@ant-design/pro-components";
+import type { ActionType, ColumnsState, ProColumns, ProCoreActionType } from "@ant-design/pro-components";
 import type { FocusEvent, KeyboardEvent } from "react";
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import { createSmsOperatorInvoice, createSmsOperatorInvoiceMonthlyReport, deleteSmsOperatorInvoice, fetchLatestSmsOperatorInvoiceMonthlyReport, fetchSmsOperatorInvoiceMonthlyReportStatus, fetchSmsOperatorInvoices, updateSmsOperatorInvoice } from "#src/features/performance/api/performances.api";
@@ -34,6 +34,8 @@ export function SmsGatewayOperatorInvoicesPage() {
 	const invoicesTableActionRef = useRef<ActionType>(null);
 	const [saving, setSaving] = useState(false); const [loadingReport, setLoadingReport] = useState(true); const [report, setReport] = useState<SmsOperatorInvoiceMonthlyReport>();
 	const [editing, setEditing] = useState<SmsOperatorInvoice>(); const [editForm] = Form.useForm<SmsOperatorInvoicePayload>(); const [updating, setUpdating] = useState(false);
+	const [summaryColumnsState, setSummaryColumnsState] = useState<Record<string, ColumnsState>>({});
+	const [detailColumnsState, setDetailColumnsState] = useState<Record<string, ColumnsState>>({});
 	const reportRequestId = useRef(0);
 	const year = Form.useWatch("sh_year", form); const month = Form.useWatch("sh_month", form);
 	const isReportProcessing = loadingReport && (!report || ["PENDING", "RUNNING"].includes(report.status));
@@ -206,7 +208,7 @@ export function SmsGatewayOperatorInvoicesPage() {
 										if (!report)
 											return;
 										try {
-											openSmsOperatorInvoicesPdfPrint({ report, monthLabel: MONTHS[report.sh_month - 1], operatorName: name, formatNumber: number });
+											openSmsOperatorInvoicesPdfPrint({ report, monthLabel: MONTHS[report.sh_month - 1], operatorName: name, formatNumber: number, summaryColumnsState, detailColumnsState });
 										}
 										catch (error) {
 											showMessage("error", error instanceof Error && error.message === "POPUP_BLOCKED" ? "پاپ‌آپ مرورگر مسدود است. لطفاً آن را فعال کنید." : "ساخت PDF ناموفق بود.");
@@ -241,14 +243,15 @@ export function SmsGatewayOperatorInvoicesPage() {
 								pagination={false}
 								tableTitle="جمع کل هر اپراتور (فارسی + انگلیسی)"
 								tableSubtitle={`دوره گزارش: ${MONTHS[report.sh_month - 1]} ماه سال ${report.sh_year}`}
+								columnsState={{ value: summaryColumnsState, onChange: setSummaryColumnsState }}
 								dataSource={report.operator_totals ?? []}
 								columns={[
 									{ title: "اپراتور", dataIndex: "operator", render: (_, item) => <Tag color="blue">{name(item.operator)}</Tag> },
 									{ title: "وضعیت فاکتور", dataIndex: "manual_invoice", render: (_, item) => invoiceStatus(item.manual_invoice) },
-									{ title: "تعداد فاکتور", dataIndex: ["manual_invoice", "count"], render: (_, item) => number(item.manual_invoice.count) },
-									{ title: "هزینه فاکتور (ریال)", dataIndex: ["manual_invoice", "cost"], render: (_, item) => number(item.manual_invoice.cost) },
-									{ title: "تعداد سامانه نگاه", dataIndex: ["internal_system", "total"], render: (_, item) => number(item.internal_system.total) },
-									{ title: "هزینه سامانه نگاه (ریال)", dataIndex: ["internal_system", "cost"], render: (_, item) => number(item.internal_system.cost) },
+									{ title: "تعداد فاکتور", key: "manual_invoice_count", dataIndex: ["manual_invoice", "count"], render: (_, item) => number(item.manual_invoice.count) },
+									{ title: "هزینه فاکتور (ریال)", key: "manual_invoice_cost", dataIndex: ["manual_invoice", "cost"], render: (_, item) => number(item.manual_invoice.cost) },
+									{ title: "تعداد سامانه نگاه", key: "internal_system_total", dataIndex: ["internal_system", "total"], render: (_, item) => number(item.internal_system.total) },
+									{ title: "هزینه سامانه نگاه (ریال)", key: "internal_system_cost", dataIndex: ["internal_system", "cost"], render: (_, item) => number(item.internal_system.cost) },
 									{ title: "تعداد Gateway", dataIndex: "gateway_total", render: (_, item) => number(item.gateway_total) },
 									{ title: "اختلاف تعداد", key: "difference", render: (_, item) => number(Number(item.manual_invoice.count ?? 0) - Number(item.internal_system.total ?? 0)) },
 								]}
@@ -260,13 +263,14 @@ export function SmsGatewayOperatorInvoicesPage() {
 								pagination={false}
 								tableTitle="به تفکیک اپراتور و زبان"
 								tableSubtitle="مقایسه فاکتور ارسالی اپراتور با سامانه نگاه و Gateway."
+								columnsState={{ value: detailColumnsState, onChange: setDetailColumnsState }}
 								dataSource={report.rows ?? []}
 								columns={[
 									{ title: "اپراتور", dataIndex: "operator", render: (_, item) => name(item.operator) },
 									{ title: "زبان", dataIndex: "language", render: (_, item) => item.language === "FA" ? "فارسی" : "انگلیسی" },
 									{ title: "وضعیت فاکتور ارسالی اپراتور", dataIndex: "manual_invoice", render: (_, item) => invoiceStatus(item.manual_invoice) },
-									{ title: "تعداد فاکتور ارسالی اپراتور", dataIndex: ["manual_invoice", "count"], render: (_, item) => number(item.manual_invoice.count) },
-									{ title: "هزینه فاکتور ارسالی اپراتور (ریال)", dataIndex: ["manual_invoice", "cost"], render: (_, item) => number(item.manual_invoice.cost) },
+									{ title: "تعداد فاکتور ارسالی اپراتور", key: "manual_invoice_count", dataIndex: ["manual_invoice", "count"], render: (_, item) => number(item.manual_invoice.count) },
+									{ title: "هزینه فاکتور ارسالی اپراتور (ریال)", key: "manual_invoice_cost", dataIndex: ["manual_invoice", "cost"], render: (_, item) => number(item.manual_invoice.cost) },
 									{ title: "تعداد سامانه نگاه", dataIndex: "internal_system_total", render: (_, item) => number(item.internal_system_total) },
 									{ title: "هزینه سامانه نگاه (ریال)", dataIndex: "internal_system_cost", render: (_, item) => number(item.internal_system_cost) },
 									{ title: "تعداد سامانه Gateway", dataIndex: "gateway_total", render: (_, item) => number(item.gateway_total) },
