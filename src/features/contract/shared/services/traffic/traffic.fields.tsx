@@ -17,6 +17,12 @@ const TRAFFIC_UNIT_OPTIONS = [
 	{ label: "GB/month", value: "GB/month" },
 	{ label: "Mbps", value: "Mbps" },
 ];
+const TRAFFIC_DEFAULT_UNIT_BY_COMPANY_TYPE: Record<string, "GB/month" | "Mbps"> = {
+	CP: "GB/month",
+	PREMIUM: "GB/month",
+	IXP: "Mbps",
+	TCI: "Mbps",
+};
 const IXP_CONTRACT_MODEL_OPTIONS = [
 	{ label: "قدیمی", value: "LEGACY" },
 	{ label: "جدول متغیر", value: "VARIABLE_TABLE" },
@@ -114,8 +120,9 @@ function TrafficPricingFields({
 }
 
 export function TrafficFields() {
-	const { control, getValues, setValue } = useFormContext<ContractFormValues>();
+	const { control, getFieldState, getValues, setValue } = useFormContext<ContractFormValues>();
 	const hasInitializedTehranPricing = useRef(false);
+	const previousCompanyType = useRef<string | null>(null);
 	const isOfficial = useWatch({ control, name: sf("isOfficial") as any }) as boolean | undefined;
 	const companyType = useWatch({ control, name: "companyType" });
 	const isCollocation = String(companyType ?? "").trim().toUpperCase() === "COLLOCATION";
@@ -134,6 +141,25 @@ export function TrafficFields() {
 	const showPricingUi = !!isOfficial;
 	const showPremiumRevenuePercent = showPricingUi && companyType === "PREMIUM";
 	const showUnitSelector = showPricingUi && ["CP", "PREMIUM", "IXP", "TCI"].includes(String(companyType ?? "").trim().toUpperCase());
+	const normalizedCompanyType = String(companyType ?? "").trim().toUpperCase();
+
+	useEffect(() => {
+		const defaultUnit = TRAFFIC_DEFAULT_UNIT_BY_COMPANY_TYPE[normalizedCompanyType];
+		const typeChangedByUser = previousCompanyType.current != null && previousCompanyType.current !== normalizedCompanyType && getFieldState("companyType").isDirty;
+		previousCompanyType.current = normalizedCompanyType || null;
+		if (!defaultUnit)
+			return;
+
+		for (const unitField of [sf("tehranUnit"), sf("provinceUnit")]) {
+			const currentUnit = getValues(unitField as any);
+			if (currentUnit == null || currentUnit === "" || typeChangedByUser) {
+				setValue(unitField as any, defaultUnit, {
+					shouldDirty: false,
+					shouldValidate: false,
+				});
+			}
+		}
+	}, [getFieldState, getValues, normalizedCompanyType, setValue]);
 
 	function addTehran() {
 		if (tehranPricing)
