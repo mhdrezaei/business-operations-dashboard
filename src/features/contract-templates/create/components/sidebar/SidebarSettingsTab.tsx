@@ -1,23 +1,17 @@
-import type { Editor } from "@tiptap/react";
-import { DeleteOutlined, FileWordOutlined, UploadOutlined } from "@ant-design/icons";
-import { Button, message, theme, Typography } from "antd";
-// src/features/contract-templates/create/components/SidebarSettingsTab.tsx
+import { DeleteOutlined, UploadOutlined } from "@ant-design/icons";
+import { Button, theme, Typography } from "antd";
 import React, { useRef, useState } from "react";
 import { TemplateCreateApi } from "../../../api/api";
 import { useTemplateStore } from "../../../store/useTemplateStore";
+import { customToast } from "../editor/ui/CustomToast";
 import HeaderEditor from "../editor/ui/HeaderEditor";
-import { importWordToEditor } from "./word-importer";
 
 const { Text } = Typography;
 
-export default function SidebarSettingsTab({ editor }: { editor: Editor | null }) {
+export default function SidebarSettingsTab() {
 	const { token } = theme.useToken();
 	const fontInputRef = useRef<HTMLInputElement>(null);
-	const wordInputRef = useRef<HTMLInputElement>(null);
-
 	const [isUploadingFont, setIsUploadingFont] = useState(false);
-	const [isImportingWord, setIsImportingWord] = useState(false);
-
 	const { customFonts, headerData, setHeaderData, fetchFonts } = useTemplateStore();
 
 	const handleFontUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -30,11 +24,11 @@ export default function SidebarSettingsTab({ editor }: { editor: Editor | null }
 		setIsUploadingFont(true);
 		try {
 			await TemplateCreateApi.uploadFont(file.name.replace(/\.[^/.]+$/, ""), file);
-			message.success("فونت با موفقیت آپلود شد.");
+			customToast.success("فونت با موفقیت آپلود شد.");
 			fetchFonts();
 		}
 		catch (error: any) {
-			message.error(error?.message || "خطا در آپلود فونت");
+			customToast.error(error?.message || "خطا در آپلود فونت");
 		}
 		finally {
 			setIsUploadingFont(false);
@@ -44,29 +38,13 @@ export default function SidebarSettingsTab({ editor }: { editor: Editor | null }
 	const handleDeleteFont = async (id: number) => {
 		try {
 			await TemplateCreateApi.deleteFont(id);
-			message.success("فونت حذف شد.");
+			customToast.success("فونت حذف شد.");
 			fetchFonts();
 		}
 		catch (error) {
-			message.error("خطا در حذف فونت");
+			customToast.error("خطا در حذف فونت");
 			console.warn(error);
 		}
-	};
-
-	const handleWordImportClick = async (event: React.ChangeEvent<HTMLInputElement>) => {
-		const file = event.target.files?.[0];
-		if (event.target)
-			event.target.value = "";
-		if (!file || !editor)
-			return;
-
-		if (!file.name.toLowerCase().endsWith(".docx")) {
-			message.error("فقط فایل‌های .docx پشتیبانی می‌شوند.");
-			return;
-		}
-
-		setIsImportingWord(true);
-		await importWordToEditor(file, editor, () => setIsImportingWord(false));
 	};
 
 	return (
@@ -97,11 +75,6 @@ export default function SidebarSettingsTab({ editor }: { editor: Editor | null }
 					))}
 				</div>
 			</div>
-
-			<Button type="primary" ghost block icon={<FileWordOutlined />} className="h-10 mt-2" loading={isImportingWord} onClick={() => wordInputRef.current?.click()}>
-				ایمپورت از (docx.) Word
-			</Button>
-			<input ref={wordInputRef} type="file" accept=".docx" className="hidden" onChange={handleWordImportClick} />
 		</div>
 	);
 }

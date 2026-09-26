@@ -10,6 +10,9 @@ export interface HeaderData {
 	logo_url?: string | null
 	show_contract_number?: boolean
 	extra_text?: string
+	contract_number?: string
+	header_font_family?: string
+	header_font_size?: number
 }
 
 export interface HeaderEditorProps {

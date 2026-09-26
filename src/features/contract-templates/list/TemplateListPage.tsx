@@ -102,7 +102,7 @@ export default function TemplateListPage() {
 	return (
 		<BasicContent className="h-full">
 			<BasicTable<TemplateListItemType>
-				adaptive
+
 				rowKey="id"
 				columns={columns}
 				actionRef={actionRef}

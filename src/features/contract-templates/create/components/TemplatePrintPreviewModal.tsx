@@ -1,4 +1,3 @@
-// src/features/contract-templates/create/components/TemplatePrintPreviewModal.tsx
 import type { Editor } from "@tiptap/react";
 import { FilePdfOutlined, PrinterOutlined } from "@ant-design/icons";
 import { DOMSerializer } from "@tiptap/pm/model";
@@ -15,7 +14,6 @@ interface TemplatePrintPreviewModalProps {
 
 export default function TemplatePrintPreviewModal({ isOpen, onClose, editor }: TemplatePrintPreviewModalProps) {
 	const { token } = theme.useToken();
-
 	const { headerData, customFonts } = useTemplateStore();
 
 	const registry = useVariableRegistry() as any;
@@ -39,20 +37,21 @@ export default function TemplatePrintPreviewModal({ isOpen, onClose, editor }: T
 		const defaultLogo = "/karashab-logo.png";
 		const logo = headerData?.logo_url || headerData?.logo_data_url || defaultLogo;
 		const showContractNo = headerData?.show_contract_number !== false;
+		const contractNumber = "[شماره قرارداد / الحاقیه]";
 		const text = headerData?.extra_text || "";
+		const fontFamily = headerData?.header_font_family ? `'${headerData.header_font_family}', sans-serif` : "inherit";
+		const fontSize = headerData?.header_font_size ? `${headerData.header_font_size}px` : "13px";
 
 		return `
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 35px;">
-                <!-- سمت راست: لوگو و متن ثابت -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 35px; font-family: ${fontFamily};">
                 <div style="display: flex; flex-direction: column; align-items: flex-start;">
                     <img src="${logo}" style="max-height: 45px; object-fit: contain; margin-bottom: 12px; max-width: 250px;" />
-                    ${text ? `<div style="font-size: 13px; font-weight: normal; color: #000;">${text}</div>` : ""}
+                    ${text ? `<div style="font-size: ${fontSize}; font-weight: normal; color: #000;">${text}</div>` : ""}
                 </div>
-                <!-- سمت چپ: شماره قرارداد و نوار آبی -->
                 ${showContractNo
 					? `
                 <div style="display: flex; flex-direction: column; align-items: center; width: 180px; padding-top: 10px;">
-                    <div style="font-weight: bold; font-size: 13px; margin-bottom: 8px; color: #000;">شماره قرارداد : ۱۴۰۳/۱۲۳۴</div>
+                    <div style="font-weight: bold; font-size: 13px; margin-bottom: 8px; color: #000;">شماره قرارداد : ${contractNumber}</div>
                     <div style="width: 100%; height: 14px; background-color: #465b8e; clip-path: polygon(15px 0, 100% 0, 100% 100%, 0% 100%);"></div>
                 </div>
                 `
@@ -60,8 +59,7 @@ export default function TemplatePrintPreviewModal({ isOpen, onClose, editor }: T
             </div>
         `;
 	}, [headerData]);
-
-	const processedHTML = useMemo(() => {
+	const rawContentHTML = useMemo(() => {
 		if (!isOpen || !editor)
 			return "";
 
@@ -99,6 +97,66 @@ export default function TemplatePrintPreviewModal({ isOpen, onClose, editor }: T
 		}
 	}, [isOpen, editor, variableLabelsMap]);
 
+	const editorStyles = `
+		.tiptap-content p { margin-top: 0; margin-bottom: 0.5em; line-height: 1.6; min-height: 1.5em; }
+		.tiptap-content table { display: table !important; border-collapse: collapse; width: 100%; margin: 1rem 0; table-layout: auto; }
+		.tiptap-content table tbody { display: table-row-group !important; }
+		.tiptap-content table tr { display: table-row !important; }
+		.tiptap-content table td, .tiptap-content table th { display: table-cell !important; border: 1px solid #94a3b8; padding: 6px 10px; vertical-align: top; box-sizing: border-box; min-width: 1em; word-break: break-word; }
+		.tiptap-content table th { font-weight: bold; background-color: #f1f5f9; }
+		.tiptap-content h1 { font-size: 22px; font-weight: bold; margin-top: 1em; margin-bottom: 0.5em; }
+		.tiptap-content h2 { font-size: 18px; font-weight: bold; margin-top: 0.8em; margin-bottom: 0.4em; }
+		.tiptap-content h3 { font-size: 16px; font-weight: bold; margin-top: 0.6em; margin-bottom: 0.3em; }
+		
+		.tiptap-content hr,
+		.tiptap-content .page-break {
+			display: block;
+			border: none;
+			height: 36px;
+			margin: 36px -72px 100px -72px;
+			background: #e2e8f0;
+			border-top: 1px solid #cbd5e1;
+			border-bottom: 1px solid #cbd5e1;
+			position: relative;
+			clear: both;
+			cursor: default;
+			user-select: none;
+		}
+		.tiptap-content hr::after,
+		.tiptap-content .page-break::after {
+			content: "━━━ شکست صفحه (صفحه بعد) ━━━";
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			font-size: 11px;
+			font-weight: 500;
+			color: #64748b;
+			background: #ffffff;
+			padding: 2px 16px;
+			border-radius: 9999px;
+			border: 1px dashed #cbd5e1;
+			box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+			white-space: nowrap;
+		}
+	`;
+
+	// Split document into physical pages for beautiful preview
+	const pages = useMemo(() => {
+		if (!rawContentHTML)
+			return [];
+		// Clean up paragraph wrappers around PAGE_BREAK to avoid broken HTML
+		const cleanHTML = rawContentHTML.replace(/<p[^>]*>\s*(?:<[^>]+>)*\[\[PAGE_BREAK\]\](?:<\/[^>]+>)*\s*<\/p>/g, "[[PAGE_BREAK]]");
+		return cleanHTML.split("[[PAGE_BREAK]]");
+	}, [rawContentHTML]);
+
+	const printContentHTML = useMemo(() => {
+		if (!rawContentHTML)
+			return "";
+		const cleanHTML = rawContentHTML.replace(/<p[^>]*>\s*(?:<[^>]+>)*\[\[PAGE_BREAK\]\](?:<\/[^>]+>)*\s*<\/p>/g, "[[PAGE_BREAK]]");
+		return `<div class="tiptap-content">${cleanHTML.replace(/\[\[PAGE_BREAK\]\]/g, "</div><div style=\"page-break-after: always; clear: both;\"></div><div class=\"tiptap-content\">")}</div>`;
+	}, [rawContentHTML]);
+
 	const handlePrint = (isPDF: boolean = false) => {
 		const printWindow = window.open("", "_blank");
 		if (!printWindow)
@@ -120,7 +178,6 @@ export default function TemplatePrintPreviewModal({ isOpen, onClose, editor }: T
 		printWindow.document.write(`
             <style>
                 ${customFontFaces}
-                
                 html, body {
                     padding: 0;
                     margin: 0;
@@ -136,7 +193,7 @@ export default function TemplatePrintPreviewModal({ isOpen, onClose, editor }: T
                     padding: 1.5cm 2cm;
                     text-align: justify;
                 }
-                /* استایل برای حفظ کردن تگ‌های inline تیپ‌تپ مثل font-family */
+                ${editorStyles}
                 .print-container * {
                     -webkit-print-color-adjust: exact !important;
                     print-color-adjust: exact !important;
@@ -148,10 +205,24 @@ export default function TemplatePrintPreviewModal({ isOpen, onClose, editor }: T
             </style>
         `);
 		printWindow.document.write(`
-            <div class="print-container">
-                ${headerHTML}
-                ${processedHTML}
-            </div>
+            <table style="width: 100%; border-collapse: collapse; border: none;">
+                <thead>
+                    <tr>
+                        <td style="border: none; padding-bottom: 10px;">
+                            ${headerHTML}
+                        </td>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="border: none;">
+                            <div class="print-container">
+                                ${printContentHTML}
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         `);
 		printWindow.document.close();
 		printWindow.focus();
@@ -164,35 +235,51 @@ export default function TemplatePrintPreviewModal({ isOpen, onClose, editor }: T
 
 	return (
 		<Modal
-			title="پیش‌نمایش چاپ قرارداد"
+			title={<div className="text-lg font-bold">پیش‌نمایش چاپ قرارداد</div>}
 			open={isOpen}
 			onCancel={onClose}
-			width={850}
+			width={950}
 			zIndex={10000}
-			footer={[
-				<Button key="back" onClick={onClose}>
-					بستن
-				</Button>,
-				<Button key="pdf" type="default" icon={<FilePdfOutlined />} onClick={() => handlePrint(true)}>
-					دانلود PDF
-				</Button>,
-				<Button key="print" type="primary" icon={<PrinterOutlined />} onClick={() => handlePrint(false)}>
-					چاپ سند
-				</Button>,
-			]}
+			centered
+			styles={{
+				body: { padding: 0, overflow: "hidden", borderRadius: "0 0 8px 8px" },
+				header: { padding: "20px 24px", borderBottom: `1px solid ${token.colorBorderSecondary}` },
+			}}
+			footer={(
+				<div className="px-6 py-4 flex justify-end gap-3" style={{ borderTop: `1px solid ${token.colorBorderSecondary}` }}>
+					<Button key="back" onClick={onClose} size="large">
+						بستن
+					</Button>
+					<Button key="pdf" type="default" icon={<FilePdfOutlined />} onClick={() => handlePrint(true)} size="large">
+						دانلود PDF
+					</Button>
+					<Button key="print" type="primary" icon={<PrinterOutlined />} onClick={() => handlePrint(false)} size="large">
+						چاپ سند
+					</Button>
+				</div>
+			)}
 		>
-			<div
-				className="max-h-[65vh] overflow-y-auto p-8 rounded-lg border shadow-inner my-4 custom-scrollbar"
-				style={{
-					backgroundColor: "#ffffff",
-					color: "#000000",
-					borderColor: token.colorBorderSecondary,
-					lineHeight: "2.2",
-					textAlign: "justify",
-				}}
-			>
-				<div dangerouslySetInnerHTML={{ __html: headerHTML }} />
-				<div dangerouslySetInnerHTML={{ __html: processedHTML }} />
+			<div className="flex flex-col items-center max-h-[70vh] overflow-y-auto custom-scrollbar bg-slate-100 dark:bg-slate-800 p-8 gap-8">
+				<style>{editorStyles}</style>
+				{pages.map((pageHtml, index) => (
+					<div
+						key={index}
+						className="bg-white shadow-xl flex-shrink-0"
+						style={{
+							width: "100%",
+							maxWidth: "21cm",
+							minHeight: "29.7cm",
+							padding: "1.5cm 2cm",
+							color: "#000000",
+							lineHeight: "2.2",
+							textAlign: "justify",
+							direction: "rtl",
+						}}
+					>
+						<div dangerouslySetInnerHTML={{ __html: headerHTML }} />
+						<div className="tiptap-content" dangerouslySetInnerHTML={{ __html: pageHtml }} />
+					</div>
+				))}
 			</div>
 		</Modal>
 	);

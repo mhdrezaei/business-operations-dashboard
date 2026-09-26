@@ -15,12 +15,15 @@ export const TemplateCreateApi = {
 		return request.get("contracts/templates/fonts/").json<PaginatedFonts>();
 	},
 
-	uploadFont: (name: string, file: File) => {
+	uploadFont: (name: string, file: File, onProgress?: (percent: number) => void) => {
 		const formData = new FormData();
 		formData.append("name", name);
 		formData.append("file", file);
 		return request.post("contracts/templates/fonts/", {
 			body: formData,
+			onUploadProgress: onProgress
+				? progress => onProgress(progress.percent * 100)
+				: undefined,
 		}).json<TemplateFont>();
 	},
 

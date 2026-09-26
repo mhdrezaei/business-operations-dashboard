@@ -15,22 +15,22 @@ export default function VariableChip({ node, deleteNode }: NodeViewProps) {
 	const label = variableDef ? variableDef.label : key;
 
 	return (
-		<NodeViewWrapper as="span" className="inline-block align-baseline mx-1" dir="rtl">
+		<NodeViewWrapper as="span" className="inline mx-[0.1em] align-baseline" dir="rtl">
 			<span
 				contentEditable={false}
 				title={`{$${key}}`}
-				className="inline-flex items-center text-primary  gap-1 rounded-md border-primary border px-2 py-1 pl-0 text-xs font-medium leading-none select-none transition-colors"
-
+				className="text-primary rounded-[0.2em] border-primary border px-[0.3em] py-[0.05em] select-none transition-colors"
+				style={{ fontSize: "inherit", fontWeight: "inherit", verticalAlign: "baseline" }}
 			>
 				{label}
 				<button
 					type="button"
 					onClick={deleteNode}
-					className="flex items-center justify-center p-0.5 rounded-full transition-colors ml-1 cursor-pointer"
+					className="inline-flex items-center justify-center p-[0.1em] rounded-full transition-colors ml-[0.2em] cursor-pointer"
 					onMouseEnter={e => (e.currentTarget.style.color = token.colorError)}
 					onMouseLeave={e => (e.currentTarget.style.color = token.colorTextSecondary)}
 				>
-					<CloseOutlined style={{ fontSize: "9px" }} />
+					<CloseOutlined style={{ fontSize: "0.75em" }} />
 				</button>
 			</span>
 		</NodeViewWrapper>
