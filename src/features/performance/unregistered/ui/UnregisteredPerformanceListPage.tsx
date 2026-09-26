@@ -29,7 +29,7 @@ function isSmsCommissionServicePath(service: PerformanceServicePath | null) {
 
 function serviceRequiresCompanyType(serviceCode: string | null | undefined) {
 	const normalized = String(serviceCode ?? "").trim().toLowerCase();
-	return normalized === "sms" || normalized === "psp" || normalized === "traffic";
+	return normalized === "sms" || normalized === "psp" || normalized === "traffic" || normalized === "sales_agency";
 }
 
 function normalizeNumberList(values: unknown) {
@@ -106,8 +106,8 @@ export default function UnregisteredPerformanceList() {
 	});
 	const selectedServiceId = selectedServiceIds.length === 1 ? selectedServiceIds[0] : null;
 	const selectedServicePath = useMemo(
-		() => resolvePerformanceServicePath(selectedServiceCode as any),
-		[selectedServiceCode],
+		() => resolvePerformanceServicePath(selectedServiceCode as any, selectedCompanyType),
+		[selectedServiceCode, selectedCompanyType],
 	);
 	const isSmsCommission = isSmsCommissionServicePath(selectedServicePath);
 	const smsCommissionAgents = useQuery(smsCommissionAgentsQuery(isSmsCommission));
@@ -218,7 +218,7 @@ export default function UnregisteredPerformanceList() {
 		const rowServiceCode = String((record as any).service_code ?? serviceOption?.code ?? selectedServiceCode ?? "")
 			.trim()
 			.toLowerCase();
-		const rowServicePath = resolvePerformanceServicePath(rowServiceCode as PerformanceServiceCode);
+		const rowServicePath = resolvePerformanceServicePath(rowServiceCode as PerformanceServiceCode, normalizePerformanceRecord(record).companyType);
 
 		if (
 			!rowServicePath

@@ -84,11 +84,11 @@ export function FixedStartSection({
 	const salesAgentId = useWatch({ control, name: "salesAgentId" });
 	const trafficSubmitMode = useWatch({ control, name: "serviceFields.submitMode" as const }) as "single" | "template" | undefined;
 
-	const servicePath = useMemo(() => resolveContractServicePath(serviceCode), [serviceCode]);
+	const servicePath = useMemo(() => resolveContractServicePath(serviceCode, companyType), [serviceCode, companyType]);
 	const isTraffic = serviceCode === "traffic";
 	const isPsp = serviceCode === "psp";
 	const isSms = serviceCode === "sms";
-	const requiresCompanyType = isSms || isPsp || isTraffic;
+	const requiresCompanyType = isSms || isPsp || isTraffic || serviceCode === "sales_agency";
 	const isSmsCommission = isSmsCommissionCode(serviceCode);
 	const isTrafficTemplateMode = isTraffic && trafficSubmitMode === "template";
 	const isTrafficSingleMode = isTraffic && trafficSubmitMode === "single";

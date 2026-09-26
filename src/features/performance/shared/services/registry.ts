@@ -3,6 +3,7 @@ import type { PerformanceServiceCode } from "../model/performance.form.types";
 import { commercialPerformanceService } from "./commercial/commercial.registry";
 import { openapiPerformanceService } from "./openapi/openapi.registry";
 import { pspPerformanceService } from "./psp/psp.registry";
+import { salesAgencyPerformanceService } from "./sales-agency/sales-agency.registry";
 import { shahkarPerformanceService } from "./shahkar/shahkar.registry";
 import { smsCommissionPerformanceService } from "./sms-commission/sms-commission.registry";
 import { smsPerformanceService } from "./sms/sms.registry";
@@ -22,5 +23,6 @@ export const performanceServiceRegistry: Partial<Record<PerformanceServiceCode, 
 	"sms": smsPerformanceService,
 	"sms-commission": smsCommissionPerformanceService,
 	"sms_commission": smsCommissionPerformanceService,
+	"sales_agency": salesAgencyPerformanceService,
 	"traffic": trafficPerformanceService,
 };
