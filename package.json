@@ -61,8 +61,11 @@
 		"file-saver": "^2.0.5",
 		"framer-motion": "^12.28.1",
 		"html-docx-js-typescript": "^0.1.5",
+		"html2canvas": "^1.4.1",
+		"html2pdf.js": "^0.14.0",
 		"i18next": "^24.2.3",
 		"jalaliday": "^3.1.1",
+		"jspdf": "^4.2.1",
 		"jszip": "^3.10.1",
 		"keepalive-for-react": "^4.0.2",
 		"ky": "^1.7.5",
@@ -137,7 +140,7 @@
 	},
 	"lint-staged": {
 		"*": [
-			"eslint --fix"
+			"eslint --fix --no-warn-ignored"
 		]
 	}
 }

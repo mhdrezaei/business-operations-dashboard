@@ -243,6 +243,8 @@ export const ContractTemplatePrintModal: React.FC<Props> = ({ open, onClose, rec
 					onClose={() => setEditorModalOpen(false)}
 					initialHtml={processedHtml}
 					templateId={currentTemplateId}
+					contractId={record?.id || null}
+					service={service}
 					onPrint={(html) => {
 						const win = window.open("", "_blank", "width=1100,height=860");
 						if (win) {

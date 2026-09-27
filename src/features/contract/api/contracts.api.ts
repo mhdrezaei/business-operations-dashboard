@@ -13,6 +13,36 @@ export type ContractServicePath = | "openapi" | "traffic" | "psp" | "commercial"
   | "sms/vendor"
   | "sms-commission";
 
+export interface SignFlowPreviewResponse {
+	service: string
+	contract: {
+		id: number
+		contract_number: string
+		company: string
+	}
+	addendum_group_id: number | null
+	company_type: string | null
+	rule_config: {
+		id: number
+		name: string
+	}
+	steps: Array<{
+		order: number
+		name: string
+		recipients: Array<{
+			target_type: string
+			user_id: number
+			username: string
+		}>
+		resolved_users: Array<{
+			user_id: number
+			username: string
+		}>
+	}>
+	has_active_flow: boolean
+	active_flow_id: number | null
+}
+
 export interface ContractGapsResponse {
 	company: {
 		id: number
@@ -143,6 +173,30 @@ export function fetchCompanyContracts(
 	return request
 		.get(buildContractPath(service), { searchParams })
 		.json<PaginatedResult<any>>();
+}
+
+/* ===================== SIGN FLOW & PDF ===================== */
+
+export function fetchSignFlowPreview(service: ContractServicePath, contractId: number) {
+	return request
+		.post("contracts/sign-flows/preview/", {
+			json: { service, contract_id: contractId },
+		})
+		.json<SignFlowPreviewResponse>();
+}
+
+export function requestOfficialPdf(service: ContractServicePath, contractId: number, body: FormData) {
+	return request
+		.post(`contracts/${service}/${contractId}/official-pdf/`, {
+			body,
+		})
+		.json<any>(); // Assuming it returns some success status
+}
+
+export function checkOfficialPdfStatus(service: ContractServicePath, contractId: number) {
+	return request
+		.get(`contracts/${service}/${contractId}/official-pdf/status/`)
+		.json<any>(); // Replace with actual status type when known
 }
 
 /* ===================== DETAIL ===================== */
