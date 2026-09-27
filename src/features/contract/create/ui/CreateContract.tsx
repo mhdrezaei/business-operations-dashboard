@@ -258,31 +258,20 @@ function mapOpenApiAddendumLegacyDetails(row: Record<string, any>) {
 	};
 }
 
-function mapOpenApiPackageDetails(serviceFields: Record<string, any>) {
-	const plans = Array.isArray(serviceFields.plans) ? serviceFields.plans : [];
+function mapOpenApiSeparatedDetails(serviceFields: Record<string, any>) {
+	const pricing = serviceFields.separatedPricing ?? {};
 	return {
-		contract_model: "PACKAGE",
-		package_model: {
-			mode: serviceFields.packageMode ?? "OR",
-			tiers: plans.map((plan: any) => ({
-				sms_min_inclusive: toNumberOrNull(plan?.smsMin),
-				sms_max_exclusive: toNumberOrNull(plan?.smsMax),
-				bill_min_inclusive: toNumberOrNull(plan?.billMin),
-				bill_max_exclusive: toNumberOrNull(plan?.billMax),
-				partner_share_percent: toStringOrNull(plan?.billPartnerShare),
-				karashab_share_percent: toStringOrNull(plan?.billKarashabShare),
-				traffic_profit_percent: toStringOrNull(plan?.trafficProfitPercent),
-				traffic_partner_share_percent: toStringOrNull(plan?.trafficPartnerSharePercent ?? plan?.trafficCommissionPercent),
-				bill_inquiry_rate: {
-					calculation_type: "FLAT",
-					tiers: [{ min_inclusive: null, max_exclusive: null, rate_per_unit: toStringOrNull(plan?.billFixedPrice) }],
-				},
-				sms_sale_rate: {
-					calculation_type: "FLAT",
-					tiers: [{ min_inclusive: null, max_exclusive: null, rate_per_unit: toStringOrNull(plan?.smsFixedPrice) }],
-				},
-			})),
-		},
+		openapi_model: "SEPARATED",
+		contract_model: "SEPARATED",
+		wallet_charge_discount_percent: toStringOrNull(pricing.walletChargeDiscountPercent),
+		mid_period_bill_inquiry: contractTypeToApiPricing(pricing.midPeriodBillInquiry ?? null),
+		end_period_bill_inquiry: contractTypeToApiPricing(pricing.endPeriodBillInquiry ?? null),
+		connected_receipt_register: contractTypeToApiPricing(pricing.connectedReceiptRegister ?? null),
+		connected_karashab_share_percent: toStringOrNull(pricing.connectedKarashabSharePercent),
+		connected_partner_share_percent: toStringOrNull(pricing.connectedPartnerSharePercent),
+		disconnected_receipt_register: contractTypeToApiPricing(pricing.disconnectedReceiptRegister ?? null),
+		disconnected_karashab_share_percent: toStringOrNull(pricing.disconnectedKarashabSharePercent),
+		disconnected_partner_share_percent: toStringOrNull(pricing.disconnectedPartnerSharePercent),
 	};
 }
 
@@ -310,7 +299,7 @@ function mapOpenApiAddenda(
 			mapped.contract_openapi_details = mapOpenApiAddendumLegacyDetails(row);
 		}
 		else if (contractModel === "separated") {
-			mapped.contract_openapi_details = mainOpenApiDetails ?? mapOpenApiPackageDetails(serviceFields);
+			mapped.contract_openapi_details = mainOpenApiDetails ?? mapOpenApiSeparatedDetails(serviceFields);
 		}
 		mapped.children = mapOpenApiAddenda(row.children, contractModel, serviceFields, mainOpenApiDetails);
 
@@ -762,27 +751,14 @@ async function formValuesToApiPayload(values: ContractFormValues) {
 	if (serviceCode === "openapi") {
 		const contractModel = serviceFields.contractModel === "separated" ? "separated" : "legacy";
 		const apiContractModel = contractModel === "separated" ? "SEPARATED" : "LEGACY";
-		const separatedPricing = serviceFields.separatedPricing ?? {};
-		const openApiDetails = {
-			openapi_model: apiContractModel,
-			contract_model: apiContractModel,
-			...(contractModel === "separated"
-				? {
-					wallet_charge_discount_percent: toStringOrNull(separatedPricing.walletChargeDiscountPercent),
-					mid_period_bill_inquiry: contractTypeToApiPricing(separatedPricing.midPeriodBillInquiry ?? null),
-					end_period_bill_inquiry: contractTypeToApiPricing(separatedPricing.endPeriodBillInquiry ?? null),
-					connected_receipt_register: contractTypeToApiPricing(separatedPricing.connectedReceiptRegister ?? null),
-					connected_karashab_share_percent: toStringOrNull(separatedPricing.connectedKarashabSharePercent),
-					connected_partner_share_percent: toStringOrNull(separatedPricing.connectedPartnerSharePercent),
-					disconnected_receipt_register: contractTypeToApiPricing(separatedPricing.disconnectedReceiptRegister ?? null),
-					disconnected_karashab_share_percent: toStringOrNull(separatedPricing.disconnectedKarashabSharePercent),
-					disconnected_partner_share_percent: toStringOrNull(separatedPricing.disconnectedPartnerSharePercent),
-				}
-				: {
-					receipt_register: contractTypeToApiPricing(serviceFields.legacyPricing?.paymentRegistration ?? null),
-					bill_inquiry: contractTypeToApiPricing(serviceFields.legacyPricing?.billInquiry ?? null),
-				}),
-		};
+		const openApiDetails = contractModel === "separated"
+			? mapOpenApiSeparatedDetails(serviceFields)
+			: {
+				openapi_model: apiContractModel,
+				contract_model: apiContractModel,
+				receipt_register: contractTypeToApiPricing(serviceFields.legacyPricing?.paymentRegistration ?? null),
+				bill_inquiry: contractTypeToApiPricing(serviceFields.legacyPricing?.billInquiry ?? null),
+			};
 
 		payload.openapi_model = apiContractModel;
 
