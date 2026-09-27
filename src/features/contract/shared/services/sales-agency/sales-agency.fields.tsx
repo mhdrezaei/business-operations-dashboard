@@ -1,23 +1,37 @@
 import type { ContractFormValues } from "../../../shared/model/contract.form.types";
-import { RHFProNumber, RHFProText } from "#src/shared/ui/rhf-pro";
-import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
+import { fetchSalesAgencyExpenseTitles } from "#src/features/contract/api/contracts.api";
+import { RHFProNumber, RHFSelect } from "#src/shared/ui/rhf-pro";
+import { PlusOutlined } from "@ant-design/icons";
+import { useQuery } from "@tanstack/react-query";
 import { Alert, Button } from "antd";
-import { useEffect, useRef } from "react";
-import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useFormContext, useWatch } from "react-hook-form";
 import { ContractFormSection } from "../../ui/form/components/ContractFormSection";
 
 const sf = (path: string) => `serviceFields.${path}` as any;
 
 export function SalesAgencyContractFields() {
-	const { control, setValue } = useFormContext<ContractFormValues>();
+	const { control, getValues, setValue } = useFormContext<ContractFormValues>();
 	const companyType = useWatch({ control, name: "companyType" });
 	const previousCompanyType = useRef(companyType);
-	const { fields, append, remove } = useFieldArray({ control, name: sf("costTitles") });
-
-	useEffect(() => {
-		if (companyType === "SALES_REP_MANAGEMENT" && fields.length === 0)
-			append({ title: "" });
-	}, [companyType, fields.length, append]);
+	const [searchText, setSearchText] = useState("");
+	const [addedTitles, setAddedTitles] = useState<string[]>([]);
+	const expenseTitles = useQuery({
+		queryKey: ["admin", "sales-agency-expense-titles"],
+		enabled: companyType === "SALES_REP_MANAGEMENT",
+		queryFn: fetchSalesAgencyExpenseTitles,
+	});
+	const costTitleOptions = useMemo(
+		() => [...new Set([...(expenseTitles.data ?? []), ...addedTitles])]
+			.map(title => ({ label: title, value: title })),
+		[expenseTitles.data, addedTitles],
+	);
+	const rememberTitles = (value: unknown) => {
+		if (!Array.isArray(value))
+			return;
+		const titles = value.filter((title): title is string => typeof title === "string").map(title => title.trim()).filter(Boolean);
+		setAddedTitles(current => [...new Set([...current, ...titles])]);
+	};
 
 	useEffect(() => {
 		if (previousCompanyType.current !== companyType) {
@@ -54,24 +68,46 @@ export function SalesAgencyContractFields() {
 	if (companyType === "SALES_REP_MANAGEMENT") {
 		return (
 			<ContractFormSection title="مدیریت نمایندگان فروش" className="w-full">
-				<div className="flex flex-col gap-3">
+				<div className="flex flex-col gap-2">
 					<div className="text-sm font-medium">عنوان‌های هزینه‌ها</div>
-					{fields.map((field, index) => (
-						<div key={field.id} className="flex items-end gap-3">
-							<RHFProText
-								name={sf(`costTitles.${index}.title`)}
-								label={index === 0 ? "عنوان هزینه" : ""}
-								inputProps={{ placeholder: "عنوان هزینه را وارد کنید" }}
-								formItemProps={{ className: "mb-0 flex-1" }}
-							/>
-							{fields.length > 1
-								? <Button type="text" danger aria-label={`حذف عنوان هزینه ${index + 1}`} icon={<DeleteOutlined />} onClick={() => remove(index)} />
-								: null}
-						</div>
-					))}
-					<Button className="self-start" icon={<PlusOutlined />} onClick={() => append({ title: "" })}>
-						افزودن
-					</Button>
+					<div className="flex items-start gap-2">
+						<RHFSelect
+							name={sf("costTitles")}
+							options={costTitleOptions}
+							loading={expenseTitles.isLoading}
+							formItemProps={{ className: "mb-0 min-w-0 flex-1" }}
+							selectProps={{
+								mode: "tags",
+								showSearch: true,
+								searchValue: searchText,
+								onSearch: setSearchText,
+								placeholder: "عنوان هزینه را بنویسید یا انتخاب کنید",
+								notFoundContent: "موردی یافت نشد. برای افزودن مورد جدید Enter بزنید.",
+							}}
+							onValueChange={(value) => {
+								rememberTitles(value);
+								setSearchText("");
+							}}
+						/>
+						<Button
+							className="shrink-0"
+							icon={<PlusOutlined />}
+							disabled={!searchText.trim()}
+							onClick={() => {
+								const title = searchText.trim();
+								if (!title)
+									return;
+								const current = getValues(sf("costTitles")) as string[] | undefined;
+								const nextTitles = [...new Set([...(current ?? []), title])];
+								setValue(sf("costTitles"), nextTitles, { shouldDirty: true, shouldValidate: true });
+								rememberTitles(nextTitles);
+								setSearchText("");
+							}}
+						>
+							افزودن
+						</Button>
+					</div>
+					{expenseTitles.isError && <Alert type="error" message="دریافت عنوان‌های هزینه ناموفق بود." />}
 				</div>
 			</ContractFormSection>
 		);
