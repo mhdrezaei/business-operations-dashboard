@@ -60,6 +60,27 @@ export interface TrafficDatacenterDto {
 	[key: string]: unknown
 }
 
+const SALES_AGENCY_EXPENSE_TITLES_PATH = "contracts/sales-agency/expense-titles/";
+
+export async function fetchSalesAgencyExpenseTitles(): Promise<string[]> {
+	const response = await request
+		.get(SALES_AGENCY_EXPENSE_TITLES_PATH, { searchParams: { page_size: "1000" } })
+		.json<any>();
+	const rows = Array.isArray(response)
+		? response
+		: response?.results ?? response?.titles ?? response?.data ?? [];
+	return rows
+		.map((item: any) => typeof item === "string" ? item : item?.title ?? item?.name ?? item?.expense_title ?? item?.cost_title)
+		.filter((title: unknown): title is string => typeof title === "string" && !!title.trim())
+		.map((title: string) => title.trim());
+}
+
+export function createSalesAgencyExpenseTitle(title: string) {
+	return request
+		.post(SALES_AGENCY_EXPENSE_TITLES_PATH, { json: { name: title } })
+		.json<any>();
+}
+
 function buildContractPath(service: ContractServicePath, id?: number) {
 	return id
 		? `contracts/${service}/${id}/`

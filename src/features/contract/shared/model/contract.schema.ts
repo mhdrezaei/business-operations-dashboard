@@ -245,7 +245,7 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 					}
 					else if (selectedType === "SALES_REP_MANAGEMENT") {
 						const titles = Array.isArray(serviceFields.costTitles) ? serviceFields.costTitles : [];
-						if (titles.length === 0 || titles.some((item: any) => !String(item?.title ?? "").trim())) {
+						if (titles.length === 0 || titles.some((item: any) => !String(item ?? "").trim())) {
 							ctx.addIssue({ code: "custom", path: ["serviceFields", "costTitles"], message: "عنوان‌های هزینه را تکمیل کنید" });
 						}
 					}

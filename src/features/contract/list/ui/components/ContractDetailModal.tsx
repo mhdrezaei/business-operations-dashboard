@@ -1154,7 +1154,7 @@ function normalizeSalesAgencyServiceFields(dto: any, companyType: string | null)
 		const titles = dto?.cost_titles ?? dto?.costTitles ?? [];
 		return {
 			costTitles: Array.isArray(titles)
-				? titles.map((title: unknown) => ({ title: String(title ?? "") }))
+				? titles.map((title: unknown) => String(title ?? ""))
 				: [],
 		};
 	}
