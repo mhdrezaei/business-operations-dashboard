@@ -9,6 +9,8 @@ import { request } from "#src/utils/request";
 
 export type ContractServicePath = | "openapi" | "traffic" | "psp" | "commercial"
   | "shahkar"
+  | "sales-agency/outbound"
+  | "sales-agency/rep-management"
   | "sms/client"
   | "sms/vendor"
   | "sms-commission";

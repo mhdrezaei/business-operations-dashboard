@@ -418,9 +418,10 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 	const isSms = serviceCode === "sms";
 	const isPsp = serviceCode === "psp";
 	const isTraffic = serviceCode === "traffic";
+	const isSalesAgency = serviceCode === "sales_agency" || serviceCode === "sales-agency";
 	const isCollocation = isTraffic && String(companyType ?? "").trim().toUpperCase() === "COLLOCATION";
 	const isTelecomCollocation = isCollocation && counterpartyType === "gov_ops";
-	const requiresCompanyType = isSms || isPsp || isTraffic;
+	const requiresCompanyType = isSms || isPsp || isTraffic || isSalesAgency;
 	const isSmsPartnersFlow = isSms && counterpartyType === "partners";
 	const shouldSelectCompany = !isSms || isSmsPartnersFlow;
 	const showCompanyTypeSelect = requiresCompanyType && shouldSelectCompany;
@@ -726,7 +727,12 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 	}, [isSmsCommission, companyId, smsCommissionAgentOptions, selectedAgentId, setValue]);
 
 	const showCompanySelect = shouldSelectCompany && (!requiresCompanyType || !!companyType) && !isCollocation;
-	const companyTypeLabel = isTraffic ? "نوع شرکت (ترافیک)" : "نوع شرکت";
+	const companyTypeLabel = isSalesAgency
+		? "نوع همکاری (عاملیت فروش)"
+		: isTraffic
+			? "نوع شرکت (ترافیک)"
+			: "نوع شرکت";
+	const companyLabel = isSalesAgency ? "نام شرکت" : "شرکت";
 	const visibleLabels = useMemo(() => {
 		const labels = [
 			"نوع سرویس",
@@ -741,7 +747,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 		if (showCompanyTypeSelect)
 			labels.push(companyTypeLabel);
 		if (showCompanySelect)
-			labels.push("شرکت");
+			labels.push(companyLabel);
 		if (isSmsCommission)
 			labels.push("نماینده فروش");
 		if (isCollocation) {
@@ -749,7 +755,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 			labels.push("ماه شروع واقعی قرارداد");
 		}
 		return labels;
-	}, [isSms, showCompanyTypeSelect, companyTypeLabel, showCompanySelect, isSmsCommission, isCollocation]);
+	}, [isSms, showCompanyTypeSelect, companyTypeLabel, showCompanySelect, companyLabel, isSmsCommission, isCollocation]);
 	const alignedLabelStyle = useContractAlignedLabelWidth(visibleLabels);
 
 	const companyOptions = requiresCompanyType ? companyOptionsByType : companyOptionsDefault;
@@ -1339,7 +1345,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 
 					{showCompanySelect
 						? (
-							<ContractAlignedField label="شرکت" labelId="contract-form-label-company">
+							<ContractAlignedField label={companyLabel} labelId="contract-form-label-company">
 								<RHFSelect<ContractFormValues, "companyId", number | null>
 									name="companyId"
 									formItemProps={compactFormItemStyle}
