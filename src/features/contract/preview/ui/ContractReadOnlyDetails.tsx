@@ -28,10 +28,12 @@ const LABELS: Record<string, string> = {
 	collocationPartnerType: "نوع شریک کولوکیشن",
 	contractModel: "مدل قرارداد",
 	contractPricing: "نحوه محاسبه قرارداد",
+	costTitles: "عنوان‌های هزینه‌ها",
 	count: "تعداد",
 	datacenter: "دیتاسنتر",
 	datacenters: "دیتاسنترها",
 	discountPercent: "درصد تخفیف",
+	expensePercentage: "درصد هزینه",
 	electricityAmpRate: "نرخ آمپر برق",
 	electricityExemptionThreshold: "آستانه معافیت برق",
 	expertPercent: "درصد کاراشاب",
@@ -45,6 +47,7 @@ const LABELS: Record<string, string> = {
 	hamrahAvalEn: "همراه اول - انگلیسی",
 	hamrahAvalFa: "همراه اول - فارسی",
 	initialCommission: "کارمزد دریافتی اولیه",
+	incomePercentage: "درصد درآمد",
 	irancellEn: "ایرانسل - انگلیسی",
 	irancellFa: "ایرانسل - فارسی",
 	ipRate: "نرخ IP",
@@ -90,6 +93,7 @@ const LABELS: Record<string, string> = {
 	type: "نوع محاسبه",
 	unit: "واحد",
 	unitPrice: "قیمت واحد",
+	title: "عنوان هزینه",
 };
 
 const SERVICE_TITLES: Record<string, string> = {
@@ -98,6 +102,8 @@ const SERVICE_TITLES: Record<string, string> = {
 	"psp": "کارمزدها و درصدها",
 	"commercial": "بهای هر واحد",
 	"shahkar": "بهای هر واحد",
+	"sales-agency/outbound": "پورسانت نمایندگی فروش",
+	"sales-agency/rep-management": "مدیریت نمایندگان فروش",
 	"sms/client": "درآمد اپراتورها",
 	"sms/vendor": "درآمد اپراتورها",
 	"sms-commission": "کارمزدها و درصدها",
@@ -511,6 +517,10 @@ function ServiceDetails({ data, service, tone }: { data: Record<string, unknown>
 					)}
 			</ContractFormSection>
 		);
+	}
+
+	if (service === "sales-agency/outbound" || service === "sales-agency/rep-management") {
+		return <ContractFormSection title={SERVICE_TITLES[service]} tone={tone} defaultExpanded><ValueGrid data={data} tone={tone} /></ContractFormSection>;
 	}
 
 	if (service === "sms/client" || service === "sms/vendor") {
