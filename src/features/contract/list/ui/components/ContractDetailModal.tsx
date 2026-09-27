@@ -41,6 +41,8 @@ interface Props {
 }
 
 function servicePathToServiceCode(service: ContractServicePath): string {
+	if (service === "sales-agency/outbound" || service === "sales-agency/rep-management")
+		return "sales_agency";
 	const raw = service.startsWith("sms/") ? "sms" : service;
 	return raw.trim().toLowerCase();
 }
@@ -1147,6 +1149,22 @@ function normalizeTrafficServiceFields(dto: any) {
 	};
 }
 
+function normalizeSalesAgencyServiceFields(dto: any, companyType: string | null) {
+	if (companyType === "SALES_REP_MANAGEMENT") {
+		const titles = dto?.cost_titles ?? dto?.costTitles ?? [];
+		return {
+			costTitles: Array.isArray(titles)
+				? titles.map((title: unknown) => ({ title: String(title ?? "") }))
+				: [],
+		};
+	}
+
+	return {
+		incomePercentage: toNumberOrStringNumber(dto?.income_percentage ?? dto?.incomePercentage),
+		expensePercentage: toNumberOrStringNumber(dto?.expense_percentage ?? dto?.expensePercentage),
+	};
+}
+
 function dtoToFormValues(dto: any, service: ContractServicePath): ContractFormValues {
 	const serviceId = toNumberOrNull(dto?.service_id ?? dto?.serviceId ?? dto?.service?.id ?? dto?.service);
 	const companyId = toNumberOrNull(dto?.company_id ?? dto?.companyId ?? dto?.company?.id ?? dto?.company);
@@ -1181,6 +1199,9 @@ function dtoToFormValues(dto: any, service: ContractServicePath): ContractFormVa
 	}
 	else if (serviceCode === "traffic") {
 		serviceFields = normalizeTrafficServiceFields(dto);
+	}
+	else if (serviceCode === "sales_agency" || serviceCode === "sales-agency") {
+		serviceFields = normalizeSalesAgencyServiceFields(dto, companyType);
 	}
 	else {
 		// ✅ سایر سرویس‌ها: هر فیلدی غیر از پایه‌ها => serviceFields
@@ -1460,6 +1481,11 @@ function resolveSelectionService(context: ContractFormSelectionContext): Contrac
 	}
 	if (code === "sms_commission" || code === "sms-commission")
 		return "sms-commission";
+	if (code === "sales_agency" || code === "sales-agency") {
+		return String(context.companyType ?? "").trim().toUpperCase() === "SALES_REP_MANAGEMENT"
+			? "sales-agency/rep-management"
+			: "sales-agency/outbound";
+	}
 	if (["openapi", "traffic", "psp", "commercial", "shahkar"].includes(code))
 		return code as ContractServicePath;
 	return null;

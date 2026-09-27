@@ -17,6 +17,8 @@ const SERVICES = new Set<ContractServicePath>([
 	"psp",
 	"commercial",
 	"shahkar",
+	"sales-agency/outbound",
+	"sales-agency/rep-management",
 	"sms/client",
 	"sms/vendor",
 	"sms-commission",

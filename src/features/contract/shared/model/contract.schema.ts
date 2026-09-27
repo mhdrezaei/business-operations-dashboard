@@ -204,12 +204,20 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 					}
 				}
 			}
-			else if (val.serviceCode === "traffic" || val.serviceCode === "psp") {
+			else if (
+				val.serviceCode === "traffic"
+				|| val.serviceCode === "psp"
+				|| val.serviceCode === "sales_agency"
+				|| val.serviceCode === "sales-agency"
+			) {
+				const isSalesAgency = val.serviceCode === "sales_agency" || val.serviceCode === "sales-agency";
 				if (val.companyType == null) {
 					ctx.addIssue({
 						code: "custom",
 						path: ["companyType"],
-						message: val.serviceCode === "traffic" ? "نوع شرکت (ترافیک) الزامی است" : "نوع شرکت الزامی است",
+						message: isSalesAgency
+							? "نوع همکاری (عاملیت فروش) الزامی است"
+							: val.serviceCode === "traffic" ? "نوع شرکت (ترافیک) الزامی است" : "نوع شرکت الزامی است",
 					});
 				}
 
@@ -222,6 +230,25 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 				// When company type is selected → companyId required
 				if (val.companyType != null && val.companyId == null && !isTelecomCollocation) {
 					ctx.addIssue({ code: "custom", path: ["companyId"], message: "شرکت الزامی است" });
+				}
+
+				if (isSalesAgency) {
+					const serviceFields = (val.serviceFields ?? {}) as Record<string, any>;
+					const selectedType = String(val.companyType ?? "").trim().toUpperCase();
+					if (selectedType === "OUTBOUND") {
+						if (serviceFields.incomePercentage == null) {
+							ctx.addIssue({ code: "custom", path: ["serviceFields", "incomePercentage"], message: "درصد درآمد الزامی است" });
+						}
+						if (serviceFields.expensePercentage == null) {
+							ctx.addIssue({ code: "custom", path: ["serviceFields", "expensePercentage"], message: "درصد هزینه الزامی است" });
+						}
+					}
+					else if (selectedType === "SALES_REP_MANAGEMENT") {
+						const titles = Array.isArray(serviceFields.costTitles) ? serviceFields.costTitles : [];
+						if (titles.length === 0 || titles.some((item: any) => !String(item?.title ?? "").trim())) {
+							ctx.addIssue({ code: "custom", path: ["serviceFields", "costTitles"], message: "عنوان‌های هزینه را تکمیل کنید" });
+						}
+					}
 				}
 
 				if (val.serviceCode === "traffic") {

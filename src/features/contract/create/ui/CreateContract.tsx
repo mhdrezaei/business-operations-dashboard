@@ -608,6 +608,11 @@ function resolveCreateServicePath(values: ContractFormValues): ContractServicePa
 		return "shahkar";
 	if (code === "commercial")
 		return "commercial";
+	if (code === "sales_agency" || code === "sales-agency") {
+		return String(values.companyType ?? "").trim().toUpperCase() === "SALES_REP_MANAGEMENT"
+			? "sales-agency/rep-management"
+			: "sales-agency/outbound";
+	}
 	if (code === "sms-commission" || code === "sms_commission")
 		return "sms-commission";
 	if (code === "sms") {
@@ -756,6 +761,21 @@ async function formValuesToApiPayload(values: ContractFormValues) {
 			tehran: serviceFields.tehranPricing != null,
 			province: serviceFields.provincePricing != null,
 		});
+		return payload;
+	}
+
+	if (serviceCode === "sales_agency" || serviceCode === "sales-agency") {
+		const companyType = String(values.companyType ?? "").trim().toUpperCase();
+		if (companyType === "OUTBOUND") {
+			payload.income_percentage = toStringOrNull(serviceFields.incomePercentage);
+			payload.expense_percentage = toStringOrNull(serviceFields.expensePercentage);
+		}
+		else if (companyType === "SALES_REP_MANAGEMENT") {
+			payload.cost_titles = (Array.isArray(serviceFields.costTitles) ? serviceFields.costTitles : [])
+				.map((item: any) => String(item?.title ?? "").trim())
+				.filter(Boolean);
+		}
+		payload.addenda = mapGenericAddenda(addenda);
 		return payload;
 	}
 
