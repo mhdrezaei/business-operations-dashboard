@@ -1,6 +1,7 @@
 import type { ArrayPath, Path } from "react-hook-form";
 import type { ContractFormValues } from "../../../shared/model/contract.form.types";
 import { ContractAddendaSection } from "#src/features/contract/components/addenda/ContractAddendaSection";
+import { CONTRACT_TYPE_OPTIONS } from "#src/features/contract/components/contract-type/contract-type.options";
 import { defaultContractTypeValue } from "#src/features/contract/components/contract-type/contract-type.types";
 import { ContractTypeSection } from "#src/features/contract/components/contract-type/ContractTypeSection";
 import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
@@ -53,8 +54,17 @@ function TrafficPricingFields({
 	contractModelName,
 	showContractModel,
 }: TrafficPricingFieldsProps) {
-	const { control } = useFormContext<ContractFormValues>();
+	const { control, setValue } = useFormContext<ContractFormValues>();
 	const contractModel = useWatch({ control, name: contractModelName as any });
+	const basedTire = useWatch({ control, name: basedTireName as any });
+	const contractType = useWatch({ control, name: `${pricingName}.type` as any });
+	const fixedOnly = showBasedTire && basedTire === true;
+
+	useEffect(() => {
+		if (fixedOnly && contractType !== "tier_fixed") {
+			setValue(`${pricingName}.type` as any, "tier_fixed", { shouldDirty: true, shouldValidate: true });
+		}
+	}, [contractType, fixedOnly, pricingName, setValue]);
 	const ratePercentageHelpText = contractModel === "VARIABLE_TABLE"
 		? "مقدار فی بر اساس ضرب مقدار فی که وارد کرده‌اید در درصد نرخ محاسبه می‌شود."
 		: "در مدل قرارداد قدیمی، درصد نرخ اختیاری است و محاسبات مالی بر اساس مقدار فی (ریال) نمایش داده می‌شود؛ این درصد هیچ تاثیری بر روی محاسبات مالی ندارد.";
@@ -112,6 +122,10 @@ function TrafficPricingFields({
 				name={pricingName}
 				tone={TRAFFIC_SECTION_TONE}
 				variant="embedded"
+				contractTypeOptions={CONTRACT_TYPE_OPTIONS.map(option => ({
+					...option,
+					disabled: fixedOnly && option.value !== "tier_fixed",
+				}))}
 				showRatePercentage={showContractModel}
 				ratePercentageHelpText={ratePercentageHelpText}
 			/>
@@ -209,9 +223,9 @@ export function TrafficFields() {
 			return;
 
 		if (getValues(sf("tehranBasedTire") as any) == null)
-			setValue(sf("tehranBasedTire") as any, true, { shouldDirty: false, shouldValidate: false });
+			setValue(sf("tehranBasedTire") as any, false, { shouldDirty: false, shouldValidate: false });
 		if (getValues(sf("provinceBasedTire") as any) == null)
-			setValue(sf("provinceBasedTire") as any, true, { shouldDirty: false, shouldValidate: false });
+			setValue(sf("provinceBasedTire") as any, false, { shouldDirty: false, shouldValidate: false });
 		if (getValues(sf("tehranContractModel") as any) == null)
 			setValue(sf("tehranContractModel") as any, "LEGACY", { shouldDirty: false, shouldValidate: false });
 		if (getValues(sf("provinceContractModel") as any) == null)
