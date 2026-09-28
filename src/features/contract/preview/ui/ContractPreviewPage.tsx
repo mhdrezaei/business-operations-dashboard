@@ -5,7 +5,7 @@ import { fetchContractApprovalHistory, fetchContractDetail } from "#src/features
 import { formatHistoryDate } from "#src/features/contract/list/ui/components/contract-approval-history.utils";
 import { ContractEditForm } from "#src/features/contract/list/ui/components/ContractDetailModal";
 import { useAccess } from "#src/hooks";
-import { ClockCircleOutlined, EditOutlined, UserOutlined } from "@ant-design/icons";
+import { ClockCircleOutlined, UserOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Card, Empty, Spin, Tag } from "antd";
 import { useState } from "react";
@@ -79,39 +79,40 @@ export default function ContractPreviewPage() {
 	return (
 		<BasicContent className="min-h-full">
 			<div dir="rtl" className="flex w-full flex-col gap-4">
-				<Spin spinning={detail.isFetching || approvalHistory.isFetching} size="small">
-					<Card className="[&_.ant-card-body]:px-8 [&_.ant-card-body]:py-7">
-						<div className="flex min-h-16 flex-wrap items-center justify-between gap-5">
-							<div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-								<div className="flex items-center gap-2">
-									<span className="text-sm text-[var(--ant-color-text-secondary)]">آخرین وضعیت:</span>
-									<span className="text-base font-semibold">{latestStatusTitle}</span>
-									<Tag bordered={false} color={latestValue === true ? "success" : latestValue === false ? "error" : "default"}>{latestStatusText}</Tag>
-								</div>
-								<div className="flex items-center gap-2 text-sm text-[var(--ant-color-text-secondary)]">
-									<UserOutlined className="text-base" />
-									<span className="text-[var(--ant-color-text)]">{latestActor}</span>
-								</div>
-								{latestDate
-									? (
-										<div className="flex items-center gap-2 text-sm text-[var(--ant-color-text-secondary)]" dir="ltr">
-											<span>{formatHistoryDate(latestDate)}</span>
-											<ClockCircleOutlined className="text-base" />
-										</div>
-									)
-									: null}
-							</div>
-							{canUpdate
-								? <Button size="large" icon={<EditOutlined />} className="!border-primary !text-primary" onClick={() => navigate(editUrl)}>ویرایش قرارداد</Button>
-								: null}
-						</div>
-					</Card>
-				</Spin>
-
 				<ContractEditForm
 					contractId={contractId}
 					service={service}
 					readOnly
+					readOnlyHeader={(
+						<Spin spinning={detail.isFetching || approvalHistory.isFetching} size="small" className="block w-full">
+							<Card className="h-[88px] w-full [&_.ant-card-body]:box-border [&_.ant-card-body]:flex [&_.ant-card-body]:h-full [&_.ant-card-body]:items-center [&_.ant-card-body]:px-6 [&_.ant-card-body]:py-0">
+								<div className="flex w-full items-center justify-between gap-4">
+									<div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+										<div className="flex items-center gap-2">
+											<span className="text-sm text-[var(--ant-color-text-secondary)]">آخرین وضعیت:</span>
+											<span className="text-base font-semibold">{latestStatusTitle}</span>
+											<Tag bordered={false} color={latestValue === true ? "success" : latestValue === false ? "error" : "default"}>{latestStatusText}</Tag>
+										</div>
+										<div className="flex items-center gap-2 text-sm text-[var(--ant-color-text-secondary)]">
+											<UserOutlined className="text-base" />
+											<span className="text-[var(--ant-color-text)]">{latestActor}</span>
+										</div>
+										{latestDate
+											? (
+												<div className="flex items-center gap-2 text-sm text-[var(--ant-color-text-secondary)]" dir="ltr">
+													<span>{formatHistoryDate(latestDate)}</span>
+													<ClockCircleOutlined className="text-base" />
+												</div>
+											)
+											: null}
+									</div>
+									{canUpdate
+										? <Button size="large" className="!h-10 !w-28 !whitespace-nowrap !border-primary !px-4 !text-primary" onClick={() => navigate(editUrl)}>ویرایش قرارداد</Button>
+										: null}
+								</div>
+							</Card>
+						</Spin>
+					)}
 					onContractSelect={(selectedContractId, selectedServiceId, selectedCompanyType, selectedService) => {
 						setSelection({
 							contractId: selectedContractId,

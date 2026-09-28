@@ -12,6 +12,7 @@ import { Collapse, Tag } from "antd";
 import "#src/features/contract/shared/ui/form/contract-form.css";
 
 const HIDDEN_KEYS = new Set(["rowKey", "datacenterSystemTag"]);
+const CURRENCY_FIELD_KEYS = new Set(["commission", "initialCommission", "finalCommission", "minProfit", "minimumProfit"]);
 
 const LABELS: Record<string, string> = {
 	addenda: "الحاقیه‌ها",
@@ -157,6 +158,19 @@ function formatFieldValue(key: string, value: unknown) {
 		return <Tag color={value ? "success" : "default"}>{value ? "رسمی" : "غیررسمی"}</Tag>;
 	if (key === "isSigned" && typeof value === "boolean")
 		return <Tag color={value ? "success" : "default"}>{value ? "امضا شده" : "امضا نشده"}</Tag>;
+	if (value != null && value !== "") {
+		const isPercent = /(?:percent|percentage)$/i.test(key);
+		const unit = isPercent ? "درصد" : CURRENCY_FIELD_KEYS.has(key) ? "ریال" : null;
+		if (unit && !String(value).includes(unit) && !String(value).includes("%")) {
+			return (
+				<>
+					{formatValue(value)}
+					{" "}
+					{unit}
+				</>
+			);
+		}
+	}
 	return formatValue(value);
 }
 
@@ -681,7 +695,7 @@ function AddendumItem({ addendum, index, service, prefix, tone }: { addendum: Re
 					items={[{
 						key: "item",
 						label: (
-							<div className="flex items-center gap-2 font-bold">
+							<div className="flex items-center gap-[10px] font-bold">
 								<span className="contract-addenda-item-badge">{displayNumber}</span>
 								<span className="inline-flex items-center gap-1 font-medium opacity-75" dir="ltr">
 									<span>(</span>
@@ -715,7 +729,7 @@ function AddendumItem({ addendum, index, service, prefix, tone }: { addendum: Re
 			</div>
 			{children.length > 0
 				? (
-					<div className="contract-addenda-tree-branch relative mt-3 flex flex-col gap-3 pr-6">
+					<div className="contract-addenda-tree-branch relative mt-6 flex flex-col gap-6 pr-6">
 						{children.map((child, childIndex) => <AddendumItem key={String(child.id ?? child.displayAddendumNumber ?? JSON.stringify(child))} addendum={child} index={childIndex} service={service} prefix={displayNumber} tone={tone} />)}
 					</div>
 				)
@@ -726,7 +740,7 @@ function AddendumItem({ addendum, index, service, prefix, tone }: { addendum: Re
 
 function AddendaDetails({ addenda, service, tone }: { addenda: unknown[], service: ContractServicePath, tone: ContractSectionTone }) {
 	return (
-		<div className="flex flex-col gap-3">
+		<div className="flex flex-col gap-6">
 			{addenda.map((item, index) => {
 				const addendum = item as Record<string, unknown>;
 				return <AddendumItem key={String(addendum.id ?? addendum.displayAddendumNumber ?? JSON.stringify(addendum))} addendum={addendum} index={index} service={service} tone={tone} />;
@@ -760,7 +774,7 @@ export function ContractReadOnlyDetails({ values, detail, service }: { values: C
 	const companyName = resolveName(detail, ["company_name", "companyName"], "company") || companyFromList || "—";
 
 	return (
-		<div className="flex w-full flex-col gap-4 px-2 pt-4">
+		<div className="flex w-full flex-col gap-6">
 			<ContractFormSection title="اطلاعات پایه قرارداد" tone="primary" defaultExpanded>
 				<FieldRows fields={[
 					["نوع سرویس", serviceName],
@@ -779,7 +793,7 @@ export function ContractReadOnlyDetails({ values, detail, service }: { values: C
 				? null
 				: (
 					<ContractSectionToneContext.Provider value="addenda">
-						<ContractFormSection title="الحاقیه‌های قرارداد (اختیاری)" tone="addenda" defaultExpanded>
+						<ContractFormSection title="الحاقیه‌های قرارداد" tone="addenda" defaultExpanded>
 							<AddendaDetails addenda={addenda as unknown[]} service={service} tone={tone} />
 						</ContractFormSection>
 					</ContractSectionToneContext.Provider>

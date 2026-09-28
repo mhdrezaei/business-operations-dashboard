@@ -34,6 +34,7 @@ const TELECOM_COLLOCATION_COMPANY_SEARCH = "TRAFFIC_COLLOCATION_COST_GLOBAL";
 interface Props {
 	contractId: number
 	service: ContractServicePath
+	readOnlyHeader?: React.ReactNode
 	onUpdated?: () => void
 	onSaved?: () => void
 	onContractSelect?: (contractId: number, serviceId: number, companyType: string | null, service: ContractServicePath) => void
@@ -1498,7 +1499,7 @@ interface ContractListScope {
 	companyType: string | null
 }
 
-export function ContractEditForm({ contractId, service, onUpdated, onSaved, onContractSelect, readOnly = false }: Props) {
+export function ContractEditForm({ contractId, service, readOnlyHeader, onUpdated, onSaved, onContractSelect, readOnly = false }: Props) {
 	const [loading, setLoading] = useState(false);
 	const [saving, setSaving] = useState(false);
 	const [initialValues, setInitialValues] = useState<ContractFormValues | null>(null);
@@ -1601,8 +1602,11 @@ export function ContractEditForm({ contractId, service, onUpdated, onSaved, onCo
 			: !initialValues || !resolvedService || loadedContractId == null
 				? <Empty description="اطلاعات قرارداد یافت نشد" />
 				: (
-					<div dir="rtl" className="flex flex-col items-start lg:flex-row">
+					<div dir="rtl" className="flex flex-col items-start gap-6 lg:flex-row">
 						<div className="order-2 min-w-0 w-full flex-1 lg:order-1">
+							{readOnlyHeader
+								? <div className="mb-6">{readOnlyHeader}</div>
+								: null}
 							{loadError
 								? (
 									<div className="p-4">
@@ -1645,7 +1649,7 @@ export function ContractEditForm({ contractId, service, onUpdated, onSaved, onCo
 
 						{initialValues.companyId != null
 							? (
-								<aside className="order-1 flex w-full flex-col gap-3 px-2 pt-4 lg:order-2 lg:w-[25rem] lg:shrink-0 lg:pr-0">
+								<aside className="order-1 flex w-full flex-col gap-3 px-2 lg:order-2 lg:w-[25rem] lg:shrink-0 lg:pr-0">
 									<CompanyContractsPanel
 										companyId={contractListScope?.companyId}
 										companyType={contractListScope?.companyType}

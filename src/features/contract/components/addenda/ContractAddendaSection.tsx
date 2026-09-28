@@ -417,7 +417,7 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 					key: String(idx),
 					label: (
 						<div className="flex justify-between items-center w-full gap-3">
-							<div className="flex items-center gap-2 font-bold">
+							<div className="flex items-center gap-[10px] font-bold">
 								<span className="contract-addenda-item-badge">{addendumTitle}</span>
 								{headerHint ? <span className="opacity-75 font-medium">{headerHint}</span> : null}
 							</div>
@@ -587,7 +587,7 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 	const tree = treeItems.length === 0
 		? null
 		: (
-			<div className="flex flex-col gap-3">
+			<div className="flex flex-col gap-6">
 				{treeItems.map((item, idx) => {
 					const itemKey = String(idx);
 					return (
@@ -606,7 +606,7 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 							</div>
 							{item.hasChildren
 								? (
-									<div className="contract-addenda-tree-branch relative mt-3 pr-6">
+									<div className="contract-addenda-tree-branch relative mt-6 pr-6">
 										<ContractAddendaSection<TFV>
 											name={p(`${name}.${idx}`, "children")}
 											displayPrefix={item.displayNumber ?? undefined}

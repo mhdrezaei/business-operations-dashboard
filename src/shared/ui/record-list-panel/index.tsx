@@ -11,6 +11,7 @@ interface RecordListPanelProps {
 	errorMessage: ReactNode
 	emptyDescription: ReactNode
 	unavailableDescription?: ReactNode
+	activeItemClassName?: string
 	onSelect: (key: string) => void
 }
 
@@ -26,6 +27,7 @@ export function RecordListPanel({
 	errorMessage,
 	emptyDescription,
 	unavailableDescription,
+	activeItemClassName,
 	onSelect,
 }: RecordListPanelProps) {
 	let content: ReactNode;
@@ -61,7 +63,7 @@ export function RecordListPanel({
 				accordion
 				items={borderedItems}
 				activeKey={activeKey}
-				className="!border-0 !bg-transparent [&_.ant-collapse-content-box]:!px-4 [&_.ant-collapse-content-box]:!pb-3 [&_.ant-collapse-content-box]:!pt-0 [&_.ant-collapse-content]:!border-0 [&_.ant-collapse-content]:!bg-transparent [&_.ant-collapse-header]:!px-4 [&_.ant-collapse-header]:!py-4 [&_.ant-collapse-item.ant-collapse-item-active]:!border-primary [&_.ant-collapse-item]:mb-3 [&_.ant-collapse-item]:overflow-hidden [&_.ant-collapse-item]:!rounded-2xl [&_.ant-collapse-item]:border [&_.ant-collapse-item]:border-solid [&_.ant-collapse-item]:!border-[var(--ant-color-border)] [&_.ant-collapse-item]:!bg-bgElevated [&_.ant-collapse-item:last-child]:mb-0"
+				className={`!border-0 !bg-transparent [&_.ant-collapse-content-box]:!px-4 [&_.ant-collapse-content-box]:!pb-3 [&_.ant-collapse-content-box]:!pt-0 [&_.ant-collapse-content]:!border-0 [&_.ant-collapse-content]:!bg-transparent [&_.ant-collapse-header]:!px-4 [&_.ant-collapse-header]:!py-4 [&_.ant-collapse-item.ant-collapse-item-active]:!border-primary [&_.ant-collapse-item]:mb-3 [&_.ant-collapse-item]:overflow-hidden [&_.ant-collapse-item]:!rounded-2xl [&_.ant-collapse-item]:border [&_.ant-collapse-item]:border-solid [&_.ant-collapse-item]:!border-[var(--ant-color-border)] [&_.ant-collapse-item]:!bg-bgElevated [&_.ant-collapse-item:last-child]:mb-0 ${activeItemClassName ?? ""}`}
 				onChange={(key) => {
 					const nextKey = Array.isArray(key) ? key[0] : key;
 					if (nextKey)

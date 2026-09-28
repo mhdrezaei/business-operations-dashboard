@@ -3,7 +3,8 @@ import type { GlobalToken } from "antd";
 export type ContractSectionTone = "primary" | "purple" | "gold" | "blue" | "geekblue" | "traffic" | "addenda";
 
 const CONTRACT_SECTION_PURPLE = "#4f1665";
-const CONTRACT_SECTION_ADDENDA = "#315426";
+const CONTRACT_SECTION_ADDENDA = "rgba(135, 254, 23, 0.27)";
+const CONTRACT_SECTION_GOLD = "rgba(254, 196, 23, 0.27)";
 
 export function getContractSectionToneColors(token: GlobalToken, tone: ContractSectionTone) {
 	switch (tone) {
@@ -14,7 +15,7 @@ export function getContractSectionToneColors(token: GlobalToken, tone: ContractS
 		case "purple":
 			return { background: CONTRACT_SECTION_PURPLE, text: token.colorTextLightSolid };
 		case "gold":
-			return { background: token.colorWarningBgHover, text: token.colorText };
+			return { background: CONTRACT_SECTION_GOLD, text: token.colorText };
 		case "geekblue":
 			return { background: token.colorInfoBgHover, text: token.colorText };
 		case "blue":

@@ -105,6 +105,7 @@ export function CompanyContractsPanel({ companyId, companyType, currentContractI
 			title="قراردادهای شرکت"
 			items={items}
 			activeKey={String(currentContractId)}
+			activeItemClassName="[&_.ant-collapse-item-active]:!bg-[#1f2e52]"
 			loading={contractsQuery.isLoading || contractsQuery.isFetching}
 			error={contractsQuery.isError}
 			errorMessage="دریافت قراردادهای شرکت ناموفق بود"

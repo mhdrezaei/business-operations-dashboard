@@ -94,10 +94,13 @@
 
 .contract-addenda-item-badge {
 	display: inline-flex;
+	flex: 0 0 32px;
+	width: 32px;
+	height: 32px;
 	align-items: center;
-	padding-block: var(--contract-section-control-padding-block);
-	padding-inline: var(--contract-section-control-padding-inline);
-	border-radius: var(--contract-section-tag-radius);
+	justify-content: center;
+	padding: 4px 8px;
+	border-radius: 12px;
 	background: var(--contract-section-accent-bg);
 	color: var(--contract-section-accent-color);
 }
@@ -185,7 +188,7 @@
 	position: relative;
 	overflow: hidden;
 	border: var(--contract-section-line-width) solid transparent;
-	border-radius: calc(var(--contract-section-body-padding) + var(--contract-section-tag-radius));
+	border-radius: calc(2 * var(--contract-section-body-padding));
 	background: var(--contract-section-nested-bg);
 }
 
