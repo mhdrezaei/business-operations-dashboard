@@ -1,4 +1,5 @@
 import type { ContractSectionTone } from "#src/features/contract/shared/ui/form/components/contract-form-section-tone";
+import type { ContractType } from "./contract-type.types";
 import { getContractSectionToneColors } from "#src/features/contract/shared/ui/form/components/contract-form-section-tone";
 import { ContractSectionToneContext } from "#src/features/contract/shared/ui/form/components/contract-section-tone-context";
 import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
@@ -20,6 +21,7 @@ interface Props {
 	ratePercentageHelpText?: React.ReactNode
 	compactCalculationModel?: boolean
 	blendedModePlaceholder?: string
+	contractTypeOptions?: Array<{ label: string, value: ContractType, disabled?: boolean }>
 }
 
 function createDefaultRows() {
@@ -38,7 +40,7 @@ function createDefaultSection(firstRowFrom: number | null = null) {
 	};
 }
 
-export function ContractTypeSection({ title, name, topAside, tone = "primary", variant = "default", showRatePercentage = false, ratePercentageHelpText, compactCalculationModel = true, blendedModePlaceholder = "انتخاب نوع محاسبه" }: Props) {
+export function ContractTypeSection({ title, name, topAside, tone = "primary", variant = "default", showRatePercentage = false, ratePercentageHelpText, compactCalculationModel = true, blendedModePlaceholder = "انتخاب نوع محاسبه", contractTypeOptions = CONTRACT_TYPE_OPTIONS }: Props) {
 	const { control, getValues, setValue } = useFormContext();
 	const inheritedTone = React.useContext(ContractSectionToneContext);
 	const resolvedTone = inheritedTone ?? tone;
@@ -192,7 +194,7 @@ export function ContractTypeSection({ title, name, topAside, tone = "primary", v
 			<RHFSegmentedSwitch
 				name={typePath}
 				label={compactCalculationModel ? "" : "مدل محاسبه"}
-				options={CONTRACT_TYPE_OPTIONS}
+				options={contractTypeOptions}
 				segmentedProps={{ block: true }}
 				formItemProps={{ className: "mb-0" }}
 			/>

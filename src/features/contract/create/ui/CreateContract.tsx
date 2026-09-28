@@ -364,7 +364,7 @@ function mapTrafficLocationPayload(location: "TEHRAN" | "COUNTY", pricingValue: 
 		unit: unit ?? "GB/month",
 		calculation_type: pricing.calculation_type,
 		tiers: pricing.tiers ?? [],
-		...(typeof basedTire === "boolean" ? { based_tire: basedTire } : {}),
+		...(typeof basedTire === "boolean" ? { based_tire: !basedTire } : {}),
 		...(normalizedIncomePercentage != null ? { income_percentage: normalizedIncomePercentage } : {}),
 		...(contractModel != null ? { contract_model: contractModel } : {}),
 	};
@@ -459,10 +459,10 @@ function mapTrafficAddenda(
 		}
 		const locations = [
 			mainLocations.tehran
-				? mapTrafficLocationPayload("TEHRAN", row.tehranPricing, hasTrafficUnit ? row.tehranUnit : null, isIxp ? row.tehranBasedTire ?? true : undefined, isPremium ? row.tehranRevenuePercent : null, isIxp ? row.tehranContractModel ?? "LEGACY" : undefined)
+				? mapTrafficLocationPayload("TEHRAN", row.tehranPricing, hasTrafficUnit ? row.tehranUnit : null, isIxp ? row.tehranBasedTire ?? false : undefined, isPremium ? row.tehranRevenuePercent : null, isIxp ? row.tehranContractModel ?? "LEGACY" : undefined)
 				: null,
 			mainLocations.province
-				? mapTrafficLocationPayload("COUNTY", row.provincePricing, hasTrafficUnit ? row.provinceUnit : null, isIxp ? row.provinceBasedTire ?? true : undefined, isPremium ? row.provinceRevenuePercent : null, isIxp ? row.provinceContractModel ?? "LEGACY" : undefined)
+				? mapTrafficLocationPayload("COUNTY", row.provincePricing, hasTrafficUnit ? row.provinceUnit : null, isIxp ? row.provinceBasedTire ?? false : undefined, isPremium ? row.provinceRevenuePercent : null, isIxp ? row.provinceContractModel ?? "LEGACY" : undefined)
 				: null,
 		].filter(Boolean);
 
@@ -732,8 +732,8 @@ async function formValuesToApiPayload(values: ContractFormValues) {
 		const isPremiumCompanyType = normalizedCompanyType === "PREMIUM";
 		const isIxp = normalizedCompanyType === "IXP";
 		const locations = [
-			mapTrafficLocationPayload("TEHRAN", serviceFields.tehranPricing, isUnitCompanyType ? serviceFields.tehranUnit : null, isIxp ? serviceFields.tehranBasedTire ?? true : undefined, isPremiumCompanyType ? serviceFields.tehranRevenuePercent : null, isIxp ? serviceFields.tehranContractModel ?? "LEGACY" : undefined),
-			mapTrafficLocationPayload("COUNTY", serviceFields.provincePricing, isUnitCompanyType ? serviceFields.provinceUnit : null, isIxp ? serviceFields.provinceBasedTire ?? true : undefined, isPremiumCompanyType ? serviceFields.provinceRevenuePercent : null, isIxp ? serviceFields.provinceContractModel ?? "LEGACY" : undefined),
+			mapTrafficLocationPayload("TEHRAN", serviceFields.tehranPricing, isUnitCompanyType ? serviceFields.tehranUnit : null, isIxp ? serviceFields.tehranBasedTire ?? false : undefined, isPremiumCompanyType ? serviceFields.tehranRevenuePercent : null, isIxp ? serviceFields.tehranContractModel ?? "LEGACY" : undefined),
+			mapTrafficLocationPayload("COUNTY", serviceFields.provincePricing, isUnitCompanyType ? serviceFields.provinceUnit : null, isIxp ? serviceFields.provinceBasedTire ?? false : undefined, isPremiumCompanyType ? serviceFields.provinceRevenuePercent : null, isIxp ? serviceFields.provinceContractModel ?? "LEGACY" : undefined),
 		].filter(Boolean);
 
 		payload.is_signed = isOfficial;
