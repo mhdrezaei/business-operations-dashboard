@@ -58,14 +58,25 @@
 }
 
 .contract-form-official-row {
-	margin-top: var(--contract-section-body-padding);
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 12px;
+	margin-bottom: var(--contract-section-body-padding);
 	padding: var(--contract-section-control-padding-block) var(--contract-section-control-padding-inline);
 	border-radius: var(--contract-section-control-radius);
 	background: var(--contract-section-control-bg);
 }
 
-.contract-form-official-row :where(.ant-form-item, .ant-pro-form-item) {
-	margin-bottom: 0;
+.contract-form-official-row__label {
+	display: inline-flex;
+	flex: 0 0 auto;
+	align-items: center;
+	gap: 8px;
+}
+
+.contract-form-official-row__hint {
+	color: var(--ant-color-text-tertiary);
 }
 
 .contract-addenda-tree-branch::before {
@@ -138,13 +149,25 @@
 	color: var(--contract-section-accent-color);
 }
 
-.contract-blended-card.ant-card,
-.contract-tier-card.ant-card {
+.contract-form .contract-blended-card.ant-card,
+.contract-form .contract-tier-card.ant-card {
 	position: relative;
 	overflow: hidden;
-	border-color: transparent;
+	border-color: var(--contract-section-outline-color);
 	border-radius: var(--contract-blended-radius);
-	background: var(--contract-section-nested-bg);
+}
+
+.contract-form .contract-addenda-collapse.ant-collapse > .ant-collapse-item > .ant-collapse-header {
+	border-bottom: 1px dashed var(--contract-section-border-color);
+}
+
+.contract-form .contract-addenda-section .contract-addenda-item {
+	border-color: var(--contract-section-outline-color);
+	border-radius: var(--contract-section-radius);
+}
+
+.contract-form .contract-addenda-section .contract-addenda-collapse > .ant-collapse-item > .ant-collapse-header {
+	min-height: calc(var(--ant-control-height) + 2 * var(--contract-section-control-padding-block));
 }
 
 
@@ -211,6 +234,11 @@
 	height: var(--ant-control-height);
 	padding-inline: var(--contract-section-control-padding-inline);
 	border-radius: var(--contract-section-tag-radius);
+	background: var(--contract-section-accent-bg);
+	color: var(--contract-section-accent-color);
+}
+
+.contract-blended-card--purple .contract-blended-index-badge {
 	background: var(--contract-section-accent-bg);
 	color: var(--contract-section-accent-color);
 }
@@ -437,6 +465,10 @@
 
 .contract-form .contract-form-aligned-grid {
 	align-items: start;
+}
+
+.contract-form .contract-form-aligned-grid--four {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .contract-form .contract-form-field__label {

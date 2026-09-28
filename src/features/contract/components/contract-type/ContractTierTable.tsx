@@ -1,6 +1,8 @@
+import type { ContractSectionTone } from "#src/features/contract/shared/ui/form/components/contract-form-section-tone";
+import { getContractSectionToneColors } from "#src/features/contract/shared/ui/form/components/contract-form-section-tone";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined, ExclamationCircleOutlined, PlusOutlined, QuestionCircleOutlined } from "@ant-design/icons";
-import { Button, Card, Tooltip } from "antd";
+import { Button, Card, theme, Tooltip } from "antd";
 import React, { useEffect, useMemo } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 
@@ -10,6 +12,7 @@ interface Props {
 	variant?: "card" | "embedded"
 	showRatePercentage?: boolean
 	ratePercentageHelpText?: React.ReactNode
+	tone?: ContractSectionTone
 }
 
 interface TierToFieldProps {
@@ -45,8 +48,10 @@ function TierToField({ name, showHint }: TierToFieldProps): React.JSX.Element {
 	);
 }
 
-export function ContractTierTable({ name, currencyAddon, variant = "card", showRatePercentage = false, ratePercentageHelpText }: Props) {
+export function ContractTierTable({ name, currencyAddon, variant = "card", showRatePercentage = false, ratePercentageHelpText, tone = "primary" }: Props) {
 	const { control, setValue } = useFormContext();
+	const { token } = theme.useToken();
+	const toneColors = getContractSectionToneColors(token, tone);
 	const { fields, append, remove } = useFieldArray({ control, name });
 
 	const rows = useWatch({ control, name }) as Array<{ from: any, to: any, fee: any }> | undefined;
@@ -120,6 +125,7 @@ export function ContractTierTable({ name, currencyAddon, variant = "card", showR
 						{header.map(item => (
 							<div
 								key={item.key}
+								style={variant === "embedded" ? { background: toneColors.background, color: toneColors.text } as React.CSSProperties : undefined}
 								className="contract-tier-header-badge px-3 py-1 text-center font-semibold"
 							>
 								{item.title}

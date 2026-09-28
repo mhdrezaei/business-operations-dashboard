@@ -57,6 +57,11 @@ export function ContractTypeSection({ title, name, topAside, tone = "primary", v
 	const blendedDashLength = compactCalculationModel ? 6 : smsDashLength;
 	const blendedDashGap = compactCalculationModel ? 6 : smsDashGap;
 	const toneColors = getContractSectionToneColors(token, resolvedTone);
+	const pricingCardStyle = {
+		"--contract-section-outline-color": token.colorBorderSecondary,
+		"--contract-pricing-header-bg": toneColors.background,
+		"--contract-pricing-header-color": toneColors.text,
+	} as React.CSSProperties;
 	const smsCardStyle = isSmsOperator
 		? {
 			"--sms-operator-border-color": smsBorderColor,
@@ -277,13 +282,14 @@ export function ContractTypeSection({ title, name, topAside, tone = "primary", v
 					<div className={isSmsOperator ? "sms-operator-pricing-details" : "mt-3"}>
 						<Card
 							bordered
-							style={{ "--contract-blended-radius": `${smsBlendedRadius}px` } as React.CSSProperties}
+							style={{ ...pricingCardStyle, "--contract-blended-radius": `${smsBlendedRadius}px` } as React.CSSProperties}
 							className="contract-tier-card w-full [&_.ant-pro-card-body]:p-4"
 						>
 							{renderDashedBorder(smsBlendedRadius)}
 							<ContractTierTable
 								name={`${name}.rows`}
 								variant="embedded"
+								tone={resolvedTone}
 								currencyAddon="ریال"
 								showRatePercentage={showRatePercentage}
 								ratePercentageHelpText={ratePercentageHelpText}
@@ -300,8 +306,8 @@ export function ContractTypeSection({ title, name, topAside, tone = "primary", v
 							<Card
 								key={sectionField.id}
 								bordered
-								style={{ "--contract-blended-radius": `${blendedCardRadius}px` } as React.CSSProperties}
-								className={`contract-blended-card ${compactCalculationModel ? "contract-blended-card--openapi" : ""} mb-3 w-full [&_.ant-pro-card-body]:p-4`}
+								style={{ ...pricingCardStyle, "--contract-blended-radius": `${blendedCardRadius}px` } as React.CSSProperties}
+								className={`contract-blended-card ${compactCalculationModel ? "contract-blended-card--openapi" : ""} ${resolvedTone === "purple" ? "contract-blended-card--purple" : ""} mb-3 w-full [&_.ant-pro-card-body]:p-4`}
 							>
 								{renderDashedBorder(blendedCardRadius, blendedDashLength, blendedDashGap)}
 								<div className="contract-blended-card__toolbar">
@@ -330,6 +336,7 @@ export function ContractTypeSection({ title, name, topAside, tone = "primary", v
 									<ContractTierTable
 										name={`${name}.sections.${sectionIndex}.rows`}
 										variant="embedded"
+										tone={resolvedTone}
 										currencyAddon="ریال"
 										showRatePercentage={showRatePercentage}
 										ratePercentageHelpText={ratePercentageHelpText}

@@ -5,10 +5,10 @@ import { ContractAddendaSection } from "#src/features/contract/components/addend
 import { ContractTypeSection } from "#src/features/contract/components/contract-type/ContractTypeSection";
 import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import { useAccess } from "#src/hooks";
-import { RHFProCheckbox, RHFProNumber, RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
+import { RHFProNumber, RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
-import { Button, Card, Steps, Tooltip } from "antd";
+import { Button, Card, Steps, Switch, Tooltip } from "antd";
 import { AnimatePresence, motion } from "framer-motion";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
@@ -1281,6 +1281,24 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 	return (
 		<ContractFormSection title="اطلاعات پایه قرارداد" className="w-full">
 			<BasicContent className="w-full">
+				{isSms
+					? (
+						<div className="contract-form-official-row" dir="rtl">
+							<div className="contract-form-official-row__label">
+								<Switch
+									checked={serviceIsOfficial ?? true}
+									aria-label="قرارداد رسمی است"
+									onChange={checked => setValue("serviceFields.isOfficial" as any, checked, {
+										shouldDirty: true,
+										shouldValidate: true,
+									})}
+								/>
+								<span>قرارداد رسمی است</span>
+							</div>
+							<span className="contract-form-official-row__hint">(در صورت رسمی بودن قرارداد، این گزینه را روشن کنید.)</span>
+						</div>
+					)
+					: null}
 				<div className="contract-form-aligned-grid contract-form-aligned-grid--two" style={alignedLabelStyle}>
 					<ContractAlignedField label="نوع سرویس" labelId="contract-form-label-service">
 						<RHFSelect<ContractFormValues, "serviceId", number | null>
@@ -2089,19 +2107,6 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 						</ContractAlignedField>
 					</div>
 				</div>
-
-				{isSms
-					? (
-						<div className="contract-form-official-row">
-							<RHFProCheckbox<ContractFormValues, any>
-								name={"serviceFields.isOfficial" as any}
-								label=""
-								checkboxLabel="قرارداد رسمی است"
-								checkboxProps={{}}
-							/>
-						</div>
-					)
-					: null}
 			</BasicContent>
 		</ContractFormSection>
 	);
