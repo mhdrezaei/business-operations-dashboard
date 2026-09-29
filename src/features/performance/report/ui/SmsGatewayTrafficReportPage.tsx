@@ -1,14 +1,18 @@
 import type { SmsGatewayTrafficReportFilters, SmsGatewayTrafficReportResult } from "#src/features/performance/api/performances.api";
 import type { Dayjs } from "#src/shared/lib/dayjs-jalali";
+import type { ReactNode } from "react";
 import { fetchCompaniesByService, fetchServices } from "#src/api/common/common.api";
 import { BasicContent } from "#src/components";
+import { ContractDashedBorder } from "#src/features/contract/shared/ui/form/components/ContractDashedBorder";
 import { createSmsGatewayTrafficReport, fetchSmsGatewayTrafficReport, fetchSmsGatewayTrafficReportStatus } from "#src/features/performance/api/performances.api";
-import { BarChartOutlined } from "@ant-design/icons";
+import { BarChartOutlined, DownOutlined, UpOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Alert, Button, Card, Collapse, Descriptions, Empty, Select, Space, Spin, Statistic, Tag, Typography } from "antd";
 import { DatePicker } from "antd-jalali";
 import moment from "moment-jalaali";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import "./sms-gateway-traffic-report.css";
+import "#src/features/contract/shared/ui/form/contract-form.css";
 
 const OPERATORS = [
 	{ label: "همراه اول (MCI)", value: "MCI" },
@@ -42,6 +46,28 @@ function formatJalaliDate(value: { toDate?: () => Date } | null) {
 	if (!value?.toDate)
 		return undefined;
 	return moment(value.toDate()).format("jYYYY/jMM/jDD");
+}
+
+function ReportSection({ title, children, className, defaultExpanded = true }: { title: string, children: ReactNode, className?: string, defaultExpanded?: boolean }) {
+	const [expanded, setExpanded] = useState(defaultExpanded);
+
+	return (
+		<Card
+			className={`sms-gateway-traffic-report__section ${!expanded ? "sms-gateway-traffic-report__section--collapsed" : ""} ${className ?? ""}`}
+			title={<Tag bordered={false} className="sms-gateway-traffic-report__section-tag">{title}</Tag>}
+			extra={(
+				<Button
+					className="sms-gateway-traffic-report__section-toggle"
+					type="text"
+					aria-label={expanded ? `بستن ${title}` : `باز کردن ${title}`}
+					icon={expanded ? <UpOutlined /> : <DownOutlined />}
+					onClick={() => setExpanded(current => !current)}
+				/>
+			)}
+		>
+			{expanded ? children : null}
+		</Card>
+	);
 }
 
 async function getRequestErrorMessage(error: unknown) {
@@ -141,13 +167,13 @@ export function SmsGatewayTrafficReportPage() {
 	const isProcessing = result && ["PENDING", "RUNNING"].includes(result.status);
 
 	return (
-		<BasicContent className="h-full">
+		<BasicContent className="h-full sms-gateway-traffic-report">
 			<Space direction="vertical" size={16} className="w-full">
 				<div>
 					<Typography.Title level={4} className="!mb-1">گزارش ترافیک پیامک Gateway</Typography.Title>
 					<Typography.Text type="secondary">گزارش ترافیک ارسال پیامک به تفکیک شرکت، اپراتور و وضعیت تحویل</Typography.Text>
 				</div>
-				<Card title="فیلترها">
+				<ReportSection className="sms-gateway-traffic-report__filter-card" title="فیلترها">
 					<div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
 						<div>
 							<Typography.Text className="mb-2 block">از تاریخ</Typography.Text>
@@ -170,11 +196,11 @@ export function SmsGatewayTrafficReportPage() {
 							<Select mode="multiple" allowClear className="w-full" placeholder="همه وضعیت‌ها" value={filters.delivery_statuses} options={STATUSES.map(value => ({ label: value, value }))} onChange={delivery_statuses => setFilters(x => ({ ...x, delivery_statuses }))} />
 						</div>
 					</div>
-					<Space className="mt-5">
+					<Space className="sms-gateway-traffic-report__actions mt-5">
 						<Button type="primary" loading={loading || !!isProcessing} onClick={apply}>اعمال فیلتر</Button>
 						<Button onClick={clear}>پاکسازی فیلترها</Button>
 					</Space>
-				</Card>
+				</ReportSection>
 				{error && <Alert type="error" showIcon message={error} />}
 				{isProcessing && (
 					<Card>
@@ -187,43 +213,54 @@ export function SmsGatewayTrafficReportPage() {
 				{result?.status === "FAILURE" && <Alert type="error" showIcon message="تهیه گزارش ناموفق بود." />}
 				{result?.status === "SUCCESS" && (
 					<>
-						<Card title="خلاصه گزارش">
-							<Descriptions column={{ xs: 1, md: 3 }}>
-								<Descriptions.Item label="مجموع کل"><Statistic value={result.grand_total ?? 0} formatter={v => number(Number(v))} /></Descriptions.Item>
-								<Descriptions.Item label="تعداد شرکت‌ها">{number(result.count)}</Descriptions.Item>
-								<Descriptions.Item label="وضعیت">
-									{" "}
-									<Tag color="success">آماده</Tag>
-								</Descriptions.Item>
-							</Descriptions>
-							<div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-								<Card size="small" title="مجموع به تفکیک اپراتور">
-									<Space wrap>
-										{(result.operator_totals ?? []).map(x => (
-											<Tag key={x.operator}>
-												{x.operator}
-												:
-												{" "}
-												{number(x.total)}
-											</Tag>
-										))}
-									</Space>
-								</Card>
-								<Card size="small" title="مجموع به تفکیک وضعیت تحویل">
-									<Space wrap>
-										{(result.status_totals ?? []).map(x => (
-											<Tag color={statusColor(x.delivery_status)} key={x.delivery_status}>
-												{x.delivery_status}
-												:
-												{" "}
-												{number(x.total_count)}
-											</Tag>
-										))}
-									</Space>
-								</Card>
+						<ReportSection className="sms-gateway-traffic-report__summary-card" title="خلاصه گزارش">
+							<div className="sms-gateway-traffic-report__summary-fields">
+								<ContractDashedBorder />
+								<Descriptions column={{ xs: 1, md: 3 }}>
+									<Descriptions.Item label="مجموع کل"><Statistic value={result.grand_total ?? 0} formatter={v => number(Number(v))} /></Descriptions.Item>
+									<Descriptions.Item label="تعداد شرکت‌ها">{number(result.count)}</Descriptions.Item>
+									<Descriptions.Item label="وضعیت">
+										{" "}
+										<Tag color="success">آماده</Tag>
+									</Descriptions.Item>
+								</Descriptions>
 							</div>
-						</Card>
-						<Card title="جزئیات شرکت‌ها">
+							<div className="sms-gateway-traffic-report__breakdown-list mt-4">
+								<div className="sms-gateway-traffic-report__breakdown-item">
+									<ContractDashedBorder />
+									<div className="sms-gateway-traffic-report__breakdown-content">
+										<div className="sms-gateway-traffic-report__breakdown-title">مجموع به تفکیک اپراتور</div>
+										<Space wrap>
+											{(result.operator_totals ?? []).map(x => (
+												<Tag key={x.operator}>
+													{x.operator}
+													:
+													{" "}
+													{number(x.total)}
+												</Tag>
+											))}
+										</Space>
+									</div>
+								</div>
+								<div className="sms-gateway-traffic-report__breakdown-item">
+									<ContractDashedBorder />
+									<div className="sms-gateway-traffic-report__breakdown-content">
+										<div className="sms-gateway-traffic-report__breakdown-title">مجموع به تفکیک وضعیت تحویل</div>
+										<Space wrap>
+											{(result.status_totals ?? []).map(x => (
+												<Tag color={statusColor(x.delivery_status)} key={x.delivery_status}>
+													{x.delivery_status}
+													:
+													{" "}
+													{number(x.total_count)}
+												</Tag>
+											))}
+										</Space>
+									</div>
+								</div>
+							</div>
+						</ReportSection>
+						<ReportSection className="sms-gateway-traffic-report__details-card" title="جزئیات شرکت‌ها">
 							{(result.results ?? []).length === 0
 								? <Empty description="داده‌ای برای نمایش وجود ندارد." />
 								: (
@@ -260,7 +297,7 @@ export function SmsGatewayTrafficReportPage() {
 														children: (
 															<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
 																{operator.statuses.map(status => (
-																	<div className="flex items-center justify-between rounded bg-black/[0.08] px-3 py-2" key={status.delivery_status}>
+																	<div className="sms-gateway-status-row" key={status.delivery_status}>
 																		<Tag color={statusColor(status.delivery_status)}>{status.delivery_status}</Tag>
 																		<b>{number(status.total_count)}</b>
 																	</div>
@@ -273,7 +310,7 @@ export function SmsGatewayTrafficReportPage() {
 										}))}
 									/>
 								)}
-						</Card>
+						</ReportSection>
 					</>
 				)}
 				{!result && !loading && <Card><Empty description="برای مشاهده گزارش، فیلترها را انتخاب و اعمال کنید." /></Card>}

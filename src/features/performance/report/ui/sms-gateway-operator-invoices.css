@@ -1,0 +1,96 @@
+.sms-gateway-invoice-entry > .ant-card-body {
+	padding-block-start: 0;
+}
+
+.sms-gateway-invoice-report > .ant-card-body {
+	display: grid;
+	min-width: 0;
+	overflow: hidden;
+	gap: var(--ant-margin-lg);
+}
+
+.sms-gateway-invoice-report > .ant-card-body > form > .grid {
+	align-items: end;
+}
+
+.sms-gateway-invoice-report .basic-table-shell,
+.sms-gateway-invoice-report .ant-pro-table,
+.sms-gateway-invoice-report .ant-pro-card {
+	min-width: 0;
+	max-width: 100%;
+}
+
+.sms-gateway-invoice-report .basic-table-grid {
+	max-width: 100%;
+	overflow-x: auto;
+}
+
+.sms-gateway-invoice-entry__filters {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: var(--ant-margin);
+	margin-block-end: var(--ant-margin-lg);
+}
+
+.sms-gateway-invoice-entry__filters .ant-form-item {
+	margin-block-end: 0;
+}
+
+.sms-gateway-invoice-entry__metrics {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	align-items: start;
+	gap: var(--ant-margin);
+}
+
+.sms-gateway-invoice-entry__metric.ant-card {
+	min-width: 0;
+}
+
+.sms-gateway-invoice-entry__metric > .ant-card-head {
+	min-height: var(--ant-control-height-lg);
+	padding: var(--ant-padding-sm) var(--ant-padding-md);
+	border-block-end: 1px solid var(--ant-colorSplit);
+	background: var(--ant-color-bg-container);
+}
+
+.sms-gateway-invoice-entry__metric > .ant-card-head .ant-card-head-title {
+	font-weight: 600;
+}
+
+.sms-gateway-invoice-entry__metric > .ant-card-head .ant-card-extra {
+	margin-inline-start: var(--ant-margin-sm);
+}
+
+.sms-gateway-invoice-entry__metric .contract-form-section__tag.ant-tag {
+	padding: 0;
+	background: transparent;
+	color: var(--ant-color-text-heading);
+}
+
+.sms-gateway-invoice-entry__metric > .ant-card-body {
+	padding-block: var(--ant-padding-md);
+}
+
+.sms-gateway-invoice-entry__metric-fields {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: var(--ant-margin);
+}
+
+.sms-gateway-invoice-entry__metric-fields .ant-form-item {
+	margin-block-end: 0;
+}
+
+@media (max-width: 900px) {
+	.sms-gateway-invoice-entry__filters,
+	.sms-gateway-invoice-entry__metrics {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+@media (max-width: 560px) {
+	.sms-gateway-invoice-entry__metric-fields {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
