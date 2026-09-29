@@ -1,5 +1,5 @@
 import type { PerformanceFormValues } from "../../model/performance.form.types";
-import { PerformanceFieldCard } from "#src/features/performance/shared/ui/form/components/PerformanceFieldCard";
+import { FieldCard } from "#src/shared/ui/dashed-card";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
 import { Tag } from "antd";
 import { useMemo } from "react";
@@ -26,7 +26,7 @@ const OPENAPI_SMS_FIELDS = [
 
 function MetricNumberCard({ name, label, placeholder, currencyLabel }: MetricNumberCardProps) {
 	return (
-		<PerformanceFieldCard title={label}>
+		<FieldCard title={label}>
 			<RHFProNumber<PerformanceFormValues, any>
 				name={sf(name) as any}
 				label=""
@@ -39,7 +39,7 @@ function MetricNumberCard({ name, label, placeholder, currencyLabel }: MetricNum
 				enableGrouping
 				enableWordsTooltip
 			/>
-		</PerformanceFieldCard>
+		</FieldCard>
 	);
 }
 
@@ -58,11 +58,11 @@ export function OpenApiPerformanceFields() {
 
 	if (!contractModel) {
 		return (
-			<PerformanceFieldCard title={t("performance.labels.openapiContractModel")}>
-				<p className="performance-field-card__hint m-0">
+			<FieldCard title={t("performance.labels.openapiContractModel")}>
+				<p className="dashed-card__hint m-0">
 					{t("performance.messages.noActiveContractForMonth")}
 				</p>
-			</PerformanceFieldCard>
+			</FieldCard>
 		);
 	}
 

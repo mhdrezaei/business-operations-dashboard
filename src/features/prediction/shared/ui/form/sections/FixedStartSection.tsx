@@ -1,8 +1,8 @@
 import type { PredictionFormValues } from "../../../model/prediction.form.types";
-import { ContractAlignedField } from "#src/features/contract/shared/ui/form/components/ContractAlignedField";
-import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import { useAccess } from "#src/hooks";
+import { AlignedFormField } from "#src/shared/ui/aligned-form-field";
 import { RHFSelect } from "#src/shared/ui/rhf-pro";
+import { SectionCard } from "#src/shared/ui/section-card";
 import { useQuery } from "@tanstack/react-query";
 import { Alert } from "antd";
 import { useEffect, useMemo, useRef } from "react";
@@ -222,9 +222,9 @@ export function FixedStartSection({
 	const selectCompanyTypeFirstText = "ابتدا نوع شرکت را انتخاب کنید";
 	return (
 		<div className="flex flex-col gap-4">
-			<ContractFormSection title={t(titleKey)} tone="primary" collapsible={false}>
-				<div className="contract-form-aligned-grid contract-form-aligned-grid--two">
-					<ContractAlignedField label={t("prediction.labels.service")} labelId="prediction-form-label-service">
+			<SectionCard title={t(titleKey)} tone="primary" collapsible={false}>
+				<div className="aligned-form-grid aligned-form-grid--two">
+					<AlignedFormField label={t("prediction.labels.service")} labelId="prediction-form-label-service">
 						<RHFSelect<PredictionFormValues, "serviceId", number | null>
 							name="serviceId"
 							label=""
@@ -240,11 +240,11 @@ export function FixedStartSection({
 								optionFilterProp: "label",
 							}}
 						/>
-					</ContractAlignedField>
+					</AlignedFormField>
 
 					{requiresCompanyType
 						? (
-							<ContractAlignedField label={companyTypeLabel} labelId="prediction-form-label-company-type">
+							<AlignedFormField label={companyTypeLabel} labelId="prediction-form-label-company-type">
 								<RHFSelect<PredictionFormValues, any, string | null>
 									name={"serviceFields.companyType" as any}
 									label=""
@@ -257,11 +257,11 @@ export function FixedStartSection({
 										optionFilterProp: "label",
 									}}
 								/>
-							</ContractAlignedField>
+							</AlignedFormField>
 						)
 						: null}
 
-					<ContractAlignedField label={t("prediction.labels.fiscalYear")} labelId="prediction-form-label-fiscal-year">
+					<AlignedFormField label={t("prediction.labels.fiscalYear")} labelId="prediction-form-label-fiscal-year">
 						<RHFSelect<PredictionFormValues, "fiscalYear", number | null>
 							name="fiscalYear"
 							label=""
@@ -276,9 +276,9 @@ export function FixedStartSection({
 								optionFilterProp: "label",
 							}}
 						/>
-					</ContractAlignedField>
+					</AlignedFormField>
 				</div>
-			</ContractFormSection>
+			</SectionCard>
 
 			{matchedYearRecord && !hideMatchedRecordAlert
 				? (

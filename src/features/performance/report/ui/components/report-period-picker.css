@@ -247,7 +247,7 @@
 	overflow: hidden;
 }
 
-.report-period-picker__selection > .contract-dashed-border {
+.report-period-picker__selection > .dashed-border {
 	position: absolute;
 	z-index: 0;
 	inset: 0;
@@ -257,7 +257,7 @@
 	pointer-events: none;
 }
 
-.report-period-picker__selection > :not(.contract-dashed-border) {
+.report-period-picker__selection > :not(.dashed-border) {
 	position: relative;
 	z-index: 1;
 }

@@ -1,6 +1,6 @@
 import type { UploadProps } from "antd";
 import type { PerformanceFormValues } from "../../model/performance.form.types";
-import { PerformanceFieldCard } from "#src/features/performance/shared/ui/form/components/PerformanceFieldCard";
+import { FieldCard } from "#src/shared/ui/dashed-card";
 import { Form, Upload } from "antd";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -28,7 +28,7 @@ function UploadCard({
 			name={name as any}
 			control={control}
 			render={({ field, fieldState, formState }) => (
-				<PerformanceFieldCard title={title}>
+				<FieldCard title={title}>
 					<Form.Item
 						help={(formState.isSubmitted || fieldState.isTouched)
 							? fieldState.error?.message
@@ -47,7 +47,7 @@ function UploadCard({
 							<p className="m-0 mt-2">{t("performance.labels.allowedFormatsXls")}</p>
 						</Upload.Dragger>
 					</Form.Item>
-				</PerformanceFieldCard>
+				</FieldCard>
 			)}
 		/>
 	);
@@ -61,7 +61,7 @@ export function CommercialPerformanceFields() {
 			<div className="performance-field-group__header">
 				<h3 className="performance-field-group__title">{t("performance.commercial.title")}</h3>
 			</div>
-			<div className="performance-field-card__hint">
+			<div className="dashed-card__hint">
 				{t("performance.commercial.uploadOnlyDescription")}
 			</div>
 

@@ -9,7 +9,7 @@
 	align-items: start;
 }
 
-.sms-gateway__workspace > .contract-form-section {
+.sms-gateway__workspace > .section-card {
 	min-width: 0;
 }
 

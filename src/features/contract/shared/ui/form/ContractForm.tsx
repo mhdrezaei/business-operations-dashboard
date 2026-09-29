@@ -226,7 +226,7 @@ export function ContractForm({
 		<FormProvider {...form}>
 			<ConfigProvider componentDisabled={readOnly}>
 				<BasicContent>
-					<div className="contract-form w-full flex flex-col justify-center items-center gap-2">
+					<div className="form-layout w-full flex flex-col justify-center items-center gap-2">
 						<input type="hidden" {...form.register("serviceCode")} />
 						<FixedStartSection mode={mode} preserveDatesDuringResetRef={preserveDatesDuringResetRef} />
 

@@ -48,7 +48,7 @@
 	width: 100%;
 }
 
-.report-company-picker > .contract-dashed-border {
+.report-company-picker > .dashed-border {
 	position: absolute;
 	z-index: 0;
 	inset: 0;

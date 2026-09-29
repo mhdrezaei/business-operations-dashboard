@@ -3,8 +3,9 @@ import type {
 	PredictionFormValues,
 	PredictionShareSectionValue,
 } from "../../model/prediction.form.types";
-import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
+import { DashedCard } from "#src/shared/ui/dashed-card";
 import { RHFProNumber, RHFSegmentedSwitch } from "#src/shared/ui/rhf-pro";
+import { SectionCard } from "#src/shared/ui/section-card";
 import { DeleteOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Form, Select, Typography } from "antd";
@@ -13,7 +14,6 @@ import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { companyTypeMatches } from "../../model/company-type.helpers";
 import { predictionCompaniesByServiceQuery } from "../../queries/prediction.queries";
-import { PredictionDashedCard } from "../../ui/form/components/PredictionDashedCard";
 import { QuarterDistributionSection } from "../../ui/form/sections/QuarterDistributionSection";
 import { createEmptySmsManualShares, SMS_CHANNEL_OPTIONS } from "./sms.config";
 
@@ -110,7 +110,7 @@ function SmsShareEditor({
 	}
 
 	return (
-		<PredictionDashedCard title={title} className="prediction-share-editor">
+		<DashedCard title={title} className="prediction-share-editor">
 			<div className="prediction-share-editor__controls">
 				<RHFSegmentedSwitch
 					name={`${fieldPath}.mode` as any}
@@ -179,7 +179,7 @@ function SmsShareEditor({
 						</Typography.Text>
 					</div>
 				)}
-		</PredictionDashedCard>
+		</DashedCard>
 	);
 }
 
@@ -223,7 +223,7 @@ export function SmsPredictionFields() {
 		<div className="flex flex-col gap-4">
 			<QuarterDistributionSection />
 
-			<ContractFormSection title={t("prediction.operations.sms")} tone="purple">
+			<SectionCard title={t("prediction.operations.sms")} tone="purple">
 				<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
 					<RHFProNumber<PredictionFormValues, any>
 						name={sf("valueYear") as any}
@@ -261,9 +261,9 @@ export function SmsPredictionFields() {
 						enableWordsTooltip
 					/>
 				</div>
-			</ContractFormSection>
+			</SectionCard>
 
-			<ContractFormSection title={t("prediction.sections.companyShares")} tone="blue">
+			<SectionCard title={t("prediction.sections.companyShares")} tone="blue">
 				<div className="flex flex-col gap-4">
 					<Typography.Paragraph className="mb-0 opacity-80">
 						{t("prediction.messages.companySharesDescription")}
@@ -287,7 +287,7 @@ export function SmsPredictionFields() {
 						/>
 					</div>
 
-					<PredictionDashedCard title={t("prediction.sections.channels", { defaultValue: "کانال‌ها" })}>
+					<DashedCard title={t("prediction.sections.channels", { defaultValue: "کانال‌ها" })}>
 						<div className="grid gap-4 xl:grid-cols-3">
 							{SMS_CHANNEL_OPTIONS.map(channel => (
 								<RHFProNumber<PredictionFormValues, any>
@@ -308,9 +308,9 @@ export function SmsPredictionFields() {
 								total: channelTotal,
 							})}
 						</Typography.Text>
-					</PredictionDashedCard>
+					</DashedCard>
 				</div>
-			</ContractFormSection>
+			</SectionCard>
 		</div>
 	);
 }

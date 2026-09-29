@@ -74,18 +74,18 @@
 }
 
 /* Let the shared contract section own its header line and spacing. */
-.sms-gateway-traffic-report .contract-form-section > .ant-card-head {
+.sms-gateway-traffic-report .section-card > .ant-card-head {
 	min-height: 56px;
 	padding-inline: 24px;
 	border-block-end: 0;
 }
 
-.sms-gateway-traffic-report .contract-form-section > .ant-card-head .ant-card-head-title {
+.sms-gateway-traffic-report .section-card > .ant-card-head .ant-card-head-title {
 	display: block;
 	flex: 0 0 auto;
 }
 
-.sms-gateway-traffic-report .contract-form-section > .ant-card-head .ant-card-head-title::after {
+.sms-gateway-traffic-report .section-card > .ant-card-head .ant-card-head-title::after {
 	display: none;
 }
 

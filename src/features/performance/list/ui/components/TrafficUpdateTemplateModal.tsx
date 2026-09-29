@@ -1,6 +1,5 @@
 import type { TrafficExcelUpdateResponse } from "#src/features/performance/api/performances.api";
 import type { UploadProps } from "antd";
-import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import {
 	downloadTrafficUpdateTemplate,
 	updateTrafficExcelImport,
@@ -8,12 +7,13 @@ import {
 import { buildMonthsByYearMap } from "#src/features/performance/shared/model/performance.helpers";
 import { performanceGapsQuery } from "#src/features/performance/shared/queries/performance.queries";
 import { MONTH_OPTIONS } from "#src/features/performance/shared/ui/form/constants/jalali-date-options";
+import { SectionCard } from "#src/shared/ui/section-card";
 import { CloudUploadOutlined, DownloadOutlined, InboxOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Modal, Select, Upload } from "antd";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import "#src/features/contract/shared/ui/form/contract-form.css";
+import "#src/shared/ui/form-layout/styles.css";
 import "#src/features/performance/shared/ui/form/performance-form.css";
 
 function getMonthLabel(month: number) {
@@ -343,9 +343,9 @@ export function TrafficUpdateTemplateModal({
 
 	if (embedded) {
 		return (
-			<ContractFormSection title="ویرایش گروهی عملکرد ترافیک" tone="traffic" defaultExpanded>
+			<SectionCard title="ویرایش گروهی عملکرد ترافیک" tone="traffic" defaultExpanded>
 				{content}
-			</ContractFormSection>
+			</SectionCard>
 		);
 	}
 

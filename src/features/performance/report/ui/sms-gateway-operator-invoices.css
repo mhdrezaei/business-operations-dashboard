@@ -62,7 +62,7 @@
 	margin-inline-start: var(--ant-margin-sm);
 }
 
-.sms-gateway-invoice-entry__metric .contract-form-section__tag.ant-tag {
+.sms-gateway-invoice-entry__metric .section-card__tag.ant-tag {
 	padding: 0;
 	background: transparent;
 	color: var(--ant-color-text-heading);

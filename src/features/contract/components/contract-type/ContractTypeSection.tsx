@@ -1,8 +1,8 @@
-import type { ContractSectionTone } from "#src/features/contract/shared/ui/form/components/contract-form-section-tone";
-import { getContractSectionToneColors } from "#src/features/contract/shared/ui/form/components/contract-form-section-tone";
-import { ContractSectionToneContext } from "#src/features/contract/shared/ui/form/components/contract-section-tone-context";
-import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
+import type { SectionTone } from "#src/shared/ui/section-card";
+import { DashedBorder } from "#src/shared/ui/dashed-border";
 import { RHFProNumber, RHFSegmentedSwitch, RHFSelect } from "#src/shared/ui/rhf-pro";
+import { getSectionToneColors, SectionCard, SectionToneContext } from "#src/shared/ui/section-card";
+
 import { DeleteOutlined, PlusOutlined, QuestionCircleOutlined } from "@ant-design/icons";
 import { Button, Card, theme, Tooltip } from "antd";
 import React, { useEffect, useRef } from "react";
@@ -14,7 +14,7 @@ interface Props {
 	title: React.ReactNode
 	name: string
 	topAside?: React.ReactNode
-	tone?: ContractSectionTone
+	tone?: SectionTone
 	variant?: "default" | "embedded" | "sms-operator"
 	showRatePercentage?: boolean
 	ratePercentageHelpText?: React.ReactNode
@@ -40,21 +40,20 @@ function createDefaultSection(firstRowFrom: number | null = null) {
 
 export function ContractTypeSection({ title, name, topAside, tone = "primary", variant = "default", showRatePercentage = false, ratePercentageHelpText, compactCalculationModel = true, blendedModePlaceholder = "انتخاب نوع محاسبه" }: Props) {
 	const { control, getValues, setValue } = useFormContext();
-	const inheritedTone = React.useContext(ContractSectionToneContext);
+	const inheritedTone = React.useContext(SectionToneContext);
 	const resolvedTone = inheritedTone ?? tone;
 	const isSmsOperator = variant === "sms-operator";
 	const isEmbedded = variant === "embedded";
 	const { token } = theme.useToken();
 	const smsOperatorRadius = token.paddingLG + token.borderRadiusSM;
 	const smsBlendedRadius = smsOperatorRadius;
-	const smsBorderWidth = token.lineWidth;
 	const smsDashLength = token.sizeXS - token.lineWidthBold;
 	const smsDashGap = token.paddingXXS;
 	const smsBorderColor = token.colorSplit;
 	const blendedCardRadius = compactCalculationModel ? 30 : smsBlendedRadius;
 	const blendedDashLength = compactCalculationModel ? 6 : smsDashLength;
 	const blendedDashGap = compactCalculationModel ? 6 : smsDashGap;
-	const toneColors = getContractSectionToneColors(token, resolvedTone);
+	const toneColors = getSectionToneColors(token, resolvedTone);
 	const smsCardStyle = isSmsOperator
 		? {
 			"--sms-operator-border-color": smsBorderColor,
@@ -74,21 +73,7 @@ export function ContractTypeSection({ title, name, topAside, tone = "primary", v
 		: undefined;
 
 	function renderDashedBorder(radius: number, dashLength = smsDashLength, dashGap = smsDashGap) {
-		return (
-			<svg className="contract-dashed-border" aria-hidden="true">
-				<rect
-					x={smsBorderWidth / 2}
-					y={smsBorderWidth / 2}
-					width={`calc(100% - ${smsBorderWidth}px)`}
-					height={`calc(100% - ${smsBorderWidth}px)`}
-					rx={Math.max(0, radius - smsBorderWidth / 2)}
-					fill="none"
-					stroke={smsBorderColor}
-					strokeWidth={smsBorderWidth}
-					strokeDasharray={`${dashLength} ${dashGap}`}
-				/>
-			</svg>
-		);
+		return <DashedBorder radius={radius} dashLength={dashLength} dashGap={dashGap} />;
 	}
 	const typePath = `${name}.type` as any;
 	const sectionsPath = `${name}.sections` as any;
@@ -351,9 +336,9 @@ export function ContractTypeSection({ title, name, topAside, tone = "primary", v
 
 	if (!isSmsOperator) {
 		return (
-			<ContractFormSection title={title || "نوع محاسبه"} tone={tone} className="mt-3">
+			<SectionCard title={title || "نوع محاسبه"} tone={tone} className="mt-3">
 				{content}
-			</ContractFormSection>
+			</SectionCard>
 		);
 	}
 

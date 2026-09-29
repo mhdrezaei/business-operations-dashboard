@@ -1,5 +1,5 @@
 import type { PerformanceFormValues } from "../../model/performance.form.types";
-import { PerformanceFieldCard } from "#src/features/performance/shared/ui/form/components/PerformanceFieldCard";
+import { FieldCard } from "#src/shared/ui/dashed-card";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
 import { useTranslation } from "react-i18next";
 
@@ -10,7 +10,7 @@ export function ShahkarPerformanceFields() {
 
 	return (
 		<div className="performance-field-grid">
-			<PerformanceFieldCard title={t("performance.fields.shahkar.performanceValue")}>
+			<FieldCard title={t("performance.fields.shahkar.performanceValue")}>
 				<RHFProNumber<PerformanceFormValues, any>
 					name={sf("performanceValue") as any}
 					label=""
@@ -22,7 +22,7 @@ export function ShahkarPerformanceFields() {
 					enableGrouping
 					enableWordsTooltip
 				/>
-			</PerformanceFieldCard>
+			</FieldCard>
 		</div>
 	);
 }

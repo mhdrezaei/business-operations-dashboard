@@ -1,7 +1,10 @@
 import type { CSSProperties, ReactNode } from "react";
 import React, { useEffect, useMemo, useState } from "react";
+import "#src/shared/ui/form-layout/styles.css";
 
-interface ContractAlignedFieldProps {
+/* eslint-disable react-refresh/only-export-components */
+
+export interface AlignedFormFieldProps {
 	label: string
 	labelId?: string
 	align?: "center" | "start"
@@ -18,7 +21,7 @@ function measureMaxLabelWidth(labels: string[]) {
 		return buildFallbackWidth(labels);
 
 	const probe = document.createElement("span");
-	probe.className = "contract-form-field__label contract-form-field__label--measure";
+	probe.className = "aligned-form-field__label aligned-form-field__label--measure";
 	document.body.appendChild(probe);
 
 	let maxWidth = 0;
@@ -31,12 +34,14 @@ function measureMaxLabelWidth(labels: string[]) {
 	return maxWidth > 0 ? `${maxWidth}px` : buildFallbackWidth(labels);
 }
 
-export function useContractAlignedLabelWidth(labels: string[]): CSSProperties {
+export function useAlignedLabelWidth(labels: string[]): CSSProperties {
 	const [labelWidth, setLabelWidth] = useState(() => buildFallbackWidth(labels));
 	const labelKey = useMemo(() => labels.join("|"), [labels]);
 
 	useEffect(() => {
 		function updateWidth() {
+			// The measured width is a layout result and must update after fonts load.
+			// eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
 			setLabelWidth(measureMaxLabelWidth(labels));
 		}
 
@@ -44,9 +49,7 @@ export function useContractAlignedLabelWidth(labels: string[]): CSSProperties {
 		void document.fonts?.ready.then(updateWidth);
 		window.addEventListener("resize", updateWidth);
 
-		return () => {
-			window.removeEventListener("resize", updateWidth);
-		};
+		return () => window.removeEventListener("resize", updateWidth);
 	}, [labelKey]);
 
 	return useMemo(
@@ -55,35 +58,22 @@ export function useContractAlignedLabelWidth(labels: string[]): CSSProperties {
 	);
 }
 
-export function ContractAlignedField({
-	label,
-	labelId,
-	align = "center",
-	children,
-}: ContractAlignedFieldProps) {
+export function AlignedFormField({ label, labelId, align = "center", children }: AlignedFormFieldProps) {
 	const className = align === "start"
-		? "contract-form-field contract-form-field--start"
-		: "contract-form-field";
+		? "aligned-form-field aligned-form-field--start"
+		: "aligned-form-field";
 	const hasLabel = label.trim().length > 0;
 
 	return (
 		<div className={className}>
 			<div
 				id={hasLabel ? labelId : undefined}
-				className="contract-form-field__label"
+				className="aligned-form-field__label"
 				aria-hidden={hasLabel ? undefined : true}
 			>
-				{hasLabel
-					? (
-						<span className="contract-form-field__label-text">
-							{label}
-						</span>
-					)
-					: null}
+				{hasLabel ? <span className="aligned-form-field__label-text">{label}</span> : null}
 			</div>
-			<div className="contract-form-field__control">
-				{children}
-			</div>
+			<div className="aligned-form-field__control">{children}</div>
 		</div>
 	);
 }

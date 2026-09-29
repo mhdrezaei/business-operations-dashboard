@@ -1,7 +1,7 @@
 import type { ServiceDto } from "#src/api/common/common.types";
 import type { CSSProperties } from "react";
 import type { SmsGatewayCustomerDto } from "../model/sms-gateway.types";
-import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
+import { SectionCard } from "#src/shared/ui/section-card";
 import {
 	CheckCircleFilled,
 	DeleteOutlined,
@@ -31,7 +31,7 @@ import {
 	smsGatewayCustomersQuery,
 	smsGatewayMappingsByCustomerQuery,
 } from "../queries/sms-gateway.queries";
-import "#src/features/contract/shared/ui/form/contract-form.css";
+import "#src/shared/ui/form-layout/styles.css";
 import "./sms-gateway-mapping.css";
 
 const SMS_SERVICE_CODES = new Set(["sms", "sms-commission", "sms_commission"]);
@@ -185,7 +185,7 @@ export default function SmsGatewayMappingPanel({ services, initialServiceId }: S
 					onRetry={() => void customersQuery.refetch()}
 				/>
 
-				<ContractFormSection
+				<SectionCard
 					className="company-profile-section company-profile-section--contact sms-gateway__mapping-section"
 					tone="geekblue"
 					title={selectedCustomer?.is_mapped ? "مدیریت مپینگ" : "مپ کردن شرکت"}
@@ -277,7 +277,7 @@ export default function SmsGatewayMappingPanel({ services, initialServiceId }: S
 								</div>
 							</div>
 						)}
-				</ContractFormSection>
+				</SectionCard>
 			</div>
 		</section>
 	);
@@ -307,7 +307,7 @@ function CustomerListCard({
 	onRetry,
 }: CustomerListCardProps) {
 	return (
-		<ContractFormSection
+		<SectionCard
 			className="company-profile-section company-profile-section--general sms-gateway__customers-section"
 			tone="primary"
 			title={`مشتریان Gateway (${total})`}
@@ -363,7 +363,7 @@ function CustomerListCard({
 					</button>
 				))}
 			</div>
-		</ContractFormSection>
+		</SectionCard>
 	);
 }
 
