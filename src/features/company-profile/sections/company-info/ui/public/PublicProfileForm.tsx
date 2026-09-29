@@ -1,11 +1,11 @@
 import type { Resolver } from "react-hook-form";
 import type { PublicProfileFormValues } from "../../model/public/company-public.mappers";
 
-import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import {
 	RHFProText,
 	RHFProTextArea,
 } from "#src/shared/ui/rhf-pro";
+import { SectionCard } from "#src/shared/ui/section-card";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form } from "antd";
@@ -58,7 +58,7 @@ export default function PublicProfileForm({ disabled, submitDisabled, hasProfile
 	return (
 		<Form layout="vertical" className="space-y-4">
 			<FormProvider {...methods}>
-				<ContractFormSection title={"\u0627\u0637\u0644\u0627\u0639\u0627\u062A \u0639\u0645\u0648\u0645\u06CC \u0634\u0631\u06A9\u062A"} tone="primary" className="company-profile-section company-profile-section--general">
+				<SectionCard title={"\u0627\u0637\u0644\u0627\u0639\u0627\u062A \u0639\u0645\u0648\u0645\u06CC \u0634\u0631\u06A9\u062A"} tone="primary" className="company-profile-section company-profile-section--general">
 					<div className="grid grid-cols-1 gap-x-4 md:grid-cols-2">
 						<RHFProText
 							name="legal_name"
@@ -71,9 +71,9 @@ export default function PublicProfileForm({ disabled, submitDisabled, hasProfile
 							inputProps={{ placeholder: "\u0646\u0627\u0645 \u0628\u0631\u0646\u062F", disabled }}
 						/>
 					</div>
-				</ContractFormSection>
+				</SectionCard>
 
-				<ContractFormSection title={"\u0622\u062F\u0631\u0633 \u0648 \u0646\u0642\u0634\u0647"} tone="purple" className="company-profile-section company-profile-section--address">
+				<SectionCard title={"\u0622\u062F\u0631\u0633 \u0648 \u0646\u0642\u0634\u0647"} tone="purple" className="company-profile-section company-profile-section--address">
 					<div className="grid grid-cols-1 gap-x-4 md:grid-cols-2">
 						<div className="md:col-span-2">
 							<RHFProTextArea
@@ -87,9 +87,9 @@ export default function PublicProfileForm({ disabled, submitDisabled, hasProfile
 							<CompanyInfoMapField disabled={disabled} />
 						</div>
 					</div>
-				</ContractFormSection>
+				</SectionCard>
 
-				<ContractFormSection title={"\u0631\u0627\u0647\u200C\u0647\u0627\u06CC \u0627\u0631\u062A\u0628\u0627\u0637\u06CC"} tone="geekblue" className="company-profile-section company-profile-section--contact">
+				<SectionCard title={"\u0631\u0627\u0647\u200C\u0647\u0627\u06CC \u0627\u0631\u062A\u0628\u0627\u0637\u06CC"} tone="geekblue" className="company-profile-section company-profile-section--contact">
 					<div className="company-contact-fields">
 						<SortableContactField name="phone" label={"\u062A\u0644\u0641\u0646"} icon={<TelephoneIcon />} disabled={disabled} />
 						<SortableContactField name="mobile" label={"\u0645\u0648\u0628\u0627\u06CC\u0644"} icon={<PhoneIcon />} disabled={disabled} />
@@ -115,7 +115,7 @@ export default function PublicProfileForm({ disabled, submitDisabled, hasProfile
 							<CompanyInfoSocialLinksField disabled={disabled} />
 						</ContactMethodCard>
 					</div>
-				</ContractFormSection>
+				</SectionCard>
 
 				<ProfileFormActions
 					hasProfile={hasProfile}

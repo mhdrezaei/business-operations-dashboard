@@ -1,6 +1,6 @@
 import type { PeriodType, ReportSelectOption } from "../constants";
 import SelectedMonthIcon from "#src/assets/svg/performance/selected-month.svg?react";
-import { ContractDashedBorder } from "#src/features/contract/shared/ui/form/components/ContractDashedBorder";
+import { DashedBorder } from "#src/shared/ui/dashed-border";
 import { CalendarOutlined, CloseOutlined, DeleteOutlined, DownOutlined, PlusOutlined, UpOutlined } from "@ant-design/icons";
 import { Button, Select, Typography } from "antd";
 import { useMemo, useState } from "react";
@@ -257,7 +257,7 @@ export function ReportPeriodPicker<TPeriodType extends string = PeriodType>({
 				</div>
 
 				<div className="report-period-picker__selection" aria-live="polite">
-					<ContractDashedBorder />
+					<DashedBorder />
 					<div className="report-period-picker__selection-heading">
 						<div className="report-period-picker__selection-title">
 							<SelectedMonthIcon aria-hidden="true" />

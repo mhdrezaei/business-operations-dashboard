@@ -1,6 +1,6 @@
 import type { DragEndEvent } from "@dnd-kit/core";
 import type { CSSProperties, ReactNode } from "react";
-import { ContractDashedBorder } from "#src/features/contract/shared/ui/form/components/ContractDashedBorder";
+import { DashedBorder } from "#src/shared/ui/dashed-border";
 import { DeleteOutlined, HolderOutlined, PlusOutlined } from "@ant-design/icons";
 import {
 	closestCenter,
@@ -61,7 +61,7 @@ function getErrorMessage(error: unknown): string | undefined {
 export function ContactMethodCard({ title, icon, children, className }: ContactMethodCardProps) {
 	return (
 		<section className={`company-contact-card${className ? ` ${className}` : ""}`} aria-label={title}>
-			<ContractDashedBorder />
+			<DashedBorder />
 			<div className="company-contact-card__content">
 				<div className="company-contact-card__title">
 					{icon ? <span className="company-contact-card__title-icon" aria-hidden="true">{icon}</span> : null}

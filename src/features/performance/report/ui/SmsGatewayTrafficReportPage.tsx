@@ -3,8 +3,8 @@ import type { Dayjs } from "#src/shared/lib/dayjs-jalali";
 import type { ReactNode } from "react";
 import { fetchCompaniesByService, fetchServices } from "#src/api/common/common.api";
 import { BasicContent } from "#src/components";
-import { ContractDashedBorder } from "#src/features/contract/shared/ui/form/components/ContractDashedBorder";
 import { createSmsGatewayTrafficReport, fetchSmsGatewayTrafficReport, fetchSmsGatewayTrafficReportStatus } from "#src/features/performance/api/performances.api";
+import { DashedBorder } from "#src/shared/ui/dashed-border";
 import { BarChartOutlined, DownOutlined, UpOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Alert, Button, Card, Collapse, Descriptions, Empty, Select, Space, Spin, Statistic, Tag, Typography } from "antd";
@@ -12,7 +12,7 @@ import { DatePicker } from "antd-jalali";
 import moment from "moment-jalaali";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./sms-gateway-traffic-report.css";
-import "#src/features/contract/shared/ui/form/contract-form.css";
+import "#src/shared/ui/form-layout/styles.css";
 
 const OPERATORS = [
 	{ label: "همراه اول (MCI)", value: "MCI" },
@@ -215,7 +215,7 @@ export function SmsGatewayTrafficReportPage() {
 					<>
 						<ReportSection className="sms-gateway-traffic-report__summary-card" title="خلاصه گزارش">
 							<div className="sms-gateway-traffic-report__summary-fields">
-								<ContractDashedBorder />
+								<DashedBorder />
 								<Descriptions column={{ xs: 1, md: 3 }}>
 									<Descriptions.Item label="مجموع کل"><Statistic value={result.grand_total ?? 0} formatter={v => number(Number(v))} /></Descriptions.Item>
 									<Descriptions.Item label="تعداد شرکت‌ها">{number(result.count)}</Descriptions.Item>
@@ -227,7 +227,7 @@ export function SmsGatewayTrafficReportPage() {
 							</div>
 							<div className="sms-gateway-traffic-report__breakdown-list mt-4">
 								<div className="sms-gateway-traffic-report__breakdown-item">
-									<ContractDashedBorder />
+									<DashedBorder />
 									<div className="sms-gateway-traffic-report__breakdown-content">
 										<div className="sms-gateway-traffic-report__breakdown-title">مجموع به تفکیک اپراتور</div>
 										<Space wrap>
@@ -243,7 +243,7 @@ export function SmsGatewayTrafficReportPage() {
 									</div>
 								</div>
 								<div className="sms-gateway-traffic-report__breakdown-item">
-									<ContractDashedBorder />
+									<DashedBorder />
 									<div className="sms-gateway-traffic-report__breakdown-content">
 										<div className="sms-gateway-traffic-report__breakdown-title">مجموع به تفکیک وضعیت تحویل</div>
 										<Space wrap>

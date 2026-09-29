@@ -1,7 +1,7 @@
 import type { PredictionFormValues } from "../../../model/prediction.form.types";
-import { ContractAlignedField, useContractAlignedLabelWidth } from "#src/features/contract/shared/ui/form/components/ContractAlignedField";
-import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
+import { AlignedFormField, useAlignedLabelWidth } from "#src/shared/ui/aligned-form-field";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
+import { SectionCard } from "#src/shared/ui/section-card";
 import { Typography } from "antd";
 import { useEffect } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
@@ -42,7 +42,7 @@ export function QuarterDistributionSection() {
 		t("prediction.quarters.q3"),
 		t("prediction.quarters.q4"),
 	];
-	const alignedLabelStyle = useContractAlignedLabelWidth(quarterLabels);
+	const alignedLabelStyle = useAlignedLabelWidth(quarterLabels);
 
 	useEffect(() => {
 		const firstThree = [q1Percent, q2Percent, q3Percent];
@@ -90,33 +90,33 @@ export function QuarterDistributionSection() {
 	}, [allInputQuarterFieldsTouched, formState.isSubmitted, q1Percent, q2Percent, q3Percent, q4Percent, trigger]);
 
 	return (
-		<ContractFormSection title={t("prediction.sections.quarters")} tone="gold">
-			<div className="contract-form-aligned-grid contract-form-aligned-grid--four" style={alignedLabelStyle}>
-				<ContractAlignedField label={quarterLabels[0]} labelId="prediction-quarter-q1">
+		<SectionCard title={t("prediction.sections.quarters")} tone="gold">
+			<div className="aligned-form-grid aligned-form-grid--four" style={alignedLabelStyle}>
+				<AlignedFormField label={quarterLabels[0]} labelId="prediction-quarter-q1">
 					<RHFProNumber<PredictionFormValues, any>
 						name={sf("q1Percent") as any}
 						label=""
 						hideError
 						inputProps={{ placeholder: t("prediction.placeholders.percentExample"), addonAfter: "%", maxLength: 3 }}
 					/>
-				</ContractAlignedField>
-				<ContractAlignedField label={quarterLabels[1]} labelId="prediction-quarter-q2">
+				</AlignedFormField>
+				<AlignedFormField label={quarterLabels[1]} labelId="prediction-quarter-q2">
 					<RHFProNumber<PredictionFormValues, any>
 						name={sf("q2Percent") as any}
 						label=""
 						hideError
 						inputProps={{ placeholder: t("prediction.placeholders.percentExample"), addonAfter: "%", maxLength: 3 }}
 					/>
-				</ContractAlignedField>
-				<ContractAlignedField label={quarterLabels[2]} labelId="prediction-quarter-q3">
+				</AlignedFormField>
+				<AlignedFormField label={quarterLabels[2]} labelId="prediction-quarter-q3">
 					<RHFProNumber<PredictionFormValues, any>
 						name={sf("q3Percent") as any}
 						label=""
 						hideError
 						inputProps={{ placeholder: t("prediction.placeholders.percentExample"), addonAfter: "%", maxLength: 3 }}
 					/>
-				</ContractAlignedField>
-				<ContractAlignedField label={quarterLabels[3]} labelId="prediction-quarter-q4">
+				</AlignedFormField>
+				<AlignedFormField label={quarterLabels[3]} labelId="prediction-quarter-q4">
 					<RHFProNumber<PredictionFormValues, any>
 						name={sf("q4Percent") as any}
 						label=""
@@ -127,7 +127,7 @@ export function QuarterDistributionSection() {
 							disabled: true,
 						}}
 					/>
-				</ContractAlignedField>
+				</AlignedFormField>
 			</div>
 
 			{shouldShowQuarterError
@@ -140,6 +140,6 @@ export function QuarterDistributionSection() {
 					</Typography.Text>
 				)
 				: null}
-		</ContractFormSection>
+		</SectionCard>
 	);
 }

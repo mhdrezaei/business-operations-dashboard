@@ -2,7 +2,6 @@ import type { PerformanceServicePath } from "#src/features/performance/api/perfo
 import type { CSSProperties } from "react";
 import type { PerformanceListRow } from "../model/performance.list.types";
 import { BasicContent } from "#src/components";
-import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import {
 	deletePerformanceByComposite,
 	deletePerformanceById,
@@ -19,6 +18,7 @@ import {
 import { companiesByServiceQuery, servicesQuery } from "#src/features/performance/shared/queries/performance.queries";
 import { MONTH_OPTIONS } from "#src/features/performance/shared/ui/form/constants/jalali-date-options";
 import { useAccess } from "#src/hooks";
+import { SectionCard } from "#src/shared/ui/section-card";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Empty, Select, Skeleton, Tag, theme, Typography } from "antd";
 import i18next from "i18next";
@@ -423,7 +423,7 @@ export default function PerformanceListPage() {
 		<BasicContent className="performance-edit-page">
 			<div className="performance-edit-page__layout">
 				<aside className="performance-edit-sidebar" aria-label="فیلتر و فهرست عملکردها">
-					<ContractFormSection title="انتخاب سرویس و شرکت" collapsible={false}>
+					<SectionCard title="انتخاب سرویس و شرکت" collapsible={false}>
 						<div className="performance-edit-filter-stack">
 							<label className="performance-edit-filter">
 								<span>{t("performance.columns.service")}</span>
@@ -482,9 +482,9 @@ export default function PerformanceListPage() {
 								/>
 							</label>
 						</div>
-					</ContractFormSection>
+					</SectionCard>
 
-					<ContractFormSection title="عملکردهای شرکت" collapsible={false}>
+					<SectionCard title="عملکردهای شرکت" collapsible={false}>
 						<label className="performance-edit-filter performance-edit-year-filter">
 							<span>انتخاب سال (شمسی)</span>
 							<Select
@@ -569,7 +569,7 @@ export default function PerformanceListPage() {
 										</div>
 									)
 									: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={emptyDescription} />}
-					</ContractFormSection>
+					</SectionCard>
 				</aside>
 
 				<main className="performance-edit-main">

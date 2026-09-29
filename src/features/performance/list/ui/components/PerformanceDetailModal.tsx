@@ -1,17 +1,10 @@
 import type { CompanyDto } from "#src/api/common/common.types.js";
-import type { ContractSectionTone } from "#src/features/contract/shared/ui/form/components/contract-form-section-tone";
 import type { PerformanceListItem, PerformanceServicePath } from "#src/features/performance/api/performances.api";
 import type { OpenApiContractModel } from "#src/features/performance/shared/model/performance.form.types";
+import type { SectionTone } from "#src/shared/ui/section-card";
 import type { CSSProperties, ReactNode } from "react";
 import type { PerformanceListRow } from "../../model/performance.list.types";
 import { MONTH_OPTIONS } from "#src/features/contract/constant/jalali-date-options.js";
-import { getContractSectionToneColors } from "#src/features/contract/shared/ui/form/components/contract-form-section-tone";
-import {
-	ContractAlignedField,
-	useContractAlignedLabelWidth,
-} from "#src/features/contract/shared/ui/form/components/ContractAlignedField";
-import { ContractDashedBorder } from "#src/features/contract/shared/ui/form/components/ContractDashedBorder";
-import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import {
 	fetchPerformanceContracts,
 	fetchPerformanceDetail,
@@ -27,14 +20,22 @@ import {
 	pickCompanyTypeToken,
 	toNullableNumber,
 } from "#src/features/performance/shared/model/performance.helpers";
+import {
+	AlignedFormField,
+	useAlignedLabelWidth,
+} from "#src/shared/ui/aligned-form-field";
+import { DashedBorder } from "#src/shared/ui/dashed-border";
+import { DashedCard } from "#src/shared/ui/dashed-card";
 import { RHFProNumber, RHFProText } from "#src/shared/ui/rhf-pro";
+import { SectionCard } from "#src/shared/ui/section-card";
+
 import { DeleteOutlined, EditOutlined, ReloadOutlined } from "@ant-design/icons";
 import { Button, Card, Modal, Popconfirm, Spin, Tag, theme } from "antd";
 import i18next from "i18next";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import "#src/features/contract/shared/ui/form/contract-form.css";
+import "#src/shared/ui/form-layout/styles.css";
 
 type EditFormValues = Record<string, unknown>;
 
@@ -618,7 +619,7 @@ function DetailValueRows({ fields }: { fields: DetailField[] }) {
 
 function DetailSection({ title, children, tone, extra, collapsible = true }: { title: string, children: ReactNode, tone?: "success", extra?: ReactNode, collapsible?: boolean }) {
 	return (
-		<ContractFormSection
+		<SectionCard
 			title={title}
 			tone={tone === "success" ? "addenda" : "primary"}
 			className="performance-detail-section"
@@ -626,11 +627,11 @@ function DetailSection({ title, children, tone, extra, collapsible = true }: { t
 			collapsible={collapsible}
 		>
 			<div className="performance-detail-section__body">{children}</div>
-		</ContractFormSection>
+		</SectionCard>
 	);
 }
 
-function resolveMetricCardTone(key: string, title: string): ContractSectionTone {
+function resolveMetricCardTone(key: string, title: string): SectionTone {
 	const value = `${key} ${title}`.toUpperCase();
 	if (value.includes("IRANCELL") || value.includes("ایرانسل"))
 		return "gold";
@@ -642,24 +643,10 @@ function resolveMetricCardTone(key: string, title: string): ContractSectionTone 
 }
 
 function DetailMetricCard({ cardKey, title, children }: { cardKey: string, title: string, children: ReactNode }) {
-	const { token } = theme.useToken();
-	const toneColors = getContractSectionToneColors(token, resolveMetricCardTone(cardKey, title));
-	const style = {
-		"--performance-detail-metric-radius": `${token.paddingLG + token.borderRadiusSM}px`,
-		"--performance-detail-metric-bg": token.colorBgLayout,
-		"--performance-detail-metric-tag-bg": toneColors.background,
-		"--performance-detail-metric-tag-color": toneColors.text,
-		"--performance-detail-metric-tag-radius": `${token.borderRadiusSM}px`,
-		"--performance-detail-divider-color": token.colorSplit,
-		"--performance-detail-divider-width": `${token.lineWidth}px`,
-	} as CSSProperties;
-
 	return (
-		<div className="performance-detail-metric-card" style={style}>
-			<ContractDashedBorder />
-			<Tag bordered={false} className="performance-detail-metric-card__tag">{title}</Tag>
+		<DashedCard title={title} tone={resolveMetricCardTone(cardKey, title)} className="performance-detail-metric-card">
 			<div className="performance-detail-metric-card__rows">{children}</div>
-		</div>
+		</DashedCard>
 	);
 }
 
@@ -693,13 +680,13 @@ export function PerformanceDetailModal({
 		() => resolveOpenApiContractModel(detail, record, openApiPerformances),
 		[detail, record, openApiPerformances],
 	);
-	const openApiPackageAlignedLabelStyle = useContractAlignedLabelWidth([
+	const openApiPackageAlignedLabelStyle = useAlignedLabelWidth([
 		t("performance.fields.openapi.billInquiryValue"),
 		t("performance.fields.openapi.trafficRevenue"),
 		t("performance.fields.openapi.trafficPackageCount"),
 		OPENAPI_PACKAGE_PERFORMANCE_LABEL,
 	]);
-	const pspAlignedLabelStyle = useContractAlignedLabelWidth([
+	const pspAlignedLabelStyle = useAlignedLabelWidth([
 		t("performance.fields.psp.performanceValue"),
 		t("performance.fields.psp.monthlyRevenue"),
 	]);
@@ -1804,7 +1791,7 @@ export function PerformanceDetailModal({
 												<div className="grid gap-3">
 													{visibleTrafficLocations.has("TEHRAN") && (
 														<div className="performance-traffic-edit-location">
-															<ContractDashedBorder />
+															<DashedBorder />
 															<div className="performance-traffic-edit-location__header">
 																<Tag bordered={false}>عملکرد تهران</Tag>
 															</div>
@@ -1836,7 +1823,7 @@ export function PerformanceDetailModal({
 													)}
 													{visibleTrafficLocations.has("COUNTY") && (
 														<div className="performance-traffic-edit-location">
-															<ContractDashedBorder />
+															<DashedBorder />
 															<div className="performance-traffic-edit-location__header">
 																<Tag bordered={false}>عملکرد مراکز استان</Tag>
 															</div>
@@ -1871,8 +1858,8 @@ export function PerformanceDetailModal({
 											: isPspEditLayout
 												? (
 													<div style={pspAlignedLabelStyle}>
-														<div className="contract-form-aligned-grid contract-form-aligned-grid--two gap-3">
-															<ContractAlignedField label={t("performance.fields.psp.performanceValue")}>
+														<div className="aligned-form-grid aligned-form-grid--two gap-3">
+															<AlignedFormField label={t("performance.fields.psp.performanceValue")}>
 																<RHFProNumber<EditFormValues, any>
 																	name={"value" as any}
 																	label=""
@@ -1881,9 +1868,9 @@ export function PerformanceDetailModal({
 																	enableGrouping
 																	enableWordsTooltip
 																/>
-															</ContractAlignedField>
+															</AlignedFormField>
 
-															<ContractAlignedField label={t("performance.fields.psp.monthlyRevenue")}>
+															<AlignedFormField label={t("performance.fields.psp.monthlyRevenue")}>
 																<RHFProNumber<EditFormValues, any>
 																	name={"income" as any}
 																	label=""
@@ -1892,7 +1879,7 @@ export function PerformanceDetailModal({
 																	enableGrouping
 																	enableWordsTooltip
 																/>
-															</ContractAlignedField>
+															</AlignedFormField>
 														</div>
 													</div>
 												)
@@ -1900,7 +1887,7 @@ export function PerformanceDetailModal({
 													? (
 														<div style={isOpenApiPackageEditLayout ? openApiPackageAlignedLabelStyle : undefined}>
 															<div
-																className={`contract-form-aligned-grid contract-form-aligned-grid--two gap-3${isSmsEditAlignedLayout ? " performance-detail-sms-grid" : ""}`}
+																className={`aligned-form-grid aligned-form-grid--two gap-3${isSmsEditAlignedLayout ? " performance-detail-sms-grid" : ""}`}
 															>
 																{visibleEditableFields.map((field) => {
 																	const smsAddon = getSmsPerformanceFieldAddon(field.key);
@@ -1930,7 +1917,7 @@ export function PerformanceDetailModal({
 																	}
 
 																	return (
-																		<ContractAlignedField key={field.key} label={alignedLabel}>
+																		<AlignedFormField key={field.key} label={alignedLabel}>
 																			<RHFProNumber<EditFormValues, any>
 																				name={field.key as any}
 																				label=""
@@ -1943,7 +1930,7 @@ export function PerformanceDetailModal({
 																				enableGrouping
 																				enableWordsTooltip
 																			/>
-																		</ContractAlignedField>
+																		</AlignedFormField>
 																	);
 																})}
 															</div>

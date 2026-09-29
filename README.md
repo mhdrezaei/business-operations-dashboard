@@ -1,5 +1,13 @@
 # Negah Admin Console
 
+## راهنمای توسعه UI
+
+[فارسی](docs/ui-component-guide.fa.md) | [English](docs/ui-component-guide.en.md)
+
+Before building or changing a feature, read the [UI implementation and shared component guide](docs/ui-component-guide.en.md) for component selection, accordion behavior, styling rules, and production examples.
+
+پیش از ساخت یا تغییر فیچر، [راهنمای کامپوننت‌ها و قواعد پیاده‌سازی UI](docs/ui-component-guide.fa.md) را بخوانید. این راهنما انتخاب کارت، خط‌چین، accordion، فرم و نمونه‌های واقعی را برای توسعه‌دهندگان و ایجنت‌ها توضیح می‌دهد.
+
 Enterprise-grade admin dashboard for managing contracts, services, and business performance.
 
 This project is a modern frontend application designed to provide a clear and efficient interface for internal company operations, including contract management, service tracking, performance reporting, and forecasting.

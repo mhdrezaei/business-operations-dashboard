@@ -3,7 +3,7 @@ import type { ReportFinancialColumnKey } from "../export";
 import FilterIcon from "#src/assets/svg/performance/report-filter.svg?react";
 import FinanceIcon from "#src/assets/svg/performance/report-finance.svg?react";
 import SumIcon from "#src/assets/svg/performance/report-sum.svg?react";
-import { ContractDashedBorder } from "#src/features/contract/shared/ui/form/components/ContractDashedBorder";
+import { DashedBorder } from "#src/shared/ui/dashed-border";
 import { DownOutlined, UpOutlined } from "@ant-design/icons";
 import { Switch } from "antd";
 import { useMemo, useState } from "react";
@@ -78,7 +78,7 @@ function SettingCard<T extends string>({
 
 	return (
 		<section className="report-settings-panel__card" aria-label={title} aria-disabled={disabled}>
-			<ContractDashedBorder />
+			<DashedBorder />
 			<div className="report-settings-panel__card-content">
 				<div className="report-settings-panel__card-title">
 					{icon}

@@ -1,5 +1,5 @@
 import type { PerformanceFormValues } from "../../model/performance.form.types";
-import { PerformanceFieldCard } from "#src/features/performance/shared/ui/form/components/PerformanceFieldCard";
+import { FieldCard } from "#src/shared/ui/dashed-card";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
 import { useTranslation } from "react-i18next";
 
@@ -20,7 +20,7 @@ export function SmsPerformanceFields() {
 	return (
 		<div className="performance-field-grid">
 			{SMS_PERFORMANCE_FIELDS.map(field => (
-				<PerformanceFieldCard key={field.key} title={field.label} tone={field.tone}>
+				<FieldCard key={field.key} title={field.label} tone={field.tone}>
 					<RHFProNumber<PerformanceFormValues, any>
 						name={sf(field.key) as any}
 						label=""
@@ -32,7 +32,7 @@ export function SmsPerformanceFields() {
 						enableGrouping
 						enableWordsTooltip
 					/>
-				</PerformanceFieldCard>
+				</FieldCard>
 			))}
 		</div>
 	);

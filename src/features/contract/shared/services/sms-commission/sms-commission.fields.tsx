@@ -4,11 +4,11 @@ import { fetchCompaniesByService } from "#src/api/common/common.api";
 import { fetchCompanyContracts, fetchContractDetail } from "#src/features/contract/api/contracts.api";
 import { ContractAddendaSection } from "#src/features/contract/components/addenda/ContractAddendaSection";
 import {
-	ContractAlignedField,
-	useContractAlignedLabelWidth,
-} from "#src/features/contract/shared/ui/form/components/ContractAlignedField";
-import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
+	AlignedFormField,
+	useAlignedLabelWidth,
+} from "#src/shared/ui/aligned-form-field";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
+import { SectionCard } from "#src/shared/ui/section-card";
 import { notification } from "#src/utils";
 import { CopyOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
@@ -472,7 +472,7 @@ function SmsCommissionAddendumPercentSync({ base }: { base: string }) {
 
 export function SmsCommissionFields() {
 	const { control, setValue } = useFormContext<ContractFormValues>();
-	const alignedLabelStyle = useContractAlignedLabelWidth(COMMISSION_LABELS);
+	const alignedLabelStyle = useAlignedLabelWidth(COMMISSION_LABELS);
 
 	const startYear = useWatch({ control, name: "startYear" });
 	const startMonth = useWatch({ control, name: "startMonth" });
@@ -683,28 +683,28 @@ export function SmsCommissionFields() {
 			<>
 				{base ? <SmsCommissionAddendumPercentSync base={base} /> : null}
 				<div
-					className="contract-form-aligned-grid contract-form-aligned-grid--two"
+					className="aligned-form-grid aligned-form-grid--two"
 					style={alignedLabelStyle}
 				>
-					<ContractAlignedField label="کارمزد دریافت اولیه">
+					<AlignedFormField label="کارمزد دریافت اولیه">
 						<RHFProNumber<ContractFormValues, any>
 							name={nameOf("initialCommission") as any}
 							label=""
 							inputProps={{ placeholder: "مثلاً 110", addonAfter: "ریال" }}
 							formItemProps={{ className: "contract-type-currency-field mb-0" }}
 						/>
-					</ContractAlignedField>
+					</AlignedFormField>
 
-					<ContractAlignedField label="کارمزد دریافت نهایی">
+					<AlignedFormField label="کارمزد دریافت نهایی">
 						<RHFProNumber<ContractFormValues, any>
 							name={nameOf("finalCommission") as any}
 							label=""
 							inputProps={{ placeholder: "مثلاً 150", addonAfter: "ریال" }}
 							formItemProps={{ className: "contract-type-currency-field mb-0" }}
 						/>
-					</ContractAlignedField>
+					</AlignedFormField>
 
-					<ContractAlignedField label="درصد کاراشاب">
+					<AlignedFormField label="درصد کاراشاب">
 						<RHFProNumber<ContractFormValues, any>
 							name={nameOf("expertPercent") as any}
 							label=""
@@ -712,9 +712,9 @@ export function SmsCommissionFields() {
 							enableGrouping={false}
 							formItemProps={{ className: "contract-type-currency-field mb-0" }}
 						/>
-					</ContractAlignedField>
+					</AlignedFormField>
 
-					<ContractAlignedField label="درصد مخابرات">
+					<AlignedFormField label="درصد مخابرات">
 						<RHFProNumber<ContractFormValues, any>
 							name={nameOf("telecomPercent") as any}
 							label=""
@@ -722,9 +722,9 @@ export function SmsCommissionFields() {
 							enableGrouping={false}
 							formItemProps={{ className: "contract-type-currency-field mb-0" }}
 						/>
-					</ContractAlignedField>
+					</AlignedFormField>
 
-					<ContractAlignedField label="درصد سهم طرف اول">
+					<AlignedFormField label="درصد سهم طرف اول">
 						<RHFProNumber<ContractFormValues, any>
 							name={nameOf("firstPartySharePercent") as any}
 							label=""
@@ -732,9 +732,9 @@ export function SmsCommissionFields() {
 							enableGrouping={false}
 							formItemProps={{ className: "contract-type-currency-field mb-0" }}
 						/>
-					</ContractAlignedField>
+					</AlignedFormField>
 
-					<ContractAlignedField label="درصد سهم منطقه">
+					<AlignedFormField label="درصد سهم منطقه">
 						<RHFProNumber<ContractFormValues, any>
 							name={nameOf("regionSharePercent") as any}
 							label=""
@@ -742,10 +742,10 @@ export function SmsCommissionFields() {
 							enableGrouping={false}
 							formItemProps={{ className: "contract-type-currency-field mb-0" }}
 						/>
-					</ContractAlignedField>
+					</AlignedFormField>
 
 					<div className="col-span-full">
-						<ContractAlignedField label="درصد سهم نماینده فروش">
+						<AlignedFormField label="درصد سهم نماینده فروش">
 							<RHFProNumber<ContractFormValues, any>
 								name={nameOf("salesAgentSharePercent") as any}
 								label=""
@@ -753,7 +753,7 @@ export function SmsCommissionFields() {
 								enableGrouping={false}
 								formItemProps={{ className: "contract-type-currency-field mb-0" }}
 							/>
-						</ContractAlignedField>
+						</AlignedFormField>
 					</div>
 				</div>
 			</>
@@ -762,10 +762,10 @@ export function SmsCommissionFields() {
 
 	return (
 		<>
-			<ContractFormSection title="کارمزدها و درصدها" tone="gold">
+			<SectionCard title="کارمزدها و درصدها" tone="gold">
 				{renderCommissionGrid()}
 				<SmsCommissionCopyDataButton />
-			</ContractFormSection>
+			</SectionCard>
 
 			{showAddenda
 				? (

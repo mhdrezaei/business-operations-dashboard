@@ -1,0 +1,64 @@
+.dashed-card {
+	position: relative;
+	overflow: hidden;
+	min-width: 0;
+	border-radius: calc(var(--contract-section-body-padding, 24px) + var(--contract-section-tag-radius, 4px));
+	background: var(--contract-section-nested-bg, var(--ant-color-bg-layout));
+}
+
+.dashed-card__content {
+	position: relative;
+	z-index: 1;
+	padding: var(--ant-paddingMD, 16px);
+}
+
+.dashed-card__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--ant-marginSM, 12px);
+	margin-block-end: var(--ant-marginMD, 16px);
+}
+
+.dashed-card__title {
+	color: var(--ant-colorText);
+	font-weight: 700;
+}
+
+.dashed-card__tag.ant-tag {
+	margin-inline-end: 0;
+	border-radius: var(--ant-border-radius-sm);
+}
+
+.dashed-card--field {
+	border-radius: calc(var(--ant-padding-lg) + var(--ant-border-radius-sm));
+	background: var(--ant-color-bg-layout);
+}
+
+.dashed-card--field > .dashed-card__content {
+	z-index: 2;
+	display: flex;
+	flex-direction: column;
+	gap: var(--ant-margin);
+	padding: var(--ant-padding-lg);
+}
+
+.dashed-card--field .dashed-card__header {
+	min-height: var(--ant-control-height-sm);
+	gap: var(--ant-margin-sm);
+	margin-block-end: 0;
+}
+
+.dashed-card--field .dashed-card__title {
+	font-weight: 500;
+	line-height: var(--ant-line-height);
+}
+
+.dashed-card--field .ant-form-item {
+	width: 100%;
+}
+
+.dashed-card__hint {
+	color: var(--ant-colorTextSecondary);
+	font-size: var(--ant-font-size-sm);
+}

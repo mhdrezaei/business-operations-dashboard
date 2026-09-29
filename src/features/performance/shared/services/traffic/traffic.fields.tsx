@@ -2,7 +2,7 @@ import type { TrafficExcelImportResponse } from "#src/features/performance/api/p
 import type { UploadProps } from "antd";
 import type { PerformanceFormValues } from "../../model/performance.form.types";
 import { downloadPerformanceTemplate, uploadTrafficExcelImport } from "#src/features/performance/api/performances.api";
-import { PerformanceFieldCard } from "#src/features/performance/shared/ui/form/components/PerformanceFieldCard";
+import { FieldCard } from "#src/shared/ui/dashed-card";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
 import { CloudUploadOutlined, DeleteOutlined, DownloadOutlined, InboxOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import { Button, Form, Modal, theme, Upload } from "antd";
@@ -262,7 +262,7 @@ export function TrafficPerformanceFields() {
 					)
 					: (
 						<div className="performance-traffic-locations">
-							<PerformanceFieldCard
+							<FieldCard
 								title={t("performance.traffic.tehranPerformance")}
 								className="performance-traffic-location"
 							>
@@ -278,13 +278,13 @@ export function TrafficPerformanceFields() {
 									<TrafficMetricField name="tehranValueReceive" label={t("performance.fields.traffic.tehranValueReceive")} placeholder={t("performance.placeholders.example10000")} />
 									{isCp ? <TrafficMetricField name="tehranConversionRatio" label={t("performance.fields.traffic.tehranConversionRatio")} placeholder="مثلاً 1.5" decimal /> : null}
 								</div>
-							</PerformanceFieldCard>
+							</FieldCard>
 							{countyEnabled
 								? (
-									<PerformanceFieldCard
+									<FieldCard
 										title={t("performance.traffic.countyPerformance")}
 										className="performance-traffic-location"
-										headerExtra={(
+										extra={(
 											<Button
 												size="small"
 												danger
@@ -311,7 +311,7 @@ export function TrafficPerformanceFields() {
 											<TrafficMetricField name="countyValueReceive" label={t("performance.fields.traffic.countyValueReceive")} placeholder={t("performance.placeholders.example10000")} />
 											{isCp ? <TrafficMetricField name="countyConversionRatio" label={t("performance.fields.traffic.countyConversionRatio")} placeholder="مثلاً 1.5" decimal /> : null}
 										</div>
-									</PerformanceFieldCard>
+									</FieldCard>
 								)
 								: null}
 						</div>

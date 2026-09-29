@@ -2,7 +2,7 @@
 	gap: var(--ant-margin-sm);
 }
 
-.performance-form .contract-form-section > .ant-card-body {
+.performance-form .section-card > .ant-card-body {
 	container-name: performance-section;
 	container-type: inline-size;
 }
@@ -42,50 +42,6 @@
 
 .performance-field-grid > :only-child {
 	grid-column: 1 / -1;
-}
-
-.performance-field-card.ant-card {
-	position: relative;
-	overflow: hidden;
-	border-radius: calc(var(--ant-padding-lg) + var(--ant-border-radius-sm));
-	background: var(--ant-color-bg-layout);
-}
-
-.performance-field-card > .ant-card-body {
-	position: relative;
-	z-index: 2;
-	display: flex;
-	flex-direction: column;
-	gap: var(--ant-margin);
-	padding: var(--ant-padding-lg);
-}
-
-.performance-field-card__header {
-	display: flex;
-	min-height: var(--ant-control-height-sm);
-	align-items: center;
-	justify-content: space-between;
-	gap: var(--ant-margin-sm);
-}
-
-.performance-field-card__title {
-	color: var(--ant-colorText);
-	font-weight: 500;
-	line-height: var(--ant-line-height);
-}
-
-.performance-field-card__tag.ant-tag {
-	margin-inline-end: 0;
-	border-radius: var(--ant-border-radius-sm);
-}
-
-.performance-field-card .ant-form-item {
-	width: 100%;
-}
-
-.performance-field-card__hint {
-	color: var(--ant-colorTextSecondary);
-	font-size: var(--ant-font-size-sm);
 }
 
 .performance-field-group {

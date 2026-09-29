@@ -1,0 +1,58 @@
+.section-card.ant-card {
+	overflow: hidden;
+	border-color: var(--contract-section-outline-color);
+	border-radius: var(--contract-section-radius);
+}
+
+.section-card > .ant-card-head {
+	border-bottom: 0;
+	background: transparent;
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
+}
+
+.section-card > .ant-card-head .ant-card-head-title {
+	flex: 0 0 auto;
+}
+
+.section-card > .ant-card-head .ant-card-extra {
+	display: flex;
+	flex: 1;
+	align-items: center;
+	gap: var(--contract-section-header-gap);
+	margin-inline-start: var(--contract-section-header-gap);
+}
+
+.section-card > .ant-card-head .ant-card-extra::before {
+	content: "";
+	flex: 1;
+	height: var(--contract-section-line-width);
+	background-image: repeating-linear-gradient(
+		to right,
+		var(--contract-section-border-color) 0,
+		var(--contract-section-border-color) var(--contract-section-dash-length),
+		transparent var(--contract-section-dash-length),
+		transparent calc(var(--contract-section-dash-length) + var(--contract-section-dash-gap))
+	);
+}
+
+.section-card__actions {
+	display: flex;
+	align-items: center;
+	gap: var(--contract-section-header-gap);
+}
+
+.section-card__tag.ant-tag {
+	margin-inline-end: 0;
+	border-radius: var(--contract-section-tag-radius);
+	background-color: var(--contract-section-tag-bg);
+	color: var(--contract-section-tag-color);
+}
+
+.section-card > .ant-card-body {
+	padding: var(--contract-section-body-padding);
+}
+
+.section-card--collapsed > .ant-card-body {
+	display: none;
+}

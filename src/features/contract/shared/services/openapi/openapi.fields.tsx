@@ -1,6 +1,7 @@
 import type { ArrayPath, Path } from "react-hook-form";
 import type { ContractFormValues } from "../../../shared/model/contract.form.types";
 import { ContractAddendaSection } from "#src/features/contract/components/addenda/ContractAddendaSection.js";
+import { AlignedFormField, useAlignedLabelWidth } from "#src/shared/ui/aligned-form-field";
 import { RHFProText } from "#src/shared/ui/rhf-pro";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro/fields/RHFProNumber.js";
 import { DeleteOutlined } from "@ant-design/icons";
@@ -8,7 +9,6 @@ import { Button, Card } from "antd";
 import React, { useMemo, useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { ContractTypeSection } from "../../../components/contract-type/ContractTypeSection";
-import { ContractAlignedField, useContractAlignedLabelWidth } from "../../ui/form/components/ContractAlignedField";
 import { defaultLegacyPricing, defaultOpenApiPlan } from "./openapi.types";
 import "./openapi.fields.css";
 
@@ -39,15 +39,15 @@ function SeparatedPricingFields() {
 }
 
 function OpenApiPackagePlanPanel({ idx }: { idx: number }) {
-	const smsLabelStyle = useContractAlignedLabelWidth(["حداقل پیامک", "حداکثر پیامک", "نرخ فروش پیامک"]);
-	const billLabelStyle = useContractAlignedLabelWidth([
+	const smsLabelStyle = useAlignedLabelWidth(["حداقل پیامک", "حداکثر پیامک", "نرخ فروش پیامک"]);
+	const billLabelStyle = useAlignedLabelWidth([
 		"سهم شریک",
 		"سهم کاراشاب",
 		"حداقل استعلام قبض",
 		"حداکثر استعلام قبض",
 		"نرخ استعلام قبض",
 	]);
-	const trafficLabelStyle = useContractAlignedLabelWidth(["درصد سود ترافیک", "درصد سهم شریک ترافیک"]);
+	const trafficLabelStyle = useAlignedLabelWidth(["درصد سود ترافیک", "درصد سهم شریک ترافیک"]);
 	const compactFormItemStyle = { className: "mb-0" };
 
 	return (
@@ -58,7 +58,7 @@ function OpenApiPackagePlanPanel({ idx }: { idx: number }) {
 				className="openapi-plan-card [&_.ant-pro-card-body]:p-3"
 			>
 				<div className="openapi-plan-fields" style={smsLabelStyle}>
-					<ContractAlignedField label="حداقل پیامک" labelId={`openapi-plan-${idx}-sms-min`}>
+					<AlignedFormField label="حداقل پیامک" labelId={`openapi-plan-${idx}-sms-min`}>
 						<RHFProNumber
 							name={sf(`plans.${idx}.smsMin`)}
 							formItemProps={compactFormItemStyle}
@@ -70,9 +70,9 @@ function OpenApiPackagePlanPanel({ idx }: { idx: number }) {
 								"aria-labelledby": `openapi-plan-${idx}-sms-min`,
 							} as any}
 						/>
-					</ContractAlignedField>
+					</AlignedFormField>
 
-					<ContractAlignedField label="حداکثر پیامک" labelId={`openapi-plan-${idx}-sms-max`}>
+					<AlignedFormField label="حداکثر پیامک" labelId={`openapi-plan-${idx}-sms-max`}>
 						<RHFProNumber
 							name={sf(`plans.${idx}.smsMax`)}
 							formItemProps={compactFormItemStyle}
@@ -83,9 +83,9 @@ function OpenApiPackagePlanPanel({ idx }: { idx: number }) {
 								"aria-labelledby": `openapi-plan-${idx}-sms-max`,
 							} as any}
 						/>
-					</ContractAlignedField>
+					</AlignedFormField>
 
-					<ContractAlignedField label="نرخ فروش پیامک" labelId={`openapi-plan-${idx}-sms-rate`}>
+					<AlignedFormField label="نرخ فروش پیامک" labelId={`openapi-plan-${idx}-sms-rate`}>
 						<RHFProNumber
 							name={sf(`plans.${idx}.smsFixedPrice`)}
 							formItemProps={compactFormItemStyle}
@@ -97,7 +97,7 @@ function OpenApiPackagePlanPanel({ idx }: { idx: number }) {
 								"aria-labelledby": `openapi-plan-${idx}-sms-rate`,
 							} as any}
 						/>
-					</ContractAlignedField>
+					</AlignedFormField>
 				</div>
 			</Card>
 
@@ -107,7 +107,7 @@ function OpenApiPackagePlanPanel({ idx }: { idx: number }) {
 				className="openapi-plan-card [&_.ant-pro-card-body]:p-3"
 			>
 				<div className="openapi-plan-fields" style={billLabelStyle}>
-					<ContractAlignedField label="سهم شریک" labelId={`openapi-plan-${idx}-bill-partner-share`}>
+					<AlignedFormField label="سهم شریک" labelId={`openapi-plan-${idx}-bill-partner-share`}>
 						<RHFProNumber
 							name={sf(`plans.${idx}.billPartnerShare`)}
 							formItemProps={compactFormItemStyle}
@@ -117,9 +117,9 @@ function OpenApiPackagePlanPanel({ idx }: { idx: number }) {
 								"aria-labelledby": `openapi-plan-${idx}-bill-partner-share`,
 							} as any}
 						/>
-					</ContractAlignedField>
+					</AlignedFormField>
 
-					<ContractAlignedField label="سهم کاراشاب" labelId={`openapi-plan-${idx}-bill-karashab-share`}>
+					<AlignedFormField label="سهم کاراشاب" labelId={`openapi-plan-${idx}-bill-karashab-share`}>
 						<RHFProText
 							name={sf(`plans.${idx}.billKarashabShare`)}
 							formItemProps={compactFormItemStyle}
@@ -130,9 +130,9 @@ function OpenApiPackagePlanPanel({ idx }: { idx: number }) {
 								"aria-labelledby": `openapi-plan-${idx}-bill-karashab-share`,
 							} as any}
 						/>
-					</ContractAlignedField>
+					</AlignedFormField>
 
-					<ContractAlignedField label="حداقل استعلام قبض" labelId={`openapi-plan-${idx}-bill-min`}>
+					<AlignedFormField label="حداقل استعلام قبض" labelId={`openapi-plan-${idx}-bill-min`}>
 						<RHFProNumber
 							name={sf(`plans.${idx}.billMin`)}
 							formItemProps={compactFormItemStyle}
@@ -144,9 +144,9 @@ function OpenApiPackagePlanPanel({ idx }: { idx: number }) {
 								"aria-labelledby": `openapi-plan-${idx}-bill-min`,
 							} as any}
 						/>
-					</ContractAlignedField>
+					</AlignedFormField>
 
-					<ContractAlignedField label="حداکثر استعلام قبض" labelId={`openapi-plan-${idx}-bill-max`}>
+					<AlignedFormField label="حداکثر استعلام قبض" labelId={`openapi-plan-${idx}-bill-max`}>
 						<RHFProNumber
 							name={sf(`plans.${idx}.billMax`)}
 							formItemProps={compactFormItemStyle}
@@ -157,9 +157,9 @@ function OpenApiPackagePlanPanel({ idx }: { idx: number }) {
 								"aria-labelledby": `openapi-plan-${idx}-bill-max`,
 							} as any}
 						/>
-					</ContractAlignedField>
+					</AlignedFormField>
 
-					<ContractAlignedField label="نرخ استعلام قبض" labelId={`openapi-plan-${idx}-bill-rate`}>
+					<AlignedFormField label="نرخ استعلام قبض" labelId={`openapi-plan-${idx}-bill-rate`}>
 						<RHFProNumber
 							name={sf(`plans.${idx}.billFixedPrice`)}
 							formItemProps={compactFormItemStyle}
@@ -171,7 +171,7 @@ function OpenApiPackagePlanPanel({ idx }: { idx: number }) {
 								"aria-labelledby": `openapi-plan-${idx}-bill-rate`,
 							} as any}
 						/>
-					</ContractAlignedField>
+					</AlignedFormField>
 				</div>
 			</Card>
 
@@ -181,7 +181,7 @@ function OpenApiPackagePlanPanel({ idx }: { idx: number }) {
 				className="openapi-plan-card [&_.ant-pro-card-body]:p-3"
 			>
 				<div className="openapi-plan-fields" style={trafficLabelStyle}>
-					<ContractAlignedField label="درصد سود ترافیک" labelId={`openapi-plan-${idx}-traffic-profit`}>
+					<AlignedFormField label="درصد سود ترافیک" labelId={`openapi-plan-${idx}-traffic-profit`}>
 						<RHFProNumber
 							name={sf(`plans.${idx}.trafficProfitPercent`)}
 							formItemProps={compactFormItemStyle}
@@ -191,9 +191,9 @@ function OpenApiPackagePlanPanel({ idx }: { idx: number }) {
 								"aria-labelledby": `openapi-plan-${idx}-traffic-profit`,
 							} as any}
 						/>
-					</ContractAlignedField>
+					</AlignedFormField>
 
-					<ContractAlignedField label="درصد سهم شریک ترافیک" labelId={`openapi-plan-${idx}-traffic-partner-share`}>
+					<AlignedFormField label="درصد سهم شریک ترافیک" labelId={`openapi-plan-${idx}-traffic-partner-share`}>
 						<RHFProNumber
 							name={sf(`plans.${idx}.trafficPartnerSharePercent`)}
 							formItemProps={compactFormItemStyle}
@@ -203,7 +203,7 @@ function OpenApiPackagePlanPanel({ idx }: { idx: number }) {
 								"aria-labelledby": `openapi-plan-${idx}-traffic-partner-share`,
 							} as any}
 						/>
-					</ContractAlignedField>
+					</AlignedFormField>
 				</div>
 			</Card>
 		</div>

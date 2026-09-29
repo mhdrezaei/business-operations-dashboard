@@ -4,7 +4,7 @@ import FinanceProfilePanel from "./finance/FinanceProfilePanel";
 import InternalProfilePanel from "./internal/InternalProfilePanel";
 import LegalProfilePanel from "./legal/LegalProfilePanel";
 import PublicProfilePanel from "./public/PublicProfilePanel";
-import "#src/features/contract/shared/ui/form/contract-form.css";
+import "#src/shared/ui/form-layout/styles.css";
 
 interface CompanyProfileAccordionPanelProps {
 	companyId: number
