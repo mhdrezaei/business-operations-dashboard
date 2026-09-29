@@ -1,8 +1,9 @@
 import type { ContractServicePath } from "../../../api/contracts.api";
 import type { ContractListItemType } from "../../model/contracts.list.types";
 import { PrinterOutlined } from "@ant-design/icons";
-import { Card, Empty, List, message, Modal, Spin, Typography } from "antd";
+import { App, Card, Empty, List, message, Modal, Spin, theme, Typography } from "antd";
 import React, { useEffect, useState } from "react";
+import { usePreferencesStore } from "../../../../../store/preferences";
 import { TemplateCreateApi } from "../../../../contract-templates/api/api";
 import { getVariable } from "../../../../contract-templates/create/components/editor/variables/registry";
 import { fetchContractDetail, fetchContractTemplates } from "../../../api/contracts.api";
@@ -92,6 +93,11 @@ export const ContractTemplatePrintModal: React.FC<Props> = ({ open, onClose, rec
 	const [currentTemplateId, setCurrentTemplateId] = useState<number | null>(null);
 	const [processedHtml, setProcessedHtml] = useState<string>("");
 
+	const { modal } = App.useApp();
+	const { token } = theme.useToken();
+	const prefTheme = usePreferencesStore(state => state.theme);
+	const isDark = prefTheme === "dark" || (prefTheme === "auto" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+
 	useEffect(() => {
 		if (open && service) {
 			// eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
@@ -136,7 +142,7 @@ export const ContractTemplatePrintModal: React.FC<Props> = ({ open, onClose, rec
 			const uniqueMissingVars = Array.from(new Set(missingVars));
 
 			const onContinue = () => {
-				Modal.confirm({
+				modal.confirm({
 					title: "تنظیمات مرورگر",
 					content: "توجه: برای بهترین نمایش و جلوگیری از به‌هم‌ریختگی قالب در هنگام چاپ، لطفاً مطمئن شوید که زوم مرورگر شما روی ۱۰۰٪ تنظیم شده است.",
 					okText: "تایید و ادامه",
@@ -151,13 +157,13 @@ export const ContractTemplatePrintModal: React.FC<Props> = ({ open, onClose, rec
 
 			if (uniqueMissingVars.length > 0) {
 				const missingLabels = uniqueMissingVars.map(v => getVariable(v)?.label || v);
-				Modal.confirm({
+				modal.confirm({
 					title: "عدم تطابق اطلاعات قرارداد با قالب",
 					icon: <PrinterOutlined className="text-orange-500" />,
 					content: (
-						<div className="text-[var(--ant-color-text)]">
+						<div>
 							<p className="mb-2">اطلاعات زیر در قرارداد یافت نشد. این مقادیر در ویرایشگر به‌صورت هایلایت نمایش داده می‌شوند تا بتوانید آن‌ها را تکمیل کنید:</p>
-							<ul className="mt-2 pl-4 text-red-500 dark:text-red-400 list-disc max-h-60 overflow-y-auto">
+							<ul className="mt-2 pl-4 list-disc max-h-60 overflow-y-auto" style={{ color: token.colorError }}>
 								{missingLabels.map(label => <li key={label} className="mb-1">{label}</li>)}
 							</ul>
 						</div>
@@ -168,7 +174,7 @@ export const ContractTemplatePrintModal: React.FC<Props> = ({ open, onClose, rec
 				});
 			}
 			else {
-				Modal.confirm({
+				modal.confirm({
 					title: "قالب سازگار است",
 					content: "قالب انتخاب شده به‌طور کامل با اطلاعات قرارداد سازگار است. آیا می‌خواهید برای مشاهده و چاپ وارد ویرایشگر شوید؟",
 					okText: "ادامه به ویرایشگر",
@@ -193,6 +199,7 @@ export const ContractTemplatePrintModal: React.FC<Props> = ({ open, onClose, rec
 			onCancel={onClose}
 			footer={null}
 			width={700}
+			rootClassName={isDark ? "dark" : ""}
 			destroyOnClose
 		>
 			<Spin spinning={loading}>

@@ -3,6 +3,7 @@ import { Button, message, Modal, Spin } from "antd";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import React, { useEffect, useState } from "react";
+import { usePreferencesStore } from "../../../../../store/preferences";
 import ProEditor from "../../../../contract-templates/create/components/editor/ProEditor";
 import { useTemplateEditor } from "../../../../contract-templates/create/components/editor/ui/TemplateEditorCanvas";
 import { useTemplateStore } from "../../../../contract-templates/store/useTemplateStore";
@@ -22,10 +23,13 @@ interface Props {
 export const ContractTemplateEditorModal: React.FC<Props> = ({ open, onClose, initialHtml, templateId, contractId, service }) => {
 	const { fetchFonts, isFetchingFonts } = useTemplateStore();
 	const [contentHtml, setContentHtml] = useState(initialHtml);
-	const [isPdfLoading, setIsPdfLoading] = useState(false);
+	const [loadingAction, setLoadingAction] = useState<"none" | "pdf" | "approval">("none");
 	const [signFlowModalOpen, setSignFlowModalOpen] = useState(false);
 	const [signFlowLoading, setSignFlowLoading] = useState(false);
 	const [signFlowData, setSignFlowData] = useState<any>(null);
+
+	const theme = usePreferencesStore(state => state.theme);
+	const isDark = theme === "dark" || (theme === "auto" && window.matchMedia("(prefers-color-scheme: dark)").matches);
 
 	const editor = useTemplateEditor({ initialContent: contentHtml });
 
@@ -79,6 +83,11 @@ export const ContractTemplateEditorModal: React.FC<Props> = ({ open, onClose, in
 			mark.style.color = "inherit";
 		});
 
+		// Hide hr and page-break visually but keep their space
+		const hrsToHide = Array.from(editorNode.querySelectorAll("hr, .page-break")) as HTMLElement[];
+		const oldHrOpacities = hrsToHide.map(hr => hr.style.opacity);
+		hrsToHide.forEach(hr => hr.style.opacity = "0");
+
 		try {
 			// Find page offsets based on TemplateEditorCanvas logic
 			const hrs = Array.from(editorNode.querySelectorAll("hr, .page-break")) as HTMLElement[];
@@ -107,7 +116,7 @@ export const ContractTemplateEditorModal: React.FC<Props> = ({ open, onClose, in
 			// Now we crop it precisely for each page (or split if a page is overflowing)
 			for (let i = 0; i < offsets.length; i++) {
 				const chunkStartY = offsets[i];
-				const chunkEndY = i < hrs.length ? hrs[i].getBoundingClientRect().top - editorRect.top : editorRect.height;
+				const chunkEndY = i < hrs.length ? offsets[i + 1] : editorRect.height;
 
 				let currentY = chunkStartY;
 
@@ -149,6 +158,8 @@ export const ContractTemplateEditorModal: React.FC<Props> = ({ open, onClose, in
 			return doc.output("blob");
 		}
 		finally {
+			// Revert hr opacities
+			hrsToHide.forEach((hr, idx) => hr.style.opacity = oldHrOpacities[idx]);
 			// Revert marks
 			originalMarks.forEach((m) => {
 				m.element.style.backgroundColor = m.bg;
@@ -167,7 +178,7 @@ export const ContractTemplateEditorModal: React.FC<Props> = ({ open, onClose, in
 			return;
 
 		try {
-			setIsPdfLoading(true);
+			setLoadingAction("pdf");
 			const pdfBlob = await generatePdfBlob();
 
 			// Download logic for blob
@@ -187,7 +198,7 @@ export const ContractTemplateEditorModal: React.FC<Props> = ({ open, onClose, in
 			message.error("خطا در درخواست دانلود نسخه PDF");
 		}
 		finally {
-			setIsPdfLoading(false);
+			setLoadingAction("none");
 		}
 	};
 
@@ -196,7 +207,7 @@ export const ContractTemplateEditorModal: React.FC<Props> = ({ open, onClose, in
 			return;
 
 		setSignFlowLoading(true);
-		setIsPdfLoading(true);
+		setLoadingAction("approval");
 		try {
 			// 1. Generate PDF Blob
 			const pdfBlob = await generatePdfBlob();
@@ -219,7 +230,7 @@ export const ContractTemplateEditorModal: React.FC<Props> = ({ open, onClose, in
 		}
 		finally {
 			setSignFlowLoading(false);
-			setIsPdfLoading(false);
+			setLoadingAction("none");
 		}
 	};
 
@@ -236,6 +247,7 @@ export const ContractTemplateEditorModal: React.FC<Props> = ({ open, onClose, in
 			open={open}
 			onCancel={onClose}
 			width="100%"
+			rootClassName={isDark ? "dark" : ""}
 			style={{ top: 0, padding: 0, margin: 0, height: "100vh", maxWidth: "100vw" }}
 			styles={{ body: { height: "calc(100vh - 110px)", padding: 0, overflow: "hidden" } }}
 			destroyOnClose
@@ -249,7 +261,7 @@ export const ContractTemplateEditorModal: React.FC<Props> = ({ open, onClose, in
 							size="large"
 							icon={<FilePdfOutlined />}
 							onClick={handleDownloadPdf}
-							loading={isPdfLoading}
+							loading={loadingAction === "pdf"}
 						>
 							دانلود نسخه PDF
 						</Button>
@@ -266,12 +278,12 @@ export const ContractTemplateEditorModal: React.FC<Props> = ({ open, onClose, in
 			)}
 		>
 			<div className="w-full h-full relative">
-				{(isFetchingFonts || isPdfLoading) && (
-					<div className="absolute inset-0 z-50 flex items-center justify-center bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm transition-all duration-300">
+				{(isFetchingFonts || loadingAction !== "none") && (
+					<div className={`absolute inset-0 z-50 flex items-center justify-center backdrop-blur-sm transition-all duration-300 ${isDark ? "bg-gray-900/70" : "bg-white/70"}`}>
 						<div className="flex flex-col items-center">
 							<Spin size="large" />
-							<span className="mt-4 text-slate-800 dark:text-slate-200 font-medium text-lg bg-white/80 dark:bg-slate-800/80 px-4 py-2 rounded-lg shadow-sm">
-								{isPdfLoading ? "در حال آماده‌سازی PDF... لطفا صبور باشید" : "در حال بارگذاری فونت‌ها..."}
+							<span className={`mt-4 font-medium text-lg px-4 py-2 rounded-lg shadow-sm ${isDark ? "text-slate-200 bg-gray-800/80" : "text-slate-800 bg-white/80"}`}>
+								{loadingAction === "approval" ? "در حال تایید نهایی قرارداد..." : (loadingAction === "pdf" ? "... لطفا صبور باشید" : "در حال بارگذاری فونت‌ها...")}
 							</span>
 						</div>
 					</div>

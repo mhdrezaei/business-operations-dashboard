@@ -1,7 +1,8 @@
 import type { SignFlowPreviewResponse } from "../../../api/contracts.api";
 import { PlayCircleOutlined } from "@ant-design/icons";
-import { Button, Modal, Spin } from "antd";
+import { Button, Modal, Spin, theme } from "antd";
 import React from "react";
+import { usePreferencesStore } from "../../../../../store/preferences";
 
 interface Props {
 	open: boolean
@@ -18,6 +19,10 @@ export const SignFlowPreviewModal: React.FC<Props> = ({
 	data,
 	loading,
 }) => {
+	const { token } = theme.useToken();
+	const prefTheme = usePreferencesStore(state => state.theme);
+	const isDark = prefTheme === "dark" || (prefTheme === "auto" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+
 	return (
 		<Modal
 			open={open}
@@ -25,33 +30,32 @@ export const SignFlowPreviewModal: React.FC<Props> = ({
 			footer={null}
 			closable={false}
 			width={600}
-			className="modern-dark-modal"
+			rootClassName={isDark ? "dark" : ""}
 			styles={{
 				content: {
-					backgroundColor: "#0F172A", // Tailwind slate-900
 					padding: 0,
 					borderRadius: "16px",
-					border: "1px solid #1E293B", // Tailwind slate-800
-					boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+					overflow: "hidden",
+					border: `1px solid ${token.colorBorderSecondary}`,
 				},
 				mask: {
-					backgroundColor: "rgba(0, 0, 0, 0.6)",
+					backgroundColor: isDark ? "rgba(0, 0, 0, 0.6)" : "rgba(0, 0, 0, 0.4)",
 					backdropFilter: "blur(4px)",
 				},
 			}}
 		>
-			<div className="p-6 text-slate-200 font-sans" dir="rtl">
+			<div className="p-6 font-sans transition-colors duration-300" style={{ backgroundColor: token.colorBgElevated, color: token.colorText }} dir="rtl">
 				{loading
 					? (
 						<div className="flex flex-col items-center justify-center py-12">
 							<Spin size="large" />
-							<div className="mt-4 text-slate-400">در حال دریافت مراحل تایید...</div>
+							<div className="mt-4 text-slate-500 dark:text-slate-400">در حال دریافت مراحل تایید...</div>
 						</div>
 					) : data
 						? (
 							<div className="flex flex-col gap-4">
 								{/* Header Message */}
-								<div className="bg-indigo-950/40 border border-indigo-900/50 rounded-xl p-4 text-indigo-200 text-[15px] leading-relaxed text-center shadow-inner">
+								<div className="border rounded-xl p-4 text-[15px] leading-relaxed text-center shadow-inner transition-colors duration-300" style={{ backgroundColor: token.colorPrimaryBg, borderColor: token.colorPrimaryBorder, color: token.colorPrimary }}>
 									مراحل زیر و افراد تاییدکننده‌ی هرکدام، دقیقاً همین‌ها خواهند بود — شروع کنم؟
 								</div>
 
@@ -60,10 +64,11 @@ export const SignFlowPreviewModal: React.FC<Props> = ({
 									{data.steps.map(step => (
 										<div
 											key={step.order}
-											className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-4 flex flex-col gap-3 shadow-sm hover:border-slate-600 transition-colors"
+											className="border rounded-xl p-4 flex flex-col gap-3 shadow-sm transition-colors duration-300"
+											style={{ backgroundColor: token.colorBgContainer, borderColor: token.colorBorderSecondary }}
 										>
 											<div className="flex justify-between items-center w-full">
-												<div className="text-slate-100 font-bold text-base">
+												<div className="font-bold text-base" style={{ color: token.colorTextHeading }}>
 													مرحله
 													{" "}
 													{step.order}
@@ -80,14 +85,15 @@ export const SignFlowPreviewModal: React.FC<Props> = ({
 														step.resolved_users.map(user => (
 															<div
 																key={user.user_id}
-																className="bg-slate-800/80 text-slate-300 text-xs px-3 py-1.5 rounded-full border border-slate-700/60"
+																className="text-xs px-3 py-1.5 rounded-full border transition-colors duration-300 shadow-sm"
+																style={{ backgroundColor: token.colorFillAlter, borderColor: token.colorBorderSecondary, color: token.colorTextSecondary }}
 															>
 																{user.username}
 															</div>
 														))
 													)
 													: (
-														<div className="text-slate-500 text-xs italic">
+														<div className="text-xs italic" style={{ color: token.colorTextQuaternary }}>
 															بدون تاییدکننده
 														</div>
 													)}
@@ -96,7 +102,7 @@ export const SignFlowPreviewModal: React.FC<Props> = ({
 									))}
 
 									{data.steps.length === 0 && (
-										<div className="text-center text-slate-500 py-6">
+										<div className="text-center py-6" style={{ color: token.colorTextQuaternary }}>
 											هیچ مرحله‌ای برای این قرارداد یافت نشد.
 										</div>
 									)}
@@ -106,7 +112,7 @@ export const SignFlowPreviewModal: React.FC<Props> = ({
 								<div className="flex items-center gap-3 mt-4">
 									<Button
 										size="large"
-										className="flex-1 bg-transparent hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-600 hover:border-slate-500 h-12 rounded-xl text-base transition-colors"
+										className="flex-1 h-12 rounded-xl text-base transition-colors"
 										onClick={onClose}
 									>
 										بازگشت
@@ -116,7 +122,8 @@ export const SignFlowPreviewModal: React.FC<Props> = ({
 										type="primary"
 										size="large"
 										icon={<PlayCircleOutlined />}
-										className="flex-1 bg-indigo-600 hover:bg-indigo-500 border-none h-12 rounded-xl text-base shadow-lg shadow-indigo-900/20"
+										className="flex-1 h-12 rounded-xl text-base shadow-lg"
+										style={{ boxShadow: `0 4px 14px 0 ${token.colorPrimary}40` }}
 										onClick={onStart}
 									>
 										شروع کن
@@ -125,7 +132,7 @@ export const SignFlowPreviewModal: React.FC<Props> = ({
 							</div>
 						)
 						: (
-							<div className="text-center text-rose-400 py-8">
+							<div className="text-center text-rose-500 dark:text-rose-400 py-8">
 								خطا در دریافت اطلاعات گردش کار.
 							</div>
 						)}

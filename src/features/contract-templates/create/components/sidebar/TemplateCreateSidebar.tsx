@@ -60,7 +60,7 @@ export default function TemplateCreateSidebar({ editor }: SidebarProps) {
 								تنظیمات سند
 							</span>
 						),
-						children: <SidebarSettingsTab editor={editor} />,
+						children: <SidebarSettingsTab />,
 					},
 				]}
 			/>

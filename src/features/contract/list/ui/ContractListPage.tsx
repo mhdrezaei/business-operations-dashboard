@@ -14,11 +14,12 @@ import { Button, Popconfirm, theme } from "antd";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
-import { fetchContractDetail, fetchContractsList, fetchDeleteContract } from "../../api/contracts.api";
+import { fetchContractDetail, fetchContractsList, fetchDeleteContract, fetchSignFlowPreview } from "../../api/contracts.api";
 import { companyTypeMatches, pickCompanyTypeToken } from "../../shared/utils";
 import { useContractAddendaTableStyles } from "./components/contract-addenda-table.styles";
 import { ContractAddendaExpandedRow } from "./components/ContractAddendaExpandedRow";
 import { ContractTemplatePrintModal } from "./components/ContractTemplatePrintModal";
+import { SignFlowPreviewModal } from "./components/SignFlowPreviewModal";
 import { getContractColumns } from "./constants";
 import { openContractPdfPrint } from "./utils/contract-pdf";
 
@@ -40,6 +41,9 @@ export default function ContractListPage() {
 	const [downloadingPdfId, setDownloadingPdfId] = useState<number | null>(null);
 	const [printModalOpen, setPrintModalOpen] = useState(false);
 	const [printRecord, setPrintRecord] = useState<ContractListItemType | null>(null);
+	const [signFlowModalOpen, setSignFlowModalOpen] = useState(false);
+	const [signFlowLoading, setSignFlowLoading] = useState(false);
+	const [signFlowData, setSignFlowData] = useState<any>(null);
 
 	const canCreateContracts = hasDomainPermission("contracts", "create");
 	const permittedViewServiceIdList = getPermittedServiceIds("contracts", "view");
@@ -323,9 +327,22 @@ export default function ContractListPage() {
 							size="large"
 							title="چاپ قرارداد"
 							icon={<PrinterOutlined />}
-							onClick={() => {
+							onClick={async () => {
 								setPrintRecord(record);
-								setPrintModalOpen(true);
+								setSignFlowLoading(true);
+								setSignFlowModalOpen(true);
+								try {
+									const data = await fetchSignFlowPreview(resolveServicePath(record), record.id);
+									setSignFlowData(data);
+								}
+								catch (err) {
+									console.error(err);
+									window.$message?.error("خطا در دریافت اطلاعات گردش کار");
+									setSignFlowModalOpen(false);
+								}
+								finally {
+									setSignFlowLoading(false);
+								}
 							}}
 						/>,
 					);
@@ -420,6 +437,16 @@ export default function ContractListPage() {
 							{t("common.addNewContract")}
 						</Button>,
 					];
+				}}
+			/>
+			<SignFlowPreviewModal
+				open={signFlowModalOpen}
+				onClose={() => setSignFlowModalOpen(false)}
+				loading={signFlowLoading}
+				data={signFlowData}
+				onStart={() => {
+					setSignFlowModalOpen(false);
+					setPrintModalOpen(true);
 				}}
 			/>
 			<ContractTemplatePrintModal
