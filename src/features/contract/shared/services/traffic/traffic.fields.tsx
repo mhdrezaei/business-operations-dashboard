@@ -32,6 +32,7 @@ const IXP_CONTRACT_MODEL_OPTIONS = [
 interface TrafficPricingFieldsProps {
 	pricingName: string
 	unitName: string
+	defaultUnit?: "GB/month" | "Mbps"
 	revenuePercentName: string
 	revenuePercentLabel: string
 	showUnitSelector: boolean
@@ -45,6 +46,7 @@ interface TrafficPricingFieldsProps {
 function TrafficPricingFields({
 	pricingName,
 	unitName,
+	defaultUnit,
 	revenuePercentName,
 	revenuePercentLabel,
 	showUnitSelector,
@@ -55,10 +57,16 @@ function TrafficPricingFields({
 	showContractModel,
 }: TrafficPricingFieldsProps) {
 	const { control, setValue } = useFormContext<ContractFormValues>();
+	const unit = useWatch({ control, name: unitName as any });
 	const contractModel = useWatch({ control, name: contractModelName as any });
 	const basedTire = useWatch({ control, name: basedTireName as any });
 	const contractType = useWatch({ control, name: `${pricingName}.type` as any });
 	const fixedOnly = showBasedTire && basedTire === true;
+
+	useEffect(() => {
+		if (defaultUnit && (unit == null || unit === ""))
+			setValue(unitName as any, defaultUnit, { shouldDirty: false, shouldValidate: false });
+	}, [defaultUnit, setValue, unit, unitName]);
 
 	useEffect(() => {
 		if (fixedOnly && contractType !== "tier_fixed") {
@@ -156,24 +164,36 @@ export function TrafficFields() {
 	const showPremiumRevenuePercent = showPricingUi && companyType === "PREMIUM";
 	const showUnitSelector = showPricingUi && ["CP", "PREMIUM", "IXP", "TCI"].includes(String(companyType ?? "").trim().toUpperCase());
 	const normalizedCompanyType = String(companyType ?? "").trim().toUpperCase();
+	const defaultTrafficUnit = TRAFFIC_DEFAULT_UNIT_BY_COMPANY_TYPE[normalizedCompanyType];
+	const addendaUnitPaths = (items: Array<Record<string, any>>, prefix: string): string[] => items.flatMap((item, index) => {
+		const base = `${prefix}.${index}`;
+		const paths = [`${base}.tehranUnit`, `${base}.provinceUnit`];
+		if (Array.isArray(item.children))
+			paths.push(...addendaUnitPaths(item.children, `${base}.children`));
+		return paths;
+	});
 
 	useEffect(() => {
-		const defaultUnit = TRAFFIC_DEFAULT_UNIT_BY_COMPANY_TYPE[normalizedCompanyType];
 		const typeChangedByUser = previousCompanyType.current != null && previousCompanyType.current !== normalizedCompanyType && getFieldState("companyType").isDirty;
 		previousCompanyType.current = normalizedCompanyType || null;
-		if (!defaultUnit)
+		if (!defaultTrafficUnit)
 			return;
 
-		for (const unitField of [sf("tehranUnit"), sf("provinceUnit")]) {
+		const addenda = getValues(sf("addenda") as any) as Array<Record<string, any>> | undefined;
+		const unitPaths = [sf("tehranUnit"), sf("provinceUnit")];
+		if (Array.isArray(addenda))
+			unitPaths.push(...addendaUnitPaths(addenda, sf("addenda")) as any);
+
+		for (const unitField of unitPaths) {
 			const currentUnit = getValues(unitField as any);
 			if (currentUnit == null || currentUnit === "" || typeChangedByUser) {
-				setValue(unitField as any, defaultUnit, {
+				setValue(unitField as any, defaultTrafficUnit, {
 					shouldDirty: false,
 					shouldValidate: false,
 				});
 			}
 		}
-	}, [getFieldState, getValues, normalizedCompanyType, setValue]);
+	}, [getFieldState, getValues, normalizedCompanyType, defaultTrafficUnit, setValue]);
 
 	function addTehran() {
 		if (tehranPricing)
@@ -406,6 +426,7 @@ export function TrafficFields() {
 											<TrafficPricingFields
 												pricingName={`${base}.tehranPricing`}
 												unitName={`${base}.tehranUnit`}
+												defaultUnit={defaultTrafficUnit}
 												revenuePercentName={`${base}.tehranRevenuePercent`}
 												revenuePercentLabel="درصد سهم درآمد (تهران)"
 												showUnitSelector={showUnitSelector}
@@ -425,6 +446,7 @@ export function TrafficFields() {
 											<TrafficPricingFields
 												pricingName={`${base}.provincePricing`}
 												unitName={`${base}.provinceUnit`}
+												defaultUnit={defaultTrafficUnit}
 												revenuePercentName={`${base}.provinceRevenuePercent`}
 												revenuePercentLabel="درصد سهم درآمد (مراکز استان‌ها)"
 												showUnitSelector={showUnitSelector}
