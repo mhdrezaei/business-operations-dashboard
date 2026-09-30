@@ -14,7 +14,7 @@ import { Button, Popconfirm, theme } from "antd";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
-import { fetchContractDetail, fetchContractsList, fetchDeleteContract, fetchSignFlowPreview } from "../../api/contracts.api";
+import { checkOfficialPdfStatus, fetchContractDetail, fetchContractsList, fetchDeleteContract, fetchSignFlowPreview } from "../../api/contracts.api";
 import { companyTypeMatches, pickCompanyTypeToken } from "../../shared/utils";
 import { useContractAddendaTableStyles } from "./components/contract-addenda-table.styles";
 import { ContractAddendaExpandedRow } from "./components/ContractAddendaExpandedRow";
@@ -329,7 +329,20 @@ export default function ContractListPage() {
 							title="چاپ قرارداد"
 							icon={<PrinterOutlined />}
 							onClick={async () => {
+								try {
+									const status = await checkOfficialPdfStatus(resolveServicePath(record), record.id);
+									if (!status.can_upload && status.has_official_pdf) {
+										window.$message?.warning("نسخه رسمی این قرارداد قبلا آپلود شده و در حال گرفتن تایید می باشد");
+										return;
+									}
+								}
+								catch (error) {
+									console.error(error);
+									window.$message?.error("خطا در بررسی وضعیت نسخه رسمی");
+									return;
+								}
 								setPrintRecord(record);
+								setPrintAddendumGroupId(null);
 								setSignFlowLoading(true);
 								setSignFlowModalOpen(true);
 								try {
@@ -386,6 +399,18 @@ export default function ContractListPage() {
 							contract={record}
 							service={resolveServicePath(record)}
 							onPrint={async (addendumGroupId) => {
+								try {
+									const status = await checkOfficialPdfStatus(resolveServicePath(record), record.id, addendumGroupId);
+									if (!status.can_upload && status.has_official_pdf) {
+										window.$message?.warning("نسخه رسمی این قرارداد قبلا آپلود شده و در حال گرفتن تایید می باشد");
+										return;
+									}
+								}
+								catch (error) {
+									console.error(error);
+									window.$message?.error("خطا در بررسی وضعیت نسخه رسمی");
+									return;
+								}
 								setPrintRecord(record);
 								setPrintAddendumGroupId(addendumGroupId);
 								setSignFlowLoading(true);

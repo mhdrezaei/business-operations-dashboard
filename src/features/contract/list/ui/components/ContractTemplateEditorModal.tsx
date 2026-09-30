@@ -7,8 +7,7 @@ import { usePreferencesStore } from "../../../../../store/preferences";
 import ProEditor from "../../../../contract-templates/create/components/editor/ProEditor";
 import { useTemplateEditor } from "../../../../contract-templates/create/components/editor/ui/TemplateEditorCanvas";
 import { useTemplateStore } from "../../../../contract-templates/store/useTemplateStore";
-import { fetchSignFlowPreview, requestOfficialPdf } from "../../../api/contracts.api";
-import { SignFlowPreviewModal } from "./SignFlowPreviewModal";
+import { requestOfficialPdf } from "../../../api/contracts.api";
 
 interface Props {
 	open: boolean
@@ -25,9 +24,6 @@ export const ContractTemplateEditorModal: React.FC<Props> = ({ open, onClose, in
 	const { fetchFonts, isFetchingFonts } = useTemplateStore();
 	const [contentHtml, setContentHtml] = useState(initialHtml);
 	const [loadingAction, setLoadingAction] = useState<"none" | "pdf" | "approval">("none");
-	const [signFlowModalOpen, setSignFlowModalOpen] = useState(false);
-	const [signFlowLoading, setSignFlowLoading] = useState(false);
-	const [signFlowData, setSignFlowData] = useState<any>(null);
 
 	const theme = usePreferencesStore(state => state.theme);
 	const isDark = theme === "dark" || (theme === "auto" && window.matchMedia("(prefers-color-scheme: dark)").matches);
@@ -207,7 +203,6 @@ export const ContractTemplateEditorModal: React.FC<Props> = ({ open, onClose, in
 		if (!contractId || !service || !editor)
 			return;
 
-		setSignFlowLoading(true);
 		setLoadingAction("approval");
 		try {
 			// 1. Generate PDF Blob
@@ -218,28 +213,16 @@ export const ContractTemplateEditorModal: React.FC<Props> = ({ open, onClose, in
 			formData.append("file", pdfBlob, `contract_${contractId}.pdf`);
 			await requestOfficialPdf(service, contractId, formData, addendumGroupId);
 
-			// 3. Fetch Sign Flow preview
-			const res = await fetchSignFlowPreview(service, contractId, addendumGroupId);
-			setSignFlowData(res);
-
-			// 4. Open Modal
-			setSignFlowModalOpen(true);
+			message.success("نسخه نهایی با موفقیت آپلود شد.");
+			onClose();
 		}
 		catch (error) {
 			console.error(error);
 			message.error("خطا در تایید نهایی و ارتباط با سرور");
 		}
 		finally {
-			setSignFlowLoading(false);
 			setLoadingAction("none");
 		}
-	};
-
-	const handleStartSignFlow = () => {
-		// Mock implementation as the real API is unknown yet
-		message.success("گردش کار با موفقیت شروع شد!");
-		setSignFlowModalOpen(false);
-		onClose();
 	};
 
 	return (
@@ -301,13 +284,6 @@ export const ContractTemplateEditorModal: React.FC<Props> = ({ open, onClose, in
 				</div>
 			</div>
 
-			<SignFlowPreviewModal
-				open={signFlowModalOpen}
-				onClose={() => setSignFlowModalOpen(false)}
-				loading={signFlowLoading}
-				data={signFlowData}
-				onStart={handleStartSignFlow}
-			/>
 		</Modal>
 	);
 };

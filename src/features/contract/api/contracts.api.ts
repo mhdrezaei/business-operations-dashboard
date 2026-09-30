@@ -202,10 +202,14 @@ export function requestOfficialPdf(service: ContractServicePath, contractId: num
 		.json<any>(); // Assuming it returns some success status
 }
 
-export function checkOfficialPdfStatus(service: ContractServicePath, contractId: number) {
+export function checkOfficialPdfStatus(service: ContractServicePath, contractId: number, addendumGroupId?: string | null) {
+	const searchParams: Record<string, string> = {};
+	if (addendumGroupId) {
+		searchParams.addendum_group_id = addendumGroupId;
+	}
 	return request
-		.get(`contracts/${service}/${contractId}/official-pdf/status/`)
-		.json<any>(); // Replace with actual status type when known
+		.get(`contracts/${service}/${contractId}/official-pdf/status/`, { searchParams })
+		.json<{ can_upload: boolean, has_official_pdf: boolean }>();
 }
 
 /* ===================== DETAIL ===================== */
