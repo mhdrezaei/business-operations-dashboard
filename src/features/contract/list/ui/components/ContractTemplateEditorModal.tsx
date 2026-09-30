@@ -292,7 +292,7 @@ export const ContractTemplateEditorModal: React.FC<Props> = ({ open, onClose, in
 				<div
 					className="w-full h-full custom-modal-scroll"
 					style={{
-						overflowY: "auto",
+						overflowY: "hidden",
 						height: "100%",
 						visibility: isFetchingFonts ? "hidden" : "visible",
 					}}
