@@ -1,5 +1,5 @@
 import type { SignFlowListItem } from "#src/features/contract/api/contracts.api";
-import type { ActionType } from "@ant-design/pro-components";
+import type { ActionType, ProFormInstance } from "@ant-design/pro-components";
 
 import { BasicContent, BasicTable } from "#src/components";
 import { fetchSignFlowsList } from "#src/features/contract/api/contracts.api";
@@ -12,6 +12,7 @@ import { getSignFlowColumns } from "./constants";
 
 export default function SignFlowListPage() {
 	const actionRef = useRef<ActionType>(null);
+	const formRef = useRef<ProFormInstance>();
 	const services = useQuery(servicesQuery());
 
 	const serviceOptions = useMemo(() => {
@@ -25,7 +26,7 @@ export default function SignFlowListPage() {
 		return opts;
 	}, [services.data]);
 
-	const columns = useMemo(() => getSignFlowColumns(serviceOptions), [serviceOptions]);
+	const columns = useMemo(() => getSignFlowColumns(serviceOptions, formRef), [serviceOptions]);
 
 	return (
 		<BasicContent className="h-full">
@@ -36,6 +37,14 @@ export default function SignFlowListPage() {
 				rowKey="id"
 				columns={columns}
 				actionRef={actionRef}
+				columnsState={{
+					defaultValue: {
+						started_at: { show: false },
+						finished_at: { show: false },
+						cancel_reason: { show: false },
+					},
+				}}
+				formRef={formRef}
 				request={async (params) => {
 					try {
 						const res = await fetchSignFlowsList({

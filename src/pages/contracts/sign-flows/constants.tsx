@@ -1,5 +1,5 @@
 import type { SignFlowListItem } from "#src/features/contract/api/contracts.api";
-import type { ProColumns } from "@ant-design/pro-components";
+import type { ProColumns, ProFormInstance } from "@ant-design/pro-components";
 import { Tag } from "antd";
 import React from "react";
 
@@ -16,7 +16,7 @@ export const RECORD_TYPE_MAP: Record<string, string> = {
 	addendum: "الحاقیه",
 };
 
-export function getSignFlowColumns(serviceOptions: Array<{ label: any, value: any }>): ProColumns<SignFlowListItem>[] {
+export function getSignFlowColumns(serviceOptions: Array<{ label: any, value: any }>, formRef: React.MutableRefObject<ProFormInstance | undefined>): ProColumns<SignFlowListItem>[] {
 	return [
 		{
 			title: "نمایش",
@@ -30,24 +30,7 @@ export function getSignFlowColumns(serviceOptions: Array<{ label: any, value: an
 					{ label: "ایجاد شده توسط من", value: "created" },
 					{ label: "ارجاع شده به من", value: "assigned" },
 				],
-			},
-		},
-		{
-			title: "وضعیت",
-			dataIndex: "state",
-			valueType: "select",
-			fieldProps: {
-				placeholder: "در حال بررسی",
-				options: [
-					{ label: "همه وضعیت‌ها", value: "" },
-					...Object.entries(SIGN_FLOW_STATE_MAP).map(([key, val]) => ({ label: val.label, value: key })),
-				],
-			},
-			render: (_, record) => {
-				const s = SIGN_FLOW_STATE_MAP[record.state];
-				if (!s)
-					return record.state;
-				return <Tag color={s.color}>{s.label}</Tag>;
+				onChange: () => formRef?.current?.submit(),
 			},
 		},
 		{
@@ -57,6 +40,7 @@ export function getSignFlowColumns(serviceOptions: Array<{ label: any, value: an
 			fieldProps: {
 				placeholder: "همه سرویس‌ها",
 				options: serviceOptions,
+				onChange: () => formRef?.current?.submit(),
 			},
 			render: (_, record) => record.service_name || "-",
 		},
@@ -70,6 +54,7 @@ export function getSignFlowColumns(serviceOptions: Array<{ label: any, value: an
 					{ label: "قرارداد و الحاقیه", value: "" },
 					...Object.entries(RECORD_TYPE_MAP).map(([key, val]) => ({ label: val, value: key })),
 				],
+				onChange: () => formRef?.current?.submit(),
 			},
 			render: (_, record) => {
 				const r = RECORD_TYPE_MAP[record.record_type];
@@ -103,12 +88,14 @@ export function getSignFlowColumns(serviceOptions: Array<{ label: any, value: an
 			dataIndex: "started_at",
 			valueType: "dateTime",
 			search: false,
+
 		},
 		{
 			title: "تاریخ پایان",
 			dataIndex: "finished_at",
 			valueType: "dateTime",
 			search: false,
+
 			render: (_, record) => record.finished_at ? _ : "-",
 		},
 		{
@@ -116,7 +103,27 @@ export function getSignFlowColumns(serviceOptions: Array<{ label: any, value: an
 			dataIndex: "cancel_reason",
 			search: false,
 			ellipsis: true,
+
 			render: (_, record) => record.cancel_reason || "-",
+		},
+		{
+			title: "وضعیت",
+			dataIndex: "state",
+			valueType: "select",
+			fieldProps: {
+				placeholder: "در حال بررسی",
+				options: [
+					{ label: "همه وضعیت‌ها", value: "" },
+					...Object.entries(SIGN_FLOW_STATE_MAP).map(([key, val]) => ({ label: val.label, value: key })),
+				],
+				onChange: () => formRef?.current?.submit(),
+			},
+			render: (_, record) => {
+				const s = SIGN_FLOW_STATE_MAP[record.state];
+				if (!s)
+					return record.state;
+				return <Tag color={s.color}>{s.label}</Tag>;
+			},
 		},
 	];
 }
