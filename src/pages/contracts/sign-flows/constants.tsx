@@ -1,6 +1,8 @@
 import type { SignFlowListItem } from "#src/features/contract/api/contracts.api";
 import type { ProColumns, ProFormInstance } from "@ant-design/pro-components";
-import { Tag } from "antd";
+import { EyeOutlined } from "@ant-design/icons";
+import { Button, Tag } from "antd";
+
 import React from "react";
 
 export const SIGN_FLOW_STATE_MAP: Record<string, { label: string, color: string }> = {
@@ -16,7 +18,7 @@ export const RECORD_TYPE_MAP: Record<string, string> = {
 	addendum: "الحاقیه",
 };
 
-export function getSignFlowColumns(serviceOptions: Array<{ label: any, value: any }>, formRef: React.MutableRefObject<ProFormInstance | undefined>): ProColumns<SignFlowListItem>[] {
+export function getSignFlowColumns(serviceOptions: Array<{ label: any, value: any }>, formRef: React.MutableRefObject<ProFormInstance | undefined>, onView: (id: number) => void): ProColumns<SignFlowListItem>[] {
 	return [
 		{
 			title: "نمایش",
@@ -124,6 +126,19 @@ export function getSignFlowColumns(serviceOptions: Array<{ label: any, value: an
 					return record.state;
 				return <Tag color={s.color}>{s.label}</Tag>;
 			},
+		},
+
+		{
+			title: "عملیات",
+			dataIndex: "action",
+			search: false,
+			render: (_, record) => (
+				<Button
+					type="text"
+					icon={<EyeOutlined />}
+					onClick={() => onView(record.id)}
+				/>
+			),
 		},
 	];
 }

@@ -7,7 +7,8 @@ import { servicesQuery } from "#src/features/contract/create/queries/contract.qu
 import { useQuery } from "@tanstack/react-query";
 
 import { message } from "antd";
-import React, { useMemo, useRef } from "react";
+import React, { useMemo, useRef, useState } from "react";
+import { SignFlowDetailModal } from "./components/SignFlowDetailModal";
 import { getSignFlowColumns } from "./constants";
 
 export default function SignFlowListPage() {
@@ -26,7 +27,13 @@ export default function SignFlowListPage() {
 		return opts;
 	}, [services.data]);
 
-	const columns = useMemo(() => getSignFlowColumns(serviceOptions, formRef), [serviceOptions]);
+	const [modalVisible, setModalVisible] = useState(false);
+	const [selectedId, setSelectedId] = useState<number | null>(null);
+
+	const columns = useMemo(() => getSignFlowColumns(serviceOptions, formRef, (id: number) => {
+		setSelectedId(id);
+		setModalVisible(true);
+	}), [serviceOptions]);
 
 	return (
 		<BasicContent className="h-full">
@@ -76,6 +83,7 @@ export default function SignFlowListPage() {
 				}}
 				rowSelection={false}
 			/>
+			<SignFlowDetailModal open={modalVisible} id={selectedId} onCancel={() => setModalVisible(false)} />
 		</BasicContent>
 	);
 }
