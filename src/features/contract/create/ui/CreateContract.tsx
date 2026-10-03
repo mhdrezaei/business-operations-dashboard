@@ -276,9 +276,37 @@ function mapOpenApiSeparatedDetails(serviceFields: Record<string, any>) {
 	};
 }
 
+function mapOpenApiPackageDetails(serviceFields: Record<string, any>) {
+	const plans = Array.isArray(serviceFields.plans) ? serviceFields.plans : [];
+	return {
+		contract_model: "PACKAGE",
+		package_model: {
+			mode: serviceFields.packageMode ?? "OR",
+			tiers: plans.map((plan: any) => ({
+				sms_min_inclusive: toNumberOrNull(plan?.smsMin),
+				sms_max_exclusive: toNumberOrNull(plan?.smsMax),
+				bill_min_inclusive: toNumberOrNull(plan?.billMin),
+				bill_max_exclusive: toNumberOrNull(plan?.billMax),
+				partner_share_percent: toStringOrNull(plan?.billPartnerShare),
+				karashab_share_percent: toStringOrNull(plan?.billKarashabShare),
+				traffic_profit_percent: toStringOrNull(plan?.trafficProfitPercent),
+				traffic_partner_share_percent: toStringOrNull(plan?.trafficPartnerSharePercent),
+				bill_inquiry_rate: {
+					calculation_type: "FLAT",
+					tiers: [{ min_inclusive: null, max_exclusive: null, rate_per_unit: toStringOrNull(plan?.billFixedPrice) }],
+				},
+				sms_sale_rate: {
+					calculation_type: "FLAT",
+					tiers: [{ min_inclusive: null, max_exclusive: null, rate_per_unit: toStringOrNull(plan?.smsFixedPrice) }],
+				},
+			})),
+		},
+	};
+}
+
 function mapOpenApiAddenda(
 	addenda: unknown,
-	contractModel: "separated" | "legacy" | null,
+	contractModel: "package" | "separated" | "legacy" | null,
 	serviceFields: Record<string, any>,
 	mainOpenApiDetails: Record<string, any> | null,
 ) {
@@ -301,6 +329,9 @@ function mapOpenApiAddenda(
 		}
 		else if (contractModel === "separated") {
 			mapped.contract_openapi_details = mainOpenApiDetails ?? mapOpenApiSeparatedDetails(serviceFields);
+		}
+		else if (contractModel === "package") {
+			mapped.contract_openapi_details = mainOpenApiDetails ?? mapOpenApiPackageDetails(serviceFields);
 		}
 		mapped.children = mapOpenApiAddenda(row.children, contractModel, serviceFields, mainOpenApiDetails);
 
@@ -770,16 +801,20 @@ async function formValuesToApiPayload(values: ContractFormValues) {
 	}
 
 	if (serviceCode === "openapi") {
-		const contractModel = serviceFields.contractModel === "separated" ? "separated" : "legacy";
-		const apiContractModel = contractModel === "separated" ? "SEPARATED" : "LEGACY";
-		const openApiDetails = contractModel === "separated"
-			? mapOpenApiSeparatedDetails(serviceFields)
-			: {
-				openapi_model: apiContractModel,
-				contract_model: apiContractModel,
-				receipt_register: contractTypeToApiPricing(serviceFields.legacyPricing?.paymentRegistration ?? null),
-				bill_inquiry: contractTypeToApiPricing(serviceFields.legacyPricing?.billInquiry ?? null),
-			};
+		const contractModel = serviceFields.contractModel === "package"
+			? "package"
+			: serviceFields.contractModel === "separated" ? "separated" : "legacy";
+		const apiContractModel = contractModel === "package" ? "PACKAGE" : contractModel === "separated" ? "SEPARATED" : "LEGACY";
+		const openApiDetails = contractModel === "package"
+			? mapOpenApiPackageDetails(serviceFields)
+			: contractModel === "separated"
+				? mapOpenApiSeparatedDetails(serviceFields)
+				: {
+					openapi_model: apiContractModel,
+					contract_model: apiContractModel,
+					receipt_register: contractTypeToApiPricing(serviceFields.legacyPricing?.paymentRegistration ?? null),
+					bill_inquiry: contractTypeToApiPricing(serviceFields.legacyPricing?.billInquiry ?? null),
+				};
 
 		payload.openapi_model = apiContractModel;
 

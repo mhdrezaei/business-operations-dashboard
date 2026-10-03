@@ -105,6 +105,7 @@ export default function UnregisteredPerformanceList() {
 		queries: selectedServiceIds.map(serviceId => companiesByServiceQuery(serviceId)),
 	});
 	const selectedServiceId = selectedServiceIds.length === 1 ? selectedServiceIds[0] : null;
+	const selectedCompanyType = formRef.current?.getFieldValue("company_type") ?? null;
 	const selectedServicePath = useMemo(
 		() => resolvePerformanceServicePath(selectedServiceCode as any, selectedCompanyType),
 		[selectedServiceCode, selectedCompanyType],

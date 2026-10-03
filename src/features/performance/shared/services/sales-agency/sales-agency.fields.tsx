@@ -1,6 +1,6 @@
 import { performanceContractsQuery } from "#src/features/performance/shared/queries/performance.queries";
-import { PerformanceFieldCard } from "#src/features/performance/shared/ui/form/components/PerformanceFieldCard";
 import { RHFProNumber, RHFSelect } from "#src/shared/ui/rhf-pro";
+import { SectionCard } from "#src/shared/ui/section-card";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Alert, Button } from "antd";
@@ -51,7 +51,7 @@ export function SalesAgencyPerformanceFields({ prefix = "serviceFields.", compan
 				formItemProps={{ className: "mb-0" }}
 			/>
 		);
-		return editLayout ? input : <PerformanceFieldCard key={key} title={label}>{input}</PerformanceFieldCard>;
+		return editLayout ? input : <SectionCard key={key} title={label} collapsible={false}>{input}</SectionCard>;
 	};
 	if (companyType === "OUTBOUND")
 		return editLayout ? <div className="sales-agency-edit-fields">{moneyField("total_sales", "فروش کل ماه (ریال)")}</div> : moneyField("total_sales", "فروش کل ماه (ریال)");
@@ -78,7 +78,7 @@ export function SalesAgencyPerformanceFields({ prefix = "serviceFields.", compan
 					</div>
 				)
 				: (
-					<PerformanceFieldCard title="هزینه‌ها" headerExtra={<Button icon={<PlusOutlined />} onClick={() => append({ cost_title: "", amount: null })}>افزودن ردیف</Button>}>
+					<SectionCard title="هزینه‌ها" extra={<Button icon={<PlusOutlined />} onClick={() => append({ cost_title: "", amount: null })}>افزودن ردیف</Button>}>
 						{contracts.isError && <Alert type="error" message="دریافت عنوان‌های هزینه ناموفق بود." />}
 						{fields.map((field, index) => (
 							<div key={field.id} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-start gap-3">
@@ -87,7 +87,7 @@ export function SalesAgencyPerformanceFields({ prefix = "serviceFields.", compan
 								<Button className="mt-7" type="text" danger aria-label={`حذف ردیف ${index + 1}`} icon={<DeleteOutlined />} onClick={() => remove(index)} />
 							</div>
 						))}
-					</PerformanceFieldCard>
+					</SectionCard>
 				)}
 		</div>
 	);

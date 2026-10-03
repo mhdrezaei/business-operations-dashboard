@@ -1,15 +1,17 @@
 import type { ArrayPath, Path } from "react-hook-form";
 import type { ContractFormValues } from "../../../shared/model/contract.form.types";
+import type { OpenApiContractModel } from "./openapi.types";
 import { ContractAddendaSection } from "#src/features/contract/components/addenda/ContractAddendaSection.js";
 import { AlignedFormField, useAlignedLabelWidth } from "#src/shared/ui/aligned-form-field";
-import { RHFProText } from "#src/shared/ui/rhf-pro";
+import { RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro/fields/RHFProNumber.js";
+import { SectionCard } from "#src/shared/ui/section-card";
 import { DeleteOutlined } from "@ant-design/icons";
-import { Button, Card } from "antd";
+import { Button, Card, Collapse } from "antd";
 import React, { useMemo, useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { ContractTypeSection } from "../../../components/contract-type/ContractTypeSection";
-import { defaultLegacyPricing, defaultOpenApiPlan } from "./openapi.types";
+import { defaultLegacyPricing, defaultOpenApiPlan, defaultSeparatedPricing } from "./openapi.types";
 import "./openapi.fields.css";
 
 const sf = (path: string) => `serviceFields.${path}` as any;
@@ -17,23 +19,41 @@ const sf = (path: string) => `serviceFields.${path}` as any;
 function SeparatedPricingFields() {
 	return (
 		<div className="flex w-full flex-col">
-			<RHFProNumber
-				name={sf("separatedPricing.walletChargeDiscountPercent")}
-				label="درصد تخفیف شارژ کیف‌پول"
-				inputProps={{ addonAfter: "%", placeholder: "مثلاً 20" } as any}
+			<ContractTypeSection
+				title="استعلام قبض میان‌دوره"
+				name={sf("separatedPricing.midPeriodBillInquiry")}
+				tone="purple"
+				topAside={(
+					<RHFProNumber
+						name={sf("separatedPricing.walletChargeDiscountPercent")}
+						label="درصد تخفیف شارژ کیف‌پول"
+						inputProps={{ addonAfter: "%", placeholder: "مثلاً 20" } as any}
+					/>
+				)}
 			/>
-			<ContractTypeSection title="استعلام قبض میان‌دوره" name={sf("separatedPricing.midPeriodBillInquiry")} tone="purple" />
 			<ContractTypeSection title="استعلام قبض پایان‌دوره" name={sf("separatedPricing.endPeriodBillInquiry")} tone="purple" />
-			<ContractTypeSection title="ثبت وصولی متصل" name={sf("separatedPricing.connectedReceiptRegister")} tone="purple" />
-			<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-				<RHFProNumber name={sf("separatedPricing.connectedKarashabSharePercent")} label="درصد سهم کاراشاب" inputProps={{ addonAfter: "%", placeholder: "مثلاً 20" } as any} />
-				<RHFProNumber name={sf("separatedPricing.connectedPartnerSharePercent")} label="درصد سهم طرف قرارداد" inputProps={{ addonAfter: "%", placeholder: "مثلاً 20" } as any} />
-			</div>
-			<ContractTypeSection title="ثبت وصولی غیرمتصل" name={sf("separatedPricing.disconnectedReceiptRegister")} tone="purple" />
-			<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-				<RHFProNumber name={sf("separatedPricing.disconnectedKarashabSharePercent")} label="درصد سهم کاراشاب" inputProps={{ addonAfter: "%", placeholder: "مثلاً 20" } as any} />
-				<RHFProNumber name={sf("separatedPricing.disconnectedPartnerSharePercent")} label="درصد سهم طرف قرارداد" inputProps={{ addonAfter: "%", placeholder: "مثلاً 20" } as any} />
-			</div>
+			<ContractTypeSection
+				title="ثبت وصولی متصل"
+				name={sf("separatedPricing.connectedReceiptRegister")}
+				tone="purple"
+				bottomAside={(
+					<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+						<RHFProNumber name={sf("separatedPricing.connectedKarashabSharePercent")} label="درصد سهم کاراشاب" inputProps={{ addonAfter: "%", placeholder: "مثلاً 20" } as any} />
+						<RHFProNumber name={sf("separatedPricing.connectedPartnerSharePercent")} label="درصد سهم طرف قرارداد" inputProps={{ addonAfter: "%", placeholder: "مثلاً 20" } as any} />
+					</div>
+				)}
+			/>
+			<ContractTypeSection
+				title="ثبت وصولی غیرمتصل"
+				name={sf("separatedPricing.disconnectedReceiptRegister")}
+				tone="purple"
+				bottomAside={(
+					<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+						<RHFProNumber name={sf("separatedPricing.disconnectedKarashabSharePercent")} label="درصد سهم کاراشاب" inputProps={{ addonAfter: "%", placeholder: "مثلاً 20" } as any} />
+						<RHFProNumber name={sf("separatedPricing.disconnectedPartnerSharePercent")} label="درصد سهم طرف قرارداد" inputProps={{ addonAfter: "%", placeholder: "مثلاً 20" } as any} />
+					</div>
+				)}
+			/>
 		</div>
 	);
 }
@@ -243,9 +263,9 @@ export function OpenApiFields() {
 		trafficProfitPercent: number | null
 		trafficPartnerSharePercent: number | null
 	}>>([]);
-	const [_activeKey, setActiveKey] = useState<string>("0");
+	const [activeKey, setActiveKey] = useState<string>("0");
 
-	const contractModel = useWatch({ control, name: sf("contractModel") }) as "legacy" | "separated" | null;
+	const contractModel = useWatch({ control, name: sf("contractModel") }) as OpenApiContractModel | null;
 
 	React.useEffect(() => {
 		register(sf("contractModel"));
@@ -275,15 +295,26 @@ export function OpenApiFields() {
 			setValue(sf("packageMode"), null as any, { shouldDirty: true, shouldValidate: true });
 		}
 		else if (contractModel === "separated") {
+			setValue(sf("packageMode"), null as any, { shouldDirty: true, shouldValidate: true });
+			if (!getValues(sf("separatedPricing"))) {
+				setValue(sf("separatedPricing"), structuredClone(defaultSeparatedPricing) as any, {
+					shouldDirty: false,
+					shouldValidate: false,
+				});
+			}
 			setValue(sf("legacyPricing"), undefined as any, {
 				shouldDirty: true,
 				shouldValidate: true,
 			});
 		}
+		else if (contractModel === "package") {
+			setValue(sf("legacyPricing"), undefined as any, { shouldDirty: true, shouldValidate: true });
+			setValue(sf("separatedPricing"), undefined as any, { shouldDirty: true, shouldValidate: true });
+		}
 	}, [contractModel, setValue, getValues]);
 
 	React.useEffect(() => {
-		if (contractModel !== "separated")
+		if (contractModel !== "package")
 			return;
 		if (fields.length > 0)
 			return;
@@ -460,7 +491,7 @@ export function OpenApiFields() {
 		}));
 	}, [plans, setValue]);
 
-	function _addPlan() {
+	function addPlan() {
 		const nextIndex = fields.length;
 		const prevPlan = (nextIndex > 0 ? getValues(sf(`plans.${nextIndex - 1}`)) : null) as {
 			smsMax: number | null
@@ -481,7 +512,7 @@ export function OpenApiFields() {
 		setActiveKey(next);
 	}
 
-	const _collapseItems = fields.map((_, idx) => ({
+	const collapseItems = fields.map((_, idx) => ({
 		key: String(idx),
 		label: (
 			<div
@@ -509,26 +540,52 @@ export function OpenApiFields() {
 	return (
 		<div className="w-full">
 			<div className="w-full">
+				<SectionCard title="مدل قرارداد OpenAPI" tone="purple" className="mb-3">
+					<RHFSelect
+						name={sf("contractModel")}
+						label=""
+						options={[
+							{ label: "بسته‌ای", value: "package" },
+							{ label: "تفکیکی", value: "separated" },
+							{ label: "قدیمی", value: "legacy" },
+						]}
+						selectProps={{ placeholder: "مدل قرارداد را انتخاب کنید", allowClear: false }}
+					/>
+				</SectionCard>
+
 				{contractModel === "separated"
 					? <SeparatedPricingFields />
-					: (
-						<div className="flex w-full flex-col">
-							<ContractTypeSection
-								title="بهای ثبت وصولی"
-								name={sf("legacyPricing.paymentRegistration")}
-								tone="purple"
-								compactCalculationModel
-								blendedModePlaceholder="انتخاب نوع پلکانی در این بخش"
-							/>
-							<ContractTypeSection
-								title="بهای استعلام قبض"
-								name={sf("legacyPricing.billInquiry")}
-								tone="purple"
-								compactCalculationModel
-								blendedModePlaceholder="انتخاب نوع پلکانی در این بخش"
-							/>
-						</div>
-					)}
+					: contractModel === "package"
+						? (
+							<div className="flex w-full flex-col gap-3">
+								<RHFSelect
+									name={sf("packageMode")}
+									label="حالت بسته"
+									options={[{ label: "یا (OR)", value: "OR" }, { label: "و (AND)", value: "AND" }]}
+									selectProps={{ placeholder: "حالت بسته را انتخاب کنید", allowClear: false }}
+								/>
+								<Collapse activeKey={activeKey} onChange={key => setActiveKey(String(Array.isArray(key) ? key[0] ?? "0" : key ?? "0"))} items={collapseItems} />
+								<Button type="dashed" onClick={addPlan}>افزودن پلن</Button>
+							</div>
+						)
+						: (
+							<div className="flex w-full flex-col">
+								<ContractTypeSection
+									title="بهای ثبت وصولی"
+									name={sf("legacyPricing.paymentRegistration")}
+									tone="purple"
+									compactCalculationModel
+									blendedModePlaceholder="انتخاب نوع پلکانی در این بخش"
+								/>
+								<ContractTypeSection
+									title="بهای استعلام قبض"
+									name={sf("legacyPricing.billInquiry")}
+									tone="purple"
+									compactCalculationModel
+									blendedModePlaceholder="انتخاب نوع پلکانی در این بخش"
+								/>
+							</div>
+						)}
 
 			</div>
 

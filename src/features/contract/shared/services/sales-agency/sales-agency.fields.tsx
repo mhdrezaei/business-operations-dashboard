@@ -1,12 +1,12 @@
 import type { ContractFormValues } from "../../../shared/model/contract.form.types";
 import { fetchSalesAgencyExpenseTitles } from "#src/features/contract/api/contracts.api";
 import { RHFProNumber, RHFSelect } from "#src/shared/ui/rhf-pro";
+import { SectionCard as ContractFormSection } from "#src/shared/ui/section-card";
 import { PlusOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Alert, Button } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
-import { ContractFormSection } from "../../ui/form/components/ContractFormSection";
 
 const sf = (path: string) => `serviceFields.${path}` as any;
 
