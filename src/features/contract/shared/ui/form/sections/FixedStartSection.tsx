@@ -1478,9 +1478,13 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													}}
 												/>
 											</AlignedFormField>
-											<AlignedFormField label="" className="aligned-form-field--copy-button" labelId="contract-form-label-copy-contract-data-collocation">
-												<ContractDataCopyButton />
-											</AlignedFormField>
+											{mode !== "edit"
+												? (
+													<AlignedFormField label="" className="aligned-form-field--copy-button" labelId="contract-form-label-copy-contract-data-collocation">
+														<ContractDataCopyButton />
+													</AlignedFormField>
+												)
+												: null}
 										</div>
 									</div>
 
@@ -1630,9 +1634,13 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													}}
 												/>
 											</AlignedFormField>
-											<AlignedFormField label="" className="aligned-form-field--copy-button" labelId="contract-form-label-copy-contract-data-collocation-main">
-												<ContractDataCopyButton />
-											</AlignedFormField>
+											{mode !== "edit"
+												? (
+													<AlignedFormField label="" className="aligned-form-field--copy-button" labelId="contract-form-label-copy-contract-data-collocation-main">
+														<ContractDataCopyButton />
+													</AlignedFormField>
+												)
+												: null}
 										</div>
 									</div>
 
@@ -2089,9 +2097,13 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 								}}
 							/>
 						</AlignedFormField>
-						<AlignedFormField label="" className="aligned-form-field--copy-button" labelId="contract-form-label-copy-contract-data">
-							<ContractDataCopyButton />
-						</AlignedFormField>
+						{mode !== "edit"
+							? (
+								<AlignedFormField label="" className="aligned-form-field--copy-button" labelId="contract-form-label-copy-contract-data">
+									<ContractDataCopyButton />
+								</AlignedFormField>
+							)
+							: null}
 					</div>
 				</div>
 
