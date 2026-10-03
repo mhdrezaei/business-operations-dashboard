@@ -14,6 +14,7 @@ interface Props {
 	title: React.ReactNode
 	name: string
 	topAside?: React.ReactNode
+	bottomAside?: React.ReactNode
 	tone?: ContractSectionTone
 	variant?: "default" | "embedded" | "sms-operator"
 	showRatePercentage?: boolean
@@ -38,7 +39,7 @@ function createDefaultSection(firstRowFrom: number | null = null) {
 	};
 }
 
-export function ContractTypeSection({ title, name, topAside, tone = "primary", variant = "default", showRatePercentage = false, ratePercentageHelpText, compactCalculationModel = true, blendedModePlaceholder = "انتخاب نوع محاسبه" }: Props) {
+export function ContractTypeSection({ title, name, topAside, bottomAside, tone = "primary", variant = "default", showRatePercentage = false, ratePercentageHelpText, compactCalculationModel = true, blendedModePlaceholder = "انتخاب نوع محاسبه" }: Props) {
 	const { control, getValues, setValue } = useFormContext();
 	const inheritedTone = React.useContext(ContractSectionToneContext);
 	const resolvedTone = inheritedTone ?? tone;
@@ -342,6 +343,8 @@ export function ContractTypeSection({ title, name, topAside, tone = "primary", v
 					</div>
 				)
 				: null}
+
+			{bottomAside ? <div className="mt-4">{bottomAside}</div> : null}
 		</>
 	);
 

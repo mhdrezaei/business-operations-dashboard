@@ -2,6 +2,7 @@ import type { ArrayPath, Path } from "react-hook-form";
 import type { ContractFormValues } from "../../../shared/model/contract.form.types";
 import type { OpenApiContractModel } from "./openapi.types";
 import { ContractAddendaSection } from "#src/features/contract/components/addenda/ContractAddendaSection.js";
+import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import { RHFProNumber, RHFSelect } from "#src/shared/ui/rhf-pro";
 import React, { useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
@@ -13,23 +14,41 @@ const sf = (path: string) => `serviceFields.${path}` as any;
 function SeparatedPricingFields() {
 	return (
 		<div className="flex w-full flex-col">
-			<RHFProNumber
-				name={sf("separatedPricing.walletChargeDiscountPercent")}
-				label="درصد تخفیف شارژ کیف‌پول"
-				inputProps={{ addonAfter: "%", placeholder: "مثلاً 20" } as any}
+			<ContractTypeSection
+				title="استعلام قبض میان‌دوره"
+				name={sf("separatedPricing.midPeriodBillInquiry")}
+				tone="purple"
+				topAside={(
+					<RHFProNumber
+						name={sf("separatedPricing.walletChargeDiscountPercent")}
+						label="درصد تخفیف شارژ کیف‌پول"
+						inputProps={{ addonAfter: "%", placeholder: "مثلاً 20" } as any}
+					/>
+				)}
 			/>
-			<ContractTypeSection title="استعلام قبض میان‌دوره" name={sf("separatedPricing.midPeriodBillInquiry")} tone="purple" />
 			<ContractTypeSection title="استعلام قبض پایان‌دوره" name={sf("separatedPricing.endPeriodBillInquiry")} tone="purple" />
-			<ContractTypeSection title="ثبت وصولی متصل" name={sf("separatedPricing.connectedReceiptRegister")} tone="purple" />
-			<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-				<RHFProNumber name={sf("separatedPricing.connectedKarashabSharePercent")} label="درصد سهم کاراشاب" inputProps={{ addonAfter: "%", placeholder: "مثلاً 20" } as any} />
-				<RHFProNumber name={sf("separatedPricing.connectedPartnerSharePercent")} label="درصد سهم طرف قرارداد" inputProps={{ addonAfter: "%", placeholder: "مثلاً 20" } as any} />
-			</div>
-			<ContractTypeSection title="ثبت وصولی غیرمتصل" name={sf("separatedPricing.disconnectedReceiptRegister")} tone="purple" />
-			<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-				<RHFProNumber name={sf("separatedPricing.disconnectedKarashabSharePercent")} label="درصد سهم کاراشاب" inputProps={{ addonAfter: "%", placeholder: "مثلاً 20" } as any} />
-				<RHFProNumber name={sf("separatedPricing.disconnectedPartnerSharePercent")} label="درصد سهم طرف قرارداد" inputProps={{ addonAfter: "%", placeholder: "مثلاً 20" } as any} />
-			</div>
+			<ContractTypeSection
+				title="ثبت وصولی متصل"
+				name={sf("separatedPricing.connectedReceiptRegister")}
+				tone="purple"
+				bottomAside={(
+					<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+						<RHFProNumber name={sf("separatedPricing.connectedKarashabSharePercent")} label="درصد سهم کاراشاب" inputProps={{ addonAfter: "%", placeholder: "مثلاً 20" } as any} />
+						<RHFProNumber name={sf("separatedPricing.connectedPartnerSharePercent")} label="درصد سهم طرف قرارداد" inputProps={{ addonAfter: "%", placeholder: "مثلاً 20" } as any} />
+					</div>
+				)}
+			/>
+			<ContractTypeSection
+				title="ثبت وصولی غیرمتصل"
+				name={sf("separatedPricing.disconnectedReceiptRegister")}
+				tone="purple"
+				bottomAside={(
+					<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+						<RHFProNumber name={sf("separatedPricing.disconnectedKarashabSharePercent")} label="درصد سهم کاراشاب" inputProps={{ addonAfter: "%", placeholder: "مثلاً 20" } as any} />
+						<RHFProNumber name={sf("separatedPricing.disconnectedPartnerSharePercent")} label="درصد سهم طرف قرارداد" inputProps={{ addonAfter: "%", placeholder: "مثلاً 20" } as any} />
+					</div>
+				)}
+			/>
 		</div>
 	);
 }
@@ -80,15 +99,17 @@ export function OpenApiFields() {
 
 	return (
 		<div className="w-full">
-			<RHFSelect
-				name={sf("contractModel")}
-				label="مدل قرارداد OpenAPI"
-				options={[
-					{ label: "تفکیکی", value: "separated" },
-					{ label: "قدیمی", value: "legacy" },
-				]}
-				selectProps={{ placeholder: "مدل قرارداد را انتخاب کنید", allowClear: false }}
-			/>
+			<ContractFormSection title="مدل قرارداد OpenAPI" tone="purple">
+				<RHFSelect
+					name={sf("contractModel")}
+					label=""
+					options={[
+						{ label: "تفکیکی", value: "separated" },
+						{ label: "قدیمی", value: "legacy" },
+					]}
+					selectProps={{ placeholder: "مدل قرارداد را انتخاب کنید", allowClear: false }}
+				/>
+			</ContractFormSection>
 
 			{contractModel === "separated"
 				? <SeparatedPricingFields />
