@@ -44,6 +44,10 @@
 	min-width: 0;
 }
 
+.aligned-form-field--copy-button > .aligned-form-field__label {
+	min-height: 1.5715em;
+}
+
 .aligned-form-field__label-text {
 	color: var(--ant-colorText);
 	font-weight: 600;

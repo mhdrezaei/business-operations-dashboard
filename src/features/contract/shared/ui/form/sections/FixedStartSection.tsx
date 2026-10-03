@@ -1448,9 +1448,6 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 											}}
 										/>
 									</AlignedFormField>
-									<AlignedFormField label="" labelId="contract-form-label-copy-contract-data-telecom">
-										<ContractDataCopyButton />
-									</AlignedFormField>
 								</div>
 							</CollocationStepPane>
 
@@ -1481,7 +1478,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													}}
 												/>
 											</AlignedFormField>
-											<AlignedFormField label="" labelId="contract-form-label-copy-contract-data-collocation">
+											<AlignedFormField label="" className="aligned-form-field--copy-button" labelId="contract-form-label-copy-contract-data-collocation">
 												<ContractDataCopyButton />
 											</AlignedFormField>
 										</div>
@@ -1632,6 +1629,9 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 														"aria-labelledby": "contract-form-label-contract-number",
 													}}
 												/>
+											</AlignedFormField>
+											<AlignedFormField label="" className="aligned-form-field--copy-button" labelId="contract-form-label-copy-contract-data-collocation-main">
+												<ContractDataCopyButton />
 											</AlignedFormField>
 										</div>
 									</div>
@@ -2089,7 +2089,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 								}}
 							/>
 						</AlignedFormField>
-						<AlignedFormField label="" labelId="contract-form-label-copy-contract-data">
+						<AlignedFormField label="" className="aligned-form-field--copy-button" labelId="contract-form-label-copy-contract-data">
 							<ContractDataCopyButton />
 						</AlignedFormField>
 					</div>
