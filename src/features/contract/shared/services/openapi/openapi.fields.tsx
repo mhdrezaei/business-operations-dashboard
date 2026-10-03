@@ -12,6 +12,28 @@ import { defaultLegacyPricing, defaultSeparatedPricing } from "./openapi.types";
 const sf = (path: string) => `serviceFields.${path}` as any;
 
 function SeparatedPricingFields() {
+	const { control, setValue } = useFormContext<ContractFormValues>();
+	const connectedKarashabShare = useWatch({ control, name: sf("separatedPricing.connectedKarashabSharePercent") });
+	const disconnectedKarashabShare = useWatch({ control, name: sf("separatedPricing.disconnectedKarashabSharePercent") });
+	const previousConnectedShare = React.useRef(connectedKarashabShare);
+	const previousDisconnectedShare = React.useRef(disconnectedKarashabShare);
+
+	React.useEffect(() => {
+		if (connectedKarashabShare === previousConnectedShare.current)
+			return;
+		previousConnectedShare.current = connectedKarashabShare;
+		const share = connectedKarashabShare == null || connectedKarashabShare === "" ? null : Number(connectedKarashabShare);
+		setValue(sf("separatedPricing.connectedPartnerSharePercent"), share != null && Number.isFinite(share) && share >= 0 && share <= 100 ? 100 - share : null, { shouldDirty: true, shouldValidate: true });
+	}, [connectedKarashabShare, setValue]);
+
+	React.useEffect(() => {
+		if (disconnectedKarashabShare === previousDisconnectedShare.current)
+			return;
+		previousDisconnectedShare.current = disconnectedKarashabShare;
+		const share = disconnectedKarashabShare == null || disconnectedKarashabShare === "" ? null : Number(disconnectedKarashabShare);
+		setValue(sf("separatedPricing.disconnectedPartnerSharePercent"), share != null && Number.isFinite(share) && share >= 0 && share <= 100 ? 100 - share : null, { shouldDirty: true, shouldValidate: true });
+	}, [disconnectedKarashabShare, setValue]);
+
 	return (
 		<div className="flex w-full flex-col">
 			<ContractTypeSection
