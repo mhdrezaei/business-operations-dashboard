@@ -3,6 +3,7 @@ import type { ContractFormValues } from "../../../model/contract.form.types";
 import { BasicContent } from "#src/components/";
 import { ContractAddendaSection } from "#src/features/contract/components/addenda/ContractAddendaSection";
 import { ContractTypeSection } from "#src/features/contract/components/contract-type/ContractTypeSection";
+import { ContractDataCopyButton } from "#src/features/contract/shared/ui/form/ContractDataCopyButton";
 import { useAccess } from "#src/hooks";
 import { AlignedFormField, useAlignedLabelWidth } from "#src/shared/ui/aligned-form-field";
 import { RHFProCheckbox, RHFProNumber, RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
@@ -1447,6 +1448,9 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 											}}
 										/>
 									</AlignedFormField>
+									<AlignedFormField label="" labelId="contract-form-label-copy-contract-data-telecom">
+										<ContractDataCopyButton />
+									</AlignedFormField>
 								</div>
 							</CollocationStepPane>
 
@@ -1476,6 +1480,9 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 														"aria-labelledby": "contract-form-label-contract-number-telecom",
 													}}
 												/>
+											</AlignedFormField>
+											<AlignedFormField label="" labelId="contract-form-label-copy-contract-data-collocation">
+												<ContractDataCopyButton />
 											</AlignedFormField>
 										</div>
 									</div>
@@ -2081,6 +2088,9 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 									"aria-labelledby": "contract-form-label-contract-number",
 								}}
 							/>
+						</AlignedFormField>
+						<AlignedFormField label="" labelId="contract-form-label-copy-contract-data">
+							<ContractDataCopyButton />
 						</AlignedFormField>
 					</div>
 				</div>
