@@ -15,7 +15,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Alert, Button, Checkbox, Modal, Select, Spin } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
-import { companyTypeMatches, pickCompanyTypeToken } from "../../utils";
 
 const sf = (path: string) => `serviceFields.${path}` as const;
 
@@ -129,7 +128,6 @@ function SmsCommissionCopyDataButton() {
 	const [isReceiving, setIsReceiving] = useState(false);
 	const companyId = useWatch({ control, name: "companyId" });
 	const serviceId = useWatch({ control, name: "serviceId" });
-	const companyType = useWatch({ control, name: "companyType" });
 	const noOtherCompaniesWarningRef = useRef<string | null>(null);
 
 	const companies = useQuery({
@@ -137,35 +135,26 @@ function SmsCommissionCopyDataButton() {
 		queryFn: () => fetchCompaniesByService(serviceId!, { pageSize: 1000 }),
 		enabled: open && includeOtherCompanies && serviceId != null,
 	});
-	const selectedCompanyType = useMemo(() => {
-		if (companyType != null)
-			return companyType;
-		return companies.data?.results.find(company => Number(company.id) === Number(companyId))?.company_type ?? null;
-	}, [companies.data, companyId, companyType]);
 	const otherCompanyOptions = useMemo(() => {
-		const typeToken = pickCompanyTypeToken(selectedCompanyType);
 		return (companies.data?.results ?? [])
 			.filter(company => Number(company.id) !== Number(companyId))
-			.filter(company => typeToken
-				? companyTypeMatches(company.company_type, typeToken)
-				: company.company_type == null)
 			.map(company => ({ label: company.name, value: company.id }));
-	}, [companies.data, companyId, selectedCompanyType]);
+	}, [companies.data, companyId]);
 
 	useEffect(() => {
-		const warningKey = `${serviceId ?? ""}:${companyId ?? ""}:${pickCompanyTypeToken(selectedCompanyType) ?? "none"}`;
+		const warningKey = `${serviceId ?? ""}:${companyId ?? ""}`;
 		if (!open || !includeOtherCompanies || companies.isLoading || companies.isError || otherCompanyOptions.length > 0) {
 			noOtherCompaniesWarningRef.current = null;
 			return;
 		}
 		if (noOtherCompaniesWarningRef.current !== warningKey) {
 			notification.warning({
-				message: "شرکت دیگری در این سرویس/کمپانی‌تایپ یافت نشد.",
+				message: "شرکت دیگری در این سرویس یافت نشد.",
 				placement: "topRight",
 			});
 			noOtherCompaniesWarningRef.current = warningKey;
 		}
-	}, [companies.isError, companies.isLoading, companyId, includeOtherCompanies, open, otherCompanyOptions.length, selectedCompanyType, serviceId]);
+	}, [companies.isError, companies.isLoading, companyId, includeOtherCompanies, open, otherCompanyOptions.length, serviceId]);
 
 	const sourceCompanyId = includeOtherCompanies ? destinationCompanyId : companyId;
 
