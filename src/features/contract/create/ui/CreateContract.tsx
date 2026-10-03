@@ -266,12 +266,16 @@ function mapOpenApiSeparatedDetails(serviceFields: Record<string, any>) {
 		wallet_charge_discount_percent: toStringOrNull(pricing.walletChargeDiscountPercent),
 		bill_inquiry_midterm: contractTypeToApiPricing(pricing.midPeriodBillInquiry ?? null),
 		bill_inquiry_endterm: contractTypeToApiPricing(pricing.endPeriodBillInquiry ?? null),
-		receipt_register_connected: contractTypeToApiPricing(pricing.connectedReceiptRegister ?? null),
-		connected_karashab_share_percent: toStringOrNull(pricing.connectedKarashabSharePercent),
-		connected_partner_share_percent: toStringOrNull(pricing.connectedPartnerSharePercent),
-		receipt_register_disconnected: contractTypeToApiPricing(pricing.disconnectedReceiptRegister ?? null),
-		disconnected_karashab_share_percent: toStringOrNull(pricing.disconnectedKarashabSharePercent),
-		disconnected_partner_share_percent: toStringOrNull(pricing.disconnectedPartnerSharePercent),
+		receipt_register_connected: {
+			...contractTypeToApiPricing(pricing.connectedReceiptRegister ?? null),
+			karashab_share_percent: toStringOrNull(pricing.connectedKarashabSharePercent),
+			partner_share_percent: toStringOrNull(pricing.connectedPartnerSharePercent),
+		},
+		receipt_register_disconnected: {
+			...contractTypeToApiPricing(pricing.disconnectedReceiptRegister ?? null),
+			karashab_share_percent: toStringOrNull(pricing.disconnectedKarashabSharePercent),
+			partner_share_percent: toStringOrNull(pricing.disconnectedPartnerSharePercent),
+		},
 	};
 }
 
