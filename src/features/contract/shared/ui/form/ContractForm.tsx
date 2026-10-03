@@ -1,6 +1,7 @@
 import type { Resolver, UseFormReturn } from "react-hook-form";
 import type { ContractFormValues, ContractServiceCode } from "../../model/contract.form.types";
 import { BasicContent } from "#src/components/index.js";
+import { useAccess } from "#src/hooks";
 import { FormActionBar } from "#src/shared/ui/form-action-bar";
 import { notification } from "#src/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -130,6 +131,8 @@ export function ContractForm({
 		resolver: dynamicResolver,
 	});
 	const watchedValues = useWatch({ control: form.control, defaultValue: mergedInitialValues as any });
+	const { hasDomainPermissionByServiceId } = useAccess();
+	const canUpdateSelectedService = watchedValues.serviceId != null && hasDomainPermissionByServiceId("contracts", "update", watchedValues.serviceId, watchedValues.companyType);
 	const { dirtyFields } = form.formState;
 	const isDirty = useMemo(() => {
 		return hasMeaningfulDirtyField(dirtyFields, watchedValues, mergedInitialValues);
@@ -272,6 +275,7 @@ export function ContractForm({
 															onSubmit={() => triggerSubmit("submit")}
 															onSubmitAndCreateAnother={() => triggerSubmit("submit_and_create_another")}
 															onSubmitAndEdit={() => triggerSubmit("submit_and_edit")}
+															canSubmitAndEdit={canUpdateSelectedService}
 															onReset={resetForm}
 														/>
 													)
