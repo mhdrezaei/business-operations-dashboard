@@ -10,7 +10,7 @@ import { ContractForm } from "#src/features/contract/shared/ui/form/ContractForm
 import { pickCompanyTypeToken } from "#src/features/contract/shared/utils";
 import { Alert, Empty, Spin } from "antd";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { fetchContractDetail, fetchUpdateContract } from "../../../api/contracts.api";
+import { fetchContractDetail, fetchUpdateContract, resolveSalesAgencyExpenseTitleNames } from "../../../api/contracts.api";
 import { CompanyContractsPanel } from "./CompanyContractsPanel";
 import { ContractApprovalHistoryPanel } from "./ContractApprovalHistoryPanel";
 import { ContractDocumentsPanel } from "./ContractDocumentsPanel";
@@ -1152,17 +1152,17 @@ function normalizeTrafficServiceFields(dto: any) {
 
 function normalizeSalesAgencyServiceFields(dto: any, companyType: string | null) {
 	if (companyType === "SALES_REP_MANAGEMENT") {
-		const titles = dto?.cost_titles ?? dto?.costTitles ?? [];
+		const titles = dto?.cost_titles ?? dto?.cost_title_names ?? dto?.costTitles ?? dto?.costTitleNames ?? [];
 		return {
 			costTitles: Array.isArray(titles)
-				? titles.map((title: unknown) => String(title ?? ""))
+				? titles.map((title: any) => String(typeof title === "object" && title != null ? title.title ?? title.name ?? title.cost_title ?? title.expense_title ?? "" : title ?? ""))
 				: [],
 		};
 	}
 
 	return {
-		incomePercentage: toNumberOrStringNumber(dto?.income_percentage ?? dto?.incomePercentage),
-		expensePercentage: toNumberOrStringNumber(dto?.expense_percentage ?? dto?.expensePercentage),
+		incomePercentage: toNumberOrStringNumber(dto?.revenue_percent ?? dto?.income_percentage ?? dto?.incomePercentage),
+		expensePercentage: toNumberOrStringNumber(dto?.cost_percent ?? dto?.expense_percentage ?? dto?.expensePercentage),
 	};
 }
 
@@ -1172,7 +1172,12 @@ function dtoToFormValues(dto: any, service: ContractServicePath): ContractFormVa
 
 	const description = dto?.note ?? dto?.description ?? "";
 
-	const companyType = pickCompanyTypeToken(dto?.company_type ?? dto?.traffic_company_type);
+	const routeCompanyType = service === "sales-agency/outbound"
+		? "OUTBOUND"
+		: service === "sales-agency/rep-management"
+			? "SALES_REP_MANAGEMENT"
+			: null;
+	const companyType = pickCompanyTypeToken(dto?.company_type ?? dto?.traffic_company_type) ?? routeCompanyType;
 	const counterpartyType = normalizeSmsCounterpartyType(dto?.sms_party ?? dto?.counterparty_type ?? dto?.counterpartyType) ?? (service === "sms/client" ? "partners" : service === "sms/vendor" ? "gov_ops" : null);
 
 	const serviceCodeRaw = dto?.service_code ?? dto?.service?.code ?? servicePathToServiceCode(service);
@@ -1412,6 +1417,22 @@ async function formValuesToApiPayload(values: ContractFormValues) {
 		return payload;
 	}
 
+	if (serviceCode === "sales_agency" || serviceCode === "sales-agency") {
+		const companyType = String(values.companyType ?? "").trim().toUpperCase();
+		if (companyType === "OUTBOUND") {
+			payload.revenue_percent = toStringOrNull(serviceFields.incomePercentage);
+			payload.cost_percent = toStringOrNull(serviceFields.expensePercentage);
+		}
+		else if (companyType === "SALES_REP_MANAGEMENT") {
+			const titles = (Array.isArray(serviceFields.costTitles) ? serviceFields.costTitles : [])
+				.map((item: any) => String(item ?? "").trim())
+				.filter(Boolean);
+			payload.cost_title_names = titles;
+		}
+		payload.addenda = mapGenericAddenda(addenda);
+		return payload;
+	}
+
 	if (serviceCode === "openapi") {
 		const contractModel = "legacy" as "package" | "legacy";
 
@@ -1549,6 +1570,14 @@ export function ContractEditForm({ contractId, service, readOnlyHeader, onUpdate
 							continue;
 
 						const formValues = dtoToFormValues(dto, candidateService);
+						if (candidateService === "sales-agency/rep-management" && Array.isArray(formValues.serviceFields.costTitles)) {
+							try {
+								formValues.serviceFields.costTitles = await resolveSalesAgencyExpenseTitleNames(formValues.serviceFields.costTitles);
+							}
+							catch {
+								// Keep the contract form usable if expense-title lookup is unavailable.
+							}
+						}
 						try {
 							const documentsResponse = await listContractDocuments(contractId);
 							formValues.documents = documentsResponse.results.map(contractDocumentToUploadFile);

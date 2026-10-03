@@ -5,7 +5,6 @@ import type { UploadFile } from "antd";
 import type { UseFormReturn } from "react-hook-form";
 import { fetchCompaniesByService } from "#src/api/common/common.api";
 import { createContractDocument } from "#src/features/contract/api/contract-documents.api";
-import { createSalesAgencyExpenseTitle, fetchSalesAgencyExpenseTitles } from "#src/features/contract/api/contracts.api";
 import { contractTypeToApiPricing } from "#src/features/contract/api/pricing.mapper";
 import { defaultContractFormValues } from "#src/features/contract/shared/ui/form/ContractForm";
 import React, { useState } from "react";
@@ -788,11 +787,11 @@ async function formValuesToApiPayload(values: ContractFormValues) {
 	if (serviceCode === "sales_agency" || serviceCode === "sales-agency") {
 		const companyType = String(values.companyType ?? "").trim().toUpperCase();
 		if (companyType === "OUTBOUND") {
-			payload.income_percentage = toStringOrNull(serviceFields.incomePercentage);
-			payload.expense_percentage = toStringOrNull(serviceFields.expensePercentage);
+			payload.revenue_percent = toStringOrNull(serviceFields.incomePercentage);
+			payload.cost_percent = toStringOrNull(serviceFields.expensePercentage);
 		}
 		else if (companyType === "SALES_REP_MANAGEMENT") {
-			payload.cost_titles = (Array.isArray(serviceFields.costTitles) ? serviceFields.costTitles : [])
+			payload.cost_title_names = (Array.isArray(serviceFields.costTitles) ? serviceFields.costTitles : [])
 				.map((item: any) => String(item ?? "").trim())
 				.filter(Boolean);
 		}
@@ -890,15 +889,6 @@ function CreateContract() {
 					try {
 						const service = resolveCreateServicePath(values);
 						const payload = await formValuesToApiPayload(values);
-						if (service === "sales-agency/rep-management" && Array.isArray(payload.cost_titles)) {
-							const existingTitles = new Set((await fetchSalesAgencyExpenseTitles()).map(title => title.toLocaleLowerCase()));
-							for (const title of [...new Set(payload.cost_titles as string[])]) {
-								if (!existingTitles.has(title.toLocaleLowerCase())) {
-									await createSalesAgencyExpenseTitle(title);
-									existingTitles.add(title.toLocaleLowerCase());
-								}
-							}
-						}
 						const created = await fetchCreateContract(service, payload);
 						if (created?.id != null)
 							await uploadStagedDocuments(created.id, values.documents);
