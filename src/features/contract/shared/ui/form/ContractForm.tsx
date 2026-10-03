@@ -12,7 +12,6 @@ import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { buildContractSchema, mergeContractValues, normalizeContractValue } from "../../model/contract.schema";
 import { serviceRegistry } from "../../services/registry";
 import { findFirstError } from "../../utils";
-import { ContractDataCopyButton } from "./ContractDataCopyButton";
 import { ActionSection } from "./sections/ActionSection";
 import { FixedEndSection } from "./sections/FixedEndSection";
 import { FixedStartSection } from "./sections/FixedStartSection";
@@ -258,8 +257,6 @@ export function ContractForm({
 											)
 											: null}
 									</AnimatePresence>
-									{module?.Fields && !readOnly ? <ContractDataCopyButton /> : null}
-
 									{isCollocationFlow ? null : <FixedEndSection contractId={contractId} showDocuments={showDocuments} />}
 
 									{readOnly

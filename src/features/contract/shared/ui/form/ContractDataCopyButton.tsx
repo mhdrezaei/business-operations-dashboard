@@ -166,9 +166,10 @@ export function ContractDataCopyButton() {
 
 	return (
 		<>
-			<div className="mt-4 flex justify-end">
+			<div className="w-full">
 				<Button
 					icon={<CopyOutlined />}
+					className="w-full"
 					disabled={companyId == null || serviceId == null || path == null}
 					onClick={() => setOpen(true)}
 				>
