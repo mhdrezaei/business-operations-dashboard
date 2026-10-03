@@ -1166,7 +1166,7 @@ function normalizeSalesAgencyServiceFields(dto: any, companyType: string | null)
 	};
 }
 
-function dtoToFormValues(dto: any, service: ContractServicePath): ContractFormValues {
+export function contractDetailToFormValues(dto: any, service: ContractServicePath): ContractFormValues {
 	const serviceId = toNumberOrNull(dto?.service_id ?? dto?.serviceId ?? dto?.service?.id ?? dto?.service);
 	const companyId = toNumberOrNull(dto?.company_id ?? dto?.companyId ?? dto?.company?.id ?? dto?.company);
 
@@ -1569,7 +1569,7 @@ export function ContractEditForm({ contractId, service, readOnlyHeader, onUpdate
 						if (!isValidContractDetailResponse(dto, contractId))
 							continue;
 
-						const formValues = dtoToFormValues(dto, candidateService);
+						const formValues = contractDetailToFormValues(dto, candidateService);
 						if (candidateService === "sales-agency/rep-management" && Array.isArray(formValues.serviceFields.costTitles)) {
 							try {
 								formValues.serviceFields.costTitles = await resolveSalesAgencyExpenseTitleNames(formValues.serviceFields.costTitles);
