@@ -19,6 +19,7 @@ export function SalesAgencyPerformanceFields({ prefix = "serviceFields.", compan
 }) {
 	const { control, getValues, setValue } = useFormContext();
 	const [type, company, service, year, month] = useWatch({ control, name: ["companyType", "companyId", "serviceId", "year", "month"] });
+	const costItems = useWatch({ control, name: `${prefix}cost_items` }) as Array<{ cost_title?: string | null }> | undefined;
 	const companyType = fixedType ?? type;
 	const selectedYear = fixedYear ?? year;
 	const selectedMonth = fixedMonth ?? month;
@@ -28,6 +29,12 @@ export function SalesAgencyPerformanceFields({ prefix = "serviceFields.", compan
 		serviceId: fixedService ?? service,
 	}));
 	const titles = useMemo(() => salesAgencyCostTitles(contracts.data?.results ?? [], selectedYear, selectedMonth), [contracts.data, selectedYear, selectedMonth]);
+	const availableTitlesForRow = (index: number) => {
+		const selectedTitle = costItems?.[index]?.cost_title;
+		return titles
+			.filter(title => title === selectedTitle || !costItems?.some((item, itemIndex) => itemIndex !== index && item?.cost_title === title))
+			.map(title => ({ label: title, value: title }));
+	};
 	useEffect(() => {
 		if (companyType === "SALES_REP_MANAGEMENT") {
 			const fieldName = prefix ? `${prefix}cost_items` : "cost_items";
@@ -69,7 +76,7 @@ export function SalesAgencyPerformanceFields({ prefix = "serviceFields.", compan
 						{contracts.isError && <Alert type="error" message="دریافت عنوان‌های هزینه ناموفق بود." />}
 						{fields.map((field, index) => (
 							<div key={field.id} className="sales-agency-edit-fields__cost-row">
-								<RHFSelect name={`${prefix}cost_items.${index}.cost_title`} label="عنوان هزینه" options={titles.map(title => ({ label: title, value: title }))} loading={contracts.isLoading} selectProps={{ placeholder: titles.length ? "انتخاب کنید" : "عنوان هزینه‌ای برای این بازه یافت نشد" }} />
+								<RHFSelect name={`${prefix}cost_items.${index}.cost_title`} label="عنوان هزینه" options={availableTitlesForRow(index)} loading={contracts.isLoading} selectProps={{ placeholder: titles.length ? "انتخاب کنید" : "عنوان هزینه‌ای برای این بازه یافت نشد" }} />
 								<RHFProNumber name={`${prefix}cost_items.${index}.amount`} label="مبلغ (ریال)" enableGrouping decimal inputProps={{ placeholder: "مثلاً 20000" }} />
 								<Button className="sales-agency-edit-fields__remove" type="text" danger aria-label={`حذف ردیف ${index + 1}`} icon={<DeleteOutlined />} onClick={() => remove(index)} />
 							</div>
@@ -82,7 +89,7 @@ export function SalesAgencyPerformanceFields({ prefix = "serviceFields.", compan
 						{contracts.isError && <Alert type="error" message="دریافت عنوان‌های هزینه ناموفق بود." />}
 						{fields.map((field, index) => (
 							<div key={field.id} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-start gap-3">
-								<RHFSelect name={`${prefix}cost_items.${index}.cost_title`} label="عنوان هزینه" options={titles.map(title => ({ label: title, value: title }))} loading={contracts.isLoading} selectProps={{ placeholder: titles.length ? "انتخاب کنید" : "عنوان هزینه‌ای برای این بازه یافت نشد" }} />
+								<RHFSelect name={`${prefix}cost_items.${index}.cost_title`} label="عنوان هزینه" options={availableTitlesForRow(index)} loading={contracts.isLoading} selectProps={{ placeholder: titles.length ? "انتخاب کنید" : "عنوان هزینه‌ای برای این بازه یافت نشد" }} />
 								<RHFProNumber name={`${prefix}cost_items.${index}.amount`} label="مبلغ (ریال)" enableGrouping decimal inputProps={{ placeholder: "مثلاً 20000" }} />
 								<Button className="mt-7" type="text" danger aria-label={`حذف ردیف ${index + 1}`} icon={<DeleteOutlined />} onClick={() => remove(index)} />
 							</div>
