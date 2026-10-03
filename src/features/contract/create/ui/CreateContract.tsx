@@ -262,7 +262,7 @@ function mapOpenApiSeparatedDetails(serviceFields: Record<string, any>) {
 	const pricing = serviceFields.separatedPricing ?? {};
 	return {
 		openapi_model: "SEPARATED",
-		contract_model: "SEPARATED",
+		contract_model: "LEGACY_2",
 		wallet_charge_discount_percent: toStringOrNull(pricing.walletChargeDiscountPercent),
 		mid_period_bill_inquiry: contractTypeToApiPricing(pricing.midPeriodBillInquiry ?? null),
 		end_period_bill_inquiry: contractTypeToApiPricing(pricing.endPeriodBillInquiry ?? null),
