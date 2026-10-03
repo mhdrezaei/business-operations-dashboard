@@ -122,15 +122,17 @@ export function OpenApiFields() {
 	return (
 		<div className="w-full">
 			<SectionCard title="مدل قرارداد OpenAPI" tone="purple" className="mb-3">
-				<RHFSelect
-					name={sf("contractModel")}
-					label=""
-					options={[
-						{ label: "تفکیکی", value: "separated" },
-						{ label: "قدیمی", value: "legacy" },
-					]}
-					selectProps={{ placeholder: "مدل قرارداد را انتخاب کنید", allowClear: false }}
-				/>
+				<div className="w-full max-w-[420px]">
+					<RHFSelect
+						name={sf("contractModel")}
+						label=""
+						options={[
+							{ label: "تفکیکی", value: "separated" },
+							{ label: "قدیمی", value: "legacy" },
+						]}
+						selectProps={{ placeholder: "مدل قرارداد را انتخاب کنید", allowClear: false }}
+					/>
+				</div>
 			</SectionCard>
 
 			{contractModel === "separated"
