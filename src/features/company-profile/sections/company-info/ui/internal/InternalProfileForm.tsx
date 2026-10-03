@@ -1,12 +1,12 @@
 import type { Resolver } from "react-hook-form";
 import type { InternalProfileFormValues } from "../../model/internal/company-internal.mappers";
 
-import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import {
 	RHFProText,
 	RHFProTextArea,
 	RHFSelect,
 } from "#src/shared/ui/rhf-pro";
+import { SectionCard } from "#src/shared/ui/section-card";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form } from "antd";
@@ -48,7 +48,7 @@ export default function InternalProfileForm({ disabled, submitDisabled, hasProfi
 	return (
 		<Form layout="vertical" className="space-y-4">
 			<FormProvider {...methods}>
-				<ContractFormSection title={"\u0627\u0637\u0644\u0627\u0639\u0627\u062A \u062F\u0627\u062E\u0644\u06CC"} tone="geekblue" className="company-profile-section company-profile-section--internal">
+				<SectionCard title={"\u0627\u0637\u0644\u0627\u0639\u0627\u062A \u062F\u0627\u062E\u0644\u06CC"} tone="geekblue" className="company-profile-section company-profile-section--internal">
 					<div className="grid grid-cols-1 gap-x-4 md:grid-cols-2">
 						<RHFProText name="internal_code" label={"\u06A9\u062F \u062F\u0627\u062E\u0644\u06CC"} inputProps={{ placeholder: "\u06A9\u062F \u062F\u0627\u062E\u0644\u06CC", disabled }} />
 
@@ -63,7 +63,7 @@ export default function InternalProfileForm({ disabled, submitDisabled, hasProfi
 							<RHFProTextArea name="internal_note" label={"\u06CC\u0627\u062F\u062F\u0627\u0634\u062A \u062F\u0627\u062E\u0644\u06CC"} textAreaProps={{ rows: 4, disabled }} />
 						</div>
 					</div>
-				</ContractFormSection>
+				</SectionCard>
 
 				<ProfileFormActions
 					hasProfile={hasProfile}

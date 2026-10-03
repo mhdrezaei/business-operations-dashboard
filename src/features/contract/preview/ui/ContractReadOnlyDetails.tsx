@@ -1,18 +1,17 @@
 import type { ContractServicePath } from "#src/features/contract/api/contracts.api";
 import type { ContractFormValues } from "#src/features/contract/shared/model/contract.form.types";
-import type { ContractSectionTone } from "#src/features/contract/shared/ui/form/components/contract-form-section-tone";
+import type { SectionTone } from "#src/shared/ui/section-card";
 
 import type { ReactNode } from "react";
 import { companiesByServiceQuery, servicesQuery } from "#src/features/contract/create/queries/contract.queries";
-import { ContractSectionToneContext } from "#src/features/contract/shared/ui/form/components/contract-section-tone-context";
-import { ContractDashedBorder } from "#src/features/contract/shared/ui/form/components/ContractDashedBorder";
-import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
+import { DashedBorder } from "#src/shared/ui/dashed-border";
+import { SectionCard, SectionToneContext } from "#src/shared/ui/section-card";
+
 import { useQuery } from "@tanstack/react-query";
 import { Collapse, Tag } from "antd";
 import "#src/features/contract/shared/ui/form/contract-form.css";
 
 const HIDDEN_KEYS = new Set(["rowKey", "datacenterSystemTag"]);
-const CURRENCY_FIELD_KEYS = new Set(["commission", "initialCommission", "finalCommission", "minProfit", "minimumProfit"]);
 
 const LABELS: Record<string, string> = {
 	addenda: "الحاقیه‌ها",
@@ -29,12 +28,10 @@ const LABELS: Record<string, string> = {
 	collocationPartnerType: "نوع شریک کولوکیشن",
 	contractModel: "مدل قرارداد",
 	contractPricing: "نحوه محاسبه قرارداد",
-	costTitles: "عنوان‌های هزینه‌ها",
 	count: "تعداد",
 	datacenter: "دیتاسنتر",
 	datacenters: "دیتاسنترها",
 	discountPercent: "درصد تخفیف",
-	expensePercentage: "درصد هزینه",
 	electricityAmpRate: "نرخ آمپر برق",
 	electricityExemptionThreshold: "آستانه معافیت برق",
 	expertPercent: "درصد کاراشاب",
@@ -48,7 +45,6 @@ const LABELS: Record<string, string> = {
 	hamrahAvalEn: "همراه اول - انگلیسی",
 	hamrahAvalFa: "همراه اول - فارسی",
 	initialCommission: "کارمزد دریافتی اولیه",
-	incomePercentage: "درصد درآمد",
 	irancellEn: "ایرانسل - انگلیسی",
 	irancellFa: "ایرانسل - فارسی",
 	ipRate: "نرخ IP",
@@ -94,7 +90,6 @@ const LABELS: Record<string, string> = {
 	type: "نوع محاسبه",
 	unit: "واحد",
 	unitPrice: "قیمت واحد",
-	title: "عنوان هزینه",
 };
 
 const SERVICE_TITLES: Record<string, string> = {
@@ -103,14 +98,14 @@ const SERVICE_TITLES: Record<string, string> = {
 	"psp": "کارمزدها و درصدها",
 	"commercial": "بهای هر واحد",
 	"shahkar": "بهای هر واحد",
-	"sales-agency/outbound": "پورسانت نمایندگی فروش",
-	"sales-agency/rep-management": "مدیریت نمایندگان فروش",
 	"sms/client": "درآمد اپراتورها",
 	"sms/vendor": "درآمد اپراتورها",
 	"sms-commission": "کارمزدها و درصدها",
+	"sales-agency/outbound": "درصدهای عاملیت فروش",
+	"sales-agency/rep-management": "هزینه‌های نمایندگان فروش",
 };
 
-function getTone(service: ContractServicePath): ContractSectionTone {
+function getTone(service: ContractServicePath): SectionTone {
 	if (service === "openapi")
 		return "purple";
 	if (service === "traffic")
@@ -158,19 +153,6 @@ function formatFieldValue(key: string, value: unknown) {
 		return <Tag color={value ? "success" : "default"}>{value ? "رسمی" : "غیررسمی"}</Tag>;
 	if (key === "isSigned" && typeof value === "boolean")
 		return <Tag color={value ? "success" : "default"}>{value ? "امضا شده" : "امضا نشده"}</Tag>;
-	if (value != null && value !== "") {
-		const isPercent = /(?:percent|percentage)$/i.test(key);
-		const unit = isPercent ? "درصد" : CURRENCY_FIELD_KEYS.has(key) ? "ریال" : null;
-		if (unit && !String(value).includes(unit) && !String(value).includes("%")) {
-			return (
-				<>
-					{formatValue(value)}
-					{" "}
-					{unit}
-				</>
-			);
-		}
-	}
 	return formatValue(value);
 }
 
@@ -356,7 +338,7 @@ function TrafficLocationDetails({ pricing, unit, revenuePercent }: { pricing: un
 	);
 }
 
-function ValueGrid({ data, tone, level = 0 }: { data: Record<string, unknown>, tone: ContractSectionTone, level?: number }) {
+function ValueGrid({ data, tone, level = 0 }: { data: Record<string, unknown>, tone: SectionTone, level?: number }) {
 	const entries = Object.entries(data).filter(([key, value]) => !HIDDEN_KEYS.has(key) && !isEmpty(value));
 	const simple = entries.filter(([, value]) => typeof value !== "object" || value == null);
 	const complex = entries.filter(([, value]) => value != null && typeof value === "object");
@@ -381,9 +363,9 @@ function ValueGrid({ data, tone, level = 0 }: { data: Record<string, unknown>, t
 						<div className="mb-3 text-sm font-semibold text-[var(--ant-color-text)]">{fieldLabel(key)}</div>
 						<div className="flex flex-col gap-3">
 							{items.map((item, index) => (
-								<ContractFormSection key={`${key}-${JSON.stringify(item)}`} title={items.length > 1 ? `${fieldLabel(key)} ${index + 1}` : fieldLabel(key)} tone={key === "addenda" ? "addenda" : tone} defaultExpanded={index === 0}>
+								<SectionCard key={`${key}-${JSON.stringify(item)}`} title={items.length > 1 ? `${fieldLabel(key)} ${index + 1}` : fieldLabel(key)} tone={key === "addenda" ? "addenda" : tone} defaultExpanded={index === 0}>
 									<ValueGrid data={item as Record<string, unknown>} tone={tone} level={level + 1} />
-								</ContractFormSection>
+								</SectionCard>
 							))}
 						</div>
 					</div>
@@ -393,14 +375,14 @@ function ValueGrid({ data, tone, level = 0 }: { data: Record<string, unknown>, t
 	);
 }
 
-function PricingSection({ title, value, tone }: { title: string, value: unknown, tone: ContractSectionTone }) {
+function PricingSection({ title, value, tone }: { title: string, value: unknown, tone: SectionTone }) {
 	if (!isPricingValue(value) || isEmpty(value))
 		return null;
 
 	return (
-		<ContractFormSection title={title} tone={tone} defaultExpanded>
+		<SectionCard title={title} tone={tone} defaultExpanded>
 			<PricingDetails value={value} />
-		</ContractFormSection>
+		</SectionCard>
 	);
 }
 
@@ -467,7 +449,7 @@ function SmsOperatorRevenueDetails({ data }: { data: Record<string, unknown> }) 
 	);
 }
 
-function ServiceDetails({ data, service, tone }: { data: Record<string, unknown>, service: ContractServicePath, tone: ContractSectionTone }) {
+function ServiceDetails({ data, service, tone }: { data: Record<string, unknown>, service: ContractServicePath, tone: SectionTone }) {
 	if (service === "openapi") {
 		const legacyPricing = data.legacyPricing as Record<string, unknown> | undefined;
 		if (data.contractModel === "legacy" && legacyPricing) {
@@ -483,7 +465,7 @@ function ServiceDetails({ data, service, tone }: { data: Record<string, unknown>
 		return plans.length === 0
 			? null
 			: (
-				<ContractFormSection title="پلن‌ها" tone="purple" defaultExpanded>
+				<SectionCard title="پلن‌ها" tone="purple" defaultExpanded>
 					<Collapse
 						defaultActiveKey={["0"]}
 						items={plans.map((plan, index) => ({
@@ -492,7 +474,7 @@ function ServiceDetails({ data, service, tone }: { data: Record<string, unknown>
 							children: <ValueGrid data={plan} tone="purple" />,
 						}))}
 					/>
-				</ContractFormSection>
+				</SectionCard>
 			);
 	}
 
@@ -509,32 +491,28 @@ function ServiceDetails({ data, service, tone }: { data: Record<string, unknown>
 			"provinceRevenuePercent",
 		].includes(key)));
 		return (
-			<ContractFormSection title="بهای ترافیک" tone="traffic" defaultExpanded>
+			<SectionCard title="بهای ترافیک" tone="traffic" defaultExpanded>
 				{isEmpty(baseFields) ? null : <ValueGrid data={baseFields} tone="traffic" />}
 				{isEmpty(data.tehranPricing)
 					? null
 					: (
 						<div className="mt-3">
-							<ContractFormSection title="قرارداد ترافیک تهران" tone="traffic" defaultExpanded>
+							<SectionCard title="قرارداد ترافیک تهران" tone="traffic" defaultExpanded>
 								<TrafficLocationDetails pricing={data.tehranPricing} unit={data.tehranUnit} revenuePercent={data.tehranRevenuePercent} />
-							</ContractFormSection>
+							</SectionCard>
 						</div>
 					)}
 				{isEmpty(data.provincePricing)
 					? null
 					: (
 						<div className="mt-3">
-							<ContractFormSection title="قرارداد ترافیک مراکز استان‌ها" tone="traffic" defaultExpanded>
+							<SectionCard title="قرارداد ترافیک مراکز استان‌ها" tone="traffic" defaultExpanded>
 								<TrafficLocationDetails pricing={data.provincePricing} unit={data.provinceUnit} revenuePercent={data.provinceRevenuePercent} />
-							</ContractFormSection>
+							</SectionCard>
 						</div>
 					)}
-			</ContractFormSection>
+			</SectionCard>
 		);
-	}
-
-	if (service === "sales-agency/outbound" || service === "sales-agency/rep-management") {
-		return <ContractFormSection title={SERVICE_TITLES[service]} tone={tone} defaultExpanded><ValueGrid data={data} tone={tone} /></ContractFormSection>;
 	}
 
 	if (service === "sms/client" || service === "sms/vendor") {
@@ -545,12 +523,12 @@ function ServiceDetails({ data, service, tone }: { data: Record<string, unknown>
 		return (
 			<>
 				{operatorRevenue && !isEmpty(operatorRevenue)
-					? <ContractFormSection title="درآمد اپراتورها" tone={tone} defaultExpanded><SmsOperatorRevenueDetails data={operatorRevenue} /></ContractFormSection>
+					? <SectionCard title="درآمد اپراتورها" tone={tone} defaultExpanded><SmsOperatorRevenueDetails data={operatorRevenue} /></SectionCard>
 					: null}
 				<PricingSection title="سهم دولت" value={governmentPricing} tone={tone} />
 				{service === "sms/client" && profit && !isEmpty(profit)
 					? (
-						<ContractFormSection title="تعیین کارمزد و سهم" tone={tone} defaultExpanded>
+						<SectionCard title="تعیین کارمزد و سهم" tone={tone} defaultExpanded>
 							{isPricingValue(profit.pricing)
 								? (
 									<PricingDetails
@@ -570,7 +548,7 @@ function ServiceDetails({ data, service, tone }: { data: Record<string, unknown>
 									/>
 								)
 								: null}
-						</ContractFormSection>
+						</SectionCard>
 					)
 					: null}
 			</>
@@ -580,10 +558,10 @@ function ServiceDetails({ data, service, tone }: { data: Record<string, unknown>
 	const visibleData = Object.fromEntries(Object.entries(data).filter(([key]) => key !== "isSigned"));
 	return isEmpty(visibleData)
 		? null
-		: <ContractFormSection title={SERVICE_TITLES[service]} tone={tone} defaultExpanded><ValueGrid data={visibleData} tone={tone} /></ContractFormSection>;
+		: <SectionCard title={SERVICE_TITLES[service]} tone={tone} defaultExpanded><ValueGrid data={visibleData} tone={tone} /></SectionCard>;
 }
 
-function AddendumServiceDetails({ data, service, tone }: { data: Record<string, unknown>, service: ContractServicePath, tone: ContractSectionTone }) {
+function AddendumServiceDetails({ data, service, tone }: { data: Record<string, unknown>, service: ContractServicePath, tone: SectionTone }) {
 	if (service === "commercial" || service === "shahkar")
 		return <PricingSection title="نوع محاسبه" value={data.contractPricing} tone={tone} />;
 
@@ -614,10 +592,10 @@ function AddendumServiceDetails({ data, service, tone }: { data: Record<string, 
 				{isEmpty(baseFields) ? null : <ValueGrid data={baseFields} tone="traffic" />}
 				{isEmpty(data.tehranPricing)
 					? null
-					: <ContractFormSection title="قرارداد ترافیک تهران" tone="traffic" defaultExpanded><TrafficLocationDetails pricing={data.tehranPricing} unit={data.tehranUnit} revenuePercent={data.tehranRevenuePercent} /></ContractFormSection>}
+					: <SectionCard title="قرارداد ترافیک تهران" tone="traffic" defaultExpanded><TrafficLocationDetails pricing={data.tehranPricing} unit={data.tehranUnit} revenuePercent={data.tehranRevenuePercent} /></SectionCard>}
 				{isEmpty(data.provincePricing)
 					? null
-					: <ContractFormSection title="قرارداد ترافیک مراکز استان‌ها" tone="traffic" defaultExpanded><TrafficLocationDetails pricing={data.provincePricing} unit={data.provinceUnit} revenuePercent={data.provinceRevenuePercent} /></ContractFormSection>}
+					: <SectionCard title="قرارداد ترافیک مراکز استان‌ها" tone="traffic" defaultExpanded><TrafficLocationDetails pricing={data.provincePricing} unit={data.provinceUnit} revenuePercent={data.provinceRevenuePercent} /></SectionCard>}
 			</>
 		);
 	}
@@ -677,7 +655,7 @@ function DateRange({ start, end }: { start: string, end: string }) {
 	);
 }
 
-function AddendumItem({ addendum, index, service, prefix, tone }: { addendum: Record<string, unknown>, index: number, service: ContractServicePath, prefix?: string, tone: ContractSectionTone }) {
+function AddendumItem({ addendum, index, service, prefix, tone }: { addendum: Record<string, unknown>, index: number, service: ContractServicePath, prefix?: string, tone: SectionTone }) {
 	const explicitNumber = addendum.displayAddendumNumber ?? addendum.display_addendum_number;
 	const displayNumber = String(explicitNumber ?? (prefix ? `${prefix}.${index + 1}` : index + 1));
 	const startDate = addendumDate(addendum.startYear, addendum.startMonth);
@@ -688,14 +666,14 @@ function AddendumItem({ addendum, index, service, prefix, tone }: { addendum: Re
 	return (
 		<div>
 			<div className="contract-addenda-item">
-				<ContractDashedBorder />
+				<DashedBorder />
 				<Collapse
 					className="contract-addenda-collapse"
 					defaultActiveKey={index === 0 ? ["item"] : []}
 					items={[{
 						key: "item",
 						label: (
-							<div className="flex items-center gap-[10px] font-bold">
+							<div className="flex items-center gap-2 font-bold">
 								<span className="contract-addenda-item-badge">{displayNumber}</span>
 								<span className="inline-flex items-center gap-1 font-medium opacity-75" dir="ltr">
 									<span>(</span>
@@ -729,7 +707,7 @@ function AddendumItem({ addendum, index, service, prefix, tone }: { addendum: Re
 			</div>
 			{children.length > 0
 				? (
-					<div className="contract-addenda-tree-branch relative mt-6 flex flex-col gap-6 pr-6">
+					<div className="contract-addenda-tree-branch relative mt-3 flex flex-col gap-3 pr-6">
 						{children.map((child, childIndex) => <AddendumItem key={String(child.id ?? child.displayAddendumNumber ?? JSON.stringify(child))} addendum={child} index={childIndex} service={service} prefix={displayNumber} tone={tone} />)}
 					</div>
 				)
@@ -738,9 +716,9 @@ function AddendumItem({ addendum, index, service, prefix, tone }: { addendum: Re
 	);
 }
 
-function AddendaDetails({ addenda, service, tone }: { addenda: unknown[], service: ContractServicePath, tone: ContractSectionTone }) {
+function AddendaDetails({ addenda, service, tone }: { addenda: unknown[], service: ContractServicePath, tone: SectionTone }) {
 	return (
-		<div className="flex flex-col gap-6">
+		<div className="flex flex-col gap-3">
 			{addenda.map((item, index) => {
 				const addendum = item as Record<string, unknown>;
 				return <AddendumItem key={String(addendum.id ?? addendum.displayAddendumNumber ?? JSON.stringify(addendum))} addendum={addendum} index={index} service={service} tone={tone} />;
@@ -774,8 +752,8 @@ export function ContractReadOnlyDetails({ values, detail, service }: { values: C
 	const companyName = resolveName(detail, ["company_name", "companyName"], "company") || companyFromList || "—";
 
 	return (
-		<div className="flex w-full flex-col gap-6">
-			<ContractFormSection title="اطلاعات پایه قرارداد" tone="primary" defaultExpanded>
+		<div className="flex w-full flex-col gap-4 px-2 pt-4">
+			<SectionCard title="اطلاعات پایه قرارداد" tone="primary" defaultExpanded>
 				<FieldRows fields={[
 					["نوع سرویس", serviceName],
 					["شرکت", companyName],
@@ -783,20 +761,20 @@ export function ContractReadOnlyDetails({ values, detail, service }: { values: C
 					["شماره قرارداد", values.contractNumber || "—"],
 				]}
 				/>
-			</ContractFormSection>
+			</SectionCard>
 
 			{isEmpty(serviceFields) ? null : <ServiceDetails data={serviceFields} service={service} tone={tone} />}
 
-			{values.description ? <ContractFormSection title="اطلاعات تکمیلی" tone="blue" defaultExpanded><div className="text-sm leading-7 text-[var(--ant-color-text)]">{values.description}</div></ContractFormSection> : null}
+			{values.description ? <SectionCard title="اطلاعات تکمیلی" tone="blue" defaultExpanded><div className="text-sm leading-7 text-[var(--ant-color-text)]">{values.description}</div></SectionCard> : null}
 
 			{isEmpty(addenda)
 				? null
 				: (
-					<ContractSectionToneContext.Provider value="addenda">
-						<ContractFormSection title="الحاقیه‌های قرارداد" tone="addenda" defaultExpanded>
+					<SectionToneContext.Provider value="addenda">
+						<SectionCard title="الحاقیه‌های قرارداد (اختیاری)" tone="addenda" defaultExpanded>
 							<AddendaDetails addenda={addenda as unknown[]} service={service} tone={tone} />
-						</ContractFormSection>
-					</ContractSectionToneContext.Provider>
+						</SectionCard>
+					</SectionToneContext.Provider>
 				)}
 		</div>
 	);

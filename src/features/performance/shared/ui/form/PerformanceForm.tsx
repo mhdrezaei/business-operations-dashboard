@@ -14,7 +14,7 @@ import { ActionSection } from "./sections/ActionSection";
 import { FixedStartSection } from "./sections/FixedStartSection";
 import { SmsGatewayImportHistoryModal } from "./sections/SmsGatewayImportHistoryModal";
 import { SmsGatewayImportModal } from "./sections/SmsGatewayImportModal";
-import "#src/features/contract/shared/ui/form/contract-form.css";
+import "#src/shared/ui/form-layout/styles.css";
 import "./performance-form.css";
 
 export type PerformanceSubmitIntent = "submit" | "submit_and_create_another" | "submit_and_edit";
@@ -240,7 +240,7 @@ export function PerformanceForm({
 
 	return (
 		<FormProvider {...form}>
-			<div className="contract-form performance-form w-full flex flex-col justify-center items-center gap-2">
+			<div className="form-layout performance-form w-full flex flex-col justify-center items-center gap-2">
 				<input type="hidden" {...form.register("serviceCode")} />
 				<input type="hidden" {...form.register("contractId")} />
 				<input type="hidden" {...form.register("contractModel")} />

@@ -1,12 +1,12 @@
 import type { Resolver } from "react-hook-form";
 import type { LegalProfileFormValues } from "../../model/legal/company-legal.mappers";
 
-import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import {
 	RHFProDate,
 	RHFProText,
 	RHFSelect,
 } from "#src/shared/ui/rhf-pro";
+import { SectionCard } from "#src/shared/ui/section-card";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form } from "antd";
@@ -48,7 +48,7 @@ export default function LegalProfileForm({ disabled, submitDisabled, hasProfile,
 	return (
 		<Form layout="vertical" className="space-y-4">
 			<FormProvider {...methods}>
-				<ContractFormSection title={"\u0627\u0637\u0644\u0627\u0639\u0627\u062A \u062B\u0628\u062A\u06CC \u0648 \u062D\u0642\u0648\u0642\u06CC"} tone="purple" className="company-profile-section company-profile-section--legal">
+				<SectionCard title={"\u0627\u0637\u0644\u0627\u0639\u0627\u062A \u062B\u0628\u062A\u06CC \u0648 \u062D\u0642\u0648\u0642\u06CC"} tone="purple" className="company-profile-section company-profile-section--legal">
 					<div className="grid grid-cols-1 gap-x-4 md:grid-cols-2">
 						<RHFProText name="national_id" label={"\u0634\u0646\u0627\u0633\u0647 \u0645\u0644\u06CC"} inputProps={{ placeholder: "\u0634\u0646\u0627\u0633\u0647 \u0645\u0644\u06CC", disabled }} />
 						<RHFProText name="tax_national_id" label={"\u0634\u0646\u0627\u0633\u0647 \u0645\u0627\u0644\u06CC\u0627\u062A\u06CC"} inputProps={{ placeholder: "\u0634\u0646\u0627\u0633\u0647 \u0645\u0627\u0644\u06CC\u0627\u062A\u06CC", disabled }} />
@@ -68,7 +68,7 @@ export default function LegalProfileForm({ disabled, submitDisabled, hasProfile,
 
 						<RHFProText name="branch_code" label={"\u06A9\u062F \u0634\u0639\u0628\u0647"} inputProps={{ placeholder: "\u06A9\u062F \u0634\u0639\u0628\u0647", disabled }} />
 					</div>
-				</ContractFormSection>
+				</SectionCard>
 
 				<ProfileFormActions
 					hasProfile={hasProfile}

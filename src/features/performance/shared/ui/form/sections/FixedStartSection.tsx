@@ -2,9 +2,9 @@ import type { ReactNode } from "react";
 import type { PerformanceFormValues } from "../../../model/performance.form.types";
 import SelectPerformanceEmptyState from "#src/assets/svg/select-performance.svg?react";
 import { TopRightAlert } from "#src/components";
-import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import { useAccess } from "#src/hooks";
 import { RHFProRadioGroup, RHFSelect } from "#src/shared/ui/rhf-pro";
+import { SectionCard } from "#src/shared/ui/section-card";
 import { useQuery } from "@tanstack/react-query";
 import { Col, Form, Input, Row, Tag } from "antd";
 import i18next from "i18next";
@@ -518,7 +518,7 @@ export function FixedStartSection({
 
 	return (
 		<>
-			<ContractFormSection title={t("performance.labels.baseInformation")} className="w-full">
+			<SectionCard title={t("performance.labels.baseInformation")} className="w-full">
 				<div className="w-full">
 					<Row gutter={16}>
 						<Col xs={24} md={12}>
@@ -606,9 +606,9 @@ export function FixedStartSection({
 							: null}
 					</Row>
 				</div>
-			</ContractFormSection>
+			</SectionCard>
 
-			<ContractFormSection
+			<SectionCard
 				title={t("performance.labels.performanceValue")}
 				className="mt-3 w-full"
 				tone="addenda"
@@ -705,7 +705,7 @@ export function FixedStartSection({
 
 					{children ? <div className="mt-4">{children}</div> : null}
 				</div>
-			</ContractFormSection>
+			</SectionCard>
 		</>
 	);
 }

@@ -1,5 +1,5 @@
 import type { ReportSelectOption } from "../constants";
-import { ContractDashedBorder } from "#src/features/contract/shared/ui/form/components/ContractDashedBorder";
+import { DashedBorder } from "#src/shared/ui/dashed-border";
 import { DownOutlined, SearchOutlined, UpOutlined } from "@ant-design/icons";
 import { Checkbox, Input, Spin } from "antd";
 import { useMemo, useState } from "react";
@@ -53,7 +53,7 @@ export function ReportCompanyPicker({
 
 	return (
 		<section className="report-company-picker" aria-label="لیست شرکت‌ها">
-			<ContractDashedBorder />
+			<DashedBorder />
 			<div className="report-company-picker__content">
 				<div className="report-company-picker__heading">
 					<div className="report-company-picker__title">

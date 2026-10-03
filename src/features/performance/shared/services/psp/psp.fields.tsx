@@ -1,5 +1,5 @@
 import type { PerformanceFormValues } from "../../model/performance.form.types";
-import { PerformanceFieldCard } from "#src/features/performance/shared/ui/form/components/PerformanceFieldCard";
+import { FieldCard } from "#src/shared/ui/dashed-card";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
 import { useTranslation } from "react-i18next";
 
@@ -10,7 +10,7 @@ export function PspPerformanceFields() {
 
 	return (
 		<div className="performance-field-grid">
-			<PerformanceFieldCard title={t("performance.fields.psp.performanceValue")}>
+			<FieldCard title={t("performance.fields.psp.performanceValue")}>
 				<RHFProNumber<PerformanceFormValues, any>
 					name={sf("performanceValue") as any}
 					label=""
@@ -22,9 +22,9 @@ export function PspPerformanceFields() {
 					enableGrouping
 					enableWordsTooltip
 				/>
-			</PerformanceFieldCard>
+			</FieldCard>
 
-			<PerformanceFieldCard title={t("performance.fields.psp.monthlyRevenue")}>
+			<FieldCard title={t("performance.fields.psp.monthlyRevenue")}>
 				<RHFProNumber<PerformanceFormValues, any>
 					name={sf("monthlyRevenue") as any}
 					label=""
@@ -37,7 +37,7 @@ export function PspPerformanceFields() {
 					enableGrouping
 					enableWordsTooltip
 				/>
-			</PerformanceFieldCard>
+			</FieldCard>
 		</div>
 	);
 }

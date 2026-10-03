@@ -1,12 +1,12 @@
-import type { ContractSectionTone } from "#src/features/contract/shared/ui/form/components/contract-form-section-tone";
+import type { SectionTone } from "#src/shared/ui/section-card";
 import type { DragEndEvent } from "@dnd-kit/core";
 import type { CSSProperties } from "react";
 import type { CompanyProfileFormValues } from "../../../model/company-profile.form.types";
 import type { CompanyPersonDto, CompanyPersonRole } from "../model/company-people.types";
 import { BasicContent } from "#src/components";
-import { ContractDashedBorder } from "#src/features/contract/shared/ui/form/components/ContractDashedBorder";
-import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import { useAccess } from "#src/hooks";
+import { DashedBorder } from "#src/shared/ui/dashed-border";
+import { SectionCard } from "#src/shared/ui/section-card";
 import {
 	ArrowDownOutlined,
 	ArrowUpOutlined,
@@ -27,7 +27,7 @@ import { companyPeopleListQuery } from "../../../queries/company-people.queries"
 import { COMPANY_PERSON_ROLE_OPTIONS } from "../model/company-people.constants";
 import { companyPersonDtoToPayload } from "../model/company-people.mappers";
 import CompanyPeopleModal from "./CompanyPeopleModal";
-import "#src/features/contract/shared/ui/form/contract-form.css";
+import "#src/shared/ui/form-layout/styles.css";
 import "./company-people-panel.css";
 
 interface PersonRowProps {
@@ -70,7 +70,7 @@ function PersonRow({
 
 	return (
 		<article ref={setNodeRef} style={style} className={`company-person-card${isDragging ? " company-person-card--dragging" : ""}`}>
-			<ContractDashedBorder />
+			<DashedBorder />
 			<div className="company-person-card__content">
 				<div className="company-person-row__main">
 					<div className="company-person-row__identity">
@@ -172,7 +172,7 @@ function RoleGroup({ label, people, totalCount, onMove, ...rowProps }: RoleGroup
 	}
 
 	return (
-		<ContractFormSection
+		<SectionCard
 			title={label}
 			tone={getRoleTone(people[0]?.role)}
 			className={`company-profile-section ${getRoleClassName(people[0]?.role)} company-people-role`}
@@ -193,11 +193,11 @@ function RoleGroup({ label, people, totalCount, onMove, ...rowProps }: RoleGroup
 					</div>
 				</SortableContext>
 			</DndContext>
-		</ContractFormSection>
+		</SectionCard>
 	);
 }
 
-function getRoleTone(role?: CompanyPersonRole): ContractSectionTone {
+function getRoleTone(role?: CompanyPersonRole): SectionTone {
 	switch (role) {
 		case "BOARD":
 			return "purple";
@@ -393,7 +393,7 @@ export default function CompanyPeoplePanel() {
 	return (
 		<BasicContent>
 			<div className="company-profile-sections company-people-panel">
-				<ContractFormSection
+				<SectionCard
 					title="اشخاص کلیدی"
 					tone="primary"
 					collapsible={false}
@@ -418,7 +418,7 @@ export default function CompanyPeoplePanel() {
 						message={`${people.length} شخص ثبت‌شده؛ شماره جایگاه هر شخص از ترتیب داخل نقش خودش محاسبه می‌شود.`}
 						description="برای تغییر ترتیب، کارت را بکشید یا از دکمه‌های بالا و پایین استفاده کنید."
 					/>
-				</ContractFormSection>
+				</SectionCard>
 
 				{peopleQuery.isLoading
 					? <Skeleton active paragraph={{ rows: 8 }} />
@@ -432,7 +432,7 @@ export default function CompanyPeoplePanel() {
 									))}
 
 									{unassignedPeople.length > 0 && (
-										<ContractFormSection
+										<SectionCard
 											title="سایر افراد"
 											tone="purple"
 											className="company-profile-section company-profile-section--address company-people-unassigned"
@@ -450,7 +450,7 @@ export default function CompanyPeoplePanel() {
 													<PersonRow key={person.id} {...rowProps} person={person} busy={busyId === person.id} onAddToContract={addToContract} />
 												))}
 											</div>
-										</ContractFormSection>
+										</SectionCard>
 									)}
 								</>
 							)

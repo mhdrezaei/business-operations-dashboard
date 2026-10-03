@@ -45,7 +45,7 @@
 	--company-profile-section-tag-bg: rgba(44, 103, 240, 0.27);
 }
 
-.company-profile-section > .ant-card-head .contract-form-section__tag.ant-tag {
+.company-profile-section > .ant-card-head .section-card__tag.ant-tag {
 	border-radius: var(--contract-section-control-radius, 6px);
 	background-color: var(--company-profile-section-tag-bg);
 	color: var(--company-profile-section-tag-color, var(--contract-section-tag-color));

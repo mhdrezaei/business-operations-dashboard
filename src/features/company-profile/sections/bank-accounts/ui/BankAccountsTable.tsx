@@ -2,9 +2,9 @@ import type { DragEndEvent } from "@dnd-kit/core";
 import type { CSSProperties } from "react";
 import type { BankAccountDto } from "../model/bank-accounts.types";
 import { BasicContent } from "#src/components";
-import { ContractDashedBorder } from "#src/features/contract/shared/ui/form/components/ContractDashedBorder";
-import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import { useAccess } from "#src/hooks";
+import { DashedBorder } from "#src/shared/ui/dashed-border";
+import { SectionCard } from "#src/shared/ui/section-card";
 import {
 	ArrowDownOutlined,
 	ArrowUpOutlined,
@@ -24,7 +24,7 @@ import { bankAccountsByCompanyQuery } from "../../../queries/bank-accounts.queri
 import { formatCardNumber, formatIban } from "../model/bank-accounts.constants";
 import { bankAccountDtoToPayload } from "../model/bank-accounts.mappers";
 import BankAccountModal from "./BankAccountModal";
-import "#src/features/contract/shared/ui/form/contract-form.css";
+import "#src/shared/ui/form-layout/styles.css";
 import "./bank-accounts-panel.css";
 
 interface Props {
@@ -68,7 +68,7 @@ function AccountCard({
 
 	return (
 		<article ref={setNodeRef} style={style} className={`bank-account-card${isDragging ? " bank-account-card--dragging" : ""}`}>
-			<ContractDashedBorder />
+			<DashedBorder />
 			<div className="bank-account-card__content">
 				<div className="bank-account-card__main">
 					<strong className="bank-account-card__title">{account.bank_name}</strong>
@@ -317,7 +317,7 @@ export default function BankAccountsTable({ serviceId, companyId }: Props) {
 	return (
 		<BasicContent>
 			<div className="company-profile-sections bank-accounts-panel">
-				<ContractFormSection
+				<SectionCard
 					title="حساب‌های بانکی"
 					tone="primary"
 					collapsible={false}
@@ -342,7 +342,7 @@ export default function BankAccountsTable({ serviceId, companyId }: Props) {
 						message={`${accounts.length} حساب ثبت‌شده؛ شماره جایگاه هر حساب از ترتیب قرارداد محاسبه می‌شود.`}
 						description="برای تغییر ترتیب، کارت را بکشید یا از دکمه‌های بالا و پایین استفاده کنید."
 					/>
-				</ContractFormSection>
+				</SectionCard>
 
 				{accountsQuery.isLoading
 					? <Skeleton active paragraph={{ rows: 8 }} />
@@ -352,7 +352,7 @@ export default function BankAccountsTable({ serviceId, companyId }: Props) {
 							? (
 								<>
 									{orderedAccounts.length > 0 && (
-										<ContractFormSection
+										<SectionCard
 											title="حساب‌های بانکی قرارداد"
 											tone="geekblue"
 											className="company-profile-section company-profile-section--contact bank-accounts-ordered"
@@ -370,11 +370,11 @@ export default function BankAccountsTable({ serviceId, companyId }: Props) {
 												busy={busyId != null}
 												onMove={(account, order) => changeContractOrder(account, order === 0 ? null : order)}
 											/>
-										</ContractFormSection>
+										</SectionCard>
 									)}
 
 									{unassignedAccounts.length > 0 && (
-										<ContractFormSection
+										<SectionCard
 											title="سایر حساب‌ها"
 											tone="purple"
 											className="company-profile-section company-profile-section--address bank-accounts-unassigned"
@@ -398,7 +398,7 @@ export default function BankAccountsTable({ serviceId, companyId }: Props) {
 													/>
 												))}
 											</div>
-										</ContractFormSection>
+										</SectionCard>
 									)}
 								</>
 							)

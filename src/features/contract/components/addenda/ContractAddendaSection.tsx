@@ -1,9 +1,9 @@
 import type { ArrayPath, FieldValues, Path, PathValue } from "react-hook-form";
 import type { AddendaMonthsByYear } from "./addenda.gaps";
-import { ContractSectionToneContext } from "#src/features/contract/shared/ui/form/components/contract-section-tone-context";
-import { ContractDashedBorder } from "#src/features/contract/shared/ui/form/components/ContractDashedBorder";
-import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
+import { DashedCard } from "#src/shared/ui/dashed-card";
 import { RHFProText, RHFProTextArea, RHFSelect } from "#src/shared/ui/rhf-pro";
+import { SectionCard, SectionToneContext } from "#src/shared/ui/section-card";
+
 import { message } from "#src/utils";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
@@ -592,8 +592,7 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 					const itemKey = String(idx);
 					return (
 						<div key={item.reactKey}>
-							<div className="contract-addenda-item">
-								<ContractDashedBorder />
+							<DashedCard className="contract-addenda-item">
 								<Collapse
 									className="contract-addenda-collapse"
 									activeKey={activeKey === itemKey ? [itemKey] : []}
@@ -603,7 +602,7 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 									}}
 									items={[item.collapseItem] as any}
 								/>
-							</div>
+							</DashedCard>
 							{item.hasChildren
 								? (
 									<div className="contract-addenda-tree-branch relative mt-6 pr-6">
@@ -639,11 +638,11 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 		);
 
 	if (level > 0)
-		return <ContractSectionToneContext.Provider value="addenda">{tree}</ContractSectionToneContext.Provider>;
+		return <SectionToneContext.Provider value="addenda">{tree}</SectionToneContext.Provider>;
 
 	return (
-		<ContractSectionToneContext.Provider value="addenda">
-			<ContractFormSection
+		<SectionToneContext.Provider value="addenda">
+			<SectionCard
 				title={title}
 				tone="addenda"
 				className="contract-addenda-section mt-3"
@@ -655,7 +654,7 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 			>
 				{notices}
 				{tree}
-			</ContractFormSection>
-		</ContractSectionToneContext.Provider>
+			</SectionCard>
+		</SectionToneContext.Provider>
 	);
 }

@@ -4,8 +4,8 @@ import { ContractAddendaSection } from "#src/features/contract/components/addend
 import { CONTRACT_TYPE_OPTIONS } from "#src/features/contract/components/contract-type/contract-type.options";
 import { defaultContractTypeValue } from "#src/features/contract/components/contract-type/contract-type.types";
 import { ContractTypeSection } from "#src/features/contract/components/contract-type/ContractTypeSection";
-import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import { RHFProCheckbox, RHFProNumber, RHFSelect } from "#src/shared/ui/rhf-pro";
+import { SectionCard } from "#src/shared/ui/section-card";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { Button } from "antd";
 import { useEffect, useMemo, useRef } from "react";
@@ -324,7 +324,7 @@ export function TrafficFields() {
 
 	return (
 		<>
-			<ContractFormSection title="بهای ترافیک" tone={TRAFFIC_SECTION_TONE}>
+			<SectionCard title="بهای ترافیک" tone={TRAFFIC_SECTION_TONE}>
 				<div className="contract-form-official-row">
 					<RHFProCheckbox<ContractFormValues, any>
 						name={sf("isOfficial") as any}
@@ -341,7 +341,7 @@ export function TrafficFields() {
 				{showPricingUi
 					? (
 						<div className="traffic-pricing-list">
-							<ContractFormSection
+							<SectionCard
 								title="قرارداد ترافیک تهران"
 								tone={TRAFFIC_SECTION_TONE}
 								extra={tehranPricing
@@ -372,9 +372,9 @@ export function TrafficFields() {
 											افزودن قرارداد تهران
 										</Button>
 									)}
-							</ContractFormSection>
+							</SectionCard>
 
-							<ContractFormSection
+							<SectionCard
 								title="قرارداد ترافیک مراکز استان‌ها"
 								tone={TRAFFIC_SECTION_TONE}
 								extra={provincePricing
@@ -405,11 +405,11 @@ export function TrafficFields() {
 											افزودن قرارداد مراکز استانی
 										</Button>
 									)}
-							</ContractFormSection>
+							</SectionCard>
 						</div>
 					)
 					: null}
-			</ContractFormSection>
+			</SectionCard>
 
 			{showPricingUi && showAddenda
 				? (
@@ -422,7 +422,7 @@ export function TrafficFields() {
 							<div className="traffic-pricing-list">
 								{tehranPricing
 									? (
-										<ContractFormSection title="قرارداد ترافیک تهران" tone={TRAFFIC_SECTION_TONE}>
+										<SectionCard title="قرارداد ترافیک تهران" tone={TRAFFIC_SECTION_TONE}>
 											<TrafficPricingFields
 												pricingName={`${base}.tehranPricing`}
 												unitName={`${base}.tehranUnit`}
@@ -436,13 +436,13 @@ export function TrafficFields() {
 												contractModelName={`${base}.tehranContractModel`}
 												showContractModel={isIxp}
 											/>
-										</ContractFormSection>
+										</SectionCard>
 									)
 									: null}
 
 								{provincePricing
 									? (
-										<ContractFormSection title="قرارداد ترافیک مراکز استان‌ها" tone={TRAFFIC_SECTION_TONE}>
+										<SectionCard title="قرارداد ترافیک مراکز استان‌ها" tone={TRAFFIC_SECTION_TONE}>
 											<TrafficPricingFields
 												pricingName={`${base}.provincePricing`}
 												unitName={`${base}.provinceUnit`}
@@ -456,7 +456,7 @@ export function TrafficFields() {
 												contractModelName={`${base}.provinceContractModel`}
 												showContractModel={isIxp}
 											/>
-										</ContractFormSection>
+										</SectionCard>
 									)
 									: null}
 							</div>

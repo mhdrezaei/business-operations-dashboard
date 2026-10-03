@@ -14,7 +14,7 @@
 	overflow: hidden;
 }
 
-.report-summary-cards__item > .contract-dashed-border {
+.report-summary-cards__item > .dashed-border {
 	position: absolute;
 	z-index: 0;
 	inset: 0;

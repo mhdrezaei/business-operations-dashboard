@@ -41,44 +41,18 @@
 	grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.prediction-dashed-card {
-	position: relative;
-	overflow: hidden;
-	min-width: 0;
-	border-radius: calc(var(--contract-section-body-padding, 24px) + var(--contract-section-tag-radius, 4px));
-	background: var(--contract-section-nested-bg);
-}
-
-.prediction-dashed-card__content {
-	position: relative;
-	z-index: 1;
-	padding: var(--ant-paddingMD, 16px);
-}
-
-.prediction-dashed-card__header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: var(--ant-marginSM, 12px);
-	margin-block-end: var(--ant-marginMD, 16px);
-}
-
-.prediction-dashed-card__header strong {
-	font-weight: 700;
-}
-
-.prediction-share-editor > .prediction-dashed-card__content {
+.prediction-share-editor > .dashed-card__content {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr);
 	gap: var(--ant-marginMD, 16px);
 	padding: var(--ant-paddingMD, 16px) var(--ant-paddingLG, 24px);
 }
 
-.prediction-share-editor > .prediction-dashed-card__content > .prediction-dashed-card__header {
+.prediction-share-editor > .dashed-card__content > .dashed-card__header {
 	margin-block-end: 0;
 }
 
-.prediction-share-editor > .prediction-dashed-card__content > .prediction-dashed-card__header strong {
+.prediction-share-editor > .dashed-card__content > .dashed-card__header .dashed-card__title {
 	display: inline-flex;
 	min-height: 32px;
 	align-items: center;
@@ -99,18 +73,18 @@
 	margin-block-end: 0;
 }
 
-.contract-form .prediction-share-editor__controls > .ant-form-item > .ant-form-item-row {
+.form-layout .prediction-share-editor__controls > .ant-form-item > .ant-form-item-row {
 	display: block;
 }
 
-.contract-form .prediction-share-editor__controls > .ant-form-item > .ant-form-item-row > .ant-form-item-label {
+.form-layout .prediction-share-editor__controls > .ant-form-item > .ant-form-item-row > .ant-form-item-label {
 	display: block;
 	max-width: none;
 	padding: 0 0 var(--contract-section-field-label-gap, var(--ant-marginXS, 8px));
 	text-align: start;
 }
 
-.contract-form .prediction-share-editor__controls > .ant-form-item > .ant-form-item-row > .ant-form-item-control {
+.form-layout .prediction-share-editor__controls > .ant-form-item > .ant-form-item-row > .ant-form-item-control {
 	width: 100%;
 	max-width: none;
 	min-width: 0;
@@ -194,7 +168,7 @@
 		grid-row: auto;
 	}
 
-	.prediction-share-editor > .prediction-dashed-card__content {
+	.prediction-share-editor > .dashed-card__content {
 		grid-template-columns: minmax(0, 1fr);
 		padding: var(--ant-paddingMD, 16px);
 	}

@@ -6,8 +6,9 @@ import type {
 	TrafficPredictionLocationFormValue,
 	TrafficPredictionMetricCode,
 } from "../../model/prediction.form.types";
-import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
+import { DashedCard } from "#src/shared/ui/dashed-card";
 import { RHFProNumber, RHFSegmentedSwitch } from "#src/shared/ui/rhf-pro";
+import { SectionCard } from "#src/shared/ui/section-card";
 import { DeleteOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Form, Select, Typography } from "antd";
@@ -16,7 +17,6 @@ import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { companyTypeMatches } from "../../model/company-type.helpers";
 import { predictionCompaniesByServiceQuery } from "../../queries/prediction.queries";
-import { PredictionDashedCard } from "../../ui/form/components/PredictionDashedCard";
 import { QuarterDistributionSection } from "../../ui/form/sections/QuarterDistributionSection";
 import {
 	createEmptyTrafficManualShares,
@@ -123,7 +123,7 @@ function TrafficShareEditor({
 	}
 
 	return (
-		<PredictionDashedCard title={metricTitle} className="prediction-share-editor">
+		<DashedCard title={metricTitle} className="prediction-share-editor">
 			<div className="prediction-share-editor__controls">
 				<RHFSegmentedSwitch
 					name={`${fieldPath}.mode` as any}
@@ -192,7 +192,7 @@ function TrafficShareEditor({
 						</Typography.Text>
 					</div>
 				)}
-		</PredictionDashedCard>
+		</DashedCard>
 	);
 }
 
@@ -277,7 +277,7 @@ export function TrafficPredictionFields() {
 		<div className="flex flex-col gap-4">
 			<QuarterDistributionSection />
 
-			<ContractFormSection
+			<SectionCard
 				title={t("prediction.operations.traffic")}
 				tone="traffic"
 			>
@@ -289,7 +289,7 @@ export function TrafficPredictionFields() {
 							: t("prediction.labels.trafficLocation");
 
 						return (
-							<PredictionDashedCard
+							<DashedCard
 								key={field.id}
 								title={title}
 							>
@@ -323,20 +323,20 @@ export function TrafficPredictionFields() {
 										enableWordsTooltip
 									/>
 								</div>
-							</PredictionDashedCard>
+							</DashedCard>
 						);
 					})}
 				</div>
-			</ContractFormSection>
+			</SectionCard>
 
-			<ContractFormSection title={t("prediction.sections.companyShares")} tone="blue">
+			<SectionCard title={t("prediction.sections.companyShares")} tone="blue">
 				<div className="flex flex-col gap-4">
 					<Typography.Paragraph className="mb-0 opacity-80">
 						{t("prediction.messages.companySharesDescription")}
 					</Typography.Paragraph>
 
 					{selectedLocationCodes.map(locationCode => (
-						<PredictionDashedCard
+						<DashedCard
 							key={locationCode}
 							title={locationTitles[locationCode]}
 							collapsible
@@ -353,10 +353,10 @@ export function TrafficPredictionFields() {
 									/>
 								))}
 							</div>
-						</PredictionDashedCard>
+						</DashedCard>
 					))}
 				</div>
-			</ContractFormSection>
+			</SectionCard>
 		</div>
 	);
 }

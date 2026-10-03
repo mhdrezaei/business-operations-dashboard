@@ -2,15 +2,15 @@ import type { SmsOperatorCode, SmsOperatorInvoice, SmsOperatorInvoiceMonthlyRepo
 import type { ActionType, ColumnsState, ProColumns, ProCoreActionType } from "@ant-design/pro-components";
 import type { FocusEvent, KeyboardEvent } from "react";
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
-import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import { createSmsOperatorInvoice, createSmsOperatorInvoiceMonthlyReport, deleteSmsOperatorInvoice, fetchLatestSmsOperatorInvoiceMonthlyReport, fetchSmsOperatorInvoiceMonthlyReportStatus, fetchSmsOperatorInvoices, updateSmsOperatorInvoice } from "#src/features/performance/api/performances.api";
 import { TableActionEditIcon, TableActionTrashIcon } from "#src/icons";
+import { SectionCard } from "#src/shared/ui/section-card";
 import { BarChartOutlined, CheckCircleOutlined, ExclamationCircleOutlined, FilePdfOutlined } from "@ant-design/icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert, Button, Form, InputNumber, Modal, Popconfirm, Select, Space, Spin, Tag, Typography } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { openSmsOperatorInvoicesPdfPrint } from "./operator-invoices-pdf";
-import "#src/features/contract/shared/ui/form/contract-form.css";
+import "#src/shared/ui/form-layout/styles.css";
 import "./sms-gateway-operator-invoices.css";
 
 /* eslint-disable style/max-statements-per-line -- This page keeps closely related request state transitions together. */
@@ -133,34 +133,34 @@ export function SmsGatewayOperatorInvoicesPage() {
 					<Typography.Title level={4} className="!mb-1">فاکتور ارسالی اپراتورهای پیامک</Typography.Title>
 					<Typography.Text type="secondary">ثبت و مشاهده تعداد و هزینه پیامک‌های ارسالی هر اپراتور</Typography.Text>
 				</div>
-				<ContractFormSection
+				<SectionCard
 					title="ثبت فاکتور ارسالی اپراتور جدید"
 					tone="primary"
 					className="sms-gateway-invoice-entry"
 				>
 					<Form form={form} layout="vertical" onFinish={save} initialValues={{ fa_cost: 0, en_cost: 0 }}>
-						<div className="contract-form-aligned-grid contract-form-aligned-grid--three sms-gateway-invoice-entry__filters">
+						<div className="aligned-form-grid aligned-form-grid--three sms-gateway-invoice-entry__filters">
 							<Form.Item name="sh_year" label="سال (شمسی)" rules={[{ required: true }]}><Select options={yearOptions} placeholder="انتخاب کنید" /></Form.Item>
 							<Form.Item name="sh_month" label="ماه (شمسی)" rules={[{ required: true }]}><Select options={availableMonths} placeholder={!year ? "ابتدا سال را انتخاب کنید" : "انتخاب کنید"} disabled={!year} /></Form.Item>
 							<Form.Item name="operator" label="اپراتور" rules={[{ required: true }]}><Select options={activeOps} disabled={!year || !month} placeholder={!year || !month ? "ابتدا سال و ماه را انتخاب کنید" : "انتخاب کنید"} /></Form.Item>
 						</div>
 						<div className="sms-gateway-invoice-entry__metrics">
-							<ContractFormSection title="تعداد پیامک" tone="blue" className="sms-gateway-invoice-entry__metric">
+							<SectionCard title="تعداد پیامک" tone="blue" className="sms-gateway-invoice-entry__metric">
 								<div className="sms-gateway-invoice-entry__metric-fields">
 									<Form.Item name="fa_count" label="فارسی" rules={[{ required: true, validator: (_, value) => value == null || value === "" ? Promise.reject(new Error("تعداد پیامک فارسی الزامی است.")) : Promise.resolve() }]}><InputNumber min={0} precision={0} placeholder="0" className="w-full" onFocus={selectNumberInput} onKeyDown={preventNonNumericInput} /></Form.Item>
 									<Form.Item name="en_count" label="انگلیسی" rules={[{ required: true, validator: (_, value) => value == null || value === "" ? Promise.reject(new Error("تعداد پیامک انگلیسی الزامی است.")) : Promise.resolve() }]}><InputNumber min={0} precision={0} placeholder="0" className="w-full" onFocus={selectNumberInput} onKeyDown={preventNonNumericInput} /></Form.Item>
 								</div>
-							</ContractFormSection>
-							<ContractFormSection title="هزینه پیامک (ریال)" tone="purple" className="sms-gateway-invoice-entry__metric">
+							</SectionCard>
+							<SectionCard title="هزینه پیامک (ریال)" tone="purple" className="sms-gateway-invoice-entry__metric">
 								<div className="sms-gateway-invoice-entry__metric-fields">
 									<Form.Item name="fa_cost" label="فارسی"><InputNumber min={0} precision={0} className="w-full" onFocus={selectNumberInput} onKeyDown={preventNonNumericInput} /></Form.Item>
 									<Form.Item name="en_cost" label="انگلیسی"><InputNumber min={0} precision={0} className="w-full" onFocus={selectNumberInput} onKeyDown={preventNonNumericInput} /></Form.Item>
 								</div>
-							</ContractFormSection>
+							</SectionCard>
 						</div>
 						<div className="mt-2 flex justify-end"><Button type="primary" htmlType="submit" loading={saving} disabled={activeOps.length === 0}>ثبت فاکتور</Button></div>
 					</Form>
-				</ContractFormSection>
+				</SectionCard>
 				<BasicTable<SmsOperatorInvoice>
 					rowKey="id"
 					columns={invoiceColumns}
@@ -189,7 +189,7 @@ export function SmsGatewayOperatorInvoicesPage() {
 						};
 					}}
 				/>
-				<ContractFormSection
+				<SectionCard
 					title="گزارش مقایسه‌ای ماهانه"
 					tone="primary"
 					className="sms-gateway-invoice-report"
@@ -277,7 +277,7 @@ export function SmsGatewayOperatorInvoicesPage() {
 							/>
 						</>
 					)}
-				</ContractFormSection>
+				</SectionCard>
 				<Modal title="ویرایش فاکتور ارسالی" open={Boolean(editing)} onCancel={() => setEditing(undefined)} onOk={() => editForm.submit()} okText="ذخیره" cancelText="انصراف" confirmLoading={updating}>
 					<Form form={editForm} layout="vertical" onFinish={update}>
 						<div className="grid grid-cols-1 gap-x-4 sm:grid-cols-3">

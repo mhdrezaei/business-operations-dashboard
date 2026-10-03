@@ -363,18 +363,18 @@
 }
 
 /* Aligned performance fields keep their label above the control at every breakpoint. */
-.performance-detail-inline .contract-form-field {
+.performance-detail-inline .aligned-form-field {
 	grid-template-columns: minmax(0, 1fr);
 	align-items: stretch;
 	row-gap: var(--ant-margin-xs);
 }
 
-.performance-detail-inline .contract-form-field__label {
+.performance-detail-inline .aligned-form-field__label {
 	justify-content: flex-start;
 	min-height: auto;
 }
 
-.performance-detail-inline .contract-form-field__label-text {
+.performance-detail-inline .aligned-form-field__label-text {
 	text-align: start;
 }
 
@@ -393,7 +393,7 @@
 	display: none;
 }
 
-.performance-detail-inline .contract-form-aligned-grid {
+.performance-detail-inline .aligned-form-grid {
 	row-gap: var(--ant-margin-sm);
 }
 
@@ -408,7 +408,7 @@
 	margin-block-end: 24px !important;
 }
 
-.performance-detail-inline .contract-form-aligned-grid > .contract-form-field {
+.performance-detail-inline .aligned-form-grid > .aligned-form-field {
 	margin-block-end: 8px;
 }
 
@@ -419,7 +419,7 @@
 	overflow: visible;
 }
 
-.performance-detail-section__body > .contract-form-aligned-grid,
+.performance-detail-section__body > .aligned-form-grid,
 .performance-detail-section__body > .grid {
 	min-height: max-content;
 	align-content: start;
@@ -553,22 +553,22 @@
 }
 
 .performance-detail-metric-card {
-	position: relative;
+	border-radius: calc(var(--ant-padding-lg) + var(--ant-border-radius-sm));
+	background: var(--ant-color-bg-layout);
+}
+
+.performance-detail-metric-card > .dashed-card__content {
 	display: grid;
 	gap: var(--ant-margin-md);
 	padding: var(--ant-padding-lg);
-	border-radius: var(--performance-detail-metric-radius);
-	background: var(--performance-detail-metric-bg);
 }
 
-.performance-detail-metric-card__tag.ant-tag {
-	display: inline-flex;
-	justify-self: start;
-	margin: 0;
+.performance-detail-metric-card .dashed-card__header {
+	margin-block-end: 0;
+}
+
+.performance-detail-metric-card .dashed-card__tag.ant-tag {
 	padding: 2px var(--ant-padding-sm);
-	border-radius: var(--performance-detail-metric-tag-radius);
-	background: var(--performance-detail-metric-tag-bg);
-	color: var(--performance-detail-metric-tag-color);
 	font-weight: 600;
 }
 
@@ -578,7 +578,7 @@
 }
 
 .performance-detail-metric-card__rows .performance-detail-value {
-	border-bottom: var(--performance-detail-divider-width, 1px) solid var(--performance-detail-divider-color, #2b3b60);
+	border-bottom: var(--ant-lineWidth, 1px) solid var(--ant-colorSplit, #2b3b60);
 }
 
 .performance-detail-metric-card__rows .performance-detail-value:last-child {

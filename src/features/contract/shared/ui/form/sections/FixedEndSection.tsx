@@ -5,8 +5,8 @@ import {
 	deleteContractDocument,
 	downloadContractDocument,
 } from "#src/features/contract/api/contract-documents.api";
-import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import { RHFProCheckbox, RHFProTextArea, RHFProUploadButton } from "#src/shared/ui/rhf-pro";
+import { SectionCard } from "#src/shared/ui/section-card";
 
 interface FixedEndSectionProps {
 	showSignedCheckbox?: boolean
@@ -57,7 +57,7 @@ export function FixedEndSection({ showSignedCheckbox = false, contractId = null,
 		};
 
 	return (
-		<ContractFormSection title="اطلاعات تکمیلی" className="w-full mt-3">
+		<SectionCard title="اطلاعات تکمیلی" className="w-full mt-3">
 			<div className="contract-supplementary-fields">
 				<div className="contract-supplementary-control contract-supplementary-description-control">
 					<div className="contract-supplementary-control__label">توضیحات</div>
@@ -101,6 +101,6 @@ export function FixedEndSection({ showSignedCheckbox = false, contractId = null,
 					)
 					: null}
 			</div>
-		</ContractFormSection>
+		</SectionCard>
 	);
 }

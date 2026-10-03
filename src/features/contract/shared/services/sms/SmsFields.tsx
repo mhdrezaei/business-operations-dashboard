@@ -1,14 +1,13 @@
 import type { ContractFormValues } from "#src/features/contract/shared/model/contract.form.types.js";
-import type { ContractSectionTone } from "#src/features/contract/shared/ui/form/components/contract-form-section-tone";
+import type { SectionTone } from "#src/shared/ui/section-card";
 import type { GlobalToken } from "antd";
 import type { CSSProperties } from "react";
 import type { ArrayPath, Path } from "react-hook-form";
 import { ContractAddendaSection } from "#src/features/contract/components/addenda/ContractAddendaSection";
 import { ContractTypeSection } from "#src/features/contract/components/contract-type/ContractTypeSection";
-import { getContractSectionToneColors } from "#src/features/contract/shared/ui/form/components/contract-form-section-tone";
-import { ContractSectionToneContext } from "#src/features/contract/shared/ui/form/components/contract-section-tone-context";
-import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
+import { getSectionToneColors, SectionCard, SectionToneContext } from "#src/shared/ui/section-card";
+
 import { Tag, theme } from "antd";
 import { useContext, useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
@@ -25,9 +24,9 @@ const SMS_OPERATOR_PRICING_FIELDS = [
 	{ key: "otherEn", title: "سایر - انگلیسی", color: "geekblue" },
 ] as const;
 
-function getOperatorTagStyle(token: GlobalToken, color: "gold" | "blue" | "geekblue", toneOverride: ContractSectionTone | null): CSSProperties {
+function getOperatorTagStyle(token: GlobalToken, color: "gold" | "blue" | "geekblue", toneOverride: SectionTone | null): CSSProperties {
 	if (toneOverride) {
-		const toneColors = getContractSectionToneColors(token, toneOverride);
+		const toneColors = getSectionToneColors(token, toneOverride);
 		return {
 			borderColor: toneColors.background,
 			borderRadius: token.borderRadiusSM,
@@ -52,7 +51,7 @@ function getOperatorTagStyle(token: GlobalToken, color: "gold" | "blue" | "geekb
 
 function SmsOperatorPricingFields({ base }: { base: string }) {
 	const { token } = theme.useToken();
-	const inheritedTone = useContext(ContractSectionToneContext);
+	const inheritedTone = useContext(SectionToneContext);
 
 	return (
 		<div className="sms-operator-list">
@@ -75,9 +74,9 @@ function SmsOperatorPricingFields({ base }: { base: string }) {
 
 function SmsOperatorRevenueCard({ base }: { base: string }) {
 	return (
-		<ContractFormSection title="درآمد اپراتورها" className="sms-operator-revenue-card">
+		<SectionCard title="درآمد اپراتورها" className="sms-operator-revenue-card">
 			<SmsOperatorPricingFields base={base} />
-		</ContractFormSection>
+		</SectionCard>
 	);
 }
 

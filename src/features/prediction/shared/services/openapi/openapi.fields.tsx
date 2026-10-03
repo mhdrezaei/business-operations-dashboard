@@ -7,8 +7,9 @@ import type {
 	PredictionMetricCode,
 	PredictionShareSectionValue,
 } from "../../model/prediction.form.types";
-import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
+import { DashedCard } from "#src/shared/ui/dashed-card";
 import { RHFProNumber, RHFSegmentedSwitch, RHFSelect } from "#src/shared/ui/rhf-pro";
+import { SectionCard } from "#src/shared/ui/section-card";
 import { DeleteOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Card, Form, Select, Typography } from "antd";
@@ -16,7 +17,6 @@ import { useEffect, useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { predictionCompaniesByServiceQuery } from "../../queries/prediction.queries";
-import { PredictionDashedCard } from "../../ui/form/components/PredictionDashedCard";
 import { QuarterDistributionSection } from "../../ui/form/sections/QuarterDistributionSection";
 import {
 	getOpenApiOperationSections,
@@ -137,7 +137,7 @@ function CompanyShareEditor({
 	}
 
 	return (
-		<PredictionDashedCard title={metricTitle} className="prediction-share-editor">
+		<DashedCard title={metricTitle} className="prediction-share-editor">
 			<div className="prediction-share-editor__controls">
 				<RHFSegmentedSwitch
 					name={`${fieldPath}.mode` as any}
@@ -206,7 +206,7 @@ function CompanyShareEditor({
 						</Typography.Text>
 					</div>
 				)}
-		</PredictionDashedCard>
+		</DashedCard>
 	);
 }
 
@@ -282,7 +282,7 @@ export function OpenApiPredictionFields() {
 			<QuarterDistributionSection />
 
 			{activeSections.map(section => (
-				<ContractFormSection
+				<SectionCard
 					key={section.key}
 					title={t(section.titleKey)}
 					tone="purple"
@@ -310,17 +310,17 @@ export function OpenApiPredictionFields() {
 							enableWordsTooltip
 						/>
 					</div>
-				</ContractFormSection>
+				</SectionCard>
 			))}
 
-			<ContractFormSection title={t("prediction.sections.companyShares")} tone="blue">
+			<SectionCard title={t("prediction.sections.companyShares")} tone="blue">
 				<div className="flex flex-col gap-4">
 					<Typography.Paragraph className="mb-0 opacity-80">
 						{t("prediction.messages.companySharesDescription")}
 					</Typography.Paragraph>
 
 					{activeSections.map(section => (
-						<PredictionDashedCard
+						<DashedCard
 							key={`${section.key}-shares`}
 							title={t(section.titleKey)}
 							collapsible
@@ -337,12 +337,12 @@ export function OpenApiPredictionFields() {
 									/>
 								))}
 							</div>
-						</PredictionDashedCard>
+						</DashedCard>
 					))}
 
 					{activeModel === "PACKAGE"
 						? (
-							<PredictionDashedCard
+							<DashedCard
 								title={t("prediction.openapi.sections.channels", { defaultValue: "کانال‌ها" })}
 							>
 								<div className="grid gap-4 xl:grid-cols-3">
@@ -365,11 +365,11 @@ export function OpenApiPredictionFields() {
 										total: channelTotal,
 									})}
 								</Typography.Text>
-							</PredictionDashedCard>
+							</DashedCard>
 						)
 						: null}
 				</div>
-			</ContractFormSection>
+			</SectionCard>
 		</div>
 	);
 }

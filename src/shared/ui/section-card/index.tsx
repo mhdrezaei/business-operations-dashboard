@@ -1,23 +1,25 @@
+/* eslint-disable react-refresh/only-export-components -- public barrel keeps the card and its tone API together */
 import type { CSSProperties, ReactNode } from "react";
-import type { ContractSectionTone } from "./contract-form-section-tone";
+import type { SectionTone } from "./section-tone";
 import { DownOutlined, UpOutlined } from "@ant-design/icons";
 import { Button, Card, ConfigProvider, Tag, theme } from "antd";
 import clsx from "clsx";
 import { useContext, useState } from "react";
-import { getContractSectionToneColors } from "./contract-form-section-tone";
-import { ContractSectionToneContext } from "./contract-section-tone-context";
+import { getSectionToneColors } from "./section-tone";
+import { SectionToneContext } from "./section-tone-context";
+import "./styles.css";
 
-interface ContractFormSectionProps {
+export interface SectionCardProps {
 	title: ReactNode
 	children: ReactNode
 	className?: string
 	extra?: ReactNode
 	defaultExpanded?: boolean
 	collapsible?: boolean
-	tone?: ContractSectionTone
+	tone?: SectionTone
 }
 
-export function ContractFormSection({
+export function SectionCard({
 	title,
 	children,
 	className,
@@ -25,19 +27,17 @@ export function ContractFormSection({
 	defaultExpanded = true,
 	collapsible = true,
 	tone = "primary",
-}: ContractFormSectionProps) {
+}: SectionCardProps) {
 	const [expanded, setExpanded] = useState(defaultExpanded);
-	const inheritedTone = useContext(ContractSectionToneContext);
+	const inheritedTone = useContext(SectionToneContext);
 	const resolvedTone = inheritedTone ?? tone;
 	const antdContext = useContext(ConfigProvider.ConfigContext);
 	const { token } = theme.useToken();
 	const configuredCardBorder = antdContext.theme?.components?.Card?.colorBorderSecondary;
 	const configuredCardRadius = antdContext.theme?.components?.Card?.borderRadiusLG;
 	const configuredInputBackground = antdContext.theme?.components?.Input?.colorBgContainer;
-	const borderColor = typeof configuredCardBorder === "string"
-		? configuredCardBorder
-		: token.colorBorderSecondary;
-	const toneColors = getContractSectionToneColors(token, resolvedTone);
+	const borderColor = typeof configuredCardBorder === "string" ? configuredCardBorder : token.colorBorderSecondary;
+	const toneColors = getSectionToneColors(token, resolvedTone);
 	const style = {
 		"--contract-section-outline-color": borderColor,
 		"--contract-section-border-color": token.colorSplit,
@@ -53,9 +53,7 @@ export function ContractFormSection({
 		"--contract-section-tag-color": toneColors.text,
 		"--contract-section-tag-radius": `${resolvedTone === "purple" ? token.borderRadius : token.borderRadiusSM}px`,
 		"--contract-section-body-padding": `${token.paddingLG}px`,
-		"--contract-section-control-bg": typeof configuredInputBackground === "string"
-			? configuredInputBackground
-			: token.colorFillSecondary,
+		"--contract-section-control-bg": typeof configuredInputBackground === "string" ? configuredInputBackground : token.colorFillSecondary,
 		"--contract-section-nested-bg": token.colorBgLayout,
 		"--contract-section-danger-border-color": token.colorSplit,
 		"--contract-section-control-radius": `${token.borderRadius}px`,
@@ -74,24 +72,15 @@ export function ContractFormSection({
 		<Card
 			variant="outlined"
 			style={style}
-			className={clsx(
-				"contract-form-section",
-				collapsible && !expanded && "contract-form-section--collapsed",
-				className,
-			)}
-			title={(
-				<Tag bordered={false} className="contract-form-section__tag">
-					{title}
-				</Tag>
-			)}
+			className={clsx("section-card", collapsible && !expanded && "section-card--collapsed", className)}
+			title={<Tag bordered={false} className="section-card__tag">{title}</Tag>}
 			extra={(
-				<div className="contract-form-section__actions">
+				<div className="section-card__actions">
 					{extra}
 					{collapsible
 						? (
 							<Button
 								type="text"
-								disabled={false}
 								aria-label={expanded ? `بستن ${String(title)}` : `باز کردن ${String(title)}`}
 								icon={expanded ? <UpOutlined /> : <DownOutlined />}
 								onClick={() => setExpanded(current => !current)}
@@ -105,3 +94,7 @@ export function ContractFormSection({
 		</Card>
 	);
 }
+
+export type { SectionTone } from "./section-tone";
+export { getSectionToneColors } from "./section-tone";
+export { SectionToneContext } from "./section-tone-context";

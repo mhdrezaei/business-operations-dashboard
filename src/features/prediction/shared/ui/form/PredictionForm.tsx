@@ -1,8 +1,8 @@
 import type { Resolver, UseFormReturn } from "react-hook-form";
 import type { PredictionFormValues } from "../../model/prediction.form.types";
 import { BasicContent } from "#src/components";
-import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import { RHFProTextArea } from "#src/shared/ui/rhf-pro";
+import { SectionCard } from "#src/shared/ui/section-card";
 import { notification } from "#src/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AnimatePresence, motion } from "framer-motion";
@@ -14,7 +14,7 @@ import { predictionServiceRegistry } from "../../services/registry";
 import { RegisteredPredictionsPanel } from "./components/RegisteredPredictionsPanel";
 import { ActionSection } from "./sections/ActionSection";
 import { FixedStartSection } from "./sections/FixedStartSection";
-import "#src/features/contract/shared/ui/form/contract-form.css";
+import "#src/shared/ui/form-layout/styles.css";
 import "./prediction-form.css";
 
 interface Props {
@@ -294,7 +294,7 @@ export function PredictionForm({
 		<FormProvider {...form}>
 			<BasicContent>
 				<div
-					className="contract-form prediction-form prediction-form-layout"
+					className="form-layout prediction-form prediction-form-layout"
 					onChangeCapture={captureBaseline}
 					onKeyDownCapture={captureBaseline}
 					onPointerDownCapture={captureBaseline}
@@ -367,7 +367,7 @@ function ProseNote() {
 	const { t } = useTranslation();
 
 	return (
-		<ContractFormSection title="اطلاعات تکمیلی" tone="blue">
+		<SectionCard title="اطلاعات تکمیلی" tone="blue">
 			<div className="contract-supplementary-control prediction-note-control">
 				<div className="contract-supplementary-control__label">{t("prediction.labels.note")}</div>
 				<RHFProTextArea<PredictionFormValues, "note">
@@ -380,6 +380,6 @@ function ProseNote() {
 					}}
 				/>
 			</div>
-		</ContractFormSection>
+		</SectionCard>
 	);
 }

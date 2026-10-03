@@ -3,18 +3,18 @@ import type { ContractFormValues } from "../../../model/contract.form.types";
 import { BasicContent } from "#src/components/";
 import { ContractAddendaSection } from "#src/features/contract/components/addenda/ContractAddendaSection";
 import { ContractTypeSection } from "#src/features/contract/components/contract-type/ContractTypeSection";
-import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import { useAccess } from "#src/hooks";
-import { RHFProNumber, RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
+import { AlignedFormField, useAlignedLabelWidth } from "#src/shared/ui/aligned-form-field";
+import { RHFProCheckbox, RHFProNumber, RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
+import { SectionCard } from "#src/shared/ui/section-card";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
-import { Button, Card, Steps, Switch, Tooltip } from "antd";
+import { Button, Card, Steps, Tooltip } from "antd";
 import { AnimatePresence, motion } from "framer-motion";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { companiesByServiceQuery, contractGapsQuery, servicesQuery, smsCommissionAgentsQuery, trafficDatacentersQuery } from "../../../queries/contract.queries";
 import { companyTypeMatches } from "../../../utils";
-import { ContractAlignedField, useContractAlignedLabelWidth } from "../components/ContractAlignedField";
 import { MONTH_OPTIONS } from "../constants/jalali-date-options";
 import { FixedEndSection } from "./FixedEndSection";
 
@@ -727,11 +727,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 	}, [isSmsCommission, companyId, smsCommissionAgentOptions, selectedAgentId, setValue]);
 
 	const showCompanySelect = shouldSelectCompany && (!requiresCompanyType || !!companyType) && !isCollocation;
-	const companyTypeLabel = isSalesAgency
-		? "نوع همکاری (عاملیت فروش)"
-		: isTraffic
-			? "نوع شرکت (ترافیک)"
-			: "نوع شرکت";
+	const companyTypeLabel = isSalesAgency ? "نوع همکاری (عاملیت فروش)" : isTraffic ? "نوع شرکت (ترافیک)" : "نوع شرکت";
 	const companyLabel = isSalesAgency ? "نام شرکت" : "شرکت";
 	const visibleLabels = useMemo(() => {
 		const labels = [
@@ -756,7 +752,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 		}
 		return labels;
 	}, [isSms, showCompanyTypeSelect, companyTypeLabel, showCompanySelect, companyLabel, isSmsCommission, isCollocation]);
-	const alignedLabelStyle = useContractAlignedLabelWidth(visibleLabels);
+	const alignedLabelStyle = useAlignedLabelWidth(visibleLabels);
 
 	const companyOptions = requiresCompanyType ? companyOptionsByType : companyOptionsDefault;
 
@@ -1043,8 +1039,8 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 	// 	return (
 	// 		<Card className="w-full">
 	// 			<BasicContent className="w-full">
-	// 				<div className="contract-form-aligned-grid contract-form-aligned-grid--two" style={alignedLabelStyle}>
-	// 					<ContractAlignedField label="نوع سرویس" labelId="contract-form-label-service">
+	// 				<div className="aligned-form-grid aligned-form-grid--two" style={alignedLabelStyle}>
+	// 					<AlignedFormField label="نوع سرویس" labelId="contract-form-label-service">
 	// 						<RHFSelect<ContractFormValues, "serviceId", number | null>
 	// 							name="serviceId"
 	// 							formItemProps={compactFormItemStyle}
@@ -1057,9 +1053,9 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 	// 								"aria-labelledby": "contract-form-label-service",
 	// 							} as any}
 	// 						/>
-	// 					</ContractAlignedField>
+	// 					</AlignedFormField>
 	//
-	// 					<ContractAlignedField label={companyTypeLabel} labelId="contract-form-label-company-type">
+	// 					<AlignedFormField label={companyTypeLabel} labelId="contract-form-label-company-type">
 	// 						<RHFSelect<ContractFormValues, "companyType", any>
 	// 							name="companyType"
 	// 							formItemProps={compactFormItemStyle}
@@ -1078,7 +1074,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 	// 								"aria-labelledby": "contract-form-label-company-type",
 	// 							} as any}
 	// 						/>
-	// 					</ContractAlignedField>
+	// 					</AlignedFormField>
 	// 				</div>
 	//
 	// 				<Card
@@ -1135,8 +1131,8 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 	//
 	// 					{activeCollocationStep === 2
 	// 						? (
-	// 							<div className="contract-form-aligned-grid contract-form-aligned-grid--two" style={alignedLabelStyle}>
-	// 								<ContractAlignedField label="شرکت" labelId="contract-form-label-company">
+	// 							<div className="aligned-form-grid aligned-form-grid--two" style={alignedLabelStyle}>
+	// 								<AlignedFormField label="شرکت" labelId="contract-form-label-company">
 	// 									<RHFSelect<ContractFormValues, "companyId", number | null>
 	// 										name="companyId"
 	// 										formItemProps={compactFormItemStyle}
@@ -1151,7 +1147,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 	// 											"aria-labelledby": "contract-form-label-company",
 	// 										}}
 	// 									/>
-	// 								</ContractAlignedField>
+	// 								</AlignedFormField>
 	// 							</div>
 	// 						)
 	// 						: null}
@@ -1192,10 +1188,10 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 	// 					? (
 	// 						<>
 	// 							<div
-	// 								className="contract-form-aligned-grid contract-form-aligned-grid--four contract-form-date-grid"
+	// 								className="aligned-form-grid aligned-form-grid--four aligned-form-date-grid"
 	// 								style={{ ...alignedLabelStyle, marginTop: 12 }}
 	// 							>
-	// 								<ContractAlignedField label="سال شروع" labelId="contract-form-label-start-year">
+	// 								<AlignedFormField label="سال شروع" labelId="contract-form-label-start-year">
 	// 									<RHFSelect<ContractFormValues, "startYear", number | null>
 	// 										name="startYear"
 	// 										formItemProps={compactFormItemStyle}
@@ -1207,9 +1203,9 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 	// 											"aria-labelledby": "contract-form-label-start-year",
 	// 										} as any}
 	// 									/>
-	// 								</ContractAlignedField>
+	// 								</AlignedFormField>
 	//
-	// 								<ContractAlignedField label="ماه شروع" labelId="contract-form-label-start-month">
+	// 								<AlignedFormField label="ماه شروع" labelId="contract-form-label-start-month">
 	// 									<RHFSelect<ContractFormValues, "startMonth", number | null>
 	// 										name="startMonth"
 	// 										formItemProps={compactFormItemStyle}
@@ -1221,9 +1217,9 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 	// 											"aria-labelledby": "contract-form-label-start-month",
 	// 										} as any}
 	// 									/>
-	// 								</ContractAlignedField>
+	// 								</AlignedFormField>
 	//
-	// 								<ContractAlignedField label="سال پایان" labelId="contract-form-label-end-year">
+	// 								<AlignedFormField label="سال پایان" labelId="contract-form-label-end-year">
 	// 									<RHFSelect<ContractFormValues, "endYear", number | null>
 	// 										name="endYear"
 	// 										formItemProps={compactFormItemStyle}
@@ -1235,9 +1231,9 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 	// 											"aria-labelledby": "contract-form-label-end-year",
 	// 										} as any}
 	// 									/>
-	// 								</ContractAlignedField>
+	// 								</AlignedFormField>
 	//
-	// 								<ContractAlignedField label="ماه پایان" labelId="contract-form-label-end-month">
+	// 								<AlignedFormField label="ماه پایان" labelId="contract-form-label-end-month">
 	// 									<RHFSelect<ContractFormValues, "endMonth", number | null>
 	// 										name="endMonth"
 	// 										formItemProps={compactFormItemStyle}
@@ -1249,14 +1245,14 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 	// 											"aria-labelledby": "contract-form-label-end-month",
 	// 										} as any}
 	// 									/>
-	// 								</ContractAlignedField>
+	// 								</AlignedFormField>
 	// 							</div>
 	//
 	// 							<div
-	// 								className="contract-form-aligned-grid contract-form-aligned-grid--two"
+	// 								className="aligned-form-grid aligned-form-grid--two"
 	// 								style={{ ...alignedLabelStyle, marginTop: 12 }}
 	// 							>
-	// 								<ContractAlignedField
+	// 								<AlignedFormField
 	// 									label="شماره قرارداد"
 	// 									labelId="contract-form-label-contract-number"
 	// 								>
@@ -1268,7 +1264,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 	// 											"aria-labelledby": "contract-form-label-contract-number",
 	// 										}}
 	// 									/>
-	// 								</ContractAlignedField>
+	// 								</AlignedFormField>
 	// 							</div>
 	// 						</>
 	// 					)
@@ -1279,49 +1275,27 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 	// }
 
 	return (
-		<ContractFormSection title="اطلاعات پایه قرارداد" className="w-full">
+		<SectionCard title="اطلاعات پایه قرارداد" className="w-full">
 			<BasicContent className="w-full">
-				{isSms
-					? (
-						<div className="contract-form-official-row" dir="rtl">
-							<div className="contract-form-official-row__label">
-								<Switch
-									checked={serviceIsOfficial ?? true}
-									aria-label="قرارداد رسمی است"
-									onChange={checked => setValue("serviceFields.isOfficial" as any, checked, {
-										shouldDirty: true,
-										shouldValidate: true,
-									})}
-								/>
-								<span>قرارداد رسمی است</span>
-							</div>
-							<span className="contract-form-official-row__hint">(در صورت رسمی بودن قرارداد، این گزینه را روشن کنید.)</span>
-						</div>
-					)
-					: null}
-				<div className="contract-form-aligned-grid contract-form-aligned-grid--two" style={alignedLabelStyle}>
-					<ContractAlignedField label="نوع سرویس" labelId="contract-form-label-service">
+				<div className="aligned-form-grid aligned-form-grid--two" style={alignedLabelStyle}>
+					<AlignedFormField label="نوع سرویس" labelId="contract-form-label-service">
 						<RHFSelect<ContractFormValues, "serviceId", number | null>
 							name="serviceId"
 							formItemProps={compactFormItemStyle}
 							loading={services.isLoading}
 							options={serviceOptions}
-							// ارور شرکت یافت نشد با این خط حل شد
-							onValueChange={() => {
-								setValue("companyId", null, { shouldDirty: true, shouldValidate: false });
-								setCollocationStep(0);
-							}}
+							onValueChange={() => setCollocationStep(0)}
 							selectProps={{
 								"allowClear": true,
 								"placeholder": "سرویس را انتخاب کنید",
 								"aria-labelledby": "contract-form-label-service",
 							} as any}
 						/>
-					</ContractAlignedField>
+					</AlignedFormField>
 
 					{isSms
 						? (
-							<ContractAlignedField label="طرف قرارداد" labelId="contract-form-label-counterparty">
+							<AlignedFormField label="طرف قرارداد" labelId="contract-form-label-counterparty">
 								<RHFSelect<ContractFormValues, "counterpartyType", "partners" | "gov_ops" | null>
 									name="counterpartyType"
 									formItemProps={compactFormItemStyle}
@@ -1332,13 +1306,13 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 										"aria-labelledby": "contract-form-label-counterparty",
 									} as any}
 								/>
-							</ContractAlignedField>
+							</AlignedFormField>
 						)
 						: null}
 
 					{showCompanyTypeSelect
 						? (
-							<ContractAlignedField label={companyTypeLabel} labelId="contract-form-label-company-type">
+							<AlignedFormField label={companyTypeLabel} labelId="contract-form-label-company-type">
 								<RHFSelect<ContractFormValues, "companyType", any>
 									name="companyType"
 									formItemProps={compactFormItemStyle}
@@ -1357,13 +1331,13 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 										"aria-labelledby": "contract-form-label-company-type",
 									} as any}
 								/>
-							</ContractAlignedField>
+							</AlignedFormField>
 						)
 						: null}
 
 					{showCompanySelect
 						? (
-							<ContractAlignedField label={companyLabel} labelId="contract-form-label-company">
+							<AlignedFormField label={companyLabel} labelId="contract-form-label-company">
 								<RHFSelect<ContractFormValues, "companyId", number | null>
 									name="companyId"
 									formItemProps={compactFormItemStyle}
@@ -1378,13 +1352,13 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 										"aria-labelledby": "contract-form-label-company",
 									}}
 								/>
-							</ContractAlignedField>
+							</AlignedFormField>
 						)
 						: null}
 
 					{isSmsCommission
 						? (
-							<ContractAlignedField label="نماینده فروش" labelId="contract-form-label-agent">
+							<AlignedFormField label="نماینده فروش" labelId="contract-form-label-agent">
 								<RHFSelect<ContractFormValues, any, number | null>
 									name={"serviceFields.agent" as any}
 									formItemProps={compactFormItemStyle}
@@ -1398,7 +1372,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 										"aria-labelledby": "contract-form-label-agent",
 									}}
 								/>
-							</ContractAlignedField>
+							</AlignedFormField>
 						)
 						: null}
 				</div>
@@ -1453,8 +1427,8 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 							</CollocationStepPane>
 
 							<CollocationStepPane active={!isTelecomCollocation && activeCollocationStep === 2}>
-								<div className="contract-form-aligned-grid contract-form-aligned-grid--two" style={alignedLabelStyle}>
-									<ContractAlignedField label="شرکت" labelId="contract-form-label-company">
+								<div className="aligned-form-grid aligned-form-grid--two" style={alignedLabelStyle}>
+									<AlignedFormField label="شرکت" labelId="contract-form-label-company">
 										<RHFSelect<ContractFormValues, "companyId", number | null>
 											name="companyId"
 											formItemProps={compactFormItemStyle}
@@ -1469,7 +1443,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 												"aria-labelledby": "contract-form-label-company",
 											}}
 										/>
-									</ContractAlignedField>
+									</AlignedFormField>
 								</div>
 							</CollocationStepPane>
 
@@ -1486,8 +1460,8 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 											<div className="text-base font-semibold">اطلاعات قرارداد</div>
 											<div className="text-sm text-[var(--ant-color-text-secondary)]">شماره قرارداد و سایر مشخصات</div>
 										</div>
-										<div className="contract-form-aligned-grid contract-form-aligned-grid--two" style={alignedLabelStyle}>
-											<ContractAlignedField
+										<div className="aligned-form-grid aligned-form-grid--two" style={alignedLabelStyle}>
+											<AlignedFormField
 												label="شماره قرارداد"
 												labelId="contract-form-label-contract-number-telecom"
 											>
@@ -1499,7 +1473,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 														"aria-labelledby": "contract-form-label-contract-number-telecom",
 													}}
 												/>
-											</ContractAlignedField>
+											</AlignedFormField>
 										</div>
 									</div>
 
@@ -1509,10 +1483,10 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 											<div className="text-sm text-[var(--ant-color-text-secondary)]">تاریخ شروع و پایان قرارداد</div>
 										</div>
 										<div
-											className="contract-form-aligned-grid contract-form-aligned-grid--four contract-form-date-grid"
+											className="aligned-form-grid aligned-form-grid--four aligned-form-date-grid"
 											style={alignedLabelStyle}
 										>
-											<ContractAlignedField label="سال شروع" labelId="contract-form-label-start-year-telecom">
+											<AlignedFormField label="سال شروع" labelId="contract-form-label-start-year-telecom">
 												<RHFSelect<ContractFormValues, "startYear", number | null>
 													name="startYear"
 													formItemProps={compactFormItemStyle}
@@ -1526,9 +1500,9 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 														"aria-labelledby": "contract-form-label-start-year-telecom",
 													} as any}
 												/>
-											</ContractAlignedField>
+											</AlignedFormField>
 
-											<ContractAlignedField label="ماه شروع" labelId="contract-form-label-start-month-telecom">
+											<AlignedFormField label="ماه شروع" labelId="contract-form-label-start-month-telecom">
 												<RHFSelect<ContractFormValues, "startMonth", number | null>
 													name="startMonth"
 													formItemProps={compactFormItemStyle}
@@ -1542,9 +1516,9 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 														"aria-labelledby": "contract-form-label-start-month-telecom",
 													} as any}
 												/>
-											</ContractAlignedField>
+											</AlignedFormField>
 
-											<ContractAlignedField label="سال پایان" labelId="contract-form-label-end-year-telecom">
+											<AlignedFormField label="سال پایان" labelId="contract-form-label-end-year-telecom">
 												<RHFSelect<ContractFormValues, "endYear", number | null>
 													name="endYear"
 													formItemProps={compactFormItemStyle}
@@ -1558,9 +1532,9 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 														"aria-labelledby": "contract-form-label-end-year-telecom",
 													} as any}
 												/>
-											</ContractAlignedField>
+											</AlignedFormField>
 
-											<ContractAlignedField label="ماه پایان" labelId="contract-form-label-end-month-telecom">
+											<AlignedFormField label="ماه پایان" labelId="contract-form-label-end-month-telecom">
 												<RHFSelect<ContractFormValues, "endMonth", number | null>
 													name="endMonth"
 													formItemProps={compactFormItemStyle}
@@ -1574,7 +1548,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 														"aria-labelledby": "contract-form-label-end-month-telecom",
 													} as any}
 												/>
-											</ContractAlignedField>
+											</AlignedFormField>
 										</div>
 									</div>
 
@@ -1583,7 +1557,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 											<div className="text-base font-semibold">جزئیات مالی</div>
 											<div className="text-sm text-[var(--ant-color-text-secondary)]">هزینه رک‌ها و محاسبات کولوکیشن</div>
 										</div>
-										<div className="contract-form-aligned-grid contract-form-aligned-grid--two" style={alignedLabelStyle}>
+										<div className="aligned-form-grid aligned-form-grid--two" style={alignedLabelStyle}>
 											<RHFProNumber<ContractFormValues, any>
 												name={"serviceFields.telecomRackCount" as any}
 												label="تعداد رک"
@@ -1635,8 +1609,8 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 											<div className="text-base font-semibold">اطلاعات قرارداد</div>
 											<div className="text-sm text-[var(--ant-color-text-secondary)]">شماره قرارداد و سایر مشخصات</div>
 										</div>
-										<div className="contract-form-aligned-grid contract-form-aligned-grid--two" style={alignedLabelStyle}>
-											<ContractAlignedField
+										<div className="aligned-form-grid aligned-form-grid--two" style={alignedLabelStyle}>
+											<AlignedFormField
 												label="شماره قرارداد"
 												labelId="contract-form-label-contract-number"
 											>
@@ -1648,7 +1622,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 														"aria-labelledby": "contract-form-label-contract-number",
 													}}
 												/>
-											</ContractAlignedField>
+											</AlignedFormField>
 										</div>
 									</div>
 
@@ -1658,10 +1632,10 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 											<div className="text-sm text-[var(--ant-color-text-secondary)]">تاریخ شروع و پایان قرارداد</div>
 										</div>
 										<div
-											className="contract-form-aligned-grid contract-form-aligned-grid--four contract-form-date-grid"
+											className="aligned-form-grid aligned-form-grid--four aligned-form-date-grid"
 											style={alignedLabelStyle}
 										>
-											<ContractAlignedField label="سال شروع" labelId="contract-form-label-start-year">
+											<AlignedFormField label="سال شروع" labelId="contract-form-label-start-year">
 												<RHFSelect<ContractFormValues, "startYear", number | null>
 													name="startYear"
 													formItemProps={compactFormItemStyle}
@@ -1675,9 +1649,9 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 														"aria-labelledby": "contract-form-label-start-year",
 													} as any}
 												/>
-											</ContractAlignedField>
+											</AlignedFormField>
 
-											<ContractAlignedField label="ماه شروع" labelId="contract-form-label-start-month">
+											<AlignedFormField label="ماه شروع" labelId="contract-form-label-start-month">
 												<RHFSelect<ContractFormValues, "startMonth", number | null>
 													name="startMonth"
 													formItemProps={compactFormItemStyle}
@@ -1691,9 +1665,9 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 														"aria-labelledby": "contract-form-label-start-month",
 													} as any}
 												/>
-											</ContractAlignedField>
+											</AlignedFormField>
 
-											<ContractAlignedField label="سال پایان" labelId="contract-form-label-end-year">
+											<AlignedFormField label="سال پایان" labelId="contract-form-label-end-year">
 												<RHFSelect<ContractFormValues, "endYear", number | null>
 													name="endYear"
 													formItemProps={compactFormItemStyle}
@@ -1707,9 +1681,9 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 														"aria-labelledby": "contract-form-label-end-year",
 													} as any}
 												/>
-											</ContractAlignedField>
+											</AlignedFormField>
 
-											<ContractAlignedField label="ماه پایان" labelId="contract-form-label-end-month">
+											<AlignedFormField label="ماه پایان" labelId="contract-form-label-end-month">
 												<RHFSelect<ContractFormValues, "endMonth", number | null>
 													name="endMonth"
 													formItemProps={compactFormItemStyle}
@@ -1723,11 +1697,11 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 														"aria-labelledby": "contract-form-label-end-month",
 													} as any}
 												/>
-											</ContractAlignedField>
+											</AlignedFormField>
 										</div>
 										<CollocationStepPane active={shouldShowRealStartFields}>
-											<div className="mt-4 contract-form-aligned-grid contract-form-aligned-grid--two contract-form-date-grid" style={alignedLabelStyle}>
-												<ContractAlignedField label="سال شروع واقعی قرارداد" labelId="contract-form-label-real-start-year">
+											<div className="mt-4 aligned-form-grid aligned-form-grid--two aligned-form-date-grid" style={alignedLabelStyle}>
+												<AlignedFormField label="سال شروع واقعی قرارداد" labelId="contract-form-label-real-start-year">
 													<RHFSelect<ContractFormValues, any, number | null>
 														name={"serviceFields.realStartYear" as any}
 														formItemProps={compactFormItemStyle}
@@ -1738,9 +1712,9 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 															"aria-labelledby": "contract-form-label-real-start-year",
 														} as any}
 													/>
-												</ContractAlignedField>
+												</AlignedFormField>
 
-												<ContractAlignedField label="ماه شروع واقعی قرارداد" labelId="contract-form-label-real-start-month">
+												<AlignedFormField label="ماه شروع واقعی قرارداد" labelId="contract-form-label-real-start-month">
 													<RHFSelect<ContractFormValues, any, number | null>
 														name={"serviceFields.realStartMonth" as any}
 														formItemProps={compactFormItemStyle}
@@ -1751,7 +1725,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 															"aria-labelledby": "contract-form-label-real-start-month",
 														} as any}
 													/>
-												</ContractAlignedField>
+												</AlignedFormField>
 											</div>
 										</CollocationStepPane>
 									</div>
@@ -1935,7 +1909,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													})}
 												</AnimatePresence>
 
-												<ContractAlignedField label="انتخاب دیتاسنتر" labelId="contract-form-label-datacenter">
+												<AlignedFormField label="انتخاب دیتاسنتر" labelId="contract-form-label-datacenter">
 													<RHFSelect<ContractFormValues, any, string | null>
 														name={"serviceFields.datacenter" as any}
 														formItemProps={compactFormItemStyle}
@@ -1953,7 +1927,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 															"aria-labelledby": "contract-form-label-datacenter",
 														} as any}
 													/>
-												</ContractAlignedField>
+												</AlignedFormField>
 											</div>
 										</Card>
 									</div>
@@ -2016,10 +1990,10 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 					: null}
 
 				<div
-					className="contract-form-aligned-grid contract-form-aligned-grid--four contract-form-date-grid"
+					className="aligned-form-grid aligned-form-grid--four aligned-form-date-grid"
 					style={{ ...alignedLabelStyle, marginTop: 12, display: isCollocation ? "none" : undefined }}
 				>
-					<ContractAlignedField label="سال شروع" labelId="contract-form-label-start-year">
+					<AlignedFormField label="سال شروع" labelId="contract-form-label-start-year">
 						<RHFSelect<ContractFormValues, "startYear", number | null>
 							name="startYear"
 							formItemProps={compactFormItemStyle}
@@ -2033,9 +2007,9 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 								"aria-labelledby": "contract-form-label-start-year",
 							} as any}
 						/>
-					</ContractAlignedField>
+					</AlignedFormField>
 
-					<ContractAlignedField label="ماه شروع" labelId="contract-form-label-start-month">
+					<AlignedFormField label="ماه شروع" labelId="contract-form-label-start-month">
 						<RHFSelect<ContractFormValues, "startMonth", number | null>
 							name="startMonth"
 							formItemProps={compactFormItemStyle}
@@ -2049,9 +2023,9 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 								"aria-labelledby": "contract-form-label-start-month",
 							} as any}
 						/>
-					</ContractAlignedField>
+					</AlignedFormField>
 
-					<ContractAlignedField label="سال پایان" labelId="contract-form-label-end-year">
+					<AlignedFormField label="سال پایان" labelId="contract-form-label-end-year">
 						<RHFSelect<ContractFormValues, "endYear", number | null>
 							name="endYear"
 							formItemProps={compactFormItemStyle}
@@ -2065,9 +2039,9 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 								"aria-labelledby": "contract-form-label-end-year",
 							} as any}
 						/>
-					</ContractAlignedField>
+					</AlignedFormField>
 
-					<ContractAlignedField label="ماه پایان" labelId="contract-form-label-end-month">
+					<AlignedFormField label="ماه پایان" labelId="contract-form-label-end-month">
 						<RHFSelect<ContractFormValues, "endMonth", number | null>
 							name="endMonth"
 							formItemProps={compactFormItemStyle}
@@ -2081,18 +2055,18 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 								"aria-labelledby": "contract-form-label-end-month",
 							} as any}
 						/>
-					</ContractAlignedField>
+					</AlignedFormField>
 				</div>
 
 				<div
-					className="contract-form-aligned-grid contract-form-aligned-grid--two"
+					className="aligned-form-grid aligned-form-grid--two"
 					style={{ ...alignedLabelStyle, marginTop: 12, display: isCollocation ? "none" : undefined }}
 				>
 					<div
-						className="contract-form-aligned-grid contract-form-aligned-grid--two"
+						className="aligned-form-grid aligned-form-grid--two"
 						style={{ ...alignedLabelStyle, marginTop: 12 }}
 					>
-						<ContractAlignedField
+						<AlignedFormField
 							label="شماره قرارداد"
 							labelId="contract-form-label-contract-number"
 						>
@@ -2104,10 +2078,23 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 									"aria-labelledby": "contract-form-label-contract-number",
 								}}
 							/>
-						</ContractAlignedField>
+						</AlignedFormField>
 					</div>
 				</div>
+
+				{isSms
+					? (
+						<div className="contract-form-official-row">
+							<RHFProCheckbox<ContractFormValues, any>
+								name={"serviceFields.isOfficial" as any}
+								label=""
+								checkboxLabel="قرارداد رسمی است"
+								checkboxProps={{}}
+							/>
+						</div>
+					)
+					: null}
 			</BasicContent>
-		</ContractFormSection>
+		</SectionCard>
 	);
 }
