@@ -2,8 +2,8 @@ import type { ArrayPath, Path } from "react-hook-form";
 import type { ContractFormValues } from "../../../shared/model/contract.form.types";
 import type { OpenApiContractModel } from "./openapi.types";
 import { ContractAddendaSection } from "#src/features/contract/components/addenda/ContractAddendaSection.js";
-import { ContractFormSection } from "#src/features/contract/shared/ui/form/components/ContractFormSection";
 import { RHFProNumber, RHFSelect } from "#src/shared/ui/rhf-pro";
+import { SectionCard } from "#src/shared/ui/section-card";
 import React, { useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { ContractTypeSection } from "../../../components/contract-type/ContractTypeSection";
@@ -99,7 +99,7 @@ export function OpenApiFields() {
 
 	return (
 		<div className="w-full">
-			<ContractFormSection title="مدل قرارداد OpenAPI" tone="purple">
+			<SectionCard title="مدل قرارداد OpenAPI" tone="purple" className="mb-3">
 				<RHFSelect
 					name={sf("contractModel")}
 					label=""
@@ -109,7 +109,7 @@ export function OpenApiFields() {
 					]}
 					selectProps={{ placeholder: "مدل قرارداد را انتخاب کنید", allowClear: false }}
 				/>
-			</ContractFormSection>
+			</SectionCard>
 
 			{contractModel === "separated"
 				? <SeparatedPricingFields />
