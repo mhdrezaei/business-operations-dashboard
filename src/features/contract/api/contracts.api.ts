@@ -224,3 +224,129 @@ export function fetchTrafficDatacenters() {
 		.get("contracts/traffic/datacenters/")
 		.json<Paginated<TrafficDatacenterDto> | TrafficDatacenterDto[]>();
 }
+
+export interface SignFlowListItem {
+	id: number
+	state: string
+	service: string
+	service_name: string
+	company_type: any
+	contract_id: number
+	contract_number: string
+	company_name: string
+	addendum_group_id: string | null
+	record_type: string
+	template_id: number | null
+	template_name: string | null
+	rule_config_id: number
+	current_step_order: number
+	current_step_name: string
+	total_steps: number
+	contract_start_date: string
+	contract_end_date: string
+	is_waiting_for_me: boolean
+	started_at: string
+	finished_at: string | null
+	cancel_reason: string
+	created_by: number
+	created_by_username: string
+	created_at: string
+}
+
+export function fetchSignFlowsList(params: {
+	page?: number
+	page_size?: number
+	mine?: "assigned" | "created"
+	state?: string
+	service?: string
+	record_type?: "contract" | "addendum"
+	ordering?: string
+	company_type?: string
+	contract_id?: number
+}) {
+	// Filter out null/undefined values to avoid passing them to searchParams
+	const searchParams: Record<string, string> = {};
+	for (const [key, value] of Object.entries(params)) {
+		if (value != null && value !== "") {
+			searchParams[key] = String(value);
+		}
+	}
+	return request
+		.get("contracts/sign-flows/", { searchParams })
+		.json<PaginatedResult<SignFlowListItem>>();
+}
+
+export interface SignFlowStep {
+	order: number
+	name: string
+	state: string
+	activated_at: string | null
+	decided_at: string | null
+	recipients: Array<{
+		target_type: string
+		user_id: number
+		username: string
+		role_id: number | null
+		role_name: string | null
+	}>
+	assignments: Array<{
+		user_id: number
+		username: string
+		source_target_type: string
+		source_role_id: number | null
+	}>
+	decision: string | null
+}
+
+export interface SignFlowDetail {
+	id: number
+	state: string
+	service: string
+	service_name: string
+	company_type: Record<string, string>
+	contract_id: number
+	contract_number: string
+	company_name: string
+	addendum_group_id: string | null
+	record_type: string
+	template_id: number
+	template_name: string
+	rule_config_id: number
+	current_step_order: number
+	current_step_name: string
+	total_steps: number
+	contract_start_date: string
+	contract_end_date: string
+	is_waiting_for_me: boolean
+	started_at: string
+	finished_at: string | null
+	cancel_reason: string
+	created_by: number
+	created_by_username: string
+	created_at: string
+	steps: SignFlowStep[]
+	print_service_code: string
+	cancelled_by: number | null
+	revoked_at: string | null
+	revoked_by: number | null
+	revoked_by_username: string | null
+	revoke_reason: string
+}
+
+export interface SignFlowHistoryItem {
+	id: number
+	state: string
+	started_at: string
+	finished_at: string | null
+	cancel_or_reject_reason: string
+	revoked_at: string | null
+	revoke_reason: string
+}
+
+export async function fetchSignFlowDetail(id: number | string): Promise<SignFlowDetail> {
+	return request.get(`contracts/sign-flows/${id}/`).json<SignFlowDetail>();
+}
+
+export async function fetchSignFlowHistory(contractId: number | string): Promise<SignFlowHistoryItem[]> {
+	return request.get(`contracts/sign-flows/history/?contract_id=${contractId}`).json<SignFlowHistoryItem[]>();
+}

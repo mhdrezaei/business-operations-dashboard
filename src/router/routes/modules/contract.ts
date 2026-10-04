@@ -13,6 +13,7 @@ const EditContractPage = lazy(() => import("#src/pages/contracts/edit"));
 const EditContractFormPage = lazy(() => import("#src/pages/contracts/edit-contract"));
 const ContractPreviewPage = lazy(() => import("#src/pages/contracts/preview"));
 const ContractTemplate = lazy(() => import("#src/pages/contracts/contract-template"));
+const SignFlowListPage = lazy(() => import("#src/pages/contracts/sign-flows"));
 
 const routes: AppRouteRecordRaw[] = [
 	{
@@ -26,6 +27,16 @@ const routes: AppRouteRecordRaw[] = [
 			accessAction: "view",
 		},
 		children: [
+			{
+				path: "/contracts/sign-flows",
+				Component: SignFlowListPage,
+				handle: {
+					icon: createElement(UnorderedListOutlined),
+					title: "گردش‌های امضای قرارداد",
+					accessDomain: "contracts",
+					accessAction: "view",
+				},
+			},
 			{
 				path: "/contracts/new",
 				Component: CreateContractPage,
