@@ -6,7 +6,7 @@ import React, { useEffect, useState } from "react";
 import { usePreferencesStore } from "../../../../../store/preferences";
 import { TemplateCreateApi } from "../../../../contract-templates/api/api";
 import { getVariable } from "../../../../contract-templates/create/components/editor/variables/registry";
-import { fetchContractDetail, fetchContractTemplates } from "../../../api/contracts.api";
+import { fetchContractPrintData, fetchContractTemplates } from "../../../api/contracts.api";
 import { ContractTemplateEditorModal } from "./ContractTemplateEditorModal";
 
 interface Props {
@@ -15,6 +15,7 @@ interface Props {
 	record: ContractListItemType | null
 	service: ContractServicePath | null
 	companyType: string | null
+	addendumGroupId?: string | null
 }
 
 function getVariableValueFromContract(varKey: string, data: any): string | undefined {
@@ -85,7 +86,7 @@ function replaceVariablesInHtml(html: string, contractData: any, missingVars: st
 	});
 }
 
-export const ContractTemplatePrintModal: React.FC<Props> = ({ open, onClose, record, service, companyType }) => {
+export const ContractTemplatePrintModal: React.FC<Props> = ({ open, onClose, record, service, companyType, addendumGroupId }) => {
 	const [templates, setTemplates] = useState<any[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [comparingId, setComparingId] = useState<number | null>(null);
@@ -103,7 +104,7 @@ export const ContractTemplatePrintModal: React.FC<Props> = ({ open, onClose, rec
 			// eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
 			setLoading(true);
 			const serviceStr = service.split("/")[0]; // e.g. sms/client -> sms
-			fetchContractTemplates(serviceStr, companyType)
+			fetchContractTemplates(serviceStr, companyType, addendumGroupId ? "addendum" : "contract")
 				.then((res) => {
 					// Handle paginated response or array
 					const data = res?.results ?? res ?? [];
@@ -121,7 +122,7 @@ export const ContractTemplatePrintModal: React.FC<Props> = ({ open, onClose, rec
 			// eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
 			setTemplates([]);
 		}
-	}, [open, service, companyType]);
+	}, [open, service, companyType, addendumGroupId]);
 
 	const handleSelectTemplate = async (template: any) => {
 		if (!record || !service)
@@ -131,7 +132,7 @@ export const ContractTemplatePrintModal: React.FC<Props> = ({ open, onClose, rec
 		try {
 			const [templateData, contractData] = await Promise.all([
 				TemplateCreateApi.getTemplate(template.id),
-				fetchContractDetail(service, record.id),
+				fetchContractPrintData(service, record.id, addendumGroupId),
 			]);
 
 			const templateHtml = templateData?.content_html || "";
@@ -252,6 +253,7 @@ export const ContractTemplatePrintModal: React.FC<Props> = ({ open, onClose, rec
 					templateId={currentTemplateId}
 					contractId={record?.id || null}
 					service={service}
+					addendumGroupId={addendumGroupId}
 					onPrint={(html) => {
 						const win = window.open("", "_blank", "width=1100,height=860");
 						if (win) {

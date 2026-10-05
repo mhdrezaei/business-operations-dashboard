@@ -41,6 +41,7 @@ export default function ContractListPage() {
 	const [downloadingPdfId, setDownloadingPdfId] = useState<number | null>(null);
 	const [printModalOpen, setPrintModalOpen] = useState(false);
 	const [printRecord, setPrintRecord] = useState<ContractListItemType | null>(null);
+	const [printAddendumGroupId, setPrintAddendumGroupId] = useState<string | null>(null);
 	const [signFlowModalOpen, setSignFlowModalOpen] = useState(false);
 	const [signFlowLoading, setSignFlowLoading] = useState(false);
 	const [signFlowData, setSignFlowData] = useState<any>(null);
@@ -384,6 +385,24 @@ export default function ContractListPage() {
 						<ContractAddendaExpandedRow
 							contract={record}
 							service={resolveServicePath(record)}
+							onPrint={async (addendumGroupId) => {
+								setPrintRecord(record);
+								setPrintAddendumGroupId(addendumGroupId);
+								setSignFlowLoading(true);
+								setSignFlowModalOpen(true);
+								try {
+									const data = await fetchSignFlowPreview(resolveServicePath(record), record.id, addendumGroupId);
+									setSignFlowData(data);
+								}
+								catch (err) {
+									console.error(err);
+									window.$message?.error("خطا در دریافت اطلاعات گردش کار");
+									setSignFlowModalOpen(false);
+								}
+								finally {
+									setSignFlowLoading(false);
+								}
+							}}
 						/>
 					),
 				}}
@@ -454,8 +473,10 @@ export default function ContractListPage() {
 				onClose={() => {
 					setPrintModalOpen(false);
 					setPrintRecord(null);
+					setPrintAddendumGroupId(null);
 				}}
 				record={printRecord}
+				addendumGroupId={printAddendumGroupId}
 				service={printRecord ? resolveServicePath(printRecord) : null}
 				companyType={printRecord ? getRowCompanyType(printRecord) : null}
 			/>

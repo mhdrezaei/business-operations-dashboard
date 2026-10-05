@@ -18,9 +18,10 @@ interface Props {
 	onPrint: (html: string) => void
 	contractId: number | null
 	service: any
+	addendumGroupId?: string | null
 }
 
-export const ContractTemplateEditorModal: React.FC<Props> = ({ open, onClose, initialHtml, templateId, contractId, service }) => {
+export const ContractTemplateEditorModal: React.FC<Props> = ({ open, onClose, initialHtml, templateId, contractId, service, addendumGroupId }) => {
 	const { fetchFonts, isFetchingFonts } = useTemplateStore();
 	const [contentHtml, setContentHtml] = useState(initialHtml);
 	const [loadingAction, setLoadingAction] = useState<"none" | "pdf" | "approval">("none");
@@ -215,10 +216,10 @@ export const ContractTemplateEditorModal: React.FC<Props> = ({ open, onClose, in
 			// 2. Upload PDF to backend
 			const formData = new FormData();
 			formData.append("file", pdfBlob, `contract_${contractId}.pdf`);
-			await requestOfficialPdf(service, contractId, formData);
+			await requestOfficialPdf(service, contractId, formData, addendumGroupId);
 
 			// 3. Fetch Sign Flow preview
-			const res = await fetchSignFlowPreview(service, contractId);
+			const res = await fetchSignFlowPreview(service, contractId, addendumGroupId);
 			setSignFlowData(res);
 
 			// 4. Open Modal

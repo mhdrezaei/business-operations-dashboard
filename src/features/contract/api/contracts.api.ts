@@ -177,18 +177,27 @@ export function fetchCompanyContracts(
 
 /* ===================== SIGN FLOW & PDF ===================== */
 
-export function fetchSignFlowPreview(service: ContractServicePath, contractId: number) {
+export function fetchSignFlowPreview(service: ContractServicePath, contractId: number, addendumGroupId?: string | null) {
+	const json: Record<string, any> = { service, contract_id: contractId };
+	if (addendumGroupId) {
+		json.addendum_group_id = addendumGroupId;
+	}
 	return request
 		.post("contracts/sign-flows/preview/", {
-			json: { service, contract_id: contractId },
+			json,
 		})
 		.json<SignFlowPreviewResponse>();
 }
 
-export function requestOfficialPdf(service: ContractServicePath, contractId: number, body: FormData) {
+export function requestOfficialPdf(service: ContractServicePath, contractId: number, body: FormData, addendumGroupId?: string | null) {
+	const searchParams: Record<string, string> = {};
+	if (addendumGroupId) {
+		searchParams.addendum_group_id = addendumGroupId;
+	}
 	return request
 		.post(`contracts/${service}/${contractId}/official-pdf/`, {
 			body,
+			searchParams,
 		})
 		.json<any>(); // Assuming it returns some success status
 }
@@ -207,6 +216,20 @@ export function fetchContractDetail(
 ) {
 	return request
 		.get(buildContractPath(service, id))
+		.json<any>();
+}
+
+export function fetchContractPrintData(
+	service: ContractServicePath,
+	id: number,
+	addendumGroupId?: string | null,
+) {
+	const searchParams: Record<string, string> = {};
+	if (addendumGroupId) {
+		searchParams.addendum_group_id = addendumGroupId;
+	}
+	return request
+		.get(`${buildContractPath(service, id)}print-data/`, { searchParams })
 		.json<any>();
 }
 
@@ -404,12 +427,15 @@ export async function fetchSignFlowDetail(id: number | string): Promise<SignFlow
 export async function fetchSignFlowHistory(contractId: number | string): Promise<SignFlowHistoryItem[]> {
 	return request.get(`contracts/sign-flows/history/?contract_id=${contractId}`).json<SignFlowHistoryItem[]>();
 }
-export function fetchContractTemplates(service: string, companyType?: string | null) {
+export function fetchContractTemplates(service: string, companyType?: string | null, documentKind?: string | null) {
 	const searchParams: Record<string, string> = {
 		service,
 	};
 	if (companyType) {
 		searchParams.company_type = companyType;
+	}
+	if (documentKind) {
+		searchParams.document_kind = documentKind;
 	}
 
 	return request

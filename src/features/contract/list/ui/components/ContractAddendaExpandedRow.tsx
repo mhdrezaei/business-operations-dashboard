@@ -4,6 +4,7 @@ import type { ContractAddendumTreeNode } from "../../model/contract-addenda-tree
 import type { ContractListItemType } from "../../model/contracts.list.types";
 
 import { TableActionDownloadIcon } from "#src/icons";
+import { PrinterOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Alert, Button, Empty, Space, Spin, Table, Tag } from "antd";
 import { fetchContractDetail } from "../../../api/contracts.api";
@@ -14,6 +15,7 @@ import { useContractAddendaTableStyles } from "./contract-addenda-table.styles";
 interface ContractAddendaExpandedRowProps {
 	contract: ContractListItemType
 	service: ContractServicePath
+	onPrint?: (addendumGroupId: string) => void
 }
 
 type ContractAddendumTableRow = Omit<ContractAddendumTreeNode, "children"> & {
@@ -33,7 +35,7 @@ function formatJalaliDate(year: number | null, month: number | null) {
 	return `${persianDigits.format(year)}/${persianDigits.format(month).padStart(2, "۰")}`;
 }
 
-function getColumns(onDownload: (row: ContractAddendumTableRow) => void): ColumnsType<ContractAddendumTableRow> {
+function getColumns(onDownload: (row: ContractAddendumTableRow) => void, onPrint?: (addendumGroupId: string) => void): ColumnsType<ContractAddendumTableRow> {
 	return [
 		{
 			title: "شماره",
@@ -84,6 +86,15 @@ function getColumns(onDownload: (row: ContractAddendumTableRow) => void): Column
 						icon={<TableActionDownloadIcon />}
 						onClick={() => onDownload(row)}
 					/>
+					{onPrint && (
+						<Button
+							type="link"
+							size="small"
+							title="چاپ الحاقیه"
+							icon={<PrinterOutlined />}
+							onClick={() => row.addendumGroupId ? onPrint(row.addendumGroupId) : undefined}
+						/>
+					)}
 				</Space>
 			),
 		},
@@ -115,7 +126,7 @@ function toTableData(rows: ContractAddendumTreeNode[]): ContractAddendumTableRow
 	}));
 }
 
-export function ContractAddendaExpandedRow({ contract, service }: ContractAddendaExpandedRowProps) {
+export function ContractAddendaExpandedRow({ contract, service, onPrint }: ContractAddendaExpandedRowProps) {
 	const classes = useContractAddendaTableStyles();
 	const detail = useQuery({
 		queryKey: ["contracts", "detail", service, contract.id],
@@ -171,7 +182,7 @@ export function ContractAddendaExpandedRow({ contract, service }: ContractAddend
 			<Table<ContractAddendumTableRow>
 				className={classes.addendaTable}
 				rowKey="key"
-				columns={getColumns(handleDownload)}
+				columns={getColumns(handleDownload, onPrint)}
 				dataSource={tableData}
 				pagination={false}
 				scroll={{ x: 1000 }}
