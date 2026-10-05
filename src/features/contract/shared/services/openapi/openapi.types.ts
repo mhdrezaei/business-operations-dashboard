@@ -1,7 +1,7 @@
 import type { ContractTypeValue } from "#src/features/contract/components/contract-type/contract-type.types";
 import { defaultContractTypeValue } from "#src/features/contract/components/contract-type/contract-type.types";
 
-export type OpenApiContractModel = "package" | "legacy";
+export type OpenApiContractModel = "package" | "legacy" | "separated";
 export type OpenApiPackageMode = "OR" | "AND";
 
 export interface OpenApiPlan {
@@ -23,10 +23,21 @@ export interface OpenApiPlan {
 }
 
 export interface OpenApiServiceFields {
-	contractModel: OpenApiContractModel | null // Package (بسته‌ای)
+	contractModel: OpenApiContractModel | null
 	packageMode: OpenApiPackageMode | null // OR/AND
 
 	plans: OpenApiPlan[]
+	separatedPricing?: {
+		walletChargeDiscountPercent: number | null
+		midPeriodBillInquiry: ContractTypeValue
+		endPeriodBillInquiry: ContractTypeValue
+		connectedReceiptRegister: ContractTypeValue
+		connectedKarashabSharePercent: number | null
+		connectedPartnerSharePercent: number | null
+		disconnectedReceiptRegister: ContractTypeValue
+		disconnectedKarashabSharePercent: number | null
+		disconnectedPartnerSharePercent: number | null
+	}
 	legacyPricing?: {
 		paymentRegistration: ContractTypeValue // بهای ثبت وصولی
 		billInquiry: ContractTypeValue // بهای استعلام قبض
@@ -51,6 +62,18 @@ export const defaultOpenApiPlan: OpenApiPlan = {
 export const defaultLegacyPricing = {
 	paymentRegistration: structuredClone(defaultContractTypeValue),
 	billInquiry: structuredClone(defaultContractTypeValue),
+};
+
+export const defaultSeparatedPricing: NonNullable<OpenApiServiceFields["separatedPricing"]> = {
+	walletChargeDiscountPercent: null,
+	midPeriodBillInquiry: structuredClone(defaultContractTypeValue),
+	endPeriodBillInquiry: structuredClone(defaultContractTypeValue),
+	connectedReceiptRegister: structuredClone(defaultContractTypeValue),
+	connectedKarashabSharePercent: null,
+	connectedPartnerSharePercent: null,
+	disconnectedReceiptRegister: structuredClone(defaultContractTypeValue),
+	disconnectedKarashabSharePercent: null,
+	disconnectedPartnerSharePercent: null,
 };
 
 export const defaultOpenApiServiceFields: OpenApiServiceFields = {

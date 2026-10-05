@@ -65,8 +65,20 @@ const contractModelSchema = z.preprocess(
 			return v.trim().toLowerCase();
 		return v;
 	},
-	z.enum(["package", "legacy"]).nullable().catch(null),
+	z.enum(["package", "legacy", "separated"]).nullable().catch(null),
 );
+
+const separatedPricingSchema = z.object({
+	walletChargeDiscountPercent: zNullablePercent("درصد تخفیف باید بین 0 تا 100 باشد"),
+	midPeriodBillInquiry: contractTypeSchema,
+	endPeriodBillInquiry: contractTypeSchema,
+	connectedReceiptRegister: contractTypeSchema,
+	connectedKarashabSharePercent: zNullablePercent("درصد سهم کاراشاب باید بین 0 تا 100 باشد"),
+	connectedPartnerSharePercent: zNullablePercent("درصد سهم طرف قرارداد باید بین 0 تا 100 باشد"),
+	disconnectedReceiptRegister: contractTypeSchema,
+	disconnectedKarashabSharePercent: zNullablePercent("درصد سهم کاراشاب باید بین 0 تا 100 باشد"),
+	disconnectedPartnerSharePercent: zNullablePercent("درصد سهم طرف قرارداد باید بین 0 تا 100 باشد"),
+});
 
 const packageModeSchema = z.preprocess(
 	v => (v === "" || v == null ? null : v),
@@ -80,6 +92,7 @@ export const openApiServiceFieldsSchema = z
 
 		plans: z.array(openApiPlanSchema).optional(),
 		addenda: z.array(addendumSchema).default([]).optional(),
+		separatedPricing: separatedPricingSchema.optional(),
 
 		legacyPricing: z
 			.object({
@@ -96,6 +109,14 @@ export const openApiServiceFieldsSchema = z
 				message: "نوع قرارداد الزامی است",
 			});
 			return;
+		}
+
+		if (val.contractModel === "separated" && !val.separatedPricing) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["separatedPricing"],
+				message: "اطلاعات مدل تفکیکی را تکمیل کنید",
+			});
 		}
 
 		if (val.contractModel === "package") {

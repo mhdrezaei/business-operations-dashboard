@@ -1,15 +1,17 @@
 import type { ArrayPath, Path } from "react-hook-form";
 import type { ContractFormValues } from "../../../shared/model/contract.form.types";
+import type { OpenApiContractModel } from "./openapi.types";
 import { ContractAddendaSection } from "#src/features/contract/components/addenda/ContractAddendaSection.js";
 import { AlignedFormField, useAlignedLabelWidth } from "#src/shared/ui/aligned-form-field";
-import { RHFProText } from "#src/shared/ui/rhf-pro";
+import { RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro/fields/RHFProNumber.js";
+import { SectionCard } from "#src/shared/ui/section-card";
 import { DeleteOutlined } from "@ant-design/icons";
 import { Button, Card } from "antd";
 import React, { useMemo, useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { ContractTypeSection } from "../../../components/contract-type/ContractTypeSection";
-import { defaultLegacyPricing, defaultOpenApiPlan } from "./openapi.types";
+import { defaultLegacyPricing, defaultOpenApiPlan, defaultSeparatedPricing } from "./openapi.types";
 import "./openapi.fields.css";
 
 const sf = (path: string) => `serviceFields.${path}` as any;
@@ -210,7 +212,7 @@ function OpenApiPackagePlanPanel({ idx }: { idx: number }) {
 	);
 }
 
-export function OpenApiFields() {
+export function OpenApiFields({ mode = "create" }: { mode?: "create" | "edit" }) {
 	const { control, setValue, getValues, register } = useFormContext<ContractFormValues>();
 	const startYear = useWatch({ control, name: "startYear" });
 	const startMonth = useWatch({ control, name: "startMonth" });
@@ -245,7 +247,7 @@ export function OpenApiFields() {
 	}>>([]);
 	const [_activeKey, setActiveKey] = useState<string>("0");
 
-	const contractModel = useWatch({ control, name: sf("contractModel") }) as "legacy" | "separated" | null;
+	const contractModel = useWatch({ control, name: sf("contractModel") }) as OpenApiContractModel | null;
 
 	React.useEffect(() => {
 		register(sf("contractModel"));
@@ -279,6 +281,12 @@ export function OpenApiFields() {
 				shouldDirty: true,
 				shouldValidate: true,
 			});
+			if (!getValues(sf("separatedPricing"))) {
+				setValue(sf("separatedPricing"), structuredClone(defaultSeparatedPricing) as any, {
+					shouldDirty: false,
+					shouldValidate: false,
+				});
+			}
 		}
 	}, [contractModel, setValue, getValues]);
 
@@ -508,6 +516,21 @@ export function OpenApiFields() {
 
 	return (
 		<div className="w-full">
+			<SectionCard title="مدل قرارداد OpenAPI" tone="purple" className="w-full">
+				<RHFSelect
+					name={sf("contractModel")}
+					label=""
+					options={[
+						{ label: "تفکیکی", value: "separated" },
+						{ label: "قدیمی", value: "legacy" },
+					]}
+					selectProps={{ placeholder: mode === "edit" ? undefined : "مدل قرارداد را انتخاب کنید", allowClear: false, disabled: mode === "edit" }}
+				/>
+				{mode === "edit" && (
+					<p className="mt-2 text-sm text-gray-500">مدل قرارداد پایه پس از ثبت قابل تغییر نیست</p>
+				)}
+			</SectionCard>
+
 			<div className="w-full">
 				{contractModel === "separated"
 					? <SeparatedPricingFields />
