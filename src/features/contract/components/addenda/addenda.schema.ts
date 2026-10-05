@@ -34,6 +34,8 @@ export const addendumSchema: z.ZodType<any> = z.lazy(() => z
 		endMonth: z.number().int().min(1).max(12).nullable(),
 
 		contractPricing: contractTypeSchema.optional(),
+		hasNewCustomerRate: z.boolean().optional(),
+		newCustomerPricing: contractTypeSchema.optional(),
 		legacyPricing: z.object({
 			paymentRegistration: contractTypeSchema,
 			billInquiry: contractTypeSchema,
@@ -54,6 +56,13 @@ export const addendumSchema: z.ZodType<any> = z.lazy(() => z
 	})
 	.passthrough()
 	.superRefine((v, ctx) => {
+		if (v.hasNewCustomerRate === true && v.newCustomerPricing == null) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["newCustomerPricing"],
+				message: "نرخ مشتریان جدید الزامی است",
+			});
+		}
 		if (v.startYear == null)
 			ctx.addIssue({ code: "custom", path: ["startYear"], message: "سال شروع الحاقیه الزامی است" });
 		if (v.startMonth == null)

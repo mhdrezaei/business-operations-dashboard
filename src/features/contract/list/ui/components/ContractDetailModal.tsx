@@ -417,6 +417,10 @@ function mapShahkarAddenda(addenda: unknown): Array<Record<string, any>> {
 	return list.map((item) => {
 		const row = (item ?? {}) as Record<string, any>;
 		const pricing = contractTypeToApiPricing((row.contractPricing ?? null) as any);
+		const hasNewCustomerRate = row.hasNewCustomerRate === true;
+		const newCustomerPricing = hasNewCustomerRate
+			? contractTypeToApiPricing((row.newCustomerPricing ?? null) as any)
+			: null;
 
 		return {
 			...mapAddendumIdentity(row),
@@ -427,8 +431,15 @@ function mapShahkarAddenda(addenda: unknown): Array<Record<string, any>> {
 			contract_number: row.contractNumber ?? "",
 			note: row.description ?? "",
 			is_signed: row.isSigned ?? row.is_signed ?? false,
+			has_new_customer_rate: hasNewCustomerRate,
 			calculation_type: pricing?.calculation_type ?? null,
 			tiers: pricing?.tiers ?? [],
+			...(newCustomerPricing
+				? {
+					new_customer_calculation_type: newCustomerPricing.calculation_type,
+					new_customer_tiers: newCustomerPricing.tiers,
+				}
+				: {}),
 			children: mapShahkarAddenda(row.children),
 		};
 	});
@@ -1077,13 +1088,23 @@ function normalizeShahkarAddendaFromDto(addenda: unknown): Array<Record<string, 
 
 	return list.map((item) => {
 		const row = (item ?? {}) as Record<string, any>;
+		const hasNewCustomerRate = Boolean(row.has_new_customer_rate ?? row.hasNewCustomerRate ?? row.new_customer_calculation_type ?? row.new_customer_tiers?.length);
 
 		return {
 			...normalizeAddendumBase(row),
+			hasNewCustomerRate,
 			contractPricing: apiPricingToContractType({
 				calculation_type: row.calculation_type ?? row.calculationType ?? null,
 				tiers: row.tiers ?? null,
 			} as any),
+			...(hasNewCustomerRate
+				? {
+					newCustomerPricing: apiPricingToContractType({
+						calculation_type: row.new_customer_calculation_type ?? row.newCustomerCalculationType ?? null,
+						tiers: row.new_customer_tiers ?? row.newCustomerTiers ?? null,
+					} as any),
+				}
+				: {}),
 			children: normalizeShahkarAddendaFromDto(row.children),
 		};
 	});
