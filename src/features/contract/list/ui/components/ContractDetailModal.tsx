@@ -312,9 +312,26 @@ function mapOpenApiPackageDetails(serviceFields: Record<string, any>) {
 	};
 }
 
+function mapOpenApiSeparatedDetails(serviceFields: Record<string, any>) {
+	const pricing = serviceFields.separatedPricing ?? {};
+	return {
+		openapi_model: "SEPARATED",
+		contract_model: "SEPARATED",
+		wallet_charge_discount_percent: toStringOrNull(pricing.walletChargeDiscountPercent),
+		mid_period_bill_inquiry: contractTypeToApiPricing(pricing.midPeriodBillInquiry ?? null),
+		end_period_bill_inquiry: contractTypeToApiPricing(pricing.endPeriodBillInquiry ?? null),
+		connected_receipt_register: contractTypeToApiPricing(pricing.connectedReceiptRegister ?? null),
+		connected_karashab_share_percent: toStringOrNull(pricing.connectedKarashabSharePercent),
+		connected_partner_share_percent: toStringOrNull(pricing.connectedPartnerSharePercent),
+		disconnected_receipt_register: contractTypeToApiPricing(pricing.disconnectedReceiptRegister ?? null),
+		disconnected_karashab_share_percent: toStringOrNull(pricing.disconnectedKarashabSharePercent),
+		disconnected_partner_share_percent: toStringOrNull(pricing.disconnectedPartnerSharePercent),
+	};
+}
+
 function mapOpenApiAddenda(
 	addenda: unknown,
-	contractModel: "package" | "legacy" | null,
+	contractModel: "package" | "legacy" | "separated" | null,
 	serviceFields: Record<string, any>,
 	mainOpenApiDetails: Record<string, any> | null,
 ) {
@@ -335,6 +352,9 @@ function mapOpenApiAddenda(
 
 		if (contractModel === "legacy") {
 			mapped.contract_openapi_details = mapOpenApiAddendumLegacyDetails(row);
+		}
+		else if (contractModel === "separated") {
+			mapped.contract_openapi_details = mainOpenApiDetails ?? mapOpenApiSeparatedDetails(serviceFields);
 		}
 		else if (contractModel === "package") {
 			mapped.contract_openapi_details = mainOpenApiDetails ?? mapOpenApiPackageDetails(serviceFields);
@@ -679,13 +699,23 @@ function normalizeCommercialAddendaFromDto(addenda: unknown): Array<Record<strin
 
 function normalizeOpenApiServiceFields(dto: any) {
 	// ✅ ساختار جدید
-	const details = dto?.contract_openapi_details ?? dto?.contractOpenapiDetails ?? null;
+	const details = dto?.contract_openapi_details ?? dto?.contractOpenapiDetails ?? dto?.contract_openapi_detail ?? dto?.contractOpenapiDetail ?? null;
 
 	// ✅ سازگاری با ساختار قدیمی (اگر هنوز بعضی جاها میاد)
 	if (!details) {
 		const legacyBill = dto?.bill_inquiry ?? null;
 		const legacyReceipt = dto?.receipt_register ?? null;
 		const packageModel = dto?.package_model ?? null;
+		const rootModel = normalizeOpenApiContractModel(
+			dto?.openapi_model ?? dto?.openapiModel ?? dto?.contract_model ?? dto?.contractModel ?? dto?.model,
+		);
+
+		if (rootModel === "separated") {
+			return {
+				contractModel: "separated",
+				separatedPricing: normalizeOpenApiSeparatedPricing(dto),
+			};
+		}
 
 		if (packageModel) {
 			return {
@@ -709,7 +739,7 @@ function normalizeOpenApiServiceFields(dto: any) {
 			};
 		}
 
-		if (legacyBill || legacyReceipt) {
+		if (legacyBill || legacyReceipt || rootModel === "legacy") {
 			return {
 				contractModel: "legacy",
 				legacyPricing: {
@@ -719,12 +749,19 @@ function normalizeOpenApiServiceFields(dto: any) {
 			};
 		}
 
+		if (hasOpenApiSeparatedPricing(dto)) {
+			return {
+				contractModel: "separated",
+				separatedPricing: normalizeOpenApiSeparatedPricing(dto),
+			};
+		}
+
 		return {};
 	}
 
 	// ✅ ساختار جدید: contract_openapi_details
-	const cmRaw = details?.contract_model ?? details?.contractModel ?? details?.openapi_model ?? details?.openapiModel ?? dto?.openapi_model ?? null;
-	const contractModel = typeof cmRaw === "string" ? cmRaw.trim().toLowerCase() : null; // "legacy" | "package"
+	const cmRaw = details?.contract_model ?? details?.contractModel ?? details?.openapi_model ?? details?.openapiModel ?? dto?.openapi_model ?? dto?.openapiModel ?? dto?.contract_model ?? dto?.contractModel ?? dto?.model ?? null;
+	const contractModel = normalizeOpenApiContractModel(cmRaw);
 
 	if (contractModel === "legacy") {
 		return {
@@ -733,6 +770,13 @@ function normalizeOpenApiServiceFields(dto: any) {
 				paymentRegistration: apiPricingToContractType(details?.receipt_register ?? details?.receiptRegister ?? null),
 				billInquiry: apiPricingToContractType(details?.bill_inquiry ?? details?.billInquiry ?? null),
 			},
+		};
+	}
+
+	if (contractModel === "separated") {
+		return {
+			contractModel: "separated",
+			separatedPricing: normalizeOpenApiSeparatedPricing(details),
 		};
 	}
 
@@ -760,7 +804,49 @@ function normalizeOpenApiServiceFields(dto: any) {
 		};
 	}
 
+	if (hasOpenApiSeparatedPricing(details)) {
+		return {
+			contractModel: "separated",
+			separatedPricing: normalizeOpenApiSeparatedPricing(details),
+		};
+	}
+
 	return {};
+}
+
+function normalizeOpenApiContractModel(value: unknown): "legacy" | "separated" | "package" | null {
+	const model = String(value ?? "").trim().toLowerCase();
+	if (["legacy", "old", "classic"].includes(model))
+		return "legacy";
+	if (["separated", "separate", "split"].includes(model))
+		return "separated";
+	if (model === "package")
+		return "package";
+	return null;
+}
+
+function hasOpenApiSeparatedPricing(details: Record<string, any>) {
+	return [
+		"wallet_charge_discount_percent",
+		"mid_period_bill_inquiry",
+		"end_period_bill_inquiry",
+		"connected_receipt_register",
+		"disconnected_receipt_register",
+	].some(key => Object.prototype.hasOwnProperty.call(details ?? {}, key));
+}
+
+function normalizeOpenApiSeparatedPricing(details: Record<string, any>) {
+	return {
+		walletChargeDiscountPercent: toNumberOrStringNumber(details?.wallet_charge_discount_percent ?? details?.walletChargeDiscountPercent),
+		midPeriodBillInquiry: apiPricingToContractType(details?.mid_period_bill_inquiry ?? details?.midPeriodBillInquiry ?? null),
+		endPeriodBillInquiry: apiPricingToContractType(details?.end_period_bill_inquiry ?? details?.endPeriodBillInquiry ?? null),
+		connectedReceiptRegister: apiPricingToContractType(details?.connected_receipt_register ?? details?.connectedReceiptRegister ?? null),
+		connectedKarashabSharePercent: toNumberOrStringNumber(details?.connected_karashab_share_percent ?? details?.connectedKarashabSharePercent),
+		connectedPartnerSharePercent: toNumberOrStringNumber(details?.connected_partner_share_percent ?? details?.connectedPartnerSharePercent),
+		disconnectedReceiptRegister: apiPricingToContractType(details?.disconnected_receipt_register ?? details?.disconnectedReceiptRegister ?? null),
+		disconnectedKarashabSharePercent: toNumberOrStringNumber(details?.disconnected_karashab_share_percent ?? details?.disconnectedKarashabSharePercent),
+		disconnectedPartnerSharePercent: toNumberOrStringNumber(details?.disconnected_partner_share_percent ?? details?.disconnectedPartnerSharePercent),
+	};
 }
 
 function normalizeOpenApiAddendaFromDto(addenda: unknown): Array<Record<string, any>> {
@@ -1391,25 +1477,19 @@ async function formValuesToApiPayload(values: ContractFormValues) {
 	}
 
 	if (serviceCode === "openapi") {
-		const contractModel = "legacy" as "package" | "legacy";
-
-		let openApiDetails: Record<string, any> | null = null;
-		payload.openapi_model = "LEGACY";
-
-		if (contractModel === "package") {
-			openApiDetails = mapOpenApiPackageDetails(serviceFields);
-		}
-		else if (contractModel === "legacy") {
-			openApiDetails = {
-				openapi_model: "LEGACY",
-				contract_model: "LEGACY",
+		const contractModel = serviceFields.contractModel === "separated" ? "separated" : "legacy";
+		const apiContractModel = contractModel === "separated" ? "SEPARATED" : "LEGACY";
+		const openApiDetails = contractModel === "separated"
+			? mapOpenApiSeparatedDetails(serviceFields)
+			: {
+				openapi_model: apiContractModel,
+				contract_model: apiContractModel,
 				receipt_register: contractTypeToApiPricing(serviceFields.legacyPricing?.paymentRegistration ?? null),
 				bill_inquiry: contractTypeToApiPricing(serviceFields.legacyPricing?.billInquiry ?? null),
 			};
-		}
+		payload.openapi_model = apiContractModel;
 
-		if (openApiDetails)
-			payload.contract_openapi_details = openApiDetails;
+		payload.contract_openapi_details = openApiDetails;
 
 		payload.addenda = mapOpenApiAddenda(addenda, contractModel as any, serviceFields, openApiDetails);
 		return payload;

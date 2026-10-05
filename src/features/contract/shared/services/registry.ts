@@ -11,7 +11,7 @@ import { trafficService } from "./traffic/traffic.registry";
 export interface ServiceModule {
 	code: ContractServiceCode
 	schema: ZodTypeAny // schema مخصوص serviceFields
-	Fields: React.ComponentType // کامپوننت فیلدهای سرویس
+	Fields: React.ComponentType<{ mode?: "create" | "edit" }> // کامپوننت فیلدهای سرویس
 	toPayload?: (values: unknown) => unknown // mapper اختیاری
 }
 
