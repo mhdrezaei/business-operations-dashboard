@@ -350,3 +350,15 @@ export async function fetchSignFlowDetail(id: number | string): Promise<SignFlow
 export async function fetchSignFlowHistory(contractId: number | string): Promise<SignFlowHistoryItem[]> {
 	return request.get(`contracts/sign-flows/history/?contract_id=${contractId}`).json<SignFlowHistoryItem[]>();
 }
+export function fetchContractTemplates(service: string, companyType?: string | null) {
+	const searchParams: Record<string, string> = {
+		service,
+	};
+	if (companyType) {
+		searchParams.company_type = companyType;
+	}
+
+	return request
+		.get("contracts/templates/", { searchParams })
+		.json<PaginatedResult<any> | any>();
+}

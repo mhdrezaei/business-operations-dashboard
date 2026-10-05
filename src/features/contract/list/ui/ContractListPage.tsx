@@ -7,7 +7,7 @@ import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import { companiesByServiceQuery, servicesQuery } from "#src/features/contract/create/queries/contract.queries";
 import { useAccess } from "#src/hooks";
 import { TableActionDownloadIcon, TableActionEditIcon, TableActionEyeIcon, TableActionTrashIcon } from "#src/icons";
-import { PlusCircleOutlined } from "@ant-design/icons";
+import { PlusCircleOutlined, PrinterOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 
 import { Button, Popconfirm, theme } from "antd";
@@ -18,6 +18,7 @@ import { fetchContractDetail, fetchContractsList, fetchDeleteContract } from "..
 import { companyTypeMatches, pickCompanyTypeToken } from "../../shared/utils";
 import { useContractAddendaTableStyles } from "./components/contract-addenda-table.styles";
 import { ContractAddendaExpandedRow } from "./components/ContractAddendaExpandedRow";
+import { ContractTemplatePrintModal } from "./components/ContractTemplatePrintModal";
 import { getContractColumns } from "./constants";
 import { openContractPdfPrint } from "./utils/contract-pdf";
 
@@ -37,6 +38,8 @@ export default function ContractListPage() {
 	const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
 	const [selectedTrafficCompanyType, setSelectedTrafficCompanyType] = useState<string | null>(null);
 	const [downloadingPdfId, setDownloadingPdfId] = useState<number | null>(null);
+	const [printModalOpen, setPrintModalOpen] = useState(false);
+	const [printRecord, setPrintRecord] = useState<ContractListItemType | null>(null);
 
 	const canCreateContracts = hasDomainPermission("contracts", "create");
 	const permittedViewServiceIdList = getPermittedServiceIds("contracts", "view");
@@ -52,7 +55,9 @@ export default function ContractListPage() {
 			return;
 		}
 		if (!permittedViewServiceIds.has(selectedServiceId)) {
+			// eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
 			setSelectedServiceId(null);
+			// eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
 			setSelectedTrafficCompanyType(null);
 			formRef.current?.setFieldsValue({
 				service_id: undefined,
@@ -125,6 +130,7 @@ export default function ContractListPage() {
 			return;
 		}
 
+		// eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
 		setSelectedTrafficCompanyType(null);
 		formRef.current?.setFieldsValue({
 			company_type: undefined,
@@ -310,6 +316,20 @@ export default function ContractListPage() {
 						</BasicButton>,
 					);
 
+					actions.push(
+						<BasicButton
+							key="print"
+							type="link"
+							size="large"
+							title="چاپ قرارداد"
+							icon={<PrinterOutlined />}
+							onClick={() => {
+								setPrintRecord(record);
+								setPrintModalOpen(true);
+							}}
+						/>,
+					);
+
 					if (canDeleteRow(record)) {
 						actions.push(
 							<Popconfirm
@@ -401,6 +421,16 @@ export default function ContractListPage() {
 						</Button>,
 					];
 				}}
+			/>
+			<ContractTemplatePrintModal
+				open={printModalOpen}
+				onClose={() => {
+					setPrintModalOpen(false);
+					setPrintRecord(null);
+				}}
+				record={printRecord}
+				service={printRecord ? resolveServicePath(printRecord) : null}
+				companyType={printRecord ? getRowCompanyType(printRecord) : null}
 			/>
 		</BasicContent>
 	);
