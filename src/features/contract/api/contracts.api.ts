@@ -446,3 +446,27 @@ export function fetchContractTemplates(service: string, companyType?: string | n
 		.get("contracts/templates/", { searchParams })
 		.json<PaginatedResult<any> | any>();
 }
+
+export interface TemplateTagValuesResponse {
+	service: string
+	variant: string | null
+	company_type: string
+	document_kind: string
+	values: Record<string, any>
+	labels: Record<string, string>
+	missing: string[]
+	unknown: string[]
+	template_id: number
+}
+
+export async function fetchTemplateTagValues(templateId: number, contractId: number, addendumGroupId?: string | null): Promise<TemplateTagValuesResponse> {
+	const searchParams: Record<string, string> = {
+		template_id: templateId.toString(),
+		contract_id: contractId.toString(),
+	};
+	if (addendumGroupId) {
+		searchParams.addendum_group_id = addendumGroupId;
+	}
+
+	return request.get("contracts/templates/tag-values/", { searchParams }).json<TemplateTagValuesResponse>();
+}

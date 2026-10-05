@@ -1,4 +1,4 @@
-import type { ContractServicePath } from "../../../api/contracts.api";
+import type { ContractServicePath, TemplateTagValuesResponse } from "../../../api/contracts.api";
 import type { ContractListItemType } from "../../model/contracts.list.types";
 import { PrinterOutlined } from "@ant-design/icons";
 import { App, Card, Empty, List, message, Modal, Spin, theme, Typography } from "antd";
@@ -6,7 +6,8 @@ import React, { useEffect, useState } from "react";
 import { usePreferencesStore } from "../../../../../store/preferences";
 import { TemplateCreateApi } from "../../../../contract-templates/api/api";
 import { getVariable } from "../../../../contract-templates/create/components/editor/variables/registry";
-import { fetchContractPrintData, fetchContractTemplates } from "../../../api/contracts.api";
+import { fetchContractTemplates, fetchTemplateTagValues } from "../../../api/contracts.api";
+
 import { ContractTemplateEditorModal } from "./ContractTemplateEditorModal";
 
 interface Props {
@@ -18,69 +19,26 @@ interface Props {
 	addendumGroupId?: string | null
 }
 
-function getVariableValueFromContract(varKey: string, data: any): string | undefined {
-	if (!data)
-		return undefined;
-
-	// Explicit mappings for common keys
-	const mappings: Record<string, any> = {
-		company_name: data.company?.name || data.company?.legal_name,
-		name: data.company?.name,
-		company_legal_name: data.company?.legal_name || data.company?.name,
-		company_national_id: data.company?.national_id,
-		national_id: data.company?.national_id,
-		company_registration_number: data.company?.registration_number,
-		contract_number: data.contract_number || data.contractNumber,
-		service_name: data.service?.name,
-		start_jy: data.start_jy,
-		start_jm: data.start_jm,
-		end_jy: data.end_jy,
-		end_jm: data.end_jm,
-		today_jalali: new Date().toLocaleDateString("fa-IR"), // Always available at generation time
-	};
-
-	if (varKey in mappings) {
-		const val = mappings[varKey];
-		return (val !== null && val !== undefined && val !== "") ? String(val) : undefined;
-	}
-
-	// Fallback: search anywhere in the object
-	let foundValue: string | undefined;
-	const search = (obj: any) => {
-		if (foundValue !== undefined)
-			return;
-		if (!obj || typeof obj !== "object")
-			return;
-
-		for (const [k, v] of Object.entries(obj)) {
-			// Basic match or camelCase to snake_case match
-			if ((k === varKey || k === varKey.replace(/_([a-z])/g, g => g[1].toUpperCase())) && v !== null && v !== undefined && v !== "") {
-				foundValue = String(v);
-				return;
-			}
-			if (typeof v === "object") {
-				search(v);
-			}
-		}
-	};
-	search(data);
-
-	return foundValue;
-}
-
-function replaceVariablesInHtml(html: string, contractData: any, missingVars: string[]): string {
+function replaceVariablesInHtml(html: string, tagValues: TemplateTagValuesResponse, missingVars: string[], unknownVars: string[]): string {
 	if (!html)
 		return "";
 
 	return html.replace(/<span([^>]*)data-variable=["']([^"']+)["']([^>]*)>.*?<\/span>/gi, (match, before, key, after) => {
-		const value = getVariableValueFromContract(key, contractData);
-		if (value !== undefined) {
+		const value = tagValues.values[key];
+		const isMissing = tagValues.missing.includes(key);
+		const isUnknown = tagValues.unknown.includes(key);
+
+		if (!isMissing && !isUnknown && value !== undefined && value !== null) {
 			const formattedValue = String(value).replace(/\n/g, "<br/>");
 			return `<span${before}${after}>${formattedValue}</span>`;
 		}
 		else {
-			missingVars.push(key);
-			const label = getVariable(key)?.label || key;
+			if (isUnknown)
+				unknownVars.push(key);
+			else
+				missingVars.push(key);
+
+			const label = tagValues.labels[key] || getVariable(key)?.label || key;
 			return `<mark style="background-color: #fef0f0; color: #f5222d;"><span${before}${after}>[${label}]</span></mark>`;
 		}
 	});
@@ -130,17 +88,19 @@ export const ContractTemplatePrintModal: React.FC<Props> = ({ open, onClose, rec
 
 		setComparingId(template.id);
 		try {
-			const [templateData, contractData] = await Promise.all([
+			const [templateData, tagValues] = await Promise.all([
 				TemplateCreateApi.getTemplate(template.id),
-				fetchContractPrintData(service, record.id, addendumGroupId),
+				fetchTemplateTagValues(template.id, record.id, addendumGroupId),
 			]);
 
 			const templateHtml = templateData?.content_html || "";
 			const missingVars: string[] = [];
-			const newHtml = replaceVariablesInHtml(templateHtml, contractData, missingVars);
+			const unknownVars: string[] = [];
+			const newHtml = replaceVariablesInHtml(templateHtml, tagValues, missingVars, unknownVars);
 
-			// De-duplicate missing vars
+			// De-duplicate
 			const uniqueMissingVars = Array.from(new Set(missingVars));
+			const uniqueUnknownVars = Array.from(new Set(unknownVars));
 
 			const onContinue = () => {
 				modal.confirm({
@@ -156,17 +116,31 @@ export const ContractTemplatePrintModal: React.FC<Props> = ({ open, onClose, rec
 				});
 			};
 
-			if (uniqueMissingVars.length > 0) {
-				const missingLabels = uniqueMissingVars.map(v => getVariable(v)?.label || v);
+			if (uniqueMissingVars.length > 0 || uniqueUnknownVars.length > 0) {
+				const missingLabels = uniqueMissingVars.map(v => tagValues.labels[v] || getVariable(v)?.label || v);
+				const unknownLabels = uniqueUnknownVars.map(v => tagValues.labels[v] || getVariable(v)?.label || v);
+
 				modal.confirm({
 					title: "عدم تطابق اطلاعات قرارداد با قالب",
 					icon: <PrinterOutlined className="text-orange-500" />,
 					content: (
 						<div>
-							<p className="mb-2">اطلاعات زیر در قرارداد یافت نشد. این مقادیر در ویرایشگر به‌صورت هایلایت نمایش داده می‌شوند تا بتوانید آن‌ها را تکمیل کنید:</p>
-							<ul className="mt-2 pl-4 list-disc max-h-60 overflow-y-auto" style={{ color: token.colorError }}>
-								{missingLabels.map(label => <li key={label} className="mb-1">{label}</li>)}
-							</ul>
+							{uniqueMissingVars.length > 0 && (
+								<>
+									<p className="mb-2">اطلاعات زیر در قرارداد یافت نشد. این مقادیر در ویرایشگر به‌صورت هایلایت نمایش داده می‌شوند تا بتوانید آن‌ها را تکمیل کنید:</p>
+									<ul className="mt-2 pl-4 list-disc max-h-40 overflow-y-auto" style={{ color: token.colorError }}>
+										{missingLabels.map(label => <li key={label} className="mb-1">{label}</li>)}
+									</ul>
+								</>
+							)}
+							{uniqueUnknownVars.length > 0 && (
+								<>
+									<p className="mb-2 mt-4 text-orange-500">متغیرهای زیر در این سیستم شناسایی نشدند (ممکن است قالب نیاز به بروزرسانی داشته باشد):</p>
+									<ul className="mt-2 pl-4 list-disc max-h-40 overflow-y-auto" style={{ color: "#faad14" }}>
+										{unknownLabels.map(label => <li key={label} className="mb-1">{label}</li>)}
+									</ul>
+								</>
+							)}
 						</div>
 					),
 					okText: "ادامه به ویرایشگر",
