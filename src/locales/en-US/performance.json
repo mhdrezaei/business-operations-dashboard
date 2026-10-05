@@ -126,6 +126,7 @@
 		"enterConversionRatio": "Enter conversion ratio",
 		"pspValue": "e.g. number of transactions",
 		"shahkarValue": "e.g. 123.45",
+		"shahkarNewCustomerCount": "e.g. 4",
 		"example100": "e.g. 100",
 		"example10000": "e.g. 10000",
 		"example100000": "e.g. 100000",
@@ -284,7 +285,9 @@
 			"monthlyRevenue": "Monthly Revenue"
 		},
 		"shahkar": {
-			"performanceValue": "Performance Value"
+			"performanceValue": "Performance Value",
+			"newCustomerCount": "New Customer Count",
+			"newCustomerIncome": "New Customer Income"
 		},
 		"sms": {
 			"irancellFa": "Irancell Performance - Persian",
@@ -357,7 +360,8 @@
 			"monthlyRevenueRequired": "Monthly revenue is required"
 		},
 		"shahkar": {
-			"performanceValueRequired": "Performance value is required"
+			"performanceValueRequired": "Performance value is required",
+			"newCustomerCountInvalid": "New customer count must be a non-negative whole number"
 		},
 		"sms": {
 			"irancellFaRequired": "Irancell Persian performance value is required",

@@ -183,6 +183,16 @@ export function pickActiveContract(
 		)) ?? null;
 }
 
+export function contractHasNewCustomerRate(contract: PerformanceContractListItem | null | undefined) {
+	if (!contract)
+		return false;
+
+	if (contract.has_new_customer_rate === true)
+		return true;
+
+	return Boolean(contract.new_customer_calculation_type || contract.new_customer_tiers?.length);
+}
+
 export function extractOpenApiContractModel(contract: PerformanceContractListItem | null): OpenApiContractModel | null {
 	return normalizeOpenApiContractModel(contract?.contract_openapi_details?.contract_model);
 }
