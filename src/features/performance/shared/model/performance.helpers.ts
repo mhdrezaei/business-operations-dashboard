@@ -183,14 +183,60 @@ export function pickActiveContract(
 		)) ?? null;
 }
 
-export function contractHasNewCustomerRate(contract: PerformanceContractListItem | null | undefined) {
+function hasNewCustomerRate(row: Record<string, unknown> | null | undefined) {
+	if (!row)
+		return false;
+
+	if (row.has_new_customer_rate === true || row.hasNewCustomerRate === true)
+		return true;
+
+	const tiers = row.new_customer_tiers ?? row.newCustomerTiers;
+	return Boolean(row.new_customer_calculation_type ?? row.newCustomerCalculationType ?? (Array.isArray(tiers) ? tiers.length : 0));
+}
+
+function findActiveShahkarAddendum(
+	rows: unknown,
+	year: number,
+	month: number,
+): Record<string, unknown> | null {
+	if (!Array.isArray(rows))
+		return null;
+
+	const active = rows.find((value) => {
+		if (value == null || typeof value !== "object")
+			return false;
+		const row = value as Record<string, unknown>;
+		return isYearMonthInRange(
+			year,
+			month,
+			Number(row.start_jy ?? row.startYear) || null,
+			Number(row.start_jm ?? row.startMonth) || null,
+			Number(row.end_jy ?? row.endYear) || null,
+			Number(row.end_jm ?? row.endMonth) || null,
+		);
+	});
+	if (active == null || typeof active !== "object")
+		return null;
+
+	const row = active as Record<string, unknown>;
+	return findActiveShahkarAddendum(row.children, year, month) ?? row;
+}
+
+export function contractHasNewCustomerRate(
+	contract: PerformanceContractListItem | null | undefined,
+	year?: number | null,
+	month?: number | null,
+) {
 	if (!contract)
 		return false;
 
-	if (contract.has_new_customer_rate === true)
-		return true;
+	if (year != null && month != null) {
+		const activeAddendum = findActiveShahkarAddendum(contract.addenda, year, month);
+		if (activeAddendum)
+			return hasNewCustomerRate(activeAddendum);
+	}
 
-	return Boolean(contract.new_customer_calculation_type || contract.new_customer_tiers?.length);
+	return hasNewCustomerRate(contract);
 }
 
 export function extractOpenApiContractModel(contract: PerformanceContractListItem | null): OpenApiContractModel | null {

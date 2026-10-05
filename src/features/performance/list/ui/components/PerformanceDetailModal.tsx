@@ -1305,7 +1305,7 @@ export function PerformanceDetailModal({
 				if (cancelled)
 					return;
 				const active = pickActiveContract(response?.results ?? [], year, month);
-				setShahkarHasNewCustomerRate(contractHasNewCustomerRate(active));
+				setShahkarHasNewCustomerRate(contractHasNewCustomerRate(active, year, month));
 			}
 			catch {
 				if (!cancelled)

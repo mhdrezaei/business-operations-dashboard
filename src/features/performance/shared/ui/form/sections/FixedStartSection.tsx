@@ -357,7 +357,7 @@ export function FixedStartSection({
 		() => pickActiveContract(contracts.data?.results ?? [], year, month),
 		[contracts.data, year, month],
 	);
-	const hasNewCustomerRate = serviceCode === "shahkar" && contractHasNewCustomerRate(activeContract);
+	const hasNewCustomerRate = serviceCode === "shahkar" && contractHasNewCustomerRate(activeContract, year, month);
 	const monthlyStatusContractId = monthlyStatus.data?.has_contract
 		? monthlyStatus.data.base_contract_id ?? null
 		: null;
