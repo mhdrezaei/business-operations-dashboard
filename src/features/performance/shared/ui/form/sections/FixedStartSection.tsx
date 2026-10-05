@@ -13,6 +13,7 @@ import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import {
 	companyTypeMatches,
+	contractHasNewCustomerRate,
 	extractOpenApiContractModel,
 	extractSalesAgentId,
 	isSmsCommissionCode,
@@ -356,11 +357,19 @@ export function FixedStartSection({
 		() => pickActiveContract(contracts.data?.results ?? [], year, month),
 		[contracts.data, year, month],
 	);
+	const hasNewCustomerRate = serviceCode === "shahkar" && contractHasNewCustomerRate(activeContract);
 	const monthlyStatusContractId = monthlyStatus.data?.has_contract
 		? monthlyStatus.data.base_contract_id ?? null
 		: null;
 	const monthlyStatusOpenApiContractModel = normalizeOpenApiContractModel(monthlyStatus.data?.openapi?.contract_model);
 	const trafficHasCountyContract = monthlyStatus.data?.traffic?.has_county_contract === true;
+
+	useEffect(() => {
+		setValue("serviceFields.hasNewCustomerRate" as any, hasNewCustomerRate, {
+			shouldDirty: false,
+			shouldValidate: false,
+		});
+	}, [hasNewCustomerRate, setValue]);
 
 	useEffect(() => {
 		if (isTrafficTemplateMode) {

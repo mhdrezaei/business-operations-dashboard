@@ -127,6 +127,7 @@
 		"enterConversionRatio": "ضریب تبدیل را وارد کنید",
 		"pspValue": "مثلاً تعداد تراکنش",
 		"shahkarValue": "مثلاً 123.45",
+		"shahkarNewCustomerCount": "مثلاً 4",
 		"example100": "مثلاً 100",
 		"example10000": "مثلاً 10000",
 		"example100000": "مثلاً 100000",
@@ -285,7 +286,9 @@
 			"monthlyRevenue": "درآمد این ماه"
 		},
 		"shahkar": {
-			"performanceValue": "مقدار عملکرد"
+			"performanceValue": "مقدار عملکرد",
+			"newCustomerCount": "تعداد مشتریان جدید",
+			"newCustomerIncome": "درآمد مشتریان جدید"
 		},
 		"sms": {
 			"irancellFa": "مقدار عملکرد ایرانسل - فارسی",
@@ -358,7 +361,8 @@
 			"monthlyRevenueRequired": "درآمد این ماه الزامی است"
 		},
 		"shahkar": {
-			"performanceValueRequired": "مقدار عملکرد الزامی است"
+			"performanceValueRequired": "مقدار عملکرد الزامی است",
+			"newCustomerCountInvalid": "تعداد مشتریان جدید باید عدد صحیح و غیرمنفی باشد"
 		},
 		"sms": {
 			"irancellFaRequired": "مقدار عملکرد ایرانسل - فارسی الزامی است",
