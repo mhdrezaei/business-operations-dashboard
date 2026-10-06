@@ -4,7 +4,10 @@ import { request } from "#src/utils/request";
 const BASE = "sales-agency/expense-titles";
 
 export function fetchSalesAgencyExpenseTitles() {
-	return request.get(`${BASE}/`).json<SalesAgencyExpenseTitlesResponse>();
+	return request
+		.get(`${BASE}/`, { searchParams: { page: 1, page_size: 100 } })
+		.json<SalesAgencyExpenseTitlesResponse | SalesAgencyExpenseTitle[]>()
+		.then(response => Array.isArray(response) ? response : response.results);
 }
 
 export function createSalesAgencyExpenseTitle(payload: SalesAgencyExpenseTitlePayload) {
