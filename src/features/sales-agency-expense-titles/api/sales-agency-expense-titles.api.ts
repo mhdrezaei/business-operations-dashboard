@@ -1,7 +1,7 @@
 import type { SalesAgencyExpenseTitle, SalesAgencyExpenseTitlePayload, SalesAgencyExpenseTitlesResponse } from "../model/sales-agency-expense-title.types";
 import { request } from "#src/utils/request";
 
-const BASE = "sales-agency/expense-titles";
+const BASE = "contracts/sales-agency/expense-titles";
 
 export function fetchSalesAgencyExpenseTitles() {
 	return request
