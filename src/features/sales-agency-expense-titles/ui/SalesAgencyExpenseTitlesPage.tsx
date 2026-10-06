@@ -39,7 +39,7 @@ export default function SalesAgencyExpenseTitlesPage() {
 		setModalOpen(true);
 	};
 
-	const titles = titlesQuery.data ?? [];
+	const titles = titlesQuery.data?.results ?? [];
 
 	return (
 		<BasicContent className="h-full !overflow-y-auto">
@@ -87,7 +87,7 @@ export default function SalesAgencyExpenseTitlesPage() {
 			>
 				<Form form={form} layout="vertical" onFinish={payload => saveMutation.mutate(payload)}>
 					<Form.Item name="name" label="نام" rules={[{ required: true, whitespace: true, message: "نام عنوان هزینه را وارد کنید." }]}>
-						<Input maxLength={150} />
+						<Input />
 					</Form.Item>
 					<div className="mb-6 flex items-center gap-2">
 						<Form.Item name="is_active" valuePropName="checked" className="mb-0">

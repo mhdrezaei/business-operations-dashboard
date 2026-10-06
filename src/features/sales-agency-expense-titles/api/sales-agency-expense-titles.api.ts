@@ -4,10 +4,7 @@ import { request } from "#src/utils/request";
 const BASE = "contracts/sales-agency/expense-titles";
 
 export function fetchSalesAgencyExpenseTitles() {
-	return request
-		.get(`${BASE}/`, { searchParams: { page: 1, page_size: 100 } })
-		.json<SalesAgencyExpenseTitlesResponse | SalesAgencyExpenseTitle[]>()
-		.then(response => Array.isArray(response) ? response : response.results);
+	return request.get(`${BASE}/`).json<SalesAgencyExpenseTitlesResponse>();
 }
 
 export function createSalesAgencyExpenseTitle(payload: SalesAgencyExpenseTitlePayload) {
@@ -15,5 +12,5 @@ export function createSalesAgencyExpenseTitle(payload: SalesAgencyExpenseTitlePa
 }
 
 export function updateSalesAgencyExpenseTitle(id: number, payload: SalesAgencyExpenseTitlePayload) {
-	return request.patch(`${BASE}/${id}/`, { json: payload }).json<SalesAgencyExpenseTitle>();
+	return request.put(`${BASE}/${id}/`, { json: payload }).json<SalesAgencyExpenseTitle>();
 }
