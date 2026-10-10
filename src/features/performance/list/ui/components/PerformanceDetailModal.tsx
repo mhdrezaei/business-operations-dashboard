@@ -330,6 +330,8 @@ function buildInitialValues(
 		values.sh_month = recordFallback.sh_month ?? null;
 	if (service === "sms-commission" && values.sales_agent == null)
 		values.sales_agent = recordFallback.sales_agent ?? recordFallback.sales_agent_id ?? null;
+	if (service === "shahkar" && values.new_customer_count == null)
+		values.new_customer_count = detail.newCustomerCount ?? recordFallback.newCustomerCount ?? null;
 
 	return values;
 }
@@ -686,6 +688,13 @@ export function PerformanceDetailModal({
 		() => normalizePerformanceRecord(record ?? {}),
 		[record],
 	);
+	const hasSavedShahkarNewCustomerCount = [
+		detail?.new_customer_count,
+		detail?.newCustomerCount,
+		normalizedRecord.raw.new_customer_count,
+		normalizedRecord.raw.newCustomerCount,
+	].some(value => value != null && value !== "");
+	const showShahkarNewCustomerCount = shahkarHasNewCustomerRate || hasSavedShahkarNewCustomerCount;
 	const openApiContractModel = useMemo(
 		() => resolveOpenApiContractModel(detail, record, openApiPerformances),
 		[detail, record, openApiPerformances],
@@ -758,7 +767,7 @@ export function PerformanceDetailModal({
 		}
 
 		if (service === "shahkar") {
-			const newCustomerFields = shahkarHasNewCustomerRate
+			const newCustomerFields = showShahkarNewCustomerCount
 				? [{ key: "new_customer_count", label: t("performance.fields.shahkar.newCustomerCount"), type: "number" as const }]
 				: [];
 			return {
@@ -768,7 +777,7 @@ export function PerformanceDetailModal({
 					{ key: "value", label: t("performance.fields.shahkar.performanceValue"), type: "number", required: true },
 					...newCustomerFields,
 				],
-				payloadKeys: shahkarHasNewCustomerRate ? ["value", "new_customer_count"] : ["value"],
+				payloadKeys: showShahkarNewCustomerCount ? ["value", "new_customer_count"] : ["value"],
 			};
 		}
 
@@ -852,7 +861,7 @@ export function PerformanceDetailModal({
 			],
 			payloadKeys: ["customer_name", "customer_nic", "province_code", "service_type", "value"],
 		};
-	}, [service, openApiContractModel, isUnregisteredMode, normalizedRecord.companyType, t]);
+	}, [service, openApiContractModel, isUnregisteredMode, normalizedRecord.companyType, showShahkarNewCustomerCount, t]);
 	const isOpenApiPackageEditLayout = service === "openapi" && openApiContractModel === "package";
 	const isSmsEditAlignedLayout = service === "sms" || service === "sms-commission";
 	const isPspEditLayout = service === "psp";
@@ -1010,10 +1019,10 @@ export function PerformanceDetailModal({
 		if (service !== "shahkar")
 			return [];
 
-		const newCustomerFields = shahkarHasNewCustomerRate
+		const newCustomerFields = showShahkarNewCustomerCount
 			? [
-				{ key: "new_customer_count", label: t("performance.fields.shahkar.newCustomerCount"), value: formatNumberLike(mergedDetail.new_customer_count) },
-				{ key: "new_customer_income", label: t("performance.fields.shahkar.newCustomerIncome"), value: formatNumberLike(mergedDetail.new_customer_income) },
+				{ key: "new_customer_count", label: t("performance.fields.shahkar.newCustomerCount"), value: formatNumberLike(mergedDetail.new_customer_count ?? mergedDetail.newCustomerCount) },
+				{ key: "new_customer_income", label: t("performance.fields.shahkar.newCustomerIncome"), value: formatNumberLike(mergedDetail.new_customer_income ?? mergedDetail.newCustomerIncome) },
 			]
 			: [];
 
@@ -1021,7 +1030,7 @@ export function PerformanceDetailModal({
 			...newCustomerFields,
 			{ key: "income", label: "درآمد این ماه", value: formatNumberLike(mergedDetail.income) },
 		];
-	}, [service, mergedDetail, shahkarHasNewCustomerRate]);
+	}, [service, mergedDetail, showShahkarNewCustomerCount]);
 	const pspSummaryFields = useMemo(() => {
 		if (service !== "psp")
 			return [];
