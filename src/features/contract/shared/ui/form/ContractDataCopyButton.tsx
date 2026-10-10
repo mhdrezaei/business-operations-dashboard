@@ -2,6 +2,8 @@ import type { ContractServicePath } from "#src/features/contract/api/contracts.a
 import type { ContractFormValues } from "../../model/contract.form.types";
 import { fetchCompaniesByService } from "#src/api/common/common.api";
 import { fetchCompanyContracts, fetchContractDetail } from "#src/features/contract/api/contracts.api";
+import { companyTypeMatches, isIxpCompanyName } from "#src/features/contract/shared/utils";
+import { useAccess } from "#src/hooks";
 import { notification } from "#src/utils";
 import { CopyOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
@@ -79,6 +81,7 @@ const OMIT_FIELDS = new Set(["addenda", "agent", "isSigned", "isOfficial", "id",
 
 export function ContractDataCopyButton() {
 	const { control, setValue } = useFormContext<ContractFormValues>();
+	const { getPermittedCompanyTypes } = useAccess();
 	const serviceId = useWatch({ control, name: "serviceId" });
 	const companyId = useWatch({ control, name: "companyId" });
 	const serviceCode = useWatch({ control, name: "serviceCode" });
@@ -88,34 +91,65 @@ export function ContractDataCopyButton() {
 	const [open, setOpen] = useState(false);
 	const [confirming, setConfirming] = useState(false);
 	const [otherCompany, setOtherCompany] = useState(false);
+	const [sourceCompanyType, setSourceCompanyType] = useState<string | null>(null);
 	const [sourceCompanyId, setSourceCompanyId] = useState<number | null>(null);
 	const [contractId, setContractId] = useState<number | null>(null);
 	const [part, setPart] = useState<string | null>(null);
 	const [receiving, setReceiving] = useState(false);
+	const normalizedServiceCode = String(serviceCode ?? "").trim().toLowerCase();
+	const isSalesAgency = normalizedServiceCode === "sales_agency" || normalizedServiceCode === "sales-agency";
+	const hasSourceCompanyType = ["sms", "traffic", "psp"].includes(normalizedServiceCode) || isSalesAgency;
+	const sourceCompanyTypeLabel = isSalesAgency
+		? "نوع همکاری (عاملیت فروش)"
+		: normalizedServiceCode === "sms"
+			? "نوع شرکت (SMS)"
+			: normalizedServiceCode === "traffic"
+				? "نوع شرکت (ترافیک)"
+				: "نوع شرکت (PSP)";
+	const sourceCompanyLabel = isSalesAgency || normalizedServiceCode === "psp" ? "نام شرکت" : "شرکت";
+	const sourceCompanyTypeOptions = useMemo(() => {
+		if (!hasSourceCompanyType || serviceId == null)
+			return [];
+
+		const options = getPermittedCompanyTypes("contracts", "create", serviceId)
+			.map(item => ({ label: item.value, value: item.key }));
+		if (normalizedServiceCode === "traffic" && !options.some(option => String(option.value).toUpperCase() === "IXP"))
+			options.push({ label: "IXP", value: "IXP" });
+		return options;
+	}, [getPermittedCompanyTypes, hasSourceCompanyType, normalizedServiceCode, serviceId]);
+	const sourcePath = contractPath(serviceCode, otherCompany ? sourceCompanyType : companyType, counterparty);
 
 	const companies = useQuery({
-		queryKey: ["common", "companies", "contract-copy", serviceId ?? null],
+		queryKey: ["common", "companies", "contract-copy", serviceId ?? null, sourceCompanyType ?? null],
 		queryFn: () => fetchCompaniesByService(serviceId!, { pageSize: 1000 }),
-		enabled: open && otherCompany && serviceId != null,
+		enabled: open && otherCompany && serviceId != null && (!hasSourceCompanyType || sourceCompanyType != null),
 	});
 	const companyOptions = useMemo(
-		() => (companies.data?.results ?? []).filter(item => Number(item.id) !== Number(companyId)).map(item => ({ label: item.name, value: Number(item.id) })),
-		[companies.data, companyId],
+		() => (companies.data?.results ?? [])
+			.filter(item => Number(item.id) !== Number(companyId))
+			.filter((item) => {
+				if (!hasSourceCompanyType || !sourceCompanyType)
+					return !hasSourceCompanyType;
+				if (normalizedServiceCode === "traffic" && sourceCompanyType.toUpperCase() === "IXP")
+					return isIxpCompanyName(item.name);
+				return companyTypeMatches(item.company_type, sourceCompanyType);
+			})
+			.map(item => ({ label: item.name, value: Number(item.id) })),
+		[companies.data, companyId, hasSourceCompanyType, sourceCompanyType],
 	);
-	const selectedCompany = companies.data?.results.find(item => Number(item.id) === Number(sourceCompanyId));
 	const selectedCompanyType = otherCompany
-		? typeof selectedCompany?.company_type === "string" ? selectedCompany.company_type : null
+		? sourceCompanyType
 		: typeof companyType === "string" ? companyType : null;
 	const resolvedCompanyId = otherCompany ? sourceCompanyId : companyId;
 	const contracts = useQuery({
-		queryKey: ["contracts", "contract-copy", path, resolvedCompanyId ?? null, selectedCompanyType ?? null, serviceId ?? null],
-		queryFn: () => fetchCompanyContracts(path!, resolvedCompanyId!, selectedCompanyType, serviceId),
-		enabled: open && path != null && resolvedCompanyId != null && serviceId != null,
+		queryKey: ["contracts", "contract-copy", sourcePath, resolvedCompanyId ?? null, selectedCompanyType ?? null, serviceId ?? null],
+		queryFn: () => fetchCompanyContracts(sourcePath!, resolvedCompanyId!, selectedCompanyType, serviceId),
+		enabled: open && sourcePath != null && resolvedCompanyId != null && serviceId != null,
 	});
 	const detail = useQuery({
-		queryKey: ["contracts", "contract-copy-detail", path, contractId ?? null],
-		queryFn: () => fetchContractDetail(path!, contractId!),
-		enabled: open && path != null && contractId != null,
+		queryKey: ["contracts", "contract-copy-detail", sourcePath, contractId ?? null],
+		queryFn: () => fetchContractDetail(sourcePath!, contractId!),
+		enabled: open && sourcePath != null && contractId != null,
 	});
 	const contractOptions = useMemo(
 		() => (contracts.data?.results ?? []).map((row: any) => ({ value: Number(row.id), label: contractLabel(row) })),
@@ -124,13 +158,13 @@ export function ContractDataCopyButton() {
 	const partOptions = useMemo(() => [{ value: "main", label: "قرارداد اصلی" }, ...addendumOptions(detail.data?.addenda)], [detail.data]);
 
 	async function receive() {
-		if (contractId == null || part == null || path == null)
+		if (contractId == null || part == null || sourcePath == null)
 			return;
 		setReceiving(true);
 		try {
-			const sourceDto = await fetchContractDetail(path, contractId);
+			const sourceDto = await fetchContractDetail(sourcePath, contractId);
 			const { contractDetailToFormValues } = await import("#src/features/contract/list/ui/components/ContractDetailModal");
-			const normalized = contractDetailToFormValues(sourceDto, path);
+			const normalized = contractDetailToFormValues(sourceDto, sourcePath);
 			const source = part === "main"
 				? normalized.serviceFields
 				: findAddendum(normalized.serviceFields.addenda, Number(part.replace("addendum:", "")));
@@ -193,6 +227,7 @@ export function ContractDataCopyButton() {
 						checked={otherCompany}
 						onChange={(event) => {
 							setOtherCompany(event.target.checked);
+							setSourceCompanyType(event.target.checked && typeof companyType === "string" ? companyType : null);
 							setSourceCompanyId(null);
 							setContractId(null);
 							setPart(null);
@@ -202,20 +237,44 @@ export function ContractDataCopyButton() {
 					</Checkbox>
 					{otherCompany
 						? (
-							<Select
-								showSearch
-								optionFilterProp="label"
-								placeholder="شرکت منبع را انتخاب کنید"
-								value={sourceCompanyId ?? undefined}
-								onChange={(id) => {
-									setSourceCompanyId(id);
-									setContractId(null);
-									setPart(null);
-								}}
-								options={companyOptions}
-								loading={companies.isLoading}
-								notFoundContent="شرکتی یافت نشد"
-							/>
+							<div className="grid gap-3">
+								{hasSourceCompanyType
+									? (
+										<div className="grid gap-2">
+											<div className="font-medium">{sourceCompanyTypeLabel}</div>
+											<Select
+												placeholder={`${sourceCompanyTypeLabel} را انتخاب کنید`}
+												value={sourceCompanyType ?? undefined}
+												onChange={(value) => {
+													setSourceCompanyType(value);
+													setSourceCompanyId(null);
+													setContractId(null);
+													setPart(null);
+												}}
+												options={sourceCompanyTypeOptions}
+											/>
+										</div>
+									)
+									: null}
+								<div className="grid gap-2">
+									<div className="font-medium">{sourceCompanyLabel}</div>
+									<Select
+										showSearch
+										optionFilterProp="label"
+										placeholder={isSalesAgency || normalizedServiceCode === "psp" ? "نام شرکت را انتخاب کنید" : "شرکت منبع را انتخاب کنید"}
+										value={sourceCompanyId ?? undefined}
+										onChange={(id) => {
+											setSourceCompanyId(id);
+											setContractId(null);
+											setPart(null);
+										}}
+										options={companyOptions}
+										disabled={hasSourceCompanyType && sourceCompanyType == null}
+										loading={companies.isLoading}
+										notFoundContent="شرکتی یافت نشد"
+									/>
+								</div>
+							</div>
 						)
 						: null}
 					<div className="grid gap-2">

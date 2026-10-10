@@ -188,7 +188,7 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 				// if business partners => company type and company required
 				if (val.counterpartyType === "partners") {
 					if (val.companyType == null) {
-						ctx.addIssue({ code: "custom", path: ["companyType"], message: "نوع شرکت الزامی است" });
+						ctx.addIssue({ code: "custom", path: ["companyType"], message: "نوع شرکت (SMS) الزامی است" });
 					}
 					if (val.companyId == null) {
 						ctx.addIssue({ code: "custom", path: ["companyId"], message: "شرکت الزامی است" });
