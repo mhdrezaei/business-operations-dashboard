@@ -2,7 +2,7 @@ import type { SalesAgencyExpenseTitle, SalesAgencyExpenseTitlePayload } from "..
 import { BasicContent } from "#src/components";
 import { EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Button, Card, Empty, Form, Input, Modal, Spin, Switch, Typography } from "antd";
+import { Alert, Button, Card, Empty, Form, Input, Modal, Spin, Switch, Typography } from "antd";
 import { useEffect, useState } from "react";
 import { createSalesAgencyExpenseTitle, fetchSalesAgencyExpenseTitles, updateSalesAgencyExpenseTitle } from "../api/sales-agency-expense-titles.api";
 
@@ -55,18 +55,27 @@ export default function SalesAgencyExpenseTitlesPage() {
 					</div>
 					{titlesQuery.isLoading
 						? <div className="py-12 text-center"><Spin /></div>
-						: titles.length === 0
-							? <Empty description="عنوانی ثبت نشده است." />
-							: (
-								<div className="flex flex-col gap-2">
-									{titles.map(title => (
-										<div key={title.id} className="flex items-center justify-between gap-4 rounded-lg border border-gray-200 px-4 py-3 dark:border-gray-700">
-											<Typography.Text>{title.name}</Typography.Text>
-											<Button aria-label={`ویرایش ${title.name}`} icon={<EditOutlined />} onClick={() => openModal(title)} />
-										</div>
-									))}
-								</div>
-							)}
+						: titlesQuery.isError
+							? (
+								<Alert
+									showIcon
+									type="error"
+									message="دریافت عنوان‌های هزینه ناموفق بود."
+									action={<Button size="small" onClick={() => void titlesQuery.refetch()}>تلاش دوباره</Button>}
+								/>
+							)
+							: titles.length === 0
+								? <Empty description="عنوانی ثبت نشده است." />
+								: (
+									<div className="flex flex-col gap-2">
+										{titles.map(title => (
+											<div key={title.id} className="flex items-center justify-between gap-4 rounded-lg border border-gray-200 px-4 py-3 dark:border-gray-700">
+												<Typography.Text>{title.name}</Typography.Text>
+												<Button aria-label={`ویرایش ${title.name}`} icon={<EditOutlined />} onClick={() => openModal(title)} />
+											</div>
+										))}
+									</div>
+								)}
 				</Card>
 			</div>
 
@@ -78,7 +87,7 @@ export default function SalesAgencyExpenseTitlesPage() {
 			>
 				<Form form={form} layout="vertical" onFinish={payload => saveMutation.mutate(payload)}>
 					<Form.Item name="name" label="نام" rules={[{ required: true, whitespace: true, message: "نام عنوان هزینه را وارد کنید." }]}>
-						<Input maxLength={150} />
+						<Input />
 					</Form.Item>
 					<div className="mb-6 flex items-center gap-2">
 						<Form.Item name="is_active" valuePropName="checked" className="mb-0">

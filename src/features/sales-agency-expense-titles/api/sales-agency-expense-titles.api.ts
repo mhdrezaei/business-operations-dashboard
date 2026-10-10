@@ -1,7 +1,7 @@
 import type { SalesAgencyExpenseTitle, SalesAgencyExpenseTitlePayload, SalesAgencyExpenseTitlesResponse } from "../model/sales-agency-expense-title.types";
 import { request } from "#src/utils/request";
 
-const BASE = "sales-agency/expense-titles";
+const BASE = "contracts/sales-agency/expense-titles";
 
 export function fetchSalesAgencyExpenseTitles() {
 	return request.get(`${BASE}/`).json<SalesAgencyExpenseTitlesResponse>();
@@ -12,5 +12,5 @@ export function createSalesAgencyExpenseTitle(payload: SalesAgencyExpenseTitlePa
 }
 
 export function updateSalesAgencyExpenseTitle(id: number, payload: SalesAgencyExpenseTitlePayload) {
-	return request.patch(`${BASE}/${id}/`, { json: payload }).json<SalesAgencyExpenseTitle>();
+	return request.put(`${BASE}/${id}/`, { json: payload }).json<SalesAgencyExpenseTitle>();
 }
