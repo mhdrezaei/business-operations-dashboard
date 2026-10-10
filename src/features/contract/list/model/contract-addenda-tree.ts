@@ -9,6 +9,7 @@ export interface ContractAddendumTreeNode {
 	startMonth: number | null
 	endYear: number | null
 	endMonth: number | null
+	addendumGroupId: string | null
 	children: ContractAddendumTreeNode[]
 }
 
@@ -146,6 +147,7 @@ export function buildContractAddendaTree(addenda: unknown): ContractAddendumTree
 			startMonth: toNumberOrNull(row.start_jm ?? row.startMonth),
 			endYear: toNumberOrNull(row.end_jy ?? row.endYear),
 			endMonth: toNumberOrNull(row.end_jm ?? row.endMonth),
+			addendumGroupId: typeof row.addendum_group_id === "string" ? row.addendum_group_id : (typeof row.addendumGroupId === "string" ? row.addendumGroupId : null),
 			children: mapNodes(node.children, displayNumber),
 		};
 	});

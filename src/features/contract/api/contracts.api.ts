@@ -13,6 +13,36 @@ export type ContractServicePath = | "openapi" | "traffic" | "psp" | "commercial"
   | "sms/vendor"
   | "sms-commission";
 
+export interface SignFlowPreviewResponse {
+	service: string
+	contract: {
+		id: number
+		contract_number: string
+		company: string
+	}
+	addendum_group_id: number | null
+	company_type: string | null
+	rule_config: {
+		id: number
+		name: string
+	}
+	steps: Array<{
+		order: number
+		name: string
+		recipients: Array<{
+			target_type: string
+			user_id: number
+			username: string
+		}>
+		resolved_users: Array<{
+			user_id: number
+			username: string
+		}>
+	}>
+	has_active_flow: boolean
+	active_flow_id: number | null
+}
+
 export interface ContractGapsResponse {
 	company: {
 		id: number
@@ -145,6 +175,43 @@ export function fetchCompanyContracts(
 		.json<PaginatedResult<any>>();
 }
 
+/* ===================== SIGN FLOW & PDF ===================== */
+
+export function fetchSignFlowPreview(service: ContractServicePath, contractId: number, addendumGroupId?: string | null) {
+	const json: Record<string, any> = { service, contract_id: contractId };
+	if (addendumGroupId) {
+		json.addendum_group_id = addendumGroupId;
+	}
+	return request
+		.post("contracts/sign-flows/preview/", {
+			json,
+		})
+		.json<SignFlowPreviewResponse>();
+}
+
+export function requestOfficialPdf(service: ContractServicePath, contractId: number, body: FormData, addendumGroupId?: string | null) {
+	const searchParams: Record<string, string> = {};
+	if (addendumGroupId) {
+		searchParams.addendum_group_id = addendumGroupId;
+	}
+	return request
+		.post(`contracts/${service}/${contractId}/official-pdf/`, {
+			body,
+			searchParams,
+		})
+		.json<any>(); // Assuming it returns some success status
+}
+
+export function checkOfficialPdfStatus(service: ContractServicePath, contractId: number, addendumGroupId?: string | null) {
+	const searchParams: Record<string, string> = {};
+	if (addendumGroupId) {
+		searchParams.addendum_group_id = addendumGroupId;
+	}
+	return request
+		.get(`contracts/${service}/${contractId}/official-pdf/status/`, { searchParams })
+		.json<{ can_upload: boolean, has_official_pdf: boolean }>();
+}
+
 /* ===================== DETAIL ===================== */
 
 export function fetchContractDetail(
@@ -153,6 +220,20 @@ export function fetchContractDetail(
 ) {
 	return request
 		.get(buildContractPath(service, id))
+		.json<any>();
+}
+
+export function fetchContractPrintData(
+	service: ContractServicePath,
+	id: number,
+	addendumGroupId?: string | null,
+) {
+	const searchParams: Record<string, string> = {};
+	if (addendumGroupId) {
+		searchParams.addendum_group_id = addendumGroupId;
+	}
+	return request
+		.get(`${buildContractPath(service, id)}print-data/`, { searchParams })
 		.json<any>();
 }
 
@@ -349,4 +430,43 @@ export async function fetchSignFlowDetail(id: number | string): Promise<SignFlow
 
 export async function fetchSignFlowHistory(contractId: number | string): Promise<SignFlowHistoryItem[]> {
 	return request.get(`contracts/sign-flows/history/?contract_id=${contractId}`).json<SignFlowHistoryItem[]>();
+}
+export function fetchContractTemplates(service: string, companyType?: string | null, documentKind?: string | null) {
+	const searchParams: Record<string, string> = {
+		service,
+	};
+	if (companyType) {
+		searchParams.company_type = companyType;
+	}
+	if (documentKind) {
+		searchParams.document_kind = documentKind;
+	}
+
+	return request
+		.get("contracts/templates/", { searchParams })
+		.json<PaginatedResult<any> | any>();
+}
+
+export interface TemplateTagValuesResponse {
+	service: string
+	variant: string | null
+	company_type: string
+	document_kind: string
+	values: Record<string, any>
+	labels: Record<string, string>
+	missing: string[]
+	unknown: string[]
+	template_id: number
+}
+
+export async function fetchTemplateTagValues(templateId: number, contractId: number, addendumGroupId?: string | null): Promise<TemplateTagValuesResponse> {
+	const searchParams: Record<string, string> = {
+		template_id: templateId.toString(),
+		contract_id: contractId.toString(),
+	};
+	if (addendumGroupId) {
+		searchParams.addendum_group_id = addendumGroupId;
+	}
+
+	return request.get("contracts/templates/tag-values/", { searchParams }).json<TemplateTagValuesResponse>();
 }
