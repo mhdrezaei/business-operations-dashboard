@@ -15,6 +15,36 @@ export type ContractServicePath = | "openapi" | "traffic" | "psp" | "commercial"
   | "sms/vendor"
   | "sms-commission";
 
+export interface SignFlowPreviewResponse {
+	service: string
+	contract: {
+		id: number
+		contract_number: string
+		company: string
+	}
+	addendum_group_id: number | null
+	company_type: string | null
+	rule_config: {
+		id: number
+		name: string
+	}
+	steps: Array<{
+		order: number
+		name: string
+		recipients: Array<{
+			target_type: string
+			user_id: number
+			username: string
+		}>
+		resolved_users: Array<{
+			user_id: number
+			username: string
+		}>
+	}>
+	has_active_flow: boolean
+	active_flow_id: number | null
+}
+
 export interface ContractGapsResponse {
 	company: {
 		id: number
@@ -232,6 +262,43 @@ export function fetchCompanyContracts(
 		.json<PaginatedResult<any>>();
 }
 
+/* ===================== SIGN FLOW & PDF ===================== */
+
+export function fetchSignFlowPreview(service: ContractServicePath, contractId: number, addendumGroupId?: string | null) {
+	const json: Record<string, any> = { service, contract_id: contractId };
+	if (addendumGroupId) {
+		json.addendum_group_id = addendumGroupId;
+	}
+	return request
+		.post("contracts/sign-flows/preview/", {
+			json,
+		})
+		.json<SignFlowPreviewResponse>();
+}
+
+export function requestOfficialPdf(service: ContractServicePath, contractId: number, body: FormData, addendumGroupId?: string | null) {
+	const searchParams: Record<string, string> = {};
+	if (addendumGroupId) {
+		searchParams.addendum_group_id = addendumGroupId;
+	}
+	return request
+		.post(`contracts/${service}/${contractId}/official-pdf/`, {
+			body,
+			searchParams,
+		})
+		.json<any>(); // Assuming it returns some success status
+}
+
+export function checkOfficialPdfStatus(service: ContractServicePath, contractId: number, addendumGroupId?: string | null) {
+	const searchParams: Record<string, string> = {};
+	if (addendumGroupId) {
+		searchParams.addendum_group_id = addendumGroupId;
+	}
+	return request
+		.get(`contracts/${service}/${contractId}/official-pdf/status/`, { searchParams })
+		.json<{ can_upload: boolean, has_official_pdf: boolean }>();
+}
+
 /* ===================== DETAIL ===================== */
 
 export function fetchContractDetail(
@@ -240,6 +307,20 @@ export function fetchContractDetail(
 ) {
 	return request
 		.get(buildContractPath(service, id))
+		.json<any>();
+}
+
+export function fetchContractPrintData(
+	service: ContractServicePath,
+	id: number,
+	addendumGroupId?: string | null,
+) {
+	const searchParams: Record<string, string> = {};
+	if (addendumGroupId) {
+		searchParams.addendum_group_id = addendumGroupId;
+	}
+	return request
+		.get(`${buildContractPath(service, id)}print-data/`, { searchParams })
 		.json<any>();
 }
 
@@ -310,4 +391,169 @@ export function fetchTrafficDatacenters() {
 	return request
 		.get("contracts/traffic/datacenters/")
 		.json<Paginated<TrafficDatacenterDto> | TrafficDatacenterDto[]>();
+}
+
+export interface SignFlowListItem {
+	id: number
+	state: string
+	service: string
+	service_name: string
+	company_type: any
+	contract_id: number
+	contract_number: string
+	company_name: string
+	addendum_group_id: string | null
+	record_type: string
+	template_id: number | null
+	template_name: string | null
+	rule_config_id: number
+	current_step_order: number
+	current_step_name: string
+	total_steps: number
+	contract_start_date: string
+	contract_end_date: string
+	is_waiting_for_me: boolean
+	started_at: string
+	finished_at: string | null
+	cancel_reason: string
+	created_by: number
+	created_by_username: string
+	created_at: string
+}
+
+export function fetchSignFlowsList(params: {
+	page?: number
+	page_size?: number
+	mine?: "assigned" | "created"
+	state?: string
+	service?: string
+	record_type?: "contract" | "addendum"
+	ordering?: string
+	company_type?: string
+	contract_id?: number
+}) {
+	// Filter out null/undefined values to avoid passing them to searchParams
+	const searchParams: Record<string, string> = {};
+	for (const [key, value] of Object.entries(params)) {
+		if (value != null && value !== "") {
+			searchParams[key] = String(value);
+		}
+	}
+	return request
+		.get("contracts/sign-flows/", { searchParams })
+		.json<PaginatedResult<SignFlowListItem>>();
+}
+
+export interface SignFlowStep {
+	order: number
+	name: string
+	state: string
+	activated_at: string | null
+	decided_at: string | null
+	recipients: Array<{
+		target_type: string
+		user_id: number
+		username: string
+		role_id: number | null
+		role_name: string | null
+	}>
+	assignments: Array<{
+		user_id: number
+		username: string
+		source_target_type: string
+		source_role_id: number | null
+	}>
+	decision: string | null
+}
+
+export interface SignFlowDetail {
+	id: number
+	state: string
+	service: string
+	service_name: string
+	company_type: Record<string, string>
+	contract_id: number
+	contract_number: string
+	company_name: string
+	addendum_group_id: string | null
+	record_type: string
+	template_id: number
+	template_name: string
+	rule_config_id: number
+	current_step_order: number
+	current_step_name: string
+	total_steps: number
+	contract_start_date: string
+	contract_end_date: string
+	is_waiting_for_me: boolean
+	started_at: string
+	finished_at: string | null
+	cancel_reason: string
+	created_by: number
+	created_by_username: string
+	created_at: string
+	steps: SignFlowStep[]
+	print_service_code: string
+	cancelled_by: number | null
+	revoked_at: string | null
+	revoked_by: number | null
+	revoked_by_username: string | null
+	revoke_reason: string
+}
+
+export interface SignFlowHistoryItem {
+	id: number
+	state: string
+	started_at: string
+	finished_at: string | null
+	cancel_or_reject_reason: string
+	revoked_at: string | null
+	revoke_reason: string
+}
+
+export async function fetchSignFlowDetail(id: number | string): Promise<SignFlowDetail> {
+	return request.get(`contracts/sign-flows/${id}/`).json<SignFlowDetail>();
+}
+
+export async function fetchSignFlowHistory(contractId: number | string): Promise<SignFlowHistoryItem[]> {
+	return request.get(`contracts/sign-flows/history/?contract_id=${contractId}`).json<SignFlowHistoryItem[]>();
+}
+export function fetchContractTemplates(service: string, companyType?: string | null, documentKind?: string | null) {
+	const searchParams: Record<string, string> = {
+		service,
+	};
+	if (companyType) {
+		searchParams.company_type = companyType;
+	}
+	if (documentKind) {
+		searchParams.document_kind = documentKind;
+	}
+
+	return request
+		.get("contracts/templates/", { searchParams })
+		.json<PaginatedResult<any> | any>();
+}
+
+export interface TemplateTagValuesResponse {
+	service: string
+	variant: string | null
+	company_type: string
+	document_kind: string
+	values: Record<string, any>
+	labels: Record<string, string>
+	missing: string[]
+	unknown: string[]
+	template_id: number
+}
+
+export async function fetchTemplateTagValues(templateId: number, contractId: number, addendumGroupId?: string | null): Promise<TemplateTagValuesResponse> {
+	const searchParams: Record<string, string> = {
+		template_id: templateId.toString(),
+		contract_id: contractId.toString(),
+	};
+	if (addendumGroupId) {
+		searchParams.addendum_group_id = addendumGroupId;
+	}
+
+	return request.get("contracts/templates/tag-values/", { searchParams }).json<TemplateTagValuesResponse>();
 }
