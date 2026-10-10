@@ -205,7 +205,7 @@ export function ContractTypeSection({ title, name, topAside, bottomAside, tone =
 				enableGrouping
 				enableWordsTooltip
 				inputProps={{ placeholder: "برای مثال ۱۲۰", inputMode: "numeric", addonAfter: "ریال" } as any}
-				formItemProps={{ className: "contract-type-currency-field mb-0" }}
+				formItemProps={{ className: "contract-type-currency-field contract-type-unit-amount-field mb-0" }}
 			/>
 		);
 		const ratePercentage = (
