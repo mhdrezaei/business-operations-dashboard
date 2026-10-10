@@ -101,6 +101,8 @@ const SERVICE_TITLES: Record<string, string> = {
 	"sms/client": "درآمد اپراتورها",
 	"sms/vendor": "درآمد اپراتورها",
 	"sms-commission": "کارمزدها و درصدها",
+	"sales-agency/outbound": "درصدهای عاملیت فروش",
+	"sales-agency/rep-management": "هزینه‌های نمایندگان فروش",
 };
 
 function getTone(service: ContractServicePath): SectionTone {

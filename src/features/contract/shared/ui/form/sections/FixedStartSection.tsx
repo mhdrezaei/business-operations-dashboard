@@ -3,6 +3,7 @@ import type { ContractFormValues } from "../../../model/contract.form.types";
 import { BasicContent } from "#src/components/";
 import { ContractAddendaSection } from "#src/features/contract/components/addenda/ContractAddendaSection";
 import { ContractTypeSection } from "#src/features/contract/components/contract-type/ContractTypeSection";
+import { ContractDataCopyButton } from "#src/features/contract/shared/ui/form/ContractDataCopyButton";
 import { useAccess } from "#src/hooks";
 import { AlignedFormField, useAlignedLabelWidth } from "#src/shared/ui/aligned-form-field";
 import { RHFProCheckbox, RHFProNumber, RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
@@ -14,7 +15,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { companiesByServiceQuery, contractGapsQuery, servicesQuery, smsCommissionAgentsQuery, trafficDatacentersQuery } from "../../../queries/contract.queries";
-import { companyTypeMatches } from "../../../utils";
+import { companyTypeMatches, isIxpCompanyName } from "../../../utils";
 import { MONTH_OPTIONS } from "../constants/jalali-date-options";
 import { FixedEndSection } from "./FixedEndSection";
 
@@ -49,68 +50,6 @@ const REAL_START_MIN_YEAR = 1400;
 const REAL_START_TRIGGER_YEAR = 1404;
 const REAL_START_TRIGGER_MONTH = 4;
 const BEHESHTI_DATACENTER_TAG = "DEFAULT_BEHESHTI";
-
-const IXP_COMPANY_NAMES = new Set([
-	"TEST IXP",
-	"آپارات",
-	"آترین",
-	"آسیاتک",
-	"ابر آروان",
-	"ارتباطات ثابت پارسیان",
-	"افرانت",
-	"افزارسا",
-	"ایتا",
-	"ایرانسل",
-	"پادیز داده رسان",
-	"پارس آنلاین",
-	"پارس فنون",
-	"پتایک",
-	"پژوهشگاه بنیادی (فیزیک نظری)",
-	"پیام رسان بله",
-	"پیشگامان",
-	"تبیان",
-	"تست آرمان 2",
-	"توسعه فناوری ارتباطات پاسارگاد آریان",
-	"حسابگر پرداز غرب",
-	"داده امین",
-	"داده گستر عصر نوین(پارس آنلاین + های وب)",
-	"رایان هم افزا",
-	"رایتل",
-	"رهام داتک",
-	"زی تل",
-	"سازمان فناوری اطلاعات سیدخندان",
-	"سازمان فناوری شهرداری تهران",
-	"سپنتا",
-	"سرزمین هوشمند",
-	"سروش رسانه",
-	"شاتل",
-	"شبدیز",
-	"صدا سیما",
-	"صفر و یک",
-	"فرزانگان پارس",
-	"فرهنگ آزما",
-	"فن آوا",
-	"گرین وب",
-	"لایزر",
-	"ماهانت",
-	"مبنا",
-	"مبین نت",
-	"مهر و وطن",
-	"ندا گستر صبا",
-	"نورنت",
-	"های وب",
-	"هلما گستر عصر تلکام",
-	"همراه اول( به همراه شاد)",
-].map(normalizeCompanyName));
-
-function normalizeCompanyName(value: unknown) {
-	return String(value ?? "")
-		.replaceAll("ي", "ی")
-		.replaceAll("ك", "ک")
-		.replaceAll(/\s+/g, " ")
-		.trim()
-		.toLocaleLowerCase("fa-IR");
-}
 
 function isSmsCommissionCode(code: string | null | undefined) {
 	const normalized = typeof code === "string" ? code.trim().toLowerCase() : "";
@@ -418,9 +357,10 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 	const isSms = serviceCode === "sms";
 	const isPsp = serviceCode === "psp";
 	const isTraffic = serviceCode === "traffic";
+	const isSalesAgency = serviceCode === "sales_agency" || serviceCode === "sales-agency";
 	const isCollocation = isTraffic && String(companyType ?? "").trim().toUpperCase() === "COLLOCATION";
 	const isTelecomCollocation = isCollocation && counterpartyType === "gov_ops";
-	const requiresCompanyType = isSms || isPsp || isTraffic;
+	const requiresCompanyType = isSms || isPsp || isTraffic || isSalesAgency;
 	const isSmsPartnersFlow = isSms && counterpartyType === "partners";
 	const shouldSelectCompany = !isSms || isSmsPartnersFlow;
 	const showCompanyTypeSelect = requiresCompanyType && shouldSelectCompany;
@@ -645,7 +585,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 		const normalizedCompanyType = String(companyType).trim().toUpperCase();
 		return list
 			.filter((c: any) => normalizedCompanyType === "IXP"
-				? IXP_COMPANY_NAMES.has(normalizeCompanyName(c.name))
+				? isIxpCompanyName(c.name)
 				: companyTypeMatches(c.company_type, companyType))
 			.map((c: any) => ({ label: c.name, value: c.id }));
 	}, [companies.data, companyType]);
@@ -726,7 +666,8 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 	}, [isSmsCommission, companyId, smsCommissionAgentOptions, selectedAgentId, setValue]);
 
 	const showCompanySelect = shouldSelectCompany && (!requiresCompanyType || !!companyType) && !isCollocation;
-	const companyTypeLabel = isTraffic ? "نوع شرکت (ترافیک)" : "نوع شرکت";
+	const companyTypeLabel = isSalesAgency ? "نوع همکاری (عاملیت فروش)" : isTraffic ? "نوع شرکت (ترافیک)" : isSms ? "نوع شرکت (SMS)" : "نوع شرکت";
+	const companyLabel = isSalesAgency ? "نام شرکت" : "شرکت";
 	const visibleLabels = useMemo(() => {
 		const labels = [
 			"نوع سرویس",
@@ -741,7 +682,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 		if (showCompanyTypeSelect)
 			labels.push(companyTypeLabel);
 		if (showCompanySelect)
-			labels.push("شرکت");
+			labels.push(companyLabel);
 		if (isSmsCommission)
 			labels.push("نماینده فروش");
 		if (isCollocation) {
@@ -749,7 +690,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 			labels.push("ماه شروع واقعی قرارداد");
 		}
 		return labels;
-	}, [isSms, showCompanyTypeSelect, companyTypeLabel, showCompanySelect, isSmsCommission, isCollocation]);
+	}, [isSms, showCompanyTypeSelect, companyTypeLabel, showCompanySelect, companyLabel, isSmsCommission, isCollocation]);
 	const alignedLabelStyle = useAlignedLabelWidth(visibleLabels);
 
 	const companyOptions = requiresCompanyType ? companyOptionsByType : companyOptionsDefault;
@@ -1282,7 +1223,10 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 							formItemProps={compactFormItemStyle}
 							loading={services.isLoading}
 							options={serviceOptions}
-							onValueChange={() => setCollocationStep(0)}
+							onValueChange={() => {
+								setValue("companyId", null, { shouldDirty: true, shouldValidate: false });
+								setCollocationStep(0);
+							}}
 							selectProps={{
 								"allowClear": true,
 								"placeholder": "سرویس را انتخاب کنید",
@@ -1335,7 +1279,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 
 					{showCompanySelect
 						? (
-							<AlignedFormField label="شرکت" labelId="contract-form-label-company">
+							<AlignedFormField label={companyLabel} labelId="contract-form-label-company">
 								<RHFSelect<ContractFormValues, "companyId", number | null>
 									name="companyId"
 									formItemProps={compactFormItemStyle}
@@ -1472,6 +1416,13 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													}}
 												/>
 											</AlignedFormField>
+											{mode !== "edit"
+												? (
+													<AlignedFormField label="" className="aligned-form-field--copy-button" labelId="contract-form-label-copy-contract-data-collocation">
+														<ContractDataCopyButton />
+													</AlignedFormField>
+												)
+												: null}
 										</div>
 									</div>
 
@@ -1621,6 +1572,13 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													}}
 												/>
 											</AlignedFormField>
+											{mode !== "edit"
+												? (
+													<AlignedFormField label="" className="aligned-form-field--copy-button" labelId="contract-form-label-copy-contract-data-collocation-main">
+														<ContractDataCopyButton />
+													</AlignedFormField>
+												)
+												: null}
 										</div>
 									</div>
 
@@ -2077,6 +2035,13 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 								}}
 							/>
 						</AlignedFormField>
+						{mode !== "edit"
+							? (
+								<AlignedFormField label="" className="aligned-form-field--copy-button" labelId="contract-form-label-copy-contract-data">
+									<ContractDataCopyButton />
+								</AlignedFormField>
+							)
+							: null}
 					</div>
 				</div>
 

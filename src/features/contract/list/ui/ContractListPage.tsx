@@ -7,17 +7,19 @@ import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import { companiesByServiceQuery, servicesQuery } from "#src/features/contract/create/queries/contract.queries";
 import { useAccess } from "#src/hooks";
 import { TableActionDownloadIcon, TableActionEditIcon, TableActionEyeIcon, TableActionTrashIcon } from "#src/icons";
-import { PlusCircleOutlined } from "@ant-design/icons";
+import { PlusCircleOutlined, PrinterOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 
 import { Button, Popconfirm, theme } from "antd";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
-import { fetchContractDetail, fetchContractsList, fetchDeleteContract } from "../../api/contracts.api";
+import { checkOfficialPdfStatus, fetchContractDetail, fetchContractsList, fetchDeleteContract, fetchSignFlowPreview } from "../../api/contracts.api";
 import { companyTypeMatches, pickCompanyTypeToken } from "../../shared/utils";
 import { useContractAddendaTableStyles } from "./components/contract-addenda-table.styles";
 import { ContractAddendaExpandedRow } from "./components/ContractAddendaExpandedRow";
+import { ContractTemplatePrintModal } from "./components/ContractTemplatePrintModal";
+import { SignFlowPreviewModal } from "./components/SignFlowPreviewModal";
 import { getContractColumns } from "./constants";
 import { openContractPdfPrint } from "./utils/contract-pdf";
 
@@ -37,6 +39,12 @@ export default function ContractListPage() {
 	const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
 	const [selectedTrafficCompanyType, setSelectedTrafficCompanyType] = useState<string | null>(null);
 	const [downloadingPdfId, setDownloadingPdfId] = useState<number | null>(null);
+	const [printModalOpen, setPrintModalOpen] = useState(false);
+	const [printRecord, setPrintRecord] = useState<ContractListItemType | null>(null);
+	const [printAddendumGroupId, setPrintAddendumGroupId] = useState<string | null>(null);
+	const [signFlowModalOpen, setSignFlowModalOpen] = useState(false);
+	const [signFlowLoading, setSignFlowLoading] = useState(false);
+	const [signFlowData, setSignFlowData] = useState<any>(null);
 
 	const canCreateContracts = hasDomainPermission("contracts", "create");
 	const permittedViewServiceIdList = getPermittedServiceIds("contracts", "view");
@@ -52,7 +60,9 @@ export default function ContractListPage() {
 			return;
 		}
 		if (!permittedViewServiceIds.has(selectedServiceId)) {
+			// eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
 			setSelectedServiceId(null);
+			// eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
 			setSelectedTrafficCompanyType(null);
 			formRef.current?.setFieldsValue({
 				service_id: undefined,
@@ -89,6 +99,11 @@ export default function ContractListPage() {
 
 		if (code === "commercial")
 			return "commercial";
+		if (code === "sales_agency" || code === "sales-agency") {
+			return pickCompanyTypeToken(row.company_type) === "SALES_REP_MANAGEMENT"
+				? "sales-agency/rep-management"
+				: "sales-agency/outbound";
+		}
 
 		if (code === "sms-commission" || code === "sms_commission")
 			return "sms-commission";
@@ -111,7 +126,7 @@ export default function ContractListPage() {
 	const selectedServiceCode = typeof selectedService?.code === "string" ? selectedService.code.trim().toLowerCase() : null;
 	const isTrafficService = selectedServiceCode === "traffic";
 	const isSmsService = selectedServiceCode === "sms";
-	const isCompanyTypeService = selectedServiceCode === "traffic" || selectedServiceCode === "sms" || selectedServiceCode === "psp";
+	const isCompanyTypeService = selectedServiceCode === "traffic" || selectedServiceCode === "sms" || selectedServiceCode === "psp" || selectedServiceCode === "sales_agency" || selectedServiceCode === "sales-agency";
 	const permittedTrafficCompanyTypeOptions = useMemo(
 		() => isCompanyTypeService ? getPermittedCompanyTypes("contracts", "view", selectedServiceId) : [],
 		[isCompanyTypeService, selectedServiceId, getPermittedCompanyTypes],
@@ -125,6 +140,7 @@ export default function ContractListPage() {
 			return;
 		}
 
+		// eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
 		setSelectedTrafficCompanyType(null);
 		formRef.current?.setFieldsValue({
 			company_type: undefined,
@@ -310,6 +326,46 @@ export default function ContractListPage() {
 						</BasicButton>,
 					);
 
+					actions.push(
+						<BasicButton
+							key="print"
+							type="link"
+							size="large"
+							title="چاپ قرارداد"
+							icon={<PrinterOutlined />}
+							onClick={async () => {
+								try {
+									const status = await checkOfficialPdfStatus(resolveServicePath(record), record.id);
+									if (!status.can_upload && status.has_official_pdf) {
+										window.$message?.warning("نسخه رسمی این قرارداد قبلا آپلود شده و در حال گرفتن تایید می باشد");
+										return;
+									}
+								}
+								catch (error) {
+									console.error(error);
+									window.$message?.error("خطا در بررسی وضعیت نسخه رسمی");
+									return;
+								}
+								setPrintRecord(record);
+								setPrintAddendumGroupId(null);
+								setSignFlowLoading(true);
+								setSignFlowModalOpen(true);
+								try {
+									const data = await fetchSignFlowPreview(resolveServicePath(record), record.id);
+									setSignFlowData(data);
+								}
+								catch (err) {
+									console.error(err);
+									window.$message?.error("خطا در دریافت اطلاعات گردش کار");
+									setSignFlowModalOpen(false);
+								}
+								finally {
+									setSignFlowLoading(false);
+								}
+							}}
+						/>,
+					);
+
 					if (canDeleteRow(record)) {
 						actions.push(
 							<Popconfirm
@@ -347,6 +403,36 @@ export default function ContractListPage() {
 						<ContractAddendaExpandedRow
 							contract={record}
 							service={resolveServicePath(record)}
+							onPrint={async (addendumGroupId) => {
+								try {
+									const status = await checkOfficialPdfStatus(resolveServicePath(record), record.id, addendumGroupId);
+									if (!status.can_upload && status.has_official_pdf) {
+										window.$message?.warning("نسخه رسمی این قرارداد قبلا آپلود شده و در حال گرفتن تایید می باشد");
+										return;
+									}
+								}
+								catch (error) {
+									console.error(error);
+									window.$message?.error("خطا در بررسی وضعیت نسخه رسمی");
+									return;
+								}
+								setPrintRecord(record);
+								setPrintAddendumGroupId(addendumGroupId);
+								setSignFlowLoading(true);
+								setSignFlowModalOpen(true);
+								try {
+									const data = await fetchSignFlowPreview(resolveServicePath(record), record.id, addendumGroupId);
+									setSignFlowData(data);
+								}
+								catch (err) {
+									console.error(err);
+									window.$message?.error("خطا در دریافت اطلاعات گردش کار");
+									setSignFlowModalOpen(false);
+								}
+								finally {
+									setSignFlowLoading(false);
+								}
+							}}
 						/>
 					),
 				}}
@@ -401,6 +487,28 @@ export default function ContractListPage() {
 						</Button>,
 					];
 				}}
+			/>
+			<SignFlowPreviewModal
+				open={signFlowModalOpen}
+				onClose={() => setSignFlowModalOpen(false)}
+				loading={signFlowLoading}
+				data={signFlowData}
+				onStart={() => {
+					setSignFlowModalOpen(false);
+					setPrintModalOpen(true);
+				}}
+			/>
+			<ContractTemplatePrintModal
+				open={printModalOpen}
+				onClose={() => {
+					setPrintModalOpen(false);
+					setPrintRecord(null);
+					setPrintAddendumGroupId(null);
+				}}
+				record={printRecord}
+				addendumGroupId={printAddendumGroupId}
+				service={printRecord ? resolveServicePath(printRecord) : null}
+				companyType={printRecord ? getRowCompanyType(printRecord) : null}
 			/>
 		</BasicContent>
 	);

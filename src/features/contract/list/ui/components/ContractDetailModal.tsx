@@ -10,7 +10,7 @@ import { ContractForm } from "#src/features/contract/shared/ui/form/ContractForm
 import { pickCompanyTypeToken } from "#src/features/contract/shared/utils";
 import { Alert, Empty, Spin } from "antd";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { fetchContractDetail, fetchUpdateContract } from "../../../api/contracts.api";
+import { fetchContractDetail, fetchUpdateContract, resolveSalesAgencyExpenseTitleNames } from "../../../api/contracts.api";
 import { CompanyContractsPanel } from "./CompanyContractsPanel";
 import { ContractApprovalHistoryPanel } from "./ContractApprovalHistoryPanel";
 import { ContractDocumentsPanel } from "./ContractDocumentsPanel";
@@ -34,6 +34,7 @@ const TELECOM_COLLOCATION_COMPANY_SEARCH = "TRAFFIC_COLLOCATION_COST_GLOBAL";
 interface Props {
 	contractId: number
 	service: ContractServicePath
+	readOnlyHeader?: React.ReactNode
 	onUpdated?: () => void
 	onSaved?: () => void
 	onContractSelect?: (contractId: number, serviceId: number, companyType: string | null, service: ContractServicePath) => void
@@ -41,6 +42,8 @@ interface Props {
 }
 
 function servicePathToServiceCode(service: ContractServicePath): string {
+	if (service === "sales-agency/outbound" || service === "sales-agency/rep-management")
+		return "sales_agency";
 	const raw = service.startsWith("sms/") ? "sms" : service;
 	return raw.trim().toLowerCase();
 }
@@ -1254,13 +1257,34 @@ function normalizeTrafficServiceFields(dto: any) {
 	};
 }
 
-function dtoToFormValues(dto: any, service: ContractServicePath): ContractFormValues {
+function normalizeSalesAgencyServiceFields(dto: any, companyType: string | null) {
+	if (companyType === "SALES_REP_MANAGEMENT") {
+		const titles = dto?.cost_titles ?? dto?.cost_title_names ?? dto?.costTitles ?? dto?.costTitleNames ?? [];
+		return {
+			costTitles: Array.isArray(titles)
+				? titles.map((title: any) => String(typeof title === "object" && title != null ? title.title ?? title.name ?? title.cost_title ?? title.expense_title ?? "" : title ?? ""))
+				: [],
+		};
+	}
+
+	return {
+		incomePercentage: toNumberOrStringNumber(dto?.revenue_percent ?? dto?.income_percentage ?? dto?.incomePercentage),
+		expensePercentage: toNumberOrStringNumber(dto?.cost_percent ?? dto?.expense_percentage ?? dto?.expensePercentage),
+	};
+}
+
+export function contractDetailToFormValues(dto: any, service: ContractServicePath): ContractFormValues {
 	const serviceId = toNumberOrNull(dto?.service_id ?? dto?.serviceId ?? dto?.service?.id ?? dto?.service);
 	const companyId = toNumberOrNull(dto?.company_id ?? dto?.companyId ?? dto?.company?.id ?? dto?.company);
 
 	const description = dto?.note ?? dto?.description ?? "";
 
-	const companyType = pickCompanyTypeToken(dto?.company_type ?? dto?.traffic_company_type);
+	const routeCompanyType = service === "sales-agency/outbound"
+		? "OUTBOUND"
+		: service === "sales-agency/rep-management"
+			? "SALES_REP_MANAGEMENT"
+			: null;
+	const companyType = pickCompanyTypeToken(dto?.company_type ?? dto?.traffic_company_type) ?? routeCompanyType;
 	const counterpartyType = normalizeSmsCounterpartyType(dto?.sms_party ?? dto?.counterparty_type ?? dto?.counterpartyType) ?? (service === "sms/client" ? "partners" : service === "sms/vendor" ? "gov_ops" : null);
 
 	const serviceCodeRaw = dto?.service_code ?? dto?.service?.code ?? servicePathToServiceCode(service);
@@ -1288,6 +1312,9 @@ function dtoToFormValues(dto: any, service: ContractServicePath): ContractFormVa
 	}
 	else if (serviceCode === "traffic") {
 		serviceFields = normalizeTrafficServiceFields(dto);
+	}
+	else if (serviceCode === "sales_agency" || serviceCode === "sales-agency") {
+		serviceFields = normalizeSalesAgencyServiceFields(dto, companyType);
 	}
 	else {
 		// ✅ سایر سرویس‌ها: هر فیلدی غیر از پایه‌ها => serviceFields
@@ -1497,6 +1524,22 @@ async function formValuesToApiPayload(values: ContractFormValues) {
 		return payload;
 	}
 
+	if (serviceCode === "sales_agency" || serviceCode === "sales-agency") {
+		const companyType = String(values.companyType ?? "").trim().toUpperCase();
+		if (companyType === "OUTBOUND") {
+			payload.revenue_percent = toStringOrNull(serviceFields.incomePercentage);
+			payload.cost_percent = toStringOrNull(serviceFields.expensePercentage);
+		}
+		else if (companyType === "SALES_REP_MANAGEMENT") {
+			const titles = (Array.isArray(serviceFields.costTitles) ? serviceFields.costTitles : [])
+				.map((item: any) => String(item ?? "").trim())
+				.filter(Boolean);
+			payload.cost_title_names = titles;
+		}
+		payload.addenda = mapGenericAddenda(addenda);
+		return payload;
+	}
+
 	if (serviceCode === "openapi") {
 		const contractModel = serviceFields.contractModel === "separated" ? "separated" : "legacy";
 		const apiContractModel = contractModel === "separated" ? "SEPARATED" : "LEGACY";
@@ -1561,6 +1604,11 @@ function resolveSelectionService(context: ContractFormSelectionContext): Contrac
 	}
 	if (code === "sms_commission" || code === "sms-commission")
 		return "sms-commission";
+	if (code === "sales_agency" || code === "sales-agency") {
+		return String(context.companyType ?? "").trim().toUpperCase() === "SALES_REP_MANAGEMENT"
+			? "sales-agency/rep-management"
+			: "sales-agency/outbound";
+	}
 	if (["openapi", "traffic", "psp", "commercial", "shahkar"].includes(code))
 		return code as ContractServicePath;
 	return null;
@@ -1573,7 +1621,7 @@ interface ContractListScope {
 	companyType: string | null
 }
 
-export function ContractEditForm({ contractId, service, onUpdated, onSaved, onContractSelect, readOnly = false }: Props) {
+export function ContractEditForm({ contractId, service, readOnlyHeader, onUpdated, onSaved, onContractSelect, readOnly = false }: Props) {
 	const [loading, setLoading] = useState(false);
 	const [saving, setSaving] = useState(false);
 	const [initialValues, setInitialValues] = useState<ContractFormValues | null>(null);
@@ -1622,7 +1670,15 @@ export function ContractEditForm({ contractId, service, onUpdated, onSaved, onCo
 						if (!isValidContractDetailResponse(dto, contractId))
 							continue;
 
-						const formValues = dtoToFormValues(dto, candidateService);
+						const formValues = contractDetailToFormValues(dto, candidateService);
+						if (candidateService === "sales-agency/rep-management" && Array.isArray(formValues.serviceFields.costTitles)) {
+							try {
+								formValues.serviceFields.costTitles = await resolveSalesAgencyExpenseTitleNames(formValues.serviceFields.costTitles);
+							}
+							catch {
+								// Keep the contract form usable if expense-title lookup is unavailable.
+							}
+						}
 						try {
 							const documentsResponse = await listContractDocuments(contractId);
 							formValues.documents = documentsResponse.results.map(contractDocumentToUploadFile);
@@ -1676,8 +1732,11 @@ export function ContractEditForm({ contractId, service, onUpdated, onSaved, onCo
 			: !initialValues || !resolvedService || loadedContractId == null
 				? <Empty description="اطلاعات قرارداد یافت نشد" />
 				: (
-					<div dir="rtl" className="flex flex-col items-start lg:flex-row">
+					<div dir="rtl" className="flex flex-col items-start gap-6 lg:flex-row">
 						<div className="order-2 min-w-0 w-full flex-1 lg:order-1">
+							{readOnlyHeader
+								? <div className="mb-6">{readOnlyHeader}</div>
+								: null}
 							{loadError
 								? (
 									<div className="p-4">
@@ -1720,7 +1779,7 @@ export function ContractEditForm({ contractId, service, onUpdated, onSaved, onCo
 
 						{initialValues.companyId != null
 							? (
-								<aside className="order-1 flex w-full flex-col gap-3 px-2 pt-4 lg:order-2 lg:w-[25rem] lg:shrink-0 lg:pr-0">
+								<aside className="order-1 flex w-full flex-col gap-3 px-2 lg:order-2 lg:w-[25rem] lg:shrink-0 lg:pr-0">
 									<CompanyContractsPanel
 										companyId={contractListScope?.companyId}
 										companyType={contractListScope?.companyType}

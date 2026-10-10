@@ -1,6 +1,7 @@
 import type { ArrayPath, Path } from "react-hook-form";
 import type { ContractFormValues } from "../../../shared/model/contract.form.types";
 import { ContractAddendaSection } from "#src/features/contract/components/addenda/ContractAddendaSection";
+import { CONTRACT_TYPE_OPTIONS } from "#src/features/contract/components/contract-type/contract-type.options";
 import { defaultContractTypeValue } from "#src/features/contract/components/contract-type/contract-type.types";
 import { ContractTypeSection } from "#src/features/contract/components/contract-type/ContractTypeSection";
 import { RHFProCheckbox, RHFProNumber, RHFSelect } from "#src/shared/ui/rhf-pro";
@@ -17,6 +18,12 @@ const TRAFFIC_UNIT_OPTIONS = [
 	{ label: "GB/month", value: "GB/month" },
 	{ label: "Mbps", value: "Mbps" },
 ];
+const TRAFFIC_DEFAULT_UNIT_BY_COMPANY_TYPE: Record<string, "GB/month" | "Mbps"> = {
+	CP: "GB/month",
+	PREMIUM: "GB/month",
+	IXP: "Mbps",
+	TCI: "Mbps",
+};
 const IXP_CONTRACT_MODEL_OPTIONS = [
 	{ label: "قدیمی", value: "LEGACY" },
 	{ label: "جدول متغیر", value: "VARIABLE_TABLE" },
@@ -25,6 +32,7 @@ const IXP_CONTRACT_MODEL_OPTIONS = [
 interface TrafficPricingFieldsProps {
 	pricingName: string
 	unitName: string
+	defaultUnit?: "GB/month" | "Mbps"
 	revenuePercentName: string
 	revenuePercentLabel: string
 	showUnitSelector: boolean
@@ -38,6 +46,7 @@ interface TrafficPricingFieldsProps {
 function TrafficPricingFields({
 	pricingName,
 	unitName,
+	defaultUnit,
 	revenuePercentName,
 	revenuePercentLabel,
 	showUnitSelector,
@@ -47,8 +56,23 @@ function TrafficPricingFields({
 	contractModelName,
 	showContractModel,
 }: TrafficPricingFieldsProps) {
-	const { control } = useFormContext<ContractFormValues>();
+	const { control, setValue } = useFormContext<ContractFormValues>();
+	const unit = useWatch({ control, name: unitName as any });
 	const contractModel = useWatch({ control, name: contractModelName as any });
+	const basedTire = useWatch({ control, name: basedTireName as any });
+	const contractType = useWatch({ control, name: `${pricingName}.type` as any });
+	const fixedOnly = showBasedTire && basedTire === true;
+
+	useEffect(() => {
+		if (defaultUnit && (unit == null || unit === ""))
+			setValue(unitName as any, defaultUnit, { shouldDirty: false, shouldValidate: false });
+	}, [defaultUnit, setValue, unit, unitName]);
+
+	useEffect(() => {
+		if (fixedOnly && contractType !== "tier_fixed") {
+			setValue(`${pricingName}.type` as any, "tier_fixed", { shouldDirty: true, shouldValidate: true });
+		}
+	}, [contractType, fixedOnly, pricingName, setValue]);
 	const ratePercentageHelpText = contractModel === "VARIABLE_TABLE"
 		? "مقدار فی بر اساس ضرب مقدار فی که وارد کرده‌اید در درصد نرخ محاسبه می‌شود."
 		: "در مدل قرارداد قدیمی، درصد نرخ اختیاری است و محاسبات مالی بر اساس مقدار فی (ریال) نمایش داده می‌شود؛ این درصد هیچ تاثیری بر روی محاسبات مالی ندارد.";
@@ -106,6 +130,10 @@ function TrafficPricingFields({
 				name={pricingName}
 				tone={TRAFFIC_SECTION_TONE}
 				variant="embedded"
+				contractTypeOptions={CONTRACT_TYPE_OPTIONS.map(option => ({
+					...option,
+					disabled: fixedOnly && option.value !== "tier_fixed",
+				}))}
 				showRatePercentage={showContractModel}
 				ratePercentageHelpText={ratePercentageHelpText}
 			/>
@@ -114,8 +142,9 @@ function TrafficPricingFields({
 }
 
 export function TrafficFields() {
-	const { control, getValues, setValue } = useFormContext<ContractFormValues>();
+	const { control, getFieldState, getValues, setValue } = useFormContext<ContractFormValues>();
 	const hasInitializedTehranPricing = useRef(false);
+	const previousCompanyType = useRef<string | null>(null);
 	const isOfficial = useWatch({ control, name: sf("isOfficial") as any }) as boolean | undefined;
 	const companyType = useWatch({ control, name: "companyType" });
 	const isCollocation = String(companyType ?? "").trim().toUpperCase() === "COLLOCATION";
@@ -134,6 +163,37 @@ export function TrafficFields() {
 	const showPricingUi = !!isOfficial;
 	const showPremiumRevenuePercent = showPricingUi && companyType === "PREMIUM";
 	const showUnitSelector = showPricingUi && ["CP", "PREMIUM", "IXP", "TCI"].includes(String(companyType ?? "").trim().toUpperCase());
+	const normalizedCompanyType = String(companyType ?? "").trim().toUpperCase();
+	const defaultTrafficUnit = TRAFFIC_DEFAULT_UNIT_BY_COMPANY_TYPE[normalizedCompanyType];
+	const addendaUnitPaths = (items: Array<Record<string, any>>, prefix: string): string[] => items.flatMap((item, index) => {
+		const base = `${prefix}.${index}`;
+		const paths = [`${base}.tehranUnit`, `${base}.provinceUnit`];
+		if (Array.isArray(item.children))
+			paths.push(...addendaUnitPaths(item.children, `${base}.children`));
+		return paths;
+	});
+
+	useEffect(() => {
+		const typeChangedByUser = previousCompanyType.current != null && previousCompanyType.current !== normalizedCompanyType && getFieldState("companyType").isDirty;
+		previousCompanyType.current = normalizedCompanyType || null;
+		if (!defaultTrafficUnit)
+			return;
+
+		const addenda = getValues(sf("addenda") as any) as Array<Record<string, any>> | undefined;
+		const unitPaths = [sf("tehranUnit"), sf("provinceUnit")];
+		if (Array.isArray(addenda))
+			unitPaths.push(...addendaUnitPaths(addenda, sf("addenda")) as any);
+
+		for (const unitField of unitPaths) {
+			const currentUnit = getValues(unitField as any);
+			if (currentUnit == null || currentUnit === "" || typeChangedByUser) {
+				setValue(unitField as any, defaultTrafficUnit, {
+					shouldDirty: false,
+					shouldValidate: false,
+				});
+			}
+		}
+	}, [getFieldState, getValues, normalizedCompanyType, defaultTrafficUnit, setValue]);
 
 	function addTehran() {
 		if (tehranPricing)
@@ -183,9 +243,9 @@ export function TrafficFields() {
 			return;
 
 		if (getValues(sf("tehranBasedTire") as any) == null)
-			setValue(sf("tehranBasedTire") as any, true, { shouldDirty: false, shouldValidate: false });
+			setValue(sf("tehranBasedTire") as any, false, { shouldDirty: false, shouldValidate: false });
 		if (getValues(sf("provinceBasedTire") as any) == null)
-			setValue(sf("provinceBasedTire") as any, true, { shouldDirty: false, shouldValidate: false });
+			setValue(sf("provinceBasedTire") as any, false, { shouldDirty: false, shouldValidate: false });
 		if (getValues(sf("tehranContractModel") as any) == null)
 			setValue(sf("tehranContractModel") as any, "LEGACY", { shouldDirty: false, shouldValidate: false });
 		if (getValues(sf("provinceContractModel") as any) == null)
@@ -366,6 +426,7 @@ export function TrafficFields() {
 											<TrafficPricingFields
 												pricingName={`${base}.tehranPricing`}
 												unitName={`${base}.tehranUnit`}
+												defaultUnit={defaultTrafficUnit}
 												revenuePercentName={`${base}.tehranRevenuePercent`}
 												revenuePercentLabel="درصد سهم درآمد (تهران)"
 												showUnitSelector={showUnitSelector}
@@ -385,6 +446,7 @@ export function TrafficFields() {
 											<TrafficPricingFields
 												pricingName={`${base}.provincePricing`}
 												unitName={`${base}.provinceUnit`}
+												defaultUnit={defaultTrafficUnit}
 												revenuePercentName={`${base}.provinceRevenuePercent`}
 												revenuePercentLabel="درصد سهم درآمد (مراکز استان‌ها)"
 												showUnitSelector={showUnitSelector}

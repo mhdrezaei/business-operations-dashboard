@@ -19,5 +19,6 @@ export default antfu({
 		"style/no-tabs": "off",
 		"style/jsx-indent-props": ["error", "tab"],
 		"react-hooks/exhaustive-deps": "off",
+		"style/multiline-ternary": "off",
 	},
 });

@@ -25,7 +25,7 @@ export default function TemplateCreateSidebar({ editor }: SidebarProps) {
                 .custom-tabs .ant-tabs-content-holder { flex: auto; min-height: 0; overflow: hidden; }
                 .custom-tabs .ant-tabs-content, .custom-tabs .ant-tabs-tabpane { height: 100%; }
                 .ant-collapse-ghost > .ant-collapse-item > .ant-collapse-content > .ant-collapse-content-box { padding-top: 0 !important; padding-bottom: 8px !important; }
-                
+
                 .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
                 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
                 .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(136, 136, 136, 0.35); border-radius: 10px; }
@@ -60,7 +60,7 @@ export default function TemplateCreateSidebar({ editor }: SidebarProps) {
 								تنظیمات سند
 							</span>
 						),
-						children: <SidebarSettingsTab editor={editor} />,
+						children: <SidebarSettingsTab />,
 					},
 				]}
 			/>

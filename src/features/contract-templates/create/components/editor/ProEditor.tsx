@@ -25,7 +25,7 @@ export default function ProEditor({ editor, onChange }: ProEditorProps) {
 				<EditorToolbar editor={editor} pageData={pageData} />
 			</div>
 
-			<div className="flex-1 p-2">
+			<div className="flex-1 p-2 min-h-0 flex flex-col">
 				<TemplateEditorCanvas
 					editor={editor}
 					onPageChange={(current, total) => {

@@ -62,13 +62,20 @@ export function shouldAggregatePerformanceRows(service: PerformanceServicePath |
 	return service === "openapi" || service === "sms" || service === "sms-commission" || service === "traffic";
 }
 
-export function resolveContractServicePath(serviceCode: PerformanceServiceCode | null): PerformanceContractServicePath | null {
+export function resolveContractServicePath(serviceCode: PerformanceServiceCode | null, companyType?: string | null): PerformanceContractServicePath | null {
 	const normalized = normalizeServiceCode(serviceCode);
 	if (!normalized)
 		return null;
 
 	if (normalized === "psp")
 		return "psp";
+	if (normalized === "sales_agency") {
+		if (companyType === "OUTBOUND")
+			return "sales-agency/outbound";
+		if (companyType === "SALES_REP_MANAGEMENT")
+			return "sales-agency/rep-management";
+		return null;
+	}
 	if (normalized === "traffic")
 		return "traffic";
 	if (normalized === "shahkar")
@@ -83,13 +90,20 @@ export function resolveContractServicePath(serviceCode: PerformanceServiceCode |
 	return "openapi";
 }
 
-export function resolvePerformanceServicePath(serviceCode: PerformanceServiceCode | null): PerformanceServicePath | null {
+export function resolvePerformanceServicePath(serviceCode: PerformanceServiceCode | null, companyType?: string | null): PerformanceServicePath | null {
 	const normalized = normalizeServiceCode(serviceCode);
 	if (!normalized)
 		return null;
 
 	if (normalized === "psp")
 		return "psp";
+	if (normalized === "sales_agency") {
+		if (companyType === "OUTBOUND")
+			return "sales-agency/outbound";
+		if (companyType === "SALES_REP_MANAGEMENT")
+			return "sales-agency/rep-management";
+		return null;
+	}
 	if (normalized === "traffic")
 		return "traffic";
 	if (normalized === "shahkar")

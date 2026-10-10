@@ -146,6 +146,13 @@ function getCompanyTypePermissions(
 		return configuredTypes;
 	}
 
+	if (["sales_agency", "sales-agency"].includes(normalizeAccessKey(service.code))) {
+		return [
+			{ key: "SALES_REP_MANAGEMENT", value: "مدیریت نمایندگان فروش" },
+			{ key: "OUTBOUND", value: "فروش Outbound" },
+		];
+	}
+
 	if (normalizeAccessKey(service.code) === TRAFFIC_SERVICE_CODE) {
 		return ALL_TRAFFIC_COMPANY_TYPES;
 	}

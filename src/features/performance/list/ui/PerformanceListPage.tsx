@@ -31,7 +31,7 @@ import "./performance-edit-workspace.css";
 
 function serviceRequiresCompanyType(serviceCode: string | null | undefined) {
 	const normalized = String(serviceCode ?? "").trim().toLowerCase();
-	return normalized === "sms" || normalized === "psp" || normalized === "traffic";
+	return normalized === "sms" || normalized === "psp" || normalized === "traffic" || normalized === "sales_agency";
 }
 
 function rowKey(row: PerformanceListRow) {
@@ -246,8 +246,8 @@ export default function PerformanceListPage() {
 	const services = useQuery(servicesQuery());
 	const companies = useQuery(companiesByServiceQuery(selectedServiceId));
 	const selectedServicePath = useMemo(
-		() => resolvePerformanceServicePath(selectedServiceCode as any),
-		[selectedServiceCode],
+		() => resolvePerformanceServicePath(selectedServiceCode as any, selectedCompanyType),
+		[selectedServiceCode, selectedCompanyType],
 	);
 	const requiresCompanyType = serviceRequiresCompanyType(selectedServiceCode);
 	const permittedCompanyTypeOptions = useMemo(
