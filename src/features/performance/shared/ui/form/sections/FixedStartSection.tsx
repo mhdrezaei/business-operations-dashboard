@@ -113,14 +113,19 @@ export function FixedStartSection({
 	);
 
 	const companies = useQuery(companiesByServiceQuery(serviceId));
+	const selectedCompany = companies.data?.results.find(company => Number(company.id) === Number(companyId));
+	const selectedServiceCode = services.data?.results.find(service => service.id === serviceId)?.code?.trim().toLowerCase();
+	const isCurrentServiceResolved = !!selectedServiceCode && selectedServiceCode === serviceCode;
+	const hasMatchingCompanyType = !requiresCompanyType || (companyType != null && companyTypeMatches(selectedCompany?.company_type, companyType));
+	const currentCompanyId = selectedCompany && isCurrentServiceResolved && hasMatchingCompanyType ? companyId : null;
 	const gaps = useQuery(performanceGapsQuery({
 		serviceId,
-		companyId: isTrafficTemplateMode ? null : companyId,
+		companyId: isTrafficTemplateMode ? null : currentCompanyId,
 		companyType: isTrafficTemplateMode ? companyType : null,
 	}));
 	const monthlyStatus = useQuery(monthlyContractStatusQuery({
 		serviceId: usesMonthlyStatus ? serviceId : null,
-		companyId: usesMonthlyStatus ? companyId : null,
+		companyId: usesMonthlyStatus ? currentCompanyId : null,
 		companyType: isTrafficSingleMode ? companyType : null,
 		year: usesMonthlyStatus ? year : null,
 		month: usesMonthlyStatus ? month : null,
@@ -128,9 +133,9 @@ export function FixedStartSection({
 	const contracts = useQuery(performanceContractsQuery({
 		servicePath: usesMonthlyStatus ? null : servicePath,
 		serviceId,
-		companyId,
+		companyId: currentCompanyId,
 	}));
-	const smsCommissionAgents = useQuery(smsCommissionAgentsQuery(isSmsCommission && !!companyId));
+	const smsCommissionAgents = useQuery(smsCommissionAgentsQuery(isSmsCommission && !!currentCompanyId));
 
 	const prevServiceIdRef = useRef<typeof serviceId>(undefined);
 	const prevCompanyIdRef = useRef<typeof companyId>(undefined);
@@ -456,19 +461,19 @@ export function FixedStartSection({
 	}, [isTrafficSingleMode, monthlyStatus.isSuccess, setValue, trafficHasCountyContract, trafficLocationUnits]);
 
 	const smsCommissionAgentOptions = useMemo(() => {
-		if (!companyId)
+		if (!currentCompanyId)
 			return [];
 
 		return (smsCommissionAgents.data?.results ?? [])
-			.filter(agent => Number(agent.company) === Number(companyId))
+			.filter(agent => Number(agent.company) === Number(currentCompanyId))
 			.map(agent => ({
 				label: agent.name,
 				value: agent.id,
 			}));
-	}, [smsCommissionAgents.data, companyId]);
+	}, [smsCommissionAgents.data, currentCompanyId]);
 
 	const salesAgentDisplayValue = useMemo(() => {
-		if (!companyId)
+		if (!currentCompanyId)
 			return t("performance.placeholders.selectCompanyFirst");
 
 		if (smsCommissionAgents.isLoading)
@@ -482,7 +487,7 @@ export function FixedStartSection({
 			return String(smsCommissionAgentOptions[0].label);
 
 		return t("performance.messages.salesAgentNotFound");
-	}, [companyId, smsCommissionAgents.isLoading, smsCommissionAgentOptions, salesAgentId, t]);
+	}, [currentCompanyId, smsCommissionAgents.isLoading, smsCommissionAgentOptions, salesAgentId, t]);
 
 	useEffect(() => {
 		if (!isSmsCommission)
@@ -496,7 +501,7 @@ export function FixedStartSection({
 			return;
 		}
 
-		if (!companyId || smsCommissionAgentOptions.length < 1) {
+		if (!currentCompanyId || smsCommissionAgentOptions.length < 1) {
 			if (salesAgentId != null) {
 				setValue("salesAgentId", null, { shouldDirty: false, shouldValidate: false });
 			}
@@ -510,12 +515,12 @@ export function FixedStartSection({
 				shouldValidate: false,
 			});
 		}
-	}, [isSmsCommission, companyId, smsCommissionAgentOptions, salesAgentId, activeContract, setValue]);
+	}, [isSmsCommission, currentCompanyId, smsCommissionAgentOptions, salesAgentId, activeContract, setValue]);
 
 	const isDateOptionsLoading = isTrafficTemplateMode
 		? !!serviceId && !!companyType && (gaps.isLoading || gaps.isFetching)
-		: !!serviceId && !!companyId && (gaps.isLoading || gaps.isFetching);
-	const hasCompanySelection = !!serviceId && !!companyId;
+		: !!serviceId && !!currentCompanyId && (gaps.isLoading || gaps.isFetching);
+	const hasCompanySelection = !!serviceId && !!currentCompanyId;
 	const hasNoContractsForCompany = hasCompanySelection && contracts.isSuccess && (contracts.data?.results?.length ?? 0) < 1;
 	const hasAnyYearMonthOption = Array.from(missingMonthsByYear.values()).some(months => months.length > 0);
 	const isPeriodStateLoading = !isTrafficTemplateMode && hasCompanySelection && (gaps.isLoading || gaps.isFetching || contracts.isLoading || contracts.isFetching);
@@ -606,7 +611,7 @@ export function FixedStartSection({
 								<Col span={24}>
 									<Form.Item
 										label={t("performance.columns.salesAgent")}
-										extra={companyId ? t("performance.messages.salesAgentAutoSelected") : undefined}
+										extra={currentCompanyId ? t("performance.messages.salesAgentAutoSelected") : undefined}
 									>
 										<Input readOnly value={salesAgentDisplayValue} />
 									</Form.Item>
