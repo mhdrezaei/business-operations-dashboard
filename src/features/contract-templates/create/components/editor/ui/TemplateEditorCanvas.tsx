@@ -221,6 +221,10 @@ const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasPro
 			<style>
 				{`
         /* ─── Editor core ─────────────────────────────────────── */
+        .ms-word-editor {
+          background-color: transparent !important;
+        }
+
         .ms-word-editor .ProseMirror {
           outline: none !important;
           border: none !important;
@@ -234,8 +238,9 @@ const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasPro
           width: ${PAGE_WIDTH_PX}px;
           min-width: ${PAGE_WIDTH_PX}px;
           max-width: ${PAGE_WIDTH_PX}px;
-          min-height: ${PAGE_HEIGHT_PX}px;
-          background-color: #ffffff;
+          background-color: transparent !important;
+          position: relative;
+          z-index: 10;
         }
 
         .ms-word-editor .ProseMirror p {
@@ -348,9 +353,51 @@ const TemplateEditorCanvas = forwardRef<EditorCanvasRef, TemplateEditorCanvasPro
 				className="flex-1 w-full flex justify-center py-8 overflow-y-auto overflow-x-hidden bg-slate-100 dark:bg-slate-900"
 			>
 				<div
-					className="ms-word-editor relative shadow-2xl rounded-sm bg-white"
-					style={{ width: `${PAGE_WIDTH_PX}px`, minHeight: `${PAGE_HEIGHT_PX}px`, boxSizing: "border-box", backgroundColor: "#ffffff" }}
+					className="ms-word-editor relative"
+					style={{
+						width: `${PAGE_WIDTH_PX}px`,
+						height: `${(headerOffsets[headerOffsets.length - 1] || 0) + (pageCount - headerOffsets.length + 1) * PAGE_HEIGHT_PX}px`,
+						boxSizing: "border-box",
+					}}
 				>
+					{/* Render physical pages as background */}
+					{Array.from({ length: Math.max(1, pageCount) }).map((_, i) => {
+						// Calculate top based on manual page breaks if they exist, otherwise use standard height
+						let top = 0;
+						if (i < headerOffsets.length) {
+							top = headerOffsets[i];
+						}
+						else {
+							const lastOffset = headerOffsets[headerOffsets.length - 1] || 0;
+							top = lastOffset + (i - headerOffsets.length + 1) * PAGE_HEIGHT_PX;
+						}
+
+						// Determine height so pages don't overlap if hr is used early
+						let height = PAGE_HEIGHT_PX;
+						if (i + 1 < headerOffsets.length) {
+							height = headerOffsets[i + 1] - top;
+						}
+						else if (i + 1 === headerOffsets.length) {
+							height = PAGE_HEIGHT_PX;
+						}
+
+						return (
+							<div
+								key={i}
+								className="absolute bg-white shadow-lg border border-gray-200"
+								style={{
+									top: `${top}px`,
+									left: 0,
+									width: `${PAGE_WIDTH_PX}px`,
+									height: `${height}px`,
+									zIndex: 1,
+									pointerEvents: "none",
+									// Add a dashed border at the bottom to clearly separate continuous pages
+									borderBottom: i < pageCount - 1 ? "2px dashed #94a3b8" : "1px solid #e5e7eb",
+								}}
+							/>
+						);
+					})}
 					{renderPageHighlight()}
 					{fontsReady
 						? (
