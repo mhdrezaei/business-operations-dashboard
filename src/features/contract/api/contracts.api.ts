@@ -9,6 +9,8 @@ import { request } from "#src/utils/request";
 
 export type ContractServicePath = | "openapi" | "traffic" | "psp" | "commercial"
   | "shahkar"
+  | "sales-agency/outbound"
+  | "sales-agency/rep-management"
   | "sms/client"
   | "sms/vendor"
   | "sms-commission";
@@ -86,6 +88,91 @@ export interface TrafficDatacenterDto {
 	title?: string | null
 	code?: string | null
 	[key: string]: unknown
+}
+
+const SALES_AGENCY_EXPENSE_TITLES_PATH = "contracts/sales-agency/expense-titles/";
+
+function salesAgencyExpenseTitleRows(response: any): any[] {
+	return Array.isArray(response)
+		? response
+		: response?.results ?? response?.titles ?? response?.data ?? [];
+}
+
+function salesAgencyExpenseTitleName(item: any): string | null {
+	const value = typeof item === "string"
+		? item
+		: item?.title ?? item?.name ?? item?.expense_title ?? item?.cost_title;
+	return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+export interface SalesAgencyExpenseTitle {
+	id: number
+	title: string
+}
+
+export async function fetchSalesAgencyExpenseTitleRecords(): Promise<SalesAgencyExpenseTitle[]> {
+	const response = await request
+		.get(SALES_AGENCY_EXPENSE_TITLES_PATH, { searchParams: { page_size: "1000" } })
+		.json<any>();
+	return salesAgencyExpenseTitleRows(response)
+		.map((item: any) => ({ id: Number(item?.id), title: salesAgencyExpenseTitleName(item) }))
+		.filter((item: { id: number, title: string | null }): item is SalesAgencyExpenseTitle => Number.isInteger(item.id) && item.id > 0 && item.title != null);
+}
+
+export async function fetchSalesAgencyExpenseTitles(): Promise<string[]> {
+	const response = await request
+		.get(SALES_AGENCY_EXPENSE_TITLES_PATH, { searchParams: { page_size: "1000" } })
+		.json<any>();
+	return salesAgencyExpenseTitleRows(response)
+		.map(salesAgencyExpenseTitleName)
+		.filter((title: string | null): title is string => title != null);
+}
+
+export function createSalesAgencyExpenseTitle(title: string) {
+	return request
+		.post(SALES_AGENCY_EXPENSE_TITLES_PATH, { json: { name: title } })
+		.json<any>();
+}
+
+export async function resolveSalesAgencyExpenseTitleIds(titles: string[]): Promise<number[]> {
+	const records = await fetchSalesAgencyExpenseTitleRecords();
+	const idByTitle = new Map(records.map(item => [item.title.toLocaleLowerCase(), item.id]));
+	const ids: number[] = [];
+
+	for (const title of [...new Set(titles.map(item => item.trim()).filter(Boolean))]) {
+		const key = title.toLocaleLowerCase();
+		let id = idByTitle.get(key);
+		if (id == null) {
+			const created = await createSalesAgencyExpenseTitle(title);
+			const createdId = Number(created?.id ?? created?.data?.id);
+			if (Number.isInteger(createdId) && createdId > 0) {
+				id = createdId;
+			}
+			else {
+				const refreshed = await fetchSalesAgencyExpenseTitleRecords();
+				id = refreshed.find(item => item.title.toLocaleLowerCase() === key)?.id;
+			}
+			if (id != null)
+				idByTitle.set(key, id);
+		}
+		if (id == null)
+			throw new Error(`شناسه عنوان هزینه «${title}» دریافت نشد.`);
+		ids.push(id);
+	}
+
+	return ids;
+}
+
+export async function resolveSalesAgencyExpenseTitleNames(titles: unknown[]): Promise<string[]> {
+	const records = await fetchSalesAgencyExpenseTitleRecords();
+	const titleById = new Map(records.map(item => [String(item.id), item.title]));
+	const knownTitles = new Set(records.map(item => item.title.toLocaleLowerCase()));
+	return titles.map((value) => {
+		const raw = String(value ?? "");
+		if (knownTitles.has(raw.toLocaleLowerCase()))
+			return records.find(item => item.title.toLocaleLowerCase() === raw.toLocaleLowerCase())!.title;
+		return titleById.get(raw) ?? raw;
+	});
 }
 
 function buildContractPath(service: ContractServicePath, id?: number) {

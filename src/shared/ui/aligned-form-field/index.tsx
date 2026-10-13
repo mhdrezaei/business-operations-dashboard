@@ -8,6 +8,7 @@ export interface AlignedFormFieldProps {
 	label: string
 	labelId?: string
 	align?: "center" | "start"
+	className?: string
 	children: ReactNode
 }
 
@@ -58,10 +59,10 @@ export function useAlignedLabelWidth(labels: string[]): CSSProperties {
 	);
 }
 
-export function AlignedFormField({ label, labelId, align = "center", children }: AlignedFormFieldProps) {
-	const className = align === "start"
+export function AlignedFormField({ label, labelId, align = "center", className: customClassName, children }: AlignedFormFieldProps) {
+	const className = [align === "start"
 		? "aligned-form-field aligned-form-field--start"
-		: "aligned-form-field";
+		: "aligned-form-field", customClassName].filter(Boolean).join(" ");
 	const hasLabel = label.trim().length > 0;
 
 	return (

@@ -258,6 +258,27 @@ function mapOpenApiAddendumLegacyDetails(row: Record<string, any>) {
 	};
 }
 
+function mapOpenApiSeparatedDetails(serviceFields: Record<string, any>) {
+	const pricing = serviceFields.separatedPricing ?? {};
+	return {
+		openapi_model: "SEPARATED",
+		contract_model: "LEGACY_2",
+		wallet_charge_discount_percent: toStringOrNull(pricing.walletChargeDiscountPercent),
+		bill_inquiry_midterm: contractTypeToApiPricing(pricing.midPeriodBillInquiry ?? null),
+		bill_inquiry_endterm: contractTypeToApiPricing(pricing.endPeriodBillInquiry ?? null),
+		receipt_register_connected: {
+			...contractTypeToApiPricing(pricing.connectedReceiptRegister ?? null),
+			karashab_share_percent: toStringOrNull(pricing.connectedKarashabSharePercent),
+			partner_share_percent: toStringOrNull(pricing.connectedPartnerSharePercent),
+		},
+		receipt_register_disconnected: {
+			...contractTypeToApiPricing(pricing.disconnectedReceiptRegister ?? null),
+			karashab_share_percent: toStringOrNull(pricing.disconnectedKarashabSharePercent),
+			partner_share_percent: toStringOrNull(pricing.disconnectedPartnerSharePercent),
+		},
+	};
+}
+
 function mapOpenApiPackageDetails(serviceFields: Record<string, any>) {
 	const plans = Array.isArray(serviceFields.plans) ? serviceFields.plans : [];
 	return {
@@ -272,7 +293,7 @@ function mapOpenApiPackageDetails(serviceFields: Record<string, any>) {
 				partner_share_percent: toStringOrNull(plan?.billPartnerShare),
 				karashab_share_percent: toStringOrNull(plan?.billKarashabShare),
 				traffic_profit_percent: toStringOrNull(plan?.trafficProfitPercent),
-				traffic_partner_share_percent: toStringOrNull(plan?.trafficPartnerSharePercent ?? plan?.trafficCommissionPercent),
+				traffic_partner_share_percent: toStringOrNull(plan?.trafficPartnerSharePercent),
 				bill_inquiry_rate: {
 					calculation_type: "FLAT",
 					tiers: [{ min_inclusive: null, max_exclusive: null, rate_per_unit: toStringOrNull(plan?.billFixedPrice) }],
@@ -288,7 +309,7 @@ function mapOpenApiPackageDetails(serviceFields: Record<string, any>) {
 
 function mapOpenApiAddenda(
 	addenda: unknown,
-	contractModel: "separated" | "legacy" | null,
+	contractModel: "package" | "separated" | "legacy" | null,
 	serviceFields: Record<string, any>,
 	mainOpenApiDetails: Record<string, any> | null,
 ) {
@@ -310,6 +331,9 @@ function mapOpenApiAddenda(
 			mapped.contract_openapi_details = mapOpenApiAddendumLegacyDetails(row);
 		}
 		else if (contractModel === "separated") {
+			mapped.contract_openapi_details = mainOpenApiDetails ?? mapOpenApiSeparatedDetails(serviceFields);
+		}
+		else if (contractModel === "package") {
 			mapped.contract_openapi_details = mainOpenApiDetails ?? mapOpenApiPackageDetails(serviceFields);
 		}
 		mapped.children = mapOpenApiAddenda(row.children, contractModel, serviceFields, mainOpenApiDetails);
@@ -374,7 +398,7 @@ function mapTrafficLocationPayload(location: "TEHRAN" | "COUNTY", pricingValue: 
 		unit: unit ?? "GB/month",
 		calculation_type: pricing.calculation_type,
 		tiers: pricing.tiers ?? [],
-		...(typeof basedTire === "boolean" ? { based_tire: basedTire } : {}),
+		...(typeof basedTire === "boolean" ? { based_tire: !basedTire } : {}),
 		...(normalizedIncomePercentage != null ? { income_percentage: normalizedIncomePercentage } : {}),
 		...(contractModel != null ? { contract_model: contractModel } : {}),
 	};
@@ -469,10 +493,10 @@ function mapTrafficAddenda(
 		}
 		const locations = [
 			mainLocations.tehran
-				? mapTrafficLocationPayload("TEHRAN", row.tehranPricing, hasTrafficUnit ? row.tehranUnit : null, isIxp ? row.tehranBasedTire ?? true : undefined, isPremium ? row.tehranRevenuePercent : null, isIxp ? row.tehranContractModel ?? "LEGACY" : undefined)
+				? mapTrafficLocationPayload("TEHRAN", row.tehranPricing, hasTrafficUnit ? row.tehranUnit : null, isIxp ? row.tehranBasedTire ?? false : undefined, isPremium ? row.tehranRevenuePercent : null, isIxp ? row.tehranContractModel ?? "LEGACY" : undefined)
 				: null,
 			mainLocations.province
-				? mapTrafficLocationPayload("COUNTY", row.provincePricing, hasTrafficUnit ? row.provinceUnit : null, isIxp ? row.provinceBasedTire ?? true : undefined, isPremium ? row.provinceRevenuePercent : null, isIxp ? row.provinceContractModel ?? "LEGACY" : undefined)
+				? mapTrafficLocationPayload("COUNTY", row.provincePricing, hasTrafficUnit ? row.provinceUnit : null, isIxp ? row.provinceBasedTire ?? false : undefined, isPremium ? row.provinceRevenuePercent : null, isIxp ? row.provinceContractModel ?? "LEGACY" : undefined)
 				: null,
 		].filter(Boolean);
 
@@ -608,6 +632,11 @@ function resolveCreateServicePath(values: ContractFormValues): ContractServicePa
 		return "shahkar";
 	if (code === "commercial")
 		return "commercial";
+	if (code === "sales_agency" || code === "sales-agency") {
+		return String(values.companyType ?? "").trim().toUpperCase() === "SALES_REP_MANAGEMENT"
+			? "sales-agency/rep-management"
+			: "sales-agency/outbound";
+	}
 	if (code === "sms-commission" || code === "sms_commission")
 		return "sms-commission";
 	if (code === "sms") {
@@ -737,8 +766,8 @@ async function formValuesToApiPayload(values: ContractFormValues) {
 		const isPremiumCompanyType = normalizedCompanyType === "PREMIUM";
 		const isIxp = normalizedCompanyType === "IXP";
 		const locations = [
-			mapTrafficLocationPayload("TEHRAN", serviceFields.tehranPricing, isUnitCompanyType ? serviceFields.tehranUnit : null, isIxp ? serviceFields.tehranBasedTire ?? true : undefined, isPremiumCompanyType ? serviceFields.tehranRevenuePercent : null, isIxp ? serviceFields.tehranContractModel ?? "LEGACY" : undefined),
-			mapTrafficLocationPayload("COUNTY", serviceFields.provincePricing, isUnitCompanyType ? serviceFields.provinceUnit : null, isIxp ? serviceFields.provinceBasedTire ?? true : undefined, isPremiumCompanyType ? serviceFields.provinceRevenuePercent : null, isIxp ? serviceFields.provinceContractModel ?? "LEGACY" : undefined),
+			mapTrafficLocationPayload("TEHRAN", serviceFields.tehranPricing, isUnitCompanyType ? serviceFields.tehranUnit : null, isIxp ? serviceFields.tehranBasedTire ?? false : undefined, isPremiumCompanyType ? serviceFields.tehranRevenuePercent : null, isIxp ? serviceFields.tehranContractModel ?? "LEGACY" : undefined),
+			mapTrafficLocationPayload("COUNTY", serviceFields.provincePricing, isUnitCompanyType ? serviceFields.provinceUnit : null, isIxp ? serviceFields.provinceBasedTire ?? false : undefined, isPremiumCompanyType ? serviceFields.provinceRevenuePercent : null, isIxp ? serviceFields.provinceContractModel ?? "LEGACY" : undefined),
 		].filter(Boolean);
 
 		payload.is_signed = isOfficial;
@@ -759,30 +788,36 @@ async function formValuesToApiPayload(values: ContractFormValues) {
 		return payload;
 	}
 
+	if (serviceCode === "sales_agency" || serviceCode === "sales-agency") {
+		const companyType = String(values.companyType ?? "").trim().toUpperCase();
+		if (companyType === "OUTBOUND") {
+			payload.revenue_percent = toStringOrNull(serviceFields.incomePercentage);
+			payload.cost_percent = toStringOrNull(serviceFields.expensePercentage);
+		}
+		else if (companyType === "SALES_REP_MANAGEMENT") {
+			payload.cost_title_names = (Array.isArray(serviceFields.costTitles) ? serviceFields.costTitles : [])
+				.map((item: any) => String(item ?? "").trim())
+				.filter(Boolean);
+		}
+		payload.addenda = mapGenericAddenda(addenda);
+		return payload;
+	}
+
 	if (serviceCode === "openapi") {
-		const contractModel = serviceFields.contractModel === "separated" ? "separated" : "legacy";
-		const apiContractModel = contractModel === "separated" ? "SEPARATED" : "LEGACY";
-		const separatedPricing = serviceFields.separatedPricing ?? {};
-		const openApiDetails = {
-			openapi_model: apiContractModel,
-			contract_model: apiContractModel,
-			...(contractModel === "separated"
-				? {
-					wallet_charge_discount_percent: toStringOrNull(separatedPricing.walletChargeDiscountPercent),
-					mid_period_bill_inquiry: contractTypeToApiPricing(separatedPricing.midPeriodBillInquiry ?? null),
-					end_period_bill_inquiry: contractTypeToApiPricing(separatedPricing.endPeriodBillInquiry ?? null),
-					connected_receipt_register: contractTypeToApiPricing(separatedPricing.connectedReceiptRegister ?? null),
-					connected_karashab_share_percent: toStringOrNull(separatedPricing.connectedKarashabSharePercent),
-					connected_partner_share_percent: toStringOrNull(separatedPricing.connectedPartnerSharePercent),
-					disconnected_receipt_register: contractTypeToApiPricing(separatedPricing.disconnectedReceiptRegister ?? null),
-					disconnected_karashab_share_percent: toStringOrNull(separatedPricing.disconnectedKarashabSharePercent),
-					disconnected_partner_share_percent: toStringOrNull(separatedPricing.disconnectedPartnerSharePercent),
-				}
+		const contractModel = serviceFields.contractModel === "package"
+			? "package"
+			: serviceFields.contractModel === "separated" ? "separated" : "legacy";
+		const apiContractModel = contractModel === "package" ? "PACKAGE" : contractModel === "separated" ? "SEPARATED" : "LEGACY";
+		const openApiDetails = contractModel === "package"
+			? mapOpenApiPackageDetails(serviceFields)
+			: contractModel === "separated"
+				? mapOpenApiSeparatedDetails(serviceFields)
 				: {
+					openapi_model: apiContractModel,
+					contract_model: apiContractModel,
 					receipt_register: contractTypeToApiPricing(serviceFields.legacyPricing?.paymentRegistration ?? null),
 					bill_inquiry: contractTypeToApiPricing(serviceFields.legacyPricing?.billInquiry ?? null),
-				}),
-		};
+				};
 
 		payload.openapi_model = apiContractModel;
 
@@ -857,7 +892,8 @@ function CreateContract() {
 					setSubmitting(true);
 					try {
 						const service = resolveCreateServicePath(values);
-						const created = await fetchCreateContract(service, await formValuesToApiPayload(values));
+						const payload = await formValuesToApiPayload(values);
+						const created = await fetchCreateContract(service, payload);
 						if (created?.id != null)
 							await uploadStagedDocuments(created.id, values.documents);
 						applySubmitIntent(intent, form, created, service, navigate, actions);

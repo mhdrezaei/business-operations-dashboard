@@ -99,6 +99,11 @@ export default function ContractListPage() {
 
 		if (code === "commercial")
 			return "commercial";
+		if (code === "sales_agency" || code === "sales-agency") {
+			return pickCompanyTypeToken(row.company_type) === "SALES_REP_MANAGEMENT"
+				? "sales-agency/rep-management"
+				: "sales-agency/outbound";
+		}
 
 		if (code === "sms-commission" || code === "sms_commission")
 			return "sms-commission";
@@ -121,7 +126,7 @@ export default function ContractListPage() {
 	const selectedServiceCode = typeof selectedService?.code === "string" ? selectedService.code.trim().toLowerCase() : null;
 	const isTrafficService = selectedServiceCode === "traffic";
 	const isSmsService = selectedServiceCode === "sms";
-	const isCompanyTypeService = selectedServiceCode === "traffic" || selectedServiceCode === "sms" || selectedServiceCode === "psp";
+	const isCompanyTypeService = selectedServiceCode === "traffic" || selectedServiceCode === "sms" || selectedServiceCode === "psp" || selectedServiceCode === "sales_agency" || selectedServiceCode === "sales-agency";
 	const permittedTrafficCompanyTypeOptions = useMemo(
 		() => isCompanyTypeService ? getPermittedCompanyTypes("contracts", "view", selectedServiceId) : [],
 		[isCompanyTypeService, selectedServiceId, getPermittedCompanyTypes],

@@ -1,5 +1,5 @@
 import { FormActionBar } from "#src/shared/ui/form-action-bar";
-import { Button } from "antd";
+import { Button, Tooltip } from "antd";
 
 interface Props {
 	submitting?: boolean
@@ -8,6 +8,7 @@ interface Props {
 	onSubmit: () => void
 	onSubmitAndCreateAnother: () => void
 	onSubmitAndEdit: () => void
+	canSubmitAndEdit: boolean
 	onReset: () => void
 }
 
@@ -18,6 +19,7 @@ export function ActionSection({
 	onSubmit,
 	onSubmitAndCreateAnother,
 	onSubmitAndEdit,
+	canSubmitAndEdit,
 	onReset,
 }: Props) {
 	return (
@@ -28,9 +30,13 @@ export function ActionSection({
 					<Button loading={!!submitting} disabled={disabled || submitting} onClick={onSubmitAndCreateAnother}>
 						ثبت و ایجاد قرارداد جدید
 					</Button>
-					<Button loading={!!submitting} disabled={disabled || submitting} onClick={onSubmitAndEdit}>
-						ثبت و ویرایش
-					</Button>
+					<Tooltip title={canSubmitAndEdit ? undefined : "برای این سرویس دسترسی ویرایش ندارید"}>
+						<span>
+							<Button loading={!!submitting} disabled={disabled || submitting || !canSubmitAndEdit} onClick={onSubmitAndEdit}>
+								ثبت و ویرایش
+							</Button>
+						</span>
+					</Tooltip>
 					<Button type="primary" loading={!!submitting} disabled={disabled || submitting} onClick={onSubmit}>
 						{submitText}
 					</Button>

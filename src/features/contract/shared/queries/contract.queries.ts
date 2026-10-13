@@ -28,7 +28,8 @@ export function contractGapsQuery({
 	companyId: number | null | undefined
 	companyType?: string | null | undefined
 }) {
-	const hasCompanyScope = !!companyId || !!companyType;
+	// ارور زود هنگام نوع شرکت الزامی هست درست شد
+	const hasCompanyScope = !!companyId;
 	return queryOptions({
 		queryKey: ["contracts", "gaps", { serviceId, companyId, companyType }],
 		enabled: !!serviceId && hasCompanyScope,

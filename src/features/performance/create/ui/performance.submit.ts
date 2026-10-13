@@ -88,6 +88,16 @@ function buildManualOperations(values: PerformanceFormValues): PerformanceOperat
 		];
 	}
 
+	if (code === "sales_agency") {
+		const companyType = String(values.companyType ?? "").toUpperCase();
+		if (companyType === "OUTBOUND") {
+			return [{ payload: { ...buildBasePayload(values), company_type: companyType, total_sales: fields.total_sales } }];
+		}
+		if (companyType === "SALES_REP_MANAGEMENT") {
+			return [{ payload: { ...buildBasePayload(values), company_type: companyType, credit_total: fields.credit_total, income: fields.income, cost_items: fields.cost_items } }];
+		}
+	}
+
 	if (code === "shahkar") {
 		return [
 			{
@@ -273,7 +283,7 @@ async function submitCommercialFiles(values: PerformanceFormValues): Promise<Rec
 }
 
 export async function submitPerformance(values: PerformanceFormValues): Promise<SubmitPerformanceResult> {
-	const servicePath = resolvePerformanceServicePath(values.serviceCode);
+	const servicePath = resolvePerformanceServicePath(values.serviceCode, values.companyType);
 	if (!servicePath) {
 		throw new Error(i18next.t("performance.errors.serviceNotSelected"));
 	}

@@ -73,6 +73,17 @@
 	color: var(--contract-section-currency-text-color);
 }
 
+.contract-type-unit-amount-field .ant-form-item-control {
+	position: relative;
+}
+
+.contract-type-unit-amount-field .ant-form-item-explain {
+	position: absolute;
+	top: 100%;
+	inset-inline-start: 0;
+	padding-top: 4px;
+}
+
 .contract-tier-header-badge {
 	border-radius: var(--contract-section-tag-radius);
 	background: var(--contract-section-accent-bg);

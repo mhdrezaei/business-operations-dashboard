@@ -56,3 +56,69 @@ export function companyTypeMatches(companyType: unknown, selectedType: string | 
 
 	return toCompanyTypeTokens(companyType).includes(selectedToken);
 }
+
+const IXP_COMPANY_NAMES = new Set([
+	"TEST IXP",
+	"آپارات",
+	"آترین",
+	"آسیاتک",
+	"ابر آروان",
+	"ارتباطات ثابت پارسیان",
+	"افرانت",
+	"افزارسا",
+	"ایتا",
+	"ایرانسل",
+	"پادیز داده رسان",
+	"پارس آنلاین",
+	"پارس فنون",
+	"پتایک",
+	"پژوهشگاه بنیادی (فیزیک نظری)",
+	"پیام رسان بله",
+	"پیشگامان",
+	"تبیان",
+	"تست آرمان 2",
+	"توسعه فناوری ارتباطات پاسارگاد آریان",
+	"حسابگر پرداز غرب",
+	"داده امین",
+	"داده گستر عصر نوین(پارس آنلاین + های وب)",
+	"رایان هم افزا",
+	"رایتل",
+	"رهام داتک",
+	"زی تل",
+	"سازمان فناوری اطلاعات سیدخندان",
+	"سازمان فناوری شهرداری تهران",
+	"سپنتا",
+	"سرزمین هوشمند",
+	"سروش رسانه",
+	"شاتل",
+	"شبدیز",
+	"صدا سیما",
+	"صفر و یک",
+	"فرزانگان پارس",
+	"فرهنگ آزما",
+	"فن آوا",
+	"گرین وب",
+	"لایزر",
+	"ماهانت",
+	"مبنا",
+	"مبین نت",
+	"مهر و وطن",
+	"ندا گستر صبا",
+	"نورنت",
+	"های وب",
+	"هلما گستر عصر تلکام",
+	"همراه اول( به همراه شاد)",
+].map(normalizeCompanyName));
+
+function normalizeCompanyName(value: unknown) {
+	return String(value ?? "")
+		.replaceAll("ي", "ی")
+		.replaceAll("ك", "ک")
+		.replaceAll(/\s+/g, " ")
+		.trim()
+		.toLocaleLowerCase("fa-IR");
+}
+
+export function isIxpCompanyName(value: unknown): boolean {
+	return IXP_COMPANY_NAMES.has(normalizeCompanyName(value));
+}

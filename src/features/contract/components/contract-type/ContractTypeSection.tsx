@@ -1,4 +1,5 @@
 import type { SectionTone } from "#src/shared/ui/section-card";
+import type { ContractType } from "./contract-type.types";
 import { DashedBorder } from "#src/shared/ui/dashed-border";
 import { RHFProNumber, RHFSegmentedSwitch, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { getSectionToneColors, SectionCard, SectionToneContext } from "#src/shared/ui/section-card";
@@ -14,12 +15,14 @@ interface Props {
 	title: React.ReactNode
 	name: string
 	topAside?: React.ReactNode
+	bottomAside?: React.ReactNode
 	tone?: SectionTone
 	variant?: "default" | "embedded" | "sms-operator"
 	showRatePercentage?: boolean
 	ratePercentageHelpText?: React.ReactNode
 	compactCalculationModel?: boolean
 	blendedModePlaceholder?: string
+	contractTypeOptions?: Array<{ label: string, value: ContractType, disabled?: boolean }>
 }
 
 function createDefaultRows() {
@@ -38,7 +41,7 @@ function createDefaultSection(firstRowFrom: number | null = null) {
 	};
 }
 
-export function ContractTypeSection({ title, name, topAside, tone = "primary", variant = "default", showRatePercentage = false, ratePercentageHelpText, compactCalculationModel = true, blendedModePlaceholder = "انتخاب نوع محاسبه" }: Props) {
+export function ContractTypeSection({ title, name, topAside, bottomAside, tone = "primary", variant = "default", showRatePercentage = false, ratePercentageHelpText, compactCalculationModel = true, blendedModePlaceholder = "انتخاب نوع محاسبه", contractTypeOptions = CONTRACT_TYPE_OPTIONS }: Props) {
 	const { control, getValues, setValue } = useFormContext();
 	const inheritedTone = React.useContext(SectionToneContext);
 	const resolvedTone = inheritedTone ?? tone;
@@ -177,7 +180,7 @@ export function ContractTypeSection({ title, name, topAside, tone = "primary", v
 			<RHFSegmentedSwitch
 				name={typePath}
 				label={compactCalculationModel ? "" : "مدل محاسبه"}
-				options={CONTRACT_TYPE_OPTIONS}
+				options={contractTypeOptions}
 				segmentedProps={{ block: true }}
 				formItemProps={{ className: "mb-0" }}
 			/>
@@ -189,7 +192,7 @@ export function ContractTypeSection({ title, name, topAside, tone = "primary", v
 				enableGrouping
 				enableWordsTooltip
 				inputProps={{ placeholder: "برای مثال ۱۲۰", inputMode: "numeric", addonAfter: "ریال" } as any}
-				formItemProps={{ className: "contract-type-currency-field mb-0" }}
+				formItemProps={{ className: "contract-type-currency-field contract-type-unit-amount-field mb-0" }}
 			/>
 		);
 		const ratePercentage = (
@@ -327,6 +330,8 @@ export function ContractTypeSection({ title, name, topAside, tone = "primary", v
 					</div>
 				)
 				: null}
+
+			{bottomAside ? <div className="mt-4">{bottomAside}</div> : null}
 		</>
 	);
 
