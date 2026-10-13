@@ -15,6 +15,7 @@ import {
 	upsertPerformance,
 } from "#src/features/performance/api/performances.api";
 import {
+	contractHasNewCustomerRate,
 	normalizePerformanceRecord,
 	pickActiveContract,
 	pickCompanyTypeToken,
@@ -80,7 +81,7 @@ interface SmsBreakdownCard {
 const SERVICE_DETAIL_KEYS: Record<PerformanceServicePath, string[]> = {
 	"openapi": ["value", "income", "expense", "profit", "traffic_income", "traffic_package_count"],
 	"psp": [],
-	"shahkar": ["value", "income", "expense", "profit"],
+	"shahkar": ["value", "new_customer_count", "new_customer_income", "income", "expense", "profit"],
 	"sms": [],
 	"sms-commission": [],
 	"traffic": ["company_type", "is_official"],
@@ -329,6 +330,8 @@ function buildInitialValues(
 		values.sh_month = recordFallback.sh_month ?? null;
 	if (service === "sms-commission" && values.sales_agent == null)
 		values.sales_agent = recordFallback.sales_agent ?? recordFallback.sales_agent_id ?? null;
+	if (service === "shahkar" && values.new_customer_count == null)
+		values.new_customer_count = detail.newCustomerCount ?? recordFallback.newCustomerCount ?? null;
 
 	return values;
 }
@@ -676,6 +679,7 @@ export function PerformanceDetailModal({
 	const [saving, setSaving] = useState(false);
 	const [detail, setDetail] = useState<Record<string, unknown> | null>(null);
 	const [smsContract, setSmsContract] = useState<Record<string, unknown> | null>(null);
+	const [shahkarHasNewCustomerRate, setShahkarHasNewCustomerRate] = useState(false);
 	const [smsPerformances, setSmsPerformances] = useState<PerformanceListItem[]>([]);
 	const [trafficPerformances, setTrafficPerformances] = useState<PerformanceListItem[]>([]);
 	const [openApiPerformances, setOpenApiPerformances] = useState<PerformanceListItem[]>([]);
@@ -684,6 +688,13 @@ export function PerformanceDetailModal({
 		() => normalizePerformanceRecord(record ?? {}),
 		[record],
 	);
+	const hasSavedShahkarNewCustomerCount = [
+		detail?.new_customer_count,
+		detail?.newCustomerCount,
+		normalizedRecord.raw.new_customer_count,
+		normalizedRecord.raw.newCustomerCount,
+	].some(value => value != null && value !== "");
+	const showShahkarNewCustomerCount = shahkarHasNewCustomerRate || hasSavedShahkarNewCustomerCount;
 	const openApiContractModel = useMemo(
 		() => resolveOpenApiContractModel(detail, record, openApiPerformances),
 		[detail, record, openApiPerformances],
@@ -756,13 +767,17 @@ export function PerformanceDetailModal({
 		}
 
 		if (service === "shahkar") {
+			const newCustomerFields = showShahkarNewCustomerCount
+				? [{ key: "new_customer_count", label: t("performance.fields.shahkar.newCustomerCount"), type: "number" as const }]
+				: [];
 			return {
 				title: t("performance.modal.titles.shahkar"),
 				readonlyKeys: [],
 				editableFields: [
 					{ key: "value", label: t("performance.fields.shahkar.performanceValue"), type: "number", required: true },
+					...newCustomerFields,
 				],
-				payloadKeys: ["value"],
+				payloadKeys: showShahkarNewCustomerCount ? ["value", "new_customer_count"] : ["value"],
 			};
 		}
 
@@ -846,7 +861,7 @@ export function PerformanceDetailModal({
 			],
 			payloadKeys: ["customer_name", "customer_nic", "province_code", "service_type", "value"],
 		};
-	}, [service, openApiContractModel, isUnregisteredMode, normalizedRecord.companyType, t]);
+	}, [service, openApiContractModel, isUnregisteredMode, normalizedRecord.companyType, showShahkarNewCustomerCount, t]);
 	const isOpenApiPackageEditLayout = service === "openapi" && openApiContractModel === "package";
 	const isSmsEditAlignedLayout = service === "sms" || service === "sms-commission";
 	const isPspEditLayout = service === "psp";
@@ -1004,10 +1019,18 @@ export function PerformanceDetailModal({
 		if (service !== "shahkar")
 			return [];
 
+		const newCustomerFields = showShahkarNewCustomerCount
+			? [
+				{ key: "new_customer_count", label: t("performance.fields.shahkar.newCustomerCount"), value: formatNumberLike(mergedDetail.new_customer_count ?? mergedDetail.newCustomerCount) },
+				{ key: "new_customer_income", label: t("performance.fields.shahkar.newCustomerIncome"), value: formatNumberLike(mergedDetail.new_customer_income ?? mergedDetail.newCustomerIncome) },
+			]
+			: [];
+
 		return [
+			...newCustomerFields,
 			{ key: "income", label: "درآمد این ماه", value: formatNumberLike(mergedDetail.income) },
 		];
-	}, [service, mergedDetail]);
+	}, [service, mergedDetail, showShahkarNewCustomerCount]);
 	const pspSummaryFields = useMemo(() => {
 		if (service !== "psp")
 			return [];
@@ -1302,6 +1325,42 @@ export function PerformanceDetailModal({
 			cancelled = true;
 		};
 	}, [open, service, record, normalizedRecord.id, isUnregisteredMode]);
+
+	useEffect(() => {
+		if (!open || service !== "shahkar") {
+			setShahkarHasNewCustomerRate(false);
+			return;
+		}
+
+		const serviceId = normalizedRecord.serviceId;
+		const companyId = normalizedRecord.companyId;
+		const year = normalizedRecord.year;
+		const month = normalizedRecord.month;
+		if (serviceId == null || companyId == null || year == null || month == null) {
+			setShahkarHasNewCustomerRate(false);
+			return;
+		}
+
+		let cancelled = false;
+		setShahkarHasNewCustomerRate(false);
+		(async () => {
+			try {
+				const response = await fetchPerformanceContracts("shahkar", serviceId, companyId);
+				if (cancelled)
+					return;
+				const active = pickActiveContract(response?.results ?? [], year, month);
+				setShahkarHasNewCustomerRate(contractHasNewCustomerRate(active, year, month));
+			}
+			catch {
+				if (!cancelled)
+					setShahkarHasNewCustomerRate(false);
+			}
+		})();
+
+		return () => {
+			cancelled = true;
+		};
+	}, [open, service, normalizedRecord.companyId, normalizedRecord.serviceId, normalizedRecord.year, normalizedRecord.month]);
 
 	useEffect(() => {
 		if (!open || service !== "sms" || isUnregisteredMode) {
@@ -1997,6 +2056,7 @@ export function PerformanceDetailModal({
 																			name={field.key as any}
 																			label={field.label}
 																			inputProps={{ placeholder: t("performance.modal.placeholders.enterNumber"), inputMode: "numeric" } as any}
+																			decimal={field.key !== "new_customer_count"}
 																			enableGrouping
 																			enableWordsTooltip
 																		/>

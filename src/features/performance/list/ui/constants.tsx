@@ -124,6 +124,7 @@ export function getPerformanceColumns({
 	const hasSelectedService = Boolean(serviceCode);
 	const isOpenApi = serviceCode === "openapi";
 	const isPsp = serviceCode === "psp";
+	const isShahkar = serviceCode === "shahkar";
 	const isTraffic = serviceCode === "traffic";
 	const isSms = serviceCode === "sms";
 	const requiresCompanyType = isSms || isPsp || isTraffic;
@@ -316,6 +317,14 @@ export function getPerformanceColumns({
 			hideInTable: hideNonMatchingServiceColumn(!isTraffic && !isOpenApi),
 			search: false,
 			render: (_, row) => formatNumeric(row.value),
+		},
+		{
+			title: t("performance.fields.shahkar.newCustomerCount"),
+			dataIndex: "new_customer_count",
+			width: 170,
+			hideInTable: hideNonMatchingServiceColumn(isShahkar),
+			search: false,
+			render: (_, row) => formatNumeric(row.new_customer_count),
 		},
 		{
 			title: t("performance.columns.income"),

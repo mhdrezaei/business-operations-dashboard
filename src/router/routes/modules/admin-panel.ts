@@ -13,6 +13,7 @@ const ListRoles = lazy(() => import("#src/pages/user-management/RolesList"));
 const AuditLogs = lazy(() => import("#src/pages/user-management/AuditLogsList"));
 const NotificationRules = lazy(() => import("#src/pages/user-management/NotificationRules"));
 const SignFlowRules = lazy(() => import("#src/pages/user-management/SignFlowRules"));
+const SalesAgencyExpenseTitles = lazy(() => import("#src/pages/user-management/SalesAgencyExpenseTitles"));
 // const EditContractPage = lazy(() => import("#src/pages/user-management/edit"));
 
 const routes: AppRouteRecordRaw[] = [
@@ -75,6 +76,15 @@ const routes: AppRouteRecordRaw[] = [
 				handle: {
 					icon: createElement(AuditOutlined),
 					title: "قوانین گردش امضای قرارداد",
+					adminAccess: "policies",
+				},
+			},
+			{
+				path: "/admin-panel/sales-agency/expense-titles",
+				Component: SalesAgencyExpenseTitles,
+				handle: {
+					icon: createElement(AuditOutlined),
+					title: "عنوان‌های هزینه‌ی عاملیت فروش",
 					adminAccess: "policies",
 				},
 			},

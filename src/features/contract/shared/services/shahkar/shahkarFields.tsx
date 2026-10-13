@@ -9,6 +9,49 @@ import { useFormContext, useWatch } from "react-hook-form";
 
 const sf = (path: string) => `serviceFields.${path}` as const;
 
+function ShahkarAddendumFields({ basePath }: { basePath: string }) {
+	const { control, getValues, setValue } = useFormContext<ContractFormValues>();
+	const hasNewCustomerRate = useWatch({
+		control,
+		name: `${basePath}.hasNewCustomerRate` as any,
+	}) as boolean | undefined;
+	useEffect(() => {
+		const pricingPath = `${basePath}.newCustomerPricing` as any;
+		if (hasNewCustomerRate) {
+			if (getValues(pricingPath) == null) {
+				setValue(pricingPath, structuredClone(defaultContractTypeValue), {
+					shouldDirty: true,
+					shouldValidate: false,
+				});
+			}
+			return;
+		}
+
+		if (hasNewCustomerRate === false && getValues(pricingPath) !== undefined) {
+			setValue(pricingPath, undefined, { shouldDirty: true, shouldValidate: false });
+		}
+	}, [basePath, getValues, hasNewCustomerRate, setValue]);
+
+	return (
+		<>
+			<ContractTypeSection title="" name={`${basePath}.contractPricing`} />
+			<RHFProCheckbox<ContractFormValues, any>
+				name={`${basePath}.hasNewCustomerRate` as any}
+				checkboxLabel="این الحاقیه نرخ مشتریان جدید دارد"
+				itemProps={{ className: "mt-3 mb-0" }}
+			/>
+			{hasNewCustomerRate
+				? (
+					<ContractTypeSection
+						title="نرخ مشتریان جدید"
+						name={`${basePath}.newCustomerPricing`}
+					/>
+				)
+				: null}
+		</>
+	);
+}
+
 export function ShahkarFields() {
 	const { control, getValues, setValue } = useFormContext<ContractFormValues>();
 	const hasNewCustomerRate = useWatch({ control, name: sf("hasNewCustomerRate") as any }) as boolean | undefined;
@@ -72,6 +115,7 @@ export function ShahkarFields() {
 							name={sf("addenda") as ArrayPath<ContractFormValues>}
 							contractTypeTitle=""
 							contractTypeFieldKey="contractPricing"
+							renderAddendumFields={basePath => <ShahkarAddendumFields basePath={basePath} />}
 
 							// ✅ Root contract dates path - mandatory in your Props
 							contractStartYearPath={"startYear" as Path<ContractFormValues>}

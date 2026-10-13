@@ -409,6 +409,10 @@ function mapShahkarAddenda(addenda: unknown): Array<Record<string, any>> {
 
 	return list.map((item) => {
 		const row = (item ?? {}) as Record<string, any>;
+		const hasNewCustomerRate = row.hasNewCustomerRate === true;
+		const newCustomerPricing = hasNewCustomerRate
+			? mapShahkarPricingPayload(row.newCustomerPricing)
+			: null;
 
 		return {
 			start_jy: toNumberOrNull(row.startYear),
@@ -418,7 +422,14 @@ function mapShahkarAddenda(addenda: unknown): Array<Record<string, any>> {
 			contract_number: row.contractNumber ?? "",
 			note: row.description ?? "",
 			is_signed: row.isSigned ?? row.is_signed ?? false,
+			has_new_customer_rate: hasNewCustomerRate,
 			...mapShahkarPricingPayload(row.contractPricing),
+			...(newCustomerPricing
+				? {
+					new_customer_calculation_type: newCustomerPricing.calculation_type,
+					new_customer_tiers: newCustomerPricing.tiers,
+				}
+				: {}),
 			children: mapShahkarAddenda(row.children),
 		};
 	});

@@ -255,7 +255,7 @@ export function ContractForm({
 													transition={{ duration: 0.2 }}
 													className="w-full"
 												>
-													<module.Fields />
+													<module.Fields mode={mode} />
 												</motion.div>
 											)
 											: null}

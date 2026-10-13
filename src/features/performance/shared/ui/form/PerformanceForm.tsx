@@ -60,6 +60,8 @@ function extractFirstErrorMessage(value: unknown): string | null {
 
 	if (value && typeof value === "object") {
 		const record = value as Record<string, unknown>;
+		if (typeof record.message === "string" && record.message.trim())
+			return record.message.trim();
 		if (Array.isArray(record.non_field_errors)) {
 			const message = extractFirstErrorMessage(record.non_field_errors);
 			if (message)
@@ -216,11 +218,11 @@ export function PerformanceForm({
 			}
 		},
 		(errors) => {
-			const firstPath = Object.keys(errors ?? {})[0];
+			const firstErrorMessage = extractFirstErrorMessage(errors);
 			notification.error({
 				message: t("performance.messages.fixFormErrors"),
-				description: firstPath
-					? String((errors as any)[firstPath]?.message ?? t("performance.messages.invalidFormInputs"))
+				description: firstErrorMessage
+					? formatServerErrorMessage(firstErrorMessage)
 					: t("performance.messages.invalidFormInputs"),
 				placement: "topRight",
 				className: "performance-submit-notification",

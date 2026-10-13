@@ -75,7 +75,7 @@ function SeparatedPricingFields() {
 	);
 }
 
-export function OpenApiFields() {
+export function OpenApiFields({ mode = "create" }: { mode?: "create" | "edit" }) {
 	const { control, setValue, getValues, register } = useFormContext<ContractFormValues>();
 	const startYear = useWatch({ control, name: "startYear" });
 	const startMonth = useWatch({ control, name: "startMonth" });
@@ -130,9 +130,12 @@ export function OpenApiFields() {
 							{ label: "تفکیکی", value: "separated" },
 							{ label: "قدیمی", value: "legacy" },
 						]}
-						selectProps={{ placeholder: "مدل قرارداد را انتخاب کنید", allowClear: false }}
+						selectProps={{ placeholder: mode === "edit" ? undefined : "مدل قرارداد را انتخاب کنید", allowClear: false, disabled: mode === "edit" }}
 					/>
 				</div>
+				{mode === "edit" && (
+					<p className="mt-2 text-sm text-gray-500">مدل قرارداد پایه پس از ثبت قابل تغییر نیست</p>
+				)}
 			</SectionCard>
 
 			{contractModel === "separated"

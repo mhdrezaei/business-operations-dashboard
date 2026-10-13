@@ -41,6 +41,8 @@ export interface PerformanceListItem {
 	sales_agent_id?: number | null
 	sales_agent_name?: string | null
 	value?: string | number | null
+	new_customer_count?: string | number | null
+	new_customer_income?: string | number | null
 	value_receive?: string | number | null
 	income?: string | number | null
 	expense?: string | number | null
@@ -234,6 +236,9 @@ export interface PerformanceContractListItem {
 			tiers?: Array<Record<string, unknown>>
 		} | null
 	} | null
+	has_new_customer_rate?: boolean | null
+	new_customer_calculation_type?: string | null
+	new_customer_tiers?: Array<Record<string, unknown>> | null
 	agent?: number | null
 	sales_agent?: number | null
 	[key: string]: unknown

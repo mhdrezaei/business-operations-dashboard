@@ -99,11 +99,15 @@ function buildManualOperations(values: PerformanceFormValues): PerformanceOperat
 	}
 
 	if (code === "shahkar") {
+		const newCustomerCount = fields.hasNewCustomerRate === true
+			? { new_customer_count: toNullableNumber(fields.newCustomerCount) }
+			: {};
 		return [
 			{
 				payload: {
 					...buildBasePayload(values),
 					value: fields.performanceValue,
+					...newCustomerCount,
 				},
 			},
 		];
