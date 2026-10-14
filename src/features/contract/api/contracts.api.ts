@@ -522,6 +522,12 @@ export async function fetchSignFlowHistory(contractId: number | string): Promise
 export function fetchSignFlowOfficialPdf(id: number | string) {
 	return request.get(`contracts/sign-flows/${id}/official-pdf/`);
 }
+
+export async function cancelSignFlow(id: number | string, reason: string): Promise<SignFlowDetail> {
+	return request.post(`contracts/sign-flows/${id}/cancel/`, {
+		json: { reason },
+	}).json<SignFlowDetail>();
+}
 export function fetchContractTemplates(service: string, companyType?: string | null, documentKind?: string | null) {
 	const searchParams: Record<string, string> = {
 		service,

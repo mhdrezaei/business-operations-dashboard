@@ -1,11 +1,12 @@
 import { Scrollbar } from "#src/components";
-import { fetchSignFlowDetail, fetchSignFlowHistory, fetchSignFlowOfficialPdf } from "#src/features/contract/api/contracts.api";
+import { cancelSignFlow, fetchSignFlowDetail, fetchSignFlowHistory, fetchSignFlowOfficialPdf } from "#src/features/contract/api/contracts.api";
 import { dayjs } from "#src/shared/lib/dayjs-jalali";
+import { useUserStore } from "#src/store";
 import { ArrowRightOutlined, CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, EyeOutlined, FilePdfOutlined, StopOutlined } from "@ant-design/icons";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { Button, Card, Col, Descriptions, Divider, Empty, message, Row, Space, Spin, Steps, Tag, Typography } from "antd";
-import React, { useEffect, useState } from "react";
+import { Button, Card, Col, Descriptions, Divider, Empty, Input, message, Modal, Row, Space, Spin, Steps, Tag, Typography } from "antd";
+import React, { useState } from "react";
 import { SIGN_FLOW_STATE_MAP } from "../constants";
 
 const { Title, Text } = Typography;
@@ -22,12 +23,21 @@ export interface SignFlowDetailProps {
 }
 
 export function SignFlowDetail({ id, onBack }: SignFlowDetailProps) {
-	const [activeId, setActiveId] = useState<number | null>(id);
+	const user = useUserStore();
+	const queryClient = useQueryClient();
+	const [historyId, setHistoryId] = useState<number | null>(null);
+	const [prevPropId, setPrevPropId] = useState(id);
 	const [isPdfLoading, setIsPdfLoading] = useState(false);
+	const [cancelModalOpen, setCancelModalOpen] = useState(false);
+	const [cancelReason, setCancelReason] = useState("");
+	const [isCancelling, setIsCancelling] = useState(false);
 
-	useEffect(() => {
-		setActiveId(id);
-	}, [id]);
+	if (id !== prevPropId) {
+		setPrevPropId(id);
+		setHistoryId(null);
+	}
+
+	const activeId = historyId ?? id;
 
 	const { data: detail, isLoading: isLoadingDetail } = useQuery({
 		queryKey: ["signFlowDetail", activeId],
@@ -84,6 +94,55 @@ export function SignFlowDetail({ id, onBack }: SignFlowDetailProps) {
 		}
 		finally {
 			setIsPdfLoading(false);
+		}
+	};
+
+	const isAdmin = Boolean(
+		user.is_superuser
+		|| user.is_staff
+		|| user.is_service_admin
+		|| user.roles?.some(r => r.toLowerCase() === "admin")
+		|| user.role?.toLowerCase() === "admin"
+		|| user.admin_role?.toLowerCase() === "admin",
+	);
+
+	const isCreator = Boolean(
+		detail
+		&& (
+			(detail.created_by != null && Number(user.id) === Number(detail.created_by))
+			|| (Boolean(detail.created_by_username) && user.username === detail.created_by_username)
+		),
+	);
+
+	const canCancel = (isAdmin || isCreator) && detail?.state === "in_progress";
+
+	const handleCancelSignFlow = async () => {
+		if (!detail?.id)
+			return;
+
+		const trimmedReason = cancelReason.trim();
+		if (!trimmedReason) {
+			message.warning("لطفاً دلیل لغو را وارد کنید");
+			return;
+		}
+
+		try {
+			setIsCancelling(true);
+			await cancelSignFlow(detail.id, trimmedReason);
+			message.success("گردش امضا با موفقیت لغو شد");
+			setCancelModalOpen(false);
+			setCancelReason("");
+			await queryClient.invalidateQueries({ queryKey: ["signFlowDetail", activeId] });
+			if (detail.contract_id) {
+				await queryClient.invalidateQueries({ queryKey: ["signFlowHistory", detail.contract_id] });
+			}
+		}
+		catch (err: any) {
+			console.error("Error cancelling sign flow:", err);
+			message.error("خطا در لغو گردش امضا");
+		}
+		finally {
+			setIsCancelling(false);
 		}
 	};
 
@@ -180,7 +239,18 @@ export function SignFlowDetail({ id, onBack }: SignFlowDetailProps) {
 							<Descriptions.Item label="تاریخ شروع گردش امضا">
 								{formatDate(detail.started_at)}
 							</Descriptions.Item>
+							{detail.finished_at && (
+								<Descriptions.Item label="تاریخ پایان گردش امضا">
+									{formatDate(detail.finished_at)}
+								</Descriptions.Item>
+							)}
 						</Descriptions>
+						{detail.cancel_reason && (
+							<div className="mt-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 p-4 text-sm font-medium text-slate-700 dark:text-slate-300">
+								<span className="font-bold">دلیل لغو: </span>
+								{detail.cancel_reason}
+							</div>
+						)}
 						<div className="mt-4 flex justify-end gap-2">
 							<Button
 								type="primary"
@@ -190,8 +260,13 @@ export function SignFlowDetail({ id, onBack }: SignFlowDetailProps) {
 							>
 								مشاهده PDF رسمی
 							</Button>
-							{detail.state === "in_progress" && (
-								<Button danger type="default" icon={<StopOutlined />}>
+							{canCancel && (
+								<Button
+									danger
+									type="default"
+									icon={<StopOutlined />}
+									onClick={() => setCancelModalOpen(true)}
+								>
 									لغو گردش امضا
 								</Button>
 							)}
@@ -261,7 +336,7 @@ export function SignFlowDetail({ id, onBack }: SignFlowDetailProps) {
 															<Button
 																type="text"
 																icon={<EyeOutlined />}
-																onClick={() => setActiveId(h.id)}
+																onClick={() => setHistoryId(h.id)}
 															/>
 															<Text strong className="text-lg">
 																گردش امضا #
@@ -299,6 +374,59 @@ export function SignFlowDetail({ id, onBack }: SignFlowDetailProps) {
 					</Card>
 				</Col>
 			</Row>
+
+			<Modal
+				open={cancelModalOpen}
+				onCancel={() => {
+					if (!isCancelling) {
+						setCancelModalOpen(false);
+						setCancelReason("");
+					}
+				}}
+				footer={null}
+				centered
+				width={480}
+				destroyOnClose
+			>
+				<div className="py-2" dir="rtl">
+					<Title level={4} className="!mb-2 text-center">
+						لغو گردش امضا
+					</Title>
+					<div className="mb-4 text-center text-sm text-gray-500 dark:text-gray-400">
+						دلیل لغو
+					</div>
+					<Input.TextArea
+						rows={5}
+						value={cancelReason}
+						onChange={e => setCancelReason(e.target.value)}
+						placeholder="دلیل لغو را وارد کنید..."
+						className="mb-6 rounded-lg"
+						disabled={isCancelling}
+					/>
+					<div className="flex items-center justify-center gap-3">
+						<Button
+							type="primary"
+							size="large"
+							className="min-w-28 rounded-lg"
+							loading={isCancelling}
+							onClick={handleCancelSignFlow}
+						>
+							لغو کن
+						</Button>
+						<Button
+							size="large"
+							className="min-w-28 rounded-lg"
+							disabled={isCancelling}
+							onClick={() => {
+								setCancelModalOpen(false);
+								setCancelReason("");
+							}}
+						>
+							انصراف
+						</Button>
+					</div>
+				</div>
+			</Modal>
 		</div>
 	);
 }
