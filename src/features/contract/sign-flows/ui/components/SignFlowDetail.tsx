@@ -1,11 +1,11 @@
 import { Scrollbar } from "#src/components";
 import { fetchSignFlowDetail, fetchSignFlowHistory } from "#src/features/contract/api/contracts.api";
 import { dayjs } from "#src/shared/lib/dayjs-jalali";
-import { CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, EyeOutlined, FilePdfOutlined, StopOutlined } from "@ant-design/icons";
+import { ArrowRightOutlined, CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, EyeOutlined, FilePdfOutlined, StopOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 
-import { Button, Card, Col, Descriptions, Divider, Empty, Modal, Row, Space, Spin, Steps, Tag, Typography } from "antd";
-import React from "react";
+import { Button, Card, Col, Descriptions, Divider, Empty, Row, Space, Spin, Steps, Tag, Typography } from "antd";
+import React, { useEffect, useState } from "react";
 import { SIGN_FLOW_STATE_MAP } from "../constants";
 
 const { Title, Text } = Typography;
@@ -16,17 +16,22 @@ function formatDate(dateString?: string | null) {
 	return dayjs(dateString).format("YYYY/MM/DD HH:mm");
 }
 
-interface SignFlowDetailModalProps {
+export interface SignFlowDetailProps {
 	id: number | null
-	open: boolean
-	onCancel: () => void
+	onBack?: () => void
 }
 
-export function SignFlowDetailModal({ id, open, onCancel }: SignFlowDetailModalProps) {
+export function SignFlowDetail({ id, onBack }: SignFlowDetailProps) {
+	const [activeId, setActiveId] = useState<number | null>(id);
+
+	useEffect(() => {
+		setActiveId(id);
+	}, [id]);
+
 	const { data: detail, isLoading: isLoadingDetail } = useQuery({
-		queryKey: ["signFlowDetail", id],
-		queryFn: () => fetchSignFlowDetail(id as unknown as string),
-		enabled: !!id,
+		queryKey: ["signFlowDetail", activeId],
+		queryFn: () => fetchSignFlowDetail(activeId as unknown as string),
+		enabled: !!activeId,
 	});
 
 	const { data: history, isLoading: isLoadingHistory } = useQuery({
@@ -37,17 +42,22 @@ export function SignFlowDetailModal({ id, open, onCancel }: SignFlowDetailModalP
 
 	if (isLoadingDetail) {
 		return (
-			<Modal open={open} onCancel={onCancel} footer={null} width={1000} destroyOnClose style={{ top: 40, paddingBottom: 40 }}>
+			<div className="flex justify-center items-center py-20">
 				<Spin size="large" />
-			</Modal>
+			</div>
 		);
 	}
 
 	if (!detail) {
 		return (
-			<Modal open={open} onCancel={onCancel} footer={null} width={1200} destroyOnClose style={{ top: 40, paddingBottom: 40 }}>
+			<div className="py-20 text-center">
 				<Empty description="اطلاعات گردش امضا یافت نشد" />
-			</Modal>
+				{onBack && (
+					<div className="mt-4">
+						<Button onClick={onBack}>بازگشت</Button>
+					</div>
+				)}
+			</div>
 		);
 	}
 
@@ -81,7 +91,14 @@ export function SignFlowDetailModal({ id, open, onCancel }: SignFlowDetailModalP
 	});
 
 	return (
-		<Modal open={open} onCancel={onCancel} footer={null} width={1200} destroyOnClose style={{ top: 40, paddingBottom: 40 }}>
+		<div className="flex flex-col gap-4">
+			{onBack && (
+				<div className="flex items-center justify-between">
+					<Button icon={<ArrowRightOutlined />} onClick={onBack}>
+						بازگشت به لیست گردش‌های امضا
+					</Button>
+				</div>
+			)}
 			<Row gutter={[24, 24]} style={{ alignItems: "stretch" }}>
 				{/* Right Main Content */}
 				<Col xs={24} lg={16}>
@@ -176,8 +193,8 @@ export function SignFlowDetailModal({ id, open, onCancel }: SignFlowDetailModalP
 
 				{/* Left Sidebar History */}
 				<Col xs={24} lg={8}>
-					<Card title={<Title level={4} style={{ margin: 0 }}>تاریخچه گردش‌های قبلی</Title>} style={{ height: "100%", display: "flex", flexDirection: "column", maxHeight: "calc(100vh - 120px)" }} bodyStyle={{ flex: 1, overflow: "hidden", padding: 0 }} styles={{ body: { flex: 1, overflow: "hidden", padding: 0 } }}>
-						<Scrollbar className="h-full p-6">
+					<Card title={<Title level={4} style={{ margin: 0 }}>تاریخچه گردش‌های قبلی</Title>} style={{ height: "100%", display: "flex", flexDirection: "column" }} bodyStyle={{ flex: 1, overflow: "hidden", padding: 0 }} styles={{ body: { flex: 1, overflow: "hidden", padding: 0 } }}>
+						<Scrollbar className="h-full p-6" style={{ maxHeight: "calc(100vh - 200px)" }}>
 							{(() => {
 								if (isLoadingHistory) {
 									return <div className="flex justify-center p-4"><Spin /></div>;
@@ -196,7 +213,7 @@ export function SignFlowDetailModal({ id, open, onCancel }: SignFlowDetailModalP
 															<Button
 																type="text"
 																icon={<EyeOutlined />}
-																// User shouldn't open in new window if modal. If we want history view, we can call onCancel() or add setLocalId.
+																onClick={() => setActiveId(h.id)}
 															/>
 															<Text strong className="text-lg">
 																گردش امضا #
@@ -234,6 +251,6 @@ export function SignFlowDetailModal({ id, open, onCancel }: SignFlowDetailModalP
 					</Card>
 				</Col>
 			</Row>
-		</Modal>
+		</div>
 	);
 }
