@@ -518,6 +518,10 @@ export async function fetchSignFlowDetail(id: number | string): Promise<SignFlow
 export async function fetchSignFlowHistory(contractId: number | string): Promise<SignFlowHistoryItem[]> {
 	return request.get(`contracts/sign-flows/history/?contract_id=${contractId}`).json<SignFlowHistoryItem[]>();
 }
+
+export function fetchSignFlowOfficialPdf(id: number | string) {
+	return request.get(`contracts/sign-flows/${id}/official-pdf/`);
+}
 export function fetchContractTemplates(service: string, companyType?: string | null, documentKind?: string | null) {
 	const searchParams: Record<string, string> = {
 		service,

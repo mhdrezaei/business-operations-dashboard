@@ -1,10 +1,10 @@
 import { Scrollbar } from "#src/components";
-import { fetchSignFlowDetail, fetchSignFlowHistory } from "#src/features/contract/api/contracts.api";
+import { fetchSignFlowDetail, fetchSignFlowHistory, fetchSignFlowOfficialPdf } from "#src/features/contract/api/contracts.api";
 import { dayjs } from "#src/shared/lib/dayjs-jalali";
 import { ArrowRightOutlined, CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, EyeOutlined, FilePdfOutlined, StopOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 
-import { Button, Card, Col, Descriptions, Divider, Empty, Row, Space, Spin, Steps, Tag, Typography } from "antd";
+import { Button, Card, Col, Descriptions, Divider, Empty, message, Row, Space, Spin, Steps, Tag, Typography } from "antd";
 import React, { useEffect, useState } from "react";
 import { SIGN_FLOW_STATE_MAP } from "../constants";
 
@@ -23,6 +23,7 @@ export interface SignFlowDetailProps {
 
 export function SignFlowDetail({ id, onBack }: SignFlowDetailProps) {
 	const [activeId, setActiveId] = useState<number | null>(id);
+	const [isPdfLoading, setIsPdfLoading] = useState(false);
 
 	useEffect(() => {
 		setActiveId(id);
@@ -39,6 +40,52 @@ export function SignFlowDetail({ id, onBack }: SignFlowDetailProps) {
 		queryFn: () => fetchSignFlowHistory(detail?.contract_id as number),
 		enabled: !!detail?.contract_id,
 	});
+
+	const handleViewOfficialPdf = async () => {
+		if (!detail?.id)
+			return;
+
+		const newTab = window.open("about:blank", "_blank");
+		try {
+			setIsPdfLoading(true);
+			const response = await fetchSignFlowOfficialPdf(detail.id);
+			const contentType = response.headers.get("content-type") || "";
+
+			if (contentType.includes("application/json")) {
+				const data = await response.json<any>();
+				const targetUrl = data?.url || data?.pdf_url || data?.file;
+				if (targetUrl) {
+					if (newTab) {
+						newTab.location.href = targetUrl;
+					}
+					else {
+						window.open(targetUrl, "_blank");
+					}
+					return;
+				}
+			}
+
+			const blob = await response.blob();
+			const file = new Blob([blob], { type: "application/pdf" });
+			const fileUrl = window.URL.createObjectURL(file);
+			if (newTab) {
+				newTab.location.href = fileUrl;
+			}
+			else {
+				window.open(fileUrl, "_blank");
+			}
+		}
+		catch (err) {
+			console.error("Error fetching official PDF:", err);
+			if (newTab) {
+				newTab.close();
+			}
+			message.error("خطا در دریافت یا باز کردن PDF رسمی");
+		}
+		finally {
+			setIsPdfLoading(false);
+		}
+	};
 
 	if (isLoadingDetail) {
 		return (
@@ -138,7 +185,8 @@ export function SignFlowDetail({ id, onBack }: SignFlowDetailProps) {
 							<Button
 								type="primary"
 								icon={<FilePdfOutlined />}
-								onClick={() => window.open(`/api/v1/contracts/sign-flows/${detail.id}/official-pdf/`, "_blank")}
+								loading={isPdfLoading}
+								onClick={handleViewOfficialPdf}
 							>
 								مشاهده PDF رسمی
 							</Button>
