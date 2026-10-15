@@ -285,6 +285,8 @@ export function requestOfficialPdf(service: ContractServicePath, contractId: num
 		.post(`contracts/${service}/${contractId}/official-pdf/`, {
 			body,
 			searchParams,
+			timeout: 120_000,
+			retry: 0,
 		})
 		.json<any>(); // Assuming it returns some success status
 }
@@ -520,7 +522,9 @@ export async function fetchSignFlowHistory(contractId: number | string): Promise
 }
 
 export function fetchSignFlowOfficialPdf(id: number | string) {
-	return request.get(`contracts/sign-flows/${id}/official-pdf/`);
+	return request.get(`contracts/sign-flows/${id}/official-pdf/`, {
+		timeout: 60_000,
+	});
 }
 
 export async function cancelSignFlow(id: number | string, reason: string): Promise<SignFlowDetail> {

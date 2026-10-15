@@ -505,6 +505,9 @@ export default function ContractListPage() {
 					setPrintRecord(null);
 					setPrintAddendumGroupId(null);
 				}}
+				onSuccess={() => {
+					actionRef.current?.reload?.();
+				}}
 				record={printRecord}
 				addendumGroupId={printAddendumGroupId}
 				service={printRecord ? resolveServicePath(printRecord) : null}

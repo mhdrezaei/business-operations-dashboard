@@ -14,6 +14,7 @@ import { ContractTemplateEditorModal } from "./ContractTemplateEditorModal";
 interface Props {
 	open: boolean
 	onClose: () => void
+	onSuccess?: () => void
 	record: ContractListItemType | null
 	service: ContractServicePath | null
 	companyType: string | null
@@ -45,7 +46,7 @@ function replaceVariablesInHtml(html: string, tagValues: TemplateTagValuesRespon
 	});
 }
 
-export const ContractTemplatePrintModal: React.FC<Props> = ({ open, onClose, record, service, companyType, addendumGroupId }) => {
+export const ContractTemplatePrintModal: React.FC<Props> = ({ open, onClose, onSuccess, record, service, companyType, addendumGroupId }) => {
 	const [templates, setTemplates] = useState<any[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [comparingId, setComparingId] = useState<number | null>(null);
@@ -226,6 +227,11 @@ export const ContractTemplatePrintModal: React.FC<Props> = ({ open, onClose, rec
 				<ContractTemplateEditorModal
 					open={editorModalOpen}
 					onClose={() => setEditorModalOpen(false)}
+					onSuccess={() => {
+						setEditorModalOpen(false);
+						onClose();
+						onSuccess?.();
+					}}
 					initialHtml={processedHtml}
 					templateId={currentTemplateId}
 					contractId={record?.id || null}
