@@ -1,5 +1,5 @@
 import { Scrollbar } from "#src/components";
-import { cancelSignFlow, fetchSignFlowDetail, fetchSignFlowHistory, fetchSignFlowOfficialPdf } from "#src/features/contract/api/contracts.api";
+import { cancelSignFlow, decideSignFlow, fetchSignFlowDetail, fetchSignFlowHistory, fetchSignFlowOfficialPdf } from "#src/features/contract/api/contracts.api";
 import { dayjs } from "#src/shared/lib/dayjs-jalali";
 import { useUserStore } from "#src/store";
 import { ArrowRightOutlined, CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, EyeOutlined, FilePdfOutlined, StopOutlined } from "@ant-design/icons";
@@ -31,6 +31,15 @@ export function SignFlowDetail({ id, onBack }: SignFlowDetailProps) {
 	const [cancelModalOpen, setCancelModalOpen] = useState(false);
 	const [cancelReason, setCancelReason] = useState("");
 	const [isCancelling, setIsCancelling] = useState(false);
+	const [decisionModal, setDecisionModal] = useState<{
+		open: boolean
+		action: "approve" | "reject"
+	}>({
+		open: false,
+		action: "approve",
+	});
+	const [decisionComment, setDecisionComment] = useState("");
+	const [isSubmittingDecision, setIsSubmittingDecision] = useState(false);
 
 	if (id !== prevPropId) {
 		setPrevPropId(id);
@@ -115,6 +124,57 @@ export function SignFlowDetail({ id, onBack }: SignFlowDetailProps) {
 	);
 
 	const canCancel = (isAdmin || isCreator) && detail?.state === "in_progress";
+
+	const currentActiveStep = detail?.steps.find(s => s.order === detail?.current_step_order);
+	const isStepApprover = Boolean(
+		detail?.is_waiting_for_me
+		|| currentActiveStep?.recipients?.some(r => Number(r.user_id) === Number(user.id) || r.username === user.username)
+		|| currentActiveStep?.assignments?.some(a => Number(a.user_id) === Number(user.id) || a.username === user.username)
+		|| isAdmin,
+	);
+
+	const canDecide = detail?.state === "in_progress" && isStepApprover;
+
+	const handleDecisionSubmit = async () => {
+		if (!detail?.id)
+			return;
+
+		const trimmedComment = decisionComment.trim();
+		if (decisionModal.action === "reject" && !trimmedComment) {
+			message.warning("لطفاً دلیل رد را وارد کنید");
+			return;
+		}
+
+		try {
+			setIsSubmittingDecision(true);
+			await decideSignFlow(detail.id, {
+				action: decisionModal.action,
+				comment: trimmedComment || undefined,
+			});
+			message.success(
+				decisionModal.action === "approve"
+					? "مرحله با موفقیت تایید شد"
+					: "گردش امضا با موفقیت رد شد",
+			);
+			setDecisionModal(prev => ({ ...prev, open: false }));
+			setDecisionComment("");
+			await queryClient.invalidateQueries({ queryKey: ["signFlowDetail", activeId] });
+			if (detail.contract_id) {
+				await queryClient.invalidateQueries({ queryKey: ["signFlowHistory", detail.contract_id] });
+			}
+		}
+		catch (err: any) {
+			console.error("Error submitting decision:", err);
+			message.error(
+				decisionModal.action === "approve"
+					? "خطا در تایید مرحله"
+					: "خطا در رد مرحله",
+			);
+		}
+		finally {
+			setIsSubmittingDecision(false);
+		}
+	};
 
 	const handleCancelSignFlow = async () => {
 		if (!detail?.id)
@@ -260,6 +320,32 @@ export function SignFlowDetail({ id, onBack }: SignFlowDetailProps) {
 							>
 								مشاهده PDF رسمی
 							</Button>
+							{canDecide && (
+								<>
+									<Button
+										type="primary"
+										className="!bg-emerald-600 hover:!bg-emerald-500"
+										icon={<CheckCircleOutlined />}
+										onClick={() => {
+											setDecisionComment("بررسی و تایید شد");
+											setDecisionModal({ open: true, action: "approve" });
+										}}
+									>
+										تایید
+									</Button>
+									<Button
+										danger
+										type="primary"
+										icon={<CloseCircleOutlined />}
+										onClick={() => {
+											setDecisionComment("");
+											setDecisionModal({ open: true, action: "reject" });
+										}}
+									>
+										رد
+									</Button>
+								</>
+							)}
 							{canCancel && (
 								<Button
 									danger
@@ -420,6 +506,60 @@ export function SignFlowDetail({ id, onBack }: SignFlowDetailProps) {
 							onClick={() => {
 								setCancelModalOpen(false);
 								setCancelReason("");
+							}}
+						>
+							انصراف
+						</Button>
+					</div>
+				</div>
+			</Modal>
+
+			<Modal
+				open={decisionModal.open}
+				onCancel={() => {
+					if (!isSubmittingDecision) {
+						setDecisionModal(prev => ({ ...prev, open: false }));
+						setDecisionComment("");
+					}
+				}}
+				footer={null}
+				centered
+				width={480}
+				destroyOnClose
+			>
+				<div className="py-2" dir="rtl">
+					<Title level={4} className="!mb-2 text-center">
+						{decisionModal.action === "approve" ? "تایید مرحله گردش امضا" : "رد مرحله گردش امضا"}
+					</Title>
+					<div className="mb-4 text-center text-sm text-gray-500 dark:text-gray-400">
+						{decisionModal.action === "approve" ? "توضیحات تایید (اختیاری)" : "دلیل رد (اجباری)"}
+					</div>
+					<Input.TextArea
+						rows={5}
+						value={decisionComment}
+						onChange={e => setDecisionComment(e.target.value)}
+						placeholder={decisionModal.action === "approve" ? "توضیحات تایید را وارد کنید..." : "دلیل رد را وارد کنید..."}
+						className="mb-6 rounded-lg"
+						disabled={isSubmittingDecision}
+					/>
+					<div className="flex items-center justify-center gap-3">
+						<Button
+							type="primary"
+							size="large"
+							className={decisionModal.action === "approve" ? "min-w-28 rounded-lg !bg-emerald-600 hover:!bg-emerald-500" : "min-w-28 rounded-lg"}
+							danger={decisionModal.action === "reject"}
+							loading={isSubmittingDecision}
+							onClick={handleDecisionSubmit}
+						>
+							{decisionModal.action === "approve" ? "تایید کن" : "رد کن"}
+						</Button>
+						<Button
+							size="large"
+							className="min-w-28 rounded-lg"
+							disabled={isSubmittingDecision}
+							onClick={() => {
+								setDecisionModal(prev => ({ ...prev, open: false }));
+								setDecisionComment("");
 							}}
 						>
 							انصراف

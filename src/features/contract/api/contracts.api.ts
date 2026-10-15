@@ -528,6 +528,17 @@ export async function cancelSignFlow(id: number | string, reason: string): Promi
 		json: { reason },
 	}).json<SignFlowDetail>();
 }
+
+export interface DecideSignFlowPayload {
+	action: "approve" | "reject"
+	comment?: string
+}
+
+export async function decideSignFlow(id: number | string, payload: DecideSignFlowPayload): Promise<SignFlowDetail> {
+	return request.post(`contracts/sign-flows/${id}/decide/`, {
+		json: payload,
+	}).json<SignFlowDetail>();
+}
 export function fetchContractTemplates(service: string, companyType?: string | null, documentKind?: string | null) {
 	const searchParams: Record<string, string> = {
 		service,
