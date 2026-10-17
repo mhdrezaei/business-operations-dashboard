@@ -1,6 +1,5 @@
 import type { Editor } from "@tiptap/react";
-import JSZip from "jszip";
-import mammoth from "mammoth";
+import { WORD_SINGLE_LINE_HEIGHT } from "../editor/core/editor-extensions";
 import { customToast } from "../editor/ui/CustomToast";
 
 function collectTextNodes(el: Element, marks: any[] = [], outNodes: any[] = []): any[] {
@@ -313,6 +312,10 @@ export async function importWordToEditor(
 	await new Promise(resolve => setTimeout(resolve, 100));
 
 	try {
+		const [{ default: JSZip }, { default: mammoth }] = await Promise.all([
+			import("jszip"),
+			import("mammoth"),
+		]);
 		const arrayBuffer = await file.arrayBuffer();
 		const zip = await JSZip.loadAsync(arrayBuffer.slice(0));
 		const docXmlFile = zip.file("word/document.xml");
@@ -487,14 +490,18 @@ export async function importWordToEditor(
 					if (line) {
 						if (lineRule && (lineRule[1] === "exact" || lineRule[1] === "atLeast"))
 							lineHeight = `${Number(line[1]) / 20}pt`;
-						else lineHeight = (Number(line[1]) / 240).toFixed(2);
+						else lineHeight = (Number(line[1]) / 240 * WORD_SINGLE_LINE_HEIGHT).toFixed(2);
 					}
 					if (before)
 						marginTop = `${Math.round(Number(before[1]) / 20)}pt`;
 					if (after)
 						marginBottom = `${Math.round(Number(after[1]) / 20)}pt`;
 				}
-				const isPageBreak = pContent.includes("<w:lastRenderedPageBreak") || pContent.includes("<w:pageBreakBefore") || pContent.includes("w:type=\"page\"");
+				// Only explicit breaks are hard page breaks; <w:lastRenderedPageBreak/> is just Word's soft wrap with its own fonts.
+				const pbBefore = pContent.match(/<w:pageBreakBefore([^>]*)>/);
+				const pbBeforeOn = !!pbBefore && !/w:val=["'](?:0|false|off)["']/i.test(pbBefore[1]);
+				const hasExplicitBr = /<w:br[^>]*\sw:type=["']page["']/.test(pContent);
+				const isPageBreak = pbBeforeOn || hasExplicitBr;
 				xmlParas.push({ textAlign, lineHeight, marginTop, marginBottom, isPageBreak });
 			}
 		}

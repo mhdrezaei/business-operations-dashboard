@@ -77,6 +77,9 @@ importers:
       '@tiptap/extension-underline':
         specifier: ^3.29.1
         version: 3.29.1(@tiptap/core@3.29.1(@tiptap/pm@3.29.1))
+      '@tiptap/extensions':
+        specifier: ^3.29.1
+        version: 3.29.1(@tiptap/core@3.29.1(@tiptap/pm@3.29.1))(@tiptap/pm@3.29.1)
       '@tiptap/pm':
         specifier: ^3.29.1
         version: 3.29.1
@@ -194,9 +197,6 @@ importers:
       tailwind-merge:
         specifier: ^2.6.0
         version: 2.6.0
-      tiptap-pagination-plus:
-        specifier: ^3.1.0
-        version: 3.1.0(@tiptap/core@3.29.1(@tiptap/pm@3.29.1))(@tiptap/pm@3.29.1)
       zod:
         specifier: ^4.3.5
         version: 4.3.5
@@ -4853,12 +4853,6 @@ packages:
   tinyspy@4.0.4:
     resolution: {integrity: sha512-azl+t0z7pw/z958Gy9svOTuzqIk6xq+NSheJzn5MMWtWTFywIacg2wUlzKFGtt3cthx0r2SxMK0yzJOR0IES7Q==}
     engines: {node: '>=14.0.0'}
-
-  tiptap-pagination-plus@3.1.0:
-    resolution: {integrity: sha512-AGefIt06TsRREG+fF0A8Uhhichz8MHiTt2mgk+hKIKaCqDH5TSTEdqBQmGgXUti1d/R00KSB4X/aAQByzQEFLQ==}
-    peerDependencies:
-      '@tiptap/core': ^2.0.0 || ^3.0.0
-      '@tiptap/pm': ^2.0.0 || ^3.0.0
 
   tmp@0.2.5:
     resolution: {integrity: sha512-voyz6MApa1rQGUxT3E+BK7/ROe8itEx7vD8/HEvt4xwXucvQ5G5oeEiHkmHZJuBO21RpOf+YYm9MOivj709jow==}
@@ -10538,11 +10532,6 @@ snapshots:
   tinyrainbow@2.0.0: {}
 
   tinyspy@4.0.4: {}
-
-  tiptap-pagination-plus@3.1.0(@tiptap/core@3.29.1(@tiptap/pm@3.29.1))(@tiptap/pm@3.29.1):
-    dependencies:
-      '@tiptap/core': 3.29.1(@tiptap/pm@3.29.1)
-      '@tiptap/pm': 3.29.1
 
   tmp@0.2.5: {}
 

@@ -11,6 +11,7 @@ import {
 	DeleteOutlined,
 	FormatPainterOutlined,
 	ItalicOutlined,
+	LineHeightOutlined,
 	MenuFoldOutlined,
 	MenuOutlined,
 	MenuUnfoldOutlined,
@@ -24,10 +25,19 @@ import {
 	UnorderedListOutlined,
 } from "@ant-design/icons";
 import { useEditorState } from "@tiptap/react";
-import { Button, ColorPicker, Divider, Select, Space, theme, Tooltip } from "antd";
+import { Button, ColorPicker, Divider, Popconfirm, Select, Space, theme, Tooltip } from "antd";
 import React, { useMemo } from "react";
+import { WORD_SINGLE_LINE_HEIGHT } from "../core/editor-extensions";
 
 const FONT_SIZES = [{ value: "8pt", label: "8pt" }, { value: "10pt", label: "10pt" }, { value: "11pt", label: "11pt" }, { value: "12pt", label: "12pt" }, { value: "14pt", label: "14pt" }, { value: "16pt", label: "16pt" }, { value: "18pt", label: "18pt" }, { value: "24pt", label: "24pt" }, { value: "36pt", label: "36pt" }];
+
+/** Word line-spacing multiples, stored as the matching CSS line-height. */
+const LINE_SPACINGS = [1, 1.15, 1.5, 2, 2.5, 3];
+const lineHeightValue = (spacing: number) => String(Math.round(spacing * WORD_SINGLE_LINE_HEIGHT * 100) / 100);
+const LINE_HEIGHT_OPTIONS = [
+	{ value: "default", label: "پیش‌فرض" },
+	...LINE_SPACINGS.map(spacing => ({ value: lineHeightValue(spacing), label: String(spacing) })),
+];
 const HEADING_OPTIONS = [{ value: "p", label: "متن عادی" }, { value: "1", label: "تیتر ۱" }, { value: "2", label: "تیتر ۲" }, { value: "3", label: "تیتر ۳" }];
 const TABLE_ACTION_OPTIONS = [
 	{ value: "addRowAfter", label: "افزودن ردیف بعد" },
@@ -151,7 +161,7 @@ function ToolbarBtn({ onClick, active = false, title, disabled = false, icon }: 
 
 export default function EditorToolbar({ editor, pageData }: { editor: Editor | null, pageData?: { current: number, total: number } }) {
 	const { token } = theme.useToken();
-	const { customFonts } = useTemplateStore();
+	const customFonts = useTemplateStore(s => s.customFonts);
 
 	const fontFamilyOptions = useMemo(() => [
 		{ value: "default", label: "فونت پیش‌فرض" },
@@ -193,6 +203,7 @@ export default function EditorToolbar({ editor, pageData }: { editor: Editor | n
 				inTable: e.isActive("table"),
 				tableBorderless: e.getAttributes("table").borderless === true,
 				fontFamily: e.getAttributes("textStyle").fontFamily || "default",
+				lineHeight: uniformBlockAttr(e.state, "lineHeight", "default"),
 				color: e.getAttributes("textStyle").color || token.colorText,
 				bgColor: e.getAttributes("highlight").color || "transparent",
 				canUndo: e.can().undo(),
@@ -200,6 +211,15 @@ export default function EditorToolbar({ editor, pageData }: { editor: Editor | n
 			};
 		},
 	});
+
+	// A value not in the list (older Word import, pt units) is shown in the same Word multiples
+	const lineHeightOptions = useMemo(() => {
+		const value = state?.lineHeight;
+		if (LINE_HEIGHT_OPTIONS.some(o => o.value === value))
+			return LINE_HEIGHT_OPTIONS;
+		const spacing = Number(value);
+		return [...LINE_HEIGHT_OPTIONS, { value, label: Number.isFinite(spacing) ? String(Math.round(spacing / WORD_SINGLE_LINE_HEIGHT * 100) / 100) : value }];
+	}, [state?.lineHeight]);
 
 	const fontSizeOptions = useMemo(() => {
 		const baseOptions = [...FONT_SIZES];
@@ -254,6 +274,10 @@ export default function EditorToolbar({ editor, pageData }: { editor: Editor | n
 				/>
 
 				<Select size="small" value={state.fontSize} options={fontSizeOptions} getPopupContainer={getPopupContainer} onChange={val => chain().setFontSize(val).run()} className="w-20" />
+
+				<Tooltip title="فاصله بین خطوط" mouseEnterDelay={0.4} placement="bottom">
+					<Select size="small" prefix={<LineHeightOutlined />} value={state.lineHeight} options={lineHeightOptions} getPopupContainer={getPopupContainer} onChange={val => chain().setBlockLineHeight(val === "default" ? null : val).run()} className="w-28" />
+				</Tooltip>
 			</Space.Compact>
 			<Divider type="vertical" className="m-0 h-6" style={{ borderColor: token.colorBorder }} />
 			<Space.Compact className="rounded-md border" style={groupStyle}>
@@ -290,7 +314,7 @@ export default function EditorToolbar({ editor, pageData }: { editor: Editor | n
 			<Space.Compact className="rounded-md border" style={groupStyle}>
 				<ToolbarBtn icon={<UnorderedListOutlined />} onClick={() => chain().toggleBulletList().run()} active={state.bulletList} title="لیست نقطه‌ای" />
 				<ToolbarBtn icon={<OrderedListOutlined />} onClick={() => chain().toggleOrderedList().run()} active={state.orderedList} title="لیست شماره‌دار" />
-				<ToolbarBtn icon={<MinusOutlined />} onClick={() => chain().setHorizontalRule().run()} title="خط جداکننده (افقی)" />
+				<ToolbarBtn icon={<MinusOutlined />} onClick={() => chain().setHorizontalRule().run()} title="شکست صفحه" />
 				<ToolbarBtn icon={<TableOutlined />} onClick={() => chain().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} active={state.inTable} title="درج جدول" />
 			</Space.Compact>
 			{state.inTable && (
@@ -321,7 +345,18 @@ export default function EditorToolbar({ editor, pageData }: { editor: Editor | n
 					/>
 					<Space.Compact className="rounded-md border" style={groupStyle}>
 						<ToolbarBtn icon={<BorderOutlined />} onClick={() => chain().updateAttributes("table", { borderless: !state.tableBorderless }).run()} active={state.tableBorderless} title="جدول بدون خط مرزی" />
-						<ToolbarBtn icon={<DeleteOutlined className="text-red-500" />} onClick={() => chain().deleteTable().run()} title="حذف کامل جدول" />
+						<Popconfirm
+							title="جدول حذف شود؟"
+							okText="حذف"
+							cancelText="انصراف"
+							okButtonProps={{ danger: true }}
+							getPopupContainer={getPopupContainer}
+							onConfirm={() => chain().deleteTable().run()}
+						>
+							<span>
+								<ToolbarBtn icon={<DeleteOutlined className="text-red-500" />} onClick={() => {}} title="حذف کامل جدول" />
+							</span>
+						</Popconfirm>
 					</Space.Compact>
 				</div>
 			)}

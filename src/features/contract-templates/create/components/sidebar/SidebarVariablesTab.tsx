@@ -53,7 +53,7 @@ function VariableButton({ variable, onInsert }: { variable: any, onInsert: (key:
 			shape="round"
 			title={variable.example ? `مثال: ${variable.example}` : `{$${variable.key}}`}
 			onClick={() => onInsert(variable.key)}
-			style={{ fontSize: "11px", borderColor: token.colorPrimaryBorder, color: token.colorPrimary, backgroundColor: token.colorPrimaryBg, padding: "0 10px" }}
+			style={{ fontSize: "11px", borderColor: token.colorPrimaryBorder, color: token.colorText, backgroundColor: token.colorPrimaryBg, padding: "0 10px" }}
 			className="hover:opacity-80 transition-opacity"
 		>
 			{variable.label}
@@ -216,7 +216,7 @@ export default function SidebarVariablesTab({ editor }: { editor: Editor | null 
 				<div className={`flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1 pb-10 transition-opacity duration-300 ${isFetchingCatalog ? "opacity-50" : "opacity-100"}`}>
 					{
 						staticGroupsWithBlocks.length > 0
-						// eslint-disable-next-line style/multiline-ternary
+
 							? (
 								<Collapse
 									ghost

@@ -4,6 +4,7 @@ import { DOMSerializer } from "@tiptap/pm/model";
 import { Button, message, Modal, theme } from "antd";
 import React, { useMemo } from "react";
 import { useTemplateStore } from "../../store/useTemplateStore";
+import { fontFaceCss } from "./editor/core/font-faces";
 import { useVariableRegistry } from "./editor/variables/VariableRegistryContext";
 
 interface TemplatePrintPreviewModalProps {
@@ -166,14 +167,7 @@ export default function TemplatePrintPreviewModal({ isOpen, onClose, editor }: T
 			message.info("لطفاً در پنجره چاپ، قسمت Destination را روی «Save as PDF» تنظیم کنید.");
 		}
 
-		const customFontFaces = customFonts.map(f => `
-            @font-face {
-                font-family: '${f.family || f.name}';
-                src: url('${f.file_url}') format('${f.format || "truetype"}');
-                font-weight: normal;
-                font-style: normal;
-            }
-        `).join("\n");
+		const customFontFaces = fontFaceCss(customFonts);
 
 		printWindow.document.write(`
             <style>

@@ -1,6 +1,6 @@
 import type { ProEditorProps } from "../../../types";
 import { theme } from "antd";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import EditorToolbar from "./ui/EditorToolbar";
 import TemplateEditorCanvas from "./ui/TemplateEditorCanvas";
 import "./core/editor-styles.css";
@@ -9,9 +9,28 @@ export default function ProEditor({ editor, onChange }: ProEditorProps) {
 	const { token } = theme.useToken();
 	const [pageData, setPageData] = useState({ current: 1, total: 1 });
 
-	editor?.on("update", () => {
-		onChange?.(editor.getHTML());
-	});
+	const onChangeRef = useRef(onChange);
+	onChangeRef.current = onChange;
+
+	useEffect(() => {
+		if (!editor)
+			return;
+		const handleUpdate = () => {
+			onChangeRef.current?.(editor.getHTML());
+		};
+		editor.on("update", handleUpdate);
+		return () => {
+			editor.off("update", handleUpdate);
+		};
+	}, [editor]);
+
+	const handlePageChange = useCallback((current: number, total: number) => {
+		setPageData((prev) => {
+			if (prev.current === current && prev.total === total)
+				return prev;
+			return { current, total };
+		});
+	}, []);
 
 	return (
 		<div
@@ -28,13 +47,7 @@ export default function ProEditor({ editor, onChange }: ProEditorProps) {
 			<div className="flex-1 p-2 min-h-0 flex flex-col">
 				<TemplateEditorCanvas
 					editor={editor}
-					onPageChange={(current, total) => {
-						setPageData((prev) => {
-							if (prev.current === current && prev.total === total)
-								return prev;
-							return { current, total };
-						});
-					}}
+					onPageChange={handlePageChange}
 				/>
 			</div>
 		</div>
