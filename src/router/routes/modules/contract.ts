@@ -105,6 +105,7 @@ const routes: AppRouteRecordRaw[] = [
 					title: $t("common.menu.contractTemplate"),
 					accessDomain: "contracts",
 					accessAction: "view",
+					keepAlive: false,
 					// roles: ["admin"],
 					// permissions: [
 					// 	accessControlCodes.get,

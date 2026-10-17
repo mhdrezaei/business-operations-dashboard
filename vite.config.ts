@@ -39,16 +39,20 @@ export default defineConfig(({ mode }) => {
 					},
 				},
 			}),
-			checker({
-				typescript: true,
-				terminal: false,
-				enableBuild: false,
-			}),
+			...(env.VITE_DEV_CHECKER === "true"
+				? [checker({
+					typescript: true,
+					terminal: false,
+					enableBuild: false,
+				})]
+				: []),
 
-			codeInspectorPlugin({
-				bundler: "vite",
-			// hideConsole: true,
-			}),
+			...(env.VITE_CODE_INSPECTOR === "true"
+				? [codeInspectorPlugin({
+					bundler: "vite",
+					// hideConsole: true,
+				})]
+				: []),
 
 			Icons({
 				customCollections: {
@@ -109,6 +113,30 @@ export default defineConfig(({ mode }) => {
 					secure: false,
 				},
 			},
+			warmup: {
+				clientFiles: ["./src/index.tsx", "./src/router/**/*.ts", "./src/layout/**/*.tsx"],
+			},
+		},
+		optimizeDeps: {
+			include: [
+				"@tiptap/react",
+				"@tiptap/core",
+				"@tiptap/pm/state",
+				"@tiptap/pm/view",
+				"@tiptap/pm/model",
+				"@tiptap/starter-kit",
+				"@tiptap/extension-table",
+				"@tiptap/extension-table-row",
+				"@tiptap/extension-table-cell",
+				"@tiptap/extension-table-header",
+				"@tiptap/extension-text-align",
+				"@tiptap/extension-text-style",
+				"@tiptap/extension-color",
+				"@tiptap/extension-font-family",
+				"@tiptap/extension-highlight",
+				"@tiptap/extension-underline",
+				"@tiptap/extension-strike",
+			],
 		},
 		define: {
 			__APP_INFO__: JSON.stringify(__APP_INFO__),

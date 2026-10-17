@@ -1,13 +1,16 @@
 // src/features/contract-templates/create/components/word-exporter.ts
 import { message } from "antd";
-import { saveAs } from "file-saver";
-import { asBlob } from "html-docx-js-typescript";
 import { getVariable } from "../editor/variables/registry";
 
 export async function exportEditorToWord(htmlContent: string, fileName = "contract-template") {
 	const hideLoading = message.loading("در حال آماده‌سازی و ساخت فایل Word...", 0);
 
 	try {
+		const [{ saveAs }, { asBlob }] = await Promise.all([
+			import("file-saver"),
+			import("html-docx-js-typescript"),
+		]);
+
 		const parser = new DOMParser();
 		const doc = parser.parseFromString(htmlContent, "text/html");
 
