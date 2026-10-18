@@ -276,6 +276,19 @@ export function fetchSignFlowPreview(service: ContractServicePath, contractId: n
 		.json<SignFlowPreviewResponse>();
 }
 
+export function createSignFlow(service: ContractServicePath, contractId: number, addendumGroupId?: string | null) {
+	const json: Record<string, any> = { service, contract_id: contractId };
+	if (addendumGroupId) {
+		json.addendum_group_id = addendumGroupId;
+	}
+	return request
+		.post("contracts/sign-flows/", {
+			json,
+			timeout: 30_000,
+		})
+		.json<SignFlowDetail>();
+}
+
 export function requestOfficialPdf(service: ContractServicePath, contractId: number, body: FormData, addendumGroupId?: string | null) {
 	const searchParams: Record<string, string> = {};
 	if (addendumGroupId) {
@@ -285,6 +298,8 @@ export function requestOfficialPdf(service: ContractServicePath, contractId: num
 		.post(`contracts/${service}/${contractId}/official-pdf/`, {
 			body,
 			searchParams,
+			timeout: 120_000,
+			retry: 0,
 		})
 		.json<any>(); // Assuming it returns some success status
 }
@@ -471,14 +486,14 @@ export interface SignFlowDetail {
 	state: string
 	service: string
 	service_name: string
-	company_type: Record<string, string>
+	company_type: Record<string, string> | null
 	contract_id: number
 	contract_number: string
 	company_name: string
 	addendum_group_id: string | null
 	record_type: string
-	template_id: number
-	template_name: string
+	template_id: number | null
+	template_name: string | null
 	rule_config_id: number
 	current_step_order: number
 	current_step_name: string
@@ -517,6 +532,29 @@ export async function fetchSignFlowDetail(id: number | string): Promise<SignFlow
 
 export async function fetchSignFlowHistory(contractId: number | string): Promise<SignFlowHistoryItem[]> {
 	return request.get(`contracts/sign-flows/history/?contract_id=${contractId}`).json<SignFlowHistoryItem[]>();
+}
+
+export function fetchSignFlowOfficialPdf(id: number | string) {
+	return request.get(`contracts/sign-flows/${id}/official-pdf/`, {
+		timeout: 60_000,
+	});
+}
+
+export async function cancelSignFlow(id: number | string, reason: string): Promise<SignFlowDetail> {
+	return request.post(`contracts/sign-flows/${id}/cancel/`, {
+		json: { reason },
+	}).json<SignFlowDetail>();
+}
+
+export interface DecideSignFlowPayload {
+	action: "approve" | "reject"
+	comment?: string
+}
+
+export async function decideSignFlow(id: number | string, payload: DecideSignFlowPayload): Promise<SignFlowDetail> {
+	return request.post(`contracts/sign-flows/${id}/decide/`, {
+		json: payload,
+	}).json<SignFlowDetail>();
 }
 export function fetchContractTemplates(service: string, companyType?: string | null, documentKind?: string | null) {
 	const searchParams: Record<string, string> = {

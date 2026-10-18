@@ -38,6 +38,19 @@ const routes: AppRouteRecordRaw[] = [
 				},
 			},
 			{
+				path: "/contracts/sign-flows/:id",
+				Component: SignFlowListPage,
+				handle: {
+					icon: createElement(UnorderedListOutlined),
+					title: "جزئیات گردش امضای قرارداد",
+					hideInMenu: true,
+					currentActiveMenu: "/contracts/sign-flows",
+					accessDomain: "contracts",
+					accessAction: "view",
+					keepAlive: false,
+				},
+			},
+			{
 				path: "/contracts/new",
 				Component: CreateContractPage,
 				handle: {
