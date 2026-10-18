@@ -1,11 +1,10 @@
 import { CheckCircleOutlined, FilePdfOutlined } from "@ant-design/icons";
 import { Button, message, Modal, Spin } from "antd";
-import html2canvas from "html2canvas";
-import { jsPDF } from "jspdf";
 import React, { useEffect, useState } from "react";
 import { usePreferencesStore } from "../../../../../store/preferences";
+import { getPageRects, PAGE_BREAK_SELECTOR, PAGE_HEIGHT_PX, PAGE_WIDTH_PX } from "../../../../contract-templates/create/components/editor/core/page-layout";
 import ProEditor from "../../../../contract-templates/create/components/editor/ProEditor";
-import { useTemplateEditor } from "../../../../contract-templates/create/components/editor/ui/TemplateEditorCanvas";
+import { loadEditorContent, useTemplateEditor } from "../../../../contract-templates/create/components/editor/ui/TemplateEditorCanvas";
 import { useTemplateStore } from "../../../../contract-templates/store/useTemplateStore";
 import { requestOfficialPdf } from "../../../api/contracts.api";
 
@@ -35,139 +34,108 @@ export const ContractTemplateEditorModal: React.FC<Props> = ({ open, onClose, in
 			// eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
 			setContentHtml(initialHtml);
 			if (editor && initialHtml) {
-				editor.commands.setContent(initialHtml);
+				loadEditorContent(editor, initialHtml);
 			}
 			fetchFonts();
 		}
 	}, [open, initialHtml, templateId, fetchFonts, editor]);
 
 	const generatePdfBlob = async (): Promise<Blob> => {
+		const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+			import("html2canvas"),
+			import("jspdf"),
+		]);
 		const editorNode = document.querySelector(".ms-word-editor") as HTMLElement;
 		if (!editorNode)
 			throw new Error("Editor node not found");
 
-		// Hide the active page highlight
-		const highlight = Array.from(editorNode.children).find(c =>
-			(c as HTMLElement).style.zIndex === "10" && (c as HTMLElement).style.pointerEvents === "none",
-		) as HTMLElement;
-		let oldHighlightDisplay = "";
-		if (highlight) {
-			oldHighlightDisplay = highlight.style.display;
-			highlight.style.display = "none";
+		// Let pending pagination passes settle: content still crossing a page edge
+		// would be hidden by the margin masks in the capture.
+		let misplaced = 0;
+		for (let i = 0; i < 10; i++) {
+			await new Promise(resolve => setTimeout(resolve, 100));
+			misplaced = editor?.storage.pagination?.misplaced ?? 0;
+			if (!misplaced && i > 0)
+				break;
 		}
+		if (misplaced)
+			console.warn(`[pdf] ${misplaced} block(s) still cross a page edge; parts may be hidden in the PDF.`);
 
-		// Hide column resize handles
-		const resizeHandles = Array.from(editorNode.querySelectorAll(".column-resize-handle")) as HTMLElement[];
-		const oldResizeDisplays = resizeHandles.map(el => el.style.display);
-		resizeHandles.forEach(el => el.style.display = "none");
-
-		// Temporarily replace <mark> tags with dotted lines
-		const originalMarks: { element: HTMLElement, bg: string, color: string, html: string }[] = [];
-		const marks = editorNode.querySelectorAll("mark");
-		marks.forEach((mark) => {
-			originalMarks.push({
-				element: mark,
-				bg: mark.style.backgroundColor,
-				color: mark.style.color,
-				html: mark.innerHTML,
+		// All capture-only tweaks are applied to html2canvas' clone, never to the
+		// live editor DOM (ProseMirror would observe the mutations). None of them
+		// changes layout, so the clone stays paginated exactly like the editor.
+		const prepareClone = (_doc: Document, root: HTMLElement) => {
+			// Active page highlight (see TemplateEditorCanvas.renderPageHighlight)
+			// and page shadows (html2canvas paints them over the white page as gray)
+			Array.from(root.children).forEach((c) => {
+				const el = c as HTMLElement;
+				el.style.boxShadow = "none";
+				if (el.style.zIndex === "10" && el.style.pointerEvents === "none")
+					el.style.display = "none";
 			});
-			const span = document.createElement("span");
-			span.style.letterSpacing = "2px";
-			span.textContent = "........................................";
-			mark.innerHTML = "";
-			mark.appendChild(span);
-			mark.style.backgroundColor = "transparent";
-			mark.style.color = "inherit";
+			root.querySelectorAll<HTMLElement>(".column-resize-handle").forEach(el => el.style.display = "none");
+			// Selection kept visible while the editor is blurred (Selection extension)
+			root.querySelectorAll<HTMLElement>(".kept-selection").forEach(el => el.style.backgroundColor = "transparent");
+			// Missing variables become a dotted blank of the same width
+			root.querySelectorAll<HTMLElement>("mark").forEach((mark) => {
+				mark.style.backgroundColor = "transparent";
+				mark.style.color = "transparent";
+				mark.style.borderBottom = "1px dotted #000";
+				mark.querySelectorAll<HTMLElement>("*").forEach(el => el.style.color = "transparent");
+			});
+			// Page breaks keep their space but are not printed
+			root.querySelectorAll<HTMLElement>(PAGE_BREAK_SELECTOR).forEach(el => el.style.opacity = "0");
+		};
+
+		// Fixed-size editor pages (separated by visual gaps) relative to editorNode
+		const pageRects = getPageRects(editorNode);
+
+		// eslint-disable-next-line new-cap
+		const doc = new jsPDF({ unit: "px", format: [PAGE_WIDTH_PX, PAGE_HEIGHT_PX], orientation: "portrait" });
+
+		// We capture one giant canvas of the entire editor
+		const giantCanvas = await html2canvas(editorNode, {
+			scale: 2,
+			useCORS: true,
+			logging: false,
+			backgroundColor: "#ffffff",
+			windowWidth: editorNode.scrollWidth,
+			windowHeight: editorNode.scrollHeight,
+			onclone: prepareClone,
 		});
 
-		// Hide hr and page-break visually but keep their space
-		const hrsToHide = Array.from(editorNode.querySelectorAll("hr, .page-break")) as HTMLElement[];
-		const oldHrOpacities = hrsToHide.map(hr => hr.style.opacity);
-		hrsToHide.forEach(hr => hr.style.opacity = "0");
+		let pageAdded = false;
 
-		try {
-			// Find page offsets based on TemplateEditorCanvas logic
-			const hrs = Array.from(editorNode.querySelectorAll("hr, .page-break")) as HTMLElement[];
-			const editorRect = editorNode.getBoundingClientRect();
-			// offsets array tells us exactly where each page starts relative to the top of editorNode
-			const offsets = [0, ...hrs.map(hr => hr.getBoundingClientRect().bottom - editorRect.top)];
+		// One PDF page per editor page; the gaps between pages are skipped
+		for (const { top, height } of pageRects) {
+			const cropCanvas = document.createElement("canvas");
+			cropCanvas.width = PAGE_WIDTH_PX * 2;
+			cropCanvas.height = PAGE_HEIGHT_PX * 2;
+			const ctx = cropCanvas.getContext("2d");
 
-			const PAGE_HEIGHT_PX = 1123;
-			const PAGE_WIDTH_PX = 794;
-
-			// eslint-disable-next-line new-cap
-			const doc = new jsPDF({ unit: "px", format: [PAGE_WIDTH_PX, PAGE_HEIGHT_PX], orientation: "portrait" });
-
-			// We capture one giant canvas of the entire editor
-			const giantCanvas = await html2canvas(editorNode, {
-				scale: 2,
-				useCORS: true,
-				logging: false,
-				backgroundColor: "#ffffff",
-				windowWidth: editorNode.scrollWidth,
-				windowHeight: editorNode.scrollHeight,
-			});
-
-			let pageAdded = false;
-
-			// Now we crop it precisely for each page (or split if a page is overflowing)
-			for (let i = 0; i < offsets.length; i++) {
-				const chunkStartY = offsets[i];
-				const chunkEndY = i < hrs.length ? offsets[i + 1] : editorRect.height;
-
-				let currentY = chunkStartY;
-
-				// Slice this chunk into PAGE_HEIGHT_PX pieces if it overflows
-				while (currentY < chunkEndY) {
-					const sliceHeight = Math.min(chunkEndY - currentY, PAGE_HEIGHT_PX);
-
-					const cropCanvas = document.createElement("canvas");
-					cropCanvas.width = PAGE_WIDTH_PX * 2;
-					cropCanvas.height = PAGE_HEIGHT_PX * 2;
-					const ctx = cropCanvas.getContext("2d");
-
-					if (ctx) {
-						ctx.fillStyle = "#ffffff";
-						ctx.fillRect(0, 0, cropCanvas.width, cropCanvas.height);
-						// Draw exactly the content of this slice
-						ctx.drawImage(
-							giantCanvas,
-							0,
-							currentY * 2,
-							PAGE_WIDTH_PX * 2,
-							sliceHeight * 2, // Source crop
-							0,
-							0,
-							PAGE_WIDTH_PX * 2,
-							sliceHeight * 2, // Destination
-						);
-					}
-
-					if (pageAdded)
-						doc.addPage();
-					doc.addImage(cropCanvas.toDataURL("image/jpeg", 0.98), "JPEG", 0, 0, PAGE_WIDTH_PX, PAGE_HEIGHT_PX);
-					pageAdded = true;
-
-					currentY += sliceHeight;
-				}
+			if (ctx) {
+				ctx.fillStyle = "#ffffff";
+				ctx.fillRect(0, 0, cropCanvas.width, cropCanvas.height);
+				ctx.drawImage(
+					giantCanvas,
+					0,
+					top * 2,
+					PAGE_WIDTH_PX * 2,
+					height * 2, // Source crop
+					0,
+					0,
+					PAGE_WIDTH_PX * 2,
+					height * 2, // Destination
+				);
 			}
 
-			return doc.output("blob");
+			if (pageAdded)
+				doc.addPage();
+			doc.addImage(cropCanvas.toDataURL("image/jpeg", 0.98), "JPEG", 0, 0, PAGE_WIDTH_PX, PAGE_HEIGHT_PX);
+			pageAdded = true;
 		}
-		finally {
-			// Revert hr opacities
-			hrsToHide.forEach((hr, idx) => hr.style.opacity = oldHrOpacities[idx]);
-			// Revert marks
-			originalMarks.forEach((m) => {
-				m.element.style.backgroundColor = m.bg;
-				m.element.style.color = m.color;
-				m.element.innerHTML = m.html;
-			});
-			// Revert highlight and resize handles
-			if (highlight)
-				highlight.style.display = oldHighlightDisplay;
-			resizeHandles.forEach((el, idx) => el.style.display = oldResizeDisplays[idx]);
-		}
+
+		return doc.output("blob");
 	};
 
 	const handleDownloadPdf = async () => {

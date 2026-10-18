@@ -48,6 +48,7 @@
 		"@tiptap/extension-text-align": "^3.29.1",
 		"@tiptap/extension-text-style": "^3.29.1",
 		"@tiptap/extension-underline": "^3.29.1",
+		"@tiptap/extensions": "^3.29.1",
 		"@tiptap/pm": "^3.29.1",
 		"@tiptap/react": "^3.29.1",
 		"@tiptap/starter-kit": "^3.29.1",
@@ -87,7 +88,6 @@
 		"simplebar-react": "^3.3.0",
 		"spin-delay": "^2.0.1",
 		"tailwind-merge": "^2.6.0",
-		"tiptap-pagination-plus": "^3.1.0",
 		"zod": "^4.3.5",
 		"zustand": "^5.0.3"
 	},

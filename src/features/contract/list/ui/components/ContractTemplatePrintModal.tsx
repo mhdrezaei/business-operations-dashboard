@@ -6,6 +6,7 @@ import React, { useEffect, useState } from "react";
 import { usePreferencesStore } from "../../../../../store/preferences";
 import { TemplateCreateApi } from "../../../../contract-templates/api/api";
 import { getVariable } from "../../../../contract-templates/create/components/editor/variables/registry";
+import { mapTemplateHeader, useTemplateStore } from "../../../../contract-templates/store/useTemplateStore";
 import { fetchContractTemplates, fetchTemplateTagValues } from "../../../api/contracts.api";
 
 import { ContractTemplateEditorModal } from "./ContractTemplateEditorModal";
@@ -92,6 +93,8 @@ export const ContractTemplatePrintModal: React.FC<Props> = ({ open, onClose, rec
 				TemplateCreateApi.getTemplate(template.id),
 				fetchTemplateTagValues(template.id, record.id, addendumGroupId),
 			]);
+
+			useTemplateStore.getState().setHeaderData(mapTemplateHeader(templateData?.header));
 
 			const templateHtml = templateData?.content_html || "";
 			const missingVars: string[] = [];
@@ -243,6 +246,7 @@ export const ContractTemplatePrintModal: React.FC<Props> = ({ open, onClose, rec
 										body { font-family: "Vazirmatn", Tahoma, Arial, sans-serif; }
 										table { border-collapse: collapse; width: 100%; }
 										td, th { border: 1px solid #000; padding: 8px; }
+										table[data-borderless="true"] td, table[data-borderless="true"] th { border-color: transparent; }
 									</style>
 								</head>
 								<body>

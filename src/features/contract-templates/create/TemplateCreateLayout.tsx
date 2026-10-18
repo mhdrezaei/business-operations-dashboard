@@ -5,9 +5,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { TemplateCreateApi } from "../api/api";
 import { useServicesListQuery } from "../queries/template-create.queries";
-import { useTemplateStore } from "../store/useTemplateStore";
+import { mapTemplateHeader, useTemplateStore } from "../store/useTemplateStore";
 import ProEditor from "./components/editor/ProEditor";
-import { useTemplateEditor } from "./components/editor/ui/TemplateEditorCanvas";
+import { loadEditorContent, useTemplateEditor } from "./components/editor/ui/TemplateEditorCanvas";
 import TemplateCreateHeader from "./components/header/TemplateCreateHeader";
 import { exportEditorToWord } from "./components/header/word-exporter";
 import TemplateCreateSidebar from "./components/sidebar/TemplateCreateSidebar";
@@ -44,7 +44,6 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 		mode: "onChange",
 	});
 
-	const [editorContent, setEditorContent] = useState("");
 	const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
 
@@ -59,8 +58,9 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 	const isReadyRef = useRef(false);
 	const initialHeaderRef = useRef<string | null>(null);
 
-	const editor = useTemplateEditor({ initialContent: editorContent });
-	const { customFonts, headerData, fetchFonts } = useTemplateStore();
+	const editor = useTemplateEditor();
+	const customFonts = useTemplateStore(s => s.customFonts);
+	const headerData = useTemplateStore(s => s.headerData);
 
 	const { data: servicesData } = useServicesListQuery();
 
@@ -70,21 +70,20 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 		exportEditorToWord(editor.getHTML(), methods.getValues("name") || "قالب-قرارداد");
 	};
 
+	// Never carry the previous template's header over (also when loading fails).
 	useEffect(() => {
-		if (!templateId) {
-			const t = setTimeout(() => {
-				isReadyRef.current = true;
-				initialHeaderRef.current = JSON.stringify(headerData);
-			}, 400);
-			return () => clearTimeout(t);
-		}
-		else if (isInitialDataLoaded) {
-			const t = setTimeout(() => {
-				isReadyRef.current = true;
-				initialHeaderRef.current = JSON.stringify(headerData);
-			}, 400);
-			return () => clearTimeout(t);
-		}
+		useTemplateStore.getState().setHeaderData({});
+	}, [templateId]);
+
+	useEffect(() => {
+		if (templateId && !isInitialDataLoaded)
+			return;
+		const t = setTimeout(() => {
+			isReadyRef.current = true;
+			// Read the store, not this render's headerData (captured before the reset/load).
+			initialHeaderRef.current = JSON.stringify(useTemplateStore.getState().headerData);
+		}, 400);
+		return () => clearTimeout(t);
 	}, [templateId, isInitialDataLoaded]);
 
 	useEffect(() => {
@@ -206,9 +205,10 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 					methods.setValue("service_id", matchedService.id);
 				}
 
+				useTemplateStore.getState().setHeaderData(mapTemplateHeader(template.header));
+
 				if (template.content_html) {
-					editor.commands.setContent(template.content_html);
-					setEditorContent(template.content_html);
+					loadEditorContent(editor, template.content_html);
 				}
 
 				setIsInitialDataLoaded(true);
@@ -275,6 +275,8 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 					logo_url: headerData?.logo_url || null,
 					show_contract_number: headerData?.show_contract_number ?? true,
 					extra_text: headerData?.extra_text || "",
+					header_font_family: headerData?.header_font_family || null,
+					header_font_size: headerData?.header_font_size ?? null,
 				},
 				font_ids: customFonts.map(font => font.id),
 			};
@@ -329,9 +331,7 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 
 	saveTemplateRef.current = handleSaveTemplate;
 
-	useEffect(() => {
-		fetchFonts();
-	}, [fetchFonts]);
+	// Fonts are fetched once by TemplateEditorCanvas on mount (rendered via ProEditor).
 
 	return (
 		<FormProvider {...methods}>
@@ -358,15 +358,6 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
                 .ant-message {
                     z-index: 100005 !important;
                 }
-                
-                ${customFonts.map(f => `
-                    @font-face {
-                        font-family: '${f.family}';
-                        src: url('${f.file_url}') format('${f.format || "truetype"}');
-                        font-weight: normal;
-                        font-style: normal;
-                    }
-                `).join("\n")}
             `}
 			</style>
 
@@ -411,7 +402,7 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 							</div>
 
 							<div className="flex-1 h-full min-w-0 flex flex-col relative">
-								<ProEditor editor={editor} onChange={setEditorContent} />
+								<ProEditor editor={editor} />
 							</div>
 						</div>
 					</div>
