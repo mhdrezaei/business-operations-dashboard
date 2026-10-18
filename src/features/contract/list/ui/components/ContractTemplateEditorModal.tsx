@@ -1,17 +1,18 @@
 import { CheckCircleOutlined, FilePdfOutlined } from "@ant-design/icons";
 import { Button, message, Modal, Spin } from "antd";
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 import { usePreferencesStore } from "../../../../../store/preferences";
 import { getPageRects, PAGE_BREAK_SELECTOR, PAGE_HEIGHT_PX, PAGE_WIDTH_PX } from "../../../../contract-templates/create/components/editor/core/page-layout";
 import ProEditor from "../../../../contract-templates/create/components/editor/ProEditor";
 import { loadEditorContent, useTemplateEditor } from "../../../../contract-templates/create/components/editor/ui/TemplateEditorCanvas";
 import { useTemplateStore } from "../../../../contract-templates/store/useTemplateStore";
-import { requestOfficialPdf } from "../../../api/contracts.api";
+import { createSignFlow, requestOfficialPdf } from "../../../api/contracts.api";
 
 interface Props {
 	open: boolean
 	onClose: () => void
-	onSuccess?: () => void
+	onSuccess?: (signFlowId?: number) => void
 	initialHtml: string
 	templateId: number | null
 	onPrint: (html: string) => void
@@ -21,6 +22,7 @@ interface Props {
 }
 
 export const ContractTemplateEditorModal: React.FC<Props> = ({ open, onClose, onSuccess, initialHtml, templateId, contractId, service, addendumGroupId }) => {
+	const navigate = useNavigate();
 	const { fetchFonts, isFetchingFonts } = useTemplateStore();
 	const [contentHtml, setContentHtml] = useState(initialHtml);
 	const [loadingAction, setLoadingAction] = useState<"none" | "pdf" | "approval">("none");
@@ -182,9 +184,18 @@ export const ContractTemplateEditorModal: React.FC<Props> = ({ open, onClose, on
 			formData.append("file", pdfBlob, `contract_${contractId}.pdf`);
 			await requestOfficialPdf(service, contractId, formData, addendumGroupId);
 
-			message.success("نسخه نهایی با موفقیت آپلود شد.");
-			onSuccess?.();
+			// 3. Initiate sign flow
+			const signFlow = await createSignFlow(service, contractId, addendumGroupId);
+
+			message.success("نسخه نهایی با موفقیت آپلود شد و به لیست گردش کار اضافه گردید.");
+			onSuccess?.(signFlow?.id);
 			onClose();
+			if (signFlow?.id) {
+				navigate(`/contracts/sign-flows/${signFlow.id}`);
+			}
+			else {
+				navigate("/contracts/sign-flows");
+			}
 		}
 		catch (error: any) {
 			console.error(error);
@@ -192,7 +203,7 @@ export const ContractTemplateEditorModal: React.FC<Props> = ({ open, onClose, on
 				message.error("مهلت ارسال و پردازش فایل به پایان رسید (Timeout). لطفا دوباره تلاش کنید.");
 			}
 			else {
-				message.error("خطا در تایید نهایی و ارتباط با سرور");
+				message.error("خطا در تایید نهایی و ایجاد گردش کار");
 			}
 		}
 		finally {
@@ -245,7 +256,7 @@ export const ContractTemplateEditorModal: React.FC<Props> = ({ open, onClose, on
 						<div className="flex flex-col items-center">
 							<Spin size="large" />
 							<span className={`mt-4 font-medium text-lg px-4 py-2 rounded-lg shadow-sm ${isDark ? "text-slate-200 bg-gray-800/80" : "text-slate-800 bg-white/80"}`}>
-								{loadingAction === "approval" ? "در حال تایید نهایی قرارداد..." : (loadingAction === "pdf" ? "... لطفا صبور باشید" : "در حال بارگذاری فونت‌ها...")}
+								{loadingAction === "approval" ? "در حال تایید نهایی و ایجاد گردش کار..." : (loadingAction === "pdf" ? "... لطفا صبور باشید" : "در حال بارگذاری فونت‌ها...")}
 							</span>
 						</div>
 					</div>

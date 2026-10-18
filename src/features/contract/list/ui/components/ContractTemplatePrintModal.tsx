@@ -14,7 +14,7 @@ import { ContractTemplateEditorModal } from "./ContractTemplateEditorModal";
 interface Props {
 	open: boolean
 	onClose: () => void
-	onSuccess?: () => void
+	onSuccess?: (signFlowId?: number) => void
 	record: ContractListItemType | null
 	service: ContractServicePath | null
 	companyType: string | null
@@ -227,10 +227,10 @@ export const ContractTemplatePrintModal: React.FC<Props> = ({ open, onClose, onS
 				<ContractTemplateEditorModal
 					open={editorModalOpen}
 					onClose={() => setEditorModalOpen(false)}
-					onSuccess={() => {
+					onSuccess={(signFlowId) => {
 						setEditorModalOpen(false);
 						onClose();
-						onSuccess?.();
+						onSuccess?.(signFlowId);
 					}}
 					initialHtml={processedHtml}
 					templateId={currentTemplateId}

@@ -8,10 +8,14 @@ import { useQuery } from "@tanstack/react-query";
 
 import { message } from "antd";
 import React, { useMemo, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router";
 import { SignFlowDetail } from "./components/SignFlowDetail";
 import { getSignFlowColumns } from "./constants";
 
 export default function SignFlowListPage() {
+	const { id } = useParams<{ id?: string }>();
+	const navigate = useNavigate();
+
 	const actionRef = useRef<ActionType>(null);
 	const formRef = useRef<ProFormInstance>();
 	const services = useQuery(servicesQuery());
@@ -29,14 +33,27 @@ export default function SignFlowListPage() {
 
 	const [selectedId, setSelectedId] = useState<number | null>(null);
 
-	const columns = useMemo(() => getSignFlowColumns(serviceOptions, formRef, (id: number) => {
-		setSelectedId(id);
-	}), [serviceOptions]);
+	const activeId = useMemo(() => {
+		if (id && !Number.isNaN(Number(id))) {
+			return Number(id);
+		}
+		return selectedId;
+	}, [id, selectedId]);
+
+	const columns = useMemo(() => getSignFlowColumns(serviceOptions, formRef, (rowId: number) => {
+		navigate(`/contracts/sign-flows/${rowId}`);
+	}), [serviceOptions, navigate]);
 
 	return (
 		<BasicContent className="h-full">
-			{selectedId ? (
-				<SignFlowDetail id={selectedId} onBack={() => setSelectedId(null)} />
+			{activeId ? (
+				<SignFlowDetail
+					id={activeId}
+					onBack={() => {
+						setSelectedId(null);
+						navigate("/contracts/sign-flows");
+					}}
+				/>
 			) : (
 				<BasicTable<SignFlowListItem>
 					filterTitle="جستجوی گردش‌های امضا"

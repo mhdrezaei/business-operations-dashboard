@@ -505,8 +505,17 @@ export default function ContractListPage() {
 					setPrintRecord(null);
 					setPrintAddendumGroupId(null);
 				}}
-				onSuccess={() => {
+				onSuccess={(signFlowId) => {
+					setPrintModalOpen(false);
+					setPrintRecord(null);
+					setPrintAddendumGroupId(null);
 					actionRef.current?.reload?.();
+					if (signFlowId) {
+						navigate(`/contracts/sign-flows/${signFlowId}`);
+					}
+					else {
+						navigate("/contracts/sign-flows");
+					}
 				}}
 				record={printRecord}
 				addendumGroupId={printAddendumGroupId}

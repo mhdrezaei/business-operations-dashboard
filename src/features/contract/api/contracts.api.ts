@@ -276,6 +276,19 @@ export function fetchSignFlowPreview(service: ContractServicePath, contractId: n
 		.json<SignFlowPreviewResponse>();
 }
 
+export function createSignFlow(service: ContractServicePath, contractId: number, addendumGroupId?: string | null) {
+	const json: Record<string, any> = { service, contract_id: contractId };
+	if (addendumGroupId) {
+		json.addendum_group_id = addendumGroupId;
+	}
+	return request
+		.post("contracts/sign-flows/", {
+			json,
+			timeout: 30_000,
+		})
+		.json<SignFlowDetail>();
+}
+
 export function requestOfficialPdf(service: ContractServicePath, contractId: number, body: FormData, addendumGroupId?: string | null) {
 	const searchParams: Record<string, string> = {};
 	if (addendumGroupId) {
@@ -473,14 +486,14 @@ export interface SignFlowDetail {
 	state: string
 	service: string
 	service_name: string
-	company_type: Record<string, string>
+	company_type: Record<string, string> | null
 	contract_id: number
 	contract_number: string
 	company_name: string
 	addendum_group_id: string | null
 	record_type: string
-	template_id: number
-	template_name: string
+	template_id: number | null
+	template_name: string | null
 	rule_config_id: number
 	current_step_order: number
 	current_step_name: string
