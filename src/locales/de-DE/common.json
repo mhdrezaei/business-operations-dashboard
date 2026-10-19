@@ -1,6 +1,7 @@
 {
 	"menu": {
 		"home": "Startseite",
+		"managementDashboard": "Management-Dashboard",
 		"access": "Zugriffs-Demo",
 		"contractsManangement": "Vertragsverwaltung",
 		"newContract": "Neuer Vertrag",

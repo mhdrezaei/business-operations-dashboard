@@ -1,0 +1,385 @@
+{
+	"page": {
+		"title": "داشبورد مدیریتی نگاه",
+		"subtitle": "مشاهده جداول و نمودارهای عملکرد، درآمد و هزینه سرویس‌ها",
+		"chartsTitle": "نمودارهای داشبورد مدیریتی",
+		"noServiceSelected": "سرویسی انتخاب نشده است",
+		"widgetsError": "خطا در دریافت لیست نمودارها",
+		"noWidgets": "نموداری برای نمایش وجود ندارد",
+		"sections": {
+			"kpi": "شاخص‌های کلیدی",
+			"monthly": "روند عملکرد ماهانه",
+			"financeContracts": "درآمد، هزینه و قراردادها",
+			"registration": "وضعیت ثبت عملکرد",
+			"companyFinancials": "جدول مالی شرکت‌ها"
+		}
+	},
+	"common": {
+		"loading": "در حال دریافت اطلاعات",
+		"widgetError": "خطا در دریافت اطلاعات این نمودار",
+		"widgetUnavailable": "این نمودار برای شما در دسترس نیست",
+		"noData": "داده‌ای برای نمایش نیست",
+		"listError": "خطا در دریافت لیست",
+		"listDenied": "دسترسی به این لیست وجود ندارد.",
+		"listWaiting": "در حال دریافت…",
+		"listEmpty": "موردی یافت نشد.",
+		"itemsCount": "{{value}} مورد",
+		"searchCompany": "جستجوی نام شرکت…",
+		"rialUnit": "ریال",
+		"lastMonth": "ماه گذشته",
+		"month": "ماه",
+		"year": "سال",
+		"from": "از",
+		"to": "تا"
+	},
+	"format": {
+		"rial": "{{value}} ریال",
+		"billion": "{{value}} میلیارد",
+		"million": "{{value}} میلیون",
+		"thousand": "{{value}} هزار",
+		"rangeTo": "{{start}} تا {{end}}"
+	},
+	"months": {
+		"1": "فروردین",
+		"2": "اردیبهشت",
+		"3": "خرداد",
+		"4": "تیر",
+		"5": "مرداد",
+		"6": "شهریور",
+		"7": "مهر",
+		"8": "آبان",
+		"9": "آذر",
+		"10": "دی",
+		"11": "بهمن",
+		"12": "اسفند"
+	},
+	"companyTypes": {
+		"sms": {
+			"CP": "شرکت های cp",
+			"TELECOM": "شرکت های مخابراتی",
+			"NON_TELECOM": "شرکت های غیر مخابرات",
+			"KARASHAB": "کاراشابی"
+		},
+		"psp": {
+			"IPG": "IPG",
+			"IVR": "IVR"
+		},
+		"sales_agency": {
+			"SALES_REP_MANAGEMENT": "مدیریت نمایندگان فروش",
+			"OUTBOUND": "فروش Outbound"
+		}
+	},
+	"modal": {
+		"fullscreen": "تمام‌صفحه",
+		"exitFullscreen": "خروج از تمام‌صفحه",
+		"close": "بستن",
+		"closeEsc": "بستن (Esc)"
+	},
+	"pager": {
+		"prev": "قبلی",
+		"next": "بعدی",
+		"pageOf": "صفحه {{page}} از {{total}}",
+		"range": "نمایش {{from}}–{{to}} از {{total}}"
+	},
+	"charts": {
+		"lineTipFoot": "برای جزئیات مالی کلیک کنید (در صورت چند سرویس، انتخاب می‌کنید)",
+		"pickSeries": "یک سرویس را برای دیدن جزئیات انتخاب کنید",
+		"grandTotal": "جمع کل",
+		"contractsCount": "{{value}} قرارداد",
+		"count": "تعداد",
+		"openAll": "مشاهده‌ی فهرست همه‌ی موارد"
+	},
+	"metrics": {
+		"income": "درآمد",
+		"expense": "هزینه",
+		"profit": "سود"
+	},
+	"ranges": {
+		"1m": "ماه گذشته",
+		"3m": "۳ ماه",
+		"6m": "۶ ماه",
+		"fiscal_ytd": "سال مالی",
+		"fiscalYtdTitle": "از ابتدای سال مالی تا ماه گذشته"
+	},
+	"approval": {
+		"kinds": {
+			"business": "تایید تجاری",
+			"sign": "تایید اداره قراردادها"
+		},
+		"stages": {
+			"pending_business_approval": "در انتظار تایید تجاری",
+			"pending_sign_approval": "در انتظار تایید اداره قراردادها",
+			"approved": "تایید شده"
+		},
+		"realSign": {
+			"not_started": "وارد گردش نشده",
+			"in_progress": "در حال گردش امضا",
+			"signed": "امضا شده"
+		},
+		"approved": "تایید شده",
+		"pending": "در انتظار"
+	},
+	"contract": {
+		"unofficial": "غیررسمی",
+		"addendum": "الحاقیه",
+		"addendumNumber": "الحاقیه {{number}}",
+		"baseContract": "قرارداد پایه",
+		"contract": "قرارداد"
+	},
+	"columns": {
+		"company": "شرکت",
+		"service": "سرویس",
+		"companyType": "نوع شرکت",
+		"serviceCompanyType": "سرویس / نوع شرکت",
+		"contractNumber": "شماره قرارداد",
+		"startDate": "شروع",
+		"endDate": "پایان",
+		"count": "تعداد"
+	},
+	"widgets": {
+		"companyFinancials": {
+			"description": "درآمد، هزینه و سود هر شرکت · {{range}}",
+			"descriptionDefault": "درآمد، هزینه و سود هر شرکت به تفکیک سرویس",
+			"concentration": "تمرکز درآمد و هزینه",
+			"concentrationHint": "سهم هر شرکت از مجموع",
+			"other": "سایر",
+			"shareOfTotal": "سهم از کل سیستم",
+			"companiesCount": "{{n}} شرکت",
+			"searchAria": "جستجوی نام شرکت",
+			"columnRial": "{{label}} (ریال)",
+			"total": "مجموع",
+			"footnote": "درصد زیر هر مبلغ: سهم از کل سیستم",
+			"pagerInfo": "صفحه {{page}} از {{total}} · {{n}} شرکت"
+		},
+		"notRenewed": {
+			"title": "شرکت‌های فاقد قرارداد فعال",
+			"titleService": "شرکت‌های فاقد قرارداد فعال · {{service}}",
+			"description": "شرکت‌هایی که در حال حاضر قرارداد فعال یا قرارداد آتی ندارند.",
+			"unit": "شرکت",
+			"openAll": "مشاهده‌ی فهرست همه‌ی شرکت‌ها",
+			"searchAria": "جستجوی نام شرکت",
+			"empty": "موردی یافت نشد",
+			"companiesCount": "{{value}} شرکت",
+			"daysValue": "{{value}} روز",
+			"cardError": "خطا در دریافت شرکت‌های فاقد قرارداد فعال",
+			"listError": "خطا در دریافت فهرست شرکت‌ها",
+			"columns": {
+				"lastContractNumber": "شماره‌ی آخرین قرارداد",
+				"endDate": "تاریخ پایان",
+				"sinceEnd": "زمان از پایان",
+				"contractsCount": "تعداد قراردادها"
+			}
+		},
+		"expiring": {
+			"monthsOption": "{{value}} ماه",
+			"description": "{{total}} قرارداد در {{months}} ماه آینده",
+			"viewTotal": "جمع کل",
+			"viewByService": "به‌تفکیک سرویس",
+			"details": "مشاهده جزئیات",
+			"error": "خطا در دریافت اطلاعات",
+			"detailError": "خطا در دریافت جزئیات",
+			"detailTitle": "جزئیات قراردادهای رو‌به‌انقضا",
+			"detailTitleMonth": "قراردادهای رو‌به‌انقضا در {{month}}",
+			"detailTitleService": "قراردادهای رو‌به‌انقضا در {{month}} — {{service}}",
+			"empty": "قراردادی برای نمایش نیست",
+			"columns": {
+				"type": "نوع",
+				"endDate": "تاریخ پایان"
+			}
+		},
+		"incomeExpense": {
+			"description": "درآمد، هزینه و سود {{range}} — برای جزئیات هر بخش کلیک کنید",
+			"rangePhrases": {
+				"1m": "ماه گذشته",
+				"3m": "۳ ماه گذشته",
+				"6m": "۶ ماه گذشته",
+				"fiscal_ytd": "از ابتدای سال مالی"
+			},
+			"sources": {
+				"actual": "تحقق",
+				"prediction": "پیش‌بینی"
+			},
+			"back": "بازگشت به نمای کلی",
+			"breakdownTitle": "جزئیات {{metric}} به‌تفکیک سرویس",
+			"profitMargin": "حاشیه سود {{value}}٪ از درآمد",
+			"noIncome": "درآمدی در این بازه ثبت نشده"
+		},
+		"approval": {
+			"description": "{{value}} قرارداد و الحاقیه",
+			"noContract": "بدون قرارداد",
+			"multiServiceTitle": "با چند سرویس انتخابی، لیست جمع کل در دسترس نیست",
+			"short": {
+				"approved": "تایید",
+				"pendingSign": "در انتظار تایید اداره"
+			},
+			"columns": {
+				"type": "نوع",
+				"stage": "مرحله"
+			},
+			"modal": {
+				"allOf": "همه — {{kind}}",
+				"stateOf": "{{state}} — {{kind}}",
+				"service": "سرویس {{name}}",
+				"allServices": "همه‌ی سرویس‌ها"
+			}
+		},
+		"monthlyKpis": {
+			"description": "شاخص‌های عملکرد {{value}}",
+			"views": {
+				"services": "به‌تفکیک سرویس",
+				"monthly": "روند ماهانه"
+			},
+			"vsPrevious": "در مقایسه با {{value}}",
+			"yoy": "سال‌به‌سال: {{value}}",
+			"yoyPeriod": "سال‌به‌سال ({{period}}): {{value}}",
+			"expenseRatio": "نسبت هزینه به درآمد: {{value}}",
+			"shareOfService": "سهم از سرویس",
+			"columns": {
+				"service": "سرویس",
+				"income": "درآمد",
+				"expense": "هزینه",
+				"profit": "سود",
+				"profitMargin": "حاشیه‌ی سود",
+				"incomeShare": "سهم از درآمد",
+				"expenseShare": "سهم از هزینه",
+				"profitShare": "سهم از سود",
+				"growthIncome": "رشد درآمد",
+				"growthExpense": "رشد هزینه",
+				"growthProfit": "رشد سود"
+			}
+		},
+		"monthlyPerformance": {
+			"titles": {
+				"income": "درآمد ماهانه",
+				"expense": "هزینه ماهانه",
+				"profit": "سود ماهانه"
+			},
+			"description": "روند ماهانه‌ی عملکرد سرویس‌های قابل‌مشاهده — برای دیدن جزئیات مالی روی هر ماه کلیک کنید",
+			"loadError": "خطا در دریافت اطلاعات",
+			"rangeTotals": "جمع بازه:",
+			"totalSeries": "{{name}} – مجموع",
+			"legend": {
+				"split": "تفکیک ({{n}})",
+				"merge": "تجمیع",
+				"splitTitle": "نمایش به‌تفکیک نوع شرکت",
+				"mergeTitle": "بازگشت به نمایش مجموع",
+				"show": "نمایش در نمودار",
+				"hide": "پنهان کردن از نمودار"
+			},
+			"drill": {
+				"title": "جزئیات مالی",
+				"loadError": "خطا در دریافت جزئیات"
+			}
+		},
+		"registeredRate": {
+			"title": "درصد عملکردهای ثبت‌شده، {{period}}",
+			"description": "درصد شرکت‌های دارای قرارداد فعال که عملکرد ماه انتخاب‌شده‌شان ثبت شده",
+			"empty": "شرکتی با قرارداد فعال در این ماه وجود ندارد",
+			"summary": "{{registered}} از {{total}} شرکت دارای قرارداد فعال در {{period}}، عملکردشان ثبت شده",
+			"legendOk": "هدف: ۸۰٪ و بالاتر",
+			"legendWarn": "۵۰ تا ۸۰٪",
+			"noData": "بدون داده",
+			"noDataServices": "بدون داده: {{names}}",
+			"modal": {
+				"title": "شرکت‌های سرویس {{service}} — {{period}}",
+				"titleWithType": "شرکت‌های سرویس {{service}} ({{type}}) — {{period}}",
+				"count": "{{value}} شرکت",
+				"summary": "<b>{{registered}}</b> از <b>{{total}}</b> شرکت ثبت شده",
+				"status": "وضعیت",
+				"tabs": {
+					"all": "همه",
+					"registered": "ثبت‌شده",
+					"unregistered": "ثبت‌نشده"
+				}
+			}
+		},
+		"unregistered": {
+			"description": "تعداد شرکت×ماه‌هایی که عملکردشان هنوز ثبت نشده",
+			"totalUnit": "شرکت×ماه ثبت‌نشده",
+			"barTitle": "{{name}}: {{value}}",
+			"noDataServices": "{{n}} سرویس بدون مورد ثبت‌نشده: {{names}}",
+			"modal": {
+				"title": "عملکردهای ثبت‌نشده — سرویس {{service}}",
+				"titleWithType": "عملکردهای ثبت‌نشده — سرویس {{service}} ({{type}})",
+				"count": "{{months}} ماه ثبت‌نشده در {{companies}} شرکت",
+				"monthsCount": "تعداد ماه",
+				"unregisteredMonths": "ماه‌های ثبت‌نشده",
+				"moreMonths": "+{{value}} ماه دیگر"
+			}
+		}
+	},
+	"filters": {
+		"range": {
+			"title": "بازه‌ی زمانی",
+			"ariaLabel": "فیلتر بازه‌ی زمانی",
+			"maxHint": "حداکثر بازه‌ی قابل انتخاب ۱۲ ماه است",
+			"monthsCount": "{{value}} ماه"
+		},
+		"services": {
+			"ariaLabel": "فیلتر سرویس‌ها",
+			"all": "همه سرویس‌ها",
+			"none": "بدون سرویس",
+			"clearAll": "هیچ‌کدام",
+			"selected": "{{selected}} از {{total}} سرویس",
+			"pin": "سنجاق",
+			"unpin": "برداشتن سنجاق"
+		}
+	},
+	"kpi": {
+		"error": "دریافت شاخص‌های کلیدی ممکن نشد",
+		"financial": {
+			"title": "عملکرد مالی",
+			"rangeGroup": "بازه‌ی زمانی عملکرد مالی",
+			"rangeNouns": {
+				"1m": "ماه گذشته",
+				"3m": "۳ ماه گذشته",
+				"6m": "۶ ماه گذشته",
+				"fiscal_ytd": "از ابتدای سال مالی"
+			},
+			"subjectWithPeriod": "{{noun}} ({{period}})",
+			"actual": "واقعی",
+			"actualVsForecast": "واقعی در برابر پیش‌بینی",
+			"cardLabel": "{{metric}} {{range}}",
+			"noData": "برای این بازه داده‌ای ثبت نشده",
+			"forecast": "پیش‌بینی",
+			"realization": "تحقق",
+			"vsForecast": "نسبت به پیش‌بینی",
+			"times": "{{value}} برابر",
+			"compareTo": "نسبت به {{label}}",
+			"previousFiscalYear": "سال مالی قبل",
+			"previousPeriod": "دوره‌ی قبل",
+			"previousYear": "سال قبل",
+			"deltaTitle": "{{label}}: {{amount}}",
+			"error": "دریافت عملکرد مالی ممکن نشد"
+		},
+		"cycle": {
+			"title": "چرخه‌ی قراردادها",
+			"subtitle": "از تایید تجاری تا امضا در سامانه",
+			"approvedNotInSignFlow": "تایید‌شده، وارد گردش امضا نشده",
+			"approvedNotInSignFlowNote": "از شهریور ۱۴۰۵",
+			"signed": "امضاشده در سامانه",
+			"hotShare": "{{value}}٪ از قراردادها در این مرحله‌اند",
+			"companies": "شرکت",
+			"contracts": "قرارداد",
+			"activeContracts": "قرارداد فعال",
+			"listTitle": "لیست {{label}}"
+		},
+		"actions": {
+			"title": "نیازمند اقدام",
+			"rate": "ثبت عملکرد ماه گذشته",
+			"rateSub": "{{registered}} از {{total}} شرکت دارای قرارداد فعال در {{month}} · هدف {{target}}٪",
+			"noData": "بدون داده",
+			"unregistered": "عملکرد ثبت‌نشده",
+			"topService": "بیشترین: {{name}}",
+			"expiring": "رو‌به‌انقضا در ۶ ماه آینده",
+			"peak": "اوج: {{month}}"
+		},
+		"list": {
+			"status": "وضعیت",
+			"contracts": "قراردادها",
+			"activeCount": "فعال: {{value}}",
+			"contractEndDate": "تاریخ پایان قرارداد",
+			"expired": "(منقضی‌شده)"
+		}
+	}
+}

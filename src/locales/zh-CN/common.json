@@ -1,6 +1,7 @@
 {
 	"menu": {
 		"home": "首页",
+		"managementDashboard": "管理仪表盘",
 		"access": "权限演示",
 		"accessMode": "权限模式",
 		"pageControl": "页面控制",
