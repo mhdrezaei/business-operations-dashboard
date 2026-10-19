@@ -2,10 +2,11 @@
 import type { Editor } from "@tiptap/react";
 import type { TemplateCreateHeaderProps } from "../../../types";
 import { ArrowRightOutlined, FileWordOutlined, PrinterOutlined, SaveOutlined, UploadOutlined } from "@ant-design/icons";
-import { Button, message, Modal, Popconfirm, Progress, Select, theme, Typography } from "antd";
+import { Button, Checkbox, message, Modal, Popconfirm, Progress, Select, theme, Typography } from "antd";
 import React, { useMemo, useRef, useState } from "react";
 import { TemplateCreateApi } from "../../../api/api";
 import { useTemplateStore } from "../../../store/useTemplateStore";
+import { isUploadedFont } from "../editor/core/font-faces";
 import { customToast } from "../editor/ui/CustomToast";
 import { importWordToEditor } from "../sidebar/word-importer";
 
@@ -42,6 +43,7 @@ export default function TemplateCreateHeader({
 		mapping: Record<string, string>
 		showMappingUi: boolean
 		selectedMappingFont?: string
+		applyMappingToRemaining: boolean
 	} | null>(null);
 
 	const { customFonts, fetchFonts } = useTemplateStore();
@@ -59,21 +61,41 @@ export default function TemplateCreateHeader({
 		}),
 	], [customFonts]);
 
+	const finishMissingFonts = (mapping: Record<string, string>) => {
+		if (missingFontsResolveRef.current) {
+			missingFontsResolveRef.current(mapping);
+			missingFontsResolveRef.current = null;
+		}
+		setMissingFontState(null);
+	};
+
 	const advanceMissingFont = (newMapping?: Record<string, string>) => {
 		if (!missingFontState)
 			return;
 		const currentMapping = newMapping || missingFontState.mapping;
 		if (missingFontState.currentIndex + 1 < missingFontState.queue.length) {
-			setMissingFontState(prev => prev ? { ...prev, currentIndex: prev.currentIndex + 1, isUploading: false, progress: 0, mapping: currentMapping, showMappingUi: false, selectedMappingFont: undefined } : null);
+			setMissingFontState(prev => prev ? { ...prev, currentIndex: prev.currentIndex + 1, isUploading: false, progress: 0, mapping: currentMapping, showMappingUi: false, selectedMappingFont: undefined, applyMappingToRemaining: false } : null);
 		}
 		else {
-			if (missingFontsResolveRef.current) {
-				missingFontsResolveRef.current(currentMapping);
-				missingFontsResolveRef.current = null;
-			}
-			setMissingFontState(null);
+			finishMissingFonts(currentMapping);
 		}
 	};
+
+	const handleConfirmMapping = () => {
+		const selectedFont = missingFontState?.selectedMappingFont;
+		if (!missingFontState || !selectedFont)
+			return;
+		const { queue, currentIndex, mapping, applyMappingToRemaining } = missingFontState;
+		// Earlier fonts keep the decision already made for them (upload / ignore / own mapping).
+		const targetFonts = applyMappingToRemaining ? queue.slice(currentIndex) : [queue[currentIndex]];
+		const newMapping = { ...mapping, ...Object.fromEntries(targetFonts.map(font => [font, selectedFont])) };
+		if (applyMappingToRemaining)
+			finishMissingFonts(newMapping);
+		else
+			advanceMissingFont(newMapping);
+	};
+
+	const remainingMissingFontsCount = missingFontState ? missingFontState.queue.length - missingFontState.currentIndex : 0;
 
 	const handleCancelMissingFont = () => {
 		advanceMissingFont();
@@ -146,9 +168,7 @@ export default function TemplateCreateHeader({
 		setIsImportingWord(true);
 		try {
 			await importWordToEditor(file, editor, () => {}, async (fontNames: string[]) => {
-				const missing = fontNames.filter((fontName) => {
-					return !customFonts?.some(f => f.name?.toLowerCase() === fontName.toLowerCase() || f.family?.toLowerCase() === fontName.toLowerCase());
-				});
+				const missing = fontNames.filter(fontName => !isUploadedFont(customFonts, fontName));
 
 				if (missing.length === 0)
 					return Promise.resolve();
@@ -165,6 +185,7 @@ export default function TemplateCreateHeader({
 						progress: 0,
 						mapping: {},
 						showMappingUi: false,
+						applyMappingToRemaining: false,
 					});
 				});
 			});
@@ -333,15 +354,20 @@ export default function TemplateCreateHeader({
 												<Button
 													type="primary"
 													disabled={!missingFontState.selectedMappingFont}
-													onClick={() => {
-														const currentFont = missingFontState.queue[missingFontState.currentIndex];
-														const newMapping = { ...missingFontState.mapping, [currentFont]: missingFontState.selectedMappingFont! };
-														advanceMissingFont(newMapping);
-													}}
+													onClick={handleConfirmMapping}
 												>
 													تایید و جایگزینی
 												</Button>
 											</div>
+											{remainingMissingFontsCount > 1 && (
+												<Checkbox
+													className="mt-3 text-right"
+													checked={missingFontState.applyMappingToRemaining}
+													onChange={e => setMissingFontState(prev => prev ? { ...prev, applyMappingToRemaining: e.target.checked } : null)}
+												>
+													{`اعمال همین فونت برای همه‌ی ${remainingMissingFontsCount} فونتِ یافت‌نشده‌ی باقی‌مانده`}
+												</Checkbox>
+											)}
 											<Button type="link" className="mt-2 self-end" onClick={() => setMissingFontState(prev => prev ? { ...prev, showMappingUi: false } : null)}>
 												انصراف
 											</Button>
