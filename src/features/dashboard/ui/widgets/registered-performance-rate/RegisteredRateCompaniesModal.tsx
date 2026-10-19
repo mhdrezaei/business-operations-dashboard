@@ -118,7 +118,7 @@ export function RegisteredRateCompaniesModal({ target, onClose }: { target: Regi
 											className={`px-3 py-1.5 rounded-lg text-[12.5px] font-[inherit] cursor-pointer border border-solid transition-colors ${
 												status === tab
 													? "bg-colorText text-colorBgContainer border-colorText"
-													: "bg-transparent border-colorBorder text-colorText hover:bg-colorFillTertiary"
+													: "bg-transparent border-[var(--dash-border)] text-colorText hover:bg-colorFillTertiary"
 											}`}
 										>
 											{t(`dashboard.widgets.registeredRate.modal.tabs.${tab}`)}

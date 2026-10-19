@@ -13,6 +13,7 @@ import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 
 import { RiArrowLeftLine, RiCalendar2Line } from "../icons";
+import { useDashboardBorderStyle } from "../shell/dashboard-border";
 import { floatingArea, GLASS_PANEL, PANEL_GAP, PANEL_WIDTH, placePanel, useFloatingTracking } from "./floating-panel";
 
 const TOP_ANCHOR_ID = "monthly-performance";
@@ -201,6 +202,7 @@ interface RangeFilterPanelProps {
 
 export function RangeFilterPanel({ range, onChange, onActiveChange }: RangeFilterPanelProps) {
 	const { t } = useTranslation();
+	const borderStyle = useDashboardBorderStyle();
 	const ref = useRef<HTMLElement>(null);
 	const placement = usePanelPlacement(ref);
 	const active = placement !== null;
@@ -216,18 +218,18 @@ export function RangeFilterPanel({ range, onChange, onActiveChange }: RangeFilte
 		<aside
 			ref={ref}
 			dir="rtl"
-			style={{ top: placement.top, left: placement.left, width: PANEL_WIDTH }}
-			className={`fixed z-20 p-2.5 flex flex-col gap-2.5 border-colorBorder hover:border-primary focus-within:border-primary ${GLASS_PANEL}`}
+			style={{ ...borderStyle, top: placement.top, left: placement.left, width: PANEL_WIDTH }}
+			className={`fixed z-20 p-2.5 flex flex-col gap-2.5 border-[var(--dash-border)] hover:border-primary focus-within:border-primary ${GLASS_PANEL}`}
 			aria-label={t("dashboard.filters.range.ariaLabel")}
 		>
-			<div className="flex items-center gap-2 px-2.5 pt-1 pb-1.5 text-[13px] font-semibold text-colorText border-0 border-b border-solid border-colorBorder">
+			<div className="flex items-center gap-2 px-2.5 pt-1 pb-1.5 text-[13px] font-semibold text-colorText border-0 border-b border-solid border-[var(--dash-border)]">
 				<RiCalendar2Line className="text-base text-primaryText" />
 				{t("dashboard.filters.range.title")}
 			</div>
 			<div className="px-1 pb-1">
 				<RangeFields range={range} onChange={onChange} vertical />
 			</div>
-			<p className="m-0 px-2.5 pb-1 pt-2 text-[11.5px] leading-5 text-colorTextTertiary border-0 border-t border-solid border-colorBorder">
+			<p className="m-0 px-2.5 pb-1 pt-2 text-[11.5px] leading-5 text-colorTextTertiary border-0 border-t border-solid border-[var(--dash-border)]">
 				{t("dashboard.filters.range.maxHint")}
 			</p>
 		</aside>,

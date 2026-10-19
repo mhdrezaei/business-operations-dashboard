@@ -36,7 +36,7 @@ function MonthChips({ months }: { months: ShPeriod[] }) {
 				<button
 					type="button"
 					onClick={() => setOpen(o => !o)}
-					className="px-2 py-0.5 rounded-full text-[11.5px] whitespace-nowrap font-[inherit] cursor-pointer bg-transparent border border-solid border-colorBorder text-colorTextSecondary hover:bg-colorFillTertiary transition-colors"
+					className="px-2 py-0.5 rounded-full text-[11.5px] whitespace-nowrap font-[inherit] cursor-pointer bg-transparent border border-solid border-[var(--dash-border)] text-colorTextSecondary hover:bg-colorFillTertiary transition-colors"
 				>
 					{open ? t("dashboard.modal.close") : t("dashboard.widgets.unregistered.modal.moreMonths", { value: formatCount(hidden) })}
 				</button>

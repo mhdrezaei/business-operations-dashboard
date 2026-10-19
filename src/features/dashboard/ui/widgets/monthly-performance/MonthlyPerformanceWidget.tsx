@@ -143,7 +143,7 @@ export function MonthlyPerformanceWidget({ canDrilldown, serviceIds, range, onRa
 		>
 			<div className="flex flex-wrap items-center gap-x-4 gap-y-2">
 				{!hideRangeBar && (
-					<div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2 rounded-xl bg-colorFillQuaternary border border-solid border-colorBorder">
+					<div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2 rounded-xl bg-colorFillQuaternary border border-solid border-[var(--dash-border)]">
 						<RangeFields range={range} onChange={onRangeChange} />
 					</div>
 				)}

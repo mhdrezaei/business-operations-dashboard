@@ -20,7 +20,7 @@ const SUMMARY_PAGE_SIZE = 1;
 
 function CountChip({ label, count }: { label: string | null, count: number }) {
 	return (
-		<span className="inline-flex items-center gap-1.5 rounded-full border border-solid border-colorBorder bg-colorBgContainer whitespace-nowrap text-colorTextSecondary px-2 py-px text-[11px]">
+		<span className="inline-flex items-center gap-1.5 rounded-full border border-solid border-[var(--dash-border)] bg-colorBgContainer whitespace-nowrap text-colorTextSecondary px-2 py-px text-[11px]">
 			{label}
 			<strong className="font-semibold text-colorText tabular-nums">{formatCount(count)}</strong>
 		</span>

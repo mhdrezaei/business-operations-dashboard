@@ -26,7 +26,7 @@ function KpiCard({ label, value, growth, inverse, previous, yoy, sub, index }: K
 		: undefined;
 	return (
 		<div className="flex dash-fade-slide-up" style={{ animationDelay: `${index * 70}ms` }}>
-			<div className="flex-1 min-w-0 flex flex-col gap-1.5 px-3.5 py-3 rounded-xl bg-colorFillQuaternary border border-solid border-colorBorder cursor-default transition-[transform,border-color,box-shadow,background-color] duration-[250ms] ease-[cubic-bezier(.2,.8,.2,1)] hover:-translate-y-[3px] hover:border-primary hover:bg-colorFillTertiary hover:shadow-md motion-reduce:transition-none motion-reduce:hover:translate-y-0">
+			<div className="flex-1 min-w-0 flex flex-col gap-1.5 px-3.5 py-3 rounded-xl bg-colorFillQuaternary border border-solid border-[var(--dash-border)] cursor-default transition-[transform,border-color,box-shadow,background-color] duration-[250ms] ease-[cubic-bezier(.2,.8,.2,1)] hover:-translate-y-[3px] hover:border-primary hover:bg-colorFillTertiary hover:shadow-md motion-reduce:transition-none motion-reduce:hover:translate-y-0">
 				<span className="text-[12px] text-colorTextTertiary">{label}</span>
 				<span className="text-[17px] font-semibold text-colorText">{value}</span>
 				{growth

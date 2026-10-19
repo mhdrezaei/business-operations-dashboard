@@ -65,7 +65,7 @@ export function PerformanceLegend({ groups, hiddenKeys, expandedServiceIds, onTo
 						}}
 						className={`flex flex-wrap items-center gap-1.5 ${
 							g.expandable
-								? `p-1 rounded-[14px] border border-solid border-colorBorder bg-[color-mix(in_srgb,var(--oo-colorFillQuaternary)_40%,transparent)] ${expanded ? "basis-full" : ""}`
+								? `p-1 rounded-[14px] border border-solid border-[var(--dash-border)] bg-[color-mix(in_srgb,var(--oo-colorFillQuaternary)_40%,transparent)] ${expanded ? "basis-full" : ""}`
 								: ""
 						}`}
 					>
@@ -95,7 +95,7 @@ export function PerformanceLegend({ groups, hiddenKeys, expandedServiceIds, onTo
 									style={{
 										animationDelay: `${Math.min(chipIndex, 8) * 35}ms`,
 										background: off ? "transparent" : "var(--oo-colorBgContainer)",
-										borderColor: off ? "var(--oo-colorBorder)" : s.color,
+										borderColor: off ? "var(--dash-border)" : s.color,
 										color: off ? "var(--oo-colorTextSecondary)" : "var(--oo-colorText)",
 										opacity: off ? 0.6 : 1,
 									}}

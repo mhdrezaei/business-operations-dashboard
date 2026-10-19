@@ -33,7 +33,7 @@ export function WidgetCardShell({ icon, title, description, headerExtra, childre
 			</div>
 			{refreshing && (
 				<div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none" role="status" aria-label={t("dashboard.common.loading")}>
-					<span className="flex items-center justify-center w-11 h-11 rounded-full bg-colorBgElevated border border-solid border-colorBorder shadow-md">
+					<span className="flex items-center justify-center w-11 h-11 rounded-full bg-colorBgElevated border border-solid border-[var(--dash-border)] shadow-md">
 						<Spin />
 					</span>
 				</div>
@@ -44,11 +44,11 @@ export function WidgetCardShell({ icon, title, description, headerExtra, childre
 	return (
 		<section
 			ref={sectionRef}
-			className="flex flex-col gap-3.5 p-5 bg-colorBgContainer border border-solid border-colorBorder rounded-[14px] shadow-sm hover:border-primary hover:-translate-y-0.5 motion-reduce:hover:translate-y-0"
+			className="flex flex-col gap-3.5 p-5 bg-colorBgContainer border border-solid border-[var(--dash-border)] rounded-[14px] shadow-sm hover:border-primary hover:-translate-y-0.5 motion-reduce:hover:translate-y-0"
 			style={{ transition: CARD_TRANSITION }}
 		>
 			<div className="flex items-start gap-3">
-				<div className="grid place-items-center w-[38px] h-[38px] rounded-[11px] bg-primaryBg border border-solid border-colorBorder shrink-0 text-lg">
+				<div className="grid place-items-center w-[38px] h-[38px] rounded-[11px] bg-primaryBg border border-solid border-[var(--dash-border)] shrink-0 text-lg">
 					{icon}
 				</div>
 				<div className="flex flex-col gap-0.5 flex-1 min-w-0">
@@ -87,7 +87,7 @@ export function WidgetError({ message }: { message?: string | null }) {
 export function WidgetNotice({ children }: { children?: ReactNode }) {
 	const { t } = useTranslation();
 	return (
-		<div className="px-3.5 py-3 rounded-[11px] bg-colorFillQuaternary border border-solid border-colorBorder text-[12.5px] text-colorTextSecondary">
+		<div className="px-3.5 py-3 rounded-[11px] bg-colorFillQuaternary border border-solid border-[var(--dash-border)] text-[12.5px] text-colorTextSecondary">
 			{children ?? t("dashboard.common.widgetUnavailable")}
 		</div>
 	);

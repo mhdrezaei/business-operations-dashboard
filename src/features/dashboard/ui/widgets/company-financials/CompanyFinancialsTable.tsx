@@ -109,7 +109,7 @@ export function CompanyFinancialsTable({ data, rows, period, gen, colorOf, serve
 								<td className={`${TD} whitespace-nowrap`}>
 									{r.company_type
 										? (
-											<span className="inline-block px-2.5 py-px rounded-full text-[11.5px] bg-colorFillQuaternary border border-solid border-colorBorder text-colorTextSecondary">
+											<span className="inline-block px-2.5 py-px rounded-full text-[11.5px] bg-colorFillQuaternary border border-solid border-[var(--dash-border)] text-colorTextSecondary">
 												{companyTypeLabel(r.service_code, r.company_type)}
 											</span>
 										)

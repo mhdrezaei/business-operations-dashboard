@@ -44,7 +44,7 @@ export function ExpiringServiceRow({ svc, color, hoverKey, setHoverKey }: Expiri
 			className={`min-w-0 rounded-lg border border-solid transition-all duration-200 ${open ? "col-span-2" : ""} ${
 				hovered
 					? "border-primary bg-primaryBg text-colorText"
-					: "border-colorBorder bg-colorFillQuaternary text-colorTextSecondary"
+					: "border-[var(--dash-border)] bg-colorFillQuaternary text-colorTextSecondary"
 			} ${dimmed ? "opacity-45" : ""}`}
 		>
 			{hasTypes

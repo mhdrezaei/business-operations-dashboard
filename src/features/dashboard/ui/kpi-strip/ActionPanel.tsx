@@ -94,7 +94,7 @@ export function ActionPanel({ tiles, motion, pending }: ActionPanelProps) {
 							<div key={a.anchor} className="flex" style={enterStyle(shown, (i + 4) * 80, 10)}>
 								<CardLink
 									anchor={a.anchor}
-									className={`flex-1 min-w-0 flex flex-col gap-2 p-3 rounded-[10px] bg-colorFillQuaternary border border-solid border-colorBorder text-colorText cursor-pointer ${HOVER_LIFT} hover:-translate-x-[3px] hover:bg-colorFillTertiary hover:border-primary hover:shadow-md active:-translate-x-px`}
+									className={`flex-1 min-w-0 flex flex-col gap-2 p-3 rounded-[10px] bg-colorFillQuaternary border border-solid border-[var(--dash-border)] text-colorText cursor-pointer ${HOVER_LIFT} hover:-translate-x-[3px] hover:bg-colorFillTertiary hover:border-primary hover:shadow-md active:-translate-x-px`}
 								>
 									<span className="flex items-center gap-2.5">
 										<PhIcon name={a.icon} className="text-lg" style={{ color }} />

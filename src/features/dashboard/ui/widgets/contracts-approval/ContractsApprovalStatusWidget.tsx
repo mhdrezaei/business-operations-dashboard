@@ -198,7 +198,7 @@ export function ContractsApprovalStatusWidget({ title, serviceIds }: DashboardWi
 			<div className="flex flex-wrap gap-4 items-stretch">
 				<div className="flex-1 basis-[360px] min-w-0 grid grid-cols-[repeat(auto-fit,minmax(min(100%,290px),1fr))] gap-2.5 content-start">
 					{donuts.map(g => (
-						<div key={g.approval} className="flex items-center gap-3.5 p-2.5 bg-colorFillQuaternary border border-solid border-colorBorder rounded-[10px]">
+						<div key={g.approval} className="flex items-center gap-3.5 p-2.5 bg-colorFillQuaternary border border-solid border-[var(--dash-border)] rounded-[10px]">
 							<ApprovalDonut segments={g.segments} onOpen={totalDetailsAvailable ? st => openTotal(g.approval, st) : undefined} />
 							<div className="flex flex-col gap-1.5 flex-1 min-w-0 whitespace-nowrap">
 								<strong className="text-[13px] font-semibold">{t(`dashboard.approval.kinds.${g.approval}`)}</strong>
