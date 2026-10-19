@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components -- public barrel keeps the card and its tone API together */
 import type { CSSProperties, ReactNode } from "react";
 import type { SectionTone } from "./section-tone";
+import { useCardBorderColor } from "#src/shared/lib/use-card-border-color";
 import { DownOutlined, UpOutlined } from "@ant-design/icons";
 import { Button, Card, ConfigProvider, Tag, theme } from "antd";
 import clsx from "clsx";
@@ -33,10 +34,9 @@ export function SectionCard({
 	const resolvedTone = inheritedTone ?? tone;
 	const antdContext = useContext(ConfigProvider.ConfigContext);
 	const { token } = theme.useToken();
-	const configuredCardBorder = antdContext.theme?.components?.Card?.colorBorderSecondary;
 	const configuredCardRadius = antdContext.theme?.components?.Card?.borderRadiusLG;
 	const configuredInputBackground = antdContext.theme?.components?.Input?.colorBgContainer;
-	const borderColor = typeof configuredCardBorder === "string" ? configuredCardBorder : token.colorBorderSecondary;
+	const borderColor = useCardBorderColor();
 	const toneColors = getSectionToneColors(token, resolvedTone);
 	const style = {
 		"--contract-section-outline-color": borderColor,
