@@ -102,7 +102,8 @@ export default function LayoutContent() {
 			<Scrollbar ref={scrollableRef}>
 				<GlobalSpin>
 					<div className="flex flex-col min-h-full">
-						<div className="flex-1">
+						{/* The page transition slides cached pages sideways; clipping keeps that from showing a horizontal scrollbar. */}
+						<div className="flex-1 overflow-x-clip">
 							<KeepAlive
 								max={20}
 								transition

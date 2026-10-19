@@ -113,7 +113,7 @@ export default function ContainerLayout() {
 	}, []);
 
 	return (
-		<Watermark content={watermark ? watermarkContent : ""}>
+		<Watermark content={watermark ? watermarkContent : ""} rootClassName="flex flex-col h-screen">
 			<LayoutHeader>
 				<Logo sidebarCollapsed={sidebarCollapsed} width={computedSidebarWidth} />
 
@@ -135,7 +135,7 @@ export default function ContainerLayout() {
 					...(isRTL ? { paddingRight: computedSidebarWidth } : { paddingLeft: computedSidebarWidth }),
 				}}
 				className={cn(
-					"transition-all flex flex-col gap-3 h-screen",
+					"transition-all flex flex-col gap-3 flex-1 min-h-0",
 				)}
 			>
 
