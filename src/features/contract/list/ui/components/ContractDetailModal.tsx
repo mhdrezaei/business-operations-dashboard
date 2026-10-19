@@ -12,7 +12,7 @@ import { Alert, Empty, Spin } from "antd";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { fetchContractDetail, fetchUpdateContract, resolveSalesAgencyExpenseTitleNames } from "../../../api/contracts.api";
 import { CompanyContractsPanel } from "./CompanyContractsPanel";
-import { ContractApprovalHistoryPanel } from "./ContractApprovalHistoryPanel";
+import { ContractApprovalPanel } from "./ContractApprovalPanel";
 import { ContractDocumentsPanel } from "./ContractDocumentsPanel";
 
 function contractDocumentToUploadFile(doc: { id: number, original_filename: string, size: number, mime_type: string }): UploadFile {
@@ -1590,7 +1590,7 @@ function getSmsFallbackService(service: ContractServicePath) {
 	return null;
 }
 
-function resolveSelectionService(context: ContractFormSelectionContext): ContractServicePath | null {
+export function resolveSelectionService(context: ContractFormSelectionContext): ContractServicePath | null {
 	const code = context.serviceCode?.trim().toLowerCase();
 	if (!code)
 		return null;
@@ -1809,9 +1809,12 @@ export function ContractEditForm({ contractId, service, readOnlyHeader, onUpdate
 													loading={loading}
 													readOnly={readOnly}
 												/>
-												<ContractApprovalHistoryPanel
+												<ContractApprovalPanel
 													contractId={loadedContractId}
 													service={resolvedService}
+													detail={contractDetail}
+													companyType={pickCompanyTypeToken(initialValues.companyType)}
+													readOnly={readOnly}
 												/>
 											</>
 										)}

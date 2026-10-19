@@ -98,13 +98,11 @@ const routes: AppRouteRecordRaw[] = [
 				},
 			},
 			{
-				path: "/contracts/:contractId/edit",
+				path: "/contracts/edit",
 				Component: EditContractFormPage,
 				handle: {
 					icon: createElement(EditOutlined),
 					title: $t("common.menu.editContractForm"),
-					hideInMenu: true,
-					currentActiveMenu: "/contracts/list",
 					accessDomain: "contracts",
 					accessAction: "update",
 					keepAlive: false,

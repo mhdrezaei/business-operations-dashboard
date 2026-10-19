@@ -16,6 +16,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { checkOfficialPdfStatus, fetchContractDetail, fetchContractsList, fetchDeleteContract, fetchSignFlowPreview } from "../../api/contracts.api";
 import { companyTypeMatches, pickCompanyTypeToken } from "../../shared/utils";
+import { buildContractEditPath } from "../../shared/utils/contract-routes";
 import { useContractAddendaTableStyles } from "./components/contract-addenda-table.styles";
 import { ContractAddendaExpandedRow } from "./components/ContractAddendaExpandedRow";
 import { ContractTemplatePrintModal } from "./components/ContractTemplatePrintModal";
@@ -295,7 +296,7 @@ export default function ContractListPage() {
 								title="ویرایش قرارداد"
 								icon={<TableActionEditIcon />}
 								onClick={() => {
-									navigate(`/contracts/${record.id}/edit?service=${encodeURIComponent(service)}&serviceId=${record.service_id}&companyType=${encodeURIComponent(companyType)}`);
+									navigate(buildContractEditPath({ contractId: record.id, service, serviceId: record.service_id, companyType }));
 								}}
 							/>,
 						);

@@ -1,5 +1,5 @@
 import type { ColumnsType } from "antd/es/table";
-import type { ContractServicePath } from "../../../api/contracts.api";
+import type { ContractApprovalHistorySubjectDto, ContractServicePath } from "../../../api/contracts.api";
 import type { ContractAddendumTreeNode } from "../../model/contract-addenda-tree";
 import type { ContractListItemType } from "../../model/contracts.list.types";
 
@@ -8,9 +8,11 @@ import { PrinterOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Alert, Button, Empty, Space, Spin, Table, Tag } from "antd";
 import { fetchContractDetail } from "../../../api/contracts.api";
+import { contractApprovalQuery } from "../../../shared/queries/contract.queries";
 import { buildContractAddendaTree } from "../../model/contract-addenda-tree";
 import { openContractPdfPrint } from "../utils/contract-pdf";
 import { useContractAddendaTableStyles } from "./contract-addenda-table.styles";
+import { ContractApprovalStatusTag } from "./ContractApprovalStatusTag";
 
 interface ContractAddendaExpandedRowProps {
 	contract: ContractListItemType
@@ -35,7 +37,11 @@ function formatJalaliDate(year: number | null, month: number | null) {
 	return `${persianDigits.format(year)}/${persianDigits.format(month).padStart(2, "۰")}`;
 }
 
-function getColumns(onDownload: (row: ContractAddendumTableRow) => void, onPrint?: (addendumGroupId: string) => void): ColumnsType<ContractAddendumTableRow> {
+function getColumns(
+	findApproval: (row: ContractAddendumTableRow) => ContractApprovalHistorySubjectDto | undefined,
+	onDownload: (row: ContractAddendumTableRow) => void,
+	onPrint?: (addendumGroupId: string) => void,
+): ColumnsType<ContractAddendumTableRow> {
 	return [
 		{
 			title: "شماره",
@@ -71,6 +77,18 @@ function getColumns(onDownload: (row: ContractAddendumTableRow) => void, onPrint
 			align: "center",
 			width: 130,
 			render: (_, row) => formatJalaliDate(row.endYear, row.endMonth),
+		},
+		{
+			title: "تأیید تجاری",
+			align: "center",
+			width: 130,
+			render: (_, row) => <ContractApprovalStatusTag value={findApproval(row)?.is_business_approved} />,
+		},
+		{
+			title: "تأیید اداره قراردادها",
+			align: "center",
+			width: 160,
+			render: (_, row) => <ContractApprovalStatusTag value={findApproval(row)?.is_signed} />,
 		},
 		{
 			title: "عملیات",
@@ -134,6 +152,11 @@ export function ContractAddendaExpandedRow({ contract, service, onPrint }: Contr
 		staleTime: 30_000,
 	});
 
+	const approval = useQuery(contractApprovalQuery(service, contract.id));
+	const findApproval = (row: ContractAddendumTableRow) => approval.data?.addenda?.find(
+		item => item.id === row.id || String(item.display_addendum_number ?? "") === row.displayNumber,
+	);
+
 	if (detail.isPending) {
 		return (
 			<div className={classes.expandedContent}>
@@ -182,10 +205,10 @@ export function ContractAddendaExpandedRow({ contract, service, onPrint }: Contr
 			<Table<ContractAddendumTableRow>
 				className={classes.addendaTable}
 				rowKey="key"
-				columns={getColumns(handleDownload, onPrint)}
+				columns={getColumns(findApproval, handleDownload, onPrint)}
 				dataSource={tableData}
 				pagination={false}
-				scroll={{ x: 1000 }}
+				scroll={{ x: 1300 }}
 				tableLayout="fixed"
 				expandable={{
 					indentSize: 16,
