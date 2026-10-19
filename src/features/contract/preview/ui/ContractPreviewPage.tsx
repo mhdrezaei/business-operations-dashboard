@@ -4,6 +4,7 @@ import { BasicContent } from "#src/components";
 import { fetchContractApprovalHistory, fetchContractDetail } from "#src/features/contract/api/contracts.api";
 import { formatHistoryDate } from "#src/features/contract/list/ui/components/contract-approval-history.utils";
 import { ContractEditForm } from "#src/features/contract/list/ui/components/ContractDetailModal";
+import { buildContractEditPath } from "#src/features/contract/shared/utils/contract-routes";
 import { useAccess } from "#src/hooks";
 import { ClockCircleOutlined, UserOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
@@ -64,7 +65,7 @@ export default function ContractPreviewPage() {
 		.sort((a, b) => new Date(b.changed_at).getTime() - new Date(a.changed_at).getTime())[0];
 	const latestField = latestHistory?.field_name ?? (isSigned ? "is_signed" : "is_business_approved");
 	const latestValue = latestHistory?.new_value ?? (latestField === "is_signed" ? isSigned : isBusinessApproved);
-	const latestStatusTitle = latestField === "is_signed" ? "امضا" : "تأیید تجاری";
+	const latestStatusTitle = latestField === "is_signed" ? "تأیید اداره قراردادها" : "تأیید تجاری";
 	const latestStatusText = latestValue === true ? "تأیید شده" : latestValue === false ? "رد شده" : "نامشخص";
 	const updatedBy = contract.updated_by_user as Record<string, unknown> | undefined;
 	const createdBy = contract.created_by_user as Record<string, unknown> | undefined;
@@ -74,7 +75,7 @@ export default function ContractPreviewPage() {
 	if (!contractId || !service || !serviceId)
 		return <Empty description="اطلاعات مسیر پیش‌نمایش قرارداد معتبر نیست" />;
 
-	const editUrl = `/contracts/${contractId}/edit?service=${encodeURIComponent(service)}&serviceId=${serviceId}&companyType=${encodeURIComponent(companyType)}`;
+	const editUrl = buildContractEditPath({ contractId, service, serviceId, companyType });
 
 	return (
 		<BasicContent className="min-h-full">

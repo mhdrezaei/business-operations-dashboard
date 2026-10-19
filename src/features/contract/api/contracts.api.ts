@@ -226,6 +226,18 @@ export interface ContractApprovalHistoryResponse extends ContractApprovalHistory
 	addenda: ContractApprovalHistorySubjectDto[]
 }
 
+export type ContractApprovalField = "is_business_approved" | "is_signed";
+
+export interface ContractApprovalAddendumPayload extends Partial<Record<ContractApprovalField, boolean>> {
+	id: number
+	comment?: string
+}
+
+export interface ContractApprovalPayload extends Partial<Record<ContractApprovalField, boolean>> {
+	comment?: string
+	addenda?: ContractApprovalAddendumPayload[]
+}
+
 export function fetchCompanyContracts(
 	service: ContractServicePath,
 	companyId: number,
@@ -342,6 +354,12 @@ export function fetchContractPrintData(
 export function fetchContractApprovalHistory(service: ContractServicePath, id: number) {
 	return request
 		.get(`${buildContractPath(service, id)}approve/`)
+		.json<ContractApprovalHistoryResponse>();
+}
+
+export function updateContractApproval(service: ContractServicePath, id: number, payload: ContractApprovalPayload) {
+	return request
+		.patch(`${buildContractPath(service, id)}approve/`, { json: payload })
 		.json<ContractApprovalHistoryResponse>();
 }
 /* ===================== CREATE ===================== */

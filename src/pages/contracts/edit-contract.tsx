@@ -1,10 +1,12 @@
 import type { ContractServicePath } from "#src/features/contract/api/contracts.api";
 
+import type { ComponentProps } from "react";
 import { ContractEditForm } from "#src/features/contract/list/ui/components/ContractDetailModal";
+import { ContractEditSelector } from "#src/features/contract/list/ui/components/ContractEditSelector";
 import { useAccess } from "#src/hooks";
 import { Button, Result } from "antd";
-import { useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router";
 
 const CONTRACT_SERVICE_PATHS = new Set<ContractServicePath>([
 	"openapi",
@@ -27,25 +29,31 @@ function parsePositiveInt(value: string | null | undefined) {
 export default function EditContractFormPage() {
 	const navigate = useNavigate();
 	const { hasDomainPermissionByServiceId } = useAccess();
-	const { contractId: contractIdParam } = useParams();
 	const [searchParams] = useSearchParams();
-	const contractId = parsePositiveInt(contractIdParam);
+	const contractId = parsePositiveInt(searchParams.get("contractId"));
 	const serviceId = parsePositiveInt(searchParams.get("serviceId"));
 	const companyType = searchParams.get("companyType") || undefined;
 	const serviceParam = searchParams.get("service") as ContractServicePath | null;
 	const service = serviceParam && CONTRACT_SERVICE_PATHS.has(serviceParam) ? serviceParam : null;
 	const [selection, setSelection] = useState(() => ({ contractId, serviceId, companyType, service }));
+
+	// The edit tab is shared by all contracts: a new query string selects another contract in the same tab.
+	useEffect(() => {
+		setSelection({ contractId, serviceId, companyType, service });
+	}, [contractId, serviceId, companyType, service]);
 	const canUpdate = selection.serviceId != null && hasDomainPermissionByServiceId("contracts", "update", selection.serviceId, selection.companyType);
 
-	if (!selection.contractId || !selection.service || !selection.serviceId) {
-		return (
-			<Result
-				status="warning"
-				title="اطلاعات مسیر ویرایش قرارداد معتبر نیست"
-				extra={<Button onClick={() => navigate("/contracts/list")}>بازگشت به لیست قراردادها</Button>}
-			/>
-		);
-	}
+	const handleContractSelect: ComponentProps<typeof ContractEditForm>["onContractSelect"] = (selectedContractId, selectedServiceId, selectedCompanyType, selectedService) => {
+		setSelection({
+			contractId: selectedContractId,
+			serviceId: selectedServiceId,
+			companyType: selectedCompanyType ?? undefined,
+			service: selectedService,
+		});
+	};
+
+	if (!selection.contractId || !selection.service || !selection.serviceId)
+		return <ContractEditSelector onContractSelect={handleContractSelect} />;
 
 	if (!canUpdate) {
 		return (
@@ -61,14 +69,7 @@ export default function EditContractFormPage() {
 		<ContractEditForm
 			contractId={selection.contractId}
 			service={selection.service}
-			onContractSelect={(selectedContractId, selectedServiceId, selectedCompanyType, selectedService) => {
-				setSelection({
-					contractId: selectedContractId,
-					serviceId: selectedServiceId,
-					companyType: selectedCompanyType ?? undefined,
-					service: selectedService,
-				});
-			}}
+			onContractSelect={handleContractSelect}
 			onSaved={() => navigate("/contracts/list")}
 		/>
 	);

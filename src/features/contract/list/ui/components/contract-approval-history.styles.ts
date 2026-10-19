@@ -22,6 +22,11 @@ export const useContractApprovalHistoryStyles = createUseStyles(({ prefixCls, to
 		flexDirection: "column",
 		gap: token.marginSM,
 	},
+	approvalSubject: {
+		display: "flex",
+		flexDirection: "column",
+		gap: token.margin,
+	},
 	historyCollapse: {
 		background: token.colorBgLayout,
 		border: `1px solid ${token.colorFillSecondary}`,
@@ -33,6 +38,7 @@ export const useContractApprovalHistoryStyles = createUseStyles(({ prefixCls, to
 		[`& > .${prefixCls}-collapse-item > .${prefixCls}-collapse-header`]: {
 			alignItems: "center",
 			background: "transparent",
+			borderRadius: "0 !important",
 			minHeight: token.controlHeightLG,
 			padding: token.padding,
 		},
@@ -67,6 +73,13 @@ export const useContractApprovalHistoryStyles = createUseStyles(({ prefixCls, to
 	},
 	timeline: {
 		marginTop: token.marginXS,
+		maxHeight: 320,
+		overflowY: "auto",
+		paddingBlock: token.paddingXS,
+		// Keep the timeline dots clear of the scroll container's clipping edge.
+		paddingInline: token.paddingSM,
+		scrollbarColor: `${token.colorFill} transparent`,
+		scrollbarWidth: "thin",
 		[`& .${prefixCls}-timeline-item-head-custom`]: {
 			background: "transparent",
 			border: 0,

@@ -1,5 +1,6 @@
+import type { ContractServicePath } from "#src/features/contract/api/contracts.api";
 import { fetchCompaniesByService, fetchServices } from "#src/api/common/common.api";
-import { fetchContractGaps, fetchSmsCommissionAgents, fetchTrafficDatacenters } from "#src/features/contract/api/contracts.api";
+import { fetchContractApprovalHistory, fetchContractGaps, fetchSmsCommissionAgents, fetchTrafficDatacenters } from "#src/features/contract/api/contracts.api";
 import { queryOptions } from "@tanstack/react-query";
 
 export function servicesQuery() {
@@ -53,5 +54,12 @@ export function trafficDatacentersQuery(enabled: boolean) {
 		enabled,
 		queryFn: fetchTrafficDatacenters,
 		staleTime: 5 * 60 * 1000,
+	});
+}
+
+export function contractApprovalQuery(service: ContractServicePath, contractId: number) {
+	return queryOptions({
+		queryKey: ["contracts", "approval-history", service, contractId],
+		queryFn: () => fetchContractApprovalHistory(service, contractId),
 	});
 }

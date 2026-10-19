@@ -1,7 +1,6 @@
 import type {
 	ContractApprovalHistoryEntryDto,
 	ContractApprovalHistorySubjectDto,
-	ContractServicePath,
 } from "../../../api/contracts.api";
 
 import CheckVerifiedIcon from "#src/assets/svg/contract-history/check-verified.svg?react";
@@ -14,23 +13,16 @@ import {
 	UpOutlined,
 	UserOutlined,
 } from "@ant-design/icons";
-import { useQuery } from "@tanstack/react-query";
-import { Alert, Badge, Card, Collapse, Empty, Space, Spin, Tag, Timeline, Typography } from "antd";
-import { fetchContractApprovalHistory } from "../../../api/contracts.api";
+import { Badge, Collapse, Empty, Space, Tag, Timeline, Typography } from "antd";
 import { useContractApprovalHistoryStyles } from "./contract-approval-history.styles";
-import { formatHistoryDate, toPersianDigits } from "./contract-approval-history.utils";
-
-interface ContractApprovalHistoryPanelProps {
-	contractId: number
-	service: ContractServicePath
-}
+import { formatHistoryDate } from "./contract-approval-history.utils";
 
 function getFieldLabel(fieldName: string) {
 	switch (fieldName) {
 		case "is_business_approved":
 			return "تأیید تجاری";
 		case "is_signed":
-			return "امضا";
+			return "تأیید اداره قراردادها";
 		default:
 			return fieldName;
 	}
@@ -42,7 +34,7 @@ function getValuePresentation(entry: ContractApprovalHistoryEntryDto) {
 			color: "success" as const,
 			cssColor: "var(--ant-color-success)",
 			icon: entry.field_name === "is_signed" ? <CheckVerifiedIcon /> : <CircleStatusIcon />,
-			label: entry.field_name === "is_signed" ? "امضا شده" : "تأیید شده",
+			label: "تأیید شده",
 		};
 	}
 
@@ -51,7 +43,7 @@ function getValuePresentation(entry: ContractApprovalHistoryEntryDto) {
 			color: "error" as const,
 			cssColor: "var(--ant-color-error)",
 			icon: entry.field_name === "is_signed" ? <CircleStatusIcon /> : <DangerIcon />,
-			label: entry.field_name === "is_signed" ? "امضا نشده" : "رد شده",
+			label: "رد شده",
 		};
 	}
 
@@ -102,7 +94,7 @@ function HistoryEntry({ entry }: { entry: ContractApprovalHistoryEntryDto }) {
 	);
 }
 
-function HistorySubject({ subject, title }: { subject: ContractApprovalHistorySubjectDto, title: string }) {
+export function ContractApprovalHistory({ subject }: { subject: ContractApprovalHistorySubjectDto }) {
 	const classes = useContractApprovalHistoryStyles();
 	const history = Array.isArray(subject.sign_approval_history) ? subject.sign_approval_history : [];
 
@@ -117,7 +109,7 @@ function HistorySubject({ subject, title }: { subject: ContractApprovalHistorySu
 					key: String(subject.id),
 					label: (
 						<div className={classes.collapseLabel}>
-							<span className={classes.subjectLabel}>{title}</span>
+							<span>تاریخچه تغییرات</span>
 							<Badge count={history.length} showZero color="var(--ant-color-primary)" />
 						</div>
 					),
@@ -140,42 +132,5 @@ function HistorySubject({ subject, title }: { subject: ContractApprovalHistorySu
 				},
 			]}
 		/>
-	);
-}
-
-export function ContractApprovalHistoryPanel({ contractId, service }: ContractApprovalHistoryPanelProps) {
-	const classes = useContractApprovalHistoryStyles();
-	const historyQuery = useQuery({
-		queryKey: ["contracts", "approval-history", service, contractId],
-		queryFn: () => fetchContractApprovalHistory(service, contractId),
-	});
-
-	return (
-		<Card
-			className={classes.historyCard}
-			size="small"
-		>
-			<div className={classes.historyContent}>
-				<div className={classes.historyTitle}>تاریخچه تغییرات</div>
-				<Spin spinning={historyQuery.isPending}>
-					{historyQuery.isError
-						? <Alert showIcon type="error" message="دریافت تاریخچه تغییرات ناموفق بود" />
-						: historyQuery.data
-							? (
-								<div className={classes.historyList}>
-									<HistorySubject subject={historyQuery.data} title="قرارداد اصلی" />
-									{(historyQuery.data.addenda ?? []).map(addendum => (
-										<HistorySubject
-											key={addendum.id}
-											subject={addendum}
-											title={`الحاقیه ${toPersianDigits(String(addendum.display_addendum_number ?? addendum.id))}`}
-										/>
-									))}
-								</div>
-							)
-							: <div className="min-h-24" />}
-				</Spin>
-			</div>
-		</Card>
 	);
 }

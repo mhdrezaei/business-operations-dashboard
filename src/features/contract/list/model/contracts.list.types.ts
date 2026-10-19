@@ -9,6 +9,11 @@ export interface ContractListItemType {
 	company_type?: string | Record<string, string> | null
 
 	addenda_count: number
+	signed_addenda_count?: number
+	business_approved_addenda_count?: number
+
+	is_signed?: boolean | null
+	is_business_approved?: boolean | null
 
 	start_jy: number | null
 	start_jm: number | null

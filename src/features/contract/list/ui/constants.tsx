@@ -4,6 +4,7 @@ import type { TFunction } from "i18next";
 import type { ContractListItemType } from "../model/contracts.list.types";
 import { Checkbox, Form, Tag } from "antd";
 import { pickCompanyTypeToken } from "../../shared/utils";
+import { ContractApprovalStatusTag } from "./components/ContractApprovalStatusTag";
 
 export interface GetContractColumnsArgs {
 	t: TFunction<"translation", undefined>
@@ -27,6 +28,18 @@ export interface GetContractColumnsArgs {
 
 	/** فقط وابسته‌ها را پاک کن (نه کل فرم) */
 	onServiceFilterChange?: () => void
+}
+
+function renderApprovalCell(approved: boolean | null | undefined, approvedAddenda: number | undefined, record: ContractListItemType) {
+	// The list API serializes the tri-state flags as booleans, so `false` means "not approved yet" here.
+	return (
+		<div className="flex flex-col items-center gap-1">
+			<ContractApprovalStatusTag value={approved ? true : null} />
+			{Number(record.addenda_count) > 0
+				? <span className="text-xs text-[var(--ant-color-text-secondary)]">{`الحاقیه: ${approvedAddenda ?? 0} از ${record.addenda_count}`}</span>
+				: null}
+		</div>
+	);
 }
 
 const ORDERING_OPTIONS: Array<{ label: string, value: string }> = [
@@ -208,6 +221,24 @@ export function getContractColumns({
 			search: false,
 			align: "center",
 			render: (_, record) => <Tag bordered={false}>{record.addenda_count ?? 0}</Tag>,
+		},
+
+		{
+			title: "تأیید تجاری",
+			dataIndex: "is_business_approved",
+			width: 150,
+			search: false,
+			align: "center",
+			render: (_, record) => renderApprovalCell(record.is_business_approved, record.business_approved_addenda_count, record),
+		},
+
+		{
+			title: "تأیید اداره قراردادها",
+			dataIndex: "is_signed",
+			width: 170,
+			search: false,
+			align: "center",
+			render: (_, record) => renderApprovalCell(record.is_signed, record.signed_addenda_count, record),
 		},
 
 		{

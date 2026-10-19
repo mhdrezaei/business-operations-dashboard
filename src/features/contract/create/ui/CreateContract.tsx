@@ -7,6 +7,7 @@ import { fetchCompaniesByService } from "#src/api/common/common.api";
 import { createContractDocument } from "#src/features/contract/api/contract-documents.api";
 import { contractTypeToApiPricing } from "#src/features/contract/api/pricing.mapper";
 import { defaultContractFormValues } from "#src/features/contract/shared/ui/form/ContractForm";
+import { buildContractEditPath } from "#src/features/contract/shared/utils/contract-routes";
 import React, { useState } from "react";
 import { useNavigate } from "react-router";
 import { fetchCreateContract } from "../../api/contracts.api";
@@ -882,7 +883,7 @@ function applySubmitIntent(
 			const companyType = form.getValues("companyType") ?? "";
 			form.reset(defaultContractFormValues);
 			if (createdContract.id != null && serviceId != null) {
-				navigate(`/contracts/${createdContract.id}/edit?service=${encodeURIComponent(service)}&serviceId=${serviceId}&companyType=${encodeURIComponent(companyType)}`);
+				navigate(buildContractEditPath({ contractId: createdContract.id, service, serviceId, companyType }));
 			}
 			break;
 		}
