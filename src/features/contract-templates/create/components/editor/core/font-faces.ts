@@ -25,6 +25,12 @@ function familyNames(font: TemplateFont) {
 	return plain && plain.toLowerCase() !== family.toLowerCase() ? [family, plain] : [family];
 }
 
+/** Whether an uploaded font already serves `fontName` (e.g. a Word font "B Mitra" is served by "B Mitra_0"). */
+export function isUploadedFont(fonts: TemplateFont[], fontName: string) {
+	const target = fontName.toLowerCase();
+	return fonts.some(f => f.name?.toLowerCase() === target || familyNames(f).some(family => family.toLowerCase() === target));
+}
+
 /**
  * @font-face rules for the template fonts. Digits are shown, printed and captured
  * into the PDF in Persian while the stored text keeps ASCII digits (variables,

@@ -153,6 +153,48 @@ export const NodeStyle = Extension.create({
 	},
 });
 
+/** Font family of the text closest to `pos`: the last one before it, else the first one after it. */
+function nearestFontFamily(doc: PMNode, pos: number): string | null {
+	let before: string | null = null;
+	let after: string | null = null;
+	doc.descendants((node, nodePos) => {
+		if (after)
+			return false;
+		const family = node.isText ? node.marks.find(m => m.type.name === "textStyle")?.attrs.fontFamily : null;
+		if (family) {
+			if (nodePos < pos)
+				before = family;
+			else
+				after = family;
+		}
+		return true;
+	});
+	return before || after;
+}
+
+/**
+ * An empty paragraph holds no text, so no font mark (e.g. the empty lines of an
+ * imported Word file). Like Word, typing there continues in the font of the
+ * surrounding text instead of the editor default. Only the stored marks change;
+ * the document is untouched until the user types.
+ */
+export const InheritEmptyBlockFont = Extension.create({
+	name: "inheritEmptyBlockFont",
+	addProseMirrorPlugins() {
+		return [new Plugin({
+			appendTransaction(_trs, _oldState, state) {
+				const { selection, storedMarks, schema } = state;
+				const { $from } = selection;
+				// storedMarks === [] means the user picked the default font here on purpose.
+				if (storedMarks || !selection.empty || !$from.parent.isTextblock || $from.parent.content.size > 0)
+					return null;
+				const fontFamily = nearestFontFamily(state.doc, $from.pos);
+				return fontFamily ? state.tr.setStoredMarks([schema.marks.textStyle.create({ fontFamily })]) : null;
+			},
+		})];
+	},
+});
+
 export const TABLE_CELL_MIN_WIDTH_PX = 56;
 
 /** Rendered column minimum: the configured one, shrunk so `count` columns fit the content width. */
@@ -345,6 +387,7 @@ export function getEditorExtensions() {
 		Strike,
 		TextStyle,
 		FontFamily,
+		InheritEmptyBlockFont,
 		Color,
 		FontSize,
 		Direction,
