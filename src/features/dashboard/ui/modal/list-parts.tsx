@@ -14,7 +14,7 @@ import { ModalFooterContext } from "./DashboardModal";
 export const PAGE_SIZE = 20;
 
 /** Shared table look of cards and modals. */
-export const TABLE_WRAP = "dash-scroll overflow-x-auto rounded-xl border border-solid border-colorBorder bg-colorBgContainer";
+export const TABLE_WRAP = "dash-scroll overflow-x-auto rounded-xl border border-solid border-[var(--dash-border)] bg-colorBgContainer";
 export const TABLE = "w-full text-[12px] border-collapse";
 export const THEAD_ROW = "bg-colorFillQuaternary text-colorTextSecondary";
 export const TH = "px-3.5 py-2.5 text-start text-[10.5px] font-bold whitespace-nowrap border-0 border-b-2 border-solid border-colorFillSecondary";
@@ -120,7 +120,7 @@ export function PagerBar({ page, totalPages, shownPage, loading, onChange, topRe
 		);
 	}
 	return (
-		<div className="sticky -bottom-4 z-10 -mx-5 -mb-4 mt-4 px-5 py-3 flex items-center justify-between gap-2 bg-colorBgContainer border-0 border-t border-solid border-colorBorder">
+		<div className="sticky -bottom-4 z-10 -mx-5 -mb-4 mt-4 px-5 py-3 flex items-center justify-between gap-2 bg-colorBgContainer border-0 border-t border-solid border-[var(--dash-border)]">
 			{buttons}
 		</div>
 	);

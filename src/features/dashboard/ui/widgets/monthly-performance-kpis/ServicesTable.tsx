@@ -181,7 +181,7 @@ export function ServicesTable({ services }: { services: KpiServiceRow[] }) {
 													<span className="inline-flex items-center gap-2">
 														{expandable
 															? (
-																<span className="inline-flex items-center justify-center w-4 h-4 rounded border border-solid border-colorBorder text-xs text-primary bg-colorBgContainer">
+																<span className="inline-flex items-center justify-center w-4 h-4 rounded border border-solid border-[var(--dash-border)] text-xs text-primary bg-colorBgContainer">
 																	{isOpen ? <RiSubtractLine /> : <RiAddLine />}
 																</span>
 															)
@@ -199,7 +199,7 @@ export function ServicesTable({ services }: { services: KpiServiceRow[] }) {
 										key={`${s.service_id}-${ct.company_type}`}
 										aria-hidden={!isOpen}
 										data-child-of={s.service_id}
-										className={`bg-colorFillQuaternary hover:bg-primaryBg transition-colors ${isOpen ? "border-0 border-b border-solid border-colorBorder" : ""}`}
+										className={`bg-colorFillQuaternary hover:bg-primaryBg transition-colors ${isOpen ? "border-0 border-b border-solid border-[var(--dash-border)]" : ""}`}
 									>
 										{SERVICE_COLUMNS.map(c => (
 											<td

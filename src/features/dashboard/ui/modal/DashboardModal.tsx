@@ -5,6 +5,7 @@ import { Button, Tooltip } from "antd";
 import { createContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
+import { useDashboardBorderStyle } from "../shell/dashboard-border";
 
 const ANIM_MS = 280;
 
@@ -48,6 +49,7 @@ export function DashboardModal({
 	crumbs,
 }: DashboardModalProps) {
 	const { t } = useTranslation();
+	const borderStyle = useDashboardBorderStyle();
 	// mounted: stays in the DOM until the close animation ends; shown: the open state (enter/leave transition).
 	const [mounted, setMounted] = useState(isOpen);
 	const [shown, setShown] = useState(false);
@@ -110,6 +112,7 @@ export function DashboardModal({
 		<div
 			role="dialog"
 			aria-modal="true"
+			style={borderStyle}
 			className={`fixed inset-0 z-[1000] flex items-center justify-center transition-[padding] duration-300 ${full ? "p-3" : "p-4 md:px-6 md:py-8"}`}
 		>
 			<div
@@ -118,11 +121,11 @@ export function DashboardModal({
 				aria-hidden="true"
 			/>
 			<div
-				className={`relative flex flex-col w-full ${full ? "max-w-full h-full max-h-full rounded-xl" : `${maxWidth} max-h-full rounded-[18px]`} overflow-hidden border border-solid border-colorBorder bg-colorBgElevated backdrop-blur-xl text-colorText shadow-2xl transition-[opacity,transform,max-width,border-radius] duration-[380ms] ease-[cubic-bezier(.2,.9,.25,1.05)] motion-reduce:transition-none ${
+				className={`relative flex flex-col w-full ${full ? "max-w-full h-full max-h-full rounded-xl" : `${maxWidth} max-h-full rounded-[18px]`} overflow-hidden border border-solid border-[var(--dash-border)] bg-colorBgElevated backdrop-blur-xl text-colorText shadow-2xl transition-[opacity,transform,max-width,border-radius] duration-[380ms] ease-[cubic-bezier(.2,.9,.25,1.05)] motion-reduce:transition-none ${
 					shown ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-[.965] translate-y-[18px]"
 				}`}
 			>
-				<div className="flex items-center gap-3 px-5 pt-4 pb-3.5 border-0 border-b border-solid border-colorBorder">
+				<div className="flex items-center gap-3 px-5 pt-4 pb-3.5 border-0 border-b border-solid border-[var(--dash-border)]">
 					<span className="grid place-items-center w-10 h-10 rounded-[11px] shrink-0 bg-primaryBg text-primaryText text-xl">
 						<Icon />
 					</span>
@@ -139,7 +142,7 @@ export function DashboardModal({
 							<div className="flex items-center gap-1 flex-wrap">
 								{view.crumbs.map((crumb, i) => (
 									<span key={`${crumb}-${i}`} className="flex items-center gap-1">
-										<span className="text-[11.5px] px-2 py-px rounded-md border border-solid border-colorBorder text-colorTextSecondary whitespace-nowrap">{crumb}</span>
+										<span className="text-[11.5px] px-2 py-px rounded-md border border-solid border-[var(--dash-border)] text-colorTextSecondary whitespace-nowrap">{crumb}</span>
 										{i < view.crumbs!.length - 1 && <span className="text-[10px] text-colorTextTertiary">‹</span>}
 									</span>
 								))}
@@ -162,10 +165,10 @@ export function DashboardModal({
 					</ModalFullContext.Provider>
 				</div>
 
-				<div className="dash-modal-footer flex items-center gap-3 flex-wrap px-5 py-3 border-0 border-t border-solid border-colorBorder">
+				<div className="dash-modal-footer flex items-center gap-3 flex-wrap px-5 py-3 border-0 border-t border-solid border-[var(--dash-border)]">
 					<div ref={setFooterEl} className="contents" />
 					<span className="hidden md:flex items-center gap-1.5 text-[11.5px] text-colorTextTertiary ms-auto [.dash-modal-footer:has(.dash-pager)_&]:ms-0">
-						<kbd className="font-[inherit] text-[11px] px-1.5 rounded-[5px] border border-solid border-colorBorder bg-colorFillQuaternary">Esc</kbd>
+						<kbd className="font-[inherit] text-[11px] px-1.5 rounded-[5px] border border-solid border-[var(--dash-border)] bg-colorFillQuaternary">Esc</kbd>
 						{t("dashboard.modal.close")}
 					</span>
 				</div>

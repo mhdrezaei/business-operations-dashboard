@@ -55,7 +55,7 @@ export function FinancialPanel({ serviceIds }: { serviceIds: number[] }) {
 			<section className={PANEL}>
 				<PanelHeader icon="wallet" tone="link" title={t("dashboard.kpi.financial.title")} subtitle={subtitle}>
 					<div className="ms-auto flex flex-wrap items-center gap-2">
-						<div role="group" aria-label={t("dashboard.kpi.financial.rangeGroup")} className="flex gap-0.5 p-[3px] bg-colorFillQuaternary border border-solid border-colorBorder rounded-[9px]">
+						<div role="group" aria-label={t("dashboard.kpi.financial.rangeGroup")} className="flex gap-0.5 p-[3px] bg-colorFillQuaternary border border-solid border-[var(--dash-border)] rounded-[9px]">
 							{FINANCIAL_RANGES.map((r) => {
 								const active = r === range;
 								return (

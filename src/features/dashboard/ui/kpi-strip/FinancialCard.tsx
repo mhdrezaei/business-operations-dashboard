@@ -90,7 +90,7 @@ export function FinancialCard({ def, data, range, rangeNoun, p, shown, index, pe
 			<CardLink
 				anchor={MONTHLY_ANCHOR}
 				onActivate={() => requestMonthlyMetric(def.key)}
-				className={`relative flex-1 min-w-0 flex flex-col items-center gap-3.5 px-5 pt-[22px] pb-[18px] rounded-xl bg-colorFillQuaternary border border-solid border-colorBorder text-colorText text-center overflow-hidden cursor-pointer ${HOVER_LIFT} hover:-translate-y-[3px] hover:bg-colorFillTertiary hover:border-primary hover:shadow-lg active:-translate-y-px`}
+				className={`relative flex-1 min-w-0 flex flex-col items-center gap-3.5 px-5 pt-[22px] pb-[18px] rounded-xl bg-colorFillQuaternary border border-solid border-[var(--dash-border)] text-colorText text-center overflow-hidden cursor-pointer ${HOVER_LIFT} hover:-translate-y-[3px] hover:bg-colorFillTertiary hover:border-primary hover:shadow-lg active:-translate-y-px`}
 			>
 				<span
 					aria-hidden="true"
@@ -139,7 +139,7 @@ export function FinancialCard({ def, data, range, rangeNoun, p, shown, index, pe
 						)}
 						<span className="flex flex-wrap justify-center gap-2 text-[12px]">
 							{deltas.map(d => (
-								<span key={d.label} title={d.title} className="inline-flex items-center gap-1.5 whitespace-nowrap px-2.5 py-[3px] rounded-full bg-colorBgContainer border border-solid border-colorBorder text-colorTextTertiary">
+								<span key={d.label} title={d.title} className="inline-flex items-center gap-1.5 whitespace-nowrap px-2.5 py-[3px] rounded-full bg-colorBgContainer border border-solid border-[var(--dash-border)] text-colorTextTertiary">
 									{t("dashboard.kpi.financial.compareTo", { label: d.label })}
 									<b dir="ltr" className="font-semibold" style={{ color: deltaColor(d.g) }}>
 										{pending ? `${roll(2)}٪` : d.g === null ? "—" : `${d.g >= 0 ? "▲" : "▼"} ${pf(Math.abs(d.g) * pn)}٪`}

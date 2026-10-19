@@ -81,7 +81,7 @@ export function ContractCyclePanel({ tiles, dashboard, motion, chainQ, deniedKey
 								type="button"
 								disabled={rolling || deniedKeys.has(s.listKey)}
 								onClick={() => openList(s.listKey, s.label)}
-								className="flex items-center gap-2 px-3.5 py-[7px] rounded-[10px] font-[inherit] bg-colorFillQuaternary border border-solid border-colorBorder text-colorTextSecondary whitespace-nowrap enabled:cursor-pointer transition-[background-color,border-color,transform] duration-200 enabled:hover:bg-colorFillTertiary enabled:hover:border-primary enabled:hover:-translate-y-px motion-reduce:transition-none"
+								className="flex items-center gap-2 px-3.5 py-[7px] rounded-[10px] font-[inherit] bg-colorFillQuaternary border border-solid border-[var(--dash-border)] text-colorTextSecondary whitespace-nowrap enabled:cursor-pointer transition-[background-color,border-color,transform] duration-200 enabled:hover:bg-colorFillTertiary enabled:hover:border-primary enabled:hover:-translate-y-px motion-reduce:transition-none"
 							>
 								<PhIcon name={s.icon} className="text-[17px] text-primaryText" />
 								<b className="text-[18px] font-semibold leading-none text-colorText tabular-nums">{rolling ? roll(3) : settle(s.value, pn)}</b>
@@ -129,7 +129,7 @@ export function ContractCyclePanel({ tiles, dashboard, motion, chainQ, deniedKey
 									className={`relative flex-1 min-w-0 flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl border-0 bg-transparent font-[inherit] text-center text-colorText enabled:cursor-pointer ${HOVER_LIFT} enabled:hover:-translate-y-[3px] enabled:hover:bg-[color-mix(in_srgb,var(--oo-colorFillQuaternary)_35%,transparent)] enabled:hover:backdrop-blur-[2px] ![transition-property:transform,border-color,box-shadow,background-color,backdrop-filter] enabled:active:-translate-y-px`}
 								>
 									<span
-										className={`relative grid place-items-center w-[38px] h-[38px] rounded-full border-2 border-solid border-colorBorder box-border ${tone ? "" : "bg-colorFillQuaternary"}`}
+										className={`relative grid place-items-center w-[38px] h-[38px] rounded-full border-2 border-solid border-[var(--dash-border)] box-border ${tone ? "" : "bg-colorFillQuaternary"}`}
 										style={{
 											// Opaque tint on the panel surface so the connecting line does not show under the circle.
 											background: tone ? tone.soft : undefined,

@@ -1,34 +1,48 @@
 {
-	"newVisits": "بازدیدهای جدید",
-	"messages": "پیام‌ها",
-	"purchases": "خریدها",
-	"shoppings": "خریدهای انجام‌شده",
-
-	"sales": "فروش",
-	"thisWeek": "این هفته",
-	"thisMonth": "این ماه",
-	"thisYear": "امسال",
-
-	"monday": "دوشنبه",
-	"tuesday": "سه‌شنبه",
-	"wednesday": "چهارشنبه",
-	"thursday": "پنج‌شنبه",
-	"friday": "جمعه",
-	"saturday": "شنبه",
-	"sunday": "یک‌شنبه",
-	"views": "بازدیدها",
-	"directAccess": "دسترسی مستقیم",
-	"emailMarketing": "بازاریابی ایمیلی",
-	"affiliateAdvertise": "تبلیغات همکاری در فروش",
-	"videoAdvertise": "تبلیغات ویدیویی",
-
-	"salesCategoryProportion": "سهم دسته‌بندی‌های فروش",
-	"electronics": "الکترونیک",
-	"homeGoods": "کالاهای خانگی",
-	"apparelAccessories": "پوشاک و لوازم جانبی",
-	"foodBeverages": "خوراکی و نوشیدنی",
-	"beautySkincare": "زیبایی و مراقبت از پوست",
-	"allChannels": "همه کانال‌ها",
-	"online": "آنلاین",
-	"site": "در محل"
+	"kpi": {
+		"signFlows": { "title": "گردش امضا", "hint": "در انتظار امضای شما" },
+		"unregistered": { "title": "عملکردهای ثبت‌نشده", "hint": "نیازمند بررسی" },
+		"activeContracts": { "title": "قراردادهای فعال", "hint": "در حال اجرا" },
+		"expiring": { "title": "قراردادهای رو به انقضا", "hint": "در ۳ ماه آینده" }
+	},
+	"cards": {
+		"contracts": { "title": "مدیریت قراردادها", "description": "تعریف قرارداد جدید یا ویرایش قراردادهای موجود" },
+		"companies": { "title": "مدیریت شرکت‌ها", "description": "مدیریت نام شرکت‌ها و پروفایل شرکت‌ها" },
+		"performance": { "title": "عملکرد شرکت‌ها", "description": "ثبت و گزارش‌گیری عملکرد ماهانه" },
+		"predictions": { "title": "پیش‌بینی عملکرد شرکت‌ها", "description": "ثبت و ویرایش پیش‌بینی سالیانه هر سرویس" }
+	},
+	"badges": {
+		"pendingSign": "{{value}} در انتظار امضا",
+		"pendingBusinessApproval": "{{value}} در انتظار تایید تجاری",
+		"pendingContractsOfficeApproval": "{{value}} در انتظار تایید اداره قراردادها",
+		"companies": "{{value}} شرکت"
+	},
+	"links": {
+		"newContract": "ایجاد قرارداد",
+		"editContracts": "ویرایش قراردادها",
+		"contractsList": "لیست قراردادها",
+		"contractTemplates": "قالب‌های قرارداد",
+		"signFlows": "گردش‌های امضای قرارداد و الحاقیه",
+		"companies": "مدیریت شرکت‌ها",
+		"newPerformance": "ایجاد عملکرد جدید",
+		"editPerformances": "لیست عملکردها",
+		"performanceReport": "گزارش عملکردها",
+		"unregisteredPerformances": "عملکردهای ثبت‌نشده",
+		"smsGatewayTrafficReport": "گزارش ترافیک پیامک Gateway",
+		"smsGatewayOperatorInvoices": "فاکتور ارسالی اپراتورهای پیامک",
+		"newPrediction": "ایجاد پیش‌بینی",
+		"predictionsList": "لیست پیش‌بینی‌ها",
+		"predictionsSummaryReport": "گزارش تجمیعی عملکرد و پیش‌بینی"
+	},
+	"finance": {
+		"title": "خلاصه مالی ماه گذشته",
+		"description": "جمع درآمد، هزینه و سود واقعی سرویس‌های قابل‌مشاهده برای شما",
+		"income": "درآمد",
+		"expense": "هزینه",
+		"profit": "سود",
+		"predictionsTitle": "پیش‌بینی ماه گذشته",
+		"predictedIncome": "درآمد پیش‌بینی‌شده",
+		"predictedExpense": "هزینه پیش‌بینی‌شده",
+		"predictedProfit": "سود پیش‌بینی‌شده"
+	}
 }

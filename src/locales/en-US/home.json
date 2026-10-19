@@ -1,34 +1,48 @@
 {
-	"newVisits": "New Visits",
-	"messages": "Messages",
-	"purchases": "Purchases",
-	"shoppings": "Shoppings",
-
-	"sales": "Sales",
-	"thisWeek": "This Week",
-	"thisMonth": "This Month",
-	"thisYear": "This Year",
-
-	"monday": "Monday",
-	"tuesday": "Tuesday",
-	"wednesday": "Wednesday",
-	"thursday": "Thursday",
-	"friday": "Friday",
-	"saturday": "Saturday",
-	"sunday": "Sunday",
-	"views": "Views",
-	"directAccess": "Direct Access",
-	"emailMarketing": "Email Marketing",
-	"affiliateAdvertise": "Affiliate Advertise",
-	"videoAdvertise": "Video Advertise",
-
-	"salesCategoryProportion": "Sales Category Proportion",
-	"electronics": "Electronics",
-	"homeGoods": "Home Goods",
-	"apparelAccessories": "Apparel Accessories",
-	"foodBeverages": "Food Beverages",
-	"beautySkincare": "Beauty Skincare",
-	"allChannels": "All Channels",
-	"online": "Online",
-	"site": "Site"
+	"kpi": {
+		"signFlows": { "title": "Sign flows", "hint": "Waiting for your signature" },
+		"unregistered": { "title": "Unregistered performances", "hint": "Needs review" },
+		"activeContracts": { "title": "Active contracts", "hint": "In progress" },
+		"expiring": { "title": "Expiring contracts", "hint": "In the next 3 months" }
+	},
+	"cards": {
+		"contracts": { "title": "Contract management", "description": "Define a new contract or edit existing ones" },
+		"companies": { "title": "Company management", "description": "Manage company names and company profiles" },
+		"performance": { "title": "Company performance", "description": "Record and report monthly performance" },
+		"predictions": { "title": "Company performance forecast", "description": "Record and edit the yearly forecast of each service" }
+	},
+	"badges": {
+		"pendingSign": "{{value}} awaiting signature",
+		"pendingBusinessApproval": "{{value}} awaiting business approval",
+		"pendingContractsOfficeApproval": "{{value}} awaiting contracts office approval",
+		"companies": "{{value}} companies"
+	},
+	"links": {
+		"newContract": "New contract",
+		"editContracts": "Edit contracts",
+		"contractsList": "Contracts list",
+		"contractTemplates": "Contract templates",
+		"signFlows": "Contract and addendum sign flows",
+		"companies": "Company management",
+		"newPerformance": "New performance",
+		"editPerformances": "Performances list",
+		"performanceReport": "Performance reports",
+		"unregisteredPerformances": "Unregistered performances",
+		"smsGatewayTrafficReport": "SMS Gateway traffic report",
+		"smsGatewayOperatorInvoices": "SMS operator invoices",
+		"newPrediction": "New forecast",
+		"predictionsList": "Forecasts list",
+		"predictionsSummaryReport": "Performance and forecast summary report"
+	},
+	"finance": {
+		"title": "Last month's financial summary",
+		"description": "Total actual income, expense and profit of the services visible to you",
+		"income": "Income",
+		"expense": "Expense",
+		"profit": "Profit",
+		"predictionsTitle": "Last month's forecast",
+		"predictedIncome": "Forecast income",
+		"predictedExpense": "Forecast expense",
+		"predictedProfit": "Forecast profit"
+	}
 }

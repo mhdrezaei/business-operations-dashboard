@@ -7,7 +7,7 @@ import { useKpiTones } from "./kpi-tones";
 import { PhIcon } from "./PhIcon";
 
 /** Frame of the three KPI panels. */
-export const PANEL = "flex-1 min-w-0 flex flex-col bg-colorBgContainer border border-solid border-colorBorder rounded-[14px]";
+export const PANEL = "flex-1 min-w-0 flex flex-col bg-colorBgContainer border border-solid border-[var(--dash-border)] rounded-[14px]";
 
 interface PanelHeaderProps {
 	icon: PhIconName

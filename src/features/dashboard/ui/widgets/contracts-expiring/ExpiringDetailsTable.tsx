@@ -43,7 +43,7 @@ export function ExpiringDetailsTable({ items, serviceNames }: { items: ExpiringC
 										{item.rows.map(row => (
 											<span
 												key={row.id}
-												className="px-1.5 py-0.5 rounded-full bg-colorFillQuaternary border border-solid border-colorBorder text-[10.5px] text-colorTextSecondary"
+												className="px-1.5 py-0.5 rounded-full bg-colorFillQuaternary border border-solid border-[var(--dash-border)] text-[10.5px] text-colorTextSecondary"
 											>
 												{row.attributes?.location || row.attributes?.company_type || `#${row.id}`}
 											</span>

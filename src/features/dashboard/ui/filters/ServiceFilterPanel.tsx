@@ -30,6 +30,7 @@ import {
 	RiStackLine,
 	RiStore2Line,
 } from "../icons";
+import { useDashboardBorderStyle } from "../shell/dashboard-border";
 import { FILTER_ANCHOR_ID, floatingArea, GLASS_PANEL, PANEL_GAP, PANEL_WIDTH, placePanel, useFloatingTracking } from "./floating-panel";
 
 export { FILTER_ANCHOR_ID };
@@ -153,6 +154,7 @@ interface ServiceFilterPanelProps {
 
 export function ServiceFilterPanel({ services, value, onChange, none, onNoneChange }: ServiceFilterPanelProps) {
 	const { t } = useTranslation();
+	const borderStyle = useDashboardBorderStyle();
 	const groupRef = useRef<HTMLElement>(null);
 	const listRef = useRef<HTMLDivElement>(null);
 	const { left: sideLeft, top } = useSidePlacement(groupRef);
@@ -269,8 +271,8 @@ export function ServiceFilterPanel({ services, value, onChange, none, onNoneChan
 			ref={groupRef}
 			dir="rtl"
 			aria-label={t("dashboard.filters.services.ariaLabel")}
-			style={wide ? { top, left: sideLeft } : undefined}
-			className={`${wide ? "fixed z-30 w-[172px]" : "w-full"} p-1.5 flex flex-col ${GLASS_PANEL} ${open && wide ? "border-primary" : "border-colorBorder"}`}
+			style={wide ? { ...borderStyle, top, left: sideLeft } : undefined}
+			className={`${wide ? "fixed z-30 w-[172px]" : "w-full"} p-1.5 flex flex-col ${GLASS_PANEL} ${open && wide ? "border-primary" : "border-[var(--dash-border)]"}`}
 			{...hoverProps}
 		>
 			<div className="flex items-center">
@@ -289,7 +291,7 @@ export function ServiceFilterPanel({ services, value, onChange, none, onNoneChan
 							{options.map(o => (
 								<span
 									key={o.id}
-									className={`w-1.5 h-1.5 rounded-[2px] transition-colors duration-200 ${isOn(o.id) ? "bg-primaryText" : "bg-colorBorder"}`}
+									className={`w-1.5 h-1.5 rounded-[2px] transition-colors duration-200 ${isOn(o.id) ? "bg-primaryText" : "bg-[var(--dash-border)]"}`}
 								/>
 							))}
 						</span>

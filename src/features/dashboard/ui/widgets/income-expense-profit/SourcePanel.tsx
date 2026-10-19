@@ -168,7 +168,7 @@ export function SourcePanel({ source, name, serviceIds, range }: SourcePanelProp
 							transition={{ duration: 0.32, ease: "easeOut", delay: 0.06 + i * 0.07 }}
 							type="button"
 							onClick={() => setMetric(row.key)}
-							className="flex flex-col justify-center gap-2 flex-1 p-3 rounded-[10px] border border-solid border-colorBorder bg-colorFillQuaternary text-colorText text-start font-[inherit] cursor-pointer transition-colors hover:border-primary hover:bg-primaryBg"
+							className="flex flex-col justify-center gap-2 flex-1 p-3 rounded-[10px] border border-solid border-[var(--dash-border)] bg-colorFillQuaternary text-colorText text-start font-[inherit] cursor-pointer transition-colors hover:border-primary hover:bg-primaryBg"
 						>
 							<span className="flex items-center gap-2 w-full text-[12.5px] text-colorTextSecondary">
 								<span className="w-2 h-2 rounded-sm shrink-0" style={{ background: metricColor[row.key] }} />
@@ -203,7 +203,7 @@ export function SourcePanel({ source, name, serviceIds, range }: SourcePanelProp
 	return (
 		<section
 			aria-label={name}
-			className={`flex flex-col gap-3 min-w-0 p-3.5 rounded-[12px] border border-solid border-colorBorder text-colorText transition-opacity duration-200 ${loading && data ? "opacity-70" : ""}`}
+			className={`flex flex-col gap-3 min-w-0 p-3.5 rounded-[12px] border border-solid border-[var(--dash-border)] text-colorText transition-opacity duration-200 ${loading && data ? "opacity-70" : ""}`}
 		>
 			<h4 className="m-0 flex items-center gap-2 text-[13px] font-semibold text-colorText">
 				<span className={`w-1 h-4 rounded-sm ${source === "actual" ? "bg-primary" : "bg-colorTextTertiary"}`} />
