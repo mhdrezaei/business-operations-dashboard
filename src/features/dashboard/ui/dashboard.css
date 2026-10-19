@@ -1,0 +1,126 @@
+/* Motion of the management dashboard; every animation is disabled under prefers-reduced-motion. */
+
+@keyframes dashRiseIn {
+	from {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+@keyframes dashChipIn {
+	from {
+		opacity: 0;
+		transform: translateY(4px) scale(0.92);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+@keyframes dashFadeUp {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes dashFadeSlideUp {
+	from {
+		opacity: 0;
+		transform: translateY(12px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes dashTipIn {
+	from {
+		opacity: 0;
+		transform: translateY(4px) scale(0.97);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+@keyframes dashSvcPop {
+	0% {
+		transform: scale(0.78);
+	}
+	55% {
+		transform: scale(1.16);
+	}
+	100% {
+		transform: scale(1);
+	}
+}
+
+@keyframes dashSvcCheckIn {
+	from {
+		transform: scale(0) rotate(-40deg);
+		opacity: 0;
+	}
+	to {
+		transform: scale(1) rotate(0);
+		opacity: 1;
+	}
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	/* Page entry and table rows. */
+	.dash-rise-in {
+		animation: dashRiseIn 0.45s ease both;
+	}
+	/* Legend chips appearing on split/merge. */
+	.dash-chip-in {
+		animation: dashChipIn 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+	}
+	/* Modal contents and swapped views; `backwards` so a dimmed loading opacity is not locked. */
+	.dash-fade-up {
+		animation: dashFadeUp 350ms ease-out backwards;
+	}
+	.dash-fade-up-450 {
+		animation: dashFadeUp 450ms ease-out both;
+	}
+	/* KPI cards and table rows. */
+	.dash-fade-slide-up {
+		animation: dashFadeSlideUp 0.4s ease-out both;
+	}
+	.dash-chart-tip {
+		animation: dashTipIn 160ms ease-out;
+	}
+	.dash-svc-pop {
+		animation: dashSvcPop 380ms cubic-bezier(0.2, 0.8, 0.2, 1);
+	}
+	.dash-svc-check-in {
+		animation: dashSvcCheckIn 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
+	}
+}
+
+.dash-chart-tip-row:hover,
+.dash-chart-tip-row:focus-visible {
+	background: var(--oo-colorFillSecondary);
+	outline: none;
+}
+
+.dash-bars-clickable .recharts-bar-rectangle {
+	cursor: pointer;
+}
+
+/* Inner scroll areas: thin, theme-colored scrollbar. */
+.dash-scroll {
+	scrollbar-width: thin;
+	scrollbar-color: var(--oo-colorTextQuaternary) transparent;
+}

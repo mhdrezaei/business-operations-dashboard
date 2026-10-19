@@ -1,0 +1,385 @@
+{
+	"page": {
+		"title": "Negah Management Dashboard",
+		"subtitle": "Tables and charts of service performance, income and expense",
+		"chartsTitle": "Management dashboard charts",
+		"noServiceSelected": "No service is selected",
+		"widgetsError": "Failed to load the chart list",
+		"noWidgets": "There is no chart to show",
+		"sections": {
+			"kpi": "Key indicators",
+			"monthly": "Monthly performance trend",
+			"financeContracts": "Income, expense and contracts",
+			"registration": "Performance registration status",
+			"companyFinancials": "Company financials"
+		}
+	},
+	"common": {
+		"loading": "Loading data",
+		"widgetError": "Failed to load this chart",
+		"widgetUnavailable": "This chart is not available to you",
+		"noData": "No data to show",
+		"listError": "Failed to load the list",
+		"listDenied": "You do not have access to this list.",
+		"listWaiting": "Loading…",
+		"listEmpty": "Nothing found.",
+		"itemsCount": "{{value}} items",
+		"searchCompany": "Search company name…",
+		"rialUnit": "IRR",
+		"lastMonth": "Last month",
+		"month": "Month",
+		"year": "Year",
+		"from": "From",
+		"to": "To"
+	},
+	"format": {
+		"rial": "{{value}} IRR",
+		"billion": "{{value}}B",
+		"million": "{{value}}M",
+		"thousand": "{{value}}K",
+		"rangeTo": "{{start}} to {{end}}"
+	},
+	"months": {
+		"1": "Farvardin",
+		"2": "Ordibehesht",
+		"3": "Khordad",
+		"4": "Tir",
+		"5": "Mordad",
+		"6": "Shahrivar",
+		"7": "Mehr",
+		"8": "Aban",
+		"9": "Azar",
+		"10": "Dey",
+		"11": "Bahman",
+		"12": "Esfand"
+	},
+	"companyTypes": {
+		"sms": {
+			"CP": "CP companies",
+			"TELECOM": "Telecom companies",
+			"NON_TELECOM": "Non-telecom companies",
+			"KARASHAB": "Karashab"
+		},
+		"psp": {
+			"IPG": "IPG",
+			"IVR": "IVR"
+		},
+		"sales_agency": {
+			"SALES_REP_MANAGEMENT": "Sales rep management",
+			"OUTBOUND": "Outbound sales"
+		}
+	},
+	"modal": {
+		"fullscreen": "Fullscreen",
+		"exitFullscreen": "Exit fullscreen",
+		"close": "Close",
+		"closeEsc": "Close (Esc)"
+	},
+	"pager": {
+		"prev": "Previous",
+		"next": "Next",
+		"pageOf": "Page {{page}} of {{total}}",
+		"range": "Showing {{from}}–{{to}} of {{total}}"
+	},
+	"charts": {
+		"lineTipFoot": "Click for financial details (pick a service if several)",
+		"pickSeries": "Pick a service to see its details",
+		"grandTotal": "Total",
+		"contractsCount": "{{value}} contracts",
+		"count": "Count",
+		"openAll": "Show the list of all items"
+	},
+	"metrics": {
+		"income": "Income",
+		"expense": "Expense",
+		"profit": "Profit"
+	},
+	"ranges": {
+		"1m": "Last month",
+		"3m": "3 months",
+		"6m": "6 months",
+		"fiscal_ytd": "Fiscal year",
+		"fiscalYtdTitle": "From the start of the fiscal year to last month"
+	},
+	"approval": {
+		"kinds": {
+			"business": "Business approval",
+			"sign": "Contract office approval"
+		},
+		"stages": {
+			"pending_business_approval": "Pending business approval",
+			"pending_sign_approval": "Pending contract office approval",
+			"approved": "Approved"
+		},
+		"realSign": {
+			"not_started": "Not in signing flow",
+			"in_progress": "In signing flow",
+			"signed": "Signed"
+		},
+		"approved": "Approved",
+		"pending": "Pending"
+	},
+	"contract": {
+		"unofficial": "Unofficial",
+		"addendum": "Addendum",
+		"addendumNumber": "Addendum {{number}}",
+		"baseContract": "Base contract",
+		"contract": "Contract"
+	},
+	"columns": {
+		"company": "Company",
+		"service": "Service",
+		"companyType": "Company type",
+		"serviceCompanyType": "Service / company type",
+		"contractNumber": "Contract number",
+		"startDate": "Start",
+		"endDate": "End",
+		"count": "Count"
+	},
+	"widgets": {
+		"companyFinancials": {
+			"description": "Income, expense and profit of each company · {{range}}",
+			"descriptionDefault": "Income, expense and profit of each company by service",
+			"concentration": "Income and expense concentration",
+			"concentrationHint": "Share of each company in the total",
+			"other": "Other",
+			"shareOfTotal": "Share of the whole system",
+			"companiesCount": "{{n}} companies",
+			"searchAria": "Search company name",
+			"columnRial": "{{label}} (IRR)",
+			"total": "Total",
+			"footnote": "Percentage under each amount: share of the whole system",
+			"pagerInfo": "Page {{page}} of {{total}} · {{n}} companies"
+		},
+		"notRenewed": {
+			"title": "Companies without an active contract",
+			"titleService": "Companies without an active contract · {{service}}",
+			"description": "Companies that currently have neither an active nor a future contract.",
+			"unit": "companies",
+			"openAll": "Show the list of all companies",
+			"searchAria": "Search company name",
+			"empty": "Nothing found",
+			"companiesCount": "{{value}} companies",
+			"daysValue": "{{value}} days",
+			"cardError": "Failed to load companies without an active contract",
+			"listError": "Failed to load the company list",
+			"columns": {
+				"lastContractNumber": "Last contract number",
+				"endDate": "End date",
+				"sinceEnd": "Time since end",
+				"contractsCount": "Contracts count"
+			}
+		},
+		"expiring": {
+			"monthsOption": "{{value}} months",
+			"description": "{{total}} contracts in the next {{months}} months",
+			"viewTotal": "Total",
+			"viewByService": "By service",
+			"details": "View details",
+			"error": "Failed to load data",
+			"detailError": "Failed to load details",
+			"detailTitle": "Expiring contract details",
+			"detailTitleMonth": "Contracts expiring in {{month}}",
+			"detailTitleService": "Contracts expiring in {{month}} — {{service}}",
+			"empty": "No contracts to show",
+			"columns": {
+				"type": "Type",
+				"endDate": "End date"
+			}
+		},
+		"incomeExpense": {
+			"description": "Income, expense and profit {{range}} — click a section for details",
+			"rangePhrases": {
+				"1m": "of the last month",
+				"3m": "of the last 3 months",
+				"6m": "of the last 6 months",
+				"fiscal_ytd": "since the start of the fiscal year"
+			},
+			"sources": {
+				"actual": "Actual",
+				"prediction": "Prediction"
+			},
+			"back": "Back to overview",
+			"breakdownTitle": "{{metric}} details by service",
+			"profitMargin": "Profit margin {{value}}% of income",
+			"noIncome": "No income recorded in this period"
+		},
+		"approval": {
+			"description": "{{value}} contracts and addenda",
+			"noContract": "No contract",
+			"multiServiceTitle": "The grand-total list is unavailable with several selected services",
+			"short": {
+				"approved": "Approved",
+				"pendingSign": "Pending contract office"
+			},
+			"columns": {
+				"type": "Type",
+				"stage": "Stage"
+			},
+			"modal": {
+				"allOf": "All — {{kind}}",
+				"stateOf": "{{state}} — {{kind}}",
+				"service": "Service {{name}}",
+				"allServices": "All services"
+			}
+		},
+		"monthlyKpis": {
+			"description": "Performance indicators {{value}}",
+			"views": {
+				"services": "By service",
+				"monthly": "Monthly trend"
+			},
+			"vsPrevious": "vs {{value}}",
+			"yoy": "Year over year: {{value}}",
+			"yoyPeriod": "Year over year ({{period}}): {{value}}",
+			"expenseRatio": "Expense to income ratio: {{value}}",
+			"shareOfService": "Share of service",
+			"columns": {
+				"service": "Service",
+				"income": "Income",
+				"expense": "Expense",
+				"profit": "Profit",
+				"profitMargin": "Profit margin",
+				"incomeShare": "Income share",
+				"expenseShare": "Expense share",
+				"profitShare": "Profit share",
+				"growthIncome": "Income growth",
+				"growthExpense": "Expense growth",
+				"growthProfit": "Profit growth"
+			}
+		},
+		"monthlyPerformance": {
+			"titles": {
+				"income": "Monthly income",
+				"expense": "Monthly expense",
+				"profit": "Monthly profit"
+			},
+			"description": "Monthly performance trend of the visible services — click a month to see its financial details",
+			"loadError": "Failed to load data",
+			"rangeTotals": "Range total:",
+			"totalSeries": "{{name}} – total",
+			"legend": {
+				"split": "Split ({{n}})",
+				"merge": "Merge",
+				"splitTitle": "Show by company type",
+				"mergeTitle": "Back to the total view",
+				"show": "Show in chart",
+				"hide": "Hide from chart"
+			},
+			"drill": {
+				"title": "Financial details of",
+				"loadError": "Failed to load details"
+			}
+		},
+		"registeredRate": {
+			"title": "Registered performance rate, {{period}}",
+			"description": "Percent of companies with an active contract whose performance of the selected month is registered",
+			"empty": "No company with an active contract in this month",
+			"summary": "{{registered}} of {{total}} companies with an active contract in {{period}} have their performance registered",
+			"legendOk": "Target: 80% and above",
+			"legendWarn": "50% to 80%",
+			"noData": "No data",
+			"noDataServices": "No data: {{names}}",
+			"modal": {
+				"title": "Companies of service {{service}} — {{period}}",
+				"titleWithType": "Companies of service {{service}} ({{type}}) — {{period}}",
+				"count": "{{value}} companies",
+				"summary": "<b>{{registered}}</b> of <b>{{total}}</b> companies registered",
+				"status": "Status",
+				"tabs": {
+					"all": "All",
+					"registered": "Registered",
+					"unregistered": "Unregistered"
+				}
+			}
+		},
+		"unregistered": {
+			"description": "Number of company × month cells whose performance is not registered yet",
+			"totalUnit": "unregistered company × months",
+			"barTitle": "{{name}}: {{value}}",
+			"noDataServices": "{{n}} services without unregistered items: {{names}}",
+			"modal": {
+				"title": "Unregistered performances — service {{service}}",
+				"titleWithType": "Unregistered performances — service {{service}} ({{type}})",
+				"count": "{{months}} unregistered months in {{companies}} companies",
+				"monthsCount": "Months",
+				"unregisteredMonths": "Unregistered months",
+				"moreMonths": "+{{value}} more months"
+			}
+		}
+	},
+	"filters": {
+		"range": {
+			"title": "Time range",
+			"ariaLabel": "Time range filter",
+			"maxHint": "The longest selectable range is 12 months",
+			"monthsCount": "{{value}} months"
+		},
+		"services": {
+			"ariaLabel": "Service filter",
+			"all": "All services",
+			"none": "No service",
+			"clearAll": "None",
+			"selected": "{{selected}} of {{total}} services",
+			"pin": "Pin",
+			"unpin": "Unpin"
+		}
+	},
+	"kpi": {
+		"error": "Could not load the key indicators",
+		"financial": {
+			"title": "Financial performance",
+			"rangeGroup": "Financial performance period",
+			"rangeNouns": {
+				"1m": "last month",
+				"3m": "last 3 months",
+				"6m": "last 6 months",
+				"fiscal_ytd": "fiscal year to date"
+			},
+			"subjectWithPeriod": "{{noun}} ({{period}})",
+			"actual": "Actual",
+			"actualVsForecast": "Actual vs. forecast",
+			"cardLabel": "{{metric}}, {{range}}",
+			"noData": "No data recorded for this period",
+			"forecast": "Forecast",
+			"realization": "Achieved",
+			"vsForecast": "Vs. forecast",
+			"times": "{{value}}×",
+			"compareTo": "vs. {{label}}",
+			"previousFiscalYear": "previous fiscal year",
+			"previousPeriod": "previous period",
+			"previousYear": "previous year",
+			"deltaTitle": "{{label}}: {{amount}}",
+			"error": "Could not load the financial performance"
+		},
+		"cycle": {
+			"title": "Contract cycle",
+			"subtitle": "From business approval to signing in the system",
+			"approvedNotInSignFlow": "Approved, not in the signing flow",
+			"approvedNotInSignFlowNote": "Since Shahrivar 1405",
+			"signed": "Signed in the system",
+			"hotShare": "{{value}}% of contracts are at this stage",
+			"companies": "Companies",
+			"contracts": "Contracts",
+			"activeContracts": "Active contracts",
+			"listTitle": "{{label}} list"
+		},
+		"actions": {
+			"title": "Needs action",
+			"rate": "Last month's performance registration",
+			"rateSub": "{{registered}} of {{total}} companies with an active contract in {{month}} · target {{target}}%",
+			"noData": "No data",
+			"unregistered": "Unregistered performances",
+			"topService": "Most: {{name}}",
+			"expiring": "Expiring in the next 6 months",
+			"peak": "Peak: {{month}}"
+		},
+		"list": {
+			"status": "Status",
+			"contracts": "Contracts",
+			"activeCount": "active: {{value}}",
+			"contractEndDate": "Contract end date",
+			"expired": "(expired)"
+		}
+	}
+}

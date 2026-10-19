@@ -5,6 +5,7 @@
  */
 
 export const home = 1;
+export const dashboard = 5;
 export const contract = 10;
 export const performance = 15;
 export const prediction = 18;

@@ -1,6 +1,7 @@
 {
 	"menu": {
 		"home": "خانه",
+		"managementDashboard": "داشبورد مدیریتی",
 		"access": "دسترسی دمو",
 		"contractsManangement": "مدیریت قراردادها",
 		"newContract": "ایجاد قرارداد",

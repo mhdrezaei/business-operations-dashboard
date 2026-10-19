@@ -14,6 +14,7 @@ export { default as ServerErrorIcon } from "~icons/svg/server-error";
 export { default as SideNavigationIcon } from "~icons/svg/side-navigation";
 export { default as SidebarCompanyIcon } from "~icons/svg/sidebar-company";
 export { default as SidebarContractIcon } from "~icons/svg/sidebar-contract";
+export { default as SidebarDashboardIcon } from "~icons/svg/sidebar-dashboard";
 export { default as SidebarHomeIcon } from "~icons/svg/sidebar-home";
 export { default as SidebarManagementIcon } from "~icons/svg/sidebar-management";
 export { default as SidebarPerformanceIcon } from "~icons/svg/sidebar-performance";
