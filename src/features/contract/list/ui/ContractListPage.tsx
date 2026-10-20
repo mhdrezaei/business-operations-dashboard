@@ -196,10 +196,15 @@ export default function ContractListPage() {
 	const getRowCompanyType = (row: ContractListItemType) =>
 		pickCompanyTypeToken((row as any).traffic_company_type ?? (row as any).company_type);
 
+	const canViewRow = (row: ContractListItemType) =>
+		hasDomainPermissionByServiceId("contracts", "view", Number(row.service_id), getRowCompanyType(row));
 	const canUpdateRow = (row: ContractListItemType) =>
 		hasDomainPermissionByServiceId("contracts", "update", Number(row.service_id), getRowCompanyType(row));
 	const canDeleteRow = (row: ContractListItemType) =>
 		hasDomainPermissionByServiceId("contracts", "delete", Number(row.service_id), getRowCompanyType(row));
+	const canSignRow = (row: ContractListItemType) =>
+		hasDomainPermissionByServiceId("contracts", "sign", Number(row.service_id), getRowCompanyType(row))
+		|| hasDomainPermissionByServiceId("contracts", "update", Number(row.service_id), getRowCompanyType(row));
 
 	const handleDeleteRow = async (row: ContractListItemType, action?: ProCoreActionType<object>) => {
 		if (!canDeleteRow(row)) {
@@ -302,70 +307,72 @@ export default function ContractListPage() {
 						);
 					}
 
-					actions.push(
-						<BasicButton
-							key="preview"
-							type="link"
-							size="large"
-							title="پیش‌نمایش قرارداد"
-							icon={<TableActionEyeIcon />}
-							onClick={() => navigate(`/contracts/${record.id}/preview?service=${encodeURIComponent(service)}&serviceId=${record.service_id}&companyType=${encodeURIComponent(companyType)}`)}
-						/>,
-					);
+					if (canViewRow(record)) {
+						actions.push(
+							<BasicButton
+								key="preview"
+								type="link"
+								size="large"
+								title="پیش‌نمایش قرارداد"
+								icon={<TableActionEyeIcon />}
+								onClick={() => navigate(`/contracts/${record.id}/preview?service=${encodeURIComponent(service)}&serviceId=${record.service_id}&companyType=${encodeURIComponent(companyType)}`)}
+							/>,
+						);
 
-					actions.push(
-						<BasicButton
-							key="pdf"
-							type="link"
-							size="large"
-							title="دانلود PDF قرارداد"
-							icon={<TableActionDownloadIcon />}
-							loading={downloadingPdfId === record.id}
-							onClick={() => handleDownloadPdf(record)}
-						>
+						actions.push(
+							<BasicButton
+								key="pdf"
+								type="link"
+								size="large"
+								title="دانلود PDF قرارداد"
+								icon={<TableActionDownloadIcon />}
+								loading={downloadingPdfId === record.id}
+								onClick={() => handleDownloadPdf(record)}
+							/>,
+						);
+					}
 
-						</BasicButton>,
-					);
-
-					actions.push(
-						<BasicButton
-							key="print"
-							type="link"
-							size="large"
-							title="چاپ قرارداد"
-							icon={<PrinterOutlined />}
-							onClick={async () => {
-								try {
-									const status = await checkOfficialPdfStatus(resolveServicePath(record), record.id);
-									if (!status.can_upload && status.has_official_pdf) {
-										window.$message?.warning("نسخه رسمی این قرارداد قبلا آپلود شده و در حال گرفتن تایید می باشد");
+					if (canSignRow(record)) {
+						actions.push(
+							<BasicButton
+								key="print"
+								type="link"
+								size="large"
+								title="چاپ قرارداد"
+								icon={<PrinterOutlined />}
+								onClick={async () => {
+									try {
+										const status = await checkOfficialPdfStatus(resolveServicePath(record), record.id);
+										if (!status.can_upload && status.has_official_pdf) {
+											window.$message?.warning("نسخه رسمی این قرارداد قبلا آپلود شده و در حال گرفتن تایید می باشد");
+											return;
+										}
+									}
+									catch (error) {
+										console.error(error);
+										window.$message?.error("خطا در بررسی وضعیت نسخه رسمی");
 										return;
 									}
-								}
-								catch (error) {
-									console.error(error);
-									window.$message?.error("خطا در بررسی وضعیت نسخه رسمی");
-									return;
-								}
-								setPrintRecord(record);
-								setPrintAddendumGroupId(null);
-								setSignFlowLoading(true);
-								setSignFlowModalOpen(true);
-								try {
-									const data = await fetchSignFlowPreview(resolveServicePath(record), record.id);
-									setSignFlowData(data);
-								}
-								catch (err) {
-									console.error(err);
-									window.$message?.error("خطا در دریافت اطلاعات گردش کار");
-									setSignFlowModalOpen(false);
-								}
-								finally {
-									setSignFlowLoading(false);
-								}
-							}}
-						/>,
-					);
+									setPrintRecord(record);
+									setPrintAddendumGroupId(null);
+									setSignFlowLoading(true);
+									setSignFlowModalOpen(true);
+									try {
+										const data = await fetchSignFlowPreview(resolveServicePath(record), record.id);
+										setSignFlowData(data);
+									}
+									catch (err) {
+										console.error(err);
+										window.$message?.error("خطا در دریافت اطلاعات گردش کار");
+										setSignFlowModalOpen(false);
+									}
+									finally {
+										setSignFlowLoading(false);
+									}
+								}}
+							/>,
+						);
+					}
 
 					if (canDeleteRow(record)) {
 						actions.push(
@@ -404,7 +411,7 @@ export default function ContractListPage() {
 						<ContractAddendaExpandedRow
 							contract={record}
 							service={resolveServicePath(record)}
-							onPrint={async (addendumGroupId) => {
+							onPrint={canSignRow(record) ? async (addendumGroupId) => {
 								try {
 									const status = await checkOfficialPdfStatus(resolveServicePath(record), record.id, addendumGroupId);
 									if (!status.can_upload && status.has_official_pdf) {
@@ -433,7 +440,7 @@ export default function ContractListPage() {
 								finally {
 									setSignFlowLoading(false);
 								}
-							}}
+							} : undefined}
 						/>
 					),
 				}}

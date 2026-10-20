@@ -1,24 +1,18 @@
 import type {
 	AccessServiceType,
 	CompanyTypeOption,
-	DomainCrudPermission,
-	DomainCrudPermissionResponse,
+	CrudAction,
+	DomainPermission,
 	DomainPermissionAction,
+	DomainPermissionResponse,
 	TrafficCompanyType,
 	UserInfoType,
 } from "#src/api/user/types";
 import type { AppRouteRecordRaw } from "#src/router/types";
 
 const TRAFFIC_SERVICE_CODE = "traffic";
-const ALL_TRAFFIC_COMPANY_TYPES: CompanyTypeOption[] = [
-	{ key: "COLLOCATION", value: "COLLOCATION" },
-	{ key: "CP", value: "CP" },
-	{ key: "IXP", value: "IXP" },
-	{ key: "PREMIUM", value: "PREMIUM" },
-	{ key: "TCI", value: "TCI" },
-];
 
-export type AdminAccessTarget = "users" | "roles" | "policies" | "audit_logs";
+export type AdminAccessTarget = "users" | "roles" | "policies" | "audit_logs" | "service_admins";
 
 function normalizeServiceId(value: unknown): number | null {
 	const normalized = Number(value);
@@ -34,7 +28,7 @@ function normalizeTrafficCompanyType(value?: string | null): TrafficCompanyType 
 	return normalized || null;
 }
 
-function toDomainCrudPermission(permission?: DomainCrudPermissionResponse): DomainCrudPermission | undefined {
+function toDomainPermission(permission?: DomainPermissionResponse): DomainPermission | undefined {
 	if (!permission) {
 		return undefined;
 	}
@@ -46,16 +40,26 @@ function toDomainCrudPermission(permission?: DomainCrudPermissionResponse): Doma
 			create: actions.includes("create"),
 			update: actions.includes("update"),
 			delete: actions.includes("delete"),
+			sign: actions.includes("sign"),
+			business_approve: actions.includes("business_approve"),
 		};
 	}
 
-	return permission;
+	// Legacy object format — normalize to include all fields
+	return {
+		view: Boolean(permission.view),
+		create: Boolean(permission.create),
+		update: Boolean(permission.update),
+		delete: Boolean(permission.delete),
+		sign: Boolean(permission.sign),
+		business_approve: Boolean(permission.business_approve),
+	};
 }
 
 export function getDomainPermission(
-	permissions: Record<string, DomainCrudPermissionResponse> | undefined,
+	permissions: Record<string, DomainPermissionResponse> | undefined,
 	domain: string,
-): DomainCrudPermission | undefined {
+): DomainPermission | undefined {
 	const normalizedDomain = normalizeAccessKey(domain);
 	if (!normalizedDomain || !permissions) {
 		return undefined;
@@ -63,7 +67,7 @@ export function getDomainPermission(
 
 	for (const [domainKey, permission] of Object.entries(permissions)) {
 		if (normalizeAccessKey(domainKey) === normalizedDomain) {
-			return toDomainCrudPermission(permission);
+			return toDomainPermission(permission);
 		}
 	}
 	return undefined;
@@ -136,28 +140,20 @@ function getConfiguredCompanyTypePermissions(
 	return null;
 }
 
+/**
+ * Get permitted company types for a specific (service, domain, action) triple.
+ * Returns `null` if the service doesn't use company type restrictions for this domain/action
+ * (meaning all company types are allowed). Returns empty array if configured but no types match.
+ *
+ * Company type data is fully driven by the backend `company_type_permissions` field.
+ * Only relevant for services: traffic, sms, psp, telecom_frame, sales_agency.
+ */
 function getCompanyTypePermissions(
 	service: AccessServiceType,
 	domain: string,
 	action: DomainPermissionAction,
 ): CompanyTypeOption[] | null {
-	const configuredTypes = getConfiguredCompanyTypePermissions(service, domain, action);
-	if (configuredTypes) {
-		return configuredTypes;
-	}
-
-	if (["sales_agency", "sales-agency"].includes(normalizeAccessKey(service.code))) {
-		return [
-			{ key: "SALES_REP_MANAGEMENT", value: "مدیریت نمایندگان فروش" },
-			{ key: "OUTBOUND", value: "فروش Outbound" },
-		];
-	}
-
-	if (normalizeAccessKey(service.code) === TRAFFIC_SERVICE_CODE) {
-		return ALL_TRAFFIC_COMPANY_TYPES;
-	}
-
-	return null;
+	return getConfiguredCompanyTypePermissions(service, domain, action);
 }
 
 function hasCompanyTypePermission(
@@ -312,6 +308,7 @@ export function hasAdminAccess(user: Pick<
 		roles: "roles",
 		policies: "notification_rules",
 		audit_logs: "logs",
+		service_admins: "service_admins",
 	};
 	const section = sectionByTarget[target];
 	const normalizedSections = (user.admin_sections ?? []).map(normalizeAccessKey);
@@ -335,9 +332,50 @@ export function hasAdminAccess(user: Pick<
 			return Boolean(deputy?.can_manage_policies);
 		case "audit_logs":
 			return Boolean(user.is_staff || user.can_manage_users || user.can_manage_roles || deputy?.can_manage_policies);
+		case "service_admins":
+			return Boolean(user.is_staff);
 		default:
 			return false;
 	}
+}
+
+/**
+ * Check if the user has a specific CRUD action within an admin section.
+ * Unlike {@link hasAdminAccess} which checks for ANY access (route/menu visibility),
+ * this checks for a specific action (button-level control).
+ *
+ * @example
+ * hasAdminSectionAction(user, "users", "create") // Can this user create new users?
+ * hasAdminSectionAction(user, "roles", "update") // Can this user edit roles?
+ */
+export function hasAdminSectionAction(
+	user: Pick<UserInfoType, "role" | "admin_role" | "is_superuser" | "admin_section_actions">,
+	target: AdminAccessTarget,
+	action: CrudAction,
+): boolean {
+	const normalizedRole = normalizeAccessKey(user.role ?? user.admin_role);
+	const isSuperAdmin = user.is_superuser || normalizedRole === "superuser";
+	if (isSuperAdmin) {
+		return true;
+	}
+
+	const sectionByTarget: Record<AdminAccessTarget, string> = {
+		users: "users",
+		roles: "roles",
+		policies: "notification_rules",
+		audit_logs: "logs",
+		service_admins: "service_admins",
+	};
+	const section = sectionByTarget[target];
+	const sectionActions = user.admin_section_actions ?? {};
+
+	for (const [sectionKey, actions] of Object.entries(sectionActions)) {
+		if (normalizeAccessKey(sectionKey) === section && Array.isArray(actions)) {
+			return actions.map(a => normalizeAccessKey(a)).includes(action);
+		}
+	}
+
+	return false;
 }
 
 export function hasRouteAccess(route: AppRouteRecordRaw, user: UserInfoType): boolean {

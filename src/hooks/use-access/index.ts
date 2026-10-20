@@ -1,4 +1,4 @@
-import type { CompanyTypeOption, DomainPermissionAction } from "#src/api/user/types";
+import type { CompanyTypeOption, CrudAction, DomainPermissionAction } from "#src/api/user/types";
 import { useUserStore } from "#src/store";
 import { isString } from "#src/utils";
 import {
@@ -7,6 +7,7 @@ import {
 	getPermittedServiceIdsForDomain,
 	getPermittedTrafficCompanyTypesForDomain,
 	hasAdminAccess,
+	hasAdminSectionAction,
 	hasDomainPermissionForServices,
 	normalizeAccessKey,
 } from "#src/utils/access-policy";
@@ -151,6 +152,18 @@ export function useAccess() {
 
 	const isPortalViewer = Boolean(portalViewer?.assigned);
 
+	/**
+	 * @fa بررسی دسترسی به عمل خاص در بخش مدیریتی
+	 * @en Check if user has a specific CRUD action within an admin section
+	 * @example hasAdminAction("users", "create") // Can create users?
+	 */
+	const hasAdminAction = (
+		target: Parameters<typeof hasAdminSectionAction>[1],
+		action: CrudAction,
+	) => {
+		return hasAdminSectionAction(userAccessState, target, action);
+	};
+
 	return {
 		hasAccessByCodes,
 		hasAccessByRoles,
@@ -162,6 +175,7 @@ export function useAccess() {
 		getPermittedTrafficCompanyTypes,
 		hasCompanyCardAccess,
 		hasAdminPanelAccess,
+		hasAdminAction,
 		isPortalViewer,
 	};
 }

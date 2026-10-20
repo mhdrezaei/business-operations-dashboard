@@ -1,4 +1,4 @@
-// src/features/contract-templates/create/components/TemplateCreateForm.tsx
+import { useAccess } from "#src/hooks";
 import { RHFProText } from "#src/shared/ui/rhf-pro/fields/RHFProText";
 import { RHFSelect } from "#src/shared/ui/rhf-pro/fields/RHFSelect";
 import { theme } from "antd";
@@ -9,13 +9,23 @@ import { useServicesListQuery } from "../../queries/template-create.queries";
 export default function TemplateCreateForm() {
 	const { token } = theme.useToken();
 	const { control, setValue } = useFormContext();
+	const { getPermittedCompanyTypes, getPermittedServiceIds } = useAccess();
+
+	const templateId = useWatch({ control, name: "templateId" });
+	const permissionAction = templateId ? "update" : "create";
 
 	const { data: servicesData, isLoading: isLoadingServices } = useServicesListQuery();
 
+	const permittedServiceIds = useMemo(
+		() => new Set(getPermittedServiceIds("contract_template", permissionAction)),
+		[getPermittedServiceIds, permissionAction],
+	);
+
 	const rawServices = useMemo(() => {
 		const payload = (servicesData as any)?.data ?? servicesData;
-		return Array.isArray(payload?.results) ? payload.results : [];
-	}, [servicesData]);
+		const results = Array.isArray(payload?.results) ? payload.results : [];
+		return results.filter((service: any) => permittedServiceIds.has(Number(service.id)));
+	}, [servicesData, permittedServiceIds]);
 
 	const serviceOptions = useMemo(() => {
 		return rawServices.map((service: any) => ({
@@ -33,20 +43,13 @@ export default function TemplateCreateForm() {
 	const serviceStringValue = selectedService?.code || selectedService?.slug || selectedService?.key || selectedServiceId;
 
 	const companyTypeOptions = useMemo(() => {
-		if (!selectedService)
+		if (!selectedServiceId)
 			return [];
-		const viewPermissions = selectedService?.company_type_permissions?.company_profile?.view;
-		if (!Array.isArray(viewPermissions))
-			return [];
-
-		return viewPermissions.map((perm: Record<string, string>) => {
-			const key = Object.keys(perm)[0];
-			return {
-				label: perm[key],
-				value: key,
-			};
-		});
-	}, [selectedService]);
+		return getPermittedCompanyTypes("contract_template", permissionAction, selectedServiceId).map(opt => ({
+			label: opt.value,
+			value: opt.key,
+		}));
+	}, [selectedServiceId, permissionAction, getPermittedCompanyTypes]);
 
 	useEffect(() => {
 		setValue("company_type", undefined);
