@@ -401,6 +401,9 @@ export function hasRouteAccess(route: AppRouteRecordRaw, user: UserInfoType): bo
 			user.services,
 			accessDomain,
 			route.handle?.accessAction ?? "view",
+			{
+				serviceCode: route.handle?.serviceCode,
+			},
 		);
 	}
 

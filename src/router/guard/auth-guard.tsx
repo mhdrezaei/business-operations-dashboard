@@ -288,6 +288,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
 	const ignoreAccess = currentRoute?.handle?.ignoreAccess;
 	const accessDomain = currentRoute?.handle?.accessDomain;
 	const accessAction = currentRoute?.handle?.accessAction ?? "view";
+	const serviceCode = currentRoute?.handle?.serviceCode;
 	const adminAccess = currentRoute?.handle?.adminAccess;
 
 	/**
@@ -307,7 +308,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
 		);
 	}
 
-	if (accessDomain && !hasDomainPermissionForServices(userServices, accessDomain, accessAction)) {
+	if (accessDomain && !hasDomainPermissionForServices(userServices, accessDomain, accessAction, { serviceCode })) {
 		return (
 			<Navigate
 				to={exception403Path}

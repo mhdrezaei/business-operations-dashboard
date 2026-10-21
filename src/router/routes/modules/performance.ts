@@ -44,7 +44,7 @@ const routes: AppRouteRecordRaw[] = [
 					icon: createElement(EditOutlined),
 					title: $t("common.menu.editPerformance"),
 					accessDomain: "performances",
-					accessAction: "view",
+					accessAction: "update",
 				},
 			},
 			{
@@ -85,6 +85,7 @@ const routes: AppRouteRecordRaw[] = [
 					title: $t("common.menu.smsGatewayOperatorInvoices"),
 					accessDomain: "performances",
 					accessAction: "view",
+					serviceCode: "sms",
 				},
 			},
 			{
@@ -95,6 +96,7 @@ const routes: AppRouteRecordRaw[] = [
 					title: $t("common.menu.smsGatewayTrafficReport"),
 					accessDomain: "performances",
 					accessAction: "view",
+					serviceCode: "sms",
 				},
 			},
 		],

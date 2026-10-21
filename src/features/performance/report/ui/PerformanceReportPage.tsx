@@ -194,11 +194,7 @@ export function PerformanceReportPage() {
 	const [debouncedDefaultConversionRatio, setDebouncedDefaultConversionRatio] = useState<number | null>(null);
 	const [summary, setSummary] = useState<PerformanceReportSummary>(null);
 
-	const permittedViewIdsFromPerformances = getPermittedServiceIds("performances", "view");
-	const permittedViewIdsFromContracts = getPermittedServiceIds("contracts", "view");
-	const permittedViewServiceIdsList = permittedViewIdsFromPerformances.length > 0
-		? permittedViewIdsFromPerformances
-		: permittedViewIdsFromContracts;
+	const permittedViewServiceIdsList = getPermittedServiceIds("performances", "view");
 
 	const permittedViewServiceIds = useMemo(
 		() => new Set(permittedViewServiceIdsList),
