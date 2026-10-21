@@ -51,4 +51,28 @@ describe("access policy service ids", () => {
 			12,
 		)).toEqual([{ key: "AGGREGATOR", value: "تجمیع‌کننده" }]);
 	});
+
+	it("denies access when company types array is empty (explicitly forbidden)", () => {
+		const restrictedService = {
+			...serviceWithStringId,
+			company_type_permissions: {
+				company_profile: {
+					delete: [],
+				},
+			},
+		} as unknown as AccessServiceType;
+
+		expect(hasDomainPermissionForServices(
+			[restrictedService],
+			"company_profile",
+			"delete",
+			{ serviceId: 12, trafficCompanyType: "AGGREGATOR" },
+		)).toBe(false);
+
+		expect(hasDomainPermissionForServices(
+			[restrictedService],
+			"company_profile",
+			"delete",
+		)).toBe(false);
+	});
 });

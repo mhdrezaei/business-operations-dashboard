@@ -26,11 +26,23 @@ export function useAccess() {
 	const {
 		roles: userRoles,
 		services: userServices = [],
+		domains: userDomains = [],
 		company_visible_cards: companyVisibleCards = [],
 		portal_viewer: portalViewer,
 		...userAccessState
 	} = useUserStore();
 	const currentRoute = matches[matches.length - 1];
+
+	const isDomainAllowed = (domain?: string) => {
+		const normalizedDomain = normalizeAccessKey(domain);
+		if (!normalizedDomain) {
+			return false;
+		}
+		if (Array.isArray(userDomains) && userDomains.length > 0) {
+			return userDomains.map(normalizeAccessKey).includes(normalizedDomain);
+		}
+		return true;
+	};
 
 	/**
 	 * @fa بررسی دسترسی مسیر فعلی بر اساس کد مجوز
@@ -83,6 +95,9 @@ export function useAccess() {
 		serviceCode?: string,
 		trafficCompanyType?: string | null,
 	) => {
+		if (!isDomainAllowed(domain)) {
+			return false;
+		}
 		return hasDomainPermissionForServices(userServices, domain, action, {
 			serviceCode,
 			trafficCompanyType,
@@ -95,6 +110,9 @@ export function useAccess() {
 		serviceId?: number | null,
 		trafficCompanyType?: string | null,
 	) => {
+		if (!isDomainAllowed(domain)) {
+			return false;
+		}
 		if (serviceId == null) {
 			return hasDomainPermission(domain, action, undefined, trafficCompanyType);
 		}
@@ -108,6 +126,9 @@ export function useAccess() {
 		domain?: string,
 		action: DomainPermissionAction = "view",
 	) => {
+		if (!isDomainAllowed(domain)) {
+			return [];
+		}
 		return getPermittedServiceIdsForDomain(userServices, domain, action);
 	};
 
@@ -115,6 +136,9 @@ export function useAccess() {
 		domain?: string,
 		action: DomainPermissionAction = "view",
 	) => {
+		if (!isDomainAllowed(domain)) {
+			return [];
+		}
 		return getPermittedServiceCodesForDomain(userServices, domain, action);
 	};
 
@@ -123,6 +147,9 @@ export function useAccess() {
 		action: DomainPermissionAction = "view",
 		serviceId?: number | null,
 	) => {
+		if (!isDomainAllowed(domain)) {
+			return [];
+		}
 		return getPermittedTrafficCompanyTypesForDomain(userServices, domain, action, serviceId);
 	};
 
@@ -131,6 +158,9 @@ export function useAccess() {
 		action: DomainPermissionAction = "view",
 		serviceId?: number | null,
 	): CompanyTypeOption[] => {
+		if (!isDomainAllowed(domain)) {
+			return [];
+		}
 		return getPermittedCompanyTypesForDomain(userServices, domain, action, serviceId);
 	};
 

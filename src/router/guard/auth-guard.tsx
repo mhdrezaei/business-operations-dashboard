@@ -6,7 +6,7 @@ import { accessRoutes, whiteRouteNames } from "#src/router/routes";
 import { isSendRoutingRequest } from "#src/router/routes/config";
 import { generateRoutesByFrontend, generateRoutesFromBackend } from "#src/router/utils";
 import { useAccessStore, useAuthStore, usePreferencesStore, useUserStore } from "#src/store";
-import { hasAdminAccess, hasDomainPermissionForServices } from "#src/utils/access-policy";
+import { hasAdminAccess, hasDomainPermissionForServices, normalizeAccessKey } from "#src/utils/access-policy";
 
 import { useEffect } from "react";
 import { matchRoutes, Navigate, useLocation, useNavigate, useSearchParams } from "react-router";
@@ -308,13 +308,25 @@ export function AuthGuard({ children }: AuthGuardProps) {
 		);
 	}
 
-	if (accessDomain && !hasDomainPermissionForServices(userServices, accessDomain, accessAction, { serviceCode })) {
-		return (
-			<Navigate
-				to={exception403Path}
-				replace
-			/>
-		);
+	if (accessDomain) {
+		const normalizedDomain = normalizeAccessKey(accessDomain);
+		if (Array.isArray(userAccessState.domains) && userAccessState.domains.length > 0 && !userAccessState.domains.map(normalizeAccessKey).includes(normalizedDomain)) {
+			return (
+				<Navigate
+					to={exception403Path}
+					replace
+				/>
+			);
+		}
+
+		if (!hasDomainPermissionForServices(userServices, accessDomain, accessAction, { serviceCode })) {
+			return (
+				<Navigate
+					to={exception403Path}
+					replace
+				/>
+			);
+		}
 	}
 
 	const matches = matchRoutes(

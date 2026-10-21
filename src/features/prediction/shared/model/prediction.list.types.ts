@@ -15,6 +15,7 @@ export interface PredictionListRow {
 	serviceId: number
 	serviceCode: PredictionServiceCode
 	serviceLabel: string
+	companyType?: string | null
 	fiscalYear: number | null
 	preview: string
 	note: string

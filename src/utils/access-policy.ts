@@ -87,13 +87,30 @@ function getConfiguredCompanyTypePermissions(
 			}
 
 			const values = actionMap?.[action];
-			if (!Array.isArray(values)) {
+			if (values === undefined) {
 				return null;
+			}
+			if (!Array.isArray(values)) {
+				return [];
 			}
 
 			return values
 				.flatMap((item) => {
-					const [key, value] = Object.entries(item ?? {})[0] ?? [];
+					let key: string | undefined;
+					let value: string | undefined;
+
+					if (typeof item === "string") {
+						key = item;
+						value = item;
+					}
+					else if (item && typeof item === "object") {
+						const entry = Object.entries(item)[0];
+						if (entry) {
+							key = entry[0];
+							value = typeof entry[1] === "string" ? entry[1] : entry[0];
+						}
+					}
+
 					const normalizedKey = normalizeTrafficCompanyType(key);
 					if (!normalizedKey) {
 						return [];
@@ -118,8 +135,11 @@ function getConfiguredCompanyTypePermissions(
 		}
 
 		const values = actionMap?.[action];
-		if (!Array.isArray(values)) {
+		if (values === undefined) {
 			return null;
+		}
+		if (!Array.isArray(values)) {
+			return [];
 		}
 
 		return values
@@ -397,6 +417,11 @@ export function hasRouteAccess(route: AppRouteRecordRaw, user: UserInfoType): bo
 
 	const accessDomain = route.handle?.accessDomain;
 	if (accessDomain) {
+		const normalizedDomain = normalizeAccessKey(accessDomain);
+		if (Array.isArray(user.domains) && user.domains.length > 0 && !user.domains.map(normalizeAccessKey).includes(normalizedDomain)) {
+			return false;
+		}
+
 		return hasDomainPermissionForServices(
 			user.services,
 			accessDomain,

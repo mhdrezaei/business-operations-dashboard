@@ -262,6 +262,7 @@ export function trafficPredictionToListRow(
 		serviceId: context.serviceId,
 		serviceCode: context.serviceCode,
 		serviceLabel: context.serviceLabel,
+		companyType: getCompanyTypeToken(record.company_type),
 		fiscalYear: toNullableNumber(record.fiscal_year),
 		preview: `${i18next.t("prediction.list.preview.companyType")}: ${getCompanyTypeToken(record.company_type) ?? "-"} | ${i18next.t("prediction.list.preview.locations")}: ${formatPredictionNumber(record.locations?.length ?? 0)}`,
 		note: String(record.note ?? ""),
