@@ -100,51 +100,63 @@ function PersonRow({
 					</div>
 				</div>
 
-				<div className="company-person-row__actions">
-					<Button icon={<EditOutlined />} disabled={!canUpdate || busy} onClick={() => onEdit(person)}>ویرایش</Button>
-					<Popconfirm
-						title="این شخص حذف شود؟"
-						description="اطلاعات شخص پس از حذف قابل بازیابی نیست."
-						okText="حذف"
-						cancelText="انصراف"
-						okButtonProps={{ danger: true }}
-						onConfirm={() => onDelete(person)}
-					>
-						<Button danger icon={<DeleteOutlined />} disabled={!canDelete || busy}>حذف</Button>
-					</Popconfirm>
-				</div>
+				{(canUpdate || canDelete) ? (
+					<div className="company-person-row__actions">
+						{canUpdate ? (
+							<Button icon={<EditOutlined />} disabled={busy} onClick={() => onEdit(person)}>ویرایش</Button>
+						) : null}
+						{canDelete ? (
+							<Popconfirm
+								title="این شخص حذف شود؟"
+								description="اطلاعات شخص پس از حذف قابل بازیابی نیست."
+								okText="حذف"
+								cancelText="انصراف"
+								okButtonProps={{ danger: true }}
+								onConfirm={() => onDelete(person)}
+							>
+								<Button danger icon={<DeleteOutlined />} disabled={busy}>حذف</Button>
+							</Popconfirm>
+						) : null}
+					</div>
+				) : null}
 
-				{displayedOrder != null && onMove
+				{displayedOrder != null
 					? (
 						<div className="company-person-row__order">
-							<Tooltip title="برای جابه‌جایی بکشید">
-								<Button
-									className="company-person-row__handle"
-									icon={<HolderOutlined />}
-									disabled={!canUpdate || busy}
-									aria-label={`جابجایی ${person.full_name}`}
-									{...attributes}
-									{...listeners}
-								/>
-							</Tooltip>
+							{canUpdate && onMove ? (
+								<Tooltip title="برای جابه‌جایی بکشید">
+									<Button
+										className="company-person-row__handle"
+										icon={<HolderOutlined />}
+										disabled={busy}
+										aria-label={`جابجایی ${person.full_name}`}
+										{...attributes}
+										{...listeners}
+									/>
+								</Tooltip>
+							) : null}
 							<span className="company-person-row__priority" aria-label={`اولویت ${displayedOrder}`}>{displayedOrder}</span>
 							<span className="company-person-row__order-label">جایگاه در قرارداد</span>
-							<Button icon={<ArrowUpOutlined />} disabled={!canUpdate || busy || displayedOrder === 1} aria-label="انتقال به جایگاه بالاتر" onClick={() => onMove(person, displayedOrder - 1)} />
-							<Button icon={<ArrowDownOutlined />} disabled={!canUpdate || busy || displayedOrder === count} aria-label="انتقال به جایگاه پایین‌تر" onClick={() => onMove(person, displayedOrder + 1)} />
-							<Tooltip title="حذف از ترتیب قرارداد؛ اطلاعات شخص باقی می‌ماند">
-								<Button danger icon={<DeleteOutlined />} disabled={!canUpdate || busy} aria-label="حذف از قرارداد" onClick={() => onMove(person, 0)} />
-							</Tooltip>
+							{canUpdate && onMove ? (
+								<>
+									<Button icon={<ArrowUpOutlined />} disabled={busy || displayedOrder === 1} aria-label="انتقال به جایگاه بالاتر" onClick={() => onMove(person, displayedOrder - 1)} />
+									<Button icon={<ArrowDownOutlined />} disabled={busy || displayedOrder === count} aria-label="انتقال به جایگاه پایین‌تر" onClick={() => onMove(person, displayedOrder + 1)} />
+									<Tooltip title="حذف از ترتیب قرارداد؛ اطلاعات شخص باقی می‌ماند">
+										<Button danger icon={<DeleteOutlined />} disabled={busy} aria-label="حذف از قرارداد" onClick={() => onMove(person, 0)} />
+									</Tooltip>
+								</>
+							) : null}
 						</div>
 					)
-					: onAddToContract
+					: (canUpdate && onAddToContract
 						? (
 							<div className="company-person-row__add">
-								<Button type="dashed" icon={<PlusOutlined />} disabled={!canUpdate || busy} loading={busy} onClick={() => onAddToContract(person)}>
+								<Button type="dashed" icon={<PlusOutlined />} disabled={busy} loading={busy} onClick={() => onAddToContract(person)}>
 									افزودن به قرارداد
 								</Button>
 							</div>
 						)
-						: null}
+						: null)}
 			</div>
 		</article>
 	);
@@ -188,7 +200,7 @@ function RoleGroup({ label, people, totalCount, onMove, ...rowProps }: RoleGroup
 				<SortableContext items={people.map(person => person.id)} strategy={verticalListSortingStrategy}>
 					<div className="company-people-role__list">
 						{people.map(person => (
-							<PersonRow key={person.id} {...rowProps} person={person} order={person.contract_order ?? undefined} count={totalCount} draggable onMove={onMove} />
+							<PersonRow key={person.id} {...rowProps} person={person} order={person.contract_order ?? undefined} count={totalCount} draggable={rowProps.canUpdate} onMove={onMove} />
 						))}
 					</div>
 				</SortableContext>
@@ -239,6 +251,7 @@ function getRoleClassName(role?: CompanyPersonRole) {
 export default function CompanyPeoplePanel() {
 	const companyId = useWatch<CompanyProfileFormValues, "companyId">({ name: "companyId" });
 	const serviceId = useWatch<CompanyProfileFormValues, "serviceId">({ name: "serviceId" });
+	const companyType = useWatch<CompanyProfileFormValues, "companyType">({ name: "companyType" });
 	const { hasDomainPermissionByServiceId } = useAccess();
 	const [optimisticPeople, setOptimisticPeople] = useState<CompanyPersonDto[] | null>(null);
 	const [role, setRole] = useState<CompanyPersonRole | undefined>();
@@ -248,9 +261,9 @@ export default function CompanyPeoplePanel() {
 	const [busyId, setBusyId] = useState<number | null>(null);
 	const peopleQuery = useQuery(companyPeopleListQuery(companyId ? { company: companyId } : null));
 
-	const canCreate = hasDomainPermissionByServiceId("company_profile", "create", serviceId);
-	const canUpdate = hasDomainPermissionByServiceId("company_profile", "update", serviceId);
-	const canDelete = hasDomainPermissionByServiceId("company_profile", "delete", serviceId);
+	const canCreate = hasDomainPermissionByServiceId("company_profile", "create", serviceId, companyType);
+	const canUpdate = hasDomainPermissionByServiceId("company_profile", "update", serviceId, companyType);
+	const canDelete = hasDomainPermissionByServiceId("company_profile", "delete", serviceId, companyType);
 
 	const people = optimisticPeople ?? peopleQuery.data?.results ?? [];
 
@@ -398,11 +411,11 @@ export default function CompanyPeoplePanel() {
 					tone="primary"
 					collapsible={false}
 					className="company-profile-section company-profile-section--general company-people-toolbar"
-					extra={(
-						<Button type="primary" icon={<PlusOutlined />} disabled={!canCreate || !serviceId} onClick={addPerson}>
+					extra={canCreate && serviceId ? (
+						<Button type="primary" icon={<PlusOutlined />} onClick={addPerson}>
 							افزودن شخص
 						</Button>
-					)}
+					) : null}
 				>
 					<div className="company-people-filters">
 						<Select allowClear placeholder="همه نقش‌ها" options={COMPANY_PERSON_ROLE_OPTIONS} value={role} onChange={setRole} />

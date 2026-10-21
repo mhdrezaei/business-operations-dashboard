@@ -135,14 +135,15 @@ export default function CompanyCreateModal({
 					/>
 
 					<div className="flex justify-between mt-4">
-						<Button
-							type="primary"
-							loading={saving}
-							disabled={!!disabled}
-							onClick={methods.handleSubmit(v => submit(v))}
-						>
-							ثبت شرکت
-						</Button>
+						{!disabled ? (
+							<Button
+								type="primary"
+								loading={saving}
+								onClick={methods.handleSubmit(v => submit(v))}
+							>
+								ثبت شرکت
+							</Button>
+						) : null}
 
 						<Button
 							onClick={() => onClose()}
