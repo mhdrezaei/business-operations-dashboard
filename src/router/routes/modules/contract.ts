@@ -23,8 +23,6 @@ const routes: AppRouteRecordRaw[] = [
 			icon: createElement(SidebarContractIcon),
 			title: $t("common.menu.contractsManangement"),
 			order: contract,
-			accessDomain: "contracts",
-			accessAction: "view",
 		},
 		children: [
 			{
@@ -114,7 +112,7 @@ const routes: AppRouteRecordRaw[] = [
 				handle: {
 					icon: createElement(SnippetsOutlined),
 					title: $t("common.menu.contractTemplate"),
-					accessDomain: "contracts",
+					accessDomain: "contract_template",
 					accessAction: "view",
 					keepAlive: false,
 					// roles: ["admin"],

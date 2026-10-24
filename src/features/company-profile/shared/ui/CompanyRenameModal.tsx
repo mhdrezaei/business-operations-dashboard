@@ -1,5 +1,6 @@
 import type { Resolver } from "react-hook-form";
 
+import { useAccess } from "#src/hooks";
 import { RHFProText } from "#src/shared/ui/rhf-pro";
 import { request } from "#src/utils/request/";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -45,8 +46,12 @@ export default function CompanyRenameModal({
 }: Props) {
 	const qc = useQueryClient();
 	const { modal } = App.useApp();
+	const { hasDomainPermissionByServiceId } = useAccess();
 	const [saving, setSaving] = useState(false);
 	const [deleting, setDeleting] = useState(false);
+
+	const canUpdateCompany = hasDomainPermissionByServiceId("company_profile", "update", serviceId, companyType);
+	const canDeleteCompany = hasDomainPermissionByServiceId("company_profile", "delete", serviceId, companyType);
 
 	const defaultValues = useMemo<RenameCompanyFormValues>(() => ({
 		name: companyName ?? "",
@@ -164,23 +169,27 @@ export default function CompanyRenameModal({
 
 					<div className="flex justify-between mt-4">
 						<div className="flex gap-3">
-							<Button
-								type="primary"
-								loading={saving}
-								disabled={isDisabled || deleting}
-								onClick={methods.handleSubmit(v => submit(v))}
-							>
-								اعمال تغییرات
-							</Button>
+							{canUpdateCompany ? (
+								<Button
+									type="primary"
+									loading={saving}
+									disabled={isDisabled || deleting}
+									onClick={methods.handleSubmit(v => submit(v))}
+								>
+									اعمال تغییرات
+								</Button>
+							) : null}
 
-							<Button
-								danger
-								loading={deleting}
-								disabled={isDisabled || saving}
-								onClick={confirmDelete}
-							>
-								حذف شرکت
-							</Button>
+							{canDeleteCompany ? (
+								<Button
+									danger
+									loading={deleting}
+									disabled={isDisabled || saving}
+									onClick={confirmDelete}
+								>
+									حذف شرکت
+								</Button>
+							) : null}
 						</div>
 
 						<Button onClick={onClose} disabled={saving || deleting}>

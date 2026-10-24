@@ -1,6 +1,7 @@
 import type { ServiceDto } from "#src/api/common/common.types";
 import type { CSSProperties } from "react";
 import type { SmsGatewayCustomerDto } from "../model/sms-gateway.types";
+import { useAccess } from "#src/hooks";
 import { SectionCard } from "#src/shared/ui/section-card";
 import {
 	CheckCircleFilled,
@@ -68,6 +69,10 @@ export default function SmsGatewayMappingPanel({ services, initialServiceId }: S
 	const effectiveCompanyId = selectedCustomer?.is_mapped ? selectedCustomer.mapped_company_id : companyId;
 	const companiesQuery = useQuery(smsGatewayCompaniesQuery(effectiveServiceId));
 
+	const { hasDomainPermissionByServiceId } = useAccess();
+	const canCreateMapping = hasDomainPermissionByServiceId("company_profile", "create", effectiveServiceId);
+	const canDeleteMapping = hasDomainPermissionByServiceId("company_profile", "delete", effectiveServiceId);
+
 	const smsServices = useMemo(
 		() => services.filter(service => SMS_SERVICE_CODES.has(normalizeServiceCode(service.code))),
 		[services],
@@ -128,6 +133,11 @@ export default function SmsGatewayMappingPanel({ services, initialServiceId }: S
 		if (!selectedCustomerId || !companyId || selectedCustomer?.is_mapped)
 			return;
 
+		if (!canCreateMapping) {
+			window.$message?.warning("دسترسی ثبت مپینگ را ندارید.");
+			return;
+		}
+
 		createMutation.mutate({ company: companyId, gateway_customer_id: selectedCustomerId });
 	}
 
@@ -140,6 +150,11 @@ export default function SmsGatewayMappingPanel({ services, initialServiceId }: S
 		const mapping = selectedCustomerMapping;
 		if (!mapping) {
 			window.$message?.error("شناسه مپینگ پیدا نشد؛ فهرست را به‌روزرسانی کنید");
+			return;
+		}
+
+		if (!canDeleteMapping) {
+			window.$message?.warning("دسترسی حذف مپینگ را ندارید.");
 			return;
 		}
 
@@ -251,7 +266,7 @@ export default function SmsGatewayMappingPanel({ services, initialServiceId }: S
 
 								<div className="sms-gateway__actions">
 									{selectedCustomer.is_mapped
-										? (
+										? (canDeleteMapping ? (
 											<Button
 												danger
 												icon={<DeleteOutlined />}
@@ -261,8 +276,8 @@ export default function SmsGatewayMappingPanel({ services, initialServiceId }: S
 											>
 												حذف مپینگ
 											</Button>
-										)
-										: (
+										) : null)
+										: (canCreateMapping ? (
 											<Button
 												type="primary"
 												icon={<LinkOutlined />}
@@ -272,7 +287,7 @@ export default function SmsGatewayMappingPanel({ services, initialServiceId }: S
 											>
 												ثبت مپینگ
 											</Button>
-										)}
+										) : null)}
 									<Button type="text" onClick={() => setSelectedCustomerId(null)}>انصراف</Button>
 								</div>
 							</div>

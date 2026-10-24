@@ -8,9 +8,8 @@ import { Alert } from "antd";
 import { useEffect, useMemo, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { getCompanyTypeToken } from "../../../model/company-type.helpers";
 import { buildFiscalYearOptions, isAvailablePredictionCompanyType, isSupportedPredictionService } from "../../../model/prediction.helpers";
-import { predictionCompaniesByServiceQuery, predictionServicesQuery } from "../../../queries/prediction.queries";
+import { predictionServicesQuery } from "../../../queries/prediction.queries";
 import { predictionServiceRegistry } from "../../../services/registry";
 
 interface Props {
@@ -35,28 +34,25 @@ export function FixedStartSection({
 	const fiscalYear = useWatch({ control, name: "fiscalYear" });
 	const companyType = useWatch({ control, name: "serviceFields.companyType" as any });
 	const services = useQuery(predictionServicesQuery());
-	const companies = useQuery(predictionCompaniesByServiceQuery(serviceId));
 	const module = serviceCode ? predictionServiceRegistry[serviceCode] : undefined;
 	const requiresCompanyType = serviceCode === "sms" || serviceCode === "psp" || serviceCode === "traffic";
 	const permissionAction = disabled ? "update" : "create";
 
 	const permittedServiceIds = getPermittedServiceIds("predictions", permissionAction);
+	const permittedServiceIdSet = useMemo(
+		() => new Set(permittedServiceIds),
+		[permittedServiceIds.join(",")],
+	);
 	const serviceOptions = useMemo(() => {
 		return (services.data?.results ?? [])
 			.filter(service => isSupportedPredictionService(service.code))
-			.filter((service) => {
-				if (permittedServiceIds.length > 0)
-					return permittedServiceIds.includes(service.id);
-				return permissionAction === "update"
-					? (service.permissions?.update ?? true)
-					: (service.permissions?.create ?? true);
-			})
+			.filter(service => permittedServiceIdSet.has(Number(service.id)))
 			.map(service => ({
 				label: service.name,
 				value: service.id,
 				code: String(service.code ?? "").trim().toLowerCase(),
 			}));
-	}, [permissionAction, services.data, permittedServiceIds.join(",")]);
+	}, [permittedServiceIdSet, services.data]);
 
 	const shouldLoadYears = !requiresCompanyType || !!companyType;
 	const yearRecordsQuery = useQuery({
@@ -114,26 +110,26 @@ export function FixedStartSection({
 			if (!requiresCompanyType || !serviceId)
 				return [];
 
-			const permissionOptions = getPermittedCompanyTypes("predictions", permissionAction, serviceId)
+			return getPermittedCompanyTypes("predictions", permissionAction, serviceId)
 				.filter(item => isAvailablePredictionCompanyType(serviceCode, item.key))
 				.map(item => ({ label: item.value, value: item.key }));
-			if (permissionOptions.length > 0)
-				return permissionOptions;
-
-			return Array.from(
-				new Set(
-					(companies.data?.results ?? [])
-						.map(company => getCompanyTypeToken(company.company_type))
-						.filter((type): type is string => Boolean(type))
-						.filter(type => isAvailablePredictionCompanyType(serviceCode, type)),
-				),
-			).map(type => ({
-				label: type,
-				value: type,
-			}));
 		},
-		[companies.data, permissionAction, requiresCompanyType, serviceCode, serviceId, getPermittedCompanyTypes],
+		[getPermittedCompanyTypes, permissionAction, requiresCompanyType, serviceCode, serviceId],
 	);
+
+	useEffect(() => {
+		if (serviceId && !services.isLoading && !permittedServiceIdSet.has(serviceId)) {
+			setValue("serviceId", null, { shouldDirty: true, shouldValidate: false });
+			setValue("serviceCode", null, { shouldDirty: false, shouldValidate: false });
+			setValue("recordId", null, { shouldDirty: false, shouldValidate: false });
+		}
+	}, [permittedServiceIdSet, serviceId, services.isLoading, setValue]);
+
+	useEffect(() => {
+		if (requiresCompanyType && companyType && companyTypeOptions.length > 0 && !companyTypeOptions.some(opt => opt.value === companyType)) {
+			setValue("serviceFields.companyType" as any, null, { shouldDirty: true, shouldValidate: false });
+		}
+	}, [companyType, companyTypeOptions, requiresCompanyType, setValue]);
 	const companyTypeLabel = serviceCode === "traffic"
 		? t("prediction.labels.trafficCompanyType")
 		: t("prediction.labels.companyType", { defaultValue: "نوع شرکت" });

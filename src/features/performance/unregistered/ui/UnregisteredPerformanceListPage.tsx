@@ -89,11 +89,7 @@ export default function UnregisteredPerformanceList() {
 		setSelectedServiceCode(serviceCode);
 	}, []);
 
-	const permittedViewIdsFromPerformances = getPermittedServiceIds("performances", "view");
-	const permittedViewIdsFromContracts = getPermittedServiceIds("contracts", "view");
-	const permittedViewServiceIdsList = permittedViewIdsFromPerformances.length > 0
-		? permittedViewIdsFromPerformances
-		: permittedViewIdsFromContracts;
+	const permittedViewServiceIdsList = getPermittedServiceIds("performances", "view");
 
 	const permittedViewServiceIds = useMemo(
 		() => new Set(permittedViewServiceIdsList),
@@ -210,7 +206,7 @@ export default function UnregisteredPerformanceList() {
 	const canCreatePerformance = useMemo(() => {
 		if (!selectedServiceId)
 			return false;
-		return hasDomainPermissionByServiceId("performances", "create", selectedServiceId) || hasDomainPermissionByServiceId("contracts", "create", selectedServiceId);
+		return hasDomainPermissionByServiceId("performances", "create", selectedServiceId);
 	}, [selectedServiceId, hasDomainPermissionByServiceId]);
 
 	const openPerformanceRegistration = useCallback((record: PerformanceListRow) => {
@@ -290,10 +286,7 @@ export default function UnregisteredPerformanceList() {
 				render: (_, record, __) => {
 					const actions: React.ReactNode[] = [];
 					const rowServiceId = Number((record as any).service ?? (record as any).service_id);
-					const canCreateRow = Number.isInteger(rowServiceId) && (
-						hasDomainPermissionByServiceId("performances", "create", rowServiceId, normalizePerformanceRecord(record).companyType)
-						|| hasDomainPermissionByServiceId("contracts", "create", rowServiceId, normalizePerformanceRecord(record).companyType)
-					);
+					const canCreateRow = Number.isInteger(rowServiceId) && hasDomainPermissionByServiceId("performances", "create", rowServiceId, normalizePerformanceRecord(record).companyType);
 
 					if (canCreateRow) {
 						actions.push(

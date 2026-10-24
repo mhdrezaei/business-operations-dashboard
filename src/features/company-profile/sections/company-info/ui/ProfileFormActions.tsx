@@ -47,36 +47,44 @@ export function ProfileFormActions({
 		});
 	}
 
+	if (submitDisabled && (!hasProfile || deleteDisabled)) {
+		return null;
+	}
+
 	return (
 		<FormActionBar
 			primaryActions={(
 				<>
-					{hasProfile && (
-						<>
-							<Button
-								danger
-								loading={isDeleting}
-								disabled={deleteDisabled || isSubmitting}
-								onClick={confirmDelete}
-							>
-								حذف پروفایل
-							</Button>
-							<Button
-								disabled={submitDisabled || isSubmitting || isDeleting || !isDirty}
-								onClick={onReset}
-							>
-								بازنشانی تغییرات
-							</Button>
-						</>
-					)}
-					<Button
-						type="primary"
-						loading={isSubmitting}
-						disabled={submitDisabled || isDeleting || !isDirty || !isValid}
-						onClick={onSubmit}
-					>
-						ثبت
-					</Button>
+					{hasProfile && !deleteDisabled ? (
+						<Button
+							danger
+							loading={isDeleting}
+							disabled={isSubmitting}
+							onClick={confirmDelete}
+						>
+							حذف پروفایل
+						</Button>
+					) : null}
+
+					{hasProfile && !submitDisabled ? (
+						<Button
+							disabled={isSubmitting || isDeleting || !isDirty}
+							onClick={onReset}
+						>
+							بازنشانی تغییرات
+						</Button>
+					) : null}
+
+					{!submitDisabled ? (
+						<Button
+							type="primary"
+							loading={isSubmitting}
+							disabled={isDeleting || !isDirty || !isValid}
+							onClick={onSubmit}
+						>
+							ثبت
+						</Button>
+					) : null}
 				</>
 			)}
 		/>

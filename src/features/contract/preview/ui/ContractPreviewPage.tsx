@@ -10,7 +10,7 @@ import { ClockCircleOutlined, UserOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Card, Empty, Spin, Tag } from "antd";
 import { useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router";
+import { Navigate, useNavigate, useParams, useSearchParams } from "react-router";
 
 const SERVICES = new Set<ContractServicePath>([
 	"openapi",
@@ -61,6 +61,7 @@ export default function ContractPreviewPage() {
 	const isSigned = contract.is_signed === true;
 	const isBusinessApproved = contract.is_business_approved === true;
 	const canUpdate = serviceId != null && hasDomainPermissionByServiceId("contracts", "update", serviceId, companyType);
+	const canView = serviceId != null && hasDomainPermissionByServiceId("contracts", "view", serviceId, companyType);
 	const latestHistory = [...(approvalHistory.data?.sign_approval_history ?? [])]
 		.sort((a, b) => new Date(b.changed_at).getTime() - new Date(a.changed_at).getTime())[0];
 	const latestField = latestHistory?.field_name ?? (isSigned ? "is_signed" : "is_business_approved");

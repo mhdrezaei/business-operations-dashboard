@@ -1,4 +1,5 @@
 import type { ActionType, ProColumns, ProCoreActionType, ProFormInstance } from "@ant-design/pro-components";
+import type { CompanyProfileFormValues } from "../../../model/company-profile.form.types";
 import type { CompanyDocumentDto } from "../model/company-documents.types";
 
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
@@ -8,6 +9,7 @@ import { PlusCircleOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Popconfirm, Tag } from "antd";
 import React, { useMemo, useRef, useState } from "react";
+import { useWatch } from "react-hook-form";
 
 import {
 	createCompanyDocument,
@@ -45,10 +47,11 @@ export default function CompanyDocumentsTable({ serviceId, companyId }: Props) {
 	const [selectedId, setSelectedId] = useState<number | null>(null);
 	const [saving, setSaving] = useState(false);
 
+	const companyType = useWatch<CompanyProfileFormValues, "companyType">({ name: "companyType" });
 	const canAccessDocumentsCard = hasCompanyCardAccess("company_documents");
-	const canCreateDocument = hasDomainPermissionByServiceId("company_profile", "create", serviceId);
-	const canUpdateDocument = hasDomainPermissionByServiceId("company_profile", "update", serviceId);
-	const canDeleteDocument = hasDomainPermissionByServiceId("company_profile", "delete", serviceId);
+	const canCreateDocument = hasDomainPermissionByServiceId("company_profile", "create", serviceId, companyType);
+	const canUpdateDocument = hasDomainPermissionByServiceId("company_profile", "update", serviceId, companyType);
+	const canDeleteDocument = hasDomainPermissionByServiceId("company_profile", "delete", serviceId, companyType);
 
 	const detail = useQuery(companyDocumentDetailQuery(selectedId));
 
@@ -185,48 +188,52 @@ export default function CompanyDocumentsTable({ serviceId, companyId }: Props) {
 				fieldProps: { allowClear: true, placeholder: "انتخاب کنید" },
 			},
 
-			{
-				title: "عملیات",
-				valueType: "option",
-				key: "option",
-				width: 140,
-				fixed: "right",
-				render: (_, record, __, action) => {
-					const actions = [] as React.ReactNode[];
-					if (canUpdateDocument) {
-						actions.push(
-							<BasicButton
-								key="edit"
-								type="link"
-								size="small"
-								icon={<TableActionEditIcon />}
-								onClick={() => {
-									setSelectedId(record.id);
-									setOpenModal(true);
-								}}
-							>
-								ویرایش
-							</BasicButton>,
-						);
-					}
-					if (canDeleteDocument) {
-						actions.push(
-							<Popconfirm
-								key="delete"
-								title="حذف شود؟"
-								okText="بله"
-								cancelText="خیر"
-								onConfirm={() => handleDeleteRow(record, action)}
-							>
-								<BasicButton type="link" size="small" icon={<TableActionTrashIcon />}>
-									حذف
-								</BasicButton>
-							</Popconfirm>,
-						);
-					}
-					return actions;
-				},
-			},
+			...(canUpdateDocument || canDeleteDocument
+				? [
+					{
+						title: "عملیات",
+						valueType: "option" as const,
+						key: "option",
+						width: 140,
+						fixed: "right" as const,
+						render: (_: unknown, record: CompanyDocumentDto, __: unknown, action: ProCoreActionType<object> | undefined) => {
+							const actions = [] as React.ReactNode[];
+							if (canUpdateDocument) {
+								actions.push(
+									<BasicButton
+										key="edit"
+										type="link"
+										size="small"
+										icon={<TableActionEditIcon />}
+										onClick={() => {
+											setSelectedId(record.id);
+											setOpenModal(true);
+										}}
+									>
+										ویرایش
+									</BasicButton>,
+								);
+							}
+							if (canDeleteDocument) {
+								actions.push(
+									<Popconfirm
+										key="delete"
+										title="حذف شود؟"
+										okText="بله"
+										cancelText="خیر"
+										onConfirm={() => handleDeleteRow(record, action)}
+									>
+										<BasicButton type="link" size="small" icon={<TableActionTrashIcon />}>
+											حذف
+										</BasicButton>
+									</Popconfirm>,
+								);
+							}
+							return actions;
+						},
+					},
+				]
+				: []),
 		];
 	}, [canDeleteDocument, canUpdateDocument, docTypeValueEnum, orderingValueEnum, verificationValueEnum]);
 

@@ -4,6 +4,7 @@ import type { SignFlowRule } from "../model/sign-flow-rules.types";
 import { BasicContent } from "#src/components";
 import { fetchAdminRolesList } from "#src/features/audit/admin-roles/api/admin-roles.api";
 import { fetchAdminUsersList } from "#src/features/audit/admin-users/api/admin-users.api";
+import { useAccess } from "#src/hooks";
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Card, Empty, Popconfirm, Space, Spin, Tag, Typography } from "antd";
@@ -16,6 +17,11 @@ function recipientLabel(recipient: SignFlowRule["steps"][number]["recipients"][n
 }
 
 export default function SignFlowRulesPage() {
+	const { hasAdminAction } = useAccess();
+	const canCreate = hasAdminAction("policies", "create") || hasAdminAction("notification_rules", "create");
+	const canUpdate = hasAdminAction("policies", "update") || hasAdminAction("notification_rules", "update");
+	const canDelete = hasAdminAction("policies", "delete") || hasAdminAction("notification_rules", "delete");
+
 	const [open, setOpen] = useState(false);
 	const [selected, setSelected] = useState<SignFlowRule | null>(null);
 	const rulesQuery = useQuery({
@@ -42,16 +48,18 @@ export default function SignFlowRulesPage() {
 			<div className="mx-auto flex max-w-6xl flex-col gap-5 py-2" dir="rtl">
 				<div className="flex flex-wrap items-center justify-between gap-3">
 					<Typography.Title level={3} className="!mb-0">قوانین گردش امضای قرارداد</Typography.Title>
-					<Button
-						type="primary"
-						icon={<PlusOutlined />}
-						onClick={() => {
-							setSelected(null);
-							setOpen(true);
-						}}
-					>
-						افزودن قانون
-					</Button>
+					{canCreate && (
+						<Button
+							type="primary"
+							icon={<PlusOutlined />}
+							onClick={() => {
+								setSelected(null);
+								setOpen(true);
+							}}
+						>
+							افزودن قانون
+						</Button>
+					)}
 				</div>
 				{rulesQuery.isLoading
 					? <div className="py-16 text-center"><Spin /></div>
@@ -80,29 +88,35 @@ export default function SignFlowRulesPage() {
 											))}
 										</div>
 									</div>
-									<Space>
-										<Button
-											icon={<EditOutlined />}
-											onClick={() => {
-												setSelected(rule);
-												setOpen(true);
-											}}
-										>
-											ویرایش
-										</Button>
-										<Popconfirm
-											title="از حذف این قانون مطمئن هستید؟"
-											okText="حذف"
-											cancelText="انصراف"
-											onConfirm={async () => {
-												await deleteSignFlowRule(rule.id);
-												window.$message?.success("قانون حذف شد.");
-												void rulesQuery.refetch();
-											}}
-										>
-											<Button danger icon={<DeleteOutlined />}>حذف</Button>
-										</Popconfirm>
-									</Space>
+									{(canUpdate || canDelete) && (
+										<Space>
+											{canUpdate && (
+												<Button
+													icon={<EditOutlined />}
+													onClick={() => {
+														setSelected(rule);
+														setOpen(true);
+													}}
+												>
+													ویرایش
+												</Button>
+											)}
+											{canDelete && (
+												<Popconfirm
+													title="از حذف این قانون مطمئن هستید؟"
+													okText="حذف"
+													cancelText="انصراف"
+													onConfirm={async () => {
+														await deleteSignFlowRule(rule.id);
+														window.$message?.success("قانون حذف شد.");
+														void rulesQuery.refetch();
+													}}
+												>
+													<Button danger icon={<DeleteOutlined />}>حذف</Button>
+												</Popconfirm>
+											)}
+										</Space>
+									)}
 								</div>
 							</Card>
 						))}

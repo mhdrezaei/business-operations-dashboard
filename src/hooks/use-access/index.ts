@@ -1,4 +1,4 @@
-import type { CompanyTypeOption, DomainPermissionAction } from "#src/api/user/types";
+import type { CompanyTypeOption, CrudAction, DomainPermissionAction } from "#src/api/user/types";
 import { useUserStore } from "#src/store";
 import { isString } from "#src/utils";
 import {
@@ -7,6 +7,7 @@ import {
 	getPermittedServiceIdsForDomain,
 	getPermittedTrafficCompanyTypesForDomain,
 	hasAdminAccess,
+	hasAdminSectionAction,
 	hasDomainPermissionForServices,
 	normalizeAccessKey,
 } from "#src/utils/access-policy";
@@ -25,11 +26,23 @@ export function useAccess() {
 	const {
 		roles: userRoles,
 		services: userServices = [],
+		domains: userDomains = [],
 		company_visible_cards: companyVisibleCards = [],
 		portal_viewer: portalViewer,
 		...userAccessState
 	} = useUserStore();
 	const currentRoute = matches[matches.length - 1];
+
+	const isDomainAllowed = (domain?: string) => {
+		const normalizedDomain = normalizeAccessKey(domain);
+		if (!normalizedDomain) {
+			return false;
+		}
+		if (Array.isArray(userDomains) && userDomains.length > 0) {
+			return userDomains.map(normalizeAccessKey).includes(normalizedDomain);
+		}
+		return true;
+	};
 
 	/**
 	 * @fa بررسی دسترسی مسیر فعلی بر اساس کد مجوز
@@ -82,6 +95,9 @@ export function useAccess() {
 		serviceCode?: string,
 		trafficCompanyType?: string | null,
 	) => {
+		if (!isDomainAllowed(domain)) {
+			return false;
+		}
 		return hasDomainPermissionForServices(userServices, domain, action, {
 			serviceCode,
 			trafficCompanyType,
@@ -94,6 +110,9 @@ export function useAccess() {
 		serviceId?: number | null,
 		trafficCompanyType?: string | null,
 	) => {
+		if (!isDomainAllowed(domain)) {
+			return false;
+		}
 		if (serviceId == null) {
 			return hasDomainPermission(domain, action, undefined, trafficCompanyType);
 		}
@@ -107,6 +126,9 @@ export function useAccess() {
 		domain?: string,
 		action: DomainPermissionAction = "view",
 	) => {
+		if (!isDomainAllowed(domain)) {
+			return [];
+		}
 		return getPermittedServiceIdsForDomain(userServices, domain, action);
 	};
 
@@ -114,6 +136,9 @@ export function useAccess() {
 		domain?: string,
 		action: DomainPermissionAction = "view",
 	) => {
+		if (!isDomainAllowed(domain)) {
+			return [];
+		}
 		return getPermittedServiceCodesForDomain(userServices, domain, action);
 	};
 
@@ -122,6 +147,9 @@ export function useAccess() {
 		action: DomainPermissionAction = "view",
 		serviceId?: number | null,
 	) => {
+		if (!isDomainAllowed(domain)) {
+			return [];
+		}
 		return getPermittedTrafficCompanyTypesForDomain(userServices, domain, action, serviceId);
 	};
 
@@ -130,6 +158,9 @@ export function useAccess() {
 		action: DomainPermissionAction = "view",
 		serviceId?: number | null,
 	): CompanyTypeOption[] => {
+		if (!isDomainAllowed(domain)) {
+			return [];
+		}
 		return getPermittedCompanyTypesForDomain(userServices, domain, action, serviceId);
 	};
 
@@ -151,6 +182,18 @@ export function useAccess() {
 
 	const isPortalViewer = Boolean(portalViewer?.assigned);
 
+	/**
+	 * @fa بررسی دسترسی به عمل خاص در بخش مدیریتی
+	 * @en Check if user has a specific CRUD action within an admin section
+	 * @example hasAdminAction("users", "create") // Can create users?
+	 */
+	const hasAdminAction = (
+		target: Parameters<typeof hasAdminSectionAction>[1],
+		action: CrudAction,
+	) => {
+		return hasAdminSectionAction(userAccessState, target, action);
+	};
+
 	return {
 		hasAccessByCodes,
 		hasAccessByRoles,
@@ -162,6 +205,7 @@ export function useAccess() {
 		getPermittedTrafficCompanyTypes,
 		hasCompanyCardAccess,
 		hasAdminPanelAccess,
+		hasAdminAction,
 		isPortalViewer,
 	};
 }

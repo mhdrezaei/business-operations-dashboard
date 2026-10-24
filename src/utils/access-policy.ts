@@ -1,24 +1,18 @@
 import type {
 	AccessServiceType,
 	CompanyTypeOption,
-	DomainCrudPermission,
-	DomainCrudPermissionResponse,
+	CrudAction,
+	DomainPermission,
 	DomainPermissionAction,
+	DomainPermissionResponse,
 	TrafficCompanyType,
 	UserInfoType,
 } from "#src/api/user/types";
 import type { AppRouteRecordRaw } from "#src/router/types";
 
 const TRAFFIC_SERVICE_CODE = "traffic";
-const ALL_TRAFFIC_COMPANY_TYPES: CompanyTypeOption[] = [
-	{ key: "COLLOCATION", value: "COLLOCATION" },
-	{ key: "CP", value: "CP" },
-	{ key: "IXP", value: "IXP" },
-	{ key: "PREMIUM", value: "PREMIUM" },
-	{ key: "TCI", value: "TCI" },
-];
 
-export type AdminAccessTarget = "users" | "roles" | "policies" | "audit_logs";
+export type AdminAccessTarget = "users" | "roles" | "policies" | "audit_logs" | "service_admins" | "logs" | "notification_rules";
 
 function normalizeServiceId(value: unknown): number | null {
 	const normalized = Number(value);
@@ -34,7 +28,7 @@ function normalizeTrafficCompanyType(value?: string | null): TrafficCompanyType 
 	return normalized || null;
 }
 
-function toDomainCrudPermission(permission?: DomainCrudPermissionResponse): DomainCrudPermission | undefined {
+function toDomainPermission(permission?: DomainPermissionResponse): DomainPermission | undefined {
 	if (!permission) {
 		return undefined;
 	}
@@ -46,16 +40,26 @@ function toDomainCrudPermission(permission?: DomainCrudPermissionResponse): Doma
 			create: actions.includes("create"),
 			update: actions.includes("update"),
 			delete: actions.includes("delete"),
+			sign: actions.includes("sign"),
+			business_approve: actions.includes("business_approve"),
 		};
 	}
 
-	return permission;
+	// Legacy object format — normalize to include all fields
+	return {
+		view: Boolean(permission.view),
+		create: Boolean(permission.create),
+		update: Boolean(permission.update),
+		delete: Boolean(permission.delete),
+		sign: Boolean(permission.sign),
+		business_approve: Boolean(permission.business_approve),
+	};
 }
 
 export function getDomainPermission(
-	permissions: Record<string, DomainCrudPermissionResponse> | undefined,
+	permissions: Record<string, DomainPermissionResponse> | undefined,
 	domain: string,
-): DomainCrudPermission | undefined {
+): DomainPermission | undefined {
 	const normalizedDomain = normalizeAccessKey(domain);
 	if (!normalizedDomain || !permissions) {
 		return undefined;
@@ -63,7 +67,7 @@ export function getDomainPermission(
 
 	for (const [domainKey, permission] of Object.entries(permissions)) {
 		if (normalizeAccessKey(domainKey) === normalizedDomain) {
-			return toDomainCrudPermission(permission);
+			return toDomainPermission(permission);
 		}
 	}
 	return undefined;
@@ -83,13 +87,30 @@ function getConfiguredCompanyTypePermissions(
 			}
 
 			const values = actionMap?.[action];
-			if (!Array.isArray(values)) {
+			if (values === undefined) {
 				return null;
+			}
+			if (!Array.isArray(values)) {
+				return [];
 			}
 
 			return values
 				.flatMap((item) => {
-					const [key, value] = Object.entries(item ?? {})[0] ?? [];
+					let key: string | undefined;
+					let value: string | undefined;
+
+					if (typeof item === "string") {
+						key = item;
+						value = item;
+					}
+					else if (item && typeof item === "object") {
+						const entry = Object.entries(item)[0];
+						if (entry) {
+							key = entry[0];
+							value = typeof entry[1] === "string" ? entry[1] : entry[0];
+						}
+					}
+
 					const normalizedKey = normalizeTrafficCompanyType(key);
 					if (!normalizedKey) {
 						return [];
@@ -114,8 +135,11 @@ function getConfiguredCompanyTypePermissions(
 		}
 
 		const values = actionMap?.[action];
-		if (!Array.isArray(values)) {
+		if (values === undefined) {
 			return null;
+		}
+		if (!Array.isArray(values)) {
+			return [];
 		}
 
 		return values
@@ -136,28 +160,20 @@ function getConfiguredCompanyTypePermissions(
 	return null;
 }
 
+/**
+ * Get permitted company types for a specific (service, domain, action) triple.
+ * Returns `null` if the service doesn't use company type restrictions for this domain/action
+ * (meaning all company types are allowed). Returns empty array if configured but no types match.
+ *
+ * Company type data is fully driven by the backend `company_type_permissions` field.
+ * Only relevant for services: traffic, sms, psp, telecom_frame, sales_agency.
+ */
 function getCompanyTypePermissions(
 	service: AccessServiceType,
 	domain: string,
 	action: DomainPermissionAction,
 ): CompanyTypeOption[] | null {
-	const configuredTypes = getConfiguredCompanyTypePermissions(service, domain, action);
-	if (configuredTypes) {
-		return configuredTypes;
-	}
-
-	if (["sales_agency", "sales-agency"].includes(normalizeAccessKey(service.code))) {
-		return [
-			{ key: "SALES_REP_MANAGEMENT", value: "مدیریت نمایندگان فروش" },
-			{ key: "OUTBOUND", value: "فروش Outbound" },
-		];
-	}
-
-	if (normalizeAccessKey(service.code) === TRAFFIC_SERVICE_CODE) {
-		return ALL_TRAFFIC_COMPANY_TYPES;
-	}
-
-	return null;
+	return getConfiguredCompanyTypePermissions(service, domain, action);
 }
 
 function hasCompanyTypePermission(
@@ -302,18 +318,22 @@ export function hasAdminAccess(user: Pick<
 	| "deputy_permissions"
 >, target: AdminAccessTarget): boolean {
 	const normalizedRole = normalizeAccessKey(user.role ?? user.admin_role);
-	const isSuperAdmin = user.is_superuser || normalizedRole === "superuser";
+	const isSuperAdmin = Boolean(user.is_superuser || normalizedRole === "superuser" || normalizedRole === "staff_admin" || user.is_staff);
 	if (isSuperAdmin) {
 		return true;
 	}
 
-	const sectionByTarget: Record<AdminAccessTarget, string> = {
+	const sectionByTarget: Record<string, string> = {
 		users: "users",
 		roles: "roles",
 		policies: "notification_rules",
+		notification_rules: "notification_rules",
 		audit_logs: "logs",
+		logs: "logs",
+		service_admins: "service_admins",
 	};
-	const section = sectionByTarget[target];
+	const normalizedTarget = normalizeAccessKey(target);
+	const section = sectionByTarget[normalizedTarget] ?? normalizedTarget;
 	const normalizedSections = (user.admin_sections ?? []).map(normalizeAccessKey);
 	const sectionActions = user.admin_section_actions ?? {};
 	for (const [sectionKey, actions] of Object.entries(sectionActions)) {
@@ -326,18 +346,105 @@ export function hasAdminAccess(user: Pick<
 	}
 
 	const deputy = user.deputy_permissions;
-	switch (target) {
+	switch (section) {
 		case "users":
 			return Boolean(user.can_manage_users || deputy?.can_create_users || deputy?.can_edit_users || deputy?.can_assign_roles);
 		case "roles":
 			return Boolean(user.can_manage_roles || deputy?.can_create_roles);
-		case "policies":
+		case "notification_rules":
 			return Boolean(deputy?.can_manage_policies);
-		case "audit_logs":
+		case "logs":
 			return Boolean(user.is_staff || user.can_manage_users || user.can_manage_roles || deputy?.can_manage_policies);
+		case "service_admins":
+			return Boolean(user.is_staff || user.can_manage_users);
 		default:
 			return false;
 	}
+}
+
+/**
+ * Check if the user has a specific CRUD action within an admin section.
+ * Unlike {@link hasAdminAccess} which checks for ANY access (route/menu visibility),
+ * this checks for a specific action (button-level control).
+ *
+ * @example
+ * hasAdminSectionAction(user, "users", "create") // Can this user create new users?
+ * hasAdminSectionAction(user, "roles", "update") // Can this user edit roles?
+ */
+export function hasAdminSectionAction(
+	user: Pick<
+		UserInfoType,
+		| "role"
+		| "admin_role"
+		| "is_superuser"
+		| "is_staff"
+		| "admin_section_actions"
+		| "can_manage_users"
+		| "can_manage_roles"
+		| "deputy_permissions"
+	>,
+	target: AdminAccessTarget,
+	action: CrudAction,
+): boolean {
+	const normalizedRole = normalizeAccessKey(user.role ?? user.admin_role);
+	const isSuperAdmin = Boolean(user.is_superuser || normalizedRole === "superuser" || normalizedRole === "staff_admin" || user.is_staff);
+	if (isSuperAdmin) {
+		return true;
+	}
+
+	const sectionByTarget: Record<string, string> = {
+		users: "users",
+		roles: "roles",
+		policies: "notification_rules",
+		notification_rules: "notification_rules",
+		audit_logs: "logs",
+		logs: "logs",
+		service_admins: "service_admins",
+	};
+	const normalizedTarget = normalizeAccessKey(target);
+	const section = sectionByTarget[normalizedTarget] ?? normalizedTarget;
+	const normalizedAction = normalizeAccessKey(action);
+	const sectionActions = user.admin_section_actions ?? {};
+
+	for (const [sectionKey, actions] of Object.entries(sectionActions)) {
+		if (normalizeAccessKey(sectionKey) === section && Array.isArray(actions)) {
+			return actions.map(a => normalizeAccessKey(a)).includes(normalizedAction);
+		}
+	}
+
+	const deputy = (user as Partial<UserInfoType>).deputy_permissions;
+	if (section === "users") {
+		if (normalizedAction === "create")
+			return Boolean(deputy?.can_create_users);
+		if (normalizedAction === "update")
+			return Boolean(deputy?.can_edit_users || deputy?.can_assign_roles);
+		if (normalizedAction === "delete")
+			return Boolean(user.can_manage_users);
+		if (normalizedAction === "view")
+			return Boolean(user.can_manage_users || deputy?.can_create_users || deputy?.can_edit_users || deputy?.can_assign_roles);
+	}
+	if (section === "roles") {
+		if (normalizedAction === "create")
+			return Boolean(deputy?.can_create_roles);
+		if (normalizedAction === "update" || normalizedAction === "delete")
+			return Boolean(user.can_manage_roles);
+		if (normalizedAction === "view")
+			return Boolean(user.can_manage_roles || deputy?.can_create_roles);
+	}
+	if (section === "notification_rules") {
+		if (normalizedAction === "view")
+			return Boolean(deputy?.can_manage_policies);
+	}
+	if (section === "logs") {
+		if (normalizedAction === "view")
+			return Boolean(user.is_staff || user.can_manage_users || user.can_manage_roles || deputy?.can_manage_policies);
+	}
+	if (section === "service_admins") {
+		if (normalizedAction === "view")
+			return Boolean(user.is_staff || user.can_manage_users);
+	}
+
+	return false;
 }
 
 export function hasRouteAccess(route: AppRouteRecordRaw, user: UserInfoType): boolean {
@@ -359,10 +466,18 @@ export function hasRouteAccess(route: AppRouteRecordRaw, user: UserInfoType): bo
 
 	const accessDomain = route.handle?.accessDomain;
 	if (accessDomain) {
+		const normalizedDomain = normalizeAccessKey(accessDomain);
+		if (Array.isArray(user.domains) && user.domains.length > 0 && !user.domains.map(normalizeAccessKey).includes(normalizedDomain)) {
+			return false;
+		}
+
 		return hasDomainPermissionForServices(
 			user.services,
 			accessDomain,
 			route.handle?.accessAction ?? "view",
+			{
+				serviceCode: route.handle?.serviceCode,
+			},
 		);
 	}
 

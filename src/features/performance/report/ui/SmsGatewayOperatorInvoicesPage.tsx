@@ -3,6 +3,7 @@ import type { ActionType, ColumnsState, ProColumns, ProCoreActionType } from "@a
 import type { FocusEvent, KeyboardEvent } from "react";
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import { createSmsOperatorInvoice, createSmsOperatorInvoiceMonthlyReport, deleteSmsOperatorInvoice, fetchLatestSmsOperatorInvoiceMonthlyReport, fetchSmsOperatorInvoiceMonthlyReportStatus, fetchSmsOperatorInvoices, updateSmsOperatorInvoice } from "#src/features/performance/api/performances.api";
+import { useAccess } from "#src/hooks";
 import { TableActionEditIcon, TableActionTrashIcon } from "#src/icons";
 import { SectionCard } from "#src/shared/ui/section-card";
 import { BarChartOutlined, CheckCircleOutlined, ExclamationCircleOutlined, FilePdfOutlined } from "@ant-design/icons";
@@ -32,6 +33,11 @@ function invoiceStatus(invoice: { invoice_registered: boolean, message?: string 
 }
 
 export function SmsGatewayOperatorInvoicesPage() {
+	const { hasDomainPermission } = useAccess();
+	const canCreateInvoice = hasDomainPermission("performances", "create", "sms");
+	const canUpdateInvoice = hasDomainPermission("performances", "update", "sms");
+	const canDeleteInvoice = hasDomainPermission("performances", "delete", "sms");
+
 	const [form] = Form.useForm<SmsOperatorInvoicePayload>(); const [reportForm] = Form.useForm<{ sh_year?: number, sh_month?: number }>(); const client = useQueryClient();
 	const invoices = useQuery({ queryKey: ["sms-gateway", "operator-invoices"], queryFn: fetchSmsOperatorInvoices });
 	const invoicesTableActionRef = useRef<ActionType>(null);
@@ -103,29 +109,39 @@ export function SmsGatewayOperatorInvoicesPage() {
 		catch { showMessage("error", "ویرایش فاکتور ناموفق بود."); }
 		finally { setUpdating(false); }
 	};
-	const invoiceColumns: ProColumns<SmsOperatorInvoice>[] = [
-		{ title: "اپراتور", dataIndex: "operator", valueType: "select", valueEnum: Object.fromEntries(OPS.map(({ label, value }) => [value, { text: label }])), render: (_, item) => <Tag color="blue">{name(item.operator)}</Tag> },
-		{ title: "سال", dataIndex: "sh_year", align: "center", valueType: "select", valueEnum: Object.fromEntries(yearOptions.map(({ label, value }) => [value, { text: label }])), render: (_, item) => String(item.sh_year) },
-		{ title: "ماه", dataIndex: "sh_month", align: "center", valueType: "select", valueEnum: Object.fromEntries(monthOptions.map(({ label, value }) => [value, { text: label }])), render: (_, item) => MONTHS[item.sh_month - 1] },
-		{ title: "تعداد فارسی", dataIndex: "fa_count", search: false, render: (_, item) => number(item.fa_count) },
-		{ title: "تعداد انگلیسی", dataIndex: "en_count", search: false, render: (_, item) => number(item.en_count) },
-		{ title: "هزینه فارسی (ریال)", dataIndex: "fa_cost", search: false, render: (_, item) => <Typography.Text type="success">{number(item.fa_cost)}</Typography.Text> },
-		{ title: "هزینه انگلیسی (ریال)", dataIndex: "en_cost", search: false, render: (_, item) => <Typography.Text type="success">{number(item.en_cost)}</Typography.Text> },
-		{
-			title: "عملیات",
-			valueType: "option",
-			key: "actions",
-			width: 120,
-			fixed: "right",
-			align: "center",
-			render: (_, item, __, action) => [
-				<BasicButton key="edit" type="link" size="large" title="ویرایش فاکتور" icon={<TableActionEditIcon />} onClick={() => openEdit(item)} />,
-				<Popconfirm key="delete" title="فاکتور حذف شود؟" okText="حذف" cancelText="انصراف" onConfirm={() => remove(item, action)}>
-					<BasicButton type="link" size="large" title="حذف فاکتور" icon={<TableActionTrashIcon />} />
-				</Popconfirm>,
-			],
-		},
-	];
+	const invoiceColumns: ProColumns<SmsOperatorInvoice>[] = useMemo(() => {
+		const base: ProColumns<SmsOperatorInvoice>[] = [
+			{ title: "اپراتور", dataIndex: "operator", valueType: "select", valueEnum: Object.fromEntries(OPS.map(({ label, value }) => [value, { text: label }])), render: (_, item) => <Tag color="blue">{name(item.operator)}</Tag> },
+			{ title: "سال", dataIndex: "sh_year", align: "center", valueType: "select", valueEnum: Object.fromEntries(yearOptions.map(({ label, value }) => [value, { text: label }])), render: (_, item) => String(item.sh_year) },
+			{ title: "ماه", dataIndex: "sh_month", align: "center", valueType: "select", valueEnum: Object.fromEntries(monthOptions.map(({ label, value }) => [value, { text: label }])), render: (_, item) => MONTHS[item.sh_month - 1] },
+			{ title: "تعداد فارسی", dataIndex: "fa_count", search: false, render: (_, item) => number(item.fa_count) },
+			{ title: "تعداد انگلیسی", dataIndex: "en_count", search: false, render: (_, item) => number(item.en_count) },
+			{ title: "هزینه فارسی (ریال)", dataIndex: "fa_cost", search: false, render: (_, item) => <Typography.Text type="success">{number(item.fa_cost)}</Typography.Text> },
+			{ title: "هزینه انگلیسی (ریال)", dataIndex: "en_cost", search: false, render: (_, item) => <Typography.Text type="success">{number(item.en_cost)}</Typography.Text> },
+		];
+
+		if (canUpdateInvoice || canDeleteInvoice) {
+			base.push({
+				title: "عملیات",
+				valueType: "option",
+				key: "actions",
+				width: 120,
+				fixed: "right",
+				align: "center",
+				render: (_, item, __, action) => [
+					canUpdateInvoice ? <BasicButton key="edit" type="link" size="large" title="ویرایش فاکتور" icon={<TableActionEditIcon />} onClick={() => openEdit(item)} /> : null,
+					canDeleteInvoice ? (
+						<Popconfirm key="delete" title="فاکتور حذف شود؟" okText="حذف" cancelText="انصراف" onConfirm={() => remove(item, action)}>
+							<BasicButton type="link" size="large" title="حذف فاکتور" icon={<TableActionTrashIcon />} />
+						</Popconfirm>
+					) : null,
+				].filter(Boolean),
+			});
+		}
+
+		return base;
+	}, [canUpdateInvoice, canDeleteInvoice]);
+
 	return (
 		<BasicContent className="h-full overflow-y-auto">
 			<Space direction="vertical" size={16} className="w-full">
@@ -133,34 +149,38 @@ export function SmsGatewayOperatorInvoicesPage() {
 					<Typography.Title level={4} className="!mb-1">فاکتور ارسالی اپراتورهای پیامک</Typography.Title>
 					<Typography.Text type="secondary">ثبت و مشاهده تعداد و هزینه پیامک‌های ارسالی هر اپراتور</Typography.Text>
 				</div>
-				<SectionCard
-					title="ثبت فاکتور ارسالی اپراتور جدید"
-					tone="primary"
-					className="sms-gateway-invoice-entry"
-				>
-					<Form form={form} layout="vertical" onFinish={save} initialValues={{ fa_cost: 0, en_cost: 0 }}>
-						<div className="aligned-form-grid aligned-form-grid--three sms-gateway-invoice-entry__filters">
-							<Form.Item name="sh_year" label="سال (شمسی)" rules={[{ required: true }]}><Select options={yearOptions} placeholder="انتخاب کنید" /></Form.Item>
-							<Form.Item name="sh_month" label="ماه (شمسی)" rules={[{ required: true }]}><Select options={availableMonths} placeholder={!year ? "ابتدا سال را انتخاب کنید" : "انتخاب کنید"} disabled={!year} /></Form.Item>
-							<Form.Item name="operator" label="اپراتور" rules={[{ required: true }]}><Select options={activeOps} disabled={!year || !month} placeholder={!year || !month ? "ابتدا سال و ماه را انتخاب کنید" : "انتخاب کنید"} /></Form.Item>
-						</div>
-						<div className="sms-gateway-invoice-entry__metrics">
-							<SectionCard title="تعداد پیامک" tone="blue" className="sms-gateway-invoice-entry__metric">
-								<div className="sms-gateway-invoice-entry__metric-fields">
-									<Form.Item name="fa_count" label="فارسی" rules={[{ required: true, validator: (_, value) => value == null || value === "" ? Promise.reject(new Error("تعداد پیامک فارسی الزامی است.")) : Promise.resolve() }]}><InputNumber min={0} precision={0} placeholder="0" className="w-full" onFocus={selectNumberInput} onKeyDown={preventNonNumericInput} /></Form.Item>
-									<Form.Item name="en_count" label="انگلیسی" rules={[{ required: true, validator: (_, value) => value == null || value === "" ? Promise.reject(new Error("تعداد پیامک انگلیسی الزامی است.")) : Promise.resolve() }]}><InputNumber min={0} precision={0} placeholder="0" className="w-full" onFocus={selectNumberInput} onKeyDown={preventNonNumericInput} /></Form.Item>
+				{canCreateInvoice
+					? (
+						<SectionCard
+							title="ثبت فاکتور ارسالی اپراتور جدید"
+							tone="primary"
+							className="sms-gateway-invoice-entry"
+						>
+							<Form form={form} layout="vertical" onFinish={save} initialValues={{ fa_cost: 0, en_cost: 0 }}>
+								<div className="aligned-form-grid aligned-form-grid--three sms-gateway-invoice-entry__filters">
+									<Form.Item name="sh_year" label="سال (شمسی)" rules={[{ required: true }]}><Select options={yearOptions} placeholder="انتخاب کنید" /></Form.Item>
+									<Form.Item name="sh_month" label="ماه (شمسی)" rules={[{ required: true }]}><Select options={availableMonths} placeholder={!year ? "ابتدا سال را انتخاب کنید" : "انتخاب کنید"} disabled={!year} /></Form.Item>
+									<Form.Item name="operator" label="اپراتور" rules={[{ required: true }]}><Select options={activeOps} disabled={!year || !month} placeholder={!year || !month ? "ابتدا سال و ماه را انتخاب کنید" : "انتخاب کنید"} /></Form.Item>
 								</div>
-							</SectionCard>
-							<SectionCard title="هزینه پیامک (ریال)" tone="purple" className="sms-gateway-invoice-entry__metric">
-								<div className="sms-gateway-invoice-entry__metric-fields">
-									<Form.Item name="fa_cost" label="فارسی"><InputNumber min={0} precision={0} className="w-full" onFocus={selectNumberInput} onKeyDown={preventNonNumericInput} /></Form.Item>
-									<Form.Item name="en_cost" label="انگلیسی"><InputNumber min={0} precision={0} className="w-full" onFocus={selectNumberInput} onKeyDown={preventNonNumericInput} /></Form.Item>
+								<div className="sms-gateway-invoice-entry__metrics">
+									<SectionCard title="تعداد پیامک" tone="blue" className="sms-gateway-invoice-entry__metric">
+										<div className="sms-gateway-invoice-entry__metric-fields">
+											<Form.Item name="fa_count" label="فارسی" rules={[{ required: true, validator: (_, value) => value == null || value === "" ? Promise.reject(new Error("تعداد پیامک فارسی الزامی است.")) : Promise.resolve() }]}><InputNumber min={0} precision={0} placeholder="0" className="w-full" onFocus={selectNumberInput} onKeyDown={preventNonNumericInput} /></Form.Item>
+											<Form.Item name="en_count" label="انگلیسی" rules={[{ required: true, validator: (_, value) => value == null || value === "" ? Promise.reject(new Error("تعداد پیامک انگلیسی الزامی است.")) : Promise.resolve() }]}><InputNumber min={0} precision={0} placeholder="0" className="w-full" onFocus={selectNumberInput} onKeyDown={preventNonNumericInput} /></Form.Item>
+										</div>
+									</SectionCard>
+									<SectionCard title="هزینه پیامک (ریال)" tone="purple" className="sms-gateway-invoice-entry__metric">
+										<div className="sms-gateway-invoice-entry__metric-fields">
+											<Form.Item name="fa_cost" label="فارسی"><InputNumber min={0} precision={0} className="w-full" onFocus={selectNumberInput} onKeyDown={preventNonNumericInput} /></Form.Item>
+											<Form.Item name="en_cost" label="انگلیسی"><InputNumber min={0} precision={0} className="w-full" onFocus={selectNumberInput} onKeyDown={preventNonNumericInput} /></Form.Item>
+										</div>
+									</SectionCard>
 								</div>
-							</SectionCard>
-						</div>
-						<div className="mt-2 flex justify-end"><Button type="primary" htmlType="submit" loading={saving} disabled={activeOps.length === 0}>ثبت فاکتور</Button></div>
-					</Form>
-				</SectionCard>
+								<div className="mt-2 flex justify-end"><Button type="primary" htmlType="submit" loading={saving} disabled={activeOps.length === 0}>ثبت فاکتور</Button></div>
+							</Form>
+						</SectionCard>
+					)
+					: null}
 				<BasicTable<SmsOperatorInvoice>
 					rowKey="id"
 					columns={invoiceColumns}

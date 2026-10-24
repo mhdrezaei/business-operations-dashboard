@@ -59,6 +59,7 @@ export const useUserStore = create<UserState & UserAction>()(
 
 			const response: UserInfoType = {
 				...profile,
+				is_superuser: profile.is_superuser || accessSnapshot.role === "superuser",
 				roles: accessSnapshot.roles ?? profile.roles ?? [],
 				role: accessSnapshot.role ?? profile.role ?? null,
 				admin_role: accessSnapshot.admin_role ?? accessSnapshot.role ?? profile.admin_role ?? profile.role ?? null,

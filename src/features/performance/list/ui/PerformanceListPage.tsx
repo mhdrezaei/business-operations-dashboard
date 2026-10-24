@@ -235,12 +235,10 @@ export default function PerformanceListPage() {
 		}
 	} | null)?.directEdit;
 
-	const performanceViewIds = getPermittedServiceIds("performances", "view");
-	const contractViewIds = getPermittedServiceIds("contracts", "view");
-	const permittedViewServiceIdsList = performanceViewIds.length > 0 ? performanceViewIds : contractViewIds;
+	const performanceUpdateIds = getPermittedServiceIds("performances", "update");
 	const permittedViewServiceIds = useMemo(
-		() => new Set(permittedViewServiceIdsList),
-		[permittedViewServiceIdsList.join(",")],
+		() => new Set(performanceUpdateIds),
+		[performanceUpdateIds.join(",")],
 	);
 
 	const services = useQuery(servicesQuery());
@@ -252,7 +250,7 @@ export default function PerformanceListPage() {
 	const requiresCompanyType = serviceRequiresCompanyType(selectedServiceCode);
 	const permittedCompanyTypeOptions = useMemo(
 		() => requiresCompanyType
-			? getPermittedCompanyTypes("performances", "view", selectedServiceId)
+			? getPermittedCompanyTypes("performances", "update", selectedServiceId)
 			: [],
 		[requiresCompanyType, selectedServiceId, getPermittedCompanyTypes],
 	);
@@ -263,7 +261,7 @@ export default function PerformanceListPage() {
 			label: service.name,
 			value: Number(service.id),
 			code: String(service.code ?? "").trim().toLowerCase(),
-		})), [services.data, permittedViewServiceIdsList.join(",")]);
+		})), [services.data, performanceUpdateIds.join(",")]);
 
 	const companyOptions = useMemo(() => (companies.data?.results ?? [])
 		.filter(company => !requiresCompanyType || (selectedCompanyType && companyTypeMatches(company.company_type, selectedCompanyType)))
@@ -326,9 +324,7 @@ export default function PerformanceListPage() {
 		if (!serviceId)
 			return false;
 		const companyType = normalized.companyType ?? selectedCompanyType;
-		const hasPerformanceAccess = hasDomainPermissionByServiceId("performances", "update", serviceId, companyType);
-		const hasContractAccess = hasDomainPermissionByServiceId("contracts", "update", serviceId, companyType);
-		return hasPerformanceAccess || hasContractAccess;
+		return hasDomainPermissionByServiceId("performances", "update", serviceId, companyType);
 	}, [selectedServiceId, selectedCompanyType, hasDomainPermissionByServiceId]);
 	const canDeleteRow = useCallback((row: PerformanceListRow) => {
 		const normalized = normalizePerformanceRecord(row);
@@ -336,27 +332,30 @@ export default function PerformanceListPage() {
 		if (!serviceId)
 			return false;
 		const companyType = normalized.companyType ?? selectedCompanyType;
-		const hasPerformanceDelete = hasDomainPermissionByServiceId("performances", "delete", serviceId, companyType);
-		const hasContractDelete = hasDomainPermissionByServiceId("contracts", "delete", serviceId, companyType);
-		return hasPerformanceDelete || hasContractDelete;
+		return hasDomainPermissionByServiceId("performances", "delete", serviceId, companyType);
 	}, [selectedServiceId, selectedCompanyType, hasDomainPermissionByServiceId]);
+
+	const editableRows = useMemo(
+		() => visibleRows.filter(canUpdateRow),
+		[visibleRows, canUpdateRow],
+	);
 
 	useEffect(() => {
 		if (deleting || performances.isFetching)
 			return;
-		if (visibleRows.length === 0) {
+		if (editableRows.length === 0) {
 			setSelectedRow(null);
 			return;
 		}
 		const currentKey = selectedRow ? rowKey(selectedRow) : null;
-		const current = visibleRows.find(row => rowKey(row) === currentKey && canUpdateRow(row));
+		const current = editableRows.find(row => rowKey(row) === currentKey);
 		if (current) {
 			if (current !== selectedRow)
 				setSelectedRow(current);
 			return;
 		}
-		setSelectedRow(visibleRows.find(canUpdateRow) ?? null);
-	}, [visibleRows, selectedRow, canUpdateRow, deleting, performances.isFetching]);
+		setSelectedRow(editableRows[0] ?? null);
+	}, [editableRows, selectedRow, deleting, performances.isFetching]);
 
 	const resetAfterService = () => {
 		setSelectedCompanyType(null);
@@ -377,8 +376,8 @@ export default function PerformanceListPage() {
 			? t("performance.placeholders.selectCompanyTypeFirst")
 			: !selectedCompanyId
 				? t("performance.placeholders.selectCompany")
-				: visibleRows.length === 0
-					? "برای این شرکت در سال انتخاب‌شده عملکردی ثبت نشده است."
+				: editableRows.length === 0
+					? "برای این شرکت در سال انتخاب‌شده عملکرد قابل ویرایشی یافت نشد."
 					: "یک عملکرد را از فهرست انتخاب کنید.";
 	const handleDelete = async (targetRow: PerformanceListRow | null = selectedRow) => {
 		if (!targetRow || !selectedServicePath || !canDeleteRow(targetRow))
@@ -513,14 +512,13 @@ export default function PerformanceListPage() {
 							)
 							: performances.isLoading || performances.isFetching
 								? <Skeleton active paragraph={{ rows: 5 }} title={false} />
-								: visibleRows.length > 0
+								: editableRows.length > 0
 									? (
 										<div className="performance-edit-list">
-											{visibleRows.map((row) => {
+											{editableRows.map((row) => {
 												const normalized = normalizePerformanceRecord(row);
 												const key = rowKey(row);
 												const selected = selectedRow ? rowKey(selectedRow) === key : false;
-												const editable = canUpdateRow(row);
 												const summary = selected ? buildPerformanceSummary(selectedServicePath, row) : [];
 												const itemStyle = {
 													"--performance-list-border": selected ? token.colorPrimary : token.colorBorderSecondary,
@@ -534,7 +532,6 @@ export default function PerformanceListPage() {
 														type="button"
 														className={`performance-edit-list-item${selected ? " performance-edit-list-item--selected" : ""}`}
 														style={itemStyle}
-														disabled={!editable}
 														aria-pressed={selected}
 														onClick={() => setSelectedRow(row)}
 													>
@@ -562,7 +559,6 @@ export default function PerformanceListPage() {
 																</span>
 															)
 															: null}
-														{!editable ? <span className="performance-edit-list-item__readonly">دسترسی ویرایش ندارید</span> : null}
 													</button>
 												);
 											})}
@@ -573,7 +569,7 @@ export default function PerformanceListPage() {
 				</aside>
 
 				<main className="performance-edit-main">
-					{selectedServicePath === "traffic" && selectedServiceId
+					{selectedServicePath === "traffic" && selectedServiceId && hasDomainPermissionByServiceId("performances", "update", selectedServiceId, selectedCompanyType)
 						? (
 							<TrafficUpdateTemplateModal
 								embedded
@@ -592,6 +588,7 @@ export default function PerformanceListPage() {
 								service={selectedServicePath}
 								companies={companies.data?.results}
 								record={selectedRow}
+								canUpdate={canUpdateRow(selectedRow)}
 								onDelete={canDeleteRow(selectedRow) ? target => void handleDelete(target ?? selectedRow) : undefined}
 								deleting={deleting}
 								onClose={() => setSelectedRow(null)}

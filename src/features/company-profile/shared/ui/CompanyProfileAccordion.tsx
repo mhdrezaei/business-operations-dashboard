@@ -21,78 +21,88 @@ interface CompanyProfileAccordionProps {
 
 export default function CompanyProfileAccordion({ revision = 0 }: CompanyProfileAccordionProps) {
 	const { token } = theme.useToken();
-	const { hasCompanyCardAccess } = useAccess();
+	const { hasCompanyCardAccess, hasDomainPermissionByServiceId } = useAccess();
 	const companyId = useWatch<CompanyProfileFormValues, "companyId">({ name: "companyId" });
 	const serviceId = useWatch<CompanyProfileFormValues, "serviceId">({ name: "serviceId" });
+	const companyType = useWatch<CompanyProfileFormValues, "companyType">({ name: "companyType" });
 	const services = useQuery(servicesQuery());
+
+	const canViewCompanyProfile = hasDomainPermissionByServiceId("company_profile", "view", serviceId, companyType);
+
 	const selectedServiceCode = String(
 		services.data?.results?.find(service => service.id === serviceId)?.code ?? "",
 	).trim().toLowerCase();
-	const canSeeSmsGateway = ["sms", "sms-commission", "sms_commission"].includes(selectedServiceCode);
+	const canSeeSmsGateway = canViewCompanyProfile && ["sms", "sms-commission", "sms_commission"].includes(selectedServiceCode);
 
-	const canSeePublic = hasCompanyCardAccess("company_public_profiles");
-	const canSeeLegal = hasCompanyCardAccess("company_legal_profiles");
-	const canSeeFinance = hasCompanyCardAccess("company_finance_profiles");
-	const canSeeInternal = hasCompanyCardAccess("company_internal_profiles");
+	const canSeePublic = canViewCompanyProfile && hasCompanyCardAccess("company_public_profiles");
+	const canSeeLegal = canViewCompanyProfile && hasCompanyCardAccess("company_legal_profiles");
+	const canSeeFinance = canViewCompanyProfile && hasCompanyCardAccess("company_finance_profiles");
+	const canSeeInternal = canViewCompanyProfile && hasCompanyCardAccess("company_internal_profiles");
 
 	const canSeeCompanyInfo = canSeePublic || canSeeLegal || canSeeFinance || canSeeInternal;
-	const canSeePeople = hasCompanyCardAccess("company_people");
-	const canSeeShareholders = hasCompanyCardAccess("company_shareholders");
-	const canSeeBankAccounts = hasCompanyCardAccess("company_bank_accounts");
-	const canSeeDocuments = hasCompanyCardAccess("company_documents");
+	const canSeePeople = canViewCompanyProfile && hasCompanyCardAccess("company_people");
+	const canSeeShareholders = canViewCompanyProfile && hasCompanyCardAccess("company_shareholders");
+	const canSeeBankAccounts = canViewCompanyProfile && hasCompanyCardAccess("company_bank_accounts");
+	const canSeeDocuments = canViewCompanyProfile && hasCompanyCardAccess("company_documents");
 
 	const items = [] as NonNullable<React.ComponentProps<typeof Tabs>["items"]>;
 
-	if (canSeeCompanyInfo) {
-		items.push({
-			key: "company-info",
-			label: "پروفایل شرکت",
-			children: companyId
-				? (
-					<CompanyProfileAccordionPanel
-						key={`company-info-${revision}`}
-						companyId={companyId}
-						canSeePublic={canSeePublic}
-						canSeeLegal={canSeeLegal}
-						canSeeFinance={canSeeFinance}
-						canSeeInternal={canSeeInternal}
+	if (canViewCompanyProfile) {
+		if (canSeeCompanyInfo) {
+			items.push({
+				key: "company-info",
+				label: "پروفایل شرکت",
+				children: companyId
+					? (
+						<CompanyProfileAccordionPanel
+							key={`company-info-${revision}`}
+							companyId={companyId}
+							canSeePublic={canSeePublic}
+							canSeeLegal={canSeeLegal}
+							canSeeFinance={canSeeFinance}
+							canSeeInternal={canSeeInternal}
+						/>
+					)
+					: null,
+			});
+		}
+
+		if (canSeePeople) {
+			items.push({ key: "key-people", label: "اشخاص کلیدی", children: <CompanyPeoplePanel key={`people-${revision}`} /> });
+		}
+
+		if (canSeeShareholders) {
+			items.push({ key: "shareholders", label: "سهام‌داران کلیدی", children: <ShareholdersPanel key={`shareholders-${revision}`} /> });
+		}
+
+		if (canSeeBankAccounts) {
+			items.push({ key: "bank-accounts", label: "حساب‌های بانکی", children: <BankAccountsPanel key={`bank-accounts-${revision}`} /> });
+		}
+
+		if (canSeeDocuments) {
+			items.push({ key: "documents", label: "مدارک شرکت", children: <CompanyDocumentsPanel /> });
+		}
+
+		if (canSeeSmsGateway) {
+			items.push({
+				key: "sms-gateway-mapping",
+				label: "مپینگ SMS Gateway",
+				children: (
+					<SmsGatewayMappingPanel
+						key={serviceId}
+						services={services.data?.results ?? []}
+						initialServiceId={serviceId ?? null}
 					/>
-				)
-				: null,
-		});
-	}
-
-	if (canSeePeople) {
-		items.push({ key: "key-people", label: "اشخاص کلیدی", children: <CompanyPeoplePanel key={`people-${revision}`} /> });
-	}
-
-	if (canSeeShareholders) {
-		items.push({ key: "shareholders", label: "سهام‌داران کلیدی", children: <ShareholdersPanel key={`shareholders-${revision}`} /> });
-	}
-
-	if (canSeeBankAccounts) {
-		items.push({ key: "bank-accounts", label: "حساب‌های بانکی", children: <BankAccountsPanel key={`bank-accounts-${revision}`} /> });
-	}
-
-	if (canSeeDocuments) {
-		items.push({ key: "documents", label: "مدارک شرکت", children: <CompanyDocumentsPanel /> });
-	}
-
-	if (canSeeSmsGateway) {
-		items.push({
-			key: "sms-gateway-mapping",
-			label: "مپینگ SMS Gateway",
-			children: (
-				<SmsGatewayMappingPanel
-					key={serviceId}
-					services={services.data?.results ?? []}
-					initialServiceId={serviceId ?? null}
-				/>
-			),
-		});
+				),
+			});
+		}
 	}
 
 	const { containerRef, resetTabScroll } = useCompanyTabsScroll(items.length > 0);
+
+	if (!canViewCompanyProfile) {
+		return <Empty description="شما دسترسی مشاهده اطلاعات این شرکت را ندارید." />;
+	}
 
 	if (!items.length) {
 		return <Empty description="بخشی برای نمایش به این کاربر فعال نیست." />;

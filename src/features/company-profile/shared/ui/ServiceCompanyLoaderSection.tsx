@@ -55,7 +55,18 @@ export function ServiceCompanyLoaderSection({ onCompanyDataCopied }: ServiceComp
 			return "";
 		return String((services.data?.results ?? []).find(item => item.id === serviceId)?.code ?? "").trim().toLowerCase();
 	}, [serviceId, services.data]);
-	const requiresCompanyType = selectedServiceCode === "traffic" || selectedServiceCode === "psp" || selectedServiceCode === "sms";
+
+	const permittedCompanyTypeOptions = useMemo(
+		() => (serviceId ? getPermittedCompanyTypes("company_profile", "view", serviceId) : []),
+		[serviceId, getPermittedCompanyTypes],
+	);
+
+	const requiresCompanyType = useMemo(() => {
+		if (permittedCompanyTypeOptions.length > 0)
+			return true;
+		const code = selectedServiceCode;
+		return code === "traffic" || code === "psp" || code === "sms" || code === "sales_agency" || code === "telecom_frame";
+	}, [permittedCompanyTypeOptions.length, selectedServiceCode]);
 
 	const canCreateCompany = hasDomainPermissionByServiceId("company_profile", "create", serviceId || null, companyType);
 	const canUpdateCompany = hasDomainPermissionByServiceId("company_profile", "update", serviceId || null, companyType);
@@ -140,9 +151,9 @@ export function ServiceCompanyLoaderSection({ onCompanyDataCopied }: ServiceComp
 
 	const companyTypeOptions = useMemo(
 		() => requiresCompanyType && serviceId
-			? getPermittedCompanyTypes("company_profile", "view", serviceId).map(item => ({ label: item.value, value: item.key }))
+			? permittedCompanyTypeOptions.map(item => ({ label: item.value, value: item.key }))
 			: [],
-		[requiresCompanyType, serviceId, getPermittedCompanyTypes],
+		[requiresCompanyType, serviceId, permittedCompanyTypeOptions],
 	);
 
 	const companyOptions = useMemo(
@@ -283,32 +294,38 @@ export function ServiceCompanyLoaderSection({ onCompanyDataCopied }: ServiceComp
 						</div>
 
 						<div className="company-profile-filter-actions">
-							<Button
-								type="default"
-								icon={<PlusOutlined />}
-								disabled={!serviceId || !canCreateCompany || (requiresCompanyType && !companyType)}
-								onClick={() => setCreateOpen(true)}
-							>
-								ایجاد شرکت جدید
-							</Button>
+							{canCreateCompany ? (
+								<Button
+									type="default"
+									icon={<PlusOutlined />}
+									disabled={!serviceId || (requiresCompanyType && !companyType)}
+									onClick={() => setCreateOpen(true)}
+								>
+									ایجاد شرکت جدید
+								</Button>
+							) : null}
 
-							<Button
-								type="primary"
-								icon={<EditOutlined />}
-								disabled={!companyId || !canUpdateCompany || (requiresCompanyType && !companyType)}
-								onClick={() => setRenameOpen(true)}
-							>
-								ویرایش نام شرکت
-							</Button>
+							{canUpdateCompany ? (
+								<Button
+									type="primary"
+									icon={<EditOutlined />}
+									disabled={!companyId || (requiresCompanyType && !companyType)}
+									onClick={() => setRenameOpen(true)}
+								>
+									ویرایش نام شرکت
+								</Button>
+							) : null}
 
-							<Button
-								type="default"
-								icon={<CopyOutlined />}
-								disabled={!companyId || !(canCreateCompany || canUpdateCompany) || copyableSections.length === 0}
-								onClick={() => setCopyOpen(true)}
-							>
-								کپی اطلاعات
-							</Button>
+							{(canCreateCompany || canUpdateCompany) && copyableSections.length > 0 ? (
+								<Button
+									type="default"
+									icon={<CopyOutlined />}
+									disabled={!companyId || (requiresCompanyType && !companyType)}
+									onClick={() => setCopyOpen(true)}
+								>
+									کپی اطلاعات
+								</Button>
+							) : null}
 						</div>
 					</Form>
 				)}

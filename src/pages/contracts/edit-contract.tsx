@@ -1,12 +1,11 @@
 import type { ContractServicePath } from "#src/features/contract/api/contracts.api";
-
 import type { ComponentProps } from "react";
 import { ContractEditForm } from "#src/features/contract/list/ui/components/ContractDetailModal";
 import { ContractEditSelector } from "#src/features/contract/list/ui/components/ContractEditSelector";
 import { useAccess } from "#src/hooks";
 import { Button, Result } from "antd";
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 
 const CONTRACT_SERVICE_PATHS = new Set<ContractServicePath>([
 	"openapi",
@@ -29,6 +28,7 @@ function parsePositiveInt(value: string | null | undefined) {
 export default function EditContractFormPage() {
 	const navigate = useNavigate();
 	const { hasDomainPermissionByServiceId } = useAccess();
+	const { contractId: contractIdParam } = useParams();
 	const [searchParams] = useSearchParams();
 	const contractId = parsePositiveInt(searchParams.get("contractId"));
 	const serviceId = parsePositiveInt(searchParams.get("serviceId"));
@@ -52,8 +52,10 @@ export default function EditContractFormPage() {
 		});
 	};
 
+
 	if (!selection.contractId || !selection.service || !selection.serviceId)
 		return <ContractEditSelector onContractSelect={handleContractSelect} />;
+
 
 	if (!canUpdate) {
 		return (
@@ -70,6 +72,8 @@ export default function EditContractFormPage() {
 			contractId={selection.contractId}
 			service={selection.service}
 			onContractSelect={handleContractSelect}
+
+
 			onSaved={() => navigate("/contracts/list")}
 		/>
 	);
