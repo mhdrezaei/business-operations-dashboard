@@ -12,7 +12,7 @@ import type { AppRouteRecordRaw } from "#src/router/types";
 
 const TRAFFIC_SERVICE_CODE = "traffic";
 
-export type AdminAccessTarget = "users" | "roles" | "policies" | "audit_logs" | "service_admins";
+export type AdminAccessTarget = "users" | "roles" | "policies" | "audit_logs" | "service_admins" | "logs" | "notification_rules";
 
 function normalizeServiceId(value: unknown): number | null {
 	const normalized = Number(value);
@@ -318,19 +318,22 @@ export function hasAdminAccess(user: Pick<
 	| "deputy_permissions"
 >, target: AdminAccessTarget): boolean {
 	const normalizedRole = normalizeAccessKey(user.role ?? user.admin_role);
-	const isSuperAdmin = user.is_superuser || normalizedRole === "superuser";
+	const isSuperAdmin = Boolean(user.is_superuser || normalizedRole === "superuser" || normalizedRole === "staff_admin" || user.is_staff);
 	if (isSuperAdmin) {
 		return true;
 	}
 
-	const sectionByTarget: Record<AdminAccessTarget, string> = {
+	const sectionByTarget: Record<string, string> = {
 		users: "users",
 		roles: "roles",
 		policies: "notification_rules",
+		notification_rules: "notification_rules",
 		audit_logs: "logs",
+		logs: "logs",
 		service_admins: "service_admins",
 	};
-	const section = sectionByTarget[target];
+	const normalizedTarget = normalizeAccessKey(target);
+	const section = sectionByTarget[normalizedTarget] ?? normalizedTarget;
 	const normalizedSections = (user.admin_sections ?? []).map(normalizeAccessKey);
 	const sectionActions = user.admin_section_actions ?? {};
 	for (const [sectionKey, actions] of Object.entries(sectionActions)) {
@@ -343,17 +346,17 @@ export function hasAdminAccess(user: Pick<
 	}
 
 	const deputy = user.deputy_permissions;
-	switch (target) {
+	switch (section) {
 		case "users":
 			return Boolean(user.can_manage_users || deputy?.can_create_users || deputy?.can_edit_users || deputy?.can_assign_roles);
 		case "roles":
 			return Boolean(user.can_manage_roles || deputy?.can_create_roles);
-		case "policies":
+		case "notification_rules":
 			return Boolean(deputy?.can_manage_policies);
-		case "audit_logs":
+		case "logs":
 			return Boolean(user.is_staff || user.can_manage_users || user.can_manage_roles || deputy?.can_manage_policies);
 		case "service_admins":
-			return Boolean(user.is_staff);
+			return Boolean(user.is_staff || user.can_manage_users);
 		default:
 			return false;
 	}
@@ -369,30 +372,76 @@ export function hasAdminAccess(user: Pick<
  * hasAdminSectionAction(user, "roles", "update") // Can this user edit roles?
  */
 export function hasAdminSectionAction(
-	user: Pick<UserInfoType, "role" | "admin_role" | "is_superuser" | "admin_section_actions">,
+	user: Pick<
+		UserInfoType,
+		| "role"
+		| "admin_role"
+		| "is_superuser"
+		| "is_staff"
+		| "admin_section_actions"
+		| "can_manage_users"
+		| "can_manage_roles"
+		| "deputy_permissions"
+	>,
 	target: AdminAccessTarget,
 	action: CrudAction,
 ): boolean {
 	const normalizedRole = normalizeAccessKey(user.role ?? user.admin_role);
-	const isSuperAdmin = user.is_superuser || normalizedRole === "superuser";
+	const isSuperAdmin = Boolean(user.is_superuser || normalizedRole === "superuser" || normalizedRole === "staff_admin" || user.is_staff);
 	if (isSuperAdmin) {
 		return true;
 	}
 
-	const sectionByTarget: Record<AdminAccessTarget, string> = {
+	const sectionByTarget: Record<string, string> = {
 		users: "users",
 		roles: "roles",
 		policies: "notification_rules",
+		notification_rules: "notification_rules",
 		audit_logs: "logs",
+		logs: "logs",
 		service_admins: "service_admins",
 	};
-	const section = sectionByTarget[target];
+	const normalizedTarget = normalizeAccessKey(target);
+	const section = sectionByTarget[normalizedTarget] ?? normalizedTarget;
+	const normalizedAction = normalizeAccessKey(action);
 	const sectionActions = user.admin_section_actions ?? {};
 
 	for (const [sectionKey, actions] of Object.entries(sectionActions)) {
 		if (normalizeAccessKey(sectionKey) === section && Array.isArray(actions)) {
-			return actions.map(a => normalizeAccessKey(a)).includes(action);
+			return actions.map(a => normalizeAccessKey(a)).includes(normalizedAction);
 		}
+	}
+
+	const deputy = (user as Partial<UserInfoType>).deputy_permissions;
+	if (section === "users") {
+		if (normalizedAction === "create")
+			return Boolean(deputy?.can_create_users);
+		if (normalizedAction === "update")
+			return Boolean(deputy?.can_edit_users || deputy?.can_assign_roles);
+		if (normalizedAction === "delete")
+			return Boolean(user.can_manage_users);
+		if (normalizedAction === "view")
+			return Boolean(user.can_manage_users || deputy?.can_create_users || deputy?.can_edit_users || deputy?.can_assign_roles);
+	}
+	if (section === "roles") {
+		if (normalizedAction === "create")
+			return Boolean(deputy?.can_create_roles);
+		if (normalizedAction === "update" || normalizedAction === "delete")
+			return Boolean(user.can_manage_roles);
+		if (normalizedAction === "view")
+			return Boolean(user.can_manage_roles || deputy?.can_create_roles);
+	}
+	if (section === "notification_rules") {
+		if (normalizedAction === "view")
+			return Boolean(deputy?.can_manage_policies);
+	}
+	if (section === "logs") {
+		if (normalizedAction === "view")
+			return Boolean(user.is_staff || user.can_manage_users || user.can_manage_roles || deputy?.can_manage_policies);
+	}
+	if (section === "service_admins") {
+		if (normalizedAction === "view")
+			return Boolean(user.is_staff || user.can_manage_users);
 	}
 
 	return false;

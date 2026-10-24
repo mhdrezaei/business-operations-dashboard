@@ -24,7 +24,6 @@ const routes: AppRouteRecordRaw[] = [
 			icon: createElement(SidebarManagementIcon),
 			title: $t("common.menu.adminPanel"),
 			order: userManagement,
-			adminAccess: "audit_logs",
 		},
 		children: [
 			{
