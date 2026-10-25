@@ -5,6 +5,7 @@ import type {
 	PaginatedResult,
 } from "../list/model/contracts.list.types";
 // import type { ContractServicePath } from "./contract-service.types";
+import { i18n } from "#src/locales";
 import { request } from "#src/utils/request";
 
 export type ContractServicePath = | "openapi" | "traffic" | "psp" | "commercial"
@@ -13,7 +14,8 @@ export type ContractServicePath = | "openapi" | "traffic" | "psp" | "commercial"
   | "sales-agency/rep-management"
   | "sms/client"
   | "sms/vendor"
-  | "sms-commission";
+  | "sms-commission"
+  | "telecom-frame";
 
 export interface SignFlowPreviewResponse {
 	service: string
@@ -121,9 +123,10 @@ export async function fetchSalesAgencyExpenseTitleRecords(): Promise<SalesAgency
 
 export async function fetchSalesAgencyExpenseTitles(): Promise<string[]> {
 	const response = await request
-		.get(SALES_AGENCY_EXPENSE_TITLES_PATH, { searchParams: { page_size: "1000" } })
+		.get(SALES_AGENCY_EXPENSE_TITLES_PATH, { searchParams: { page_size: "1000", is_active: "true" } })
 		.json<any>();
 	return salesAgencyExpenseTitleRows(response)
+		.filter((item: any) => item?.is_active !== false)
 		.map(salesAgencyExpenseTitleName)
 		.filter((title: string | null): title is string => title != null);
 }
@@ -156,7 +159,7 @@ export async function resolveSalesAgencyExpenseTitleIds(titles: string[]): Promi
 				idByTitle.set(key, id);
 		}
 		if (id == null)
-			throw new Error(`شناسه عنوان هزینه «${title}» دریافت نشد.`);
+			throw new Error(i18n.t("contract.create.costTitleIdMissing", { title }));
 		ids.push(id);
 	}
 
@@ -240,16 +243,19 @@ export interface ContractApprovalPayload extends Partial<Record<ContractApproval
 
 export function fetchCompanyContracts(
 	service: ContractServicePath,
-	companyId: number,
+	companyId: number | null,
 	companyType?: string | null,
 	serviceId?: number | null,
+	options?: { isOfficial?: boolean | null },
 ) {
 	if (service === "sms/client" || service === "sms/vendor") {
 		const searchParams: Record<string, string> = {
-			company_id: String(companyId),
 			page_size: "1000",
 			sms_party: service === "sms/client" ? "client" : "vendor",
 		};
+
+		if (companyId != null)
+			searchParams.company_id = String(companyId);
 
 		if (serviceId != null)
 			searchParams.service_id = String(serviceId);
@@ -268,6 +274,8 @@ export function fetchCompanyContracts(
 		searchParams.company_type = companyType;
 	if (serviceId != null)
 		searchParams.service = String(serviceId);
+	if (options?.isOfficial != null)
+		searchParams.is_official = String(options.isOfficial);
 
 	return request
 		.get(buildContractPath(service), { searchParams })

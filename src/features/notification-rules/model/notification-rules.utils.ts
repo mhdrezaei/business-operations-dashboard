@@ -7,6 +7,7 @@ import type {
 	NotificationRuleDto,
 	NotificationRulePayloadTemplate,
 	NotificationRuleRecipientDto,
+	NotificationRunDto,
 } from "./notification-rules.types";
 
 export const notificationRuleCodeOptions: Array<{ label: string, value: NotificationRuleCode }> = [
@@ -28,44 +29,43 @@ export const notificationRuleTargetTypeLabels: Record<NotificationRecipientTarge
 	ROLE: "نقش",
 };
 
-export const defaultNotificationRuleDays = [1, 2, 3, 7, 15, 20, 30];
-
-export const defaultInAppPayloadTemplate: NotificationRulePayloadTemplate = {
-	ui: {
-		icon: "contract-expiry",
-		category: "contracts",
-		severity: "warning",
-	},
-	actions: [
-		{
-			url: "/contracts/list",
-			type: "link",
-			label: "مشاهده قراردادها",
-		},
-	],
-	message: {
-		body_fa: "قرارداد برخی شرکت‌ها رو به اتمام است.",
-		title_fa: "هشدار پایان قرارداد",
-	},
-};
+export const defaultNotificationRuleDays = [30, 15, 7, 3, 2, 1];
 
 export function resolveRuleChannel(code: NotificationRuleCode): NotificationRuleChannel {
 	return code.endsWith("_SMS") ? "SMS" : "IN_APP";
 }
 
-export function normalizeRulePayloadTemplate(
+export function isMissingPerformanceRule(code: NotificationRuleCode): boolean {
+	return code === "PERFORMANCE_MISSING_PREV_MONTH" || code === "PERFORMANCE_MISSING_PREV_MONTH_SMS";
+}
+
+/** `days_before_end` here counts days since the contract/addendum was created; the recipient is always its creator. */
+export function isPendingSinceCreationRule(code: NotificationRuleCode): boolean {
+	return code === "BUSINESS_APPROVAL_PENDING" || code === "SIGN_PENDING";
+}
+
+export function getDaysBeforeEndError(code: NotificationRuleCode, days: number[]): string | null {
+	if (!days.length) {
+		return "حداقل یک مقدار معتبر برای days_before_end وارد کنید.";
+	}
+	if (isMissingPerformanceRule(code) && days.some(day => day < 1 || day > 30)) {
+		return "برای Ruleهای PERFORMANCE_MISSING_PREV_MONTH روزها باید بین 1 تا 30 باشند.";
+	}
+	if (isPendingSinceCreationRule(code) && days.some(day => day < 1)) {
+		return "برای این Rule، days_before_end باید شامل اعداد مثبت (حداقل 1) باشد.";
+	}
+	return null;
+}
+
+/** The modal has no payload editor: a saved template is kept as is, but only for the same rule code (pending rules never send one). */
+export function resolveKeptPayloadTemplate(
 	code: NotificationRuleCode,
-	payload: NotificationRulePayloadTemplate | null | undefined,
-): NotificationRulePayloadTemplate {
-	if (resolveRuleChannel(code) === "SMS") {
-		return payload && Object.keys(payload).length > 0 ? payload : {};
+	initial?: NotificationRuleDto | null,
+): NotificationRulePayloadTemplate | undefined {
+	if (isPendingSinceCreationRule(code) || initial?.code !== code || !Object.keys(initial.payload_template ?? {}).length) {
+		return undefined;
 	}
-
-	if (payload && Object.keys(payload).length > 0) {
-		return payload;
-	}
-
-	return defaultInAppPayloadTemplate;
+	return initial.payload_template;
 }
 
 export function formatRuleDate(value?: string | null): string {
@@ -160,29 +160,21 @@ export function stringifyDaysBeforeEnd(days: number[]): string {
 	return days.join(",");
 }
 
-export function safeJsonStringify(value: unknown): string {
-	try {
-		return JSON.stringify(value ?? {}, null, 2);
-	}
-	catch {
-		return "{}";
-	}
-}
-
-export function parsePayloadJson(rawValue: string): NotificationRulePayloadTemplate {
-	const trimmed = rawValue.trim();
-	if (!trimmed) {
-		return {};
-	}
-
-	const parsed = JSON.parse(trimmed) as unknown;
-	if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-		throw new Error("payload_template باید یک object معتبر باشد.");
-	}
-
-	return parsed as NotificationRulePayloadTemplate;
-}
-
 export function getRuleInitialName(rule?: NotificationRuleDto | null): string {
 	return rule?.name ?? "";
+}
+
+export const notificationRunJobs: Array<{ jobName: string, label: string, withSmsMeta?: boolean }> = [
+	{ jobName: "notifications.contract_expiry_daily", label: "آخرین اجرای IN_APP" },
+	{ jobName: "notifications.contract_expiry_sms_daily", label: "آخرین اجرای SMS", withSmsMeta: true },
+	{ jobName: "notifications.performance_missing_prev_month_daily", label: "آخرین اجرای Missing Performance IN_APP" },
+	{ jobName: "notifications.performance_missing_prev_month_sms_daily", label: "آخرین اجرای Missing Performance SMS", withSmsMeta: true },
+	{ jobName: "notifications.business_approval_pending_daily", label: "آخرین اجرای Business Approval Pending" },
+	{ jobName: "notifications.sign_pending_daily", label: "آخرین اجرای Sign Pending" },
+];
+
+export function findLatestRunByJobName(runs: NotificationRunDto[], jobName: string): NotificationRunDto | undefined {
+	return runs
+		.filter(run => run.job_name === jobName)
+		.sort((left, right) => new Date(right.started_at).getTime() - new Date(left.started_at).getTime())[0];
 }

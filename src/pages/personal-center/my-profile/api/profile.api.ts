@@ -9,6 +9,8 @@ export interface ProfilePayload {
 	email?: string | null
 	mobile?: string | null
 	national_code?: string | null
+	current_password?: string
+	new_password?: string
 	otp_code?: string
 	mobile_otp_code?: string
 }

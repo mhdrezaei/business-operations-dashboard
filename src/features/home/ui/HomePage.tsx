@@ -4,6 +4,7 @@ import { HOME_CARDS } from "#src/features/home/model/home-cards";
 import { HomeFinanceCard } from "./HomeFinanceCard";
 import { HomeKpiStrip } from "./HomeKpiStrip";
 import { HomeModuleCard } from "./HomeModuleCard";
+import { HomeNotificationsCard } from "./HomeNotificationsCard";
 
 /** Landing page: counters, shortcuts to the main modules and last month's financial summary. */
 export function HomePage() {
@@ -14,6 +15,7 @@ export function HomePage() {
 				<div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
 					{HOME_CARDS.map(card => <HomeModuleCard key={card.key} card={card} />)}
 				</div>
+				<HomeNotificationsCard />
 				<HomeFinanceCard />
 			</div>
 		</BasicContent>

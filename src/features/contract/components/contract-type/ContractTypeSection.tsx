@@ -3,11 +3,12 @@ import type { ContractType } from "./contract-type.types";
 import { DashedBorder } from "#src/shared/ui/dashed-border";
 import { RHFProNumber, RHFSegmentedSwitch, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { getSectionToneColors, SectionCard, SectionToneContext } from "#src/shared/ui/section-card";
-
 import { DeleteOutlined, PlusOutlined, QuestionCircleOutlined } from "@ant-design/icons";
+
 import { Button, Card, theme, Tooltip } from "antd";
 import React, { useEffect, useRef } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { BLENDED_MODE_OPTIONS, CONTRACT_TYPE_OPTIONS } from "./contract-type.options";
 import { ContractTierTable } from "./ContractTierTable";
 
@@ -41,8 +42,9 @@ function createDefaultSection(firstRowFrom: number | null = null) {
 	};
 }
 
-export function ContractTypeSection({ title, name, topAside, bottomAside, tone = "primary", variant = "default", showRatePercentage = false, ratePercentageHelpText, compactCalculationModel = true, blendedModePlaceholder = "انتخاب نوع محاسبه", contractTypeOptions = CONTRACT_TYPE_OPTIONS }: Props) {
+export function ContractTypeSection({ title, name, topAside, bottomAside, tone = "primary", variant = "default", showRatePercentage = false, ratePercentageHelpText, compactCalculationModel = true, blendedModePlaceholder, contractTypeOptions = CONTRACT_TYPE_OPTIONS }: Props) {
 	const { control, getValues, setValue } = useFormContext();
+	const { t } = useTranslation();
 	const inheritedTone = React.useContext(SectionToneContext);
 	const resolvedTone = inheritedTone ?? tone;
 	const isSmsOperator = variant === "sms-operator";
@@ -96,17 +98,6 @@ export function ContractTypeSection({ title, name, topAside, bottomAside, tone =
 		rows: Array<{ from: number | null, to: number | null, fee: number | null }>
 	}> | undefined;
 	const prevTypeRef = useRef<any>(undefined);
-
-	useEffect(() => {
-		if (getValues(typePath) != null)
-			return;
-
-		setValue(typePath, "fixed", {
-			shouldDirty: false,
-			shouldTouch: false,
-			shouldValidate: false,
-		});
-	}, [getValues, setValue, typePath]);
 
 	useEffect(() => {
 		const prevType = prevTypeRef.current;
@@ -179,7 +170,7 @@ export function ContractTypeSection({ title, name, topAside, bottomAside, tone =
 		const typeSwitch = (
 			<RHFSegmentedSwitch
 				name={typePath}
-				label={compactCalculationModel ? "" : "مدل محاسبه"}
+				label={compactCalculationModel ? "" : t("contract.type.calculationModel")}
 				options={contractTypeOptions}
 				segmentedProps={{ block: true }}
 				formItemProps={{ className: "mb-0" }}
@@ -188,10 +179,10 @@ export function ContractTypeSection({ title, name, topAside, bottomAside, tone =
 		const fixedAmount = (
 			<RHFProNumber
 				name={`${name}.fixedAmount` as any}
-				label={showRatePercentage ? "مبلغ ثابت (ریال)" : "مبلغ هر واحد"}
+				label={showRatePercentage ? t("contract.type.fixedAmountRial") : t("contract.type.unitAmount")}
 				enableGrouping
 				enableWordsTooltip
-				inputProps={{ placeholder: "برای مثال ۱۲۰", inputMode: "numeric", addonAfter: "ریال" } as any}
+				inputProps={{ placeholder: t("contract.type.amountPlaceholder"), inputMode: "numeric", addonAfter: t("contract.unit.rial") } as any}
 				formItemProps={{ className: "contract-type-currency-field contract-type-unit-amount-field mb-0" }}
 			/>
 		);
@@ -200,11 +191,11 @@ export function ContractTypeSection({ title, name, topAside, bottomAside, tone =
 				name={`${name}.ratePercentage` as any}
 				label={(
 					<span className="inline-flex items-center gap-1">
-						درصد نرخ
+						{t("contract.type.ratePercentage")}
 						<Tooltip title={ratePercentageHelpText}>
 							<button
 								type="button"
-								aria-label="توضیحات درصد نرخ"
+								aria-label={t("contract.type.ratePercentageHelp")}
 								className="inline-flex cursor-help border-0 bg-transparent p-0 text-warning"
 							>
 								<QuestionCircleOutlined />
@@ -214,7 +205,7 @@ export function ContractTypeSection({ title, name, topAside, bottomAside, tone =
 				)}
 				enableGrouping={false}
 				enableWordsTooltip={false}
-				inputProps={{ placeholder: "بین 0 تا 100", inputMode: "numeric" } as any}
+				inputProps={{ placeholder: t("contract.type.percentRangePlaceholder"), inputMode: "numeric" } as any}
 				formItemProps={{ className: "mb-0" }}
 			/>
 		);
@@ -270,7 +261,7 @@ export function ContractTypeSection({ title, name, topAside, bottomAside, tone =
 							<ContractTierTable
 								name={`${name}.rows`}
 								variant="embedded"
-								currencyAddon="ریال"
+								currencyAddon={t("contract.unit.rial")}
 								showRatePercentage={showRatePercentage}
 								ratePercentageHelpText={ratePercentageHelpText}
 							/>
@@ -297,7 +288,7 @@ export function ContractTypeSection({ title, name, topAside, bottomAside, tone =
 											name={`${name}.sections.${sectionIndex}.mode` as any}
 											label=""
 											options={BLENDED_MODE_OPTIONS}
-											selectProps={{ placeholder: blendedModePlaceholder, allowClear: true }}
+											selectProps={{ placeholder: blendedModePlaceholder ?? t("contract.type.blendedModePlaceholder"), allowClear: true }}
 											formItemProps={{ className: "mb-0" }}
 										/>
 									</div>
@@ -308,7 +299,7 @@ export function ContractTypeSection({ title, name, topAside, bottomAside, tone =
 										disabled={sectionsFa.fields.length <= 1}
 										onClick={() => handleRemoveSection(sectionIndex)}
 									>
-										حذف بخش
+										{t("contract.type.removeSection")}
 									</Button>
 								</div>
 
@@ -316,7 +307,7 @@ export function ContractTypeSection({ title, name, topAside, bottomAside, tone =
 									<ContractTierTable
 										name={`${name}.sections.${sectionIndex}.rows`}
 										variant="embedded"
-										currencyAddon="ریال"
+										currencyAddon={t("contract.unit.rial")}
 										showRatePercentage={showRatePercentage}
 										ratePercentageHelpText={ratePercentageHelpText}
 									/>
@@ -325,7 +316,7 @@ export function ContractTypeSection({ title, name, topAside, bottomAside, tone =
 						))}
 
 						<Button className="contract-dashed-action" icon={<PlusOutlined />} onClick={addSection}>
-							افزودن مدل محاسبه
+							{t("contract.type.addCalculationModel")}
 						</Button>
 					</div>
 				)
@@ -341,7 +332,7 @@ export function ContractTypeSection({ title, name, topAside, bottomAside, tone =
 
 	if (!isSmsOperator) {
 		return (
-			<SectionCard title={title || "نوع محاسبه"} tone={tone} className="mt-3">
+			<SectionCard title={title || t("contract.type.calculationType")} tone={tone} className="mt-3">
 				{content}
 			</SectionCard>
 		);

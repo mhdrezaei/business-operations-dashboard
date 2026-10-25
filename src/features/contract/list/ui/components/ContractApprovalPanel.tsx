@@ -4,16 +4,19 @@ import type {
 	ContractApprovalPayload,
 	ContractServicePath,
 } from "../../../api/contracts.api";
+import type { ContractApprovalDecision } from "../../model/contract-approval-payload";
+import { toPersianDigits } from "#src/utils/formated";
 
 import { DownOutlined, UpOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert, Button, Card, Collapse, Input, Modal, Spin, Tooltip } from "antd";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { updateContractApproval } from "../../../api/contracts.api";
 import { contractApprovalQuery } from "../../../shared/queries/contract.queries";
+import { buildContractApprovalPayload } from "../../model/contract-approval-payload";
 import { ContractApprovalPolicy } from "../../model/contract-approval-policy";
 import { useContractApprovalHistoryStyles } from "./contract-approval-history.styles";
-import { toPersianDigits } from "./contract-approval-history.utils";
 import { ContractApprovalHistory } from "./ContractApprovalHistory";
 import { ContractApprovalStatusTag } from "./ContractApprovalStatusTag";
 
@@ -23,24 +26,20 @@ interface ContractApprovalPanelProps {
 	/** Raw contract detail, used for `is_official` and `real_signed_at` (lock) state. */
 	detail: Record<string, unknown> | null
 	companyType?: string | null
-	/** Shows statuses and history without the approve/reject actions. */
-	readOnly?: boolean
+	/** Shows the approve/reject actions; otherwise only statuses and history (old: hidden while editing). */
+	canDecide?: boolean
 }
 
-interface PendingDecision {
-	/** `null` targets the main contract, otherwise the addendum row id. */
-	addendumId: number | null
-	field: ContractApprovalField
-	value: boolean
+interface PendingDecision extends ContractApprovalDecision {
 	title: string
 }
 
-const FIELD_LABELS: Record<ContractApprovalField, string> = {
-	is_business_approved: "تأیید تجاری",
-	is_signed: "تأیید اداره قراردادها",
+const FIELD_LABEL_KEYS: Record<ContractApprovalField, string> = {
+	is_business_approved: "contract.list.column.isBusinessApproved",
+	is_signed: "contract.list.column.isSigned",
 };
 
-const APPROVAL_FIELDS = Object.keys(FIELD_LABELS) as ContractApprovalField[];
+const APPROVAL_FIELDS = Object.keys(FIELD_LABEL_KEYS) as ContractApprovalField[];
 
 function collectRealSignedIds(addenda: unknown, ids = new Set<number>()) {
 	if (!Array.isArray(addenda))
@@ -54,15 +53,8 @@ function collectRealSignedIds(addenda: unknown, ids = new Set<number>()) {
 	return ids;
 }
 
-function buildPayload(decision: PendingDecision, comment: string): ContractApprovalPayload {
-	const trimmedComment = comment.trim() || undefined;
-	const change = { [decision.field]: decision.value, comment: trimmedComment };
-	return decision.addendumId === null
-		? change
-		: { addenda: [{ id: decision.addendumId, ...change }] };
-}
-
-export function ContractApprovalPanel({ contractId, service, detail, companyType, readOnly }: ContractApprovalPanelProps) {
+export function ContractApprovalPanel({ contractId, service, detail, companyType, canDecide = false }: ContractApprovalPanelProps) {
+	const { t } = useTranslation();
 	const classes = useContractApprovalHistoryStyles();
 	const queryClient = useQueryClient();
 	const approvalQuery = contractApprovalQuery(service, contractId);
@@ -95,8 +87,10 @@ export function ContractApprovalPanel({ contractId, service, detail, companyType
 		mutationFn: (payload: ContractApprovalPayload) => updateContractApproval(service, contractId, payload),
 		onSuccess: (response) => {
 			queryClient.setQueryData(approvalQuery.queryKey, response);
-			queryClient.invalidateQueries({ queryKey: ["contracts", "detail", service, contractId] });
-			window.$message?.success("وضعیت تأیید با موفقیت ثبت شد");
+			// the preview page header reads the same status through its own queries
+			for (const key of ["detail", "preview-status", "preview-approval-history"])
+				queryClient.invalidateQueries({ queryKey: ["contracts", key, service, contractId] });
+			window.$message?.success(t("contract.list.approval.saved"));
 			closeDecision();
 		},
 	});
@@ -136,12 +130,11 @@ export function ContractApprovalPanel({ contractId, service, detail, companyType
 								{APPROVAL_FIELDS.map(field => (
 									<div key={field} className="flex flex-col gap-2">
 										<div className="flex items-center justify-between gap-2">
-											<span>{FIELD_LABELS[field]}</span>
+											<span>{t(FIELD_LABEL_KEYS[field])}</span>
 											<ContractApprovalStatusTag value={subject[field]} />
 										</div>
-										{readOnly
-											? null
-											: (
+										{canDecide
+											? (
 												<div className="flex gap-2">
 													{[true, false].map((value) => {
 														const state = policy.getActionState(subject, field, value, isRealSigned);
@@ -155,13 +148,14 @@ export function ContractApprovalPanel({ contractId, service, detail, companyType
 																	disabled={state.disabled}
 																	onClick={() => setDecision({ addendumId, field, value, title })}
 																>
-																	{value ? "تأیید" : "رد"}
+																	{value ? t("common.confirm") : t("contract.list.approval.reject")}
 																</Button>
 															</Tooltip>
 														);
 													})}
 												</div>
-											)}
+											)
+											: null}
 									</div>
 								))}
 								<ContractApprovalHistory subject={subject} />
@@ -176,20 +170,20 @@ export function ContractApprovalPanel({ contractId, service, detail, companyType
 	return (
 		<Card className={classes.historyCard} size="small">
 			<div className={classes.historyContent}>
-				<div className={classes.historyTitle}>وضعیت تأیید و تاریخچه</div>
+				<div className={classes.historyTitle}>{t("contract.list.approval.title")}</div>
 				<Spin spinning={isPending}>
 					{isError
-						? <Alert showIcon type="error" message="دریافت وضعیت تأیید ناموفق بود" />
+						? <Alert showIcon type="error" message={t("contract.list.approval.loadFailed")} />
 						: data
 							? (
 								<div className={classes.historyList}>
 									{policy.isUnofficialBlocked
-										? <Alert showIcon type="info" message="این قرارداد غیررسمی است و تأیید برای آن مجاز نیست." />
+										? <Alert showIcon type="info" message={t("contract.list.approval.unofficialBlocked")} />
 										: null}
-									{renderSubject(data, "قرارداد اصلی", null)}
+									{renderSubject(data, t("contract.list.approval.mainContract"), null)}
 									{uniqueAddenda.map(addendum => renderSubject(
 										addendum,
-										`الحاقیه ${toPersianDigits(String(addendum.display_addendum_number ?? addendum.id))}`,
+										t("contract.list.approval.addendumTitle", { number: toPersianDigits(String(addendum.display_addendum_number ?? addendum.id)) }),
 										addendum.id,
 									))}
 								</div>
@@ -199,12 +193,12 @@ export function ContractApprovalPanel({ contractId, service, detail, companyType
 			</div>
 			<Modal
 				open={decision !== null}
-				title={decision ? `${decision.value ? "تأیید" : "رد"} ${FIELD_LABELS[decision.field]} - ${decision.title}` : undefined}
-				okText="ثبت"
-				cancelText="انصراف"
+				title={decision ? `${decision.value ? t("common.confirm") : t("contract.list.approval.reject")} ${t(FIELD_LABEL_KEYS[decision.field])} - ${decision.title}` : undefined}
+				okText={t("contract.list.approval.submit")}
+				cancelText={t("common.cancel")}
 				okButtonProps={{ danger: decision?.value === false }}
 				confirmLoading={mutation.isPending}
-				onOk={() => decision && mutation.mutate(buildPayload(decision, comment))}
+				onOk={() => decision && mutation.mutate(buildContractApprovalPayload(decision, comment))}
 				onCancel={closeDecision}
 				destroyOnHidden
 			>
@@ -212,7 +206,7 @@ export function ContractApprovalPanel({ contractId, service, detail, companyType
 					rows={3}
 					maxLength={500}
 					value={comment}
-					placeholder="توضیحات (اختیاری)"
+					placeholder={t("contract.list.approval.commentPlaceholder")}
 					onChange={event => setComment(event.target.value)}
 				/>
 			</Modal>

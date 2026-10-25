@@ -1,30 +1,46 @@
 import type { ActionType, ProColumns, ProFormInstance } from "@ant-design/pro-components";
 import type { PerformanceReportRow, PerformanceReportSummary } from "../model/performance.report.types";
+import type { OperatorGovernmentFilters } from "../model/sms-report-variants";
+import type { ReportRequest } from "../queries/performance-report.fetch";
 import type { CompanyTypeSelection, PeriodType, ReportAggregationKey, ReportAuditColumnKey, ReportSelectOption, ReportServiceOption, SmsContractTypeFilter, SmsReportType } from "./constants";
-import type { ReportFinancialColumnKey } from "./export";
+import type { ReportExportExtraTitles, ReportExportLabels, ReportFinancialColumnKey } from "./export";
 import ReportResultsIcon from "#src/assets/svg/performance/report-results.svg?react";
 import { BasicContent, BasicTable } from "#src/components";
-import { fetchPerformanceReport } from "#src/features/performance/api/performances.api";
 import { normalizeServiceCode } from "#src/features/performance/shared/model/performance.helpers";
 import {
 	companiesByServiceQuery,
 	performanceReportAvailabilityQuery,
 	servicesQuery,
+	smsCommissionAgentsQuery,
 } from "#src/features/performance/shared/queries/performance.queries";
 import { MONTH_OPTIONS } from "#src/features/performance/shared/ui/form/constants/jalali-date-options";
 import { useAccess } from "#src/hooks";
+import { SingleOptionSync } from "#src/shared/ui/rhf-pro";
 import { FileExcelOutlined, FilePdfOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Space } from "antd";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ALL_COMPANY_TYPES, getReportCompanyTypeLabel, isOnlyCompanyType, normalizeCompanyTypeFilter } from "./company-type";
+import {
+	buildPerformanceReportParams,
+	buildReportAvailabilityQuery,
+	getDefaultFinancialColumns,
+	getFinancialColumnKeys,
+	isValidDefaultConversionRatio,
+	normalizePeriods,
+	parsePeriod,
+	prunePeriodsToAvailability,
+} from "../model/performance-report.params";
+import { buildOperatorGovernmentParams, DEFAULT_OPERATOR_GOVERNMENT_FILTERS, resolveSmsCommissionScope } from "../model/sms-report-variants";
+import { fetchReportPage } from "../queries/performance-report.fetch";
+import { ALL_COMPANY_TYPES, getReportCompanyTypeLabel, hasCompanyTypeSelection, isOnlyCompanyType, isUnitConversionCompanyType } from "./company-type";
 import { ReportCompanyPicker } from "./components/ReportCompanyPicker";
 import { ReportPeriodPicker } from "./components/ReportPeriodPicker";
+import { ReportRowActions } from "./components/ReportRowActions";
 import { ReportSettingsPanel } from "./components/ReportSettingsPanel";
 import { ReportSummaryCards } from "./components/ReportSummaryCards";
+import { ReportTotalsSummary } from "./components/ReportTotalsSummary";
 import {
-	buildReportAggregationParams,
 	filterAggregationKeys,
 	getAllowedAggregationKeys,
 	getPerformanceReportColumns,
@@ -39,85 +55,10 @@ import {
 	downloadPerformanceReportExcel,
 	openPerformanceReportPdfPrint,
 } from "./export";
+import { formatReportMoney, formatReportNumber } from "./report-number-format";
+import { addSmsVariantExportColumns } from "./sms-variant-export-columns";
 
-interface ParsedPeriod {
-	period: string
-	year: number
-	month: number
-}
-
-function parsePeriod(period: string): ParsedPeriod | null {
-	const text = String(period ?? "").trim();
-	if (!text)
-		return null;
-
-	const [yearRaw, monthRaw] = text.split("-");
-	const year = Number(yearRaw);
-	const month = Number(monthRaw);
-	if (!Number.isFinite(year) || !Number.isFinite(month))
-		return null;
-	if (month < 1 || month > 12)
-		return null;
-
-	return {
-		period: `${year}-${month}`,
-		year,
-		month,
-	};
-}
-
-function sortPeriods(periods: string[]) {
-	return [...periods].sort((a, b) => {
-		const parsedA = parsePeriod(a);
-		const parsedB = parsePeriod(b);
-		if (!parsedA || !parsedB)
-			return String(a).localeCompare(String(b));
-		if (parsedA.year !== parsedB.year)
-			return parsedA.year - parsedB.year;
-		return parsedA.month - parsedB.month;
-	});
-}
-
-function normalizePeriods(values: unknown) {
-	if (!Array.isArray(values))
-		return [];
-
-	const dedup = new Set<string>();
-	values.forEach((item) => {
-		const parsed = parsePeriod(String(item ?? ""));
-		if (!parsed)
-			return;
-		dedup.add(parsed.period);
-	});
-
-	return sortPeriods(Array.from(dedup));
-}
-
-function normalizeNumberList(values: unknown) {
-	if (!Array.isArray(values))
-		return [];
-
-	const dedup = new Set<number>();
-	values.forEach((item) => {
-		const numeric = Number(item);
-		if (Number.isInteger(numeric) && numeric > 0)
-			dedup.add(numeric);
-	});
-
-	return Array.from(dedup);
-}
-
-function formatSummaryNumber(value: number | null | undefined) {
-	if (value == null)
-		return "-";
-	return Number(value).toLocaleString("en-US");
-}
-
-function formatSummaryMoney(value: number | null | undefined, showRial: boolean) {
-	if (value == null)
-		return "-";
-	return (showRial ? Number(value) : Number(value) / 10).toLocaleString("en-US");
-}
+const INITIAL_FINANCIAL_COLUMNS = getDefaultFinancialColumns("default", "normal", false);
 
 function pickSummaryValue(summary: PerformanceReportSummary, keys: readonly string[]) {
 	if (!summary)
@@ -135,42 +76,9 @@ function pickSummaryValue(summary: PerformanceReportSummary, keys: readonly stri
 	return null;
 }
 
-function isValidDefaultConversionRatio(value: number | null) {
-	return value != null && Number.isFinite(value) && value >= 0 && value <= 10;
-}
-
 // In the fiscal calendar the period month is 3 months ahead of the month it
 // represents to the user (fiscal month 1 = دی, 11 = آبان, 12 = آذر). Only the
 // displayed name is shifted; the underlying period value stays untouched.
-
-const DEFAULT_FINANCIAL_COLUMNS: ReportFinancialColumnKey[] = ["rial", "income", "expense", "profit", "total"];
-const OPENAPI_FINANCIAL_COLUMNS: ReportFinancialColumnKey[] = ["rial", "income", "expense"];
-const PSP_FINANCIAL_COLUMNS: ReportFinancialColumnKey[] = ["rial", "income", "expense", "profit"];
-const SHAHKAR_FINANCIAL_COLUMNS: ReportFinancialColumnKey[] = ["rial", "income", "expense", "profit", "total"];
-const TRAFFIC_FINANCIAL_COLUMNS: ReportFinancialColumnKey[] = ["rial", "income", "expense", "profit", "contractType", "total"];
-const TRAFFIC_CP_FINANCIAL_COLUMNS: ReportFinancialColumnKey[] = ["showBaseUnit", ...TRAFFIC_FINANCIAL_COLUMNS];
-const SMS_NORMAL_FINANCIAL_COLUMNS: ReportFinancialColumnKey[] = ["rial", "income", "expense", "contractType"];
-const SMS_FINANCE_FINANCIAL_COLUMNS: ReportFinancialColumnKey[] = ["rial", "income", "total"];
-const SMS_SUMMARY_FINANCIAL_COLUMNS: ReportFinancialColumnKey[] = ["rial", "income", "expense", "profit", "contractType", "total"];
-const SMS_COMMISSION_FINANCIAL_COLUMNS: ReportFinancialColumnKey[] = [
-	"rial",
-	"unitPrice",
-	"karashabIncome",
-	"karashabExpense",
-	"karashabProfit",
-	"telecomIncome",
-	"firstPartyIncome",
-	"regionIncome",
-	"salesAgentIncome",
-	"total",
-];
-function getSmsFinancialDefaults(reportType: SmsReportType) {
-	if (reportType === "finance")
-		return SMS_FINANCE_FINANCIAL_COLUMNS;
-	if (reportType === "summary")
-		return SMS_SUMMARY_FINANCIAL_COLUMNS;
-	return SMS_NORMAL_FINANCIAL_COLUMNS;
-}
 
 export function PerformanceReportPage() {
 	const { t, i18n } = useTranslation();
@@ -183,16 +91,20 @@ export function PerformanceReportPage() {
 	const [selectedServiceCode, setSelectedServiceCode] = useState<string | null>(null);
 	const [selectedPeriods, setSelectedPeriods] = useState<string[]>([]);
 	const [selectedCompanyIds, setSelectedCompanyIds] = useState<number[]>([]);
+	const [userClearedCompanies, setUserClearedCompanies] = useState(false);
+	const [autoSelectCompanies, setAutoSelectCompanies] = useState(true);
 	const [selectedSmsReportType, setSelectedSmsReportType] = useState<SmsReportType>("normal");
 	const [selectedPeriodType, setSelectedPeriodType] = useState<PeriodType>("sh");
 	const [selectedCompanyType, setSelectedCompanyType] = useState<CompanyTypeSelection>(null);
 	const [selectedContractType, setSelectedContractType] = useState<SmsContractTypeFilter>("all");
-	const [selectedFinancialColumns, setSelectedFinancialColumns] = useState<ReportFinancialColumnKey[]>(DEFAULT_FINANCIAL_COLUMNS);
+	const [selectedFinancialColumns, setSelectedFinancialColumns] = useState<ReportFinancialColumnKey[]>(INITIAL_FINANCIAL_COLUMNS);
 	const [selectedAuditColumns, setSelectedAuditColumns] = useState<ReportAuditColumnKey[]>([]);
 	const [selectedAggregation, setSelectedAggregation] = useState<ReportAggregationKey[]>([]);
 	const [defaultConversionRatio, setDefaultConversionRatio] = useState<number | null>(null);
 	const [debouncedDefaultConversionRatio, setDebouncedDefaultConversionRatio] = useState<number | null>(null);
 	const [summary, setSummary] = useState<PerformanceReportSummary>(null);
+	const [totalsRows, setTotalsRows] = useState<PerformanceReportRow[]>([]);
+	const [operatorGovernmentFilters, setOperatorGovernmentFilters] = useState<OperatorGovernmentFilters>(DEFAULT_OPERATOR_GOVERNMENT_FILTERS);
 
 	const permittedViewIdsFromPerformances = getPermittedServiceIds("performances", "view");
 	const permittedViewIdsFromContracts = getPermittedServiceIds("contracts", "view");
@@ -205,30 +117,48 @@ export function PerformanceReportPage() {
 		[permittedViewServiceIdsList.join(",")],
 	);
 
-	const normalizedSelectedServiceCode = normalizeServiceCode(selectedServiceCode);
-	const availabilityRequiresCompanyType = normalizedSelectedServiceCode === "sms" || normalizedSelectedServiceCode === "psp" || normalizedSelectedServiceCode === "traffic";
-	const hasSelectedCompanyType = Array.isArray(selectedCompanyType) ? selectedCompanyType.length > 0 : !!selectedCompanyType;
-	const hasRequiredAvailabilityFilters = !!selectedServiceId && (!availabilityRequiresCompanyType || hasSelectedCompanyType);
+	const serviceLayout = getReportServiceLayout(selectedServiceCode);
+	const isSmsService = serviceLayout === "sms";
+	const isSmsCommissionService = serviceLayout === "sms-commission";
+	const isTrafficService = serviceLayout === "traffic";
+	const isPspService = serviceLayout === "psp";
+	const isSalesAgencyService = serviceLayout === "sales-agency";
+	const supportsOperatorLanguageAggregationFilter = supportsOperatorLanguageAggregation(selectedServiceCode);
+	const isOperatorGovernment = isSmsService && selectedSmsReportType === "operatorGovernment";
+	const isFinanceDepartment = isSmsService && selectedSmsReportType === "finance";
+	const isOverallSms = isSmsService && selectedSmsReportType === "summary";
+	const requiresCompanyType = (isSmsService || isPspService || isTrafficService || isSalesAgencyService) && !isOperatorGovernment;
+	const supportsContractType = isSmsService || isTrafficService;
+	const hasSelectedCompanyType = hasCompanyTypeSelection(selectedCompanyType);
+	const isSalesAgencyOutbound = isSalesAgencyService && isOnlyCompanyType(selectedCompanyType, "OUTBOUND");
+	const isCollocation = isTrafficService && isOnlyCompanyType(selectedCompanyType, "COLLOCATION");
+	const isUnitConversion = isTrafficService && isUnitConversionCompanyType(selectedCompanyType);
+	const hasRequiredAvailabilityFilters = !!selectedServiceId && (!requiresCompanyType || hasSelectedCompanyType);
+	const isAggregated = selectedAggregation.some(key => key !== "by_data_center");
+	const isAuditColumnsDisabled = selectedAggregation.length > 0 || (isSmsService && selectedSmsReportType !== "normal");
+
+	const availabilityInput = {
+		serviceId: selectedServiceId,
+		periodType: selectedPeriodType,
+		companyType: selectedCompanyType,
+		supportsContractType,
+		contractType: selectedContractType,
+		aggregation: selectedAggregation,
+		isCollocation,
+		overallSmsPerformance: isOverallSms,
+	};
 
 	const services = useQuery(servicesQuery());
 	const companies = useQuery(companiesByServiceQuery(selectedServiceId));
-	const availabilityBase = useQuery({
-		...performanceReportAvailabilityQuery({
-			serviceId: selectedServiceId,
-			companyType: normalizeCompanyTypeFilter(selectedCompanyType),
-			periodType: selectedPeriodType,
-		}),
-		enabled: hasRequiredAvailabilityFilters,
-	});
-	const availabilityByPeriods = useQuery({
-		...performanceReportAvailabilityQuery({
-			serviceId: selectedServiceId,
-			shPeriods: selectedPeriods,
-			companyType: normalizeCompanyTypeFilter(selectedCompanyType),
-			periodType: selectedPeriodType,
-		}),
-		enabled: hasRequiredAvailabilityFilters && selectedPeriods.length > 0,
-	});
+	const smsCommissionAgents = useQuery(smsCommissionAgentsQuery(isSmsCommissionService));
+	const availabilityBase = useQuery(performanceReportAvailabilityQuery(
+		hasRequiredAvailabilityFilters ? buildReportAvailabilityQuery({ ...availabilityInput, periods: [] }) : null,
+	));
+	const availabilityByPeriods = useQuery(performanceReportAvailabilityQuery(
+		hasRequiredAvailabilityFilters && selectedPeriods.length > 0
+			? buildReportAvailabilityQuery({ ...availabilityInput, periods: selectedPeriods })
+			: null,
+	));
 
 	const serviceOptions: ReportServiceOption[] = useMemo(() => {
 		return (services.data?.results ?? [])
@@ -243,73 +173,21 @@ export function PerformanceReportPage() {
 			});
 	}, [services.data, permittedViewServiceIdsList.join(",")]);
 
-	useEffect(() => {
-		if (!selectedServiceId)
-			return;
-		if (permittedViewServiceIds.has(selectedServiceId))
-			return;
-
-		setSelectedServiceId(null);
-		setSelectedServiceCode(null);
-		setSelectedPeriods([]);
-		setSelectedCompanyIds([]);
-		setSelectedSmsReportType("normal");
-		setSelectedPeriodType("sh");
-		setSelectedCompanyType(null);
-		setSelectedContractType("all");
-		setSelectedFinancialColumns(DEFAULT_FINANCIAL_COLUMNS);
-		setSelectedAuditColumns([]);
-		setSelectedAggregation([]);
-		setDefaultConversionRatio(null);
-		setDebouncedDefaultConversionRatio(null);
-		setSummary(null);
-		formRef.current?.setFieldsValue({
-			service_id: undefined,
-			sh_year: undefined,
-			sh_periods: undefined,
-			company_ids: undefined,
-			company_type: undefined,
-			sms_report_type: "normal",
-			period_type: "sh",
-			is_official: "all",
-			financial_columns: DEFAULT_FINANCIAL_COLUMNS,
-			audit_columns: undefined,
-			aggregation: [],
-			default_conversion_ratio: undefined,
-		});
-	}, [selectedServiceId, permittedViewServiceIdsList.join(",")]);
+	const canViewSmsCommission = useMemo(
+		() => serviceOptions.some(option => getReportServiceLayout(option.code) === "sms-commission"),
+		[serviceOptions],
+	);
 
 	const selectedServiceName = useMemo(() => {
 		if (!selectedServiceId)
 			return null;
 		return serviceOptions.find(item => item.value === selectedServiceId)?.label ?? null;
 	}, [selectedServiceId, serviceOptions]);
-	const isSmsService = selectedServiceCode === "sms";
-	const isSmsCommissionService = selectedServiceCode === "sms-commission" || selectedServiceCode === "sms_commission";
-	const isOpenApiService = selectedServiceCode === "openapi";
-	const isTrafficService = selectedServiceCode === "traffic";
-	const isPspService = selectedServiceCode === "psp";
-	const isShahkarService = selectedServiceCode === "shahkar";
-	const supportsOperatorLanguageAggregationFilter = supportsOperatorLanguageAggregation(selectedServiceCode);
-	const requiresCompanyType = isSmsService || isPspService || isTrafficService;
-	const supportsContractType = isSmsService || isTrafficService;
-	const isAuditColumnsDisabled = selectedAggregation.length > 0;
-	const isTrafficCp = isTrafficService && isOnlyCompanyType(selectedCompanyType, "CP");
 	const isBaseUnitHidden = !selectedFinancialColumns.includes("showBaseUnit");
 	const hasDefaultConversionRatio = defaultConversionRatio != null;
-	const isDefaultConversionRatioInvalid = isTrafficCp && isBaseUnitHidden && hasDefaultConversionRatio && !isValidDefaultConversionRatio(defaultConversionRatio);
+	const isDefaultConversionRatioInvalid = isUnitConversion && isBaseUnitHidden && hasDefaultConversionRatio && !isValidDefaultConversionRatio(defaultConversionRatio);
 
-	const availablePeriods = useMemo(() => {
-		const fromApi = availabilityBase.data?.periods ?? [];
-		const dedup = new Set<string>();
-		fromApi.forEach((item) => {
-			const parsed = parsePeriod(String(item ?? ""));
-			if (!parsed)
-				return;
-			dedup.add(parsed.period);
-		});
-		return sortPeriods(Array.from(dedup));
-	}, [availabilityBase.data]);
+	const availablePeriods = useMemo(() => normalizePeriods(availabilityBase.data?.periods), [availabilityBase.data]);
 
 	const yearOptions = useMemo(() => {
 		const years = new Set<number>();
@@ -362,6 +240,12 @@ export function PerformanceReportPage() {
 		[requiresCompanyType, selectedServiceId, getPermittedCompanyTypes, isSmsService, t],
 	);
 
+	const resetCompanySelection = () => {
+		setSelectedCompanyIds([]);
+		setUserClearedCompanies(false);
+		setAutoSelectCompanies(true);
+	};
+
 	useEffect(() => {
 		if (!requiresCompanyType || !hasSelectedCompanyType)
 			return;
@@ -371,13 +255,16 @@ export function PerformanceReportPage() {
 			return;
 
 		setSelectedCompanyType(null);
-		setSelectedCompanyIds([]);
+		resetCompanySelection();
 		setSummary(null);
-		formRef.current?.setFieldsValue({
-			company_type: undefined,
-			company_ids: undefined,
-		});
+		formRef.current?.setFieldsValue({ company_type: undefined });
 	}, [requiresCompanyType, hasSelectedCompanyType, selectedCompanyType, companyTypeOptions]);
+
+	const agentNameByCompanyId = useMemo(() => {
+		const names = new Map<number, string>();
+		(smsCommissionAgents.data?.results ?? []).forEach(agent => names.set(Number(agent.company), agent.name));
+		return names;
+	}, [smsCommissionAgents.data]);
 
 	const companyOptions = useMemo(() => {
 		if (!selectedServiceId)
@@ -397,8 +284,10 @@ export function PerformanceReportPage() {
 					return options;
 
 				seenCompanyIds.add(companyId);
+				const companyName = String(company.name ?? "").trim() || String(companyId);
+				const agentName = agentNameByCompanyId.get(companyId);
 				options.push({
-					label: String(company.name ?? "").trim() || String(companyId),
+					label: agentName ? `${companyName} - ${agentName}` : companyName,
 					value: companyId,
 				});
 				return options;
@@ -410,7 +299,7 @@ export function PerformanceReportPage() {
 		return companiesList
 			.filter(company => availableSet.has(Number(company.id)))
 			.map(company => ({
-				label: company.name,
+				label: agentNameByCompanyId.has(Number(company.id)) ? `${company.name} - ${agentNameByCompanyId.get(Number(company.id))}` : company.name,
 				value: company.id,
 			}));
 	}, [
@@ -420,7 +309,15 @@ export function PerformanceReportPage() {
 		availabilityByPeriods.data,
 		companies.data,
 		availableCompanyIds.join(","),
+		agentNameByCompanyId,
 	]);
+
+	useEffect(() => {
+		if (!autoSelectCompanies || companyOptions.length === 0)
+			return;
+		setSelectedCompanyIds(companyOptions.map(option => Number(option.value)));
+		setUserClearedCompanies(false);
+	}, [autoSelectCompanies, companyOptions]);
 
 	const contractTypeOptions = useMemo<ReportSelectOption[]>(() => ([
 		{ label: t("performance.contractType.all"), value: "all" },
@@ -430,15 +327,16 @@ export function PerformanceReportPage() {
 	const smsReportTypeOptions = useMemo<ReportSelectOption[]>(() => ([
 		{ label: t("performance.smsReportType.normal"), value: "normal" },
 		{ label: t("performance.smsReportType.finance"), value: "finance" },
-		{ label: t("performance.smsReportType.summary"), value: "summary" },
-	]), [t]);
+		...(canViewSmsCommission ? [{ label: t("performance.smsReportType.summary"), value: "summary" }] : []),
+		{ label: t("performance.smsReportType.operatorGovernment"), value: "operatorGovernment" },
+	]), [canViewSmsCommission, t]);
 	const periodTypeOptions = useMemo<ReportSelectOption[]>(() => ([
 		{ label: t("performance.periodType.sh"), value: "sh" },
 		{ label: t("performance.periodType.fiscal"), value: "fiscal" },
 	]), [t]);
 	const aggregationOptions = useMemo<ReportSelectOption[]>(() => {
 		const options: ReportSelectOption[] = [
-			{ label: t("performance.aggregation.byCompany"), value: "by_company" },
+			...(isOperatorGovernment ? [] : [{ label: t("performance.aggregation.byCompany"), value: "by_company" }]),
 			{ label: t("performance.aggregation.byMonth"), value: "by_month" },
 		];
 		if (supportsOperatorLanguageAggregationFilter) {
@@ -447,24 +345,20 @@ export function PerformanceReportPage() {
 				{ label: t("performance.aggregation.byLanguage"), value: "by_language" },
 			);
 		}
+		if (isCollocation)
+			options.push({ label: t("performance.aggregation.byDataCenter"), value: "by_data_center" });
 		return options;
-	}, [supportsOperatorLanguageAggregationFilter, t]);
+	}, [supportsOperatorLanguageAggregationFilter, isCollocation, isOperatorGovernment, t]);
 
 	const allowedAggregationKeys = useMemo(
-		() => getAllowedAggregationKeys(selectedServiceCode),
-		[selectedServiceCode],
+		() => getAllowedAggregationKeys(selectedServiceCode, isCollocation).filter(key => !(isOperatorGovernment && key === "by_company")),
+		[selectedServiceCode, isCollocation, isOperatorGovernment],
 	);
 
 	useEffect(() => {
 		setSelectedAggregation((prev) => {
 			const next = filterAggregationKeys(prev, allowedAggregationKeys);
-			if (next.join(",") === prev.join(","))
-				return prev;
-
-			formRef.current?.setFieldsValue({
-				aggregation: next.length > 0 ? next : undefined,
-			});
-			return next;
+			return next.join(",") === prev.join(",") ? prev : next;
 		});
 	}, [allowedAggregationKeys.join(",")]);
 
@@ -473,89 +367,13 @@ export function PerformanceReportPage() {
 			return;
 
 		setSelectedAuditColumns([]);
-		formRef.current?.setFieldsValue({
-			audit_columns: undefined,
-		});
 	}, [isAuditColumnsDisabled, selectedAuditColumns.length]);
 
-	const financialColumnOptions = useMemo<ReportSelectOption[]>(() => {
-		const rialOption = { label: t("performance.columns.rial"), value: "rial" };
-		if (isSmsCommissionService) {
-			return [
-				rialOption,
-				{ label: t("performance.columns.unitPrice"), value: "unitPrice" },
-				{ label: t("performance.columns.karashabIncome"), value: "karashabIncome" },
-				{ label: t("performance.columns.karashabExpense"), value: "karashabExpense" },
-				{ label: t("performance.columns.karashabProfit"), value: "karashabProfit" },
-				{ label: t("performance.columns.telecomIncome"), value: "telecomIncome" },
-				{ label: t("performance.columns.firstPartyIncome"), value: "firstPartyIncome" },
-				{ label: t("performance.columns.regionIncome"), value: "regionIncome" },
-				{ label: t("performance.columns.salesAgentIncome"), value: "salesAgentIncome" },
-				{ label: t("performance.columns.total"), value: "total" },
-			];
-		}
-		if (isOpenApiService) {
-			return [
-				rialOption,
-				{ label: t("performance.columns.income"), value: "income" },
-				{ label: t("performance.columns.expense"), value: "expense" },
-				{ label: t("performance.columns.profit"), value: "profit" },
-				{ label: t("performance.columns.total"), value: "total" },
-			];
-		}
-		if (isPspService) {
-			return [
-				rialOption,
-				{ label: t("performance.columns.income"), value: "income" },
-				{ label: t("performance.columns.expense"), value: "expense" },
-				{ label: t("performance.columns.profit"), value: "profit" },
-				{ label: t("performance.columns.total"), value: "total" },
-			];
-		}
-		if (isShahkarService) {
-			return [
-				rialOption,
-				{ label: t("performance.columns.income"), value: "income" },
-				{ label: t("performance.columns.expense"), value: "expense" },
-				{ label: t("performance.columns.profit"), value: "profit" },
-				{ label: t("performance.columns.total"), value: "total" },
-			];
-		}
-		if (isTrafficService) {
-			const options: ReportSelectOption[] = [
-				rialOption,
-				{ label: t("performance.columns.income"), value: "income" },
-				{ label: t("performance.columns.expense"), value: "expense" },
-				{ label: t("performance.columns.profit"), value: "profit" },
-				{ label: t("performance.columns.contractType"), value: "contractType" },
-				{ label: t("performance.columns.total"), value: "total" },
-			];
-			if (isTrafficCp) {
-				return [
-					{ label: t("performance.columns.showBaseUnit"), value: "showBaseUnit" },
-					...options,
-				];
-			}
-			return options;
-		}
-		if (isSmsService && selectedSmsReportType === "finance") {
-			return [
-				rialOption,
-				{ label: t("performance.columns.income"), value: "income" },
-				{ label: t("performance.columns.total"), value: "total" },
-			];
-		}
-		const options: ReportSelectOption[] = [
-			rialOption,
-			{ label: t("performance.columns.income"), value: "income" },
-			{ label: t("performance.columns.expense"), value: "expense" },
-			{ label: t("performance.columns.profit"), value: "profit" },
-		];
-		if (supportsContractType)
-			options.push({ label: t("performance.columns.contractType"), value: "contractType" });
-		options.push({ label: t("performance.columns.total"), value: "total" });
-		return options;
-	}, [isOpenApiService, isPspService, isShahkarService, isTrafficService, isTrafficCp, isSmsCommissionService, isSmsService, selectedSmsReportType, supportsContractType, t]);
+	const financialColumnOptions = useMemo<ReportSelectOption[]>(
+		() => getFinancialColumnKeys(serviceLayout, selectedSmsReportType, isUnitConversion)
+			.map(key => ({ label: t(`performance.columns.${key}`), value: key })),
+		[serviceLayout, selectedSmsReportType, isUnitConversion, t],
+	);
 
 	const auditColumnOptions = useMemo<ReportSelectOption[]>(() => ([
 		{ label: t("performance.columns.createdByUser"), value: "createdByUser" },
@@ -565,28 +383,18 @@ export function PerformanceReportPage() {
 	useEffect(() => {
 		setSelectedFinancialColumns((prev) => {
 			const hasShowBaseUnit = prev.includes("showBaseUnit");
-			if (isTrafficCp) {
-				if (hasShowBaseUnit)
-					return prev;
-				const next = ["showBaseUnit", ...prev] as ReportFinancialColumnKey[];
-				formRef.current?.setFieldsValue({ financial_columns: next });
-				return next;
-			}
-
-			if (!hasShowBaseUnit)
-				return prev;
-			const next = prev.filter(key => key !== "showBaseUnit");
-			formRef.current?.setFieldsValue({ financial_columns: next });
-			return next;
+			if (isUnitConversion)
+				return hasShowBaseUnit ? prev : ["showBaseUnit", ...prev];
+			return hasShowBaseUnit ? prev.filter(key => key !== "showBaseUnit") : prev;
 		});
 
-		if (isTrafficCp)
+		if (isUnitConversion)
 			return;
 
 		setDefaultConversionRatio(null);
 		setDebouncedDefaultConversionRatio(null);
 		formRef.current?.setFieldsValue({ default_conversion_ratio: undefined });
-	}, [isTrafficCp]);
+	}, [isUnitConversion]);
 
 	useEffect(() => {
 		if (isDefaultConversionRatioInvalid)
@@ -601,42 +409,12 @@ export function PerformanceReportPage() {
 		};
 	}, [defaultConversionRatio, isDefaultConversionRatioInvalid]);
 
-	const selectedFinancialColumnTitles = useMemo(() => {
-		const titles: Partial<Record<ReportFinancialColumnKey, string>> = {};
-		selectedFinancialColumns.forEach((key) => {
-			if (key === "income")
-				titles.income = t("performance.columns.income");
-			if (key === "expense")
-				titles.expense = t("performance.columns.expense");
-			if (key === "profit")
-				titles.profit = t("performance.columns.profit");
-			if (key === "total")
-				titles.total = t("performance.columns.total");
-			if (key === "contractType")
-				titles.contractType = t("performance.columns.contractType");
-			if (key === "showBaseUnit")
-				titles.showBaseUnit = t("performance.columns.showBaseUnit");
-			if (key === "rial")
-				titles.rial = t("performance.columns.rial");
-			if (key === "unitPrice")
-				titles.unitPrice = t("performance.columns.unitPrice");
-			if (key === "karashabIncome")
-				titles.karashabIncome = t("performance.columns.karashabIncome");
-			if (key === "karashabExpense")
-				titles.karashabExpense = t("performance.columns.karashabExpense");
-			if (key === "karashabProfit")
-				titles.karashabProfit = t("performance.columns.karashabProfit");
-			if (key === "telecomIncome")
-				titles.telecomIncome = t("performance.columns.telecomIncome");
-			if (key === "firstPartyIncome")
-				titles.firstPartyIncome = t("performance.columns.firstPartyIncome");
-			if (key === "regionIncome")
-				titles.regionIncome = t("performance.columns.regionIncome");
-			if (key === "salesAgentIncome")
-				titles.salesAgentIncome = t("performance.columns.salesAgentIncome");
-		});
-		return titles;
-	}, [selectedFinancialColumns, t]);
+	const selectedFinancialColumnTitles = useMemo(
+		() => Object.fromEntries(
+			selectedFinancialColumns.map(key => [key, t(`performance.columns.${key}`)]),
+		) as Partial<Record<ReportFinancialColumnKey, string>>,
+		[selectedFinancialColumns, t],
+	);
 
 	const reportSummaryItems = useMemo(() => {
 		if (!selectedFinancialColumns.includes("total") || !summary)
@@ -645,31 +423,37 @@ export function PerformanceReportPage() {
 		const showRial = selectedFinancialColumns.includes("rial");
 		const items: Array<{ key: string, label: string, value: string }> = [];
 		if (selectedFinancialColumnTitles.total) {
-			items.push({
-				key: "total",
-				label: selectedFinancialColumnTitles.total,
-				value: formatSummaryNumber(summary.value),
-			});
+			items.push(isSalesAgencyService
+				? {
+					key: "total",
+					label: t(isSalesAgencyOutbound ? "performance.columns.totalSales" : "performance.columns.creditTotal"),
+					value: formatReportMoney(pickSummaryValue(summary, [...REPORT_FIELD_KEYS.creditTotal, ...REPORT_FIELD_KEYS.totalSales]), showRial),
+				}
+				: {
+					key: "total",
+					label: selectedFinancialColumnTitles.total,
+					value: formatReportNumber(summary.value),
+				});
 		}
 		if (selectedFinancialColumnTitles.income) {
 			items.push({
 				key: "income",
 				label: selectedFinancialColumnTitles.income,
-				value: formatSummaryMoney(summary.income_financial, showRial),
+				value: formatReportMoney(summary.income_financial, showRial),
 			});
 		}
 		if (selectedFinancialColumnTitles.expense) {
 			items.push({
 				key: "expense",
 				label: selectedFinancialColumnTitles.expense,
-				value: formatSummaryMoney(summary.expense_financial, showRial),
+				value: formatReportMoney(summary.expense_financial, showRial),
 			});
 		}
 		if (selectedFinancialColumnTitles.profit) {
 			items.push({
 				key: "profit",
 				label: selectedFinancialColumnTitles.profit,
-				value: formatSummaryMoney(summary.profit_financial, showRial),
+				value: formatReportMoney(summary.profit_financial, showRial),
 			});
 		}
 
@@ -692,39 +476,21 @@ export function PerformanceReportPage() {
 			const value = pickSummaryValue(summary, field.keys);
 			if (value == null)
 				return;
-			items.push({ key: field.key, label: field.title, value: formatSummaryMoney(value, showRial) });
+			items.push({ key: field.key, label: field.title, value: formatReportMoney(value, showRial) });
 		});
 
 		return items;
-	}, [selectedFinancialColumnTitles, selectedFinancialColumns, summary]);
+	}, [selectedFinancialColumnTitles, selectedFinancialColumns, summary, isSalesAgencyService, isSalesAgencyOutbound, t]);
 
 	const setSelectedService = (serviceId: number | null, serviceCode: string | null) => {
 		const normalizedServiceCode = serviceCode ? normalizeServiceCode(serviceCode) : null;
-		const nextIsSmsService = normalizedServiceCode === "sms";
-		const nextIsSmsCommissionService = normalizedServiceCode === "sms-commission" || normalizedServiceCode === "sms_commission";
-		const nextIsOpenApiService = normalizedServiceCode === "openapi";
-		const nextIsPspService = normalizedServiceCode === "psp";
-		const nextIsShahkarService = normalizedServiceCode === "shahkar";
-		const nextIsTrafficService = normalizedServiceCode === "traffic";
 		const nextSmsReportType: SmsReportType = "normal";
-		const nextFinancialColumns = nextIsSmsCommissionService
-			? SMS_COMMISSION_FINANCIAL_COLUMNS
-			: nextIsSmsService
-				? getSmsFinancialDefaults(nextSmsReportType)
-				: nextIsOpenApiService
-					? OPENAPI_FINANCIAL_COLUMNS
-					: nextIsPspService
-						? PSP_FINANCIAL_COLUMNS
-						: nextIsShahkarService
-							? SHAHKAR_FINANCIAL_COLUMNS
-							: nextIsTrafficService
-								? TRAFFIC_FINANCIAL_COLUMNS
-								: DEFAULT_FINANCIAL_COLUMNS;
+		const nextFinancialColumns = getDefaultFinancialColumns(getReportServiceLayout(normalizedServiceCode), nextSmsReportType, false);
 
 		setSelectedServiceId(serviceId);
 		setSelectedServiceCode(normalizedServiceCode);
 		setSelectedPeriods([]);
-		setSelectedCompanyIds([]);
+		resetCompanySelection();
 		setSelectedSmsReportType(nextSmsReportType);
 		setSelectedCompanyType(null);
 		setSelectedContractType("all");
@@ -736,93 +502,75 @@ export function PerformanceReportPage() {
 		setSummary(null);
 
 		formRef.current?.setFieldsValue({
-			sh_year: undefined,
-			sh_periods: undefined,
-			company_ids: undefined,
+			service_id: serviceId ?? undefined,
 			company_type: undefined,
 			sms_report_type: nextSmsReportType,
 			is_official: "all",
-			financial_columns: nextFinancialColumns,
-			audit_columns: undefined,
-			aggregation: [],
 			default_conversion_ratio: undefined,
 		});
 	};
 
+	useEffect(() => {
+		if (!selectedServiceId)
+			return;
+		if (permittedViewServiceIds.has(selectedServiceId))
+			return;
+
+		setSelectedService(null, null);
+		setSelectedPeriodType("sh");
+	}, [selectedServiceId, permittedViewServiceIdsList.join(",")]);
+
 	const handlePeriodsChange = (periods: string[]) => {
 		setSelectedPeriods(periods);
-		setSelectedCompanyIds([]);
 		setSummary(null);
-		formRef.current?.setFieldsValue({
-			sh_periods: periods.length > 0 ? periods : undefined,
-			company_ids: undefined,
-		});
 	};
 
+	useEffect(() => {
+		if (!availabilityBase.data)
+			return;
+
+		const pruned = prunePeriodsToAvailability(selectedPeriods, availabilityBase.data.periods ?? []);
+		if (pruned !== selectedPeriods)
+			handlePeriodsChange(pruned);
+	}, [availabilityBase.data]);
+
+	// Old behaviour: a user-emptied list means "no request", and picking every company hands control back to auto-select.
 	const handleCompanyIdsChange = (companyIds: number[]) => {
 		setSelectedCompanyIds(companyIds);
+		setUserClearedCompanies(companyIds.length === 0);
+		setAutoSelectCompanies(companyIds.length > 0 && companyIds.length === companyOptions.length);
 		setSummary(null);
-		formRef.current?.setFieldsValue({
-			company_ids: companyIds.length > 0 ? companyIds : undefined,
-		});
 	};
 
 	const handleCompanyTypeChange = (value: CompanyTypeSelection) => {
 		setSelectedCompanyType(value);
-		setSelectedCompanyIds([]);
+		resetCompanySelection();
 		setSummary(null);
-		formRef.current?.setFieldsValue({
-			company_type: value ?? undefined,
-			company_ids: undefined,
-		});
+		formRef.current?.setFieldsValue({ company_type: value ?? undefined });
 	};
 
 	const handleSmsReportTypeChange = (reportType: SmsReportType) => {
-		const nextColumns = getSmsFinancialDefaults(reportType);
 		setSelectedSmsReportType(reportType);
-		setSelectedFinancialColumns(nextColumns);
-		formRef.current?.setFieldsValue({
-			sms_report_type: reportType,
-			financial_columns: nextColumns,
-		});
+		setSelectedFinancialColumns(getDefaultFinancialColumns("sms", reportType, false));
+		setSummary(null);
+		formRef.current?.setFieldsValue({ sms_report_type: reportType });
 	};
 
 	const handleContractTypeChange = (value: SmsContractTypeFilter) => {
 		setSelectedContractType(value);
-		formRef.current?.setFieldsValue({
-			is_official: value,
-		});
+		setOperatorGovernmentFilters(prev => ({ ...prev, smsCommission: resolveSmsCommissionScope(prev.smsCommission, value) }));
+		formRef.current?.setFieldsValue({ is_official: value });
 	};
 
 	const handlePeriodTypeChange = (value: PeriodType) => {
 		setSelectedPeriodType(value);
 		setSelectedPeriods([]);
-		setSelectedCompanyIds([]);
+		resetCompanySelection();
 		setSummary(null);
-		formRef.current?.setFieldsValue({
-			period_type: value,
-			sh_year: undefined,
-			sh_periods: undefined,
-			company_ids: undefined,
-		});
 	};
 
 	const handleFinancialColumnsChange = (columns: ReportFinancialColumnKey[]) => {
-		let fallback = DEFAULT_FINANCIAL_COLUMNS;
-		if (isSmsCommissionService)
-			fallback = SMS_COMMISSION_FINANCIAL_COLUMNS;
-		else if (isSmsService)
-			fallback = getSmsFinancialDefaults(selectedSmsReportType);
-		else if (isOpenApiService)
-			fallback = OPENAPI_FINANCIAL_COLUMNS;
-		else if (isPspService)
-			fallback = PSP_FINANCIAL_COLUMNS;
-		else if (isShahkarService)
-			fallback = SHAHKAR_FINANCIAL_COLUMNS;
-		else if (isTrafficService)
-			fallback = isTrafficCp ? TRAFFIC_CP_FINANCIAL_COLUMNS : TRAFFIC_FINANCIAL_COLUMNS;
-
-		const nextColumns = columns.length > 0 ? columns : fallback;
+		const nextColumns = columns.length > 0 ? columns : getDefaultFinancialColumns(serviceLayout, selectedSmsReportType, isUnitConversion);
 		const shouldClearDefaultConversionRatio = !selectedFinancialColumns.includes("showBaseUnit") && nextColumns.includes("showBaseUnit");
 		setSelectedFinancialColumns(nextColumns);
 		if (shouldClearDefaultConversionRatio) {
@@ -834,31 +582,27 @@ export function PerformanceReportPage() {
 		}
 	};
 
-	const handleAuditColumnsChange = (columns: ReportAuditColumnKey[]) => {
-		setSelectedAuditColumns(columns);
-		formRef.current?.setFieldsValue({
-			audit_columns: columns.length > 0 ? columns : undefined,
-		});
+	const handleOperatorGovernmentFiltersChange = (filters: Partial<OperatorGovernmentFilters>) => {
+		setOperatorGovernmentFilters(prev => ({ ...prev, ...filters }));
+		setSummary(null);
 	};
 
 	const handleAggregationChange = (values: ReportAggregationKey[]) => {
-		setSelectedAggregation(values);
+		// The data-center switch only means something on top of company aggregation (old UI lock).
+		const next = values.includes("by_company") ? values : values.filter(key => key !== "by_data_center");
+		setSelectedAggregation(next);
 		setSummary(null);
-		if (values.length > 0) {
-			setSelectedAuditColumns([]);
-			formRef.current?.setFieldsValue({
-				aggregation: values,
-				audit_columns: undefined,
-			});
+		if (next.length === 0)
 			return;
-		}
-		formRef.current?.setFieldsValue({
-			aggregation: undefined,
-		});
+
+		setSelectedAuditColumns([]);
+		const hasCompanyTypeColumn = getFinancialColumnKeys(serviceLayout, selectedSmsReportType, isUnitConversion).includes("companyType");
+		if (next.includes("by_company") && !selectedAggregation.includes("by_company") && hasCompanyTypeColumn)
+			setSelectedFinancialColumns(prev => prev.includes("companyType") ? prev : [...prev, "companyType"]);
 	};
 
 	const isPeriodDisabled = !selectedServiceId || availabilityBase.isLoading;
-	const isCompanyDisabled = !selectedServiceId || selectedPeriods.length === 0 || companies.isLoading || (selectedPeriods.length > 0 && availabilityByPeriods.isFetching) || (requiresCompanyType && !hasSelectedCompanyType);
+	const isCompanyDisabled = !selectedServiceId || selectedPeriods.length === 0 || companies.isLoading || (selectedPeriods.length > 0 && availabilityByPeriods.isFetching) || (requiresCompanyType && !hasSelectedCompanyType) || isOperatorGovernment;
 
 	const columns: ProColumns<PerformanceReportRow>[] = useMemo(() => {
 		return getPerformanceReportColumns({
@@ -886,7 +630,19 @@ export function PerformanceReportPage() {
 			onCompanyTypeChange: handleCompanyTypeChange,
 			onContractTypeChange: handleContractTypeChange,
 			onSmsReportTypeChange: handleSmsReportTypeChange,
+			operatorGovernmentFilters,
+			canFilterSmsCommission: canViewSmsCommission,
+			onOperatorGovernmentFiltersChange: handleOperatorGovernmentFiltersChange,
 			onDefaultConversionRatioChange: setDefaultConversionRatio,
+			renderRowActions: row => (
+				<ReportRowActions
+					row={row}
+					serviceId={selectedServiceId}
+					serviceCode={selectedServiceCode}
+					selectedCompanyType={Array.isArray(selectedCompanyType) ? null : selectedCompanyType}
+					isAggregated={isAggregated}
+				/>
+			),
 		});
 	}, [
 		t,
@@ -913,6 +669,8 @@ export function PerformanceReportPage() {
 		isAuditColumnsDisabled,
 		selectedAggregation,
 		selectedSmsReportType,
+		operatorGovernmentFilters,
+		canViewSmsCommission,
 		selectedPeriodType,
 		selectedCompanyType,
 		isSmsService,
@@ -922,6 +680,7 @@ export function PerformanceReportPage() {
 		requiresCompanyType,
 		isPeriodDisabled,
 		isCompanyDisabled,
+		isAggregated,
 	]);
 
 	const getMonthLabel = useCallback((month: unknown) => {
@@ -938,47 +697,70 @@ export function PerformanceReportPage() {
 		return String(operationType ?? "-");
 	}, [t]);
 
-	const buildReportQuery = useCallback((page: number, pageSize: number, total?: boolean) => {
-		if (!selectedServiceId || !selectedServiceCode)
-			return null;
-
-		const includeTotals = total ?? selectedFinancialColumns.includes("total");
-
-		const formValues = formRef.current?.getFieldsValue?.(true) as Record<string, unknown> | undefined;
-		const periods = normalizePeriods(formValues?.sh_periods ?? selectedPeriods);
-		if (periods.length === 0)
-			return null;
-
-		const companyIds = normalizeNumberList(formValues?.company_ids ?? selectedCompanyIds);
-		const companyType = requiresCompanyType ? normalizeCompanyTypeFilter(formValues?.company_type) : undefined;
-		const contractType = String(formValues?.is_official ?? selectedContractType ?? "all") as SmsContractTypeFilter;
-		const isOfficial = contractType === "official" ? true : contractType === "unofficial" ? false : undefined;
-		const ratioRaw = formValues?.default_conversion_ratio ?? defaultConversionRatio;
-		const ratio = ratioRaw == null || ratioRaw === "" ? null : Number(ratioRaw);
-		const isBaseUnitHidden = !selectedFinancialColumns.includes("showBaseUnit");
-		if (isTrafficCp && isBaseUnitHidden && ratio != null && !isValidDefaultConversionRatio(ratio)) {
-			window.$message?.warning(t("performance.validation.traffic.conversionRatioRange"));
-			return null;
+	const buildReportRequest = useCallback((page: number, pageSize: number, options?: { total?: boolean, ratio?: number | null }): ReportRequest | null => {
+		const total = options?.total ?? selectedFinancialColumns.includes("total");
+		if (isOperatorGovernment) {
+			const query = buildOperatorGovernmentParams({
+				serviceId: selectedServiceId,
+				periodType: selectedPeriodType,
+				periods: selectedPeriods,
+				contractType: selectedContractType,
+				canFilterSmsCommission: canViewSmsCommission,
+				filters: operatorGovernmentFilters,
+				aggregation: selectedAggregation,
+				page,
+				pageSize,
+				total,
+			});
+			return query && { kind: "operator-government", query };
 		}
-		const shouldSendDefaultConversionRatio = isTrafficCp && isBaseUnitHidden && isValidDefaultConversionRatio(ratio);
-		const payloadDefaultConversionRatio = shouldSendDefaultConversionRatio ? Number(ratio) : undefined;
 
-		const periodsKey = selectedPeriodType === "fiscal" ? "fiscal_periods" : "sh_periods";
-
-		return {
-			service_id: selectedServiceId,
-			service_code: selectedServiceCode,
-			[periodsKey]: periods.join(","),
-			company_ids: companyIds.length > 0 ? companyIds.join(",") : undefined,
-			company_type: companyType,
-			is_official: supportsContractType ? isOfficial : undefined,
-			default_conversion_ratio: payloadDefaultConversionRatio,
-			...buildReportAggregationParams(selectedAggregation),
+		const query = buildPerformanceReportParams({
+			serviceId: selectedServiceId,
+			serviceCode: selectedServiceCode,
+			periodType: selectedPeriodType,
+			periods: selectedPeriods,
+			companyType: selectedCompanyType,
+			requiresCompanyType,
+			supportsContractType,
+			contractType: selectedContractType,
+			selectedCompanyIds,
+			availableCompanyIds: companyOptions.map(option => Number(option.value)),
+			requireCompanies: (userClearedCompanies && selectedCompanyIds.length === 0) || (isSmsCommissionService && !isAggregated),
+			aggregation: selectedAggregation,
+			isUnitConversion,
+			showBaseUnit: selectedFinancialColumns.includes("showBaseUnit"),
+			conversionRatio: options?.ratio === undefined ? debouncedDefaultConversionRatio : options.ratio,
+			overallSmsPerformance: isOverallSms,
 			page,
-			page_size: pageSize,
-			total: includeTotals,
-		};
-	}, [defaultConversionRatio, isTrafficCp, requiresCompanyType, selectedAggregation, selectedCompanyIds, selectedContractType, selectedFinancialColumns, selectedPeriods, selectedServiceId, selectedServiceCode, selectedPeriodType, supportsContractType, t]);
+			pageSize,
+			total,
+		});
+		return query && { kind: isFinanceDepartment ? "finance" : "performance", query };
+	}, [
+		canViewSmsCommission,
+		companyOptions,
+		debouncedDefaultConversionRatio,
+		isAggregated,
+		isFinanceDepartment,
+		isOperatorGovernment,
+		isOverallSms,
+		isSmsCommissionService,
+		isUnitConversion,
+		operatorGovernmentFilters,
+		requiresCompanyType,
+		selectedAggregation,
+		selectedCompanyIds,
+		selectedCompanyType,
+		selectedContractType,
+		selectedFinancialColumns,
+		selectedPeriodType,
+		selectedPeriods,
+		selectedServiceCode,
+		selectedServiceId,
+		supportsContractType,
+		userClearedCompanies,
+	]);
 
 	const getOperatorLabel = useCallback((operator: unknown) => {
 		const value = String(operator ?? "").trim().toUpperCase();
@@ -1026,16 +808,31 @@ export function PerformanceReportPage() {
 		? t("performance.columns.fiscalMonth")
 		: t("performance.columns.month");
 
-	const reportServiceLayout = getReportServiceLayout(selectedServiceCode);
 	const trafficLayout = isTrafficService
 		? getTrafficReportLayout(selectedCompanyType)
 		: getTrafficReportLayout(null);
 
 	const effectiveAuditColumns = !selectedServiceId || isAuditColumnsDisabled ? [] : selectedAuditColumns;
 
+	const exportExtraTitles = useMemo<ReportExportExtraTitles>(() => ({
+		rackFullCount: t("performance.columns.rackFullCount"),
+		rackQuarterCount: t("performance.columns.rackQuarterCount"),
+		rackUnitCount: t("performance.columns.rackUnitCount"),
+		rackFullIncome: t("performance.columns.rackFullIncome"),
+		rackQuarterIncome: t("performance.columns.rackQuarterIncome"),
+		rackUnitIncome: t("performance.columns.rackUnitIncome"),
+		newCustomerCount: t("performance.columns.newCustomerCount"),
+		newCustomerIncome: t("performance.columns.newCustomerIncome"),
+		performanceIncome: t("performance.columns.performanceIncome"),
+		creditTotal: t("performance.columns.creditTotal"),
+		totalSales: t("performance.columns.totalSales"),
+		costItems: t("performance.columns.costItems"),
+		totalCost: t("performance.columns.totalCost"),
+	}), [t]);
+
 	const exportColumns = useMemo(() => {
-		return createPerformanceReportExportColumns({
-			layout: reportServiceLayout,
+		const baseColumns = createPerformanceReportExportColumns({
+			layout: serviceLayout,
 			idTitle: t("performance.columns.id"),
 			serviceNameTitle: t("performance.columns.serviceName"),
 			serviceNameFallback: selectedServiceName,
@@ -1086,6 +883,8 @@ export function PerformanceReportPage() {
 			ampereIncomeTitle: t("performance.columns.ampereIncome"),
 			trafficLocationLabelByValue: getTrafficLocationLabel,
 			trafficLayout,
+			extraTitles: exportExtraTitles,
+			isSalesAgencyOutbound,
 			periodType: selectedPeriodType,
 			selectedAuditColumns: effectiveAuditColumns,
 			createdByUserTitle: t("performance.columns.createdByUser"),
@@ -1103,13 +902,31 @@ export function PerformanceReportPage() {
 				return "-";
 			},
 			financialColumnTitles: selectedFinancialColumnTitles,
-			hideCompanyColumn: selectedAggregation.includes("by_company"),
+			hideCompanyColumn: selectedAggregation.includes("by_company") || isOperatorGovernment,
 			hideMonthColumn: selectedAggregation.includes("by_month"),
 			showOperatorLanguageColumns: supportsOperatorLanguageAggregationFilter,
-			hideOperatorColumn: selectedAggregation.includes("by_operator"),
-			hideLanguageColumn: selectedAggregation.includes("by_language"),
+			hideOperatorColumn: selectedAggregation.includes("by_operator") || isFinanceDepartment,
+			hideLanguageColumn: selectedAggregation.includes("by_language") || isFinanceDepartment,
+		});
+		return addSmsVariantExportColumns(baseColumns, {
+			variant: isSmsService ? selectedSmsReportType : "normal",
+			countTitle: t("performance.columns.count"),
+			serviceNameTitle: t("performance.columns.service"),
+			serviceNameFallback: selectedServiceName,
+			rowTypeTitle: t("performance.columns.rowType"),
+			rowTypeLabels: {
+				government: t("performance.rowType.government"),
+				profit: t("performance.rowType.profit"),
+				overall: t("performance.rowType.overall"),
+			},
+			getOperatorLabel,
+			getLanguageLabel,
 		});
 	}, [
+		isFinanceDepartment,
+		isOperatorGovernment,
+		isSmsService,
+		selectedSmsReportType,
 		getCompanyTypeLabel,
 		getLanguageLabel,
 		getMonthLabel,
@@ -1118,7 +935,7 @@ export function PerformanceReportPage() {
 		getTrafficLocationLabel,
 		reportYearTitle,
 		reportMonthTitle,
-		reportServiceLayout,
+		serviceLayout,
 		trafficLayout,
 		selectedServiceName,
 		selectedPeriodType,
@@ -1126,27 +943,27 @@ export function PerformanceReportPage() {
 		selectedAggregation,
 		selectedFinancialColumnTitles,
 		supportsOperatorLanguageAggregationFilter,
+		exportExtraTitles,
+		isSalesAgencyOutbound,
 		t,
 	]);
 
 	const fetchAllRowsForExport = useCallback(async () => {
-		const initialQuery = buildReportQuery(1, 500);
-		if (!initialQuery) {
+		const initialRequest = buildReportRequest(1, 500, { ratio: defaultConversionRatio });
+		if (!initialRequest) {
 			window.$message?.warning(t("performance.messages.selectReportFiltersFirst"));
 			return null;
 		}
 
-		const firstResponse = await fetchPerformanceReport(initialQuery);
-		const rows = [...firstResponse.results];
-		const totalCount = Number(firstResponse.count ?? rows.length);
-		const totalPages = Math.max(1, Math.ceil(totalCount / 500));
+		const firstPage = await fetchReportPage(initialRequest);
+		const rows = [...firstPage.rows];
+		const totalPages = Math.max(1, Math.ceil(firstPage.count / 500));
 
 		for (let page = 2; page <= totalPages; page++) {
-			const query = buildReportQuery(page, 500, false);
-			if (!query)
+			const request = buildReportRequest(page, 500, { total: false, ratio: defaultConversionRatio });
+			if (!request)
 				break;
-			const response = await fetchPerformanceReport(query);
-			rows.push(...response.results);
+			rows.push(...(await fetchReportPage(request)).rows);
 		}
 
 		if (rows.length === 0) {
@@ -1156,9 +973,21 @@ export function PerformanceReportPage() {
 
 		return {
 			rows,
-			summary: firstResponse.totals ?? summary,
+			summary: firstPage.summary ?? summary,
+			totals: firstPage.totalsRows.length > 0
+				? { rows: firstPage.totalsRows, label: t("performance.columns.total"), labelColumnTitles: [t("performance.columns.companyName"), t("performance.columns.operationType")] }
+				: undefined,
 		};
-	}, [buildReportQuery, summary, t]);
+	}, [buildReportRequest, defaultConversionRatio, summary, t]);
+
+	const exportLabels = useMemo<ReportExportLabels>(() => ({
+		summary: t("performance.reportPage.export.summary"),
+		generatedAt: t("performance.reportPage.export.generatedAt"),
+		brandName: t("performance.reportPage.export.brandName"),
+		footer: t("performance.reportPage.export.footer"),
+		service: t("performance.columns.service"),
+		currencyUnit: t("performance.labels.currencyUnit"),
+	}), [t]);
 
 	const handleDownloadExcel = useCallback(async () => {
 		const exportData = await fetchAllRowsForExport();
@@ -1172,16 +1001,16 @@ export function PerformanceReportPage() {
 		downloadPerformanceReportExcel({
 			filename: `performance-report-${new Date().toISOString().slice(0, 10)}.xls`,
 			title: t("performance.titles.performanceReport"),
-			serviceLabel: t("performance.columns.service"),
+			labels: exportLabels,
 			serviceName: selectedServiceName,
-			currencyLabel: t("performance.labels.currencyUnit"),
 			currencyValue,
 			rows: exportData.rows,
 			columns: exportColumns,
 			summary: exportData.summary,
+			totals: exportData.totals,
 			financialColumnTitles: selectedFinancialColumnTitles,
 		});
-	}, [exportColumns, fetchAllRowsForExport, selectedFinancialColumnTitles, selectedFinancialColumns, selectedServiceName, t]);
+	}, [exportColumns, exportLabels, fetchAllRowsForExport, selectedFinancialColumnTitles, selectedFinancialColumns, selectedServiceName, t]);
 
 	const handleDownloadPdf = useCallback(async () => {
 		const exportData = await fetchAllRowsForExport();
@@ -1195,20 +1024,20 @@ export function PerformanceReportPage() {
 		try {
 			openPerformanceReportPdfPrint({
 				title: t("performance.titles.performanceReport"),
-				serviceLabel: t("performance.columns.service"),
+				labels: exportLabels,
 				serviceName: selectedServiceName,
-				currencyLabel: t("performance.labels.currencyUnit"),
 				currencyValue,
 				rows: exportData.rows,
 				columns: exportColumns,
 				summary: exportData.summary,
+				totals: exportData.totals,
 				financialColumnTitles: selectedFinancialColumnTitles,
 			});
 		}
 		catch {
 			window.$message?.warning(t("performance.messages.popupBlocked"));
 		}
-	}, [exportColumns, fetchAllRowsForExport, selectedFinancialColumnTitles, selectedFinancialColumns, selectedServiceName, t]);
+	}, [exportColumns, exportLabels, fetchAllRowsForExport, selectedFinancialColumnTitles, selectedFinancialColumns, selectedServiceName, t]);
 
 	const canExport = !!selectedServiceId && !!selectedServiceCode && selectedPeriods.length > 0 && !isDefaultConversionRatioInvalid;
 	const reportReloadFinancialColumnsKey = selectedFinancialColumns
@@ -1226,6 +1055,9 @@ export function PerformanceReportPage() {
 		selectedAggregation.join(","),
 		reportReloadFinancialColumnsKey,
 		selectedSmsReportType,
+		JSON.stringify(operatorGovernmentFilters),
+		debouncedDefaultConversionRatio,
+		companyOptions.length,
 	].join("|");
 
 	useEffect(() => {
@@ -1257,10 +1089,22 @@ export function PerformanceReportPage() {
 					span: 12,
 					optionRender: false,
 				}}
-				filterTitle="اطلاعات سرویس و گزارش"
+				filterTitle={t("performance.reportPage.filterTitle")}
 				filterSubtitle=""
 				tableExtraRender={() => (
 					<div className="performance-report-extra-panels">
+						<SingleOptionSync
+							options={serviceOptions}
+							value={selectedServiceId}
+							onSelect={value => setSelectedService(Number(value), serviceOptions.find(option => option.value === Number(value))?.code ?? null)}
+						/>
+						{requiresCompanyType && (
+							<SingleOptionSync
+								options={companyTypeOptions.filter(option => option.value !== ALL_COMPANY_TYPES)}
+								value={selectedCompanyType}
+								onSelect={value => handleCompanyTypeChange(isTrafficService ? [String(value)] : String(value))}
+							/>
+						)}
 						<ReportPeriodPicker
 							key={`${selectedServiceId ?? "no-service"}-${selectedPeriodType}`}
 							yearOptions={yearOptions}
@@ -1279,11 +1123,12 @@ export function PerformanceReportPage() {
 							selectedFinancialColumns={selectedFinancialColumns}
 							selectedAggregation={selectedAggregation}
 							selectedAuditColumns={selectedAuditColumns}
-							disabled={!selectedServiceId}
+							disabled={selectedPeriods.length === 0}
 							auditDisabled={isAuditColumnsDisabled}
+							aggregationDisabledKeys={selectedAggregation.includes("by_company") ? [] : ["by_data_center"]}
 							onFinancialColumnsChange={handleFinancialColumnsChange}
 							onAggregationChange={handleAggregationChange}
-							onAuditColumnsChange={handleAuditColumnsChange}
+							onAuditColumnsChange={setSelectedAuditColumns}
 						/>
 					</div>
 				)}
@@ -1304,19 +1149,22 @@ export function PerformanceReportPage() {
 				}}
 				form={{
 					initialValues: {
-						financial_columns: DEFAULT_FINANCIAL_COLUMNS,
-						audit_columns: undefined,
 						sms_report_type: "normal",
-						period_type: "sh",
 						company_type: undefined,
 						is_official: "all",
-						aggregation: [],
 						default_conversion_ratio: undefined,
 					},
 				}}
+				summary={() => totalsRows.length > 0
+					? <ReportTotalsSummary columns={columns} rows={totalsRows} label={t("performance.columns.total")} />
+					: null}
 				request={async (params) => {
-					if (!selectedServiceId || !selectedServiceCode) {
+					const current = params.current ?? 1;
+					const pageSize = params.pageSize ?? 20;
+					const reportRequest = isDefaultConversionRatioInvalid ? null : buildReportRequest(current, pageSize);
+					if (!reportRequest) {
 						setSummary(null);
+						setTotalsRows([]);
 						return {
 							data: [],
 							total: 0,
@@ -1324,61 +1172,14 @@ export function PerformanceReportPage() {
 						};
 					}
 
-					const periods = normalizePeriods(selectedPeriods);
-					if (periods.length === 0) {
-						setSummary(null);
-						return {
-							data: [],
-							total: 0,
-							success: true,
-						};
-					}
-
-					if (requiresCompanyType && !hasSelectedCompanyType) {
-						setSummary(null);
-						return {
-							data: [],
-							total: 0,
-							success: true,
-						};
-					}
-
-					const companyIds = normalizeNumberList(selectedCompanyIds);
-					const companyType = requiresCompanyType ? normalizeCompanyTypeFilter(selectedCompanyType) : undefined;
-					const contractType = selectedContractType;
-					const isOfficial = contractType === "official" ? true : contractType === "unofficial" ? false : undefined;
-					const isBaseUnitHidden = !selectedFinancialColumns.includes("showBaseUnit");
-					if (isTrafficCp && isBaseUnitHidden && isDefaultConversionRatioInvalid) {
-						return {
-							data: [],
-							total: 0,
-							success: true,
-						};
-					}
-					const shouldSendDefaultConversionRatio = isTrafficCp && isBaseUnitHidden && isValidDefaultConversionRatio(debouncedDefaultConversionRatio);
-					const payloadDefaultConversionRatio = shouldSendDefaultConversionRatio ? Number(debouncedDefaultConversionRatio) : undefined;
-
-					const includeTotals = selectedFinancialColumns.includes("total");
-
-					const response = await fetchPerformanceReport({
-						service_id: selectedServiceId,
-						service_code: selectedServiceCode,
-						[selectedPeriodType === "fiscal" ? "fiscal_periods" : "sh_periods"]: periods.join(","),
-						company_ids: companyIds.length > 0 ? companyIds.join(",") : undefined,
-						company_type: companyType,
-						is_official: supportsContractType ? isOfficial : undefined,
-						default_conversion_ratio: payloadDefaultConversionRatio,
-						...buildReportAggregationParams(selectedAggregation),
-						page: params.current ?? 1,
-						page_size: params.pageSize ?? 20,
-						total: includeTotals,
-					});
-
-					setSummary(includeTotals ? response.totals ?? null : null);
+					const page = await fetchReportPage(reportRequest);
+					setSummary(reportRequest.query.total ? page.summary : null);
+					// The total line belongs to the end of the report.
+					setTotalsRows(reportRequest.query.total && current * pageSize >= page.count ? page.totalsRows : []);
 
 					return {
-						data: response.results,
-						total: response.count,
+						data: page.rows,
+						total: page.count,
 						success: true,
 					};
 				}}

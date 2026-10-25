@@ -1,4 +1,5 @@
 import type { Paginated } from "#src/api/types";
+import { downloadBlob } from "#src/utils/download-blob";
 import { request } from "#src/utils/request";
 
 export interface ContractDocumentDto {
@@ -44,17 +45,12 @@ export function deleteContractDocument(id: number) {
 		.json<any>();
 }
 
-export async function downloadContractDocument(id: number, fileName?: string) {
-	const blob = await request
+export function fetchContractDocumentBlob(id: number) {
+	return request
 		.get(`contracts/documents/${id}/download/`)
 		.blob();
+}
 
-	const url = window.URL.createObjectURL(blob);
-	const a = document.createElement("a");
-	a.href = url;
-	a.download = fileName || "contract-file";
-	document.body.appendChild(a);
-	a.click();
-	a.remove();
-	window.URL.revokeObjectURL(url);
+export async function downloadContractDocument(id: number, fileName?: string) {
+	downloadBlob(await fetchContractDocumentBlob(id), fileName || "contract-file");
 }

@@ -1,8 +1,8 @@
+import { z } from "zod";
 import { SalesAgencyPerformanceFields } from "./sales-agency.fields";
-import { salesAgencyPerformanceSchema } from "./sales-agency.schema";
 
 export const salesAgencyPerformanceService = {
 	code: "sales_agency",
-	schema: salesAgencyPerformanceSchema,
+	schema: z.record(z.string(), z.unknown()),
 	Fields: SalesAgencyPerformanceFields,
 } as const;

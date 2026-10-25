@@ -1,10 +1,9 @@
 import { createContext, createElement } from "react";
 
-import { CodeLogin, ForgotPassword, PasswordLogin, RegisterPassword } from "./components";
+import { CodeLogin, ForgotPassword, PasswordLogin } from "./components";
 
 export const FORM_COMPONENT_MAP = {
 	login: createElement(PasswordLogin),
-	register: createElement(RegisterPassword),
 	forgotPassword: createElement(ForgotPassword),
 	codeLogin: createElement(CodeLogin),
 };

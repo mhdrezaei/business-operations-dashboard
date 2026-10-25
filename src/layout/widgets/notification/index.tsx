@@ -138,7 +138,7 @@ export const NotificationPopup: React.FC<Props> = ({
 										onClick={handleMakeAll}
 										type="text"
 									>
-										{t("widgets.notificationReadAllOnPage")}
+										{t("widgets.notificationReadAll")}
 									</BasicButton>
 								</Tooltip>
 							</div>

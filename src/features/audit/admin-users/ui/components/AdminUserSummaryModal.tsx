@@ -7,6 +7,7 @@ import type {
 import { useQuery } from "@tanstack/react-query";
 import { Descriptions, Empty, List, Modal, Space, Spin, Table, Tag, Typography } from "antd";
 import { fetchAdminUserServiceAdminSummary } from "../../api/admin-users.api";
+import { useServiceLabel } from "../../queries/admin-users.queries";
 
 interface Props {
 	open: boolean
@@ -20,6 +21,7 @@ function renderUserName(user: { first_name: string, last_name: string, username:
 }
 
 function RoleTable({ roles }: { roles: AdminUserSummaryRoleDto[] }) {
+	const getServiceLabel = useServiceLabel();
 	return (
 		<Table<AdminUserSummaryRoleDto>
 			size="small"
@@ -53,7 +55,7 @@ function RoleTable({ roles }: { roles: AdminUserSummaryRoleDto[] }) {
 					render: (_, record) => (
 						<Space size={[4, 4]} wrap>
 							{record.allowed_service_ids.length > 0
-								? record.allowed_service_ids.map(serviceId => <Tag key={serviceId}>{serviceId}</Tag>)
+								? record.allowed_service_ids.map(serviceId => <Tag key={serviceId}>{getServiceLabel(serviceId)}</Tag>)
 								: "-"}
 						</Space>
 					),
@@ -122,6 +124,7 @@ function SummaryContent({
 	user: AdminUserDto
 	summary: AdminUserServiceAdminSummaryDto
 }) {
+	const getServiceLabel = useServiceLabel();
 	return (
 		<Space direction="vertical" size={16} className="w-full">
 			<Descriptions bordered size="small" column={2}>
@@ -131,7 +134,7 @@ function SummaryContent({
 				<Descriptions.Item label="سرویس‌های ادمین">
 					<Space size={[4, 4]} wrap>
 						{summary.service_admin_service_ids.length > 0
-							? summary.service_admin_service_ids.map(serviceId => <Tag key={serviceId}>{serviceId}</Tag>)
+							? summary.service_admin_service_ids.map(serviceId => <Tag key={serviceId}>{getServiceLabel(serviceId)}</Tag>)
 							: "-"}
 					</Space>
 				</Descriptions.Item>

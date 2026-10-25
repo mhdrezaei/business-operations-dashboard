@@ -29,9 +29,49 @@
 	"notificationRefresh": "刷新",
 	"notificationMarkAsRead": "标记为已读",
 	"notificationMarkAsUnread": "标记为未读",
-	"notificationReadAllOnPage": "全部标记已读",
+	"notificationReadAll": "全部标为已读",
 	"notificationSentAt": "发送时间",
 	"notificationEmpty": "暂无通知",
 	"notificationUnreadCount": "通知收件箱（未读：{{count}}）",
-	"notificationRelatedCompanies": "相关公司"
+	"notificationRelatedCompanies": "相关公司",
+	"notificationUnreadAll": "全部标为未读",
+	"notificationCategory": {
+		"all": "全部事件",
+		"real_sign_flow": "签名请求",
+		"contract_expiry": "合同",
+		"performance_missing": "业绩",
+		"business_approval_pending": "商务审批",
+		"sign_pending": "合同办公室审批",
+		"sms_gateway_auto_import": "短信业绩自动导入报告"
+	},
+	"notificationViewSignFlow": "查看签名流程",
+	"notificationActionEditContract": "编辑合同",
+	"notificationActionRegisterPerformance": "登记业绩",
+	"notificationSmsVendor": "运营商与政府",
+	"notificationPendingItems": "涉及项目（{{count}}）",
+	"notificationPendingTruncated": "本页仅显示部分项目。",
+	"notificationPendingDays": "{{count}} 天",
+	"notificationObjectContract": "合同",
+	"notificationObjectAddendum": "补充协议",
+	"notificationPendingPage": "第 {{page}} 页，共 {{count}} 页",
+	"notificationPendingPrevious": "上一页",
+	"notificationPendingNext": "下一页",
+	"notificationSmsCompanyType": {
+		"CP": "CP 公司",
+		"TELECOM": "电信公司",
+		"NON_TELECOM": "非电信公司",
+		"KARASHAB": "Karashab"
+	},
+	"notificationSmsImport": {
+		"title": "详情 - {{month}}",
+		"commission": "代理",
+		"sms": "短信",
+		"unmappedTag": "未映射",
+		"imported": "已登记（{{count}} 家公司）",
+		"updated": "已更新（{{count}} 家公司）",
+		"noContract": "无合同（{{count}} 家公司）",
+		"unmapped": "系统中未映射（{{count}}）",
+		"editPerformance": "编辑业绩",
+		"createContract": "创建合同"
+	}
 }

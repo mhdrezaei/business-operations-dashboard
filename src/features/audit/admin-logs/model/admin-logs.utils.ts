@@ -115,3 +115,16 @@ export function formatAuditLogJson(value: AuditLogJsonValue | AuditLogJsonObject
 
 	return JSON.stringify(sanitizeAuditLogJson(value), null, 2);
 }
+
+/** `YYYY-MM-DDTHH:mm:ss+03:30` (Tehran offset, like old) of the picked moment; Gregorian regardless of the picker calendar. */
+export function formatAuditLogDateParam(value: unknown): string | undefined {
+	const date = value && typeof (value as { toDate?: unknown }).toDate === "function"
+		? (value as { toDate: () => Date }).toDate()
+		: value;
+	if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+		return undefined;
+	}
+
+	const pad = (num: number) => String(num).padStart(2, "0");
+	return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}+03:30`;
+}

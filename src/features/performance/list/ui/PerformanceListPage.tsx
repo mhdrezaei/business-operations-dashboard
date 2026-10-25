@@ -2,6 +2,7 @@ import type { PerformanceServicePath } from "#src/features/performance/api/perfo
 import type { CSSProperties } from "react";
 import type { PerformanceListRow } from "../model/performance.list.types";
 import { BasicContent } from "#src/components";
+import { isSmsVendorCompany } from "#src/features/contract/shared/utils";
 import {
 	deletePerformanceByComposite,
 	deletePerformanceById,
@@ -18,6 +19,7 @@ import {
 import { companiesByServiceQuery, servicesQuery } from "#src/features/performance/shared/queries/performance.queries";
 import { MONTH_OPTIONS } from "#src/features/performance/shared/ui/form/constants/jalali-date-options";
 import { useAccess } from "#src/hooks";
+import { SingleOptionSync } from "#src/shared/ui/rhf-pro";
 import { SectionCard } from "#src/shared/ui/section-card";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Empty, Select, Skeleton, Tag, theme, Typography } from "antd";
@@ -68,36 +70,36 @@ interface PerformanceSummaryItem {
 
 function summaryNumber(value: unknown, monetary = false) {
 	const formatted = formatNumeric(value);
-	return formatted ? `${formatted}${monetary ? " ریال" : ""}` : null;
+	return formatted ? `${formatted}${monetary ? ` ${i18next.t("performance.columns.rial")}` : ""}` : null;
 }
 
 function operatorLabel(value: unknown) {
 	const normalized = String(value ?? "").trim().toUpperCase();
 	if (normalized === "MCI" || normalized === "HAMRAH_AVAL")
-		return "همراه اول";
+		return i18next.t("performance.operator.mci");
 	if (normalized === "MTN" || normalized === "IRANCELL")
-		return "ایرانسل";
+		return i18next.t("performance.operator.irancell");
 	if (normalized === "RIGHTEL")
-		return "رایتل";
-	return normalized || "سایر";
+		return i18next.t("performance.operator.rightel");
+	return normalized || i18next.t("performance.operator.other");
 }
 
 function languageLabel(value: unknown) {
 	const normalized = String(value ?? "").trim().toUpperCase();
 	if (normalized === "FA")
-		return "فارسی";
+		return i18next.t("performance.language.fa");
 	if (normalized === "EN")
-		return "انگلیسی";
+		return i18next.t("performance.language.en");
 	return normalized || "-";
 }
 
 function trafficLocationLabel(value: unknown) {
 	const normalized = String(value ?? "").trim().toUpperCase();
 	if (normalized === "TEHRAN")
-		return "تهران";
+		return i18next.t("performance.traffic.locations.tehran");
 	if (normalized === "COUNTY")
-		return "شهرستان";
-	return String(value ?? "").trim() || "ترافیک";
+		return i18next.t("performance.list.county");
+	return String(value ?? "").trim() || i18next.t("performance.list.traffic");
 }
 
 function operationTypeLabel(value: unknown) {
@@ -105,11 +107,15 @@ function operationTypeLabel(value: unknown) {
 	const labels: Record<string, string> = {
 		BILL_INQUIRY: i18next.t("performance.operationType.billInquiry"),
 		RECEIPT_REGISTER: i18next.t("performance.operationType.receiptRegister"),
+		BILL_INQUIRY_MIDTERM: i18next.t("performance.fields.openapi.billInquiryMidtermValue"),
+		BILL_INQUIRY_ENDTERM: i18next.t("performance.fields.openapi.billInquiryEndtermValue"),
+		RECEIPT_REGISTER_CONNECTED: i18next.t("performance.fields.openapi.receiptRegisterConnectedValue"),
+		RECEIPT_REGISTER_DISCONNECTED: i18next.t("performance.fields.openapi.receiptRegisterDisconnectedValue"),
 		TRAFFIC: i18next.t("performance.fields.openapi.trafficPackageCount"),
 		TRAFFIC_REVENUE: i18next.t("performance.fields.openapi.trafficRevenue"),
 		TRAFFIC_PACKAGE_COUNT: i18next.t("performance.fields.openapi.trafficPackageCount"),
 	};
-	return labels[normalized] ?? String(value ?? "عملکرد");
+	return labels[normalized] ?? String(value ?? i18next.t("performance.list.performance"));
 }
 
 function buildPerformanceSummary(service: PerformanceServicePath | null, row: PerformanceListRow): PerformanceSummaryItem[] {
@@ -139,7 +145,7 @@ function buildPerformanceSummary(service: PerformanceServicePath | null, row: Pe
 				items.push({
 					key: `openapi-${index}`,
 					label: operationTypeLabel(item.operation_type),
-					value: [value ? `مقدار ${value}` : null, income ? `درآمد ${income}` : null].filter(Boolean).join(" · "),
+					value: [value ? `${i18next.t("performance.columns.value")} ${value}` : null, income ? `${i18next.t("performance.columns.income")} ${income}` : null].filter(Boolean).join(" · "),
 				});
 			}
 		});
@@ -150,20 +156,42 @@ function buildPerformanceSummary(service: PerformanceServicePath | null, row: Pe
 		const trafficRows = Array.isArray(row.traffic_locations) ? row.traffic_locations as PerformanceListRow[] : [row];
 		trafficRows.forEach((item, index) => {
 			const location = trafficLocationLabel(item.location);
-			add(items, `traffic-sent-${index}`, `${location} · ترافیک ارسالی`, item.value);
-			add(items, `traffic-received-${index}`, `${location} · ترافیک دریافتی`, item.value_receive);
-			add(items, `traffic-income-${index}`, `${location} · درآمد`, item.income, true);
-			add(items, `traffic-expense-${index}`, `${location} · هزینه`, item.expense, true);
+			add(items, `traffic-sent-${index}`, `${location} · ${i18next.t("performance.fields.traffic.sentTraffic")}`, item.value);
+			add(items, `traffic-received-${index}`, `${location} · ${i18next.t("performance.fields.traffic.receivedTraffic")}`, item.value_receive);
+			add(items, `traffic-income-${index}`, `${location} · ${i18next.t("performance.columns.income")}`, item.income, true);
+			add(items, `traffic-expense-${index}`, `${location} · ${i18next.t("performance.columns.expense")}`, item.expense, true);
 		});
 		return items;
 	}
 
+	if (service === "sales-agency/outbound") {
+		add(items, "total-sales", i18next.t("performance.columns.totalSales"), row.total_sales, true);
+		add(items, "income", i18next.t("performance.columns.income"), row.income, true);
+		add(items, "expense", i18next.t("performance.columns.expense"), row.expense, true);
+		return items;
+	}
+
+	if (service === "sales-agency/rep-management") {
+		add(items, "credit-total", i18next.t("performance.columns.creditTotal"), row.credit_total, true);
+		add(items, "income", i18next.t("performance.columns.income"), row.income, true);
+		(Array.isArray(row.cost_items) ? row.cost_items as Array<{ cost_title?: string, amount?: unknown }> : []).forEach((item, index) => {
+			add(items, `cost-${index}`, String(item.cost_title ?? i18next.t("performance.columns.expense")), item.amount, true);
+		});
+		add(items, "total-cost", i18next.t("performance.columns.totalCost"), row.total_cost, true);
+		return items;
+	}
+
+	if (service === "shahkar") {
+		add(items, "new-customer-count", i18next.t("performance.fields.shahkar.newCustomerCount"), row.new_customer_count);
+		add(items, "new-customer-income", i18next.t("performance.fields.shahkar.newCustomerIncome"), row.new_customer_income, true);
+	}
+
 	if (service === "commercial" && row.customer_name)
-		items.push({ key: "customer", label: "مشتری", value: String(row.customer_name) });
-	add(items, "value", service === "psp" ? "مقدار عملکرد" : "مقدار", row.value);
-	add(items, "income", "درآمد", row.income, true);
-	add(items, "expense", "هزینه", row.expense, true);
-	add(items, "profit", "سود", row.profit, true);
+		items.push({ key: "customer", label: i18next.t("performance.list.customer"), value: String(row.customer_name) });
+	add(items, "value", service === "psp" ? i18next.t("performance.labels.performanceValue") : i18next.t("performance.columns.value"), row.value);
+	add(items, "income", i18next.t("performance.columns.income"), row.income, true);
+	add(items, "expense", i18next.t("performance.columns.expense"), row.expense, true);
+	add(items, "profit", i18next.t("performance.columns.profit"), row.profit, true);
 	return items;
 }
 
@@ -266,8 +294,9 @@ export default function PerformanceListPage() {
 		})), [services.data, permittedViewServiceIdsList.join(",")]);
 
 	const companyOptions = useMemo(() => (companies.data?.results ?? [])
+		.filter(company => selectedServiceCode === "sms" || !isSmsVendorCompany(company))
 		.filter(company => !requiresCompanyType || (selectedCompanyType && companyTypeMatches(company.company_type, selectedCompanyType)))
-		.map(company => ({ label: company.name, value: Number(company.id) })), [companies.data, requiresCompanyType, selectedCompanyType]);
+		.map(company => ({ label: company.name, value: Number(company.id) })), [companies.data, requiresCompanyType, selectedCompanyType, selectedServiceCode]);
 
 	useEffect(() => {
 		if (!directEdit || initializedDirectEdit.current)
@@ -305,19 +334,21 @@ export default function PerformanceListPage() {
 		.sort((first, second) => second - first), [performances.data]);
 
 	useEffect(() => {
-		if (performances.isLoading || performances.isFetching)
+		// Wait for the list: the query is still disabled right after a direct-edit
+		// redirect, and resetting here would drop the preselected year and row.
+		if (!performances.isSuccess || performances.isFetching)
 			return;
 		if (availableYears.length === 0) {
 			setSelectedYear(null);
 			setSelectedRow(null);
 			return;
 		}
-		if (selectedYear == null || !availableYears.includes(selectedYear))
-			setSelectedYear(availableYears[0]);
-	}, [availableYears.join(","), performances.isLoading, performances.isFetching, selectedYear]);
+		if (selectedYear != null && !availableYears.includes(selectedYear))
+			setSelectedYear(null);
+	}, [availableYears.join(","), performances.isSuccess, performances.isFetching, selectedYear]);
 
 	const visibleRows = useMemo(() => (performances.data ?? []).filter(
-		row => normalizePerformanceRecord(row).year === selectedYear,
+		row => selectedYear == null || normalizePerformanceRecord(row).year === selectedYear,
 	), [performances.data, selectedYear]);
 
 	const canUpdateRow = useCallback((row: PerformanceListRow) => {
@@ -342,21 +373,31 @@ export default function PerformanceListPage() {
 	}, [selectedServiceId, selectedCompanyType, hasDomainPermissionByServiceId]);
 
 	useEffect(() => {
-		if (deleting || performances.isFetching)
+		if (deleting || !performances.isSuccess || performances.isFetching)
 			return;
 		if (visibleRows.length === 0) {
 			setSelectedRow(null);
 			return;
 		}
 		const currentKey = selectedRow ? rowKey(selectedRow) : null;
-		const current = visibleRows.find(row => rowKey(row) === currentKey && canUpdateRow(row));
+		const selectedPeriod = selectedRow ? normalizePerformanceRecord(selectedRow) : null;
+		const isSamePeriod = (row: PerformanceListRow) => {
+			const normalized = normalizePerformanceRecord(row);
+			return selectedPeriod != null && [
+				normalized.year === selectedPeriod.year,
+				normalized.month === selectedPeriod.month,
+				normalized.salesAgentId === selectedPeriod.salesAgentId,
+			].every(Boolean);
+		};
+		const updatableRows = visibleRows.filter(canUpdateRow);
+		const current = updatableRows.find(row => rowKey(row) === currentKey) ?? updatableRows.find(isSamePeriod);
 		if (current) {
 			if (current !== selectedRow)
 				setSelectedRow(current);
 			return;
 		}
 		setSelectedRow(visibleRows.find(canUpdateRow) ?? null);
-	}, [visibleRows, selectedRow, canUpdateRow, deleting, performances.isFetching]);
+	}, [visibleRows, selectedRow, canUpdateRow, deleting, performances.isSuccess, performances.isFetching]);
 
 	const resetAfterService = () => {
 		setSelectedCompanyType(null);
@@ -378,8 +419,8 @@ export default function PerformanceListPage() {
 			: !selectedCompanyId
 				? t("performance.placeholders.selectCompany")
 				: visibleRows.length === 0
-					? "برای این شرکت در سال انتخاب‌شده عملکردی ثبت نشده است."
-					: "یک عملکرد را از فهرست انتخاب کنید.";
+					? t("performance.list.noPerformanceForYear")
+					: t("performance.list.selectFromList");
 	const handleDelete = async (targetRow: PerformanceListRow | null = selectedRow) => {
 		if (!targetRow || !selectedServicePath || !canDeleteRow(targetRow))
 			return;
@@ -394,12 +435,13 @@ export default function PerformanceListPage() {
 			else if (selectedServicePath === "openapi" || selectedServicePath === "sms" || selectedServicePath === "traffic") {
 				if (normalized.companyId == null || normalized.year == null || normalized.month == null)
 					throw new Error(t("performance.errors.deleteCompositeKeyIncomplete"));
-				await deletePerformanceByComposite(selectedServicePath, normalized.companyId, normalized.year, normalized.month);
-			}
-			else if (selectedServicePath === "psp") {
-				if (normalized.companyId == null || normalized.year == null || normalized.month == null)
-					throw new Error(t("performance.errors.deleteCompositeKeyIncomplete"));
-				await deletePerformanceByComposite(selectedServicePath, normalized.companyId, normalized.year, normalized.month);
+				await deletePerformanceByComposite(
+					selectedServicePath,
+					normalized.companyId,
+					normalized.year,
+					normalized.month,
+					selectedServicePath === "traffic" ? normalized.companyType ?? selectedCompanyType : null,
+				);
 			}
 			else if (normalized.id != null) {
 				await deletePerformanceById(selectedServicePath, normalized.id);
@@ -422,8 +464,38 @@ export default function PerformanceListPage() {
 	return (
 		<BasicContent className="performance-edit-page">
 			<div className="performance-edit-page__layout">
-				<aside className="performance-edit-sidebar" aria-label="فیلتر و فهرست عملکردها">
-					<SectionCard title="انتخاب سرویس و شرکت" collapsible={false}>
+				<aside className="performance-edit-sidebar" aria-label={t("performance.list.sidebarLabel")}>
+					<SectionCard title={t("performance.list.selectServiceAndCompany")} collapsible={false}>
+						<SingleOptionSync
+							options={serviceOptions}
+							value={selectedServiceId}
+							onSelect={(value) => {
+								setSelectedServiceId(Number(value));
+								setSelectedServiceCode(serviceOptions.find(item => item.value === value)?.code ?? null);
+								resetAfterService();
+							}}
+						/>
+						{requiresCompanyType
+							? (
+								<SingleOptionSync
+									options={permittedCompanyTypeOptions.map(option => ({ label: option.value, value: option.key }))}
+									value={selectedCompanyType}
+									onSelect={(value) => {
+										setSelectedCompanyType(String(value));
+										resetAfterCompanyType();
+									}}
+								/>
+							)
+							: null}
+						<SingleOptionSync
+							options={selectedServiceId && (!requiresCompanyType || selectedCompanyType) ? companyOptions : []}
+							value={selectedCompanyId}
+							onSelect={(value) => {
+								setSelectedCompanyId(Number(value));
+								setSelectedYear(null);
+								setSelectedRow(null);
+							}}
+						/>
 						<div className="performance-edit-filter-stack">
 							<label className="performance-edit-filter">
 								<span>{t("performance.columns.service")}</span>
@@ -450,7 +522,7 @@ export default function PerformanceListPage() {
 										<Select
 											value={selectedCompanyType}
 											options={permittedCompanyTypeOptions.map(option => ({ label: option.value, value: option.key }))}
-											placeholder={t("performance.placeholders.selectCompanyType", { defaultValue: "نوع شرکت را انتخاب کنید" })}
+											placeholder={t("performance.placeholders.selectCompanyType")}
 											onChange={(value) => {
 												setSelectedCompanyType(value ?? null);
 												resetAfterCompanyType();
@@ -484,15 +556,16 @@ export default function PerformanceListPage() {
 						</div>
 					</SectionCard>
 
-					<SectionCard title="عملکردهای شرکت" collapsible={false}>
+					<SectionCard title={t("performance.list.companyPerformances")} collapsible={false}>
 						<label className="performance-edit-filter performance-edit-year-filter">
-							<span>انتخاب سال (شمسی)</span>
+							<span>{t("performance.list.selectShYear")}</span>
 							<Select
 								value={selectedYear}
 								options={availableYears.map(year => ({ label: String(year), value: year }))}
 								loading={performances.isLoading || performances.isFetching}
+								allowClear
 								disabled={!selectedCompanyId || availableYears.length === 0}
-								placeholder={availableYears.length > 0 ? t("performance.placeholders.year") : "سال دارای عملکردی یافت نشد"}
+								placeholder={availableYears.length > 0 ? t("performance.placeholders.allYears") : t("performance.list.noYearWithPerformance")}
 								onChange={(value) => {
 									setSelectedYear(value ?? null);
 									setSelectedRow(null);
@@ -501,14 +574,14 @@ export default function PerformanceListPage() {
 						</label>
 
 						<div className="performance-edit-list-heading">
-							<Typography.Text strong>عملکردهای شرکت</Typography.Text>
+							<Typography.Text strong>{t("performance.list.companyPerformances")}</Typography.Text>
 							{visibleRows.length > 0 ? <Tag bordered={false}>{visibleRows.length}</Tag> : null}
 						</div>
 
 						{performances.isError
 							? (
-								<Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="دریافت عملکردها ناموفق بود.">
-									<Button onClick={() => void performances.refetch()}>تلاش دوباره</Button>
+								<Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t("performance.list.fetchFailed")}>
+									<Button onClick={() => void performances.refetch()}>{t("performance.list.retry")}</Button>
 								</Empty>
 							)
 							: performances.isLoading || performances.isFetching
@@ -540,13 +613,23 @@ export default function PerformanceListPage() {
 													>
 														<span className="performance-edit-list-item__header">
 															<strong>
-																عملکرد
+																{t("performance.list.performance")}
 																{normalized.year}
 																/
 																{String(normalized.month ?? "-").padStart(2, "0")}
 															</strong>
 															<span>{resolveMonthLabel(normalized.month)}</span>
 														</span>
+														{row.sales_agent_name || row.is_official != null
+															? (
+																<span className="performance-edit-list-item__meta">
+																	{row.sales_agent_name ? <span>{String(row.sales_agent_name)}</span> : null}
+																	{row.is_official != null
+																		? <Tag bordered={false}>{row.is_official ? t("performance.badges.official") : t("performance.badges.unofficial")}</Tag>
+																		: null}
+																</span>
+															)
+															: null}
 														{summary.length > 0
 															? (
 																<span className="performance-edit-list-item__summary">
@@ -562,7 +645,7 @@ export default function PerformanceListPage() {
 																</span>
 															)
 															: null}
-														{!editable ? <span className="performance-edit-list-item__readonly">دسترسی ویرایش ندارید</span> : null}
+														{!editable ? <span className="performance-edit-list-item__readonly">{t("performance.list.noEditAccess")}</span> : null}
 													</button>
 												);
 											})}
@@ -580,6 +663,7 @@ export default function PerformanceListPage() {
 								open
 								serviceId={selectedServiceId}
 								companyTypeOptions={permittedCompanyTypeOptions.map(option => ({ label: option.value, value: option.key }))}
+								onUploaded={() => void performances.refetch()}
 							/>
 						)
 						: null}
@@ -616,7 +700,7 @@ export default function PerformanceListPage() {
 									className="performance-edit-main__empty-badge"
 									style={{ background: token.colorPrimaryBg, color: token.colorText }}
 								>
-									ویرایش عملکرد
+									{t("performance.actions.editPerformance")}
 								</span>
 								<div className="performance-edit-main__empty-inner">
 									<img
@@ -626,7 +710,7 @@ export default function PerformanceListPage() {
 										aria-hidden="true"
 									/>
 									<Typography.Paragraph className="performance-edit-main__empty-copy">
-										برای ویرایش، ابتدا از ستون سمت راست سرویس و شرکت را انتخاب کرده و سپس یکی از عملکردها را از لیست انتخاب کنید.
+										{t("performance.list.selectToEdit")}
 									</Typography.Paragraph>
 								</div>
 							</div>

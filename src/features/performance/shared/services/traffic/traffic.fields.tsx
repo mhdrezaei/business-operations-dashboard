@@ -2,95 +2,71 @@ import type { TrafficExcelImportResponse } from "#src/features/performance/api/p
 import type { UploadProps } from "antd";
 import type { PerformanceFormValues } from "../../model/performance.form.types";
 import { downloadPerformanceTemplate, uploadTrafficExcelImport } from "#src/features/performance/api/performances.api";
+import { TrafficExcelResult, UploadStatCard } from "#src/features/performance/shared/ui/traffic-excel-result";
 import { FieldCard } from "#src/shared/ui/dashed-card";
-import { RHFProNumber } from "#src/shared/ui/rhf-pro";
-import { CloudUploadOutlined, DeleteOutlined, DownloadOutlined, InboxOutlined, InfoCircleOutlined } from "@ant-design/icons";
-import { Button, Form, Modal, theme, Upload } from "antd";
-import { useEffect, useMemo, useState } from "react";
+import { downloadBlob } from "#src/utils/download-blob";
+import { CloudUploadOutlined, DeleteOutlined, DownloadOutlined, InboxOutlined, PlusOutlined } from "@ant-design/icons";
+import { Button, Form, Modal, Upload } from "antd";
+import { useEffect, useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { isCollocationCompanyType } from "./traffic-collocation";
+import { TrafficCollocationFields } from "./TrafficCollocationFields";
+import { TrafficMetricField } from "./TrafficMetricField";
 
 const sf = (path: string) => `serviceFields.${path}` as const;
 
-function downloadBlob(blob: Blob, filename: string) {
-	const url = URL.createObjectURL(blob);
-	const link = document.createElement("a");
-	link.href = url;
-	link.download = filename;
-	link.click();
-	URL.revokeObjectURL(url);
+interface TrafficLocationCardProps {
+	location: "tehran" | "county"
+	enabled: boolean
+	available: boolean
+	unit: string | null
+	isCp: boolean
+	onToggle: (enabled: boolean) => void
 }
 
-function UploadStatCard({
-	label,
-	value,
-	danger,
-}: {
-	label: string
-	value: number
-	danger?: boolean
-}) {
-	return (
-		<div className="flex items-center justify-between gap-4 rounded-[14px] border border-[rgba(255,255,255,0.12)] px-4 py-3">
-			<span className="opacity-[0.88]">{label}</span>
-			<strong className={danger ? "text-[#ff7875]" : undefined}>{value.toLocaleString("fa-IR")}</strong>
-		</div>
-	);
-}
+function TrafficLocationCard({ location, enabled, available, unit, isCp, onToggle }: TrafficLocationCardProps) {
+	const { t } = useTranslation();
 
-function UploadRejectedRow({
-	item,
-	index,
-}: {
-	item: TrafficExcelImportResponse["rejected_items"][number]
-	index: number
-}) {
+	if (!available)
+		return null;
+
+	if (!enabled) {
+		return (
+			<Button type="dashed" block icon={<PlusOutlined />} onClick={() => onToggle(true)}>
+				{t(`performance.traffic.${location}Add`)}
+			</Button>
+		);
+	}
+
 	return (
-		<div
-			className={index === 0
-				? "grid grid-cols-[140px_minmax(0,1fr)_minmax(220px,1.2fr)] items-center gap-3 px-[18px] py-[14px]"
-				: "grid grid-cols-[140px_minmax(0,1fr)_minmax(220px,1.2fr)] items-center gap-3 border-t border-t-[rgba(255,255,255,0.08)] px-[18px] py-[14px]"}
+		<FieldCard
+			title={t(`performance.traffic.${location}Performance`)}
+			className="performance-traffic-location"
+			extra={(
+				<Button size="small" danger icon={<DeleteOutlined />} onClick={() => onToggle(false)}>
+					{t("common.delete")}
+				</Button>
+			)}
 		>
-			<div>{item.row_no}</div>
-			<div>{item.company_name || "-"}</div>
-			<div className="text-[#ff7875]">{item.reason}</div>
-		</div>
-	);
-}
-
-interface TrafficMetricFieldProps {
-	name: string
-	label: string
-	placeholder: string
-	decimal?: boolean
-}
-
-function TrafficMetricField({ name, label, placeholder, decimal }: TrafficMetricFieldProps) {
-	const inputId = `performance-traffic-${name}`;
-
-	return (
-		<div className="performance-traffic-location__field">
-			<label className="performance-traffic-location__label" htmlFor={inputId}>{label}</label>
-			<RHFProNumber<PerformanceFormValues, any>
-				name={sf(name) as any}
-				label=""
-				inputProps={{
-					"id": inputId,
-					"placeholder": placeholder,
-					"aria-label": label,
-				}}
-				formItemProps={{ className: "mb-0" }}
-				decimal={decimal}
-				enableGrouping={!decimal}
-				enableWordsTooltip={!decimal}
-			/>
-		</div>
+			{unit
+				? (
+					<div className="performance-traffic-location__unit">
+						{`${t(`performance.traffic.${location}ContractUnit`)}: ${unit}`}
+					</div>
+				)
+				: null}
+			<div className="performance-traffic-location__fields">
+				<TrafficMetricField name={sf(`${location}Value`)} label={t(`performance.fields.traffic.${location}Value`)} placeholder={t("performance.placeholders.example100")} decimal />
+				<TrafficMetricField name={sf(`${location}ValueReceive`)} label={t(`performance.fields.traffic.${location}ValueReceive`)} placeholder={t("performance.placeholders.example10000")} decimal />
+				{isCp ? <TrafficMetricField name={sf(`${location}ConversionRatio`)} label={t(`performance.fields.traffic.${location}ConversionRatio`)} placeholder={t("performance.placeholders.exampleConversionRatio")} decimal /> : null}
+			</div>
+		</FieldCard>
 	);
 }
 
 export function TrafficPerformanceFields() {
 	const { t } = useTranslation();
-	const { token } = theme.useToken();
 	const { control, setValue, getValues, trigger, reset } = useFormContext<PerformanceFormValues>();
 	const [downloading, setDownloading] = useState(false);
 	const [uploading, setUploading] = useState(false);
@@ -101,19 +77,17 @@ export function TrafficPerformanceFields() {
 	const companyType = useWatch({ control, name: "companyType" });
 	const submitMode = useWatch({ control, name: sf("submitMode") as any }) as "template" | "single" | undefined;
 	const countyEnabled = useWatch({ control, name: sf("countyEnabled") as any }) as boolean | undefined;
+	const tehranEnabled = (useWatch({ control, name: sf("tehranEnabled") as any }) as boolean | undefined) !== false;
+	const hasCountyContract = useWatch({ control, name: sf("hasCountyContract") as any }) as boolean | undefined;
+	const isCollocation = isCollocationCompanyType(companyType);
 	const isCp = typeof companyType === "string" && companyType.toUpperCase() === "CP";
 	const trafficLocationUnits = useWatch({ control, name: sf("trafficLocationUnits") as any }) as Record<string, string> | undefined;
 	const tehranUnit = typeof trafficLocationUnits?.TEHRAN === "string" ? trafficLocationUnits.TEHRAN : null;
 	const countyUnit = typeof trafficLocationUnits?.COUNTY === "string" ? trafficLocationUnits.COUNTY : null;
-	const isUnitVisible = typeof companyType === "string" && ["CP", "PREMIUM", "IXP", "TCI"].includes(companyType.toUpperCase());
 	const monthlyPerformanceFile = useWatch({ control, name: sf("monthlyPerformanceFile") as any }) as UploadProps["fileList"] | undefined;
 
 	const canDownloadTemplate = !!companyType && !!year && !!month;
 	const canUploadTemplate = canDownloadTemplate && Array.isArray(monthlyPerformanceFile) && monthlyPerformanceFile.length > 0;
-	const rejectionReasons = useMemo(
-		() => Object.entries(uploadResult?.rejected_by_reason ?? {}),
-		[uploadResult],
-	);
 	const uploadProps: Omit<UploadProps, "fileList" | "onChange"> = {
 		beforeUpload: () => false,
 		maxCount: 1,
@@ -124,8 +98,17 @@ export function TrafficPerformanceFields() {
 		if (!countyEnabled) {
 			setValue(sf("countyValue") as any, null, { shouldDirty: false, shouldValidate: false });
 			setValue(sf("countyValueReceive") as any, null, { shouldDirty: false, shouldValidate: false });
+			setValue(sf("countyConversionRatio") as any, null, { shouldDirty: false, shouldValidate: false });
 		}
 	}, [countyEnabled, setValue]);
+
+	useEffect(() => {
+		if (!tehranEnabled) {
+			setValue(sf("tehranValue") as any, null, { shouldDirty: false, shouldValidate: false });
+			setValue(sf("tehranValueReceive") as any, null, { shouldDirty: false, shouldValidate: false });
+			setValue(sf("tehranConversionRatio") as any, null, { shouldDirty: false, shouldValidate: false });
+		}
+	}, [tehranEnabled, setValue]);
 
 	async function handleTemplateUpload() {
 		const isValid = await trigger([
@@ -185,7 +168,7 @@ export function TrafficPerformanceFields() {
 							<div className="performance-traffic-step">
 								<div className="performance-traffic-step__number">۱</div>
 								<div className="performance-traffic-step__content">
-									<div className="performance-traffic-step__title">دانلود فایل تمپلیت</div>
+									<div className="performance-traffic-step__title">{t("performance.traffic.stepDownload")}</div>
 								</div>
 								<Button
 									icon={<DownloadOutlined />}
@@ -216,7 +199,7 @@ export function TrafficPerformanceFields() {
 							<div className="performance-traffic-step performance-traffic-step--upload">
 								<div className="performance-traffic-step__number">۲</div>
 								<div className="performance-traffic-step__content">
-									<div className="performance-traffic-step__title">آپلود فایل عملکرد</div>
+									<div className="performance-traffic-step__title">{t("performance.traffic.stepUpload")}</div>
 								</div>
 								<Controller
 									name={sf("monthlyPerformanceFile") as any}
@@ -246,7 +229,7 @@ export function TrafficPerformanceFields() {
 							<div className="performance-traffic-step">
 								<div className="performance-traffic-step__number">۳</div>
 								<div className="performance-traffic-step__content">
-									<div className="performance-traffic-step__title">ایمپورت مقادیر</div>
+									<div className="performance-traffic-step__title">{t("performance.traffic.stepImport")}</div>
 								</div>
 								<Button
 									type="primary"
@@ -260,62 +243,23 @@ export function TrafficPerformanceFields() {
 							</div>
 						</div>
 					)
-					: (
-						<div className="performance-traffic-locations">
-							<FieldCard
-								title={t("performance.traffic.tehranPerformance")}
-								className="performance-traffic-location"
-							>
-								{isUnitVisible && tehranUnit
-									? (
-										<div className="performance-traffic-location__unit">
-											{`${t("performance.traffic.tehranContractUnit")}: ${tehranUnit}`}
-										</div>
-									)
-									: null}
-								<div className="performance-traffic-location__fields">
-									<TrafficMetricField name="tehranValue" label={t("performance.fields.traffic.tehranValue")} placeholder={t("performance.placeholders.example100")} />
-									<TrafficMetricField name="tehranValueReceive" label={t("performance.fields.traffic.tehranValueReceive")} placeholder={t("performance.placeholders.example10000")} />
-									{isCp ? <TrafficMetricField name="tehranConversionRatio" label={t("performance.fields.traffic.tehranConversionRatio")} placeholder="مثلاً 1.5" decimal /> : null}
-								</div>
-							</FieldCard>
-							{countyEnabled
-								? (
-									<FieldCard
-										title={t("performance.traffic.countyPerformance")}
-										className="performance-traffic-location"
-										extra={(
-											<Button
-												size="small"
-												danger
-												icon={<DeleteOutlined />}
-												onClick={() =>
-													setValue(sf("countyEnabled") as any, false, {
-														shouldDirty: true,
-														shouldValidate: false,
-													})}
-											>
-												{t("common.delete")}
-											</Button>
-										)}
-									>
-										{isUnitVisible && countyUnit
-											? (
-												<div className="performance-traffic-location__unit">
-													{`${t("performance.traffic.countyContractUnit")}: ${countyUnit}`}
-												</div>
-											)
-											: null}
-										<div className="performance-traffic-location__fields">
-											<TrafficMetricField name="countyValue" label={t("performance.fields.traffic.countyValue")} placeholder={t("performance.placeholders.example100")} />
-											<TrafficMetricField name="countyValueReceive" label={t("performance.fields.traffic.countyValueReceive")} placeholder={t("performance.placeholders.example10000")} />
-											{isCp ? <TrafficMetricField name="countyConversionRatio" label={t("performance.fields.traffic.countyConversionRatio")} placeholder="مثلاً 1.5" decimal /> : null}
-										</div>
-									</FieldCard>
-								)
-								: null}
-						</div>
-					)}
+					: isCollocation
+						? <TrafficCollocationFields />
+						: (
+							<div className="performance-traffic-locations">
+								{(["tehran", "county"] as const).map(location => (
+									<TrafficLocationCard
+										key={location}
+										location={location}
+										enabled={location === "tehran" ? tehranEnabled : countyEnabled === true}
+										available={location === "tehran" || hasCountyContract === true}
+										unit={location === "tehran" ? tehranUnit : countyUnit}
+										isCp={isCp}
+										onToggle={enabled => setValue(sf(`${location}Enabled`) as any, enabled, { shouldDirty: true, shouldValidate: false })}
+									/>
+								))}
+							</div>
+						)}
 			</div>
 			<Modal
 				open={!!uploadResult}
@@ -324,99 +268,20 @@ export function TrafficPerformanceFields() {
 				centered
 				width={980}
 				destroyOnHidden
-				styles={{
-					content: {
-						background: token.colorBgContainer,
-						border: `1px solid ${token.colorBorderSecondary}`,
-						boxShadow: token.boxShadowSecondary,
-					},
-					header: {
-						background: token.colorBgContainer,
-						borderBottom: "none",
-					},
-					body: {
-						paddingTop: 8,
-					},
-				}}
+				title={t("performance.traffic.editTemplate.resultTitle")}
 			>
 				{uploadResult
 					? (
-						<div className="grid gap-5">
-							<div className="grid justify-items-center gap-3">
-								<div
-									className="grid h-[84px] w-[84px] place-items-center rounded-full border-4 border-[#40c4ff] text-[40px] text-[#40c4ff]"
-								>
-									<InfoCircleOutlined />
-								</div>
-								<div className="text-center">
-									<div className="text-[34px] font-extrabold">نتیجه آپلود فایل ترافیک</div>
-								</div>
-							</div>
-
-							<div
-								className="grid grid-cols-4 gap-2.5"
-							>
-								<UploadStatCard label="کل ردیف‌ها" value={uploadResult.total_rows_in_file} />
-								<UploadStatCard label="ردیف‌های پر شده" value={uploadResult.filled_rows} />
-								<UploadStatCard label="ایجاد شده" value={uploadResult.created} />
-								<UploadStatCard label="رد شده" value={uploadResult.rejected} danger />
-							</div>
-
-							<div className="grid gap-2.5">
-								<div className="font-bold">دلایل رد</div>
-								<div className="grid gap-2">
-									{rejectionReasons.length > 0
-										? rejectionReasons.map(([reason, count]) => (
-											<div
-												key={reason}
-												className="flex justify-between gap-4 rounded-xl border border-[rgba(255,255,255,0.12)] px-4 py-3"
-											>
-												<span>{reason}</span>
-												<strong>{count.toLocaleString("fa-IR")}</strong>
-											</div>
-										))
-										: (
-											<div
-												className="rounded-xl border border-[rgba(255,255,255,0.12)] px-4 py-3"
-											>
-												موردی برای نمایش وجود ندارد.
-											</div>
-										)}
-								</div>
-							</div>
-
-							<div className="grid gap-2.5">
-								<div className="font-bold">ردیف‌های رد شده</div>
-								<div
-									className="overflow-hidden rounded-2xl border border-[rgba(255,255,255,0.12)]"
-								>
-									<div
-										className="grid grid-cols-[140px_minmax(0,1fr)_minmax(220px,1.2fr)] gap-3 bg-[rgba(255,255,255,0.06)] px-[18px] py-4 font-bold"
-									>
-										<div>ردیف</div>
-										<div>نام شرکت</div>
-										<div>دلیل</div>
-									</div>
-
-									{uploadResult.rejected_items.length > 0
-										? uploadResult.rejected_items.map((item, index) => (
-											// eslint-disable-next-line react/no-array-index-key
-											<UploadRejectedRow key={`${item.row_no}-${index}`} item={item} index={index} />
-										))
-										: (
-											<div className="p-[18px] opacity-80">
-												ردیفی رد نشده است.
-											</div>
-										)}
-								</div>
-							</div>
-
-							<div className="flex justify-center">
-								<Button type="primary" size="large" onClick={handleCloseUploadResult}>
-									باشه
-								</Button>
-							</div>
-						</div>
+						<TrafficExcelResult
+							rejected_by_reason={uploadResult.rejected_by_reason}
+							rejected_items={uploadResult.rejected_items}
+							onConfirm={handleCloseUploadResult}
+						>
+							<UploadStatCard label={t("performance.traffic.editTemplate.totalRows")} value={uploadResult.total_rows_in_file} />
+							<UploadStatCard label={t("performance.traffic.editTemplate.filledRows")} value={uploadResult.filled_rows} />
+							<UploadStatCard label={t("performance.traffic.created")} value={uploadResult.created} />
+							<UploadStatCard label={t("performance.traffic.editTemplate.rejected")} value={uploadResult.rejected} danger />
+						</TrafficExcelResult>
 					)
 					: null}
 			</Modal>

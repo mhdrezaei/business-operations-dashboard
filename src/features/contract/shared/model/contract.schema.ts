@@ -1,11 +1,12 @@
 import type { ContractFormValues, ContractServiceCode } from "./contract.form.types";
+import { i18n } from "#src/locales";
 import { z } from "zod";
 import { addendaRefineValidAndNoOverlap } from "../../components/addenda/addenda.schema";
 import { serviceRegistry } from "../services/registry";
-
-function isBlankContractValue(value: unknown) {
-	return value == null || (typeof value === "string" && value.trim() === "");
-}
+import { isTelecomFrameCode } from "../services/telecom-frame/telecom-frame.types";
+import { validateCollocationAddenda, validateCollocationDatacenter } from "../services/traffic/traffic.collocation.schema";
+import { isBlankValue, toNumberOrNull } from "../utils/value-coercion";
+import { realStartFieldsSchema, validateRealStart } from "./contract-dates";
 
 export function normalizeContractValue(value: unknown): any {
 	if (value === undefined || value === null)
@@ -100,9 +101,9 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 
 	const serviceFieldsSchema = serviceCode === "psp"
 		? z
-			.preprocess(v => (v == null ? null : v), moduleSchema.nullable())
+			.preprocess(v => (v == null ? null : v), moduleSchema.and(realStartFieldsSchema).nullable())
 			.optional()
-		: z.preprocess(v => (v == null ? {} : v), moduleSchema);
+		: z.preprocess(v => (v == null ? {} : v), moduleSchema.and(realStartFieldsSchema));
 
 	return fixedStartSchema
 		.and(fixedEndSchema)
@@ -119,7 +120,7 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 				ctx.addIssue({
 					code: "custom",
 					path: ["serviceId"],
-					message: "نوع سرویس الزامی است",
+					message: i18n.t("contract.schema.serviceType"),
 				});
 			}
 
@@ -127,7 +128,7 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 				ctx.addIssue({
 					code: "custom",
 					path: ["serviceCode"],
-					message: "کد سرویس الزامی است",
+					message: i18n.t("contract.schema.serviceCode"),
 				});
 			}
 
@@ -135,28 +136,28 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 				ctx.addIssue({
 					code: "custom",
 					path: ["startYear"],
-					message: "سال شروع الزامی است",
+					message: i18n.t("contract.schema.startYear"),
 				});
 			}
 			if (val.startMonth == null) {
 				ctx.addIssue({
 					code: "custom",
 					path: ["startMonth"],
-					message: "ماه شروع الزامی است",
+					message: i18n.t("contract.schema.startMonth"),
 				});
 			}
 			if (val.endYear == null) {
 				ctx.addIssue({
 					code: "custom",
 					path: ["endYear"],
-					message: "سال پایان الزامی است",
+					message: i18n.t("contract.schema.endYear"),
 				});
 			}
 			if (val.endMonth == null) {
 				ctx.addIssue({
 					code: "custom",
 					path: ["endMonth"],
-					message: "ماه پایان الزامی است",
+					message: i18n.t("contract.schema.endMonth"),
 				});
 			}
 			if (
@@ -171,36 +172,48 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 					ctx.addIssue({
 						code: "custom",
 						path: ["endYear"],
-						message: "سال/ماه پایان قرارداد نمی‌تواند قبل از سال/ماه شروع باشد",
+						message: i18n.t("contract.schema.endBeforeStart"),
 					});
 					ctx.addIssue({
 						code: "custom",
 						path: ["endMonth"],
-						message: "سال/ماه پایان قرارداد نمی‌تواند قبل از سال/ماه شروع باشد",
+						message: i18n.t("contract.schema.endBeforeStart"),
 					});
 				}
 			}
+			const realStartSource = (val.serviceFields ?? {}) as Record<string, unknown>;
+			const realStartIssue = validateRealStart(
+				{ startYear: val.startYear, startMonth: val.startMonth },
+				{ year: toNumberOrNull(realStartSource.realStartYear), month: toNumberOrNull(realStartSource.realStartMonth) },
+			);
+			if (realStartIssue) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["serviceFields", realStartIssue === "max-month" ? "realStartMonth" : "realStartYear"],
+					message: i18n.t(`contract.realStart.${realStartIssue}`),
+				});
+			}
 			if (val.serviceCode === "sms") {
 				if (val.counterpartyType == null) {
-					ctx.addIssue({ code: "custom", path: ["counterpartyType"], message: "طرف قرارداد الزامی است" });
+					ctx.addIssue({ code: "custom", path: ["counterpartyType"], message: i18n.t("contract.schema.counterparty") });
 				}
 
 				// if business partners => company type and company required
 				if (val.counterpartyType === "partners") {
 					if (val.companyType == null) {
-						ctx.addIssue({ code: "custom", path: ["companyType"], message: "نوع شرکت (SMS) الزامی است" });
+						ctx.addIssue({ code: "custom", path: ["companyType"], message: i18n.t("contract.schema.smsCompanyType") });
 					}
 					if (val.companyId == null) {
-						ctx.addIssue({ code: "custom", path: ["companyId"], message: "شرکت الزامی است" });
+						ctx.addIssue({ code: "custom", path: ["companyId"], message: i18n.t("contract.schema.company") });
 					}
 				}
 
 				// If state/operators => company and company type are not needed
 				if (val.counterpartyType === "gov_ops") {
 					if (val.companyId != null) {
-						ctx.addIssue({ code: "custom", path: ["companyId"], message: "در این حالت نیازی به انتخاب شرکت نیست" });
+						ctx.addIssue({ code: "custom", path: ["companyId"], message: i18n.t("contract.schema.companyNotNeeded") });
 						if (val.companyType != null)
-							ctx.addIssue({ code: "custom", path: ["companyType"], message: "در این حالت نیازی به انتخاب نوع شرکت نیست" });
+							ctx.addIssue({ code: "custom", path: ["companyType"], message: i18n.t("contract.schema.companyTypeNotNeeded") });
 					}
 				}
 			}
@@ -209,6 +222,7 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 				|| val.serviceCode === "psp"
 				|| val.serviceCode === "sales_agency"
 				|| val.serviceCode === "sales-agency"
+				|| isTelecomFrameCode(val.serviceCode)
 			) {
 				const isSalesAgency = val.serviceCode === "sales_agency" || val.serviceCode === "sales-agency";
 				if (val.companyType == null) {
@@ -216,8 +230,8 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 						code: "custom",
 						path: ["companyType"],
 						message: isSalesAgency
-							? "نوع همکاری (عاملیت فروش) الزامی است"
-							: val.serviceCode === "traffic" ? "نوع شرکت (ترافیک) الزامی است" : "نوع شرکت الزامی است",
+							? i18n.t("contract.schema.salesAgencyCompanyType")
+							: val.serviceCode === "traffic" ? i18n.t("contract.schema.trafficCompanyType") : i18n.t("contract.schema.companyType"),
 					});
 				}
 
@@ -229,24 +243,41 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 
 				// When company type is selected → companyId required
 				if (val.companyType != null && val.companyId == null && !isTelecomCollocation) {
-					ctx.addIssue({ code: "custom", path: ["companyId"], message: "شرکت الزامی است" });
+					ctx.addIssue({ code: "custom", path: ["companyId"], message: i18n.t("contract.schema.company") });
 				}
 
 				if (isSalesAgency) {
 					const serviceFields = (val.serviceFields ?? {}) as Record<string, any>;
 					const selectedType = String(val.companyType ?? "").trim().toUpperCase();
 					if (selectedType === "OUTBOUND") {
+						const validateOutboundAddenda = (items: unknown, path: Array<string | number>) => {
+							(Array.isArray(items) ? items : []).forEach((addendum: any, index: number) => {
+								const addendumPath = [...path, index];
+								(["incomePercentage", "expensePercentage"] as const).forEach((key) => {
+									const percent = toNumberOrNull(addendum?.[key]);
+									if (percent == null || percent < 0 || percent > 100) {
+										ctx.addIssue({
+											code: "custom",
+											path: [...addendumPath, key],
+											message: i18n.t("contract.salesAgency.addendumPercentRange"),
+										});
+									}
+								});
+								validateOutboundAddenda(addendum?.children, [...addendumPath, "children"]);
+							});
+						};
+						validateOutboundAddenda(serviceFields.addenda, ["serviceFields", "addenda"]);
 						if (serviceFields.incomePercentage == null) {
-							ctx.addIssue({ code: "custom", path: ["serviceFields", "incomePercentage"], message: "درصد درآمد الزامی است" });
+							ctx.addIssue({ code: "custom", path: ["serviceFields", "incomePercentage"], message: i18n.t("contract.schema.incomePercentage") });
 						}
 						if (serviceFields.expensePercentage == null) {
-							ctx.addIssue({ code: "custom", path: ["serviceFields", "expensePercentage"], message: "درصد هزینه الزامی است" });
+							ctx.addIssue({ code: "custom", path: ["serviceFields", "expensePercentage"], message: i18n.t("contract.schema.expensePercentage") });
 						}
 					}
 					else if (selectedType === "SALES_REP_MANAGEMENT") {
 						const titles = Array.isArray(serviceFields.costTitles) ? serviceFields.costTitles : [];
 						if (titles.length === 0 || titles.some((item: any) => !String(item ?? "").trim())) {
-							ctx.addIssue({ code: "custom", path: ["serviceFields", "costTitles"], message: "عنوان‌های هزینه را تکمیل کنید" });
+							ctx.addIssue({ code: "custom", path: ["serviceFields", "costTitles"], message: i18n.t("contract.schema.costTitles") });
 						}
 					}
 				}
@@ -258,7 +289,7 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 							ctx.addIssue({
 								code: "custom",
 								path: ["counterpartyType"],
-								message: "طرف قرارداد الزامی است",
+								message: i18n.t("contract.schema.counterparty"),
 							});
 						}
 
@@ -266,30 +297,38 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 							ctx.addIssue({
 								code: "custom",
 								path: ["serviceFields", "collocationPartnerType"],
-								message: "نوع شریک الزامی است",
+								message: i18n.t("contract.schema.partnerType"),
+							});
+						}
+
+						if (val.counterpartyType !== "gov_ops" && isBlankValue((val.serviceFields as any)?.sla)) {
+							ctx.addIssue({
+								code: "custom",
+								path: ["serviceFields", "sla"],
+								message: i18n.t("contract.collocation.slaRequired"),
 							});
 						}
 
 						if (val.counterpartyType === "gov_ops") {
-							if (isBlankContractValue((val.serviceFields as any)?.telecomRackCount)) {
+							if (isBlankValue((val.serviceFields as any)?.telecomRackCount)) {
 								ctx.addIssue({
 									code: "custom",
 									path: ["serviceFields", "telecomRackCount"],
-									message: "تعداد رک الزامی است",
+									message: i18n.t("contract.schema.rackCount"),
 								});
 							}
-							if (isBlankContractValue((val.serviceFields as any)?.telecomUnitsPerRack)) {
+							if (isBlankValue((val.serviceFields as any)?.telecomUnitsPerRack)) {
 								ctx.addIssue({
 									code: "custom",
 									path: ["serviceFields", "telecomUnitsPerRack"],
-									message: "تعداد یونیت هر رک الزامی است",
+									message: i18n.t("contract.schema.unitsPerRack"),
 								});
 							}
-							if (isBlankContractValue((val.serviceFields as any)?.telecomMonthlyRackRent)) {
+							if (isBlankValue((val.serviceFields as any)?.telecomMonthlyRackRent)) {
 								ctx.addIssue({
 									code: "custom",
 									path: ["serviceFields", "telecomMonthlyRackRent"],
-									message: "اجاره ماهیانه تمامی رک‌ها الزامی است",
+									message: i18n.t("contract.schema.monthlyRent"),
 								});
 							}
 						}
@@ -302,130 +341,39 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 								ctx.addIssue({
 									code: "custom",
 									path: ["serviceFields", "datacenter"],
-									message: "حداقل یک دیتاسنتر باید انتخاب شود",
+									message: i18n.t("contract.schema.datacenters"),
 								});
 							}
 
-							datacenters.forEach((datacenter: any, datacenterIndex: number) => {
-								if (isBlankContractValue(datacenter?.bandwidthUnitRate)) {
-									ctx.addIssue({
-										code: "custom",
-										path: ["serviceFields", "datacenters", datacenterIndex, "bandwidthUnitRate"],
-										message: "نرخ هر واحد پهنای باند الزامی است",
-									});
-								}
-								if (isBlankContractValue(datacenter?.ipRate)) {
-									ctx.addIssue({
-										code: "custom",
-										path: ["serviceFields", "datacenters", datacenterIndex, "ipRate"],
-										message: "نرخ هر IP الزامی است",
-									});
-								}
-								if (isBlankContractValue(datacenter?.electricityAmpRate)) {
-									ctx.addIssue({
-										code: "custom",
-										path: ["serviceFields", "datacenters", datacenterIndex, "electricityAmpRate"],
-										message: "نرخ هر آمپر الزامی است",
-									});
-								}
-								if (isBlankContractValue(datacenter?.electricityExemptionThreshold)) {
-									ctx.addIssue({
-										code: "custom",
-										path: ["serviceFields", "datacenters", datacenterIndex, "electricityExemptionThreshold"],
-										message: "آستانه معافیت آمپر الزامی است",
-									});
-								}
+							datacenters.forEach((datacenter: any, datacenterIndex: number) =>
+								validateCollocationDatacenter(
+									datacenter,
+									["serviceFields", "datacenters", datacenterIndex],
+									ctx,
+									(val.serviceFields as any)?.collocationPartnerType,
+								),
+							);
+						}
+					}
 
-								const portItems = Array.isArray(datacenter?.portItems) ? datacenter.portItems : [];
-								portItems.forEach((item: any, itemIndex: number) => {
-									if (isBlankContractValue(item?.count)) {
-										ctx.addIssue({
-											code: "custom",
-											path: ["serviceFields", "datacenters", datacenterIndex, "portItems", itemIndex, "count"],
-											message: "تعداد الزامی است",
-										});
-									}
-									if (isBlankContractValue(item?.speed)) {
-										ctx.addIssue({
-											code: "custom",
-											path: ["serviceFields", "datacenters", datacenterIndex, "portItems", itemIndex, "speed"],
-											message: "سرعت الزامی است",
-										});
-									}
-									if (isBlankContractValue(item?.unitPrice)) {
-										ctx.addIssue({
-											code: "custom",
-											path: ["serviceFields", "datacenters", datacenterIndex, "portItems", itemIndex, "unitPrice"],
-											message: "قیمت هر واحد الزامی است",
-										});
-									}
-								});
-
-								const rackItems = Array.isArray(datacenter?.rackItems) ? datacenter.rackItems : [];
-								rackItems.forEach((item: any, itemIndex: number) => {
-									if (isBlankContractValue(item?.rackType)) {
-										ctx.addIssue({
-											code: "custom",
-											path: ["serviceFields", "datacenters", datacenterIndex, "rackItems", itemIndex, "rackType"],
-											message: "نوع رک الزامی است",
-										});
-									}
-									if (isBlankContractValue(item?.count)) {
-										ctx.addIssue({
-											code: "custom",
-											path: ["serviceFields", "datacenters", datacenterIndex, "rackItems", itemIndex, "count"],
-											message: "تعداد الزامی است",
-										});
-									}
-									if (isBlankContractValue(item?.unitPrice)) {
-										ctx.addIssue({
-											code: "custom",
-											path: ["serviceFields", "datacenters", datacenterIndex, "rackItems", itemIndex, "unitPrice"],
-											message: "قیمت هر واحد الزامی است",
-										});
-									}
-								});
-
-								const shouldValidateRackDiscountTiers = (
-									(val.serviceFields as any)?.collocationPartnerType === "CP"
-									&& datacenter?.datacenterSystemTag === "DEFAULT_BEHESHTI"
-								);
-								if (shouldValidateRackDiscountTiers) {
-									const rackDiscountTiers = Array.isArray(datacenter?.rackDiscountTiers) ? datacenter.rackDiscountTiers : [];
-									rackDiscountTiers.forEach((tier: any, tierIndex: number) => {
-										if (isBlankContractValue(tier?.from)) {
-											ctx.addIssue({
-												code: "custom",
-												path: ["serviceFields", "datacenters", datacenterIndex, "rackDiscountTiers", tierIndex, "from"],
-												message: "از الزامی است",
-											});
-										}
-										if (tierIndex < rackDiscountTiers.length - 1 && isBlankContractValue(tier?.to)) {
-											ctx.addIssue({
-												code: "custom",
-												path: ["serviceFields", "datacenters", datacenterIndex, "rackDiscountTiers", tierIndex, "to"],
-												message: "تا الزامی است",
-											});
-										}
-										if (isBlankContractValue(tier?.discountPercent)) {
-											ctx.addIssue({
-												code: "custom",
-												path: ["serviceFields", "datacenters", datacenterIndex, "rackDiscountTiers", tierIndex, "discountPercent"],
-												message: "درصد تخفیف الزامی است",
-											});
-										}
-										else {
-											const discountPercent = Number(tier?.discountPercent);
-											if (!Number.isFinite(discountPercent) || discountPercent < 0 || discountPercent > 100) {
-												ctx.addIssue({
-													code: "custom",
-													path: ["serviceFields", "datacenters", datacenterIndex, "rackDiscountTiers", tierIndex, "discountPercent"],
-													message: "درصد تخفیف باید بین 0 تا 100 باشد",
-												});
-											}
-										}
-									});
-								}
+					if (trafficCompanyType === "COLLOCATION") {
+						const collocationFields = (val.serviceFields ?? {}) as Record<string, any>;
+						validateCollocationAddenda(collocationFields.addenda, ["serviceFields", "addenda"], ctx, {
+							partnerType: collocationFields.collocationPartnerType,
+							isTelecom: val.counterpartyType === "gov_ops",
+							baseDatacenterIds: new Set((Array.isArray(collocationFields.datacenters) ? collocationFields.datacenters : []).map((item: any) => String(item?.datacenter))),
+						});
+					}
+					else {
+						const trafficFields = (val.serviceFields ?? {}) as Record<string, any>;
+						const hasLocation = trafficFields.isOfficial === false
+							? trafficFields.tehranEnabled !== false || trafficFields.provinceEnabled === true
+							: trafficFields.tehranPricing != null || trafficFields.provincePricing != null;
+						if (!hasLocation) {
+							ctx.addIssue({
+								code: "custom",
+								path: ["serviceFields", "tehranPricing"],
+								message: i18n.t("contract.traffic.minLocation"),
 							});
 						}
 					}
@@ -434,22 +382,28 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 					const isOfficial = (val.serviceFields as any)?.isOfficial === true;
 
 					if (isOfficial && ["CP", "PREMIUM", "IXP", "TCI"].includes(trafficCompanyType)) {
-						const tehranPricing = (val.serviceFields as any)?.tehranPricing;
-						const provincePricing = (val.serviceFields as any)?.provincePricing;
-						if (tehranPricing != null && isBlankContractValue((val.serviceFields as any)?.tehranUnit)) {
-							ctx.addIssue({
-								code: "custom",
-								path: ["serviceFields", "tehranUnit"],
-								message: "واحد (تهران) الزامی است",
-							});
-						}
-						if (provincePricing != null && isBlankContractValue((val.serviceFields as any)?.provinceUnit)) {
-							ctx.addIssue({
-								code: "custom",
-								path: ["serviceFields", "provinceUnit"],
-								message: "واحد (مراکز استانی) الزامی است",
-							});
-						}
+						// واحد در قرارداد اصلی و هر الحاقیه (old: «واحد الحاقیه را انتخاب کنید»)
+						const validateUnits = (fields: any, path: Array<string | number>) => {
+							if (fields?.tehranPricing != null && isBlankValue(fields?.tehranUnit)) {
+								ctx.addIssue({
+									code: "custom",
+									path: [...path, "tehranUnit"],
+									message: i18n.t("contract.schema.tehranUnit"),
+								});
+							}
+							if (fields?.provincePricing != null && isBlankValue(fields?.provinceUnit)) {
+								ctx.addIssue({
+									code: "custom",
+									path: [...path, "provinceUnit"],
+									message: i18n.t("contract.schema.provinceUnit"),
+								});
+							}
+							(fields?.addenda ?? fields?.children ?? []).forEach((addendum: any, index: number) =>
+								validateUnits(addendum, [...path, fields?.addenda ? "addenda" : "children", index]),
+							);
+						};
+
+						validateUnits(val.serviceFields, ["serviceFields"]);
 					}
 
 					if (isOfficial && trafficCompanyType === "IXP") {
@@ -457,11 +411,11 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 							if (contractModel !== "VARIABLE_TABLE")
 								return;
 							if (pricing?.type === "fixed") {
-								if (isBlankContractValue(pricing.ratePercentage)) {
+								if (isBlankValue(pricing.ratePercentage)) {
 									ctx.addIssue({
 										code: "custom",
 										path: [...path, "ratePercentage"],
-										message: "درصد نرخ الزامی است",
+										message: i18n.t("contract.schema.ratePercent"),
 									});
 								}
 								return;
@@ -469,11 +423,11 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 
 							const validateRows = (rows: any[], rowsPath: Array<string | number>) => {
 								rows.forEach((row, index) => {
-									if (isBlankContractValue(row?.ratePercentage)) {
+									if (isBlankValue(row?.ratePercentage)) {
 										ctx.addIssue({
 											code: "custom",
 											path: [...rowsPath, index, "ratePercentage"],
-											message: "درصد نرخ الزامی است",
+											message: i18n.t("contract.schema.ratePercent"),
 										});
 									}
 								});
@@ -504,36 +458,34 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 					}
 
 					if (isOfficial && val.companyType === "PREMIUM") {
-						const tehranPricing = (val.serviceFields as any)?.tehranPricing;
-						const provincePricing = (val.serviceFields as any)?.provincePricing;
+						// درصد سهم درآمد در قرارداد اصلی و هر الحاقیه الزامی است
+						const validateRevenuePercents = (fields: any, path: Array<string | number>) => {
+							if (fields?.tehranPricing != null && fields?.tehranRevenuePercent == null) {
+								ctx.addIssue({
+									code: "custom",
+									path: [...path, "tehranRevenuePercent"],
+									message: i18n.t("contract.schema.tehranRevenueShare"),
+								});
+							}
+							if (fields?.provincePricing != null && fields?.provinceRevenuePercent == null) {
+								ctx.addIssue({
+									code: "custom",
+									path: [...path, "provinceRevenuePercent"],
+									message: i18n.t("contract.schema.provinceRevenueShare"),
+								});
+							}
+							(fields?.addenda ?? []).forEach((addendum: any, index: number) => validateRevenuePercents(addendum, [...path, "addenda", index]));
+							(fields?.children ?? []).forEach((child: any, index: number) => validateRevenuePercents(child, [...path, "children", index]));
+						};
 
-						if (tehranPricing != null) {
-							const p = (val.serviceFields as any)?.tehranRevenuePercent;
-							if (p == null) {
-								ctx.addIssue({
-									code: "custom",
-									path: ["serviceFields", "tehranRevenuePercent"],
-									message: "درصد سهم درآمد (تهران) الزامی است",
-								});
-							}
-						}
-						if (provincePricing != null) {
-							const p = (val.serviceFields as any)?.provinceRevenuePercent;
-							if (p == null) {
-								ctx.addIssue({
-									code: "custom",
-									path: ["serviceFields", "provinceRevenuePercent"],
-									message: "درصد سهم درآمد (مراکز استانی) الزامی است",
-								});
-							}
-						}
+						validateRevenuePercents(val.serviceFields, ["serviceFields"]);
 					}
 				}
 			}
 
 			else {
 				if (val.companyId == null) {
-					ctx.addIssue({ code: "custom", path: ["companyId"], message: "شرکت الزامی است" });
+					ctx.addIssue({ code: "custom", path: ["companyId"], message: i18n.t("contract.schema.company") });
 				}
 			}
 		});

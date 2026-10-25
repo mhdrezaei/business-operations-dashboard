@@ -25,14 +25,5 @@
 	"email": "Email",
 	"sendResetLink": "Send Reset Link",
 	"logout": "Logout",
-	"register": "Register",
-	"alreadyHaveAnAccount": "Already have an account?",
-	"goToLogin": "Go to Login",
-	"goToRegister": "Go to Register",
-	"noAccountYet": "No account yet?",
-	"confirmPassword": "Confirm Password",
-	"logoutConfirm": "Are you sure to logout?",
-	"agree": "I have read and agree to <0>Privacy Policy</0> and <1>Terms of Service</1>",
-	"privacyPolicy": "Privacy Policy",
-	"termsOfService": "Terms of Service"
+	"logoutConfirm": "Are you sure to logout?"
 }

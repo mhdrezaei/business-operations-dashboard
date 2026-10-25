@@ -9,7 +9,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { getCompanyTypeToken } from "../../../model/company-type.helpers";
-import { buildFiscalYearOptions, isAvailablePredictionCompanyType, isSupportedPredictionService } from "../../../model/prediction.helpers";
+import { isAvailablePredictionCompanyType, isSupportedPredictionService, pickQuarterFields, PREDICTION_FISCAL_YEAR_OPTIONS } from "../../../model/prediction.helpers";
 import { predictionCompaniesByServiceQuery, predictionServicesQuery } from "../../../queries/prediction.queries";
 import { predictionServiceRegistry } from "../../../services/registry";
 
@@ -68,6 +68,7 @@ export function FixedStartSection({
 
 	const prevServiceIdRef = useRef<number | null | undefined>(undefined);
 	const lastHydratedStateKeyRef = useRef<string>("");
+	const keepDraftRef = useRef(false);
 
 	useEffect(() => {
 		const prevServiceId = prevServiceIdRef.current;
@@ -78,12 +79,11 @@ export function FixedStartSection({
 
 		const currentFields = getValues("serviceFields");
 		setValue("recordId", null, { shouldDirty: true, shouldValidate: false });
-		setValue("fiscalYear", null, { shouldDirty: true, shouldValidate: false });
-		setValue("note", "", { shouldDirty: true, shouldValidate: false });
-		setValue("serviceFields", module?.createEmptyServiceFields(currentFields) ?? {}, {
+		setValue("serviceFields", { ...module?.createEmptyServiceFields(), ...pickQuarterFields(currentFields) }, {
 			shouldDirty: true,
 			shouldValidate: false,
 		});
+		keepDraftRef.current = true;
 		lastHydratedStateKeyRef.current = "";
 	}, [getValues, module, serviceId, setValue]);
 
@@ -100,7 +100,7 @@ export function FixedStartSection({
 		if (getValues("serviceCode") !== nextCode) {
 			setValue("serviceCode", nextCode, { shouldDirty: false, shouldValidate: false });
 			const nextModule = nextCode ? predictionServiceRegistry[nextCode] : undefined;
-			setValue("serviceFields", nextModule?.createEmptyServiceFields(getValues("serviceFields")) ?? {}, {
+			setValue("serviceFields", { ...nextModule?.createEmptyServiceFields(), ...pickQuarterFields(getValues("serviceFields")) }, {
 				shouldDirty: false,
 				shouldValidate: false,
 			});
@@ -136,7 +136,7 @@ export function FixedStartSection({
 	);
 	const companyTypeLabel = serviceCode === "traffic"
 		? t("prediction.labels.trafficCompanyType")
-		: t("prediction.labels.companyType", { defaultValue: "نوع شرکت" });
+		: t("prediction.labels.companyType");
 	const matchedYearRecord = useMemo(
 		() => {
 			if (!autoHydrateBySelection || !shouldLoadYears)
@@ -182,14 +182,24 @@ export function FixedStartSection({
 			return;
 		}
 
-		if (fiscalYear == null) {
+		// after a service change the quarters and note stay (the old panel keeps them)
+		const keepDraft = keepDraftRef.current;
+		const resetDraft = () => {
 			setValue("recordId", null, { shouldDirty: false, shouldValidate: false });
-			setValue("note", "", { shouldDirty: false, shouldValidate: false });
-			setValue("serviceFields", module.createEmptyServiceFields(currentFields), {
+			if (!keepDraft)
+				setValue("note", "", { shouldDirty: false, shouldValidate: false });
+			setValue("serviceFields", {
+				...module.createEmptyServiceFields(currentFields),
+				...(keepDraft ? pickQuarterFields(currentFields) : {}),
+			}, {
 				shouldDirty: false,
 				shouldValidate: false,
 			});
 			lastHydratedStateKeyRef.current = stateKey;
+		};
+
+		if (fiscalYear == null) {
+			resetDraft();
 			return;
 		}
 
@@ -201,25 +211,16 @@ export function FixedStartSection({
 				shouldDirty: false,
 				shouldValidate: false,
 			});
+			keepDraftRef.current = false;
 			lastHydratedStateKeyRef.current = stateKey;
 			return;
 		}
 
-		setValue("recordId", null, { shouldDirty: false, shouldValidate: false });
-		setValue("note", "", { shouldDirty: false, shouldValidate: false });
-		setValue("serviceFields", module.createEmptyServiceFields(currentFields), {
-			shouldDirty: false,
-			shouldValidate: false,
-		});
-		lastHydratedStateKeyRef.current = stateKey;
+		resetDraft();
+		keepDraftRef.current = false;
 	}, [autoHydrateBySelection, fiscalYear, getValues, matchedYearRecord, module, setValue, companyType, shouldLoadYears, yearRecordsQuery.isLoading]);
 
-	const fiscalYearOptions = useMemo(() => {
-		const existingYears = existingYearRecords.map(record => Number((record as any).fiscal_year));
-		return buildFiscalYearOptions(existingYears);
-	}, [existingYearRecords]);
 	const companyTypePlaceholder = t("prediction.placeholders.selectTrafficCompanyType");
-	const selectCompanyTypeFirstText = "ابتدا نوع شرکت را انتخاب کنید";
 	return (
 		<div className="flex flex-col gap-4">
 			<SectionCard title={t(titleKey)} tone="primary" collapsible={false}>
@@ -232,6 +233,7 @@ export function FixedStartSection({
 								label: option.label,
 								value: option.value,
 							}))}
+							autoSelectSingle
 							loading={services.isLoading}
 							selectProps={{
 								disabled,
@@ -249,6 +251,7 @@ export function FixedStartSection({
 									name={"serviceFields.companyType" as any}
 									label=""
 									options={companyTypeOptions}
+									autoSelectSingle
 									selectProps={{
 										disabled,
 										allowClear: true,
@@ -265,12 +268,12 @@ export function FixedStartSection({
 						<RHFSelect<PredictionFormValues, "fiscalYear", number | null>
 							name="fiscalYear"
 							label=""
-							options={fiscalYearOptions}
+							options={PREDICTION_FISCAL_YEAR_OPTIONS}
 							loading={yearRecordsQuery.isLoading}
 							selectProps={{
 								disabled: disabled || (requiresCompanyType && !companyType),
 								placeholder: requiresCompanyType && !companyType
-									? selectCompanyTypeFirstText
+									? t("prediction.placeholders.selectCompanyTypeFirst")
 									: t("prediction.placeholders.selectFiscalYear"),
 								showSearch: true,
 								optionFilterProp: "label",

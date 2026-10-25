@@ -20,12 +20,12 @@ import {
 	fetchRunNotificationJob,
 	fetchUpdateNotificationRule,
 } from "../api/notification-rules.api";
-import { formatAdminRoleName, formatAdminUserName, formatRuleDate } from "../model/notification-rules.utils";
+import { findLatestRunByJobName, formatAdminRoleName, formatAdminUserName, formatRuleDate, notificationRunJobs } from "../model/notification-rules.utils";
 import {
-	latestNotificationRunQuery,
 	notificationRuleRolesQuery,
 	notificationRuleServicesQuery,
 	notificationRuleUsersQuery,
+	recentNotificationRunsQuery,
 } from "../queries/notification-rules.queries";
 import { NotificationRuleUpsertModal } from "./components/NotificationRuleUpsertModal";
 import { getNotificationRulesColumns } from "./constants/notification-rules.columns";
@@ -59,14 +59,14 @@ export default function AdminNotificationRulesPage() {
 	const servicesQuery = useQuery(notificationRuleServicesQuery());
 	const usersQuery = useQuery(notificationRuleUsersQuery());
 	const rolesQuery = useQuery(notificationRuleRolesQuery());
-	const latestRunQuery = useQuery(latestNotificationRunQuery());
+	const recentRunsQuery = useQuery(recentNotificationRunsQuery());
 
 	const runJobMutation = useMutation({
 		mutationFn: fetchRunNotificationJob,
 		onSuccess: async (response, job) => {
 			window.$message?.success(`Job در صف قرار گرفت. status: ${response.status} | task_id: ${response.task_id}`);
 			await Promise.all([
-				latestRunQuery.refetch(),
+				recentRunsQuery.refetch(),
 				...(job === "IN_APP" || job === "MISSING_PREV_MONTH_IN_APP"
 					? [queryClient.invalidateQueries({ queryKey: ["notifications", "inbox"] })]
 					: []),
@@ -184,8 +184,7 @@ export default function AdminNotificationRulesPage() {
 		},
 	], [baseColumns, canDelete, canUpdate, t]);
 
-	const latestRun = latestRunQuery.data;
-	const runMeta = latestRun?.meta ?? {};
+	const recentRuns = recentRunsQuery.data ?? [];
 	const manualJobs: Array<{ key: NotificationManualJob, label: string }> = [
 		{ key: "IN_APP", label: "Run Contract Expiry IN_APP Now" },
 		{ key: "SMS", label: "Run Contract Expiry SMS Now" },
@@ -262,33 +261,53 @@ export default function AdminNotificationRulesPage() {
 							))}
 							<Button
 								icon={<ReloadOutlined />}
-								loading={latestRunQuery.isFetching}
-								onClick={() => latestRunQuery.refetch()}
+								loading={recentRunsQuery.isFetching}
+								onClick={() => recentRunsQuery.refetch()}
 							>
 								به‌روزرسانی
 							</Button>
 						</Space>
 					</div>
 
-					{latestRun
-						? (
-							<Descriptions
-								bordered
-								column={{ xs: 1, sm: 2, lg: 3 }}
-								size="small"
-								title="آخرین اجرا"
-							>
-								<Descriptions.Item label="job_name">{latestRun.job_name}</Descriptions.Item>
-								<Descriptions.Item label="status">{renderRunStatus(latestRun.status)}</Descriptions.Item>
-								<Descriptions.Item label="today">{String(runMeta.today ?? "-")}</Descriptions.Item>
-								<Descriptions.Item label="started_at">{formatRuleDate(latestRun.started_at)}</Descriptions.Item>
-								<Descriptions.Item label="finished_at">{formatRuleDate(latestRun.finished_at)}</Descriptions.Item>
-								<Descriptions.Item label="scanned_contracts">{String(runMeta.scanned_contracts ?? "-")}</Descriptions.Item>
-								<Descriptions.Item label="created_events">{String(runMeta.created_events ?? "-")}</Descriptions.Item>
-								<Descriptions.Item label="task_id" span={2}>{String(runMeta.task_id ?? "-")}</Descriptions.Item>
-							</Descriptions>
-						)
-						: <Empty description="اطلاعات آخرین اجرا موجود نیست." />}
+					<div className="flex flex-col gap-4">
+						{notificationRunJobs.map(({ jobName, label, withSmsMeta }) => {
+							const run = findLatestRunByJobName(recentRuns, jobName);
+							if (!run) {
+								return <Empty key={jobName} description={`${label}: اجرایی با job_name = ${jobName} پیدا نشد.`} />;
+							}
+
+							const meta = run.meta ?? {};
+							return (
+								<Descriptions
+									key={jobName}
+									bordered
+									column={{ xs: 1, sm: 2, lg: 3 }}
+									size="small"
+									title={label}
+								>
+									<Descriptions.Item label="job_name">{run.job_name}</Descriptions.Item>
+									<Descriptions.Item label="status">{renderRunStatus(run.status)}</Descriptions.Item>
+									<Descriptions.Item label="today">{String(meta.today ?? "-")}</Descriptions.Item>
+									<Descriptions.Item label="started_at">{formatRuleDate(run.started_at)}</Descriptions.Item>
+									<Descriptions.Item label="finished_at">{formatRuleDate(run.finished_at)}</Descriptions.Item>
+									<Descriptions.Item label="scanned_contracts">{String(meta.scanned_contracts ?? "-")}</Descriptions.Item>
+									<Descriptions.Item label="created_events">{String(meta.created_events ?? "-")}</Descriptions.Item>
+									<Descriptions.Item label="task_id" span={withSmsMeta ? 1 : 2}>{String(run.task_id ?? meta.task_id ?? "-")}</Descriptions.Item>
+									{withSmsMeta
+										? (
+											<>
+												<Descriptions.Item label="total_targets">{String(meta.total_targets ?? "-")}</Descriptions.Item>
+												<Descriptions.Item label="sent_count">{String(meta.sent_count ?? "-")}</Descriptions.Item>
+												<Descriptions.Item label="failed_count">{String(meta.failed_count ?? "-")}</Descriptions.Item>
+												<Descriptions.Item label="missing_mobile_user_ids">{meta.missing_mobile_user_ids?.length ? meta.missing_mobile_user_ids.join("، ") : "-"}</Descriptions.Item>
+												<Descriptions.Item label="failed_users">{meta.failed_users?.length ?? 0}</Descriptions.Item>
+											</>
+										)
+										: null}
+								</Descriptions>
+							);
+						})}
+					</div>
 				</section>
 			</div>
 

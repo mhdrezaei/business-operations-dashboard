@@ -1,6 +1,6 @@
 import type { SmsGatewayCustomerDto } from "./sms-gateway.types";
 import { describe, expect, it } from "vitest";
-import { getOtherGatewayCustomerNames } from "./sms-gateway.helpers";
+import { findGatewayCustomerByName, getOtherGatewayCustomerNames, isGatewayUnavailableError } from "./sms-gateway.helpers";
 
 const customers: SmsGatewayCustomerDto[] = [
 	{ id: 71, value: "یکتا ارتباط آسان پرداز", is_mapped: true, mapped_company_id: 122, mapped_company_name: "منطقه تهران" },
@@ -22,5 +22,21 @@ describe("getOtherGatewayCustomerNames", () => {
 		expect(getOtherGatewayCustomerNames(customers, 122, 71)).toEqual([
 			"معاونت ارتباطات و هماهنگی",
 		]);
+	});
+});
+
+describe("findGatewayCustomerByName", () => {
+	it("matches the customer name case-insensitively and ignores blank input", () => {
+		expect(findGatewayCustomerByName(customers, " نواتل ")?.id).toBe(48);
+		expect(findGatewayCustomerByName(customers, "ناشناس")).toBeNull();
+		expect(findGatewayCustomerByName(customers, "  ")).toBeNull();
+	});
+});
+
+describe("isGatewayUnavailableError", () => {
+	it("is true only for a 502 response", () => {
+		expect(isGatewayUnavailableError({ response: { status: 502 } })).toBe(true);
+		expect(isGatewayUnavailableError({ response: { status: 500 } })).toBe(false);
+		expect(isGatewayUnavailableError(null)).toBe(false);
 	});
 });

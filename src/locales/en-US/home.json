@@ -1,15 +1,39 @@
 {
 	"kpi": {
-		"signFlows": { "title": "Sign flows", "hint": "Waiting for your signature" },
-		"unregistered": { "title": "Unregistered performances", "hint": "Needs review" },
-		"activeContracts": { "title": "Active contracts", "hint": "In progress" },
-		"expiring": { "title": "Expiring contracts", "hint": "In the next 3 months" }
+		"signFlows": {
+			"title": "Sign flows",
+			"hint": "Waiting for your signature"
+		},
+		"unregistered": {
+			"title": "Unregistered performances",
+			"hint": "Needs review"
+		},
+		"activeContracts": {
+			"title": "Active contracts",
+			"hint": "In progress"
+		},
+		"expiring": {
+			"title": "Expiring contracts",
+			"hint": "In the next 3 months"
+		}
 	},
 	"cards": {
-		"contracts": { "title": "Contract management", "description": "Define a new contract or edit existing ones" },
-		"companies": { "title": "Company management", "description": "Manage company names and company profiles" },
-		"performance": { "title": "Company performance", "description": "Record and report monthly performance" },
-		"predictions": { "title": "Company performance forecast", "description": "Record and edit the yearly forecast of each service" }
+		"contracts": {
+			"title": "Contract management",
+			"description": "Define a new contract or edit existing ones"
+		},
+		"companies": {
+			"title": "Company management",
+			"description": "Manage company names and company profiles"
+		},
+		"performance": {
+			"title": "Company performance",
+			"description": "Record and report monthly performance"
+		},
+		"predictions": {
+			"title": "Company performance forecast",
+			"description": "Record and edit the yearly forecast of each service"
+		}
 	},
 	"badges": {
 		"pendingSign": "{{value}} awaiting signature",
@@ -44,5 +68,10 @@
 		"predictedIncome": "Forecast income",
 		"predictedExpense": "Forecast expense",
 		"predictedProfit": "Forecast profit"
+	},
+	"notifications": {
+		"title": "Latest notifications",
+		"viewAll": "View all",
+		"categoryUnread": "{{value}} unread"
 	}
 }

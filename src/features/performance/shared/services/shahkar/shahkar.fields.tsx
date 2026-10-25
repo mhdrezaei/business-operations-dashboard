@@ -22,7 +22,7 @@ export function ShahkarPerformanceFields() {
 						"aria-label": t("performance.fields.shahkar.performanceValue"),
 					}}
 					formItemProps={{ className: "mb-0" }}
-					enableGrouping
+					decimal
 					enableWordsTooltip
 				/>
 			</FieldCard>

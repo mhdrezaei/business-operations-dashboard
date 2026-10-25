@@ -4,13 +4,13 @@ export const DOC_TYPE_OPTIONS: Array<{ label: string, value: CompanyDocumentDocT
 	{ label: "روزنامه رسمی تغییرات", value: "OFFICIAL_GAZETTE_CHANGES" },
 	{ label: "آگهی ثبت", value: "REGISTRATION_NOTICE" },
 	{ label: "اساسنامه", value: "ARTICLES_OF_ASSOCIATION" },
-	{ label: "معرفی‌نامه نماینده", value: "REPRESENTATIVE_LETTER" },
+	{ label: "نامه نماینده", value: "REPRESENTATIVE_LETTER" },
 	{ label: "لوگوی شرکت", value: "LOGO" },
 	{ label: "سایر", value: "OTHER" },
 ];
 
 export const VERIFICATION_STATUS_OPTIONS: Array<{ label: string, value: CompanyDocumentVerificationStatus }> = [
-	{ label: "در انتظار بررسی", value: "PENDING" },
+	{ label: "در انتظار", value: "PENDING" },
 	{ label: "تایید شده", value: "VERIFIED" },
 	{ label: "رد شده", value: "REJECTED" },
 ];
@@ -23,3 +23,7 @@ export const ORDERING_OPTIONS: Array<{ label: string, value: string }> = [
 	{ label: "وضعیت تایید (صعودی)", value: "verification_status" },
 	{ label: "وضعیت تایید (نزولی)", value: "-verification_status" },
 ];
+
+export function getCompanyDocumentAccept(docType: CompanyDocumentDocType | null | undefined) {
+	return docType === "LOGO" ? "image/svg+xml,image/png,.svg,.png" : "application/pdf,.pdf";
+}

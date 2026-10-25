@@ -1,0 +1,26 @@
+{
+	"title": "مدیریت اطلاعات پایه فریم مخابرات",
+	"subtitle": "مدیریت ساختار BO (معاونت/اداره‌کل/شخص) و PO (بخش/شخص)",
+	"levels": {
+		"department": "معاونت",
+		"generalOffice": "اداره کل",
+		"boPerson": "شخص (BO)",
+		"division": "بخش/فناوری",
+		"poPerson": "شخص (PO)"
+	},
+	"people": "اشخاص",
+	"name": "نام",
+	"fullName": "نام کامل",
+	"personTitle": "سمت",
+	"companyTypes": "انواع شرکت مجاز",
+	"noCompanyTypes": "هیچ نوع شرکتی انتخاب نشده",
+	"active": "فعال",
+	"inactive": "غیرفعال",
+	"save": "ذخیره",
+	"add": "افزودن",
+	"edit": "ویرایش",
+	"selectParentFirst": "ابتدا مورد بالادستی را انتخاب کنید",
+	"empty": "موردی وجود ندارد.",
+	"saved": "ذخیره شد.",
+	"deleted": "حذف شد."
+}

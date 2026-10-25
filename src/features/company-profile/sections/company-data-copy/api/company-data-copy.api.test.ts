@@ -137,6 +137,9 @@ describe("copyCompanyData", () => {
 						phone: [],
 						email: [],
 						is_signatory: false,
+						gender: "MALE",
+						official_gazette_number: "55",
+						official_gazette_date: "2024-01-02",
 						contract_order: 3,
 					},
 					{
@@ -175,16 +178,53 @@ describe("copyCompanyData", () => {
 			title: "مدیرعامل",
 			phone: [],
 			email: [],
+			gender: "MALE",
 			is_signatory: false,
+			official_gazette_number: "55",
+			official_gazette_date: "2024-01-02",
 			contract_order: 3,
 		});
 		expect(peopleApi.createCompanyPerson).toHaveBeenNthCalledWith(2, expect.objectContaining({
 			company: 20,
 			service: 7,
 			full_name: "مدیر دوم",
-			national_id: null,
+			national_id: "",
 			title: "",
+			gender: null,
+			official_gazette_number: null,
+			official_gazette_date: null,
 			contract_order: 10,
+		}));
+	});
+
+	it("copies official gazette fields of the legal profile", async () => {
+		profileApi.getLegalProfile
+			.mockResolvedValueOnce({
+				id: 1,
+				company: 10,
+				national_id: "1",
+				tax_national_id: "2",
+				registration_number: "3",
+				tax_registration_number: "4",
+				registration_place: "تهران",
+				registration_date: "2020-01-01",
+				official_gazette_number: "777",
+				official_gazette_date: "2021-02-03",
+				legal_person_type: "LLC",
+				branch_code: "0",
+			})
+			.mockResolvedValueOnce(null);
+
+		await copyCompanyData({
+			source: { companyId: 10, serviceId: 2 },
+			destination: { companyId: 20, serviceId: 7 },
+			sections: ["legal"],
+		});
+
+		expect(profileApi.createLegalProfile).toHaveBeenCalledWith(expect.objectContaining({
+			company: 20,
+			official_gazette_number: "777",
+			official_gazette_date: "2021-02-03",
 		}));
 	});
 });

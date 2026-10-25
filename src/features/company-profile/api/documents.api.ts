@@ -1,5 +1,7 @@
 import type { CompanyDocumentDto, Paginated } from "../sections/documents/model/company-documents.types";
+import { downloadBlob } from "#src/utils/download-blob";
 import { request } from "#src/utils/request/";
+import { resolveCompanyDocumentFileName } from "../sections/documents/model/company-documents.filename";
 
 export type ListCompanyDocumentsParams = Record<string, string | number | boolean | undefined>
   & { company: number, page?: number, search?: string, ordering?: string, doc_type?: string, verification_status?: string };
@@ -32,4 +34,12 @@ export async function deleteCompanyDocument(id: number) {
 	return request
 		.delete(`contracts/company/documents/${id}/`)
 		.json<any>();
+}
+
+export async function downloadCompanyDocument(doc: Pick<CompanyDocumentDto, "id" | "original_filename" | "mime_type" | "file">) {
+	const blob = await request
+		.get(`contracts/company/documents/${doc.id}/download/`)
+		.blob();
+
+	downloadBlob(blob, resolveCompanyDocumentFileName(doc, blob.type));
 }

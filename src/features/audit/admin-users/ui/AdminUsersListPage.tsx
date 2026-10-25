@@ -20,7 +20,7 @@ import {
 	fetchSetAdminUserRoles,
 	fetchUpdateAdminUser,
 } from "../api/admin-users.api";
-import { adminRolesQuery } from "../queries/admin-users.queries";
+import { adminRolesQuery, adminUsersLookupQuery, useServiceLabel } from "../queries/admin-users.queries";
 import { AdminUserRolesModal } from "./components/AdminUserRolesModal";
 import { AdminUserServiceAdminModal } from "./components/AdminUserServiceAdminModal";
 import { AdminUserSummaryModal } from "./components/AdminUserSummaryModal";
@@ -62,11 +62,18 @@ export default function AdminUsersListPage() {
 		[rolesList],
 	);
 
+	const usersLookupQuery = useQuery(adminUsersLookupQuery());
+	const userNameById = useMemo(
+		() => new Map<number, string>((usersLookupQuery.data?.results ?? []).map(user => [user.id, `${user.first_name} ${user.last_name}`.trim() || user.username])),
+		[usersLookupQuery.data],
+	);
+	const getServiceLabel = useServiceLabel();
+
 	const refreshTable = () => actionRef.current?.reload?.();
 
 	const baseColumns = useMemo(
-		() => getAdminUsersColumns({ t, roleNameById }),
-		[t, roleNameById],
+		() => getAdminUsersColumns({ t, roleNameById, userNameById, getServiceLabel }),
+		[t, roleNameById, userNameById, getServiceLabel],
 	);
 
 	const handleOpenCreate = () => {

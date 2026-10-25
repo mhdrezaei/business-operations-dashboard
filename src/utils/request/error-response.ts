@@ -1,6 +1,6 @@
 import { isObject, message } from "#src/utils";
 
-function extractFirstErrorMessage(value: unknown): string | null {
+export function extractFirstErrorMessage(value: unknown): string | null {
 	if (typeof value === "string") {
 		const text = value.trim();
 		return text.length ? text : null;

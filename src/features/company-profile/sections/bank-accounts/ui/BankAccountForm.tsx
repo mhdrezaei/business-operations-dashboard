@@ -6,7 +6,6 @@ import { Button, Form, Input } from "antd";
 import React, { useEffect, useMemo, useRef } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import {
-	detectBankNameByCardNumber,
 	getIbanDigits,
 	normalizeBankDigits,
 	normalizeCardNumber,
@@ -170,7 +169,7 @@ export default function BankAccountForm({ disabled, defaultValues, onSubmit }: P
 		mode: "onChange",
 	});
 
-	const { control, handleSubmit, setValue, reset, formState: { isDirty, isValid, isSubmitting } } = methods;
+	const { control, handleSubmit, reset, formState: { isDirty, isValid, isSubmitting } } = methods;
 
 	useEffect(() => {
 		reset(defaultValues);
@@ -185,20 +184,13 @@ export default function BankAccountForm({ disabled, defaultValues, onSubmit }: P
 						control={control}
 						render={({ field, fieldState }) => (
 							<Form.Item
-								label="شماره کارت *"
+								label="شماره کارت"
 								help={fieldState.error?.message}
 								validateStatus={fieldState.error ? "error" : undefined}
 							>
 								<SegmentedNumericInput
 									value={String(field.value ?? "")}
-									onChange={(nextValue) => {
-										const nextCardNumber = normalizeCardNumber(nextValue);
-										field.onChange(nextCardNumber);
-										setValue("bank_name", detectBankNameByCardNumber(nextCardNumber), {
-											shouldDirty: true,
-											shouldValidate: true,
-										});
-									}}
+									onChange={nextValue => field.onChange(normalizeCardNumber(nextValue))}
 									onBlur={field.onBlur}
 									disabled={disabled}
 									segments={[4, 4, 4, 4]}
@@ -208,24 +200,10 @@ export default function BankAccountForm({ disabled, defaultValues, onSubmit }: P
 						)}
 					/>
 
-					<Controller
+					<RHFProText
 						name="bank_name"
-						control={control}
-						render={({ field, fieldState }) => (
-							<Form.Item
-								label="نام بانک *"
-								help={fieldState.error?.message}
-								validateStatus={fieldState.error ? "error" : undefined}
-							>
-								<Input
-									value={String(field.value ?? "")}
-									placeholder="نام بانک"
-									disabled
-									readOnly
-									className="text-right"
-								/>
-							</Form.Item>
-						)}
+						label="نام بانک *"
+						inputProps={{ placeholder: "نام بانک", disabled }}
 					/>
 
 					<RHFProText

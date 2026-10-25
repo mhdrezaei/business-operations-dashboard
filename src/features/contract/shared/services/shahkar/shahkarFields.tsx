@@ -6,10 +6,12 @@ import { ContractTypeSection } from "#src/features/contract/components/contract-
 import { RHFProCheckbox } from "#src/shared/ui/rhf-pro";
 import React, { useEffect, useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 const sf = (path: string) => `serviceFields.${path}` as const;
 
 function ShahkarAddendumFields({ basePath }: { basePath: string }) {
+	const { t } = useTranslation();
 	const { control, getValues, setValue } = useFormContext<ContractFormValues>();
 	const hasNewCustomerRate = useWatch({
 		control,
@@ -37,13 +39,13 @@ function ShahkarAddendumFields({ basePath }: { basePath: string }) {
 			<ContractTypeSection title="" name={`${basePath}.contractPricing`} />
 			<RHFProCheckbox<ContractFormValues, any>
 				name={`${basePath}.hasNewCustomerRate` as any}
-				checkboxLabel="این الحاقیه نرخ مشتریان جدید دارد"
+				checkboxLabel={t("contract.shahkar.addendumHasNewCustomerRate")}
 				itemProps={{ className: "mt-3 mb-0" }}
 			/>
 			{hasNewCustomerRate
 				? (
 					<ContractTypeSection
-						title="نرخ مشتریان جدید"
+						title={t("contract.shahkar.newCustomerRate")}
 						name={`${basePath}.newCustomerPricing`}
 					/>
 				)
@@ -53,6 +55,7 @@ function ShahkarAddendumFields({ basePath }: { basePath: string }) {
 }
 
 export function ShahkarFields() {
+	const { t } = useTranslation();
 	const { control, getValues, setValue } = useFormContext<ContractFormValues>();
 	const hasNewCustomerRate = useWatch({ control, name: sf("hasNewCustomerRate") as any }) as boolean | undefined;
 
@@ -87,31 +90,31 @@ export function ShahkarFields() {
 	return (
 		<>
 			<ContractTypeSection
-				title="بهای هر واحد"
+				title={t("contract.shahkar.unitPrice")}
 				name={sf("contractPricing") as any}
 			/>
 
 			<RHFProCheckbox<ContractFormValues, any>
 				name={sf("hasNewCustomerRate") as any}
-				checkboxLabel="این قرارداد نرخ مشتریان جدید دارد"
+				checkboxLabel={t("contract.shahkar.contractHasNewCustomerRate")}
 				itemProps={{ className: "mt-3 mb-0" }}
 			/>
 
 			{hasNewCustomerRate
 				? (
 					<ContractTypeSection
-						title="نرخ مشتریان جدید"
+						title={t("contract.shahkar.newCustomerRate")}
 						name={sf("newCustomerPricing") as any}
 					/>
 				)
 				: null}
 
 			{showAddenda
-				// eslint-disable-next-line style/multiline-ternary
+
 				? (
 					<div className="mt-3">
 						<ContractAddendaSection<ContractFormValues>
-							title="الحاقیه‌های قرارداد (اختیاری)"
+							title={t("contract.addenda.title")}
 							name={sf("addenda") as ArrayPath<ContractFormValues>}
 							contractTypeTitle=""
 							contractTypeFieldKey="contractPricing"

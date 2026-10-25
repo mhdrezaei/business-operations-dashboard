@@ -36,6 +36,9 @@ export default function CompanyPeopleModal({ open, companyId, serviceId, personI
 				is_signatory: false,
 				national_id: "",
 				title: "",
+				gender: null,
+				official_gazette_number: "",
+				official_gazette_date: "",
 				phone: [{ value: "" }],
 				email: [{ value: "" }],
 			};

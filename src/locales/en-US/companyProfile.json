@@ -1,0 +1,52 @@
+{
+	"company": {
+		"selected": "Selected company",
+		"nameLabel": "Company name",
+		"createTitle": "Create new company",
+		"createSubmit": "Create company",
+		"createSuccess": "Company created successfully",
+		"renameTitle": "Edit company name",
+		"renameSuccess": "Company name updated successfully",
+		"confirmTitle": "Confirm company edit",
+		"confirmContent": "Are you sure you want to rename the company?",
+		"delete": "Delete company",
+		"deleteTitle": "Delete company",
+		"deleteContent": "Are you sure you want to delete this company?",
+		"deleteSuccess": "Company deleted"
+	},
+	"datacenter": {
+		"selected": "Selected datacenter",
+		"nameLabel": "Datacenter name",
+		"createTitle": "Create new datacenter",
+		"createSubmit": "Create datacenter",
+		"createSuccess": "Datacenter created successfully",
+		"renameTitle": "Edit datacenter name",
+		"renameSuccess": "Datacenter name updated successfully",
+		"confirmTitle": "Confirm datacenter edit",
+		"confirmContent": "Are you sure you want to rename the datacenter?",
+		"delete": "Delete datacenter",
+		"deleteTitle": "Delete datacenter",
+		"deleteContent": "Are you sure you want to delete this datacenter?",
+		"deleteSuccess": "Datacenter deleted"
+	},
+	"service": "Service",
+	"serviceRequired": "Select a service",
+	"nameRequired": "Company name is required",
+	"companyType": "Company type",
+	"companyTypePlaceholder": "Select the company type",
+	"agentName": "Sales agent name",
+	"agentNameRequired": "Enter the sales agent name",
+	"confirmRename": "Yes, rename",
+	"applyChanges": "Apply changes",
+	"genericError": "Something went wrong",
+	"profile": {
+		"deleteTitle": "Delete profile",
+		"deleteContent": "Deleting the profile erases this section's data. Are you sure?",
+		"delete": "Delete profile",
+		"reset": "Reset changes",
+		"submit": "Save"
+	},
+	"documents": {
+		"downloadError": "Failed to download the document"
+	}
+}

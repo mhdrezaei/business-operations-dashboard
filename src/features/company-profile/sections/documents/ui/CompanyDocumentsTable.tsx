@@ -4,18 +4,21 @@ import type { CompanyDocumentDto } from "../model/company-documents.types";
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import { useAccess } from "#src/hooks";
 import { TableActionEditIcon, TableActionTrashIcon } from "#src/icons";
-import { PlusCircleOutlined } from "@ant-design/icons";
+import { DownloadOutlined, PlusCircleOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Popconfirm, Tag } from "antd";
 import React, { useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import {
 	createCompanyDocument,
 	deleteCompanyDocument,
+	downloadCompanyDocument,
 	listCompanyDocuments,
 	updateCompanyDocument,
 } from "../../../api/documents.api";
 import { companyDocumentDetailQuery } from "../../../queries/company-documents.queries";
+import { formatJalaliDate } from "../../../shared/utils/jalali-date";
 
 import {
 	DOC_TYPE_OPTIONS,
@@ -37,6 +40,7 @@ interface Props {
 }
 
 export default function CompanyDocumentsTable({ serviceId, companyId }: Props) {
+	const { t } = useTranslation();
 	const { hasCompanyCardAccess, hasDomainPermissionByServiceId } = useAccess();
 	const actionRef = useRef<ActionType>(null);
 	const formRef = useRef<ProFormInstance | undefined>(undefined);
@@ -77,6 +81,15 @@ export default function CompanyDocumentsTable({ serviceId, companyId }: Props) {
 		await deleteCompanyDocument(row.id);
 		await action?.reload?.();
 		window.$message?.success("حذف شد");
+	};
+
+	const handleDownloadRow = async (row: CompanyDocumentDto) => {
+		try {
+			await downloadCompanyDocument(row);
+		}
+		catch {
+			window.$message?.error(t("companyProfile.documents.downloadError"));
+		}
 	};
 
 	const docTypeValueEnum = useMemo(() => {
@@ -141,16 +154,16 @@ export default function CompanyDocumentsTable({ serviceId, companyId }: Props) {
 			{
 				title: "اعتبار از",
 				dataIndex: "valid_from",
-				valueType: "date",
 				width: 140,
 				search: false,
+				render: (_, r) => formatJalaliDate(r.valid_from),
 			},
 			{
 				title: "اعتبار تا",
 				dataIndex: "valid_until",
-				valueType: "date",
 				width: 140,
 				search: false,
+				render: (_, r) => formatJalaliDate(r.valid_until),
 			},
 
 			{
@@ -189,10 +202,21 @@ export default function CompanyDocumentsTable({ serviceId, companyId }: Props) {
 				title: "عملیات",
 				valueType: "option",
 				key: "option",
-				width: 140,
+				width: 220,
 				fixed: "right",
 				render: (_, record, __, action) => {
 					const actions = [] as React.ReactNode[];
+					actions.push(
+						<BasicButton
+							key="download"
+							type="link"
+							size="small"
+							icon={<DownloadOutlined />}
+							onClick={() => handleDownloadRow(record)}
+						>
+							دانلود
+						</BasicButton>,
+					);
 					if (canUpdateDocument) {
 						actions.push(
 							<BasicButton

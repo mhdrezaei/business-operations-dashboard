@@ -1,6 +1,6 @@
 export type SupportedLang = "fa-IR" | "en-US" | "de-DE" | string;
 
-function normalizeDigitsToLatin(input: string) {
+export function normalizeDigitsToLatin(input: string) {
 	// Persian/Arabic digits -> Latin
 	const map: Record<string, string> = {
 		"۰": "0",
@@ -26,6 +26,12 @@ function normalizeDigitsToLatin(input: string) {
 	};
 	// eslint-disable-next-line regexp/no-obscure-range
 	return input.replace(/[۰-۹٠-٩]/g, d => map[d] ?? d);
+}
+
+const PERSIAN_DIGITS = "۰۱۲۳۴۵۶۷۸۹";
+
+export function toPersianDigits(input: string) {
+	return normalizeDigitsToLatin(input).replace(/\d/g, digit => PERSIAN_DIGITS[Number(digit)]);
 }
 
 export function formatNumberForLocale(n: number, language: SupportedLang) {

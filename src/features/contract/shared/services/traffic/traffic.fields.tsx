@@ -10,6 +10,8 @@ import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { Button } from "antd";
 import { useEffect, useMemo, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { getDefaultTrafficUnit, hasTrafficUnit } from "./traffic.units";
 import "./traffic.fields.css";
 
 const sf = (path: string) => `serviceFields.${path}` as const;
@@ -18,15 +20,9 @@ const TRAFFIC_UNIT_OPTIONS = [
 	{ label: "GB/month", value: "GB/month" },
 	{ label: "Mbps", value: "Mbps" },
 ];
-const TRAFFIC_DEFAULT_UNIT_BY_COMPANY_TYPE: Record<string, "GB/month" | "Mbps"> = {
-	CP: "GB/month",
-	PREMIUM: "GB/month",
-	IXP: "Mbps",
-	TCI: "Mbps",
-};
 const IXP_CONTRACT_MODEL_OPTIONS = [
-	{ label: "قدیمی", value: "LEGACY" },
-	{ label: "جدول متغیر", value: "VARIABLE_TABLE" },
+	{ labelKey: "contract.traffic.models.legacy", value: "LEGACY" },
+	{ labelKey: "contract.traffic.models.variableTable", value: "VARIABLE_TABLE" },
 ];
 
 interface TrafficPricingFieldsProps {
@@ -56,6 +52,7 @@ function TrafficPricingFields({
 	contractModelName,
 	showContractModel,
 }: TrafficPricingFieldsProps) {
+	const { t } = useTranslation();
 	const { control, setValue } = useFormContext<ContractFormValues>();
 	const unit = useWatch({ control, name: unitName as any });
 	const contractModel = useWatch({ control, name: contractModelName as any });
@@ -74,8 +71,8 @@ function TrafficPricingFields({
 		}
 	}, [contractType, fixedOnly, pricingName, setValue]);
 	const ratePercentageHelpText = contractModel === "VARIABLE_TABLE"
-		? "مقدار فی بر اساس ضرب مقدار فی که وارد کرده‌اید در درصد نرخ محاسبه می‌شود."
-		: "در مدل قرارداد قدیمی، درصد نرخ اختیاری است و محاسبات مالی بر اساس مقدار فی (ریال) نمایش داده می‌شود؛ این درصد هیچ تاثیری بر روی محاسبات مالی ندارد.";
+		? t("contract.traffic.rateHelpVariableTable")
+		: t("contract.traffic.rateHelpLegacy");
 	return (
 		<div className="traffic-pricing-fields">
 			{showUnitSelector || showPremiumRevenuePercent || showContractModel
@@ -85,9 +82,9 @@ function TrafficPricingFields({
 							? (
 								<RHFSelect
 									name={unitName as any}
-									label="واحد"
+									label={t("contract.traffic.unit")}
 									options={TRAFFIC_UNIT_OPTIONS}
-									selectProps={{ placeholder: "انتخاب واحد", allowClear: false }}
+									selectProps={{ placeholder: t("contract.traffic.selectUnit"), allowClear: false }}
 								/>
 							)
 							: null}
@@ -96,7 +93,7 @@ function TrafficPricingFields({
 								<RHFProNumber
 									name={revenuePercentName as any}
 									label={revenuePercentLabel}
-									inputProps={{ placeholder: "بین ۰ تا ۱۰۰", inputMode: "numeric" } as any}
+									inputProps={{ placeholder: t("contract.traffic.percentPlaceholder"), inputMode: "numeric" } as any}
 									enableGrouping={false}
 									enableWordsTooltip={false}
 								/>
@@ -107,7 +104,7 @@ function TrafficPricingFields({
 								<RHFProCheckbox
 									name={basedTireName as any}
 									label=""
-									checkboxLabel="محاسبه پله بر اساس پله بالاتر انجام شود"
+									checkboxLabel={t("contract.traffic.basedTire")}
 								/>
 							)
 							: null}
@@ -115,9 +112,9 @@ function TrafficPricingFields({
 							? (
 								<RHFSelect
 									name={contractModelName as any}
-									label="مدل قرارداد"
-									options={IXP_CONTRACT_MODEL_OPTIONS}
-									selectProps={{ placeholder: "انتخاب مدل قرارداد", allowClear: false }}
+									label={t("contract.traffic.contractModel")}
+									options={IXP_CONTRACT_MODEL_OPTIONS.map(option => ({ label: t(option.labelKey), value: option.value }))}
+									selectProps={{ placeholder: t("contract.traffic.selectContractModel"), allowClear: false }}
 								/>
 							)
 							: null}
@@ -142,6 +139,7 @@ function TrafficPricingFields({
 }
 
 export function TrafficFields() {
+	const { t } = useTranslation();
 	const { control, getFieldState, getValues, setValue } = useFormContext<ContractFormValues>();
 	const hasInitializedTehranPricing = useRef(false);
 	const previousCompanyType = useRef<string | null>(null);
@@ -151,6 +149,8 @@ export function TrafficFields() {
 	const isIxp = String(companyType ?? "").trim().toUpperCase() === "IXP";
 	const tehranPricing = useWatch({ control, name: sf("tehranPricing") as any });
 	const provincePricing = useWatch({ control, name: sf("provincePricing") as any });
+	const tehranEnabled = useWatch({ control, name: sf("tehranEnabled") as any }) as boolean | undefined;
+	const provinceEnabled = useWatch({ control, name: sf("provinceEnabled") as any }) as boolean | undefined;
 	const startYear = useWatch({ control, name: "startYear" });
 	const startMonth = useWatch({ control, name: "startMonth" });
 	const endYear = useWatch({ control, name: "endYear" });
@@ -161,10 +161,13 @@ export function TrafficFields() {
 		[startYear, startMonth, endYear, endMonth],
 	);
 	const showPricingUi = !!isOfficial;
+	// در حالت غیررسمی فقط فعال بودن محل (و واحد) ثبت می‌شود؛ تهران پیش‌فرض فعال است (مثل old)
+	const tehranOn = showPricingUi ? !!tehranPricing : tehranEnabled !== false;
+	const provinceOn = showPricingUi ? !!provincePricing : provinceEnabled === true;
 	const showPremiumRevenuePercent = showPricingUi && companyType === "PREMIUM";
-	const showUnitSelector = showPricingUi && ["CP", "PREMIUM", "IXP", "TCI"].includes(String(companyType ?? "").trim().toUpperCase());
+	const showUnitSelector = showPricingUi && hasTrafficUnit(companyType);
 	const normalizedCompanyType = String(companyType ?? "").trim().toUpperCase();
-	const defaultTrafficUnit = TRAFFIC_DEFAULT_UNIT_BY_COMPANY_TYPE[normalizedCompanyType];
+	const defaultTrafficUnit = getDefaultTrafficUnit(companyType);
 	const addendaUnitPaths = (items: Array<Record<string, any>>, prefix: string): string[] => items.flatMap((item, index) => {
 		const base = `${prefix}.${index}`;
 		const paths = [`${base}.tehranUnit`, `${base}.provinceUnit`];
@@ -195,30 +198,21 @@ export function TrafficFields() {
 		}
 	}, [getFieldState, getValues, normalizedCompanyType, defaultTrafficUnit, setValue]);
 
-	function addTehran() {
-		if (tehranPricing)
+	function addLocation(pricingPath: string, enabledPath: string, pricing: unknown) {
+		if (!showPricingUi) {
+			setValue(enabledPath as any, true, { shouldDirty: true, shouldValidate: true });
 			return;
-		setValue(sf("tehranPricing") as any, structuredClone(defaultContractTypeValue), {
+		}
+		if (pricing)
+			return;
+		setValue(pricingPath as any, structuredClone(defaultContractTypeValue), {
 			shouldDirty: true,
 			shouldValidate: true,
 		});
 	}
 
-	function addProvince() {
-		if (provincePricing)
-			return;
-		setValue(sf("provincePricing") as any, structuredClone(defaultContractTypeValue), {
-			shouldDirty: true,
-			shouldValidate: true,
-		});
-	}
-
-	function removeTehran() {
-		setValue(sf("tehranPricing") as any, undefined, { shouldDirty: true, shouldValidate: true });
-	}
-
-	function removeProvince() {
-		setValue(sf("provincePricing") as any, undefined, { shouldDirty: true, shouldValidate: true });
+	function removeLocation(pricingPath: string, enabledPath: string) {
+		setValue((showPricingUi ? pricingPath : enabledPath) as any, showPricingUi ? undefined : false, { shouldDirty: true, shouldValidate: true });
 	}
 
 	useEffect(() => {
@@ -229,14 +223,20 @@ export function TrafficFields() {
 		if (hasInitializedTehranPricing.current)
 			return;
 
-		if (!tehranPricing) {
+		if (!tehranPricing && getValues(sf("tehranEnabled") as any) !== false) {
 			setValue(sf("tehranPricing") as any, structuredClone(defaultContractTypeValue), {
 				shouldDirty: false,
 				shouldValidate: false,
 			});
 		}
+		if (!provincePricing && getValues(sf("provinceEnabled") as any) === true) {
+			setValue(sf("provincePricing") as any, structuredClone(defaultContractTypeValue), {
+				shouldDirty: false,
+				shouldValidate: false,
+			});
+		}
 		hasInitializedTehranPricing.current = true;
-	}, [isCollocation, setValue, showPricingUi, tehranPricing]);
+	}, [getValues, isCollocation, provincePricing, setValue, showPricingUi, tehranPricing]);
 
 	useEffect(() => {
 		if (!isIxp)
@@ -256,6 +256,12 @@ export function TrafficFields() {
 		if (isOfficial !== false)
 			return;
 
+		const hasTehran = !!getValues(sf("tehranPricing") as any);
+		const hasProvince = !!getValues(sf("provincePricing") as any);
+		if (hasTehran || hasProvince) {
+			setValue(sf("tehranEnabled") as any, hasTehran, { shouldDirty: false, shouldValidate: false });
+			setValue(sf("provinceEnabled") as any, hasProvince, { shouldDirty: false, shouldValidate: false });
+		}
 		setValue(sf("tehranPricing") as any, undefined, { shouldDirty: true, shouldValidate: true });
 		setValue(sf("provincePricing") as any, undefined, { shouldDirty: true, shouldValidate: true });
 		setValue(sf("addenda") as any, undefined, { shouldDirty: true, shouldValidate: true });
@@ -263,7 +269,7 @@ export function TrafficFields() {
 		setValue(sf("provinceRevenuePercent") as any, undefined, { shouldDirty: true, shouldValidate: true });
 		setValue(sf("tehranContractModel") as any, undefined, { shouldDirty: true, shouldValidate: true });
 		setValue(sf("provinceContractModel") as any, undefined, { shouldDirty: true, shouldValidate: true });
-	}, [isOfficial, setValue]);
+	}, [isOfficial, getValues, setValue]);
 
 	useEffect(() => {
 		const addenda = getValues(sf("addenda") as any) as Array<Record<string, any>> | undefined;
@@ -324,97 +330,97 @@ export function TrafficFields() {
 
 	return (
 		<>
-			<SectionCard title="بهای ترافیک" tone={TRAFFIC_SECTION_TONE}>
+			<SectionCard title={t("contract.traffic.pricingTitle")} tone={TRAFFIC_SECTION_TONE}>
 				<div className="contract-form-official-row">
 					<RHFProCheckbox<ContractFormValues, any>
 						name={sf("isOfficial") as any}
 						label=""
-						checkboxLabel="قرارداد رسمی است"
+						checkboxLabel={t("contract.field.officialContract")}
 						checkboxProps={{}}
 					/>
 				</div>
 
 				{!isOfficial
-					? <div className="traffic-non-official-notice">قرارداد غیررسمی است؛ فیلدهای محاسباتی ارسال نمی‌شوند.</div>
+					? <div className="traffic-non-official-notice">{t("contract.traffic.nonOfficialNotice")}</div>
 					: null}
 
-				{showPricingUi
-					? (
-						<div className="traffic-pricing-list">
-							<SectionCard
-								title="قرارداد ترافیک تهران"
-								tone={TRAFFIC_SECTION_TONE}
-								extra={tehranPricing
-									? (
-										<Button danger className="contract-dashed-action" icon={<DeleteOutlined />} onClick={removeTehran}>
-											حذف
-										</Button>
-									)
-									: null}
-							>
-								{tehranPricing
-									? (
-										<TrafficPricingFields
-											pricingName={sf("tehranPricing")}
-											unitName={sf("tehranUnit")}
-											revenuePercentName={sf("tehranRevenuePercent")}
-											revenuePercentLabel="درصد سهم درآمد (تهران)"
-											showUnitSelector={showUnitSelector}
-											showPremiumRevenuePercent={showPremiumRevenuePercent}
-											basedTireName={sf("tehranBasedTire")}
-											showBasedTire={isIxp}
-											contractModelName={sf("tehranContractModel")}
-											showContractModel={isIxp}
-										/>
-									)
-									: (
-										<Button className="contract-dashed-action" icon={<PlusOutlined />} onClick={addTehran}>
-											افزودن قرارداد تهران
-										</Button>
-									)}
-							</SectionCard>
+				<div className="traffic-pricing-list">
+					<SectionCard
+						title={t("contract.traffic.tehranContract")}
+						tone={TRAFFIC_SECTION_TONE}
+						extra={tehranOn
+							? (
+								<Button danger className="contract-dashed-action" icon={<DeleteOutlined />} onClick={() => removeLocation(sf("tehranPricing"), sf("tehranEnabled"))}>
+									{t("common.delete")}
+								</Button>
+							)
+							: null}
+					>
+						{tehranOn
+							? showPricingUi
+								? (
+									<TrafficPricingFields
+										pricingName={sf("tehranPricing")}
+										unitName={sf("tehranUnit")}
+										revenuePercentName={sf("tehranRevenuePercent")}
+										revenuePercentLabel={t("contract.traffic.tehranRevenueShare")}
+										showUnitSelector={showUnitSelector}
+										showPremiumRevenuePercent={showPremiumRevenuePercent}
+										basedTireName={sf("tehranBasedTire")}
+										showBasedTire={isIxp}
+										contractModelName={sf("tehranContractModel")}
+										showContractModel={isIxp}
+									/>
+								)
+								: <div className="traffic-non-official-notice">{t("contract.traffic.nonOfficialLocation")}</div>
+							: (
+								<Button className="contract-dashed-action" icon={<PlusOutlined />} onClick={() => addLocation(sf("tehranPricing"), sf("tehranEnabled"), tehranPricing)}>
+									{t("contract.traffic.addTehran")}
+								</Button>
+							)}
+					</SectionCard>
 
-							<SectionCard
-								title="قرارداد ترافیک مراکز استان‌ها"
-								tone={TRAFFIC_SECTION_TONE}
-								extra={provincePricing
-									? (
-										<Button danger className="contract-dashed-action" icon={<DeleteOutlined />} onClick={removeProvince}>
-											حذف
-										</Button>
-									)
-									: null}
-							>
-								{provincePricing
-									? (
-										<TrafficPricingFields
-											pricingName={sf("provincePricing")}
-											unitName={sf("provinceUnit")}
-											revenuePercentName={sf("provinceRevenuePercent")}
-											revenuePercentLabel="درصد سهم درآمد (مراکز استان‌ها)"
-											showUnitSelector={showUnitSelector}
-											showPremiumRevenuePercent={showPremiumRevenuePercent}
-											basedTireName={sf("provinceBasedTire")}
-											showBasedTire={isIxp}
-											contractModelName={sf("provinceContractModel")}
-											showContractModel={isIxp}
-										/>
-									)
-									: (
-										<Button className="contract-dashed-action" icon={<PlusOutlined />} onClick={addProvince}>
-											افزودن قرارداد مراکز استانی
-										</Button>
-									)}
-							</SectionCard>
-						</div>
-					)
-					: null}
+					<SectionCard
+						title={t("contract.traffic.provinceContract")}
+						tone={TRAFFIC_SECTION_TONE}
+						extra={provinceOn
+							? (
+								<Button danger className="contract-dashed-action" icon={<DeleteOutlined />} onClick={() => removeLocation(sf("provincePricing"), sf("provinceEnabled"))}>
+									{t("common.delete")}
+								</Button>
+							)
+							: null}
+					>
+						{provinceOn
+							? showPricingUi
+								? (
+									<TrafficPricingFields
+										pricingName={sf("provincePricing")}
+										unitName={sf("provinceUnit")}
+										revenuePercentName={sf("provinceRevenuePercent")}
+										revenuePercentLabel={t("contract.traffic.provinceRevenueShare")}
+										showUnitSelector={showUnitSelector}
+										showPremiumRevenuePercent={showPremiumRevenuePercent}
+										basedTireName={sf("provinceBasedTire")}
+										showBasedTire={isIxp}
+										contractModelName={sf("provinceContractModel")}
+										showContractModel={isIxp}
+									/>
+								)
+								: <div className="traffic-non-official-notice">{t("contract.traffic.nonOfficialLocation")}</div>
+							: (
+								<Button className="contract-dashed-action" icon={<PlusOutlined />} onClick={() => addLocation(sf("provincePricing"), sf("provinceEnabled"), provincePricing)}>
+									{t("contract.traffic.addProvince")}
+								</Button>
+							)}
+					</SectionCard>
+				</div>
 			</SectionCard>
 
 			{showPricingUi && showAddenda
 				? (
 					<ContractAddendaSection<ContractFormValues>
-						title="الحاقیه‌های قرارداد (اختیاری)"
+						title={t("contract.addenda.title")}
 						name={sf("addenda") as ArrayPath<ContractFormValues>}
 						contractTypeTitle=""
 						contractTypeFieldKey="contractPricing"
@@ -422,13 +428,13 @@ export function TrafficFields() {
 							<div className="traffic-pricing-list">
 								{tehranPricing
 									? (
-										<SectionCard title="قرارداد ترافیک تهران" tone={TRAFFIC_SECTION_TONE}>
+										<SectionCard title={t("contract.traffic.tehranContract")} tone={TRAFFIC_SECTION_TONE}>
 											<TrafficPricingFields
 												pricingName={`${base}.tehranPricing`}
 												unitName={`${base}.tehranUnit`}
 												defaultUnit={defaultTrafficUnit}
 												revenuePercentName={`${base}.tehranRevenuePercent`}
-												revenuePercentLabel="درصد سهم درآمد (تهران)"
+												revenuePercentLabel={t("contract.traffic.tehranRevenueShare")}
 												showUnitSelector={showUnitSelector}
 												showPremiumRevenuePercent={showPremiumRevenuePercent}
 												basedTireName={`${base}.tehranBasedTire`}
@@ -442,13 +448,13 @@ export function TrafficFields() {
 
 								{provincePricing
 									? (
-										<SectionCard title="قرارداد ترافیک مراکز استان‌ها" tone={TRAFFIC_SECTION_TONE}>
+										<SectionCard title={t("contract.traffic.provinceContract")} tone={TRAFFIC_SECTION_TONE}>
 											<TrafficPricingFields
 												pricingName={`${base}.provincePricing`}
 												unitName={`${base}.provinceUnit`}
 												defaultUnit={defaultTrafficUnit}
 												revenuePercentName={`${base}.provinceRevenuePercent`}
-												revenuePercentLabel="درصد سهم درآمد (مراکز استان‌ها)"
+												revenuePercentLabel={t("contract.traffic.provinceRevenueShare")}
 												showUnitSelector={showUnitSelector}
 												showPremiumRevenuePercent={showPremiumRevenuePercent}
 												basedTireName={`${base}.provinceBasedTire`}

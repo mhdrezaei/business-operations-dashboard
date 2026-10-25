@@ -7,7 +7,7 @@
 	},
 	"password": {
 		"required": "Please enter your password",
-		"invalid": "The password is 8-16 characters and must contain letters and numbers"
+		"invalid": "Use English characters only"
 	},
 	"code": {
 		"required": "Please enter the security code"
@@ -23,13 +23,6 @@
 	"email": {
 		"required": "Please enter your email",
 		"invalid": "The email format is incorrect"
-	},
-	"confirmPassword": {
-		"required": "Please enter the password again",
-		"invalid": "The password does not match"
-	},
-	"agree": {
-		"required": "Please agree to the privacy policy and terms of service"
 	},
 	"alphanumeric": {
 		"required": "Please enter letters or numbers",

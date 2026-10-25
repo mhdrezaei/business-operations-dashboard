@@ -29,9 +29,49 @@
 	"notificationRefresh": "Refresh",
 	"notificationMarkAsRead": "Mark as read",
 	"notificationMarkAsUnread": "Mark as unread",
-	"notificationReadAllOnPage": "Mark all read",
+	"notificationReadAll": "Mark all read",
 	"notificationSentAt": "Sent",
 	"notificationEmpty": "No notifications found",
 	"notificationUnreadCount": "Notification Inbox (Unread: {{count}})",
-	"notificationRelatedCompanies": "Related Companies"
+	"notificationRelatedCompanies": "Related Companies",
+	"notificationUnreadAll": "Mark all unread",
+	"notificationCategory": {
+		"all": "All events",
+		"real_sign_flow": "Signature request",
+		"contract_expiry": "Contract",
+		"performance_missing": "Performance",
+		"business_approval_pending": "Business approval",
+		"sign_pending": "Contracts office approval",
+		"sms_gateway_auto_import": "SMS auto performance import report"
+	},
+	"notificationViewSignFlow": "View sign flow",
+	"notificationActionEditContract": "Edit contract",
+	"notificationActionRegisterPerformance": "Register performance",
+	"notificationSmsVendor": "Operators and government",
+	"notificationPendingItems": "Included items ({{count}})",
+	"notificationPendingTruncated": "Only part of the items is shown on this page.",
+	"notificationPendingDays": "{{count}} days",
+	"notificationObjectContract": "Contract",
+	"notificationObjectAddendum": "Addendum",
+	"notificationPendingPage": "Page {{page}} of {{count}}",
+	"notificationPendingPrevious": "Previous page",
+	"notificationPendingNext": "Next page",
+	"notificationSmsCompanyType": {
+		"CP": "CP companies",
+		"TELECOM": "Telecom companies",
+		"NON_TELECOM": "Non-telecom companies",
+		"KARASHAB": "Karashab"
+	},
+	"notificationSmsImport": {
+		"title": "Details - {{month}}",
+		"commission": "Agency",
+		"sms": "SMS",
+		"unmappedTag": "Unmapped",
+		"imported": "Registered ({{count}} companies)",
+		"updated": "Updated ({{count}} companies)",
+		"noContract": "No contract ({{count}} companies)",
+		"unmapped": "Unmapped in the system ({{count}})",
+		"editPerformance": "Edit performance",
+		"createContract": "Create contract"
+	}
 }

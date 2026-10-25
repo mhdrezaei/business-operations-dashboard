@@ -2,7 +2,6 @@ import type { PredictionFormValues } from "../../model/prediction.form.types";
 import type { PredictionListParams, PredictionListRow } from "../../model/prediction.list.types";
 import {
 	createSmsPrediction,
-	fetchSmsPredictionDetail,
 	fetchSmsPredictionYears,
 	listSmsPredictions,
 	updateSmsPrediction,
@@ -23,7 +22,6 @@ export const smsPredictionService = {
 		findSmsPredictionByFiscalYear(records as any[], selection.fiscalYear, selection.serviceFields),
 	fetchYears: (serviceId: number, companyType?: string | null) => fetchSmsPredictionYears(serviceId, companyType) as Promise<any>,
 	fetchList: (params: PredictionListParams) => listSmsPredictions(params) as Promise<any>,
-	fetchDetail: (id: number) => fetchSmsPredictionDetail(id) as Promise<any>,
 	getYearsQueryKey: (serviceId: number | null | undefined, companyType?: string | null) =>
 		smsPredictionYearsQuery(serviceId, companyType).queryKey,
 	createRecord: (payload: Record<string, unknown>) => createSmsPrediction(payload as any),

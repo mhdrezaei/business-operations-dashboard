@@ -3,7 +3,6 @@ import type { PredictionFormValues } from "../../model/prediction.form.types";
 import type { PredictionListParams, PredictionListRow } from "../../model/prediction.list.types";
 import {
 	createTrafficPrediction,
-	fetchTrafficPredictionDetail,
 	fetchTrafficPredictionYears,
 	listTrafficPredictions,
 	updateTrafficPrediction,
@@ -28,7 +27,6 @@ export const trafficPredictionService = {
 		findTrafficPredictionBySelection(records as any[], selection.fiscalYear, selection.serviceFields as Record<string, unknown>),
 	fetchYears: (serviceId: number, companyType?: string | null) => fetchTrafficPredictionYears(serviceId, companyType) as Promise<any>,
 	fetchList: (params: PredictionListParams) => listTrafficPredictions(params) as Promise<any>,
-	fetchDetail: (id: number) => fetchTrafficPredictionDetail(id) as Promise<any>,
 	getYearsQueryKey: (serviceId: number | null | undefined, companyType?: string | null) =>
 		trafficPredictionYearsQuery(serviceId, companyType).queryKey,
 	createRecord: (payload: Record<string, unknown>) => createTrafficPrediction(payload as any),

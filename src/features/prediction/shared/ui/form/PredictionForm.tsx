@@ -1,5 +1,5 @@
 import type { Resolver, UseFormReturn } from "react-hook-form";
-import type { PredictionFormValues } from "../../model/prediction.form.types";
+import type { PredictionFormValues, PredictionSubmitMode } from "../../model/prediction.form.types";
 import { BasicContent } from "#src/components";
 import { RHFProTextArea } from "#src/shared/ui/rhf-pro";
 import { SectionCard } from "#src/shared/ui/section-card";
@@ -25,6 +25,7 @@ interface Props {
 	onSubmit?: (
 		values: PredictionFormValues,
 		form: UseFormReturn<PredictionFormValues>,
+		submitMode: PredictionSubmitMode,
 	) => void | Promise<void>
 	submitting?: boolean
 }
@@ -233,13 +234,14 @@ export function PredictionForm({
 		interactionRef.current = nextInteraction;
 		setInteraction(nextInteraction);
 	};
+	const submitModeRef = useRef<PredictionSubmitMode>("create_reset");
 	const submit = form.handleSubmit(
 		async (values) => {
 			if (!onSubmitProp)
 				return;
 
 			try {
-				await onSubmitProp(values, form);
+				await onSubmitProp(values, form, submitModeRef.current);
 				interactionRef.current = null;
 				setInteraction(null);
 			}
@@ -264,8 +266,15 @@ export function PredictionForm({
 		},
 	);
 
-	function triggerSubmit() {
+	function triggerSubmit(submitMode: PredictionSubmitMode) {
+		submitModeRef.current = submitMode;
 		void submit();
+	}
+
+	function clearForm() {
+		form.reset(defaultValues);
+		interactionRef.current = null;
+		setInteraction(null);
 	}
 
 	function selectRegisteredPrediction(record: unknown) {
@@ -352,6 +361,7 @@ export function PredictionForm({
 										submitting={submitting}
 										disabled={!hasMeaningfulChange}
 										onSubmit={triggerSubmit}
+										onClear={clearForm}
 									/>
 								</>
 							)
@@ -367,7 +377,7 @@ function ProseNote() {
 	const { t } = useTranslation();
 
 	return (
-		<SectionCard title="اطلاعات تکمیلی" tone="blue">
+		<SectionCard title={t("prediction.labels.supplementaryInfo")} tone="blue">
 			<div className="contract-supplementary-control prediction-note-control">
 				<div className="contract-supplementary-control__label">{t("prediction.labels.note")}</div>
 				<RHFProTextArea<PredictionFormValues, "note">

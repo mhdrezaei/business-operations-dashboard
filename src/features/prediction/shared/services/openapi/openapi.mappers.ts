@@ -1,9 +1,7 @@
-import type { OpenApiPredictionPayload, OpenApiPredictionYearDto } from "../../../api/predictions.api";
+import type { OpenApiAmountKey, OpenApiPredictionPayload, OpenApiPredictionYearDto } from "../../../api/predictions.api";
 import type {
-	OpenApiChannelCode,
-	OpenApiChannelSharesValue,
+	OpenApiAmountField,
 	OpenApiManualSharesValue,
-	OpenApiOperationCode,
 	OpenApiPredictionModel,
 	OpenApiPredictionServiceFields,
 	PredictionFormValues,
@@ -14,18 +12,24 @@ import type { PredictionListRow } from "../../model/prediction.list.types";
 import i18next from "i18next";
 import { formatPredictionNumber, toNullableNumber, toNumberOrZero } from "../../model/prediction.helpers";
 import {
-	createEmptyOpenApiChannelShares,
 	createEmptyOpenApiFields,
 	createEmptyOpenApiManualShares,
+	getOpenApiAmountField,
 	getOpenApiOperationSections,
-	OPENAPI_API_SECTION_KEYS,
-	OPENAPI_CHANNEL_OPTIONS,
 	OPENAPI_METRICS,
+	OPENAPI_OPERATION_SECTIONS,
 } from "./openapi.config";
 
-// function normalizeOpenApiModel(value: unknown): OpenApiPredictionModel {
-// 	return value === "PACKAGE" ? "PACKAGE" : "LEGACY";
-// }
+export function resolveOpenApiModel(record: Pick<OpenApiPredictionYearDto, "openapi_model" | "manual_shares">): OpenApiPredictionModel {
+	const model = String(record.openapi_model ?? "").toUpperCase();
+	if (model === "LEGACY" || model === "LEGACY_2" || model === "PACKAGE")
+		return model;
+
+	const shareKeys = Object.keys(record.manual_shares ?? {});
+	return OPENAPI_OPERATION_SECTIONS.some(section => section.model === "LEGACY_2" && shareKeys.includes(section.shareKey))
+		? "LEGACY_2"
+		: "LEGACY";
+}
 
 function isShareMode(value: unknown): value is PredictionShareMode {
 	return value === "auto" || value === "manual";
@@ -85,60 +89,48 @@ function normalizeManualShares(value: unknown): OpenApiManualSharesValue {
 		return fallback;
 
 	const raw = value as Record<string, unknown>;
-	const getSectionValue = (operationKey: OpenApiOperationCode) => {
-		const apiKey = OPENAPI_API_SECTION_KEYS[operationKey];
-		return raw[apiKey] ?? raw[operationKey];
-	};
-
-	return {
-		billInquiry: {
-			value: normalizeShareSection(getSectionValue("billInquiry") && (getSectionValue("billInquiry") as Record<string, unknown>).value),
-			income: normalizeShareSection(getSectionValue("billInquiry") && (getSectionValue("billInquiry") as Record<string, unknown>).income),
-			expense: normalizeShareSection(getSectionValue("billInquiry") && (getSectionValue("billInquiry") as Record<string, unknown>).expense),
-		},
-		receiptRegister: {
-			value: normalizeShareSection(getSectionValue("receiptRegister") && (getSectionValue("receiptRegister") as Record<string, unknown>).value),
-			income: normalizeShareSection(getSectionValue("receiptRegister") && (getSectionValue("receiptRegister") as Record<string, unknown>).income),
-			expense: normalizeShareSection(getSectionValue("receiptRegister") && (getSectionValue("receiptRegister") as Record<string, unknown>).expense),
-		},
-		smsTotal: {
-			value: normalizeShareSection(getSectionValue("smsTotal") && (getSectionValue("smsTotal") as Record<string, unknown>).value),
-			income: normalizeShareSection(getSectionValue("smsTotal") && (getSectionValue("smsTotal") as Record<string, unknown>).income),
-			expense: normalizeShareSection(getSectionValue("smsTotal") && (getSectionValue("smsTotal") as Record<string, unknown>).expense),
-		},
-		trafficTotal: {
-			value: normalizeShareSection(getSectionValue("trafficTotal") && (getSectionValue("trafficTotal") as Record<string, unknown>).value),
-			income: normalizeShareSection(getSectionValue("trafficTotal") && (getSectionValue("trafficTotal") as Record<string, unknown>).income),
-			expense: normalizeShareSection(getSectionValue("trafficTotal") && (getSectionValue("trafficTotal") as Record<string, unknown>).expense),
-		},
-	};
+	return Object.fromEntries(
+		OPENAPI_OPERATION_SECTIONS.map((section) => {
+			const sectionRaw = raw[section.shareKey] as Record<string, unknown> | undefined;
+			return [
+				section.key,
+				Object.fromEntries(
+					OPENAPI_METRICS.map(metric => [metric.key, normalizeShareSection(sectionRaw?.[metric.key])]),
+				),
+			];
+		}),
+	) as OpenApiManualSharesValue;
 }
 
-function normalizeChannelShares(value: unknown): OpenApiChannelSharesValue {
-	const fallback = createEmptyOpenApiChannelShares();
-	if (!value || typeof value !== "object")
-		return fallback;
+const PACKAGE_EXTRA_AMOUNT_KEYS = OPENAPI_METRICS.flatMap(metric => [
+	`sms_total_${metric.key}_year`,
+	`traffic_total_${metric.key}_year`,
+]);
 
-	const raw = value as Record<string, unknown>;
-	const channelSource = raw.channels && typeof raw.channels === "object"
-		? (raw.channels as Record<string, unknown>).value
-		: raw.value;
+// SMS_TOTAL / TRAFFIC / channels shares: stored by PACKAGE records, no form fields, must survive an edit
+const PACKAGE_EXTRA_SHARE_KEYS = ["SMS_TOTAL", "TRAFFIC", "channels"];
 
-	if (!channelSource || typeof channelSource !== "object")
-		return fallback;
-
+function pickPackageExtras(record: OpenApiPredictionYearDto): Record<string, unknown> {
+	const raw = record as unknown as Record<string, unknown>;
+	const manualShares = (record.manual_shares ?? {}) as Record<string, unknown>;
 	return {
-		value: Object.fromEntries(
-			OPENAPI_CHANNEL_OPTIONS.map(channel => [
-				channel.key,
-				toNullableNumber((channelSource as Record<string, unknown>)[channel.key]),
-			]),
-		) as Record<OpenApiChannelCode, number | null>,
+		...Object.fromEntries(PACKAGE_EXTRA_AMOUNT_KEYS.filter(key => raw[key] != null).map(key => [key, raw[key]])),
+		manual_shares: Object.fromEntries(
+			PACKAGE_EXTRA_SHARE_KEYS.filter(key => manualShares[key] != null).map(key => [key, manualShares[key]]),
+		),
 	};
 }
 
 export function dtoToOpenApiPredictionForm(record: OpenApiPredictionYearDto): Partial<PredictionFormValues> {
 	const empty = createEmptyOpenApiFields();
+	const amounts = Object.fromEntries(
+		OPENAPI_OPERATION_SECTIONS.flatMap(section =>
+			OPENAPI_METRICS.map(metric => [
+				getOpenApiAmountField(section.key, metric.key),
+				toNullableNumber(record[`${section.apiKey}_${metric.key}_year`]),
+			] as const),
+		),
+	) as Record<OpenApiAmountField, number | null>;
 
 	return {
 		recordId: record.id,
@@ -146,25 +138,14 @@ export function dtoToOpenApiPredictionForm(record: OpenApiPredictionYearDto): Pa
 		note: record.note ?? "",
 		serviceFields: {
 			...empty,
-			openapiModel: "LEGACY",
+			...amounts,
+			openapiModel: resolveOpenApiModel(record),
 			q1Percent: toNullableNumber(record.q1_percent),
 			q2Percent: toNullableNumber(record.q2_percent),
 			q3Percent: toNullableNumber(record.q3_percent),
 			q4Percent: toNullableNumber(record.q4_percent),
-			billInquiryValueYear: toNullableNumber(record.bill_inquiry_value_year),
-			billInquiryIncomeYear: toNullableNumber(record.bill_inquiry_income_year),
-			billInquiryExpenseYear: toNullableNumber(record.bill_inquiry_expense_year),
-			receiptRegisterValueYear: toNullableNumber(record.receipt_register_value_year),
-			receiptRegisterIncomeYear: toNullableNumber(record.receipt_register_income_year),
-			receiptRegisterExpenseYear: toNullableNumber(record.receipt_register_expense_year),
-			smsTotalValueYear: toNullableNumber(record.sms_total_value_year),
-			smsTotalIncomeYear: toNullableNumber(record.sms_total_income_year),
-			smsTotalExpenseYear: toNullableNumber(record.sms_total_expense_year),
-			trafficTotalValueYear: toNullableNumber(record.traffic_total_value_year),
-			trafficTotalIncomeYear: toNullableNumber(record.traffic_total_income_year),
-			trafficTotalExpenseYear: toNullableNumber(record.traffic_total_expense_year),
 			manualShares: normalizeManualShares(record.manual_shares),
-			channels: normalizeChannelShares(record.manual_shares),
+			...(resolveOpenApiModel(record) === "PACKAGE" ? { packageExtras: pickPackageExtras(record) } : {}),
 		} satisfies OpenApiPredictionServiceFields,
 	};
 }
@@ -186,7 +167,6 @@ function buildOperationSharePayload(state: PredictionShareSectionValue) {
 function buildManualSharesPayload(
 	manualShares: OpenApiManualSharesValue,
 	openapiModel: OpenApiPredictionModel,
-	channels: OpenApiChannelSharesValue,
 ) {
 	const payload: Record<string, unknown> = {};
 
@@ -199,57 +179,44 @@ function buildManualSharesPayload(
 		);
 
 		if (Object.keys(sectionPayload).length > 0) {
-			payload[OPENAPI_API_SECTION_KEYS[section.key]] = sectionPayload;
+			payload[section.shareKey] = sectionPayload;
 		}
 	});
-
-	if (openapiModel === "PACKAGE") {
-		const channelValue = Object.fromEntries(
-			OPENAPI_CHANNEL_OPTIONS
-				.map(channel => [channel.key, toNumberOrZero(channels.value[channel.key])] as const)
-				.filter(([, amount]) => amount > 0),
-		);
-
-		if (Object.keys(channelValue).length > 0) {
-			payload.channels = {
-				value: channelValue,
-			};
-		}
-	}
 
 	return payload;
 }
 
-export function openApiPredictionFormToPayload(
-	values: PredictionFormValues,
-	_allCompanyIds: number[],
-): OpenApiPredictionPayload {
+export function openApiPredictionFormToPayload(values: PredictionFormValues): OpenApiPredictionPayload {
 	const fields = {
 		...createEmptyOpenApiFields(),
 		...(values.serviceFields as Partial<OpenApiPredictionServiceFields>),
 	};
-	const openapiModel = "LEGACY" as OpenApiPredictionModel;
+	const amounts = Object.fromEntries(
+		OPENAPI_OPERATION_SECTIONS.flatMap(section =>
+			OPENAPI_METRICS
+				.map(metric => [`${section.apiKey}_${metric.key}_year`, toNullableNumber(fields[getOpenApiAmountField(section.key, metric.key)])] as const)
+				.filter(([, amount]) => amount != null),
+		),
+	);
+
+	// the API rejects PACKAGE on write: leaving openapi_model out keeps the stored model unchanged
+	const isPackage = fields.openapiModel === "PACKAGE";
+	const { manual_shares: extraShares, ...extraAmounts } = (isPackage ? fields.packageExtras : null) ?? {};
+
 	return {
 		service: Number(values.serviceId),
 		fiscal_year: Number(values.fiscalYear),
-		openapi_model: openapiModel,
-		bill_inquiry_value_year: toNumberOrZero(fields.billInquiryValueYear),
-		bill_inquiry_income_year: toNumberOrZero(fields.billInquiryIncomeYear),
-		bill_inquiry_expense_year: toNumberOrZero(fields.billInquiryExpenseYear),
-		receipt_register_value_year: toNumberOrZero(fields.receiptRegisterValueYear),
-		receipt_register_income_year: toNumberOrZero(fields.receiptRegisterIncomeYear),
-		receipt_register_expense_year: toNumberOrZero(fields.receiptRegisterExpenseYear),
-		sms_total_value_year: 0,
-		sms_total_income_year: 0,
-		sms_total_expense_year: 0,
-		traffic_total_value_year: 0,
-		traffic_total_income_year: 0,
-		traffic_total_expense_year: 0,
+		...(isPackage ? {} : { openapi_model: fields.openapiModel }),
+		...amounts,
+		...extraAmounts as Partial<Record<OpenApiAmountKey, number>>,
 		q1_percent: Number(fields.q1Percent ?? 0),
 		q2_percent: Number(fields.q2Percent ?? 0),
 		q3_percent: Number(fields.q3Percent ?? 0),
 		q4_percent: Number(fields.q4Percent ?? 0),
-		manual_shares: buildManualSharesPayload(fields.manualShares, openapiModel, fields.channels),
+		manual_shares: {
+			...(extraShares as Record<string, unknown> | undefined),
+			...buildManualSharesPayload(fields.manualShares, fields.openapiModel),
+		},
 		note: String(values.note ?? ""),
 	};
 }
@@ -264,6 +231,17 @@ export function findOpenApiPredictionByFiscalYear(
 	return records.find(record => Number(record.fiscal_year) === Number(fiscalYear)) ?? null;
 }
 
+function buildOpenApiPreview(record: OpenApiPredictionYearDto) {
+	const model = resolveOpenApiModel(record);
+	const sections = getOpenApiOperationSections(model).map((section) => {
+		const [value, income, expense] = OPENAPI_METRICS.map(metric =>
+			`${i18next.t(metric.titleKey)}: ${formatPredictionNumber(record[`${section.apiKey}_${metric.key}_year`])}`);
+		return `${i18next.t(section.titleKey)} (${value}، ${income}، ${expense})`;
+	});
+
+	return [`${i18next.t("prediction.list.preview.model")}: ${model}`, ...sections].join(" | ");
+}
+
 export function openApiPredictionToListRow(
 	record: OpenApiPredictionYearDto,
 	context: { serviceId: number, serviceCode: PredictionListRow["serviceCode"], serviceLabel: string },
@@ -274,7 +252,7 @@ export function openApiPredictionToListRow(
 		serviceCode: context.serviceCode,
 		serviceLabel: context.serviceLabel,
 		fiscalYear: toNullableNumber(record.fiscal_year),
-		preview: `${i18next.t("prediction.list.preview.model")}: ${record.openapi_model ?? "-"} | ${i18next.t("prediction.list.preview.value")}: ${formatPredictionNumber(record.bill_inquiry_value_year)}`,
+		preview: buildOpenApiPreview(record),
 		note: String(record.note ?? ""),
 		createdAt: record.created_at ?? null,
 		updatedAt: record.updated_at ?? null,

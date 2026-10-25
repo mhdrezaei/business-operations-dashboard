@@ -1,9 +1,9 @@
 import type { ContractServicePath } from "../../../api/contracts.api";
 import type { ContractFormSelectionContext } from "../../../shared/ui/form/ContractForm";
 import { useCallback, useState } from "react";
+import { isCollocationCostContext, resolveContractServicePath } from "../../../shared/model/contract-service-path";
 import { ContractForm, defaultContractFormValues } from "../../../shared/ui/form/ContractForm";
-import { CompanyContractsPanel } from "./CompanyContractsPanel";
-import { resolveSelectionService } from "./ContractDetailModal";
+import { ScopedCompanyContractsPanel } from "../../../shared/ui/ScopedCompanyContractsPanel";
 
 interface ContractEditSelectorProps {
 	onContractSelect: (contractId: number, serviceId: number, companyType: string | null, service: ContractServicePath) => void
@@ -16,14 +16,16 @@ export function ContractEditSelector({ onContractSelect }: ContractEditSelectorP
 		serviceId: number | null
 		companyId: number | null
 		companyType: string | null
+		costContext: boolean
 	} | null>(null);
 
 	const handleSelectionContextChange = useCallback((context: ContractFormSelectionContext) => {
 		setScope({
-			service: resolveSelectionService(context),
+			service: resolveContractServicePath(context),
 			serviceId: context.serviceId,
 			companyId: context.companyId,
 			companyType: context.companyType,
+			costContext: isCollocationCostContext(context),
 		});
 	}, []);
 
@@ -39,7 +41,8 @@ export function ContractEditSelector({ onContractSelect }: ContractEditSelectorP
 				/>
 			</div>
 			<aside className="order-1 flex w-full flex-col gap-3 px-2 lg:order-2 lg:w-[25rem] lg:shrink-0 lg:pr-0">
-				<CompanyContractsPanel
+				<ScopedCompanyContractsPanel
+					costContext={scope?.costContext}
 					companyId={scope?.companyId}
 					companyType={scope?.companyType}
 					currentContractId={0}

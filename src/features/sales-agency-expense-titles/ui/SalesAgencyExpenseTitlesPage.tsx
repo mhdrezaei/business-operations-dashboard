@@ -2,7 +2,7 @@ import type { SalesAgencyExpenseTitle, SalesAgencyExpenseTitlePayload } from "..
 import { BasicContent } from "#src/components";
 import { EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Alert, Button, Card, Empty, Form, Input, Modal, Spin, Switch, Typography } from "antd";
+import { Alert, Button, Card, Empty, Form, Input, Modal, Spin, Switch, Tag, Typography } from "antd";
 import { useEffect, useState } from "react";
 import { createSalesAgencyExpenseTitle, fetchSalesAgencyExpenseTitles, updateSalesAgencyExpenseTitle } from "../api/sales-agency-expense-titles.api";
 
@@ -30,7 +30,7 @@ export default function SalesAgencyExpenseTitlesPage() {
 
 	useEffect(() => {
 		if (modalOpen) {
-			form.setFieldsValue({ name: selected?.name ?? "", is_active: selected?.is_active ?? false });
+			form.setFieldsValue({ name: selected?.name ?? "", is_active: selected?.is_active ?? true });
 		}
 	}, [form, modalOpen, selected]);
 
@@ -39,7 +39,7 @@ export default function SalesAgencyExpenseTitlesPage() {
 		setModalOpen(true);
 	};
 
-	const titles = titlesQuery.data?.results ?? [];
+	const titles = titlesQuery.data ?? [];
 
 	return (
 		<BasicContent className="h-full !overflow-y-auto">
@@ -70,7 +70,10 @@ export default function SalesAgencyExpenseTitlesPage() {
 									<div className="flex flex-col gap-2">
 										{titles.map(title => (
 											<div key={title.id} className="flex items-center justify-between gap-4 rounded-lg border border-gray-200 px-4 py-3 dark:border-gray-700">
-												<Typography.Text>{title.name}</Typography.Text>
+												<Typography.Text>
+													{title.name}
+													{title.is_active ? null : <Tag className="!ms-2">غیرفعال</Tag>}
+												</Typography.Text>
 												<Button aria-label={`ویرایش ${title.name}`} icon={<EditOutlined />} onClick={() => openModal(title)} />
 											</div>
 										))}

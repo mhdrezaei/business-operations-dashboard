@@ -1,3 +1,8 @@
+import type { ProfilePayload } from "../api/profile.api";
+
+import { NO_ARABIC_SCRIPT_REGEXP, USERNAME_REGEXP } from "#src/constants/regular-expressions";
+import { i18n } from "#src/locales";
+import { normalizeIranMobile } from "#src/shared/lib/iran-mobile";
 import { z } from "zod";
 
 const lettersOnlyPattern = /^[\p{L}\s]+$/u;
@@ -20,19 +25,6 @@ export function keepLettersOnly(value: string): string {
 
 export function keepDigitsOnly(value: string, maxLength: number): string {
 	return normalizeDigits(value).replace(/\D/g, "").slice(0, maxLength);
-}
-
-export function normalizeIranMobile(value: string): string {
-	const digits = normalizeDigits(value).replace(/\D/g, "");
-
-	if (digits.startsWith("0098"))
-		return `0${digits.slice(4)}`;
-	if (digits.startsWith("98"))
-		return `0${digits.slice(2)}`;
-	if (digits.startsWith("9") && digits.length === 10)
-		return `0${digits}`;
-
-	return digits;
 }
 
 type ProfileInputKind = "letters" | "digits";
@@ -105,6 +97,9 @@ export function sanitizeProfileFormValues(
 
 // ====================== ERROR MESSAGES ======================
 
+// پیام مشترک با فرم کاربر ادمین (کلید i18n)؛ lazy تا در زمان import به آماده‌بودن i18n وابسته نباشد
+const englishOnlyMessage = { error: () => i18n.t("form.password.invalid") };
+
 export const profileErrorMessages = {
 	usernameRequired: "نام کاربری الزامی است",
 	nameLettersOnly: "نام فقط باید شامل حروف باشد",
@@ -113,6 +108,8 @@ export const profileErrorMessages = {
 	mobileLength: "شماره موبایل باید 11 رقم باشد",
 	nationalCodeLength: "کد ملی باید 10 رقم باشد",
 	passwordsMismatch: "رمز جدید و تکرار آن مطابقت ندارد",
+	passwordPairRequired: "برای تغییر رمز، هر دو فیلد رمز فعلی و رمز جدید باید پر شوند.",
+	mobileChangeAlone: "برای تغییر شماره موبایل، ابتدا فقط شماره را ذخیره کنید و بعد سایر اطلاعات را تغییر دهید.",
 } as const;
 
 // ====================== NORMALIZATION FOR DIRTY CHECK ======================
@@ -164,6 +161,7 @@ export const myProfileUpsertSchema = z.object({
 	username: z.string()
 		.trim()
 		.min(1, profileErrorMessages.usernameRequired)
+		.regex(USERNAME_REGEXP, { error: () => i18n.t("form.username.invalid") })
 		.nullable(),
 
 	first_name: z.string()
@@ -197,17 +195,40 @@ export const myProfileUpsertSchema = z.object({
 		})
 		.nullable(),
 
-	password: z.string().optional(),
-	newPassword: z.string().optional(),
-	ConfirmNewPassword: z.string().optional(),
-}).refine((data) => {
-	if (data.newPassword && data.newPassword !== data.ConfirmNewPassword) {
-		return false;
-	}
-	return true;
-}, {
+	password: z.string().regex(NO_ARABIC_SCRIPT_REGEXP, englishOnlyMessage).optional(),
+	newPassword: z.string().regex(NO_ARABIC_SCRIPT_REGEXP, englishOnlyMessage).optional(),
+	ConfirmNewPassword: z.string().regex(NO_ARABIC_SCRIPT_REGEXP, englishOnlyMessage).optional(),
+}).refine(data => Boolean(data.password) === Boolean(data.newPassword), {
+	message: profileErrorMessages.passwordPairRequired,
+	path: ["newPassword"],
+}).refine(data => !data.newPassword || data.newPassword === data.ConfirmNewPassword, {
 	message: profileErrorMessages.passwordsMismatch,
 	path: ["ConfirmNewPassword"],
 });
+
+function emptyToNull(value: string | null | undefined): string | null {
+	return value?.trim() || null;
+}
+
+/** مقادیر خالی null می‌شوند؛ رمز فقط وقتی هر دو فیلد پر باشند ارسال می‌شود؛ موبایل جداگانه (OTP) می‌رود. */
+export function buildProfileUpdatePayload(profile: MyProfileFormValues): ProfilePayload {
+	return {
+		username: profile.username?.trim(),
+		first_name: emptyToNull(profile.first_name),
+		last_name: emptyToNull(profile.last_name),
+		email: emptyToNull(profile.email),
+		national_code: emptyToNull(profile.national_code),
+		...(profile.password && profile.newPassword
+			? { current_password: profile.password, new_password: profile.newPassword }
+			: {}),
+	};
+}
+
+export function hasNonMobileProfileChanges(initial: MyProfileFormValues, current: MyProfileFormValues): boolean {
+	const text = (value: string | null | undefined) => value?.trim() ?? "";
+	return (["username", "first_name", "last_name", "email", "national_code"] as const)
+		.some(key => text(current[key]) !== text(initial[key]))
+		|| Boolean(current.password || current.newPassword || current.ConfirmNewPassword);
+}
 
 export type MyProfileFormValues = z.output<typeof myProfileUpsertSchema>;

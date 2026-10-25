@@ -2,6 +2,8 @@ import type { OpenApiContractModel, PerformanceServiceCode } from "./performance
 import i18next from "i18next";
 import { z } from "zod";
 import { performanceServiceRegistry } from "../services/registry";
+import { salesAgencyFieldsSchema } from "../services/sales-agency/sales-agency.schema";
+import { isCollocationCompanyType } from "../services/traffic/traffic-collocation";
 import { isSmsCommissionCode } from "./performance.helpers";
 
 const baseSchema = z.object({
@@ -21,7 +23,7 @@ const baseSchema = z.object({
 	contractId: z.number().int().positive().nullable(),
 	contractModel: z.preprocess(
 		v => (v === "" || v == null ? null : v),
-		z.enum(["legacy", "package"]).nullable(),
+		z.enum(["legacy", "package", "legacy_2"]).nullable(),
 	),
 });
 
@@ -38,10 +40,6 @@ function requireNotNull(
 		path,
 		message,
 	});
-}
-
-function isUploadListEmpty(value: unknown) {
-	return !Array.isArray(value) || value.length < 1;
 }
 
 export function buildPerformanceSchema(
@@ -89,12 +87,38 @@ export function buildPerformanceSchema(
 				}
 			}
 
+			if (normalizedCode === "traffic" && trafficSubmitMode === "single" && String(value.companyType ?? "").toUpperCase() === "CP") {
+				const sections = [
+					{ enabled: serviceFields.tehranEnabled !== false, field: "tehranConversionRatio", message: "performance.validation.traffic.tehranConversionRatioRequired" },
+					{ enabled: serviceFields.countyEnabled === true, field: "countyConversionRatio", message: "performance.validation.traffic.countyConversionRatioRequired" },
+				];
+				sections.forEach(({ enabled, field, message }) => {
+					requireNotNull(enabled ? serviceFields[field] : true, ["serviceFields", field], i18next.t(message), ctx);
+				});
+			}
+
+			if (normalizedCode === "traffic" && trafficSubmitMode === "single" && isCollocationCompanyType(value.companyType)) {
+				requireNotNull(serviceFields.collocationMode, ["serviceFields", "collocationMode"], i18next.t("performance.validation.traffic.collocationPartnerRequired"), ctx);
+			}
+
 			if (isSmsCommissionCode(normalizedCode) && value.salesAgentId == null) {
 				ctx.addIssue({
 					code: "custom",
 					path: ["salesAgentId"],
 					message: i18next.t("performance.validation.base.salesAgentRequired"),
 				});
+			}
+
+			if (normalizedCode === "sales_agency" && value.companyType != null) {
+				const parsed = salesAgencyFieldsSchema(value.companyType).safeParse(serviceFields);
+				if (!parsed.success) {
+					parsed.error.issues.forEach(issue => ctx.addIssue({
+						code: "custom",
+						path: ["serviceFields", ...issue.path],
+						message: issue.message,
+					}));
+				}
+				return;
 			}
 
 			if (normalizedCode === "openapi") {
@@ -120,6 +144,13 @@ export function buildPerformanceSchema(
 						i18next.t("performance.validation.openapi.receiptRegisterValueRequired"),
 						ctx,
 					);
+				}
+
+				if (contractModel === "legacy_2") {
+					requireNotNull(serviceFields.billInquiryMidtermValue, ["serviceFields", "billInquiryMidtermValue"], i18next.t("performance.validation.openapi.billInquiryMidtermValueRequired"), ctx);
+					requireNotNull(serviceFields.billInquiryEndtermValue, ["serviceFields", "billInquiryEndtermValue"], i18next.t("performance.validation.openapi.billInquiryEndtermValueRequired"), ctx);
+					requireNotNull(serviceFields.receiptRegisterConnectedValue, ["serviceFields", "receiptRegisterConnectedValue"], i18next.t("performance.validation.openapi.receiptRegisterConnectedValueRequired"), ctx);
+					requireNotNull(serviceFields.receiptRegisterDisconnectedValue, ["serviceFields", "receiptRegisterDisconnectedValue"], i18next.t("performance.validation.openapi.receiptRegisterDisconnectedValueRequired"), ctx);
 				}
 
 				if (contractModel === "package") {
@@ -184,31 +215,6 @@ export function buildPerformanceSchema(
 				requireNotNull(serviceFields.mciEn, ["serviceFields", "mciEn"], i18next.t("performance.validation.sms.mciEnRequired"), ctx);
 				requireNotNull(serviceFields.otherFa, ["serviceFields", "otherFa"], i18next.t("performance.validation.sms.otherFaRequired"), ctx);
 				requireNotNull(serviceFields.otherEn, ["serviceFields", "otherEn"], i18next.t("performance.validation.sms.otherEnRequired"), ctx);
-				return;
-			}
-
-			if (normalizedCode === "commercial") {
-				if (isUploadListEmpty(serviceFields.servicesFile)) {
-					ctx.addIssue({
-						code: "custom",
-						path: ["serviceFields", "servicesFile"],
-						message: i18next.t("performance.validation.commercial.servicesFileRequired"),
-					});
-				}
-				if (isUploadListEmpty(serviceFields.provinceCodeFile)) {
-					ctx.addIssue({
-						code: "custom",
-						path: ["serviceFields", "provinceCodeFile"],
-						message: i18next.t("performance.validation.commercial.provinceCodeFileRequired"),
-					});
-				}
-				if (isUploadListEmpty(serviceFields.monthlyPerformanceFile)) {
-					ctx.addIssue({
-						code: "custom",
-						path: ["serviceFields", "monthlyPerformanceFile"],
-						message: i18next.t("performance.validation.commercial.monthlyPerformanceFileRequired"),
-					});
-				}
 			}
 		});
 }

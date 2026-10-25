@@ -1,0 +1,52 @@
+{
+	"company": {
+		"selected": "شرکت انتخاب‌شده",
+		"nameLabel": "نام شرکت",
+		"createTitle": "ایجاد شرکت جدید",
+		"createSubmit": "ثبت شرکت",
+		"createSuccess": "شرکت با موفقیت ایجاد شد",
+		"renameTitle": "ویرایش نام شرکت",
+		"renameSuccess": "نام شرکت با موفقیت ویرایش شد",
+		"confirmTitle": "تأیید ویرایش شرکت",
+		"confirmContent": "آیا از تغییر نام شرکت مطمئن هستید؟",
+		"delete": "حذف شرکت",
+		"deleteTitle": "حذف شرکت",
+		"deleteContent": "آیا از حذف این شرکت مطمئن هستید؟",
+		"deleteSuccess": "شرکت حذف شد"
+	},
+	"datacenter": {
+		"selected": "دیتاسنتر انتخاب‌شده",
+		"nameLabel": "نام دیتاسنتر",
+		"createTitle": "ایجاد دیتاسنتر جدید",
+		"createSubmit": "ثبت دیتاسنتر",
+		"createSuccess": "دیتاسنتر با موفقیت ایجاد شد",
+		"renameTitle": "ویرایش نام دیتاسنتر",
+		"renameSuccess": "نام دیتاسنتر با موفقیت ویرایش شد",
+		"confirmTitle": "تأیید ویرایش دیتاسنتر",
+		"confirmContent": "آیا از تغییر نام دیتاسنتر مطمئن هستید؟",
+		"delete": "حذف دیتاسنتر",
+		"deleteTitle": "حذف دیتاسنتر",
+		"deleteContent": "آیا از حذف این دیتاسنتر مطمئن هستید؟",
+		"deleteSuccess": "دیتاسنتر حذف شد"
+	},
+	"service": "سرویس",
+	"serviceRequired": "سرویس را انتخاب کنید",
+	"nameRequired": "نام شرکت الزامی است",
+	"companyType": "نوع شرکت",
+	"companyTypePlaceholder": "نوع شرکت را انتخاب کنید",
+	"agentName": "نام نماینده فروش",
+	"agentNameRequired": "نام نماینده فروش را وارد کنید",
+	"confirmRename": "بله، تغییر بده",
+	"applyChanges": "اعمال تغییرات",
+	"genericError": "در حال حاضر مشکلی وجود دارد",
+	"profile": {
+		"deleteTitle": "حذف پروفایل",
+		"deleteContent": "با حذف پروفایل، اطلاعات این بخش پاک می‌شود. آیا مطمئن هستید؟",
+		"delete": "حذف پروفایل",
+		"reset": "بازنشانی تغییرات",
+		"submit": "ثبت"
+	},
+	"documents": {
+		"downloadError": "خطا در دانلود مدرک"
+	}
+}

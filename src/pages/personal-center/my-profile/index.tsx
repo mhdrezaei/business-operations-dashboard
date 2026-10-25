@@ -1,7 +1,9 @@
 import type { MyProfileFormValues } from "./model/profile.schema";
 
 import { BasicButton, BasicContent } from "#src/components/index.js";
+import { normalizeIranMobile } from "#src/shared/lib/iran-mobile";
 import { RHFProText } from "#src/shared/ui/rhf-pro/index.js";
+import { useUserStore } from "#src/store";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card } from "antd";
@@ -11,11 +13,13 @@ import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { updateProfile } from "./api/profile.api";
 import { useMobileChangeOtp } from "./hooks/use-mobile-change-otp";
 import {
+	buildProfileUpdatePayload,
 	getComparableProfileString,
+	hasNonMobileProfileChanges,
 	mergeProfileValues,
 	myProfileUpsertSchema,
 	normalizeDigits,
-	normalizeIranMobile,
+	profileErrorMessages,
 	sanitizeProfileFormValues,
 	sanitizeProfileInputValue,
 	shouldPreventProfileInputKey,
@@ -70,13 +74,18 @@ export default function MyProfileForm() {
 		const normalizedProfile = normalizeProfileForForm(profile);
 		form.reset(normalizedProfile);
 		queryClient.setQueryData(profileQuery.queryKey, normalizedProfile);
+		useUserStore.setState({
+			first_name: normalizedProfile.first_name ?? "",
+			last_name: normalizedProfile.last_name ?? "",
+			username: normalizedProfile.username ?? "",
+		});
 		await queryClient.invalidateQueries({ queryKey: profileQuery.queryKey });
 	};
 
 	const saveProfile = async (profile: MyProfileFormValues) => {
 		setSaving(true);
 		try {
-			const result = await updateProfile({ ...profile });
+			const result = await updateProfile(buildProfileUpdatePayload(profile));
 			await finishProfileUpdate(result.data ?? profile);
 			window.$message?.success("اطلاعات پروفایل با موفقیت ذخیره شد");
 		}
@@ -96,6 +105,10 @@ export default function MyProfileForm() {
 					const initialMobile = normalizeDigits(mergedDefaultValues.mobile ?? "").replace(/\D/g, "");
 
 					if (currentMobile !== initialMobile) {
+						if (hasNonMobileProfileChanges(mergedDefaultValues, profile)) {
+							window.$message?.error(profileErrorMessages.mobileChangeAlone);
+							return;
+						}
 						await mobileChangeOtp.requestMobileOtp(profile);
 						return;
 					}

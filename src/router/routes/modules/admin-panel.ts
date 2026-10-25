@@ -5,7 +5,7 @@ import { ContainerLayout } from "#src/layout";
 import { $t } from "#src/locales";
 
 import { userManagement } from "#src/router/extra-info";
-import { AuditOutlined, BellOutlined, HistoryOutlined, SafetyOutlined, UserOutlined } from "@ant-design/icons";
+import { ApartmentOutlined, AuditOutlined, BellOutlined, HistoryOutlined, SafetyOutlined, UserOutlined } from "@ant-design/icons";
 import { createElement, lazy } from "react";
 
 const ListUsers = lazy(() => import("#src/pages/user-management/UsersList"));
@@ -13,6 +13,7 @@ const ListRoles = lazy(() => import("#src/pages/user-management/RolesList"));
 const AuditLogs = lazy(() => import("#src/pages/user-management/AuditLogsList"));
 const NotificationRules = lazy(() => import("#src/pages/user-management/NotificationRules"));
 const SignFlowRules = lazy(() => import("#src/pages/user-management/SignFlowRules"));
+const TelecomFrameMasterData = lazy(() => import("#src/pages/user-management/TelecomFrameMasterData"));
 const SalesAgencyExpenseTitles = lazy(() => import("#src/pages/user-management/SalesAgencyExpenseTitles"));
 // const EditContractPage = lazy(() => import("#src/pages/user-management/edit"));
 
@@ -86,6 +87,16 @@ const routes: AppRouteRecordRaw[] = [
 					icon: createElement(AuditOutlined),
 					title: "عنوان‌های هزینه‌ی عاملیت فروش",
 					adminAccess: "policies",
+				},
+			},
+			{
+				path: "/admin-panel/telecom-frame/master-data",
+				Component: TelecomFrameMasterData,
+				handle: {
+					icon: createElement(ApartmentOutlined),
+					title: $t("common.menu.telecomFrameMasterData"),
+					accessDomain: "contracts",
+					accessAction: "view",
 				},
 			},
 			// {

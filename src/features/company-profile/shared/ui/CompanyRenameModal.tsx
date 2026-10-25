@@ -1,14 +1,21 @@
-import type { Resolver } from "react-hook-form";
+import type { TFunction } from "i18next";
 
-import { RHFProText } from "#src/shared/ui/rhf-pro";
+import { RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { request } from "#src/utils/request/";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { App, Button, Form, Modal } from "antd";
 import React, { useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 import { z } from "zod";
+
+import { agentCompanyId, createSmsCommissionAgent, deleteSmsCommissionAgent, updateSmsCommissionAgent } from "../../api/sms-commission-agents.api";
+import { deleteTrafficDatacenter, updateTrafficDatacenter } from "../../api/traffic-datacenters.api";
+import { smsCommissionAgentsQuery, trafficDatacentersQuery } from "../../queries/company-profile.queries";
+import { companyNameFields } from "../utils/company-name-schema";
+import { buildCompanyRenamePayload } from "../utils/company-rename";
 
 interface Props {
 	open: boolean
@@ -16,20 +23,25 @@ interface Props {
 	serviceId: number
 	companyType: string | null
 	requiresCompanyType: boolean
+	companyTypeOptions: Array<{ label: string, value: string }>
+	isSmsCommission: boolean
+	isDatacenter: boolean
 	companyId: number | null
 	companyName: string | null
 	onClose: () => void
-	onRenamed: (newName: string) => void
+	onRenamed: (newName: string, newCompanyType: string | null) => void
 	onDeleted: () => void
 }
 
 interface RenameCompanyFormValues {
+	company_type: string | null
 	name: string
+	agent_name: string
 }
 
-const renameCompanySchema = z.object({
-	name: z.string().trim().min(2, "نام شرکت الزامی است"),
-}) as unknown as z.ZodType<RenameCompanyFormValues>;
+function createRenameCompanySchema(t: TFunction) {
+	return z.object(companyNameFields(t)) as unknown as z.ZodType<RenameCompanyFormValues, RenameCompanyFormValues>;
+}
 
 export default function CompanyRenameModal({
 	open,
@@ -37,6 +49,9 @@ export default function CompanyRenameModal({
 	serviceId,
 	companyType,
 	requiresCompanyType,
+	companyTypeOptions,
+	isSmsCommission,
+	isDatacenter,
 	companyId,
 	companyName,
 	onClose,
@@ -44,54 +59,99 @@ export default function CompanyRenameModal({
 	onDeleted,
 }: Props) {
 	const qc = useQueryClient();
+	const { t } = useTranslation();
 	const { modal } = App.useApp();
+	const renameCompanySchema = useMemo(() => createRenameCompanySchema(t), [t]);
 	const [saving, setSaving] = useState(false);
 	const [deleting, setDeleting] = useState(false);
 
+	const needsAgent = isSmsCommission && !isDatacenter;
+	const agentsQuery = useQuery({ ...smsCommissionAgentsQuery(), enabled: open && needsAgent });
+	// تا بارگذاری لیست نمایندگان، نماینده موجود نامعلوم است و ثبت/حذف ممکن است تکراری شود یا رد شود
+	const agentsNotReady = needsAgent && !agentsQuery.isSuccess;
+	const existingAgent = useMemo(
+		() => (agentsQuery.data ?? []).find(agent => agentCompanyId(agent) === companyId),
+		[agentsQuery.data, companyId],
+	);
+
 	const defaultValues = useMemo<RenameCompanyFormValues>(() => ({
+		company_type: companyType,
 		name: companyName ?? "",
-	}), [companyName]);
+		agent_name: existingAgent?.name ?? "",
+	}), [companyName, companyType, existingAgent?.name]);
 
 	const methods = useForm<RenameCompanyFormValues>({
 		defaultValues,
-		resolver: zodResolver(renameCompanySchema as any) as unknown as Resolver<RenameCompanyFormValues>,
+		resolver: zodResolver(renameCompanySchema),
 		mode: "onBlur",
 	});
 
 	React.useEffect(() => {
 		if (open) {
-			methods.reset({ name: companyName ?? "" });
+			methods.reset(defaultValues);
 		}
-	}, [open, companyId, companyName]);
+	}, [open, companyId, defaultValues]);
 
-	const isDisabled = !!disabled || !companyId;
+	const isDisabled = !!disabled || !companyId || agentsNotReady;
+	const current = methods.watch();
+	const typeChanged = requiresCompanyType && !isDatacenter && current.company_type !== defaultValues.company_type;
+	const agentChanged = needsAgent && current.agent_name.trim() !== defaultValues.agent_name.trim();
+	const isChanged = current.name.trim() !== defaultValues.name.trim() || typeChanged || agentChanged;
+	const kind = isDatacenter ? "datacenter" : "company";
 
 	async function submit(values: RenameCompanyFormValues) {
 		if (!companyId)
 			return;
-		if (requiresCompanyType && !companyType) {
-			window.$message?.warning("نوع شرکت را انتخاب کنید");
+		const needsType = requiresCompanyType && !isDatacenter;
+		if (needsType && !values.company_type) {
+			window.$message?.warning(t("companyProfile.companyTypePlaceholder"));
+			return;
+		}
+		if (needsAgent && !values.agent_name) {
+			window.$message?.warning(t("companyProfile.agentNameRequired"));
 			return;
 		}
 
+		modal.confirm({
+			title: t(`companyProfile.${kind}.confirmTitle`),
+			content: t(`companyProfile.${kind}.confirmContent`),
+			okText: t("companyProfile.confirmRename"),
+			cancelText: t("common.cancel"),
+			onOk: () => save(companyId, values),
+		});
+	}
+
+	async function save(id: number, values: RenameCompanyFormValues) {
 		setSaving(true);
 		try {
-			const payload = {
-				name: values.name.trim(),
-				service: serviceId,
-				company_type: requiresCompanyType ? companyType : undefined,
-			};
+			const name = values.name.trim();
+			if (isDatacenter) {
+				await updateTrafficDatacenter(id, { name });
+				await qc.invalidateQueries({ queryKey: trafficDatacentersQuery().queryKey });
+			}
+			else {
+				const payload = buildCompanyRenamePayload(name, serviceId, values.company_type);
 
-			await request.put(`common/companies/${companyId}/`, { json: payload }).json<any>();
+				await request.put(`common/companies/${id}/`, { json: payload }).json<unknown>();
 
-			await qc.invalidateQueries({ queryKey: ["common", "companies", { serviceId }] });
+				if (isSmsCommission) {
+					const agentPayload = { name: values.agent_name, company: id };
+					if (existingAgent)
+						await updateSmsCommissionAgent(existingAgent.id, agentPayload);
+					else
+						await createSmsCommissionAgent(agentPayload);
+					await qc.invalidateQueries({ queryKey: smsCommissionAgentsQuery().queryKey });
+				}
 
-			window.$message?.success("نام شرکت با موفقیت ویرایش شد");
-			onRenamed(payload.name);
+				await qc.invalidateQueries({ queryKey: ["common", "companies", { serviceId }] });
+			}
+
+			window.$message?.success(t(`companyProfile.${kind}.renameSuccess`));
+			onRenamed(name, values.company_type);
 		}
 		catch (e) {
 			console.error(e);
-			window.$message?.error("در حال حاضر مشکلی وجود دارد");
+			window.$message?.error(t("companyProfile.genericError"));
 		}
 		finally {
 			setSaving(false);
@@ -103,26 +163,34 @@ export default function CompanyRenameModal({
 			return;
 
 		modal.confirm({
-			title: "حذف شرکت",
-			content: "آیا از حذف این شرکت مطمئن هستید؟",
-			okText: "حذف",
-			cancelText: "انصراف",
+			title: t(`companyProfile.${kind}.deleteTitle`),
+			content: t(`companyProfile.${kind}.deleteContent`),
+			okText: t("common.delete"),
+			cancelText: t("common.cancel"),
 			okButtonProps: { danger: true },
 			onOk: async () => {
 				setDeleting(true);
 				try {
-					await request.delete(`common/companies/${companyId}/`).json<void>();
+					if (isDatacenter) {
+						await deleteTrafficDatacenter(companyId);
+						await qc.invalidateQueries({ queryKey: trafficDatacentersQuery().queryKey });
+					}
+					else {
+						if (needsAgent && existingAgent)
+							await deleteSmsCommissionAgent(existingAgent.id);
+						await request.delete(`common/companies/${companyId}/`).json<void>();
 
-					await qc.invalidateQueries({ queryKey: ["common", "companies", { serviceId }] });
+						await qc.invalidateQueries({ queryKey: ["common", "companies", { serviceId }] });
 
-					await qc.invalidateQueries({ queryKey: ["contracts", "companyProfiles", { companyId }] });
+						await qc.invalidateQueries({ queryKey: ["contracts", "companyProfiles", { companyId }] });
+					}
 
-					window.$message?.success("شرکت حذف شد");
+					window.$message?.success(t(`companyProfile.${kind}.deleteSuccess`));
 					onDeleted();
 				}
 				catch (e) {
 					console.error(e);
-					window.$message?.error("در حال حاضر مشکلی وجود دارد");
+					window.$message?.error(t("companyProfile.genericError"));
 				}
 				finally {
 					setDeleting(false);
@@ -138,7 +206,7 @@ export default function CompanyRenameModal({
 				if (!saving && !deleting)
 					onClose();
 			}}
-			title="ویرایش نام شرکت"
+			title={t(`companyProfile.${kind}.renameTitle`)}
 			footer={null}
 			destroyOnHidden
 		>
@@ -146,7 +214,7 @@ export default function CompanyRenameModal({
 				<FormProvider {...methods}>
 					{/* نمایش شرکت انتخاب شده */}
 					<div className="mb-3 opacity-85">
-						<div className="mb-1.5">شرکت انتخاب‌شده</div>
+						<div className="mb-1.5">{t(`companyProfile.${kind}.selected`)}</div>
 						<div
 							className={isDisabled
 								? "rounded-[10px] border border-[rgba(255,255,255,0.08)] px-3 py-2.5 opacity-70"
@@ -156,21 +224,38 @@ export default function CompanyRenameModal({
 						</div>
 					</div>
 
+					{requiresCompanyType && !isDatacenter && (
+						<RHFSelect<RenameCompanyFormValues, "company_type", string | null>
+							name="company_type"
+							label={t("companyProfile.companyType")}
+							options={companyTypeOptions}
+							selectProps={{ placeholder: t("companyProfile.companyTypePlaceholder"), disabled: isDisabled || saving || deleting }}
+						/>
+					)}
+
 					<RHFProText
 						name="name"
-						label="نام شرکت"
-						inputProps={{ placeholder: "نام شرکت", disabled: isDisabled || saving || deleting }}
+						label={t(`companyProfile.${kind}.nameLabel`)}
+						inputProps={{ placeholder: t(`companyProfile.${kind}.nameLabel`), disabled: isDisabled || saving || deleting }}
 					/>
+
+					{needsAgent && (
+						<RHFProText
+							name="agent_name"
+							label={t("companyProfile.agentName")}
+							inputProps={{ placeholder: t("companyProfile.agentName"), disabled: isDisabled || saving || deleting }}
+						/>
+					)}
 
 					<div className="flex justify-between mt-4">
 						<div className="flex gap-3">
 							<Button
 								type="primary"
 								loading={saving}
-								disabled={isDisabled || deleting}
+								disabled={isDisabled || deleting || !isChanged}
 								onClick={methods.handleSubmit(v => submit(v))}
 							>
-								اعمال تغییرات
+								{t("companyProfile.applyChanges")}
 							</Button>
 
 							<Button
@@ -179,12 +264,12 @@ export default function CompanyRenameModal({
 								disabled={isDisabled || saving}
 								onClick={confirmDelete}
 							>
-								حذف شرکت
+								{t(`companyProfile.${kind}.delete`)}
 							</Button>
 						</div>
 
 						<Button onClick={onClose} disabled={saving || deleting}>
-							انصراف
+							{t("common.cancel")}
 						</Button>
 					</div>
 				</FormProvider>

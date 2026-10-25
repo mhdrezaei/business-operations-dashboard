@@ -1,5 +1,6 @@
+import type { ReactNode } from "react";
 import type { Resolver, UseFormReturn } from "react-hook-form";
-import type { ContractFormValues, ContractServiceCode } from "../../model/contract.form.types";
+import type { ContractFormValues, ContractServiceCode, ContractTypeValue } from "../../model/contract.form.types";
 import { BasicContent } from "#src/components/index.js";
 import { useAccess } from "#src/hooks";
 import { FormActionBar } from "#src/shared/ui/form-action-bar";
@@ -9,6 +10,7 @@ import { Button, ConfigProvider, Empty } from "antd";
 import { AnimatePresence, motion } from "framer-motion";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 import { buildContractSchema, mergeContractValues, normalizeContractValue } from "../../model/contract.schema";
 import { serviceRegistry } from "../../services/registry";
@@ -30,6 +32,9 @@ export interface ContractFormSelectionContext {
 	companyId: number | null
 	companyType: string | null
 	counterpartyType: ContractFormValues["counterpartyType"]
+	/** خلاصه قیمت‌گذاری اصلی (فقط سرویس‌های دارای `contractPricing`) برای کارت خلاصه صفحه ایجاد */
+	contractPricingType?: ContractTypeValue["type"]
+	fixedAmount?: number | null
 }
 
 export const defaultContractFormValues: ContractFormValues = {
@@ -61,6 +66,8 @@ interface Props {
 	submitText?: string
 	submitting?: boolean
 	showExtendedActions?: boolean
+	/** دکمه‌های کنار «ثبت» در نوار عملیات ساده (مثلاً «حذف قرارداد» در ویرایش) */
+	secondaryActions?: ReactNode
 	showDocuments?: boolean
 	onSelectionContextChange?: (context: ContractFormSelectionContext) => void
 	awaitingContractSelection?: boolean
@@ -98,14 +105,16 @@ export function ContractForm({
 	contractId = null,
 	initialValues,
 	onSubmit: onSubmitProp,
-	submitText = "ثبت قرارداد",
+	submitText,
 	submitting,
 	showExtendedActions = false,
+	secondaryActions,
 	showDocuments = true,
 	onSelectionContextChange,
 	awaitingContractSelection = false,
 	readOnly = false,
 }: Props) {
+	const { t } = useTranslation();
 	const dynamicResolver: Resolver<ContractFormValues> = useCallback(
 		async (values, context, options) => {
 			const sc = values.serviceCode ?? null;
@@ -137,6 +146,7 @@ export function ContractForm({
 	const isDirty = useMemo(() => {
 		return hasMeaningfulDirtyField(dirtyFields, watchedValues, mergedInitialValues);
 	}, [dirtyFields, mergedInitialValues, watchedValues]);
+	const mainPricing = watchedValues.serviceFields?.contractPricing as ContractTypeValue | undefined;
 	useEffect(() => {
 		onSelectionContextChange?.({
 			serviceId: watchedValues.serviceId ?? null,
@@ -144,6 +154,8 @@ export function ContractForm({
 			companyId: watchedValues.companyId ?? null,
 			companyType: watchedValues.companyType ?? null,
 			counterpartyType: watchedValues.counterpartyType ?? null,
+			contractPricingType: mainPricing?.type ?? null,
+			fixedAmount: mainPricing?.fixedAmount ?? null,
 		});
 	}, [
 		watchedValues.serviceId,
@@ -151,6 +163,8 @@ export function ContractForm({
 		watchedValues.companyId,
 		watchedValues.companyType,
 		watchedValues.counterpartyType,
+		mainPricing?.type,
+		mainPricing?.fixedAmount,
 		onSelectionContextChange,
 	]);
 	useEffect(() => {
@@ -199,8 +213,8 @@ export function ContractForm({
 				if (e?.response)
 					return;
 				notification.error({
-					message: "خطا در ثبت/ویرایش",
-					description: e?.message ?? "خطای نامشخص",
+					message: t("contract.form.submitError"),
+					description: e?.message ?? t("contract.form.unknownError"),
 					placement: "top",
 				});
 			}
@@ -209,7 +223,7 @@ export function ContractForm({
 			const first = findFirstError(errors);
 			if (first?.message) {
 				notification.error({
-					message: "لطفاً خطاهای فرم را اصلاح کنید",
+					message: t("contract.form.fixErrors"),
 					description: first.message,
 					placement: "top",
 				});
@@ -231,14 +245,14 @@ export function ContractForm({
 				<BasicContent>
 					<div className="form-layout w-full flex flex-col justify-center items-center gap-2">
 						<input type="hidden" {...form.register("serviceCode")} />
-						<FixedStartSection mode={mode} preserveDatesDuringResetRef={preserveDatesDuringResetRef} />
+						<FixedStartSection mode={mode} awaitingContractSelection={awaitingContractSelection} preserveDatesDuringResetRef={preserveDatesDuringResetRef} />
 
 						{awaitingContractSelection
 							? (
 								<div className="flex min-h-[240px] w-full items-center justify-center">
 									<Empty
 										image={Empty.PRESENTED_IMAGE_SIMPLE}
-										description="جهت مشاهده، یک قرارداد را از پنل سمت چپ انتخاب کنید"
+										description={t("contract.form.selectContractHint")}
 									/>
 								</div>
 							)
@@ -271,7 +285,7 @@ export function ContractForm({
 														<ActionSection
 															submitting={submitting}
 															disabled={submitDisabled}
-															submitText={submitText}
+															submitText={submitText ?? t("contract.create.submit")}
 															onSubmit={() => triggerSubmit("submit")}
 															onSubmitAndCreateAnother={() => triggerSubmit("submit_and_create_another")}
 															onSubmitAndEdit={() => triggerSubmit("submit_and_edit")}
@@ -281,9 +295,10 @@ export function ContractForm({
 													)
 													: (
 														<FormActionBar
+															secondaryActions={secondaryActions}
 															primaryActions={(
 																<Button type="primary" onClick={() => triggerSubmit("submit")} loading={!!submitting} disabled={submitDisabled}>
-																	{submitText}
+																	{submitText ?? t("contract.create.submit")}
 																</Button>
 															)}
 														/>

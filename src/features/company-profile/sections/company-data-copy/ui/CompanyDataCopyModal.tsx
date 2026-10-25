@@ -5,6 +5,9 @@ import { CopyOutlined, ExclamationCircleFilled } from "@ant-design/icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert, App, Button, Checkbox, Empty, Modal, Select, Skeleton, Tag, theme } from "antd";
 import React, { useMemo, useState } from "react";
+import { servicesQuery } from "../../../queries/company-profile.queries";
+import { companyTypeMatches, serviceRequiresCompanyType } from "../../../shared/utils";
+import { useCompanyTypeOptions } from "../../../shared/utils/use-company-type-options";
 import {
 	companyCopySectionHasData,
 	copyCompanyData,
@@ -45,16 +48,23 @@ export default function CompanyDataCopyModal({
 	const { modal } = App.useApp();
 	const queryClient = useQueryClient();
 	const [sourceServiceId, setSourceServiceId] = useState<number | null>(null);
+	const [sourceCompanyType, setSourceCompanyType] = useState<string | null>(null);
 	const [sourceCompanyId, setSourceCompanyId] = useState<number | null>(null);
 	const [selectedSections, setSelectedSections] = useState<CompanyCopySectionKey[]>([]);
 	const [copying, setCopying] = useState(false);
 
 	function resetState() {
 		setSourceServiceId(destinationServiceId);
+		setSourceCompanyType(null);
 		setSourceCompanyId(null);
 		setSelectedSections([]);
 		setCopying(false);
 	}
+
+	const servicesResult = useQuery(servicesQuery());
+	const sourceServiceCode = servicesResult.data?.results.find(service => service.id === sourceServiceId)?.code;
+	const sourceRequiresCompanyType = serviceRequiresCompanyType(sourceServiceCode);
+	const sourceCompanyTypeOptions = useCompanyTypeOptions(String(sourceServiceCode ?? "").toLowerCase(), sourceServiceId, "view", sourceRequiresCompanyType);
 
 	const sourceCompaniesQuery = useQuery({
 		queryKey: ["common", "companies", { serviceId: sourceServiceId, pageSize: 1000, purpose: "copy" }],
@@ -80,8 +90,9 @@ export default function CompanyDataCopyModal({
 	const sourceCompanyOptions = useMemo(
 		() => (sourceCompaniesQuery.data?.results ?? [])
 			.filter(company => sourceServiceId !== destinationServiceId || company.id !== destinationCompanyId)
+			.filter(company => !sourceRequiresCompanyType || companyTypeMatches(company.company_type, sourceCompanyType))
 			.map(company => ({ label: company.name, value: company.id })),
-		[sourceCompaniesQuery.data, sourceServiceId, destinationServiceId, destinationCompanyId],
+		[sourceCompaniesQuery.data, sourceServiceId, destinationServiceId, destinationCompanyId, sourceRequiresCompanyType, sourceCompanyType],
 	);
 
 	const sourceCompanyName = useMemo(
@@ -230,11 +241,30 @@ export default function CompanyDataCopyModal({
 							disabled={copying}
 							onChange={(value) => {
 								setSourceServiceId(value);
+								setSourceCompanyType(null);
 								setSourceCompanyId(null);
 								setSelectedSections([]);
 							}}
 						/>
 					</label>
+
+					{sourceRequiresCompanyType && (
+						<label className="company-data-copy__field">
+							<span>نوع شرکت مبدأ</span>
+							<Select
+								allowClear
+								value={sourceCompanyType}
+								options={sourceCompanyTypeOptions}
+								placeholder="نوع شرکت را انتخاب کنید"
+								disabled={copying || sourceCompanyTypeOptions.length === 0}
+								onChange={(value) => {
+									setSourceCompanyType(value ?? null);
+									setSourceCompanyId(null);
+									setSelectedSections([]);
+								}}
+							/>
+						</label>
+					)}
 
 					<label className="company-data-copy__field">
 						<span>شرکت مبدأ</span>
@@ -246,7 +276,7 @@ export default function CompanyDataCopyModal({
 							options={sourceCompanyOptions}
 							loading={sourceCompaniesQuery.isLoading}
 							placeholder={sourceServiceId ? "شرکت را انتخاب کنید" : "ابتدا سرویس را انتخاب کنید"}
-							disabled={!sourceServiceId || sourceCompaniesQuery.isLoading || copying}
+							disabled={!sourceServiceId || sourceCompaniesQuery.isLoading || copying || (sourceRequiresCompanyType && !sourceCompanyType)}
 							notFoundContent={sourceCompaniesQuery.isLoading ? null : "شرکت دیگری یافت نشد"}
 							onChange={(value) => {
 								setSourceCompanyId(value ?? null);

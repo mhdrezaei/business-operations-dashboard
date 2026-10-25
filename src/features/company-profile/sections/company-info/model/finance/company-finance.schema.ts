@@ -1,8 +1,8 @@
 import type { FinanceProfileFormValues } from "./company-finance.mappers";
 import { z } from "zod";
 
-const VatStatusEnum = z.enum(["SUBJECT", "EXEMPT", "UNKNOWN"]);
-const SettlementTermEnum = z.enum(["CASH", "CREDIT", "INSTALLMENT"]);
+const VatStatusEnum = z.enum(["SUBJECT", "EXEMPT"]);
+const SettlementTermEnum = z.enum(["CASH", "CREDIT", "MONTHLY", "PERIODIC"]);
 
 export const financeProfileSchema = z.object({
 	economic_code: z.string().trim().default(""),
@@ -10,7 +10,7 @@ export const financeProfileSchema = z.object({
 	vat_status: VatStatusEnum.nullable(),
 	tax_office: z.string().trim().default(""),
 
-	financial_commitment_cap: z.string().trim().default(""),
+	financial_commitment_cap: z.string().trim().default("").refine(value => !value || !Number.isNaN(Number(value)), "مقدار عددی برای «سقف تعهد مالی» معتبر نیست."),
 	settlement_term: SettlementTermEnum.nullable(),
 
 	service: z.number(),

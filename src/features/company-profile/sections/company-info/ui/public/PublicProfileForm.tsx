@@ -14,6 +14,7 @@ import { FormProvider, useForm } from "react-hook-form";
 
 import CompanyInfoMapField from "../../../company-info/ui/CompanyInfoMapField";
 import CompanyInfoSocialLinksField from "../../../company-info/ui/CompanyInfoSocialLinksField";
+import { normalizeWebsiteUrl } from "../../model/public/company-public.mappers";
 import { publicProfileSchema } from "../../model/public/company-public.schema";
 import { ProfileFormActions } from "../ProfileFormActions";
 import SortableContactField, { ContactMethodCard } from "./CompanyContactFields";
@@ -100,6 +101,7 @@ export default function PublicProfileForm({ disabled, submitDisabled, hasProfile
 							<RHFProText
 								name="website"
 								label=""
+								normalizeOnBlur={normalizeWebsiteUrl}
 								inputProps={{ "placeholder": "\u0648\u0628\u0633\u0627\u06CC\u062A", "aria-label": "\u0648\u0628\u0633\u0627\u06CC\u062A", disabled }}
 							/>
 						</ContactMethodCard>

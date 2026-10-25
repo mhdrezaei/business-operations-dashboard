@@ -4,36 +4,23 @@ import type { TFunction } from "i18next";
 import type { PerformanceListRow } from "../model/performance.list.types";
 import { pickCompanyTypeToken } from "#src/features/performance/shared/model/performance.helpers";
 import { MONTH_OPTIONS } from "#src/features/performance/shared/ui/form/constants/jalali-date-options";
-
-type ServiceCode = | "openapi"
-  | "commercial"
-  | "traffic"
-  | "psp"
-  | "shahkar"
-  | "sms"
-  | "sms-commission"
-  | "sms_commission";
+import { Tag } from "antd";
+import {
+	isCompanyTypeColumnService,
+	isCompanyTypeFilterService,
+} from "../model/unregistered-performance.model";
 
 export interface GetPerformanceColumnsArgs {
 	t: TFunction<"translation", undefined>
-	selectedServiceIds: number[]
-	selectedServiceCode: string | null
+	selectedServiceCodes: string[]
 	permittedCompanyTypeOptions: CompanyTypeOption[]
-	setSelectedServices: (serviceIds: number[], serviceCode: string | null) => void
+	setSelectedServices: (serviceIds: number[]) => void
+	setSelectedCompanyType: (companyType: string | undefined) => void
 	serviceOptions: Array<{ label: string, value: number, code: string }>
 	companyOptions: Array<{ label: string, value: number }>
 	isCompanyDisabled: boolean
 	companyPlaceholder: string
-	salesAgentOptions: Array<{ label: string, value: number }>
-}
-
-function isSmsCommissionService(code: string | null | undefined) {
-	return code === "sms-commission" || code === "sms_commission";
-}
-
-function serviceRequiresCompanyType(code: string | null | undefined) {
-	const normalized = String(code ?? "").trim().toLowerCase();
-	return normalized === "sms" || normalized === "psp" || normalized === "traffic";
+	showCollocationMode: boolean
 }
 
 function getCompanyTypeDisplay(companyType: unknown, companyTypeLabelByKey: Record<string, string>) {
@@ -53,15 +40,15 @@ function getCompanyTypeDisplay(companyType: unknown, companyTypeLabelByKey: Reco
 
 export function getPerformanceColumns({
 	t,
-	selectedServiceIds,
-	// selectedServiceCode,
+	selectedServiceCodes,
 	permittedCompanyTypeOptions,
 	setSelectedServices,
+	setSelectedCompanyType,
 	serviceOptions,
 	companyOptions,
 	isCompanyDisabled,
 	companyPlaceholder,
-	salesAgentOptions,
+	showCollocationMode,
 }: GetPerformanceColumnsArgs): ProColumns<PerformanceListRow>[] {
 	const serviceNameById = serviceOptions.reduce((acc, it) => {
 		acc[String(it.value)] = String(it.label);
@@ -76,30 +63,8 @@ export function getPerformanceColumns({
 		return acc;
 	}, {} as Record<string, string>);
 
-	// const serviceCode = (selectedServiceCode ?? "").trim().toLowerCase() as ServiceCode | "";
-	const selectedServiceCodes = Array.from(
-		new Set(
-			selectedServiceIds
-				.map(serviceId => serviceOptions.find(option => option.value === serviceId)?.code ?? "")
-				.map(code => String(code).trim().toLowerCase())
-				.filter(Boolean),
-		),
-	) as ServiceCode[];
-
-	const ORDERING_OPTIONS = [
-		{ label: t("performance.ordering.newestId"), value: "-id" },
-		{ label: t("performance.ordering.oldestId"), value: "id" },
-		{ label: t("performance.ordering.yearDesc"), value: "-sh_year" },
-		{ label: t("performance.ordering.yearAsc"), value: "sh_year" },
-		{ label: t("performance.ordering.monthDesc"), value: "-sh_month" },
-		{ label: t("performance.ordering.monthAsc"), value: "sh_month" },
-		{ label: t("performance.ordering.valueDesc"), value: "-value" },
-		{ label: t("performance.ordering.valueAsc"), value: "value" },
-	] as const;
-
-	const hasSelectedService = selectedServiceIds.length > 0;
-	const showCompanyTypeSpecificFields = selectedServiceCodes.length > 0 && selectedServiceCodes.every(code => serviceRequiresCompanyType(code));
-	const showSmsCommissionSpecificFields = selectedServiceCodes.length > 0 && selectedServiceCodes.every(code => isSmsCommissionService(code));
+	const hasCompanyTypeFilter = selectedServiceCodes.some(isCompanyTypeFilterService);
+	const hasCompanyTypeColumn = selectedServiceCodes.some(isCompanyTypeColumnService);
 
 	return [
 		{
@@ -114,6 +79,7 @@ export function getPerformanceColumns({
 			dataIndex: "service_name",
 			search: false,
 			width: 160,
+			sorter: { multiple: 4 },
 			render: (_, r) => (r as any).service_name ?? serviceNameById[String((r as any).service)] ?? "-",
 
 		},
@@ -135,30 +101,12 @@ export function getPerformanceColumns({
 					value: String(option.value),
 				})),
 				placeholder: t("performance.placeholders.selectService"),
-				onChange: (value: Array<string | number> | string | number | null) => {
-					const rawValues = Array.isArray(value)
-						? value
-						: value == null || value === ""
-							? []
-							: [value];
-					const serviceIds = rawValues
-						.map(item => Number(item))
-						.filter(item => Number.isInteger(item) && item > 0);
-					const selected = serviceIds.length === 1
-						? serviceOptions.find(option => option.value === serviceIds[0])
-						: null;
-					setSelectedServices(serviceIds, selected?.code ?? null);
-				},
-				onClear: () => {
-					setSelectedServices([], null);
-				},
-				onDeselect: (value: string | number) => {
-					const removedServiceId = Number(value);
-					const serviceIds = selectedServiceIds.filter(serviceId => serviceId !== removedServiceId);
-					const selected = serviceIds.length === 1
-						? serviceOptions.find(option => option.value === serviceIds[0])
-						: null;
-					setSelectedServices(serviceIds, selected?.code ?? null);
+				onChange: (value: Array<string | number> | null) => {
+					setSelectedServices(
+						(value ?? [])
+							.map(item => Number(item))
+							.filter(item => Number.isInteger(item) && item > 0),
+					);
 				},
 			},
 		},
@@ -167,6 +115,7 @@ export function getPerformanceColumns({
 			dataIndex: "company_name",
 			search: false,
 			width: 220,
+			sorter: { multiple: 3 },
 			render: (_, r) => (r as any).company_name ?? companyNameById[String((r as any).company)] ?? "-",
 
 		},
@@ -192,64 +141,79 @@ export function getPerformanceColumns({
 			},
 		},
 		{
+			title: t("performance.columns.companyType"),
+			dataIndex: "company_type",
+			width: 120,
+			search: false,
+			hideInTable: !hasCompanyTypeColumn,
+			render: (_, row) => (
+				isCompanyTypeColumnService(String((row as any).service_code ?? ""))
+					? getCompanyTypeDisplay(row.company_type, companyTypeLabelByKey)
+					: "-"
+			),
+		},
+		{
+			title: t("performance.columns.companyType"),
+			dataIndex: "company_type",
+			key: "company_type_filter",
+			hideInTable: true,
+			hideInSearch: !hasCompanyTypeFilter,
+			valueType: "select",
+			valueEnum: permittedCompanyTypeOptions.reduce((acc, option) => {
+				acc[option.key] = option.value;
+				return acc;
+			}, {} as Record<string, string>),
+			fieldProps: {
+				onChange: (value: string | undefined) => setSelectedCompanyType(value),
+			},
+		},
+		{
+			title: t("performance.columns.contractType"),
+			dataIndex: "is_official",
+			width: 120,
+			search: false,
+			hideInTable: !selectedServiceCodes.some(isCompanyTypeFilterService),
+			render: (_, row) => (
+				typeof row.is_official === "boolean"
+					? (
+						<Tag color={row.is_official ? "success" : "error"}>
+							{t(row.is_official ? "performance.contractType.official" : "performance.contractType.unofficial")}
+						</Tag>
+					)
+					: "-"
+			),
+		},
+		{
+			title: t("performance.columns.collocationMode"),
+			dataIndex: "collocation_mode",
+			width: 100,
+			search: false,
+			hideInTable: !showCollocationMode,
+			render: (_, row) => (
+				pickCompanyTypeToken(row.company_type) === "COLLOCATION" && row.collocation_mode
+					? <Tag>{String(row.collocation_mode).toUpperCase()}</Tag>
+					: "-"
+			),
+		},
+		{
 			title: t("performance.columns.year"),
 			dataIndex: "sh_year",
 			hideInSearch: true,
 			width: 100,
+			sorter: { multiple: 2 },
 			render: (_, row) => row.sh_year ?? "-",
 		},
-
 		{
 			title: t("performance.columns.month"),
 			dataIndex: "sh_month",
 			width: 100,
 			hideInSearch: true,
+			sorter: { multiple: 1 },
 			render: (_, row) => {
 				const month = Number(row.sh_month);
 				const found = MONTH_OPTIONS.find(option => option.value === month);
 				return found?.label ?? row.sh_month ?? "-";
 			},
 		},
-
-		{
-			title: t("performance.columns.ordering"),
-			dataIndex: "ordering",
-			hideInTable: true,
-			hideInSearch: !hasSelectedService,
-			valueType: "select",
-			valueEnum: ORDERING_OPTIONS.reduce((acc, option) => {
-				acc[option.value] = option.label;
-				return acc;
-			}, {} as Record<string, string>),
-			fieldProps: { allowClear: true },
-		},
-
-		{
-			title: t("performance.columns.salesAgent"),
-			dataIndex: "sales_agent",
-			width: 150,
-			hideInTable: !showSmsCommissionSpecificFields,
-			hideInSearch: !showSmsCommissionSpecificFields,
-			valueType: "select",
-			valueEnum: salesAgentOptions.reduce((acc, option) => {
-				acc[String(option.value)] = option.label;
-				return acc;
-			}, {} as Record<string, string>),
-			render: (_, row) => row.sales_agent_name ?? row.sales_agent ?? "-",
-		},
-		{
-			title: t("performance.columns.companyType"),
-			dataIndex: "company_type",
-			width: 120,
-			hideInTable: !showCompanyTypeSpecificFields,
-			hideInSearch: !showCompanyTypeSpecificFields,
-			valueType: "select",
-			valueEnum: permittedCompanyTypeOptions.reduce((acc, option) => {
-				acc[option.key] = option.value;
-				return acc;
-			}, {} as Record<string, string>),
-			render: (_, row) => getCompanyTypeDisplay(row.company_type, companyTypeLabelByKey),
-		},
-
 	];
 }

@@ -6,6 +6,52 @@
 		"performanceReportResultsSubtitle": "پس از انتخاب فیلترها، نتایج گزارش نمایش داده می‌شود.",
 		"performanceReportPeriodCount": "{{periodCount}} بازه"
 	},
+	"smsGatewayImport": {
+		"summary": {
+			"imported_count": "رکوردهای جدید سرویس پیامک ثبت‌شده",
+			"updated_count": "رکوردهای سرویس پیامک به‌روزرسانی‌شده",
+			"commission_imported_count": "رکوردهای جدید سرویس پیامک عاملیت ثبت‌شده",
+			"commission_updated_count": "رکوردهای سرویس پیامک عاملیت به‌روزرسانی‌شده",
+			"skipped_count": "رکوردهای ردشده"
+		},
+		"jobStatus": {
+			"PENDING": "در صف",
+			"RUNNING": "در حال اجرا",
+			"SUCCESS": "موفق",
+			"FAILED": "ناموفق"
+		},
+		"processingTitle": "در حال پردازش...",
+		"processingDescription": "ثبت اطلاعات در پس‌زمینه در حال انجام است، لطفاً صبر کنید.",
+		"jobFailed": "خطا در پردازش import",
+		"pollTimeout": "هنوز در حال پردازش است، لطفاً کمی بعد دوباره بررسی کنید.",
+		"searchPlaceholder": "جستجو بر اساس نام شرکت...",
+		"selectAll": "انتخاب همه",
+		"selectedCount": "{{selected}} از {{total}} مورد انتخاب شده",
+		"noSearchResult": "شرکتی با این نام یافت نشد.",
+		"pollFailed": "بررسی وضعیت import ناموفق بود؛ لطفاً در تاریخچه ایمپورت وضعیت را بررسی کنید.",
+		"status": {
+			"will_create": "ایجاد می‌شود",
+			"will_update": "به‌روز می‌شود",
+			"no_contract": "قرارداد ندارد",
+			"unmapped": "مپ نشده"
+		},
+		"selectYear": "انتخاب سال",
+		"shMonth": "ماه شمسی",
+		"refreshPreview": "به‌روزرسانی پیش‌نمایش",
+		"preview": "پیش‌نمایش",
+		"confirmAndRegister": "تأیید و ثبت",
+		"emptyInline": "سال و ماه را انتخاب کنید تا اطلاعات به‌صورت خودکار نمایش داده شود",
+		"emptyManual": "سال و ماه را انتخاب کنید، سپس پیش‌نمایش را دریافت کنید",
+		"previewResult": "نتیجه پیش‌نمایش",
+		"itemUnit": "مورد",
+		"unmatchedCompany": "شرکت تطبیق داده نشده",
+		"gatewayName": "نام Gateway",
+		"type": "نوع",
+		"modalTitle": "ثبت عملکرد از Gateway پیامک",
+		"successTitle": "داده‌ها با موفقیت ثبت شدند",
+		"successSummary": "خلاصه عملیات ثبت:",
+		"ok": "باشه"
+	},
 	"actions": {
 		"clearForm": "پاکسازی فرم",
 		"submit": "ثبت",
@@ -15,7 +61,8 @@
 		"submitPerformance": "ثبت عملکرد",
 		"deletePerformance": "حذف عملکرد",
 		"downloadPdf": "دانلود PDF",
-		"downloadExcel": "دانلود Excel"
+		"downloadExcel": "دانلود Excel",
+		"createPerformance": "ایجاد عملکرد"
 	},
 	"columns": {
 		"id": "شناسه",
@@ -80,7 +127,22 @@
 		"customerNationalId": "کد ملی مشتری",
 		"provinceCode": "کد استان",
 		"commercialServiceType": "نوع سرویس تجاری",
-		"valueReceive": "مقدار دریافتی"
+		"valueReceive": "مقدار دریافتی",
+		"collocationMode": "حالت",
+		"totalCost": "جمع هزینه‌ها",
+		"totalSales": "فروش کل ماه",
+		"creditTotal": "اعتبار کل ماهیانه",
+		"rackFullCount": "رک کامل (تعداد)",
+		"rackQuarterCount": "ربع‌رک (تعداد)",
+		"rackUnitCount": "رک یونیت (تعداد)",
+		"rackFullIncome": "درآمد رک کامل",
+		"rackQuarterIncome": "درآمد ربع‌رک",
+		"rackUnitIncome": "درآمد رک یونیت",
+		"newCustomerCount": "تعداد مشتریان جدید",
+		"newCustomerIncome": "درآمد مشتریان جدید",
+		"performanceIncome": "درآمد خالص عملکرد",
+		"costItems": "ریز هزینه‌ها",
+		"rowType": "نوع ردیف"
 	},
 	"ordering": {
 		"newestId": "جدیدترین (شناسه)",
@@ -99,6 +161,7 @@
 	"operator": {
 		"irancell": "ایرانسل",
 		"mci": "همراه اول",
+		"rightel": "رایتل",
 		"other": "سایر"
 	},
 	"operationType": {
@@ -135,7 +198,9 @@
 		"example60000": "مثلاً 60000",
 		"example80000": "مثلاً 80000",
 		"example120000000": "مثلاً 120000000",
-		"example450": "مثلاً 450"
+		"example450": "مثلاً 450",
+		"allYears": "همه سال‌ها",
+		"exampleConversionRatio": "مثلاً 1.5"
 	},
 	"labels": {
 		"baseInformation": "اطلاعات پایه عملکرد",
@@ -178,18 +243,24 @@
 		"selectReportFiltersFirst": "ابتدا سرویس، سال و ماه های گزارش را انتخاب کنید",
 		"selectYearAndMonth": "لطفاً مقادیر سال و ماه را انتخاب نمایید",
 		"noReportData": "داده ای برای گزارش وجود ندارد",
-		"popupBlocked": "پنجره دانلود PDF توسط مرورگر مسدود شد"
+		"popupBlocked": "پنجره دانلود PDF توسط مرورگر مسدود شد",
+		"noCreateAccess": "عدم دسترسی ایجاد",
+		"noEditAccess": "عدم دسترسی ویرایش",
+		"editBeforeCutoff": "ویرایش برای تاریخ‌های قبل از ۱۴۰۴/۴ مجاز نیست.",
+		"reportActionsAggregated": "در حالت تجمیعی امکان ایجاد یا ویرایش عملکرد وجود ندارد."
 	},
 	"aggregation": {
 		"byCompany": "تجمیع بر اساس شرکت",
 		"byMonth": "تجمیع بر اساس ماه",
 		"byOperator": "تجمیع بر اساس اپراتور",
-		"byLanguage": "تجمیع بر اساس زبان"
+		"byLanguage": "تجمیع بر اساس زبان",
+		"byDataCenter": "تجمیع دیتاسنتر"
 	},
 	"smsReportType": {
 		"normal": "گزارش عادی",
 		"finance": "گزارش واحد مالی",
-		"summary": "گزارش تجمیعی"
+		"summary": "گزارش تجمیعی",
+		"operatorGovernment": "اپراتورها و دولت"
 	},
 	"periodType": {
 		"sh": "سال و ماه شمسی",
@@ -230,20 +301,23 @@
 		"monthlyPerformanceFileRequired": "فایل عملکرد ماهانه الزامی است",
 		"trafficTehranRequired": "برای تهران مقدار ارسالی و دریافتی الزامی است",
 		"trafficCountyRequiredWhenEnabled": "در صورت ثبت مراکز استان، مقدار ارسالی و دریافتی الزامی است",
-		"allCommercialFilesRequired": "تمام فایل‌های سرویس تجاری باید انتخاب شوند",
 		"serviceNotSelected": "سرویس انتخاب نشده است",
 		"deleteCompositeKeyIncomplete": "کلید رکورد برای حذف کامل نیست",
 		"deleteUniqueKeyNotFound": "شناسه یا کلید یکتا برای حذف رکورد پیدا نشد",
-		"invalidSalesAgentId": "شناسه نماینده فروش نامعتبر است"
+		"invalidSalesAgentId": "شناسه نماینده فروش نامعتبر است",
+		"trafficAtLeastOneLocation": "حداقل یکی از عملکردهای تهران یا مراکز استان را فعال کنید"
 	},
 	"contractModel": {
 		"legacy": "قدیمی",
-		"package": "بسته‌ای"
+		"package": "بسته‌ای",
+		"legacy_2": "تفکیکی"
 	},
 	"badges": {
 		"usedAddendum": "بر اساس الحاقیه",
 		"hasCountyContract": "دارای قرارداد مراکز استان",
-		"noCountyContract": "فاقد قرارداد مراکز استان"
+		"noCountyContract": "فاقد قرارداد مراکز استان",
+		"official": "رسمی",
+		"unofficial": "غیررسمی"
 	},
 	"traffic": {
 		"excelTitle": "فایل اکسل عملکرد ترافیک",
@@ -262,6 +336,10 @@
 		"addCountyPerformance": "افزودن عملکرد مراکز استان",
 		"tehranContractUnit": "واحد موثر تهران در این ماه",
 		"countyContractUnit": "واحد موثر مراکز استان در این ماه",
+		"created": "ایجاد شده",
+		"stepDownload": "دانلود فایل تمپلیت",
+		"stepUpload": "آپلود فایل عملکرد",
+		"stepImport": "ایمپورت مقادیر",
 		"editTemplate": {
 			"title": "ویرایش تمپلیت",
 			"subtitle": "دانلود/آپلود فایل اکسل ویرایش عملکرد ترافیک",
@@ -270,7 +348,40 @@
 			"download": "دانلود فایل تمپلیت ویرایش",
 			"upload": "آپلود فایل ویرایش",
 			"resultTitle": "نتیجه آپلود فایل ترافیک",
-			"hint": "ابتدا سال و ماه را انتخاب کنید، سپس فایل تمپلیت را دانلود، ویرایش و دوباره آپلود کنید."
+			"hint": "ابتدا سال و ماه را انتخاب کنید، سپس فایل تمپلیت را دانلود، ویرایش و دوباره آپلود کنید.",
+			"totalRows": "کل ردیف‌ها",
+			"filledRows": "ردیف‌های پر شده",
+			"updated": "ویرایش شده",
+			"skippedEmpty": "خالی ردشده",
+			"rejected": "رد شده",
+			"rejectionReasons": "دلایل رد",
+			"noReasons": "موردی برای نمایش وجود ندارد.",
+			"rejectedRows": "ردیف‌های رد شده",
+			"row": "ردیف",
+			"reason": "دلیل",
+			"noRejectedRows": "ردیفی رد نشده است.",
+			"stepDownload": "دانلود فایل تمپلیت عملکرد ماهیانه",
+			"stepUpload": "آپلود فایل اکسل عملکرد ترافیک",
+			"stepImport": "ایمپورت مقادیر فایل اکسل برای عملکرد",
+			"bulkTitle": "ویرایش گروهی عملکرد ترافیک"
+		},
+		"tehranAdd": "افزودن عملکرد تهران",
+		"countyAdd": "افزودن عملکرد مراکز استان",
+		"collocation": {
+			"partnerType": "نوع شریک",
+			"selectPartnerFirst": "ابتدا نوع شریک را انتخاب کنید",
+			"loadingContracts": "در حال دریافت قراردادهای دیتاسنتر...",
+			"noRows": "هنوز دیتاسنتری برای این عملکرد انتخاب نشده است.",
+			"noActiveContract": "برای این شرکت در بازه انتخاب‌شده قرارداد دیتاسنتر فعالی پیدا نشد.",
+			"addDatacenter": "افزودن دیتاسنتر",
+			"addDatacenterPlaceholder": "دیتاسنترهای موجود در قرارداد را انتخاب کنید",
+			"noMoreDatacenters": "دیتاسنتر دیگری طبق قرارداد موجود نیست",
+			"datacenterFallback": "دیتاسنتر {{id}}",
+			"metrics": {
+				"ipCount": "تعداد IP",
+				"bandwidthUsed": "پهنای‌باند مصرفی",
+				"ampereUsed": "آمپر مصرفی"
+			}
 		}
 	},
 	"commercial": {
@@ -278,7 +389,10 @@
 		"uploadOnlyDescription": "برای این سرویس ثبت عملکرد دستی وجود ندارد و فقط آپلود فایل انجام می‌شود.",
 		"servicesFile": "آپلود فایل سرویس‌ها",
 		"provinceCodeFile": "آپلود فایل کد استانی",
-		"monthlyPerformanceFile": "آپلود عملکرد ماهانه"
+		"monthlyPerformanceFile": "آپلود عملکرد ماهانه",
+		"selectFile": "فایل را انتخاب کنید.",
+		"upload": "آپلود فایل",
+		"uploadSuccess": "{{title}} با موفقیت آپلود شد."
 	},
 	"fields": {
 		"psp": {
@@ -302,7 +416,13 @@
 			"billInquiryValue": "مقدار عملکرد استعلام قبض",
 			"receiptRegisterValue": "مقدار عملکرد ثبت وصولی",
 			"trafficRevenue": "درآمد ترافیک",
-			"trafficPackageCount": "تعداد بسته ترافیک"
+			"trafficPackageCount": "تعداد بسته ترافیک",
+			"billInquiryMidtermValue": "مقدار عملکرد استعلام قبض میان‌دوره",
+			"billInquiryEndtermValue": "مقدار عملکرد استعلام قبض پایان‌دوره",
+			"receiptRegisterConnectedValue": "مقدار عملکرد ثبت وصولی متصل",
+			"receiptRegisterDisconnectedValue": "مقدار عملکرد ثبت وصولی غیرمتصل",
+			"walletWasCharged": "کیف پول شارژ شد",
+			"packagePerformanceValue": "مقدار عملکرد پیامک"
 		},
 		"traffic": {
 			"tehranValue": "مقدار ترافیک ارسالی در تهران",
@@ -354,7 +474,11 @@
 			"billInquiryValueRequired": "مقدار عملکرد استعلام قبض الزامی است",
 			"receiptRegisterValueRequired": "مقدار عملکرد ثبت وصولی الزامی است",
 			"trafficRevenueRequired": "درآمد ترافیک الزامی است",
-			"trafficPackageCountRequired": "تعداد بسته ترافیک الزامی است"
+			"trafficPackageCountRequired": "تعداد بسته ترافیک الزامی است",
+			"billInquiryMidtermValueRequired": "مقدار عملکرد استعلام قبض میان‌دوره الزامی است",
+			"billInquiryEndtermValueRequired": "مقدار عملکرد استعلام قبض پایان‌دوره الزامی است",
+			"receiptRegisterConnectedValueRequired": "مقدار عملکرد ثبت وصولی متصل الزامی است",
+			"receiptRegisterDisconnectedValueRequired": "مقدار عملکرد ثبت وصولی غیرمتصل الزامی است"
 		},
 		"psp": {
 			"performanceValueRequired": "مقدار عملکرد الزامی است",
@@ -378,13 +502,351 @@
 			"tehranValueReceiveRequired": "مقدار ترافیک دریافتی تهران الزامی است",
 			"countyValueRequired": "مقدار ترافیک ارسالی مراکز استان الزامی است",
 			"countyValueReceiveRequired": "مقدار ترافیک دریافتی مراکز استان الزامی است",
-			"conversionRatioRange": "ضریب تبدیل باید بین 0 تا 10 باشد"
+			"conversionRatioRange": "ضریب تبدیل باید بین 0 تا 10 باشد",
+			"conversionRatioDecimals": "ضریب تبدیل حداکثر می‌تواند ۳ رقم اعشار داشته باشد",
+			"tehranConversionRatioRequired": "ضریب تبدیل تهران اجباری است",
+			"countyConversionRatioRequired": "ضریب تبدیل مراکز استان اجباری است",
+			"collocationPartnerRequired": "نوع شریک کولوکیشن را انتخاب کنید.",
+			"collocationFieldRequired": "همه فیلدهای دیتاسنترهای انتخاب‌شده را وارد کنید."
 		},
-		"commercial": {
-			"servicesFileRequired": "فایل سرویس‌ها الزامی است",
-			"provinceCodeFileRequired": "فایل کد استانی الزامی است",
-			"monthlyPerformanceFileRequired": "فایل عملکرد ماهانه الزامی است"
+		"requiredField": "این فیلد الزامی است",
+		"salesAgency": {
+			"amountInvalid": "مبلغ باید عدد باشد",
+			"amountNegative": "مبلغ باید صفر یا بیشتر باشد",
+			"costTitleRequired": "عنوان و مبلغ همه ردیف‌های هزینه را وارد کنید",
+			"costItemsRequired": "حداقل یک ردیف هزینه اضافه کنید"
+		}
+	},
+	"smsGatewayReport": {
+		"lockedNotice": "درخواست قبلی شما هنوز آماده نشده؛ لطفاً صبر کنید. تا رسیدن نتیجه نمی‌توانید فیلترها را تغییر دهید یا درخواست جدیدی بزنید.",
+		"jobFailed": "تهیه گزارش ناموفق بود.",
+		"requestFailed": "ارتباط با سرور برقرار نشد. لطفاً دوباره تلاش کنید.",
+		"companiesLoadFailed": "دریافت لیست شرکت‌ها با خطا مواجه شد.",
+		"saveFailed": "ثبت فاکتور ناموفق بود.",
+		"updateFailed": "ویرایش فاکتور ناموفق بود.",
+		"duplicateInvoice": "برای این سال، ماه و اپراتور قبلاً فاکتور ثبت شده است."
+	},
+	"rowType": {
+		"government": "سهم دولت",
+		"profit": "سهم کاراشاب",
+		"overall": "تجمیعی"
+	},
+	"operatorGovernment": {
+		"mode": "نوع گزارش",
+		"modes": {
+			"operators": "اپراتورها",
+			"government": "سهم دولت"
 		},
-		"requiredField": "این فیلد الزامی است"
+		"smsServiceType": "نوع سرویس پیامک",
+		"scope": {
+			"both": "پیامک + عاملیت",
+			"commissionOnly": "فقط عاملیت",
+			"smsOnly": "فقط پیامک"
+		},
+		"allOperators": "همه اپراتورها",
+		"allLanguages": "همه زبان‌ها"
+	},
+	"list": {
+		"county": "شهرستان",
+		"traffic": "ترافیک",
+		"performance": "عملکرد",
+		"customer": "مشتری",
+		"noPerformanceForYear": "برای این شرکت در سال انتخاب‌شده عملکردی ثبت نشده است.",
+		"selectFromList": "یک عملکرد را از فهرست انتخاب کنید.",
+		"sidebarLabel": "فیلتر و فهرست عملکردها",
+		"selectServiceAndCompany": "انتخاب سرویس و شرکت",
+		"companyPerformances": "عملکردهای شرکت",
+		"selectShYear": "انتخاب سال (شمسی)",
+		"noYearWithPerformance": "سال دارای عملکردی یافت نشد",
+		"fetchFailed": "دریافت عملکردها ناموفق بود.",
+		"retry": "تلاش دوباره",
+		"noEditAccess": "دسترسی ویرایش ندارید",
+		"selectToEdit": "برای ویرایش، ابتدا از ستون سمت راست سرویس و شرکت را انتخاب کرده و سپس یکی از عملکردها را از لیست انتخاب کنید."
+	},
+	"detail": {
+		"services": {
+			"salesAgencyOutbound": "سرویس عاملیت فروش کشور",
+			"salesAgencyRepManagement": "مدیریت نمایندگان فروش",
+			"openapi": "سرویس OpenAPI",
+			"psp": "سرویس PSP",
+			"sms": "سرویس پیامک",
+			"smsCommission": "سرویس پیامک عاملیت",
+			"shahkar": "کلاسه شاهکار"
+		},
+		"salesAgencyEditTitle": "ویرایش عملکرد عاملیت فروش کشور",
+		"totalSalesRial": "فروش کل ماه (ریال)",
+		"creditTotalRial": "اعتبار کل ماهیانه (ریال)",
+		"totalIncomeRial": "درآمد کل (ریال)",
+		"costs": "هزینه‌ها",
+		"smsCommissionEditTitle": "ویرایش عملکرد پیامک عاملیت",
+		"billInquiryIncome": "درآمد استعلام قبض این ماه",
+		"billInquiryExpense": "هزینه استعلام قبض این ماه",
+		"receiptRegisterIncome": "درآمد ثبت وصولی این ماه",
+		"baseInfo": "اطلاعات پایه",
+		"breakdown": "ریز هزینه‌ها و درآمدها"
+	},
+	"predictionsSummary": {
+		"periodModes": {
+			"shamsi_months": "سال و ماه شمسی",
+			"fiscal_months": "سال و ماه مالی",
+			"shamsi_quarters": "سال و کوارتر شمسی",
+			"fiscal_quarters": "سال و کوارتر مالی"
+		},
+		"sections": {
+			"performance": "عملکرد",
+			"predictions": "پیش‌بینی"
+		},
+		"calendar": {
+			"fiscal": "مالی",
+			"shamsi": "شمسی"
+		},
+		"columns": {
+			"section": "بخش",
+			"type": "نوع",
+			"period": "بازه",
+			"calendar": "تقویم",
+			"realMonths": "ماه‌های واقعی"
+		},
+		"quarter": "کوارتر {{value}}",
+		"yearPrefix": "سال {{year}}: ",
+		"monthRange": "از {{from}} تا {{to}}",
+		"monthRangeCrossYear": "از {{from}} {{fromYear}} تا {{to}} {{toYear}}",
+		"periodMonth": "{{year}} / ماه {{month}}",
+		"periodQuarter": "{{year}} / کوارتر {{quarter}}",
+		"periodMonths": "{{year}} / ماه‌های {{months}}",
+		"listSeparator": "، ",
+		"total": "مجموع",
+		"types": {
+			"BILL_INQUIRY_MIDTERM": "استعلام قبض میان‌دوره",
+			"BILL_INQUIRY_ENDTERM": "استعلام قبض پایان‌دوره",
+			"RECEIPT_REGISTER_CONNECTED": "ثبت وصولی متصل",
+			"RECEIPT_REGISTER_DISCONNECTED": "ثبت وصولی غیرمتصل",
+			"SMS": "پیامک",
+			"TRAFFIC": "ترافیک",
+			"KARASHAB": "کاراشابی",
+			"NON_TELECOM": "غیر مخابراتی",
+			"TELECOM": "مخابراتی"
+		},
+		"regions": {
+			"tehran": "تهران",
+			"county": "مناطق استان"
+		},
+		"trafficType": "{{type}} ({{region}})",
+		"collocation": {
+			"rackFull": "رک کامل",
+			"rackHalf": "نیم‌رک",
+			"rackQuarter": "ربع‌رک",
+			"rackUnit": "رک یونیت",
+			"ip": "IP",
+			"port": "پورت",
+			"bandwidth": "BW"
+		},
+		"validation": {
+			"selectService": "حداقل یک سرویس را انتخاب کنید.",
+			"addYear": "حداقل یک سال را اضافه کنید.",
+			"selectPeriodValues": "برای هر سال حداقل یک ماه یا کوارتر انتخاب کنید."
+		},
+		"messages": {
+			"exportFailed": "ساخت یا دانلود فایل اکسل با خطا مواجه شد.",
+			"popupBlocked": "پاپ‌آپ مرورگر مسدود است. لطفاً آن را فعال کنید."
+		},
+		"meta": {
+			"services": "سرویس‌ها: {{value}}",
+			"periodType": "نوع دوره: {{value}}",
+			"periods": "بازه‌ها: {{value}}",
+			"prices": "قیمت‌ها: {{value}}"
+		},
+		"brand": "نگاه",
+		"servicesCount": "{{total}} سرویس",
+		"noPeriods": "برای این سرویس دوره‌ای وجود ندارد.",
+		"noRows": "داده‌ای وجود ندارد.",
+		"filters": {
+			"title": "فیلترهای گزارش",
+			"subtitle": "سرویس‌ها، نوع گزارش و دوره‌های موردنظر را انتخاب کنید.",
+			"open": "باز کردن فیلترها",
+			"close": "بستن فیلترها"
+		},
+		"services": "سرویس‌ها",
+		"servicesPlaceholder": "سرویس‌ها را انتخاب کنید",
+		"reportMode": "حالت گزارش",
+		"reportModes": {
+			"separated": "تفکیکی",
+			"total": "تجمیعی"
+		},
+		"outputMode": "نوع خروجی فایل",
+		"outputModes": {
+			"classic": "کلاسیک",
+			"singleTable": "تجمیعی - یک جدول"
+		},
+		"picker": {
+			"quarter": {
+				"section": "سال و کوارترهای گزارش",
+				"value": "انتخاب کوارتر",
+				"selected": "کوارترهای انتخاب‌شده",
+				"unit": "کوارتر",
+				"empty": "سال و کوارتر را انتخاب کنید، سپس «افزودن تاریخ» را بزنید."
+			},
+			"month": {
+				"section": "سال و ماه‌های گزارش",
+				"value": "انتخاب ماه",
+				"selected": "ماه‌های انتخاب‌شده",
+				"unit": "ماه",
+				"empty": "سال و ماه را انتخاب کنید، سپس «افزودن تاریخ» را بزنید."
+			}
+		},
+		"conversionRatio": {
+			"label": "ضریب تبدیل پیش‌فرض",
+			"placeholder": "مثال: 1.25",
+			"hint": "اگر رکوردهای CP ضریب تبدیل نداشته باشند، از این مقدار به عنوان fallback استفاده می‌شود."
+		},
+		"showRial": "نمایش مبالغ به ریال",
+		"apply": "اعمال گزارش",
+		"error": {
+			"title": "خطا در دریافت گزارش",
+			"description": "دریافت اطلاعات گزارش با خطا مواجه شد. لطفاً دوباره تلاش کنید."
+		},
+		"resultsSubtitle": "نتایج عملکرد و پیش‌بینی بر اساس سرویس‌ها و دوره‌های انتخاب‌شده",
+		"exportExcel": "خروجی اکسل",
+		"exportPdf": "خروجی PDF",
+		"emptyPrompt": "برای مشاهده گزارش، فیلترها را انتخاب و اعمال کنید."
+	},
+	"smsGatewayPages": {
+		"operators": {
+			"MCI": "همراه اول (MCI)",
+			"MTN": "ایرانسل (MTN)",
+			"RTL": "رایتل (RTL)",
+			"RIGHTEL": "رایتل (RIGHTEL)",
+			"UNKNOWN_OPERATOR": "اپراتورهای ناشناخته",
+			"IRANCELL": "ایرانسل (IRANCELL)"
+		},
+		"shared": {
+			"registered": "ثبت شده",
+			"notRegistered": "ثبت نشده",
+			"preparing": "گزارش در حال آماده‌سازی است…",
+			"save": "ذخیره"
+		},
+		"traffic": {
+			"title": "گزارش ترافیک پیامک Gateway",
+			"subtitle": "گزارش ترافیک ارسال پیامک به تفکیک شرکت، اپراتور و وضعیت تحویل",
+			"filters": "فیلترها",
+			"dateFrom": "از تاریخ",
+			"dateTo": "تا تاریخ",
+			"pickDate": "انتخاب تاریخ",
+			"company": "شرکت",
+			"allCompanies": "همه شرکت‌های مجاز",
+			"operator": "اپراتور",
+			"allOperators": "همه اپراتورها",
+			"deliveryStatus": "وضعیت تحویل",
+			"allStatuses": "همه وضعیت‌ها",
+			"apply": "اعمال فیلتر",
+			"clear": "پاکسازی فیلترها",
+			"summary": "خلاصه گزارش",
+			"grandTotal": "مجموع کل",
+			"companiesCount": "تعداد شرکت‌ها",
+			"status": "وضعیت",
+			"ready": "آماده",
+			"totalByOperator": "مجموع به تفکیک اپراتور",
+			"totalByStatus": "مجموع به تفکیک وضعیت تحویل",
+			"companyDetails": "جزئیات شرکت‌ها",
+			"noData": "داده‌ای برای نمایش وجود ندارد.",
+			"selectFilters": "برای مشاهده گزارش، فیلترها را انتخاب و اعمال کنید.",
+			"closeSection": "بستن {{title}}",
+			"openSection": "باز کردن {{title}}"
+		},
+		"invoices": {
+			"pageTitle": "فاکتور ارسالی اپراتورهای پیامک",
+			"pageSubtitle": "ثبت و مشاهده تعداد و هزینه پیامک‌های ارسالی هر اپراتور",
+			"createTitle": "ثبت فاکتور ارسالی اپراتور جدید",
+			"yearShamsi": "سال (شمسی)",
+			"monthShamsi": "ماه (شمسی)",
+			"selectYearAndMonthFirst": "ابتدا سال و ماه را انتخاب کنید",
+			"smsCount": "تعداد پیامک",
+			"smsCost": "هزینه پیامک (ریال)",
+			"faCountRequired": "تعداد پیامک فارسی الزامی است.",
+			"enCountRequired": "تعداد پیامک انگلیسی الزامی است.",
+			"submit": "ثبت فاکتور",
+			"listTitle": "لیست فاکتورهای ارسالی اپراتور",
+			"listSubtitle": "فاکتورهای ثبت‌شده را مشاهده، ویرایش یا حذف کنید.",
+			"editInvoice": "ویرایش فاکتور",
+			"deleteInvoice": "حذف فاکتور",
+			"confirmDelete": "فاکتور حذف شود؟",
+			"faCountColumn": "تعداد فارسی",
+			"enCountColumn": "تعداد انگلیسی",
+			"faCostColumn": "هزینه فارسی (ریال)",
+			"enCostColumn": "هزینه انگلیسی (ریال)",
+			"reportTitle": "گزارش مقایسه‌ای ماهانه",
+			"showReport": "نمایش گزارش",
+			"downloadPdf": "دانلود PDF",
+			"reportDocTitle": "گزارش مقایسه‌ای ماهانه فاکتورهای ارسالی اپراتور",
+			"reportPeriod": "دوره گزارش: {{month}} ماه سال {{year}}",
+			"summaryTableTitle": "جمع کل هر اپراتور (فارسی + انگلیسی)",
+			"detailTableTitle": "به تفکیک اپراتور و زبان",
+			"detailTableSubtitle": "مقایسه فاکتور ارسالی اپراتور با سامانه نگاه و Gateway.",
+			"editModalTitle": "ویرایش فاکتور ارسالی",
+			"logoAlt": "نگاه",
+			"columns": {
+				"invoiceStatus": "وضعیت فاکتور",
+				"invoiceCount": "تعداد فاکتور",
+				"invoiceCost": "هزینه فاکتور (ریال)",
+				"internalCount": "تعداد سامانه نگاه",
+				"internalCost": "هزینه سامانه نگاه (ریال)",
+				"gatewayCount": "تعداد Gateway",
+				"countDiff": "اختلاف تعداد",
+				"costDiff": "اختلاف هزینه (ریال)",
+				"detailInvoiceStatus": "وضعیت فاکتور ارسالی اپراتور",
+				"detailInvoiceCount": "تعداد فاکتور ارسالی اپراتور",
+				"detailInvoiceCost": "هزینه فاکتور ارسالی اپراتور (ریال)",
+				"detailGatewayCount": "تعداد سامانه Gateway"
+			},
+			"messages": {
+				"selectYearMonth": "لطفاً سال و ماه را انتخاب کنید.",
+				"reportFailed": "دریافت گزارش ناموفق بود.",
+				"reportStatusFailed": "دریافت وضعیت گزارش ناموفق بود.",
+				"created": "فاکتور ارسالی اپراتور با موفقیت ثبت شد.",
+				"deleted": "فاکتور حذف شد.",
+				"deleteFailed": "حذف فاکتور ناموفق بود.",
+				"updated": "فاکتور ویرایش شد.",
+				"popupBlocked": "پاپ‌آپ مرورگر مسدود است. لطفاً آن را فعال کنید.",
+				"pdfFailed": "ساخت PDF ناموفق بود."
+			}
+		}
+	},
+	"reportPage": {
+		"filterTitle": "اطلاعات سرویس و گزارش",
+		"summaryCardsLabel": "جمع کل گزارش",
+		"export": {
+			"summary": "جمع‌بندی",
+			"generatedAt": "تاریخ تولید",
+			"brandName": "نگاه",
+			"footer": "این گزارش به صورت خودکار از سامانه تولید شده است."
+		},
+		"settings": {
+			"title": "تنظیمات گزارش",
+			"financialColumns": "نمایش ستون‌های مالی",
+			"aggregation": "جمع تجمیعی",
+			"auditColumns": "نمایش ستون‌های ثبت و ویرایش"
+		},
+		"companyPicker": {
+			"title": "لیست شرکت‌ها",
+			"show": "نمایش لیست شرکت‌ها",
+			"hide": "بستن لیست شرکت‌ها",
+			"searchPlaceholder": "جستجوی شرکت...",
+			"completeFilters": "ابتدا فیلترهای دوره گزارش را کامل کنید.",
+			"noSearchResult": "شرکتی با این نام پیدا نشد.",
+			"noCompanies": "شرکتی برای این دوره یافت نشد."
+		},
+		"periodPicker": {
+			"section": "دوره و بازه گزارش",
+			"selectMonth": "انتخاب ماه",
+			"selected": "دوره‌های انتخاب‌شده",
+			"unit": "دوره",
+			"empty": "سال و ماه را انتخاب کنید، سپس «افزودن تاریخ» را بزنید.",
+			"add": "افزودن تاریخ",
+			"selectYear": "انتخاب سال",
+			"yearPlaceholder": "سال را انتخاب کنید",
+			"noneAdded": "هنوز {{unit}}‌ای اضافه نشده است",
+			"removeAll": "حذف همه",
+			"removePeriod": "حذف دوره {{period}}"
+		}
 	}
 }

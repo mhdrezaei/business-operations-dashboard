@@ -1,5 +1,6 @@
 import type { PerformanceServicePath } from "../../api/performances.api";
 import type { PerformanceFormValues } from "../../shared/model/performance.form.types";
+import type { CollocationRow } from "../../shared/services/traffic/traffic-collocation";
 import i18next from "i18next";
 import {
 	uploadPerformanceFiles,
@@ -10,6 +11,7 @@ import {
 	isSmsCommissionCode,
 	resolvePerformanceServicePath,
 } from "../../shared/model/performance.helpers";
+import { buildCollocationRowsPayload, COLLOCATION_ROW_METRICS, isCollocationCompanyType } from "../../shared/services/traffic/traffic-collocation";
 
 interface PerformanceOperation {
 	payload: Record<string, unknown>
@@ -50,6 +52,20 @@ function buildManualOperations(values: PerformanceFormValues): PerformanceOperat
 						...buildBasePayload(values),
 						bill_inquiry_value: fields.billInquiryValue,
 						receipt_register_value: fields.receiptRegisterValue,
+					},
+				},
+			];
+		}
+		if (values.contractModel === "legacy_2") {
+			return [
+				{
+					payload: {
+						...buildBasePayload(values),
+						bill_inquiry_midterm_value: fields.billInquiryMidtermValue,
+						bill_inquiry_endterm_value: fields.billInquiryEndtermValue,
+						receipt_register_connected_value: fields.receiptRegisterConnectedValue,
+						receipt_register_disconnected_value: fields.receiptRegisterDisconnectedValue,
+						wallet_was_charged: Boolean(fields.walletWasCharged),
 					},
 				},
 			];
@@ -206,6 +222,27 @@ async function submitTrafficSingle(values: PerformanceFormValues): Promise<Recor
 	}
 
 	const fields = (values.serviceFields ?? {}) as Record<string, any>;
+	if (isCollocationCompanyType(values.companyType)) {
+		const rows = (fields.collocationRows ?? []) as CollocationRow[];
+		if (!fields.collocationMode || rows.length < 1 || rows.some(row => COLLOCATION_ROW_METRICS.some(metric => toNullableNumber(row[metric]) == null))) {
+			throw new Error(i18next.t("performance.validation.traffic.collocationFieldRequired"));
+		}
+
+		return await upsertPerformance({
+			service: "traffic",
+			companyId: values.companyId,
+			year: values.year,
+			month: values.month,
+			payload: {
+				...buildBasePayload(values),
+				company_type: values.companyType,
+				collocation_rows: buildCollocationRowsPayload(rows, fields.collocationMode),
+			},
+			suppressErrorNotification: true,
+		});
+	}
+
+	const tehranEnabled = fields.tehranEnabled !== false;
 	const tehranValue = toNullableNumber(fields.tehranValue);
 	const tehranValueReceive = toNullableNumber(fields.tehranValueReceive);
 	const tehranConversionRatio = toNullableNumber(fields.tehranConversionRatio);
@@ -215,17 +252,23 @@ async function submitTrafficSingle(values: PerformanceFormValues): Promise<Recor
 	const countyConversionRatio = toNullableNumber(fields.countyConversionRatio);
 	const isCp = typeof values.companyType === "string" && values.companyType.toUpperCase() === "CP";
 
-	if (tehranValue == null || tehranValueReceive == null) {
-		throw new Error(i18next.t("performance.errors.trafficTehranRequired"));
+	if (!tehranEnabled && !countyEnabled) {
+		throw new Error(i18next.t("performance.errors.trafficAtLeastOneLocation"));
 	}
 
-	const trafficPayload: Record<string, unknown> = {
-		tehran_value: tehranValue,
-		tehran_value_receive: tehranValueReceive,
-	};
+	const trafficPayload: Record<string, unknown> = {};
 
-	if (isCp) {
-		trafficPayload.tehran_conversion_ratio = tehranConversionRatio;
+	if (tehranEnabled) {
+		if (tehranValue == null || tehranValueReceive == null) {
+			throw new Error(i18next.t("performance.errors.trafficTehranRequired"));
+		}
+
+		trafficPayload.tehran_value = tehranValue;
+		trafficPayload.tehran_value_receive = tehranValueReceive;
+
+		if (isCp) {
+			trafficPayload.tehran_conversion_ratio = tehranConversionRatio;
+		}
 	}
 
 	if (countyEnabled) {
@@ -255,37 +298,6 @@ async function submitTrafficSingle(values: PerformanceFormValues): Promise<Recor
 	});
 }
 
-async function submitCommercialFiles(values: PerformanceFormValues): Promise<Record<string, unknown> | null> {
-	if (!values.companyId || !values.year || !values.month) {
-		throw new Error(i18next.t("performance.errors.baseFormIncomplete"));
-	}
-
-	const fields = (values.serviceFields ?? {}) as Record<string, unknown>;
-	const servicesFile = getFirstFileFromUploadField(fields.servicesFile);
-	const provinceCodeFile = getFirstFileFromUploadField(fields.provinceCodeFile);
-	const monthlyPerformanceFile = getFirstFileFromUploadField(fields.monthlyPerformanceFile);
-
-	if (!servicesFile || !provinceCodeFile || !monthlyPerformanceFile) {
-		throw new Error(i18next.t("performance.errors.allCommercialFilesRequired"));
-	}
-
-	return await uploadPerformanceFiles({
-		service: "commercial",
-		files: {
-			services_file: servicesFile,
-			province_code_file: provinceCodeFile,
-			monthly_file: monthlyPerformanceFile,
-		},
-		extraFields: {
-			service: values.serviceId,
-			company: values.companyId,
-			sh_year: values.year,
-			sh_month: values.month,
-		},
-		suppressErrorNotification: true,
-	});
-}
-
 export async function submitPerformance(values: PerformanceFormValues): Promise<SubmitPerformanceResult> {
 	const servicePath = resolvePerformanceServicePath(values.serviceCode, values.companyType);
 	if (!servicePath) {
@@ -303,13 +315,6 @@ export async function submitPerformance(values: PerformanceFormValues): Promise<
 		return {
 			servicePath,
 			record: await submitTrafficFiles(values),
-		};
-	}
-
-	if (servicePath === "commercial") {
-		return {
-			servicePath,
-			record: await submitCommercialFiles(values),
 		};
 	}
 

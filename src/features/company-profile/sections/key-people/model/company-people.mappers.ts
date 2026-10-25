@@ -27,6 +27,9 @@ export function dtoToCompanyPersonForm(dto: CompanyPersonDto): CompanyPersonForm
 		is_signatory: !!dto.is_signatory,
 		national_id: dto.national_id ?? "",
 		title: dto.title ?? "",
+		gender: dto.gender ?? null,
+		official_gazette_number: dto.official_gazette_number ?? "",
+		official_gazette_date: dto.official_gazette_date ?? "",
 		phone: normalizeMultiValue(dto.phone),
 		email: normalizeMultiValue(dto.email),
 	};
@@ -44,10 +47,13 @@ export function companyPersonFormToPayload(
 		role: values.role ?? "OTHER",
 		full_name: values.full_name.trim(),
 		is_signatory: !!values.is_signatory,
-		national_id: values.national_id.trim() || null,
-		title: values.title.trim() || null,
+		national_id: values.national_id.trim(),
+		title: values.title.trim(),
+		gender: values.gender ?? null,
 		phone: cleanMultiValue(values.phone),
 		email: cleanMultiValue(values.email),
+		official_gazette_number: values.official_gazette_number.trim() || null,
+		official_gazette_date: values.official_gazette_date || null,
 		contract_order: contractOrder,
 	};
 }
@@ -62,11 +68,14 @@ export function companyPersonDtoToPayload(
 		service: serviceId,
 		role: dto.role,
 		full_name: dto.full_name,
-		national_id: dto.national_id,
-		title: dto.title,
+		national_id: dto.national_id ?? "",
+		title: dto.title ?? "",
+		gender: dto.gender ?? null,
 		phone: dto.phone ?? [],
 		email: dto.email ?? [],
 		is_signatory: dto.is_signatory,
+		official_gazette_number: dto.official_gazette_number ?? null,
+		official_gazette_date: dto.official_gazette_date ?? null,
 		contract_order: contractOrder,
 	};
 }

@@ -5,6 +5,11 @@ import { zNullableNonNegative } from "../../model/zod-helpers";
 export const openapiPerformanceSchema = z.object({
 	billInquiryValue: zNullableNonNegative(i18next.t("performance.validation.openapi.billInquiryValueRequired")),
 	receiptRegisterValue: zNullableNonNegative(i18next.t("performance.validation.openapi.receiptRegisterValueRequired")),
+	billInquiryMidtermValue: zNullableNonNegative(i18next.t("performance.validation.openapi.billInquiryMidtermValueRequired")),
+	billInquiryEndtermValue: zNullableNonNegative(i18next.t("performance.validation.openapi.billInquiryEndtermValueRequired")),
+	receiptRegisterConnectedValue: zNullableNonNegative(i18next.t("performance.validation.openapi.receiptRegisterConnectedValueRequired")),
+	receiptRegisterDisconnectedValue: zNullableNonNegative(i18next.t("performance.validation.openapi.receiptRegisterDisconnectedValueRequired")),
+	walletWasCharged: z.boolean().optional(),
 	trafficRevenue: zNullableNonNegative(i18next.t("performance.validation.openapi.trafficRevenueRequired")),
 	trafficPackageCount: zNullableNonNegative(i18next.t("performance.validation.openapi.trafficPackageCountRequired")),
 	irancellFa: zNullableNonNegative(i18next.t("performance.validation.sms.irancellFaRequired")),

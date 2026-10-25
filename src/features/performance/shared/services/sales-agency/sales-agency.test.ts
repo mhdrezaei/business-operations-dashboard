@@ -4,8 +4,8 @@ import { upsertPerformance } from "#src/features/performance/api/performances.ap
 import { submitPerformance } from "#src/features/performance/create/ui/performance.submit";
 import { getPermittedCompanyTypesForDomain } from "#src/utils/access-policy";
 import { describe, expect, it, vi } from "vitest";
-import { companyTypeMatches, resolveContractServicePath, resolvePerformanceServicePath } from "../../model/performance.helpers";
-import { hasSalesAgencyContractPeriod, salesAgencyCostTitles } from "./sales-agency.helpers";
+import { companyTypeMatches, isContractActiveInPeriod, resolveContractServicePath, resolvePerformanceServicePath } from "../../model/performance.helpers";
+import { salesAgencyCostTitles } from "./sales-agency.helpers";
 import { salesAgencyFieldsSchema } from "./sales-agency.schema";
 
 vi.mock("#src/features/performance/api/performances.api", () => ({
@@ -24,7 +24,7 @@ describe("sales agency performance", () => {
 	it("requires a cooperation type before selecting an endpoint", () => {
 		expect(resolvePerformanceServicePath("sales_agency")).toBeNull();
 		expect(resolvePerformanceServicePath("sales_agency", "OUTBOUND")).toBe("sales-agency/outbound");
-		expect(resolveContractServicePath("sales-agency", "SALES_REP_MANAGEMENT")).toBe("sales-agency/rep-management");
+		expect(resolveContractServicePath("sales_agency", "SALES_REP_MANAGEMENT")).toBe("sales-agency/rep-management");
 		expect(companyTypeMatches({ OUTBOUND: "فروش Outbound" }, "SALES_REP_MANAGEMENT")).toBe(false);
 		expect(companyTypeMatches({ OUTBOUND: "فروش Outbound" }, "OUTBOUND")).toBe(true);
 	});
@@ -33,7 +33,7 @@ describe("sales agency performance", () => {
 		const contract = { id: 1, company: 10, service: 8, start_jy: 1405, start_jm: 1, end_jy: 1405, end_jm: 3, cost_titles: ["base"], addenda: [{ start_jy: 1405, start_jm: 4, end_jy: 1405, end_jm: 6, cost_title_names: ["extension"] }] } as PerformanceContractListItem;
 		expect(salesAgencyCostTitles([contract], 1405, 2)).toEqual(["base"]);
 		expect(salesAgencyCostTitles([contract], 1405, 4)).toEqual(["extension"]);
-		expect(hasSalesAgencyContractPeriod(contract, 1405, 4)).toBe(true);
+		expect(isContractActiveInPeriod(contract, 1405, 4)).toBe(true);
 		expect(salesAgencyCostTitles([contract], 1405, 7)).toEqual([]);
 	});
 

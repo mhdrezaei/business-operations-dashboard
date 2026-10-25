@@ -1,10 +1,14 @@
 import type { ProColumns } from "@ant-design/pro-components";
 import type { TFunction } from "i18next";
+import type { ReactNode } from "react";
 import type { PerformanceReportRow } from "../model/performance.report.types";
+import type { OperatorGovernmentFilters, SmsCommissionScope } from "../model/sms-report-variants";
 import type { ReportFinancialColumnKey } from "./export";
 import { MONTH_OPTIONS } from "#src/features/performance/shared/ui/form/constants/jalali-date-options";
-import { InputNumber, Radio, Typography } from "antd";
-import { getReportCompanyTypeLabel, hasMixedCompanyTypeIncluding, isOnlyCompanyType } from "./company-type";
+import { InputNumber, Radio, Select, Typography } from "antd";
+import { formatFinanceRowType } from "../model/sms-report-variants";
+import { getReportCompanyTypeLabel, hasMixedCompanyTypeIncluding, isOnlyCompanyType, isUnitConversionCompanyType } from "./company-type";
+import { formatReportMoney, formatReportNumber } from "./report-number-format";
 
 export interface ReportSelectOption {
 	label: string
@@ -16,7 +20,7 @@ export interface ReportServiceOption extends ReportSelectOption {
 	code: string
 }
 
-export type SmsReportType = "normal" | "finance" | "summary";
+export type SmsReportType = "normal" | "finance" | "summary" | "operatorGovernment";
 export type SmsContractTypeFilter = "all" | "official" | "unofficial";
 export type CompanyType = string;
 export type CompanyTypeSelection = CompanyType | CompanyType[] | null;
@@ -49,17 +53,28 @@ export const REPORT_FIELD_KEYS = {
 	conversionRatio: ["conversion_ratio"],
 	datacenter: ["datacenter"],
 	collocationMode: ["collocation_mode"],
+	rackFullCount: ["rack_full_count"],
 	rackHalfCount: ["rack_half_count"],
+	rackQuarterCount: ["rack_quarter_count"],
+	rackUnitCount: ["rack_unit_count"],
 	ipCount: ["ip_count"],
 	portCount: ["port_count"],
 	bandwidthUsed: ["bandwidth_used"],
 	ampereUsed: ["ampere_used"],
+	rackFullIncome: ["rack_full_income_financial"],
 	rackHalfIncome: ["rack_half_income_financial"],
+	rackQuarterIncome: ["rack_quarter_income_financial"],
+	rackUnitIncome: ["rack_unit_income_financial"],
 	rackIncome: ["rack_income_financial"],
 	ipIncome: ["ip_income_financial"],
 	portIncome: ["port_income_financial"],
 	bandwidthIncome: ["bandwidth_income_financial"],
 	ampereIncome: ["ampere_income_financial"],
+	newCustomerCount: ["new_customer_count"],
+	newCustomerIncome: ["new_customer_income"],
+	performanceIncome: ["performance_income"],
+	creditTotal: ["credit_total"],
+	totalSales: ["total_sales"],
 } as const;
 
 function pickReportValue(row: PerformanceReportRow, keys: string[]) {
@@ -104,7 +119,7 @@ export function getReportMonthLabel(row: PerformanceReportRow, periodType: Perio
 	return found?.label ?? String(rawMonth);
 }
 
-export type ReportAggregationKey = "by_company" | "by_month" | "by_operator" | "by_language";
+export type ReportAggregationKey = "by_company" | "by_month" | "by_operator" | "by_language" | "by_data_center";
 
 export type ReportAuditColumnKey = "createdByUser" | "updatedByUser";
 
@@ -118,10 +133,12 @@ export function supportsOperatorLanguageAggregation(serviceCode: string | null |
 	return normalized === "openapi" || normalized === "sms" || normalized === "sms-commission" || normalized === "sms_commission";
 }
 
-export function getAllowedAggregationKeys(serviceCode: string | null | undefined): ReportAggregationKey[] {
-	return supportsOperatorLanguageAggregation(serviceCode)
-		? [...BASE_AGGREGATION_KEYS, ...OPERATOR_LANGUAGE_AGGREGATION_KEYS]
-		: BASE_AGGREGATION_KEYS;
+export function getAllowedAggregationKeys(serviceCode: string | null | undefined, isCollocation = false): ReportAggregationKey[] {
+	return [
+		...BASE_AGGREGATION_KEYS,
+		...(supportsOperatorLanguageAggregation(serviceCode) ? OPERATOR_LANGUAGE_AGGREGATION_KEYS : []),
+		...(isCollocation ? ["by_data_center" as const] : []),
+	];
 }
 
 export function filterAggregationKeys(values: ReportAggregationKey[], allowedKeys: ReportAggregationKey[]) {
@@ -129,25 +146,16 @@ export function filterAggregationKeys(values: ReportAggregationKey[], allowedKey
 	return allowedKeys.filter(key => values.includes(key) && allowed.has(key));
 }
 
-export type TrafficReportLayout = "tci-ixp" | "cp" | "collocation" | "mixed-collocation";
+/** "cp" covers every unit-converted type (CP/IXP/TCI/PREMIUM); COLLOCATION has its own rack/IP/port columns. */
+export type TrafficReportLayout = "cp" | "collocation" | "mixed-collocation";
 
 export function getTrafficReportLayout(companyType: CompanyTypeSelection | undefined): TrafficReportLayout {
-	const tokens = (Array.isArray(companyType) ? companyType : String(companyType ?? "").split(","))
-		.map(value => String(value).trim().toUpperCase())
-		.filter(Boolean);
-	if (hasMixedCompanyTypeIncluding(tokens, "COLLOCATION"))
+	if (hasMixedCompanyTypeIncluding(companyType, "COLLOCATION"))
 		return "mixed-collocation";
-	if (tokens.length > 1)
-		return "tci-ixp";
-	const [token = ""] = tokens;
-	if (token === "TCI" || token === "IXP" || token === "PREMIUM")
-		return "tci-ixp";
-	if (token === "COLLOCATION")
-		return "collocation";
-	return "cp";
+	return isOnlyCompanyType(companyType, "COLLOCATION") ? "collocation" : "cp";
 }
 
-export type ReportServiceLayout = "openapi" | "sms" | "sms-commission" | "psp" | "shahkar" | "traffic" | "default";
+export type ReportServiceLayout = "openapi" | "sms" | "sms-commission" | "psp" | "shahkar" | "traffic" | "sales-agency" | "default";
 
 export function getReportServiceLayout(serviceCode: string | null | undefined): ReportServiceLayout {
 	const normalized = String(serviceCode ?? "").trim().toLowerCase();
@@ -163,6 +171,8 @@ export function getReportServiceLayout(serviceCode: string | null | undefined): 
 		return "shahkar";
 	if (normalized === "traffic")
 		return "traffic";
+	if (normalized === "sales_agency" || normalized === "sales-agency")
+		return "sales-agency";
 	return "default";
 }
 
@@ -191,7 +201,11 @@ export interface GetPerformanceReportColumnsArgs {
 	onCompanyTypeChange: (value: CompanyTypeSelection) => void
 	onContractTypeChange: (value: SmsContractTypeFilter) => void
 	onSmsReportTypeChange: (value: SmsReportType) => void
+	operatorGovernmentFilters: OperatorGovernmentFilters
+	canFilterSmsCommission: boolean
+	onOperatorGovernmentFiltersChange: (filters: Partial<OperatorGovernmentFilters>) => void
 	onDefaultConversionRatioChange: (value: number | null) => void
+	renderRowActions: (row: PerformanceReportRow) => ReactNode
 }
 
 function createOperationTypeLabels(t: TFunction<"translation", undefined>) {
@@ -215,20 +229,6 @@ function toNullableNumber(value: unknown) {
 	return Number.isFinite(numeric) ? numeric : null;
 }
 
-function formatNumeric(value: unknown) {
-	const numeric = toNullableNumber(value);
-	if (numeric == null)
-		return "-";
-	return numeric.toLocaleString("en-US");
-}
-
-function formatMoney(value: unknown, showRial: boolean) {
-	const numeric = toNullableNumber(value);
-	if (numeric == null)
-		return "-";
-	return (showRial ? numeric : numeric / 10).toLocaleString("en-US");
-}
-
 function createOperatorLabels(t: TFunction<"translation", undefined>) {
 	return {
 		IRANCELL: t("performance.operator.irancell"),
@@ -246,24 +246,6 @@ function getLanguageLabel(t: TFunction<"translation", undefined>, value: unknown
 	if (normalized === "EN")
 		return t("performance.language.en");
 	return String(value);
-}
-
-export function buildReportAggregationParams(selectedAggregation: ReportAggregationKey[]) {
-	const params: {
-		by_company?: boolean
-		by_month?: boolean
-		by_operator?: boolean
-		by_language?: boolean
-	} = {};
-	if (selectedAggregation.includes("by_company"))
-		params.by_company = true;
-	if (selectedAggregation.includes("by_month"))
-		params.by_month = true;
-	if (selectedAggregation.includes("by_operator"))
-		params.by_operator = true;
-	if (selectedAggregation.includes("by_language"))
-		params.by_language = true;
-	return params;
 }
 
 function getContractTypeLabel(t: TFunction<"translation", undefined>, value: unknown) {
@@ -295,6 +277,9 @@ interface ReportTableColumnContext {
 	aggregateByOperator: boolean
 	aggregateByLanguage: boolean
 	showRial: boolean
+	showCompanyType: boolean
+	isSalesAgencyOutbound: boolean
+	smsReportType: SmsReportType
 }
 
 function createTrafficLocationLabels(t: TFunction<"translation", undefined>) {
@@ -473,7 +458,7 @@ function createReportCountColumn(t: TFunction<"translation", undefined>): ProCol
 		dataIndex: "value",
 		search: false,
 		width: 140,
-		render: (_, row) => formatNumeric(row.value),
+		render: (_, row) => formatReportNumber(row.value),
 	};
 }
 
@@ -529,7 +514,7 @@ function createReportIncomeColumn(t: TFunction<"translation", undefined>, showRi
 		dataIndex: "income_financial",
 		search: false,
 		width: 160,
-		render: (_, row) => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.income]), showRial),
+		render: (_, row) => formatReportMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.income]), showRial),
 	};
 }
 
@@ -539,7 +524,7 @@ function createReportExpenseColumn(t: TFunction<"translation", undefined>, showR
 		dataIndex: "expense_financial",
 		search: false,
 		width: 160,
-		render: (_, row) => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.expense]), showRial),
+		render: (_, row) => formatReportMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.expense]), showRial),
 	};
 }
 
@@ -549,7 +534,7 @@ function createReportProfitColumn(t: TFunction<"translation", undefined>, showRi
 		dataIndex: "profit_financial",
 		search: false,
 		width: 160,
-		render: (_, row) => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.profit]), showRial),
+		render: (_, row) => formatReportMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.profit]), showRial),
 	};
 }
 
@@ -559,7 +544,7 @@ function createReportUnitPriceColumn(t: TFunction<"translation", undefined>, sho
 		dataIndex: "unit_price",
 		search: false,
 		width: 160,
-		render: (_, row) => formatMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.unitPrice]), showRial),
+		render: (_, row) => formatReportMoney(pickReportValue(row, [...REPORT_FIELD_KEYS.unitPrice]), showRial),
 	};
 }
 
@@ -588,7 +573,7 @@ function createReportNumericValueColumn(
 		width,
 		render: (_, row) => {
 			const value = pickReportValue(row, keys);
-			return showRial == null ? formatNumeric(value) : formatMoney(value, showRial);
+			return showRial == null ? formatReportNumber(value) : formatReportMoney(value, showRial);
 		},
 	};
 }
@@ -635,7 +620,7 @@ function createReportSentTrafficColumn(t: TFunction<"translation", undefined>): 
 		dataIndex: "value",
 		search: false,
 		width: 150,
-		render: (_, row) => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.sentTraffic])),
+		render: (_, row) => formatReportNumber(pickReportValue(row, [...REPORT_FIELD_KEYS.sentTraffic])),
 	};
 }
 
@@ -645,7 +630,7 @@ function createReportReceivedTrafficColumn(t: TFunction<"translation", undefined
 		dataIndex: "value_receive",
 		search: false,
 		width: 150,
-		render: (_, row) => formatNumeric(pickReportValue(row, [...REPORT_FIELD_KEYS.receivedTraffic])),
+		render: (_, row) => formatReportNumber(pickReportValue(row, [...REPORT_FIELD_KEYS.receivedTraffic])),
 	};
 }
 
@@ -660,7 +645,7 @@ function createReportTrafficValueColumn(
 		dataIndex,
 		search: false,
 		width: 190,
-		render: (_, row) => formatNumeric(pickReportValue(row, keys)),
+		render: (_, row) => formatReportNumber(pickReportValue(row, keys)),
 	};
 }
 
@@ -818,16 +803,93 @@ function buildOpenApiReportTableColumns(
 	return tableColumns;
 }
 
-function buildSmsReportTableColumns(
+function createReportRowTypeColumn(
+	t: TFunction<"translation", undefined>,
+	operatorLabels: Record<string, string>,
+): ProColumns<PerformanceReportRow> {
+	return {
+		title: t("performance.columns.rowType"),
+		dataIndex: "row_type",
+		search: false,
+		width: 200,
+		render: (_, row) => formatFinanceRowType(
+			row,
+			{
+				government: t("performance.rowType.government"),
+				profit: t("performance.rowType.profit"),
+				overall: t("performance.rowType.overall"),
+			},
+			operator => operatorLabels[operator] ?? operator,
+			language => getLanguageLabel(t, language),
+		),
+	};
+}
+
+/** Finance-department rows: one line per operator/language plus the government and Karashab shares. */
+function buildSmsFinanceReportTableColumns(
+	ctx: ReportTableColumnContext,
+	financialColumns: Set<ReportFinancialColumnKey>,
+): ProColumns<PerformanceReportRow>[] {
+	const tableColumns: ProColumns<PerformanceReportRow>[] = [createReportIndexColumn(ctx.t)];
+
+	appendSharedDimensionColumns(tableColumns, ctx, false, ctx.showCompanyType);
+	tableColumns.push(
+		createReportRowTypeColumn(ctx.t, ctx.operatorLabels),
+		createReportCountColumn(ctx.t),
+		createReportUnitPriceColumn(ctx.t, ctx.showRial),
+	);
+	if (financialColumns.has("income"))
+		tableColumns.push(createReportIncomeColumn(ctx.t, ctx.showRial));
+
+	return tableColumns;
+}
+
+/** Operator-government rows are system-wide, so there is no company dimension. */
+function buildSmsOperatorGovernmentReportTableColumns(
 	ctx: ReportTableColumnContext,
 	financialColumns: Set<ReportFinancialColumnKey>,
 ): ProColumns<PerformanceReportRow>[] {
 	const tableColumns: ProColumns<PerformanceReportRow>[] = [
 		createReportIndexColumn(ctx.t),
+		createReportServiceNameColumn(ctx.t, ctx.serviceNameFallback),
+	];
+
+	appendFiscalYearColumns(tableColumns, ctx);
+	if (!ctx.aggregateByMonth)
+		tableColumns.push(createReportMonthColumn(ctx.t, ctx.periodType));
+	if (!ctx.aggregateByOperator)
+		tableColumns.push(createReportOperatorColumn(ctx.t, ctx.operatorLabels));
+	if (!ctx.aggregateByLanguage)
+		tableColumns.push(createReportLanguageColumn(ctx.t));
+
+	tableColumns.push(createReportCountColumn(ctx.t));
+	if (financialColumns.has("unitPrice"))
+		tableColumns.push(createReportUnitPriceColumn(ctx.t, ctx.showRial));
+	if (financialColumns.has("expense"))
+		tableColumns.push(createReportExpenseColumn(ctx.t, ctx.showRial));
+
+	return tableColumns;
+}
+
+function buildSmsReportTableColumns(
+	ctx: ReportTableColumnContext,
+	financialColumns: Set<ReportFinancialColumnKey>,
+): ProColumns<PerformanceReportRow>[] {
+	if (ctx.smsReportType === "finance")
+		return buildSmsFinanceReportTableColumns(ctx, financialColumns);
+	if (ctx.smsReportType === "operatorGovernment")
+		return buildSmsOperatorGovernmentReportTableColumns(ctx, financialColumns);
+
+	const tableColumns: ProColumns<PerformanceReportRow>[] = [
+		createReportIndexColumn(ctx.t),
 		createReportIdColumn(ctx.t),
 	];
 
-	appendSharedDimensionColumns(tableColumns, ctx, true, true);
+	// The overall report mixes sms and sms commission rows.
+	if (ctx.smsReportType === "summary")
+		tableColumns.push(createReportServiceNameColumn(ctx.t, ctx.serviceNameFallback));
+
+	appendSharedDimensionColumns(tableColumns, ctx, true, ctx.showCompanyType);
 
 	tableColumns.push(
 		createReportCountColumn(ctx.t),
@@ -964,6 +1026,12 @@ function buildShahkarReportTableColumns(
 	if (financialColumns.has("profit"))
 		tableColumns.push(createReportProfitColumn(ctx.t, ctx.showRial));
 
+	tableColumns.push(
+		createReportNumericValueColumn(ctx.t, ctx.t("performance.columns.newCustomerCount"), "new_customer_count", [...REPORT_FIELD_KEYS.newCustomerCount]),
+		createReportNumericValueColumn(ctx.t, ctx.t("performance.columns.newCustomerIncome"), "new_customer_income", [...REPORT_FIELD_KEYS.newCustomerIncome], 180, ctx.showRial),
+		createReportNumericValueColumn(ctx.t, ctx.t("performance.columns.performanceIncome"), "performance_income", [...REPORT_FIELD_KEYS.performanceIncome], 180, ctx.showRial),
+	);
+
 	return tableColumns;
 }
 
@@ -988,9 +1056,8 @@ function buildTrafficReportTableColumns(
 	if (!ctx.aggregateByCompany)
 		tableColumns.push(createReportCompanyNameColumn(ctx.t));
 
-	tableColumns.push(
-		createReportCompanyTypeColumn(ctx.t, ctx.companyTypeOptions),
-	);
+	if (ctx.showCompanyType)
+		tableColumns.push(createReportCompanyTypeColumn(ctx.t, ctx.companyTypeOptions));
 	appendFiscalYearColumns(tableColumns, ctx, yearTitle);
 
 	if (!ctx.aggregateByMonth)
@@ -1010,28 +1077,23 @@ function buildTrafficReportTableColumns(
 		tableColumns.push(
 			createReportDatacenterColumn(ctx.t),
 			createReportPartnerTypeColumn(ctx.t),
+			createReportNumericValueColumn(ctx.t, ctx.t("performance.columns.rackFullCount"), "rack_full_count", [...REPORT_FIELD_KEYS.rackFullCount]),
 			createReportNumericValueColumn(ctx.t, ctx.t("performance.columns.rackHalfCount"), "rack_half_count", [...REPORT_FIELD_KEYS.rackHalfCount]),
+			createReportNumericValueColumn(ctx.t, ctx.t("performance.columns.rackQuarterCount"), "rack_quarter_count", [...REPORT_FIELD_KEYS.rackQuarterCount]),
+			createReportNumericValueColumn(ctx.t, ctx.t("performance.columns.rackUnitCount"), "rack_unit_count", [...REPORT_FIELD_KEYS.rackUnitCount]),
 			createReportNumericValueColumn(ctx.t, ctx.t("performance.columns.ipCount"), "ip_count", [...REPORT_FIELD_KEYS.ipCount]),
 			createReportNumericValueColumn(ctx.t, ctx.t("performance.columns.portCount"), "port_count", [...REPORT_FIELD_KEYS.portCount]),
 			createReportNumericValueColumn(ctx.t, ctx.t("performance.columns.bandwidthUsed"), "bandwidth_used", [...REPORT_FIELD_KEYS.bandwidthUsed]),
 			createReportNumericValueColumn(ctx.t, ctx.t("performance.columns.ampereUsed"), "ampere_used", [...REPORT_FIELD_KEYS.ampereUsed]),
+			createReportNumericValueColumn(ctx.t, ctx.t("performance.columns.rackFullIncome"), "rack_full_income_financial", [...REPORT_FIELD_KEYS.rackFullIncome], 180, ctx.showRial),
 			createReportNumericValueColumn(ctx.t, ctx.t("performance.columns.rackHalfIncome"), "rack_half_income_financial", [...REPORT_FIELD_KEYS.rackHalfIncome], 180, ctx.showRial),
+			createReportNumericValueColumn(ctx.t, ctx.t("performance.columns.rackQuarterIncome"), "rack_quarter_income_financial", [...REPORT_FIELD_KEYS.rackQuarterIncome], 180, ctx.showRial),
+			createReportNumericValueColumn(ctx.t, ctx.t("performance.columns.rackUnitIncome"), "rack_unit_income_financial", [...REPORT_FIELD_KEYS.rackUnitIncome], 180, ctx.showRial),
 			createReportNumericValueColumn(ctx.t, ctx.t("performance.columns.rackIncome"), "rack_income_financial", [...REPORT_FIELD_KEYS.rackIncome], 180, ctx.showRial),
 			createReportNumericValueColumn(ctx.t, ctx.t("performance.columns.ipIncome"), "ip_income_financial", [...REPORT_FIELD_KEYS.ipIncome], 180, ctx.showRial),
 			createReportNumericValueColumn(ctx.t, ctx.t("performance.columns.portIncome"), "port_income_financial", [...REPORT_FIELD_KEYS.portIncome], 180, ctx.showRial),
 			createReportNumericValueColumn(ctx.t, ctx.t("performance.columns.bandwidthIncome"), "bandwidth_income_financial", [...REPORT_FIELD_KEYS.bandwidthIncome], 180, ctx.showRial),
 			createReportNumericValueColumn(ctx.t, ctx.t("performance.columns.ampereIncome"), "ampere_income_financial", [...REPORT_FIELD_KEYS.ampereIncome], 180, ctx.showRial),
-		);
-		appendTrafficFinancialColumns(tableColumns, ctx, financialColumns);
-		return tableColumns;
-	}
-
-	if (ctx.trafficLayout === "tci-ixp") {
-		tableColumns.push(
-			createReportConversionRatioColumn(ctx.t),
-			createReportPositionColumn(ctx.t, locationLabels),
-			createReportSentTrafficColumn(ctx.t),
-			createReportReceivedTrafficColumn(ctx.t),
 		);
 		appendTrafficFinancialColumns(tableColumns, ctx, financialColumns);
 		return tableColumns;
@@ -1063,8 +1125,9 @@ function buildPspReportTableColumns(
 	const tableColumns: ProColumns<PerformanceReportRow>[] = [
 		createReportIndexColumn(ctx.t),
 		createReportIdColumn(ctx.t),
-		createReportCompanyTypeColumn(ctx.t, ctx.companyTypeOptions),
 	];
+	if (ctx.showCompanyType)
+		tableColumns.push(createReportCompanyTypeColumn(ctx.t, ctx.companyTypeOptions));
 	appendFiscalYearColumns(tableColumns, ctx);
 	tableColumns.push(createReportCountColumn(ctx.t));
 
@@ -1074,6 +1137,79 @@ function buildPspReportTableColumns(
 		tableColumns.push(createReportExpenseColumn(ctx.t, ctx.showRial));
 	if (financialColumns.has("profit"))
 		tableColumns.push(createReportProfitColumn(ctx.t, ctx.showRial));
+	return tableColumns;
+}
+
+interface SalesAgencyCostItem {
+	cost_title?: string | null
+	amount?: number | string | null
+}
+
+function getSalesAgencyCostItems(row: PerformanceReportRow): SalesAgencyCostItem[] {
+	return Array.isArray(row.cost_items) ? row.cost_items as SalesAgencyCostItem[] : [];
+}
+
+export function formatSalesAgencyCostItems(row: PerformanceReportRow, showRial: boolean) {
+	const items = getSalesAgencyCostItems(row);
+	if (items.length === 0)
+		return "-";
+	return items.map(item => `${item.cost_title ?? "-"}: ${formatReportMoney(item.amount, showRial)}`).join("، ");
+}
+
+export function getSalesAgencyTotalCost(row: PerformanceReportRow) {
+	const items = getSalesAgencyCostItems(row);
+	if (items.length === 0)
+		return null;
+	return items.reduce((sum, item) => sum + (toNullableNumber(item.amount) ?? 0), 0);
+}
+
+function buildSalesAgencyReportTableColumns(
+	ctx: ReportTableColumnContext,
+	financialColumns: Set<ReportFinancialColumnKey>,
+): ProColumns<PerformanceReportRow>[] {
+	const tableColumns: ProColumns<PerformanceReportRow>[] = [
+		createReportIndexColumn(ctx.t),
+		createReportIdColumn(ctx.t),
+	];
+
+	if (!ctx.aggregateByCompany)
+		tableColumns.push(createReportCompanyNameColumn(ctx.t));
+	if (ctx.showCompanyType)
+		tableColumns.push(createReportCompanyTypeColumn(ctx.t, ctx.companyTypeOptions));
+	appendFiscalYearColumns(tableColumns, ctx);
+	if (!ctx.aggregateByMonth)
+		tableColumns.push(createReportMonthColumn(ctx.t, ctx.periodType));
+
+	tableColumns.push(ctx.isSalesAgencyOutbound
+		? createReportNumericValueColumn(ctx.t, ctx.t("performance.columns.totalSales"), "total_sales", [...REPORT_FIELD_KEYS.totalSales], 180, ctx.showRial)
+		: createReportNumericValueColumn(ctx.t, ctx.t("performance.columns.creditTotal"), "credit_total", [...REPORT_FIELD_KEYS.creditTotal], 180, ctx.showRial));
+
+	if (financialColumns.has("income"))
+		tableColumns.push(createReportIncomeColumn(ctx.t, ctx.showRial));
+	if (!financialColumns.has("expense"))
+		return tableColumns;
+
+	if (ctx.isSalesAgencyOutbound) {
+		tableColumns.push(createReportExpenseColumn(ctx.t, ctx.showRial));
+		return tableColumns;
+	}
+
+	tableColumns.push(
+		{
+			title: ctx.t("performance.columns.costItems"),
+			dataIndex: "cost_items",
+			search: false,
+			width: 260,
+			render: (_, row) => formatSalesAgencyCostItems(row, ctx.showRial),
+		},
+		{
+			title: ctx.t("performance.columns.totalCost"),
+			dataIndex: "total_cost",
+			search: false,
+			width: 180,
+			render: (_, row) => formatReportMoney(getSalesAgencyTotalCost(row), ctx.showRial),
+		},
+	);
 	return tableColumns;
 }
 
@@ -1115,7 +1251,7 @@ function buildDefaultReportTableColumns(
 			dataIndex: "profit_financial",
 			search: false,
 			width: 160,
-			render: (_, row) => formatMoney(row.profit_financial, ctx.showRial),
+			render: (_, row) => formatReportMoney(row.profit_financial, ctx.showRial),
 		});
 	}
 
@@ -1223,7 +1359,64 @@ function buildReportTableColumns(
 		return buildShahkarReportTableColumns(ctx, financialColumns);
 	if (layout === "traffic")
 		return buildTrafficReportTableColumns(ctx, financialColumns);
+	if (layout === "sales-agency")
+		return buildSalesAgencyReportTableColumns(ctx, financialColumns);
 	return buildDefaultReportTableColumns(ctx, financialColumns, showOperatorLanguage);
+}
+
+function createOperatorGovernmentFilterColumns({ t, isVisible, canFilterSmsCommission, filters, onChange }: {
+	t: TFunction<"translation", undefined>
+	isVisible: boolean
+	canFilterSmsCommission: boolean
+	filters: OperatorGovernmentFilters
+	onChange: (filters: Partial<OperatorGovernmentFilters>) => void
+}): ProColumns<PerformanceReportRow>[] {
+	const createSelectColumn = <Key extends keyof OperatorGovernmentFilters>(
+		key: Key,
+		title: string,
+		options: Array<{ label: string, value: string }>,
+		{ hidden = false, placeholder }: { hidden?: boolean, placeholder?: string } = {},
+	): ProColumns<PerformanceReportRow> => ({
+		title,
+		dataIndex: `og_${key}`,
+		hideInTable: true,
+		hideInSearch: !isVisible || hidden,
+		renderFormItem: (_, config) => (
+			<Select
+				mode={Array.isArray(filters[key]) ? "multiple" : undefined}
+				allowClear={Array.isArray(filters[key])}
+				placeholder={placeholder}
+				options={options}
+				value={filters[key]}
+				onChange={(value) => {
+					config.onChange?.(value);
+					onChange({ [key]: value });
+				}}
+			/>
+		),
+	});
+	const scopeOptions: Array<{ label: string, value: SmsCommissionScope }> = [
+		{ label: t("performance.operatorGovernment.scope.both"), value: "both" },
+		{ label: t("performance.operatorGovernment.scope.commissionOnly"), value: "commission_only" },
+		{ label: t("performance.operatorGovernment.scope.smsOnly"), value: "sms_only" },
+	];
+
+	return [
+		createSelectColumn("mode", t("performance.operatorGovernment.mode"), [
+			{ label: t("performance.operatorGovernment.modes.operators"), value: "operators" },
+			{ label: t("performance.operatorGovernment.modes.government"), value: "government" },
+		]),
+		createSelectColumn("smsCommission", t("performance.operatorGovernment.smsServiceType"), scopeOptions, { hidden: !canFilterSmsCommission }),
+		createSelectColumn("operators", t("performance.columns.operator"), [
+			{ label: t("performance.operator.mci"), value: "MCI" },
+			{ label: t("performance.operator.irancell"), value: "IRANCELL" },
+			{ label: t("performance.operator.other"), value: "OTHER" },
+		], { placeholder: t("performance.operatorGovernment.allOperators") }),
+		createSelectColumn("languages", t("performance.columns.language"), [
+			{ label: t("performance.language.fa"), value: "FA" },
+			{ label: t("performance.language.en"), value: "EN" },
+		], { placeholder: t("performance.operatorGovernment.allLanguages") }),
+	];
 }
 
 export function getPerformanceReportColumns({
@@ -1251,7 +1444,11 @@ export function getPerformanceReportColumns({
 	onCompanyTypeChange,
 	onContractTypeChange,
 	onSmsReportTypeChange,
+	operatorGovernmentFilters,
+	canFilterSmsCommission,
+	onOperatorGovernmentFiltersChange,
 	onDefaultConversionRatioChange,
+	renderRowActions,
 }: GetPerformanceReportColumnsArgs): ProColumns<PerformanceReportRow>[] {
 	const operationTypeLabels = createOperationTypeLabels(t);
 	const operatorLabels = createOperatorLabels(t);
@@ -1260,7 +1457,7 @@ export function getPerformanceReportColumns({
 	const trafficLayout = isTrafficService
 		? getTrafficReportLayout(selectedCompanyType)
 		: getTrafficReportLayout(null);
-	const isTrafficCp = isTrafficService && isOnlyCompanyType(selectedCompanyType, "CP");
+	const isUnitConversion = isTrafficService && isUnitConversionCompanyType(selectedCompanyType);
 	const isBaseUnitVisible = financialColumns.has("showBaseUnit");
 	const tableColumnContext: ReportTableColumnContext = {
 		t,
@@ -1275,6 +1472,9 @@ export function getPerformanceReportColumns({
 		aggregateByOperator: selectedAggregation.includes("by_operator"),
 		aggregateByLanguage: selectedAggregation.includes("by_language"),
 		showRial: financialColumns.has("rial"),
+		showCompanyType: financialColumns.has("companyType"),
+		isSalesAgencyOutbound: isOnlyCompanyType(selectedCompanyType, "OUTBOUND"),
+		smsReportType: selectedSmsReportType,
 	};
 
 	const tableColumns = appendReportAuditColumns(
@@ -1290,6 +1490,15 @@ export function getPerformanceReportColumns({
 
 	return [
 		...tableColumns,
+		{
+			title: t("common.action"),
+			valueType: "option",
+			key: "option",
+			width: 120,
+			fixed: "right",
+			align: "center",
+			render: (_, row) => renderRowActions(row),
+		},
 		{
 			title: t("performance.columns.service"),
 			dataIndex: "service_id",
@@ -1330,6 +1539,13 @@ export function getPerformanceReportColumns({
 				</Radio.Group>
 			),
 		},
+		...createOperatorGovernmentFilterColumns({
+			t,
+			isVisible: isSmsService && selectedSmsReportType === "operatorGovernment",
+			canFilterSmsCommission,
+			filters: operatorGovernmentFilters,
+			onChange: onOperatorGovernmentFiltersChange,
+		}),
 		{
 			title: t("performance.labels.companyType"),
 			dataIndex: "company_type",
@@ -1367,7 +1583,7 @@ export function getPerformanceReportColumns({
 			title: t("performance.columns.conversionRatio"),
 			dataIndex: "default_conversion_ratio",
 			hideInTable: true,
-			hideInSearch: !isTrafficCp,
+			hideInSearch: !isUnitConversion,
 			renderFormItem: (_, config) => (
 				<div>
 					<InputNumber

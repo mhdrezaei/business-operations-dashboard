@@ -2,8 +2,11 @@ import type { CompanyTypeOption } from "#src/api/user/types";
 import type { ProColumns } from "@ant-design/pro-components";
 import type { TFunction } from "i18next";
 import type { ContractListItemType } from "../model/contracts.list.types";
-import { Checkbox, Form, Tag } from "antd";
-import { pickCompanyTypeToken } from "../../shared/utils";
+import { toPersianDigits } from "#src/utils/formated";
+import { Tag } from "antd";
+import { isSmsVendorCompany, pickCompanyTypeToken } from "../../shared/utils";
+import { formatContractMonth, getContractListUserName } from "../model/contract-list";
+import { formatHistoryDate } from "./components/contract-approval-history.utils";
 import { ContractApprovalStatusTag } from "./components/ContractApprovalStatusTag";
 
 export interface GetContractColumnsArgs {
@@ -15,6 +18,12 @@ export interface GetContractColumnsArgs {
 	isTrafficService: boolean
 	isCompanyTypeService: boolean
 	isSmsService: boolean
+	/** SMS party currently selected in the filters (`null` while none is chosen). */
+	selectedSmsParty: "vendor" | "client" | null
+	setSelectedSmsParty: (v: "vendor" | "client" | null) => void
+	/** Table columns visible even without a selected service (old: any service of that kind exists). */
+	showCompanyTypeColumn: boolean
+	showOfficialColumn: boolean
 
 	selectedTrafficCompanyType: string | null
 	setSelectedTrafficCompanyType: (v: string | null) => void
@@ -30,48 +39,29 @@ export interface GetContractColumnsArgs {
 	onServiceFilterChange?: () => void
 }
 
-function renderApprovalCell(approved: boolean | null | undefined, approvedAddenda: number | undefined, record: ContractListItemType) {
-	// The list API serializes the tri-state flags as booleans, so `false` means "not approved yet" here.
-	return (
-		<div className="flex flex-col items-center gap-1">
-			<ContractApprovalStatusTag value={approved ? true : null} />
-			{Number(record.addenda_count) > 0
-				? <span className="text-xs text-[var(--ant-color-text-secondary)]">{`الحاقیه: ${approvedAddenda ?? 0} از ${record.addenda_count}`}</span>
-				: null}
-		</div>
-	);
+const multiSort = (priority: number) => ({ multiple: priority });
+
+function renderCountCell(value: number | undefined) {
+	return <Tag bordered={false}>{value ?? 0}</Tag>;
 }
 
-const ORDERING_OPTIONS: Array<{ label: string, value: string }> = [
-	{ label: "نام شرکت (صعودی)", value: "company_name" },
-	{ label: "نام شرکت (نزولی)", value: "-company_name" },
-	{ label: "نام سرویس (صعودی)", value: "service_name" },
-	{ label: "نام سرویس (نزولی)", value: "-service_name" },
-	{ label: "تعداد الحاقیه (صعودی)", value: "addenda_count" },
-	{ label: "تعداد الحاقیه (نزولی)", value: "-addenda_count" },
-	{ label: "نوع شرکت ترافیک (صعودی)", value: "traffic_company_type" },
-	{ label: "نوع شرکت ترافیک (نزولی)", value: "-traffic_company_type" },
-	{ label: "رسمی بودن ترافیک (صعودی)", value: "traffic_is_official" },
-	{ label: "رسمی بودن ترافیک (نزولی)", value: "-traffic_is_official" },
-	{ label: "تاریخ شروع (صعودی)", value: "start_date" },
-	{ label: "تاریخ شروع (نزولی)", value: "-start_date" },
-	{ label: "تاریخ پایان (صعودی)", value: "end_date_exclusive" },
-	{ label: "تاریخ پایان (نزولی)", value: "-end_date_exclusive" },
-	{ label: "شناسه قرارداد (صعودی)", value: "id" },
-	{ label: "شناسه قرارداد (نزولی)", value: "-id" },
-	{ label: "شناسه سرویس (صعودی)", value: "service_id" },
-	{ label: "شناسه سرویس (نزولی)", value: "-service_id" },
-	{ label: "شناسه شرکت (صعودی)", value: "company_id" },
-	{ label: "شناسه شرکت (نزولی)", value: "-company_id" },
-];
+function toValueEnum(options: Array<{ label: any, value: any }>) {
+	return options.reduce((acc, it) => {
+		acc[String(it.value)] = it.label;
+		return acc;
+	}, {} as Record<string, any>);
+}
 
 export function getContractColumns({
 	t,
-	// selectedServiceId,
 	setSelectedServiceId,
 	isTrafficService,
 	isCompanyTypeService,
 	isSmsService,
+	selectedSmsParty,
+	setSelectedSmsParty,
+	showCompanyTypeColumn,
+	showOfficialColumn,
 	selectedTrafficCompanyType,
 	setSelectedTrafficCompanyType,
 	permittedTrafficCompanyTypeOptions,
@@ -89,6 +79,18 @@ export function getContractColumns({
 		acc[item.key] = item.value;
 		return acc;
 	}, {} as Record<string, string>);
+	// SMS vendor contracts have no company type and no company: those filters only apply to partners.
+	const isSmsVendor = isSmsService && selectedSmsParty === "vendor";
+	const approvalOptions = [
+		{ label: t("contract.list.approval.approved"), value: "true" },
+		{ label: t("contract.list.approval.rejected"), value: "false" },
+		{ label: t("contract.list.approval.pending"), value: "pending" },
+	];
+	const signedOptions = [
+		{ label: t("contract.list.approval.approved"), value: "true" },
+		{ label: t("contract.list.approval.notApproved"), value: "false" },
+		{ label: t("contract.list.approval.pending"), value: "pending" },
+	];
 
 	return [
 		{
@@ -99,12 +101,32 @@ export function getContractColumns({
 		},
 
 		{
+			title: t("contract.list.column.id"),
+			dataIndex: "id",
+			width: 90,
+			search: false,
+			sorter: multiSort(1),
+		},
+
+		{
+			title: t("contract.list.column.contractNumber"),
+			dataIndex: "contract_number",
+			width: 170,
+			search: false,
+			sorter: multiSort(2),
+			render: (_, record) => (
+				<span dir="ltr" className="font-mono text-xs">{record.contract_number ? toPersianDigits(record.contract_number) : "-"}</span>
+			),
+		},
+
+		{
 			title: t("contract.tableTitle.servicetype"),
 			dataIndex: "service_name",
 			ellipsis: true,
 			width: 160,
 			search: false,
-			render: (_, r) => (r as any).service_name ?? serviceNameById[String((r as any).service_id)] ?? "-",
+			sorter: multiSort(3),
+			render: (_, r) => r.service_name ?? serviceNameById[String(r.service_id)] ?? "-",
 		},
 
 		{
@@ -112,13 +134,10 @@ export function getContractColumns({
 			dataIndex: "service_id",
 			valueType: "select",
 			hideInTable: true,
-			valueEnum: serviceOptions.reduce((acc, it) => {
-				acc[String(it.value)] = it.label;
-				return acc;
-			}, {} as Record<string, any>),
+			valueEnum: toValueEnum(serviceOptions),
 			fieldProps: {
 				allowClear: true,
-				placeholder: "نوع سرویس را انتخاب کنید",
+				placeholder: t("contract.list.filter.selectService"),
 				onChange: (v: any) => {
 					const nv = v == null ? null : Number(v);
 					setSelectedServiceId(nv);
@@ -131,18 +150,19 @@ export function getContractColumns({
 		},
 
 		{
-			title: isTrafficService ? t("contract.tableTitle.trafficCompanyType") : "نوع شرکت",
+			title: isTrafficService ? t("contract.tableTitle.trafficCompanyType") : t("contract.list.column.companyType"),
 			dataIndex: "company_type",
 			valueType: "select",
 			width: 150,
-			hideInTable: !isCompanyTypeService,
-			hideInSearch: !isCompanyTypeService,
+			hideInTable: !showCompanyTypeColumn,
+			hideInSearch: !isCompanyTypeService || isSmsVendor,
+			sorter: multiSort(4),
 			valueEnum: permittedTrafficCompanyTypeOptions.reduce((acc, item) => {
 				acc[item.key] = item.value;
 				return acc;
 			}, {} as Record<string, string>),
 			render: (_, r) => {
-				const companyType = pickCompanyTypeToken((r as any).traffic_company_type ?? (r as any).company_type);
+				const companyType = pickCompanyTypeToken(r.company_type);
 				if (!companyType) {
 					return "-";
 				}
@@ -150,7 +170,7 @@ export function getContractColumns({
 			},
 			fieldProps: {
 				allowClear: true,
-				placeholder: "نوع شرکت را انتخاب کنید",
+				placeholder: t("contract.list.filter.selectCompanyType"),
 				onChange: (v: any) => setSelectedTrafficCompanyType((v ?? null) as any),
 			},
 		},
@@ -161,7 +181,8 @@ export function getContractColumns({
 			ellipsis: true,
 			width: 220,
 			search: false,
-
+			sorter: multiSort(5),
+			render: (_, record) => isSmsVendorCompany({ name: record.company_name }) ? t("contract.list.smsVendorCompany") : record.company_name,
 		},
 
 		{
@@ -169,11 +190,8 @@ export function getContractColumns({
 			dataIndex: "company_id",
 			valueType: "select",
 			hideInTable: true,
-			hideInSearch: isCompanyTypeService ? !selectedTrafficCompanyType : false,
-			valueEnum: companyOptions.reduce((acc, it) => {
-				acc[String(it.value)] = it.label;
-				return acc;
-			}, {} as Record<string, any>),
+			hideInSearch: isSmsVendor || (isCompanyTypeService ? !selectedTrafficCompanyType : false),
+			valueEnum: toValueEnum(companyOptions),
 			fieldProps: {
 				allowClear: true,
 				disabled: isCompanyDisabled,
@@ -190,28 +208,95 @@ export function getContractColumns({
 		},
 
 		{
-			title: t("contract.tableTitle.sort"),
-			dataIndex: "ordering",
-			hideInTable: true,
-			valueType: "select",
-			valueEnum: ORDERING_OPTIONS.reduce((acc, it) => {
-				acc[it.value] = it.label;
-				return acc;
-			}, {} as Record<string, string>),
-			fieldProps: { allowClear: true, placeholder: t("contract.tableTitle.orderBy") },
-		},
-
-		{
-			title: "sms_party",
+			title: t("contract.list.filter.smsParty"),
 			dataIndex: "sms_party",
 			valueType: "select",
 			hideInTable: true,
 			hideInSearch: !isSmsService,
 			valueEnum: {
-				vendor: { text: "دولت و اپراتورها" },
-				client: { text: "شرکای تجاری" },
+				vendor: { text: t("contract.list.filter.smsVendor") },
+				client: { text: t("contract.list.filter.smsClient") },
 			},
-			fieldProps: { allowClear: true, placeholder: "طرف قرارداد" },
+			fieldProps: {
+				allowClear: true,
+				placeholder: t("contract.list.filter.smsParty"),
+				onChange: (v: "vendor" | "client" | undefined) => setSelectedSmsParty(v ?? null),
+			},
+		},
+
+		{
+			title: t("contract.tableTitle.isOfficial"),
+			dataIndex: "is_official",
+			valueType: "select",
+			width: 130,
+			hideInTable: !showOfficialColumn,
+			hideInSearch: !(isTrafficService || (isSmsService && selectedSmsParty === "client")),
+			sorter: multiSort(6),
+			valueEnum: {
+				true: { text: t("contract.list.filter.officialOnly") },
+				false: { text: t("contract.list.filter.unofficialOnly") },
+			},
+			formItemProps: { label: t("contract.list.filter.contractKind") },
+			fieldProps: { allowClear: true, placeholder: t("contract.list.filter.allContracts") },
+			render: (_, r) => {
+				if (r.is_official == null)
+					return "-";
+				return <Tag>{r.is_official ? t("common.yes") : t("common.no")}</Tag>;
+			},
+		},
+
+		{
+			title: t("contract.list.column.isBusinessApproved"),
+			dataIndex: "is_business_approved",
+			valueType: "select",
+			width: 150,
+			align: "center",
+			sorter: multiSort(7),
+			valueEnum: toValueEnum(approvalOptions),
+			fieldProps: { allowClear: true, placeholder: t("contract.list.filter.approvalPlaceholder") },
+			render: (_, record) => (
+				<ContractApprovalStatusTag value={record.is_business_approved} pendingLabel={t("contract.list.approval.pending")} />
+			),
+		},
+
+		{
+			title: t("contract.list.column.isSigned"),
+			dataIndex: "is_signed",
+			valueType: "select",
+			width: 170,
+			align: "center",
+			sorter: multiSort(8),
+			valueEnum: toValueEnum(signedOptions),
+			fieldProps: { allowClear: true, placeholder: t("contract.list.filter.approvalPlaceholder") },
+			render: (_, record) => (
+				<ContractApprovalStatusTag
+					value={record.is_signed}
+					pendingLabel={t("contract.list.approval.pending")}
+					rejectedLabel={t("contract.list.approval.notApproved")}
+				/>
+			),
+		},
+
+		{
+			title: t("contract.list.filter.realSigned"),
+			dataIndex: "real_signed",
+			valueType: "select",
+			hideInTable: true,
+			valueEnum: {
+				true: { text: t("contract.list.approval.signed") },
+				false: { text: t("contract.list.approval.unsigned") },
+			},
+			fieldProps: { allowClear: true, placeholder: t("contract.list.filter.approvalPlaceholder") },
+		},
+
+		{
+			title: t("contract.list.column.realSignedAt"),
+			dataIndex: "real_signed_at",
+			width: 170,
+			search: false,
+			align: "center",
+			sorter: multiSort(9),
+			render: (_, record) => record.real_signed_at ? <Tag bordered={false} color="processing">{formatHistoryDate(record.real_signed_at)}</Tag> : "-",
 		},
 
 		{
@@ -220,83 +305,70 @@ export function getContractColumns({
 			width: 120,
 			search: false,
 			align: "center",
-			render: (_, record) => <Tag bordered={false}>{record.addenda_count ?? 0}</Tag>,
+			sorter: multiSort(10),
+			render: (_, record) => renderCountCell(record.addenda_count),
 		},
 
 		{
-			title: "تأیید تجاری",
-			dataIndex: "is_business_approved",
+			title: t("contract.list.column.businessApprovedAddenda"),
+			dataIndex: "business_approved_addenda_count",
 			width: 150,
 			search: false,
 			align: "center",
-			render: (_, record) => renderApprovalCell(record.is_business_approved, record.business_approved_addenda_count, record),
+			sorter: multiSort(11),
+			render: (_, record) => renderCountCell(record.business_approved_addenda_count),
 		},
 
 		{
-			title: "تأیید اداره قراردادها",
-			dataIndex: "is_signed",
-			width: 170,
+			title: t("contract.list.column.signedAddenda"),
+			dataIndex: "signed_addenda_count",
+			width: 150,
 			search: false,
 			align: "center",
-			render: (_, record) => renderApprovalCell(record.is_signed, record.signed_addenda_count, record),
+			sorter: multiSort(12),
+			render: (_, record) => renderCountCell(record.signed_addenda_count),
 		},
 
 		{
-			title: t("contract.tableTitle.isOfficial"),
-			dataIndex: "is_official",
-			valueType: "select",
+			title: t("contract.list.column.realSignedAddenda"),
+			dataIndex: "real_signed_addenda_count",
 			width: 130,
-			hideInTable: !isTrafficService,
-			hideInSearch: !isTrafficService,
-
-			valueEnum: {
-				true: { text: t("common.yes") },
-				false: { text: t("common.no") },
-			},
-
-			render: (_, r) => {
-				const v = (r as any).traffic_is_official ?? (r as any).is_official;
-				if (v == null)
-					return "-";
-				return <Tag>{v ? t("common.yes") : t("common.no")}</Tag>;
-			},
-
-			formItemProps: { label: " " },
-
-			renderFormItem: () => {
-				if (!isTrafficService)
-					return null;
-
-				return (
-					<Form.Item
-						name="is_official"
-						valuePropName="checked"
-						style={{ marginBottom: 0 }}
-						initialValue={undefined}
-					>
-						<Checkbox>فقط قراردادهای رسمی</Checkbox>
-					</Form.Item>
-				);
-			},
-
-			fieldProps: {
-				allowClear: true,
-			},
+			search: false,
+			align: "center",
+			sorter: multiSort(13),
+			render: (_, record) => renderCountCell(record.real_signed_addenda_count),
 		},
 
 		{
 			title: t("contract.tableTitle.startDate"),
 			dataIndex: "start_date",
-			valueType: "date",
-			width: 140,
+			width: 120,
 			search: false,
+			sorter: multiSort(14),
+			render: (_, record) => formatContractMonth(record.start_jy, record.start_jm) ?? "-",
 		},
 		{
 			title: t("contract.tableTitle.endDate"),
 			dataIndex: "end_date",
-			valueType: "date",
-			width: 140,
+			width: 120,
 			search: false,
+			sorter: multiSort(15),
+			render: (_, record) => formatContractMonth(record.end_jy, record.end_jm) ?? "-",
+		},
+
+		{
+			title: t("contract.list.column.createdBy"),
+			dataIndex: "created_by_user",
+			width: 150,
+			search: false,
+			render: (_, record) => getContractListUserName(record.created_by_user) ?? "-",
+		},
+		{
+			title: t("contract.list.column.updatedBy"),
+			dataIndex: "updated_by_user",
+			width: 150,
+			search: false,
+			render: (_, record) => getContractListUserName(record.updated_by_user) ?? "-",
 		},
 	];
 }

@@ -1,8 +1,8 @@
+import { z } from "zod";
 import { CommercialPerformanceFields } from "./commercial.fields";
-import { commercialPerformanceSchema } from "./commercial.schema";
 
 export const commercialPerformanceService = {
 	code: "commercial",
-	schema: commercialPerformanceSchema,
+	schema: z.record(z.string(), z.unknown()),
 	Fields: CommercialPerformanceFields,
 } as const;

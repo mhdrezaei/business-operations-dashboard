@@ -20,7 +20,7 @@ export interface SmsGatewayMappingDto {
 	updated_by: number | null
 }
 
-export interface CreateSmsGatewayMappingPayload {
+export interface SmsGatewayMappingPayload {
 	company: number
 	gateway_customer_id: number
 }

@@ -2,23 +2,14 @@ import type { Paginated } from "#src/api/types";
 import type { PredictionListParams } from "../shared/model/prediction.list.types";
 import { request } from "#src/utils/request";
 
-export interface OpenApiPredictionYearDto {
+export type OpenApiAmountPrefix = "bill_inquiry" | "receipt_register" | "bill_inquiry_midterm" | "bill_inquiry_endterm" | "receipt_register_connected" | "receipt_register_disconnected";
+export type OpenApiAmountKey = `${OpenApiAmountPrefix}_${"value" | "income" | "expense"}_year`;
+
+export interface OpenApiPredictionYearDto extends Partial<Record<OpenApiAmountKey, string | number | null>> {
 	id: number
 	service: number
 	fiscal_year: number
 	openapi_model: string | null
-	bill_inquiry_value_year: string | number | null
-	bill_inquiry_income_year: string | number | null
-	bill_inquiry_expense_year: string | number | null
-	receipt_register_value_year: string | number | null
-	receipt_register_income_year: string | number | null
-	receipt_register_expense_year: string | number | null
-	sms_total_value_year: string | number | null
-	sms_total_income_year: string | number | null
-	sms_total_expense_year: string | number | null
-	traffic_total_value_year: string | number | null
-	traffic_total_income_year: string | number | null
-	traffic_total_expense_year: string | number | null
 	q1_percent: number | null
 	q2_percent: number | null
 	q3_percent: number | null
@@ -29,22 +20,10 @@ export interface OpenApiPredictionYearDto {
 	updated_at: string
 }
 
-export interface OpenApiPredictionPayload {
+export interface OpenApiPredictionPayload extends Partial<Record<OpenApiAmountKey, number>> {
 	service: number
 	fiscal_year: number
-	openapi_model: string
-	bill_inquiry_value_year: number
-	bill_inquiry_income_year: number
-	bill_inquiry_expense_year: number
-	receipt_register_value_year: number
-	receipt_register_income_year: number
-	receipt_register_expense_year: number
-	sms_total_value_year: number
-	sms_total_income_year: number
-	sms_total_expense_year: number
-	traffic_total_value_year: number
-	traffic_total_income_year: number
-	traffic_total_expense_year: number
+	openapi_model?: string
 	q1_percent: number
 	q2_percent: number
 	q3_percent: number
@@ -169,6 +148,9 @@ export interface TrafficPredictionPayload {
 	note: string
 }
 
+// backend max page size: one fiscal year per service/company type, so a single page holds every record
+const PREDICTION_YEARS_PAGE_SIZE = 100;
+
 function buildPredictionListSearchParams(params: PredictionListParams) {
 	return Object.fromEntries(
 		Object.entries(params).filter(([, value]) => value != null && value !== ""),
@@ -190,7 +172,7 @@ export function deletePrediction(service: "openapi" | "psp" | "shahkar" | "sms" 
 export function fetchOpenApiPredictionYears(serviceId: number) {
 	return request
 		.get("predictions/openapi/years/", {
-			searchParams: { service: serviceId },
+			searchParams: { service: serviceId, page_size: PREDICTION_YEARS_PAGE_SIZE },
 		})
 		.json<Paginated<OpenApiPredictionYearDto>>();
 }
@@ -201,12 +183,6 @@ export function listOpenApiPredictions(params: PredictionListParams) {
 			searchParams: buildPredictionListSearchParams(params),
 		})
 		.json<Paginated<OpenApiPredictionYearDto>>();
-}
-
-export function fetchOpenApiPredictionDetail(id: number) {
-	return request
-		.get(`predictions/openapi/years/${id}/`)
-		.json<OpenApiPredictionYearDto>();
 }
 
 export function createOpenApiPrediction(payload: OpenApiPredictionPayload) {
@@ -231,6 +207,7 @@ export function fetchPspPredictionYears(serviceId: number, companyType?: string 
 			searchParams: buildPredictionListSearchParams({
 				service: serviceId,
 				company_type: companyType ?? undefined,
+				page_size: PREDICTION_YEARS_PAGE_SIZE,
 			}),
 		})
 		.json<Paginated<PspPredictionYearDto>>();
@@ -242,12 +219,6 @@ export function listPspPredictions(params: PredictionListParams) {
 			searchParams: buildPredictionListSearchParams(params),
 		})
 		.json<Paginated<PspPredictionYearDto>>();
-}
-
-export function fetchPspPredictionDetail(id: number) {
-	return request
-		.get(`prediction/psp/year/${id}/`)
-		.json<PspPredictionYearDto>();
 }
 
 export function createPspPrediction(payload: PspPredictionPayload) {
@@ -269,7 +240,7 @@ export function updatePspPrediction(id: number, payload: PspPredictionPayload) {
 export function fetchShahkarPredictionYears(serviceId: number) {
 	return request
 		.get("predictions/shahkar/years/", {
-			searchParams: { service: serviceId },
+			searchParams: { service: serviceId, page_size: PREDICTION_YEARS_PAGE_SIZE },
 		})
 		.json<Paginated<ShahkarPredictionYearDto>>();
 }
@@ -280,12 +251,6 @@ export function listShahkarPredictions(params: PredictionListParams) {
 			searchParams: buildPredictionListSearchParams(params),
 		})
 		.json<Paginated<ShahkarPredictionYearDto>>();
-}
-
-export function fetchShahkarPredictionDetail(id: number) {
-	return request
-		.get(`prediction/shahkar/year/${id}/`)
-		.json<ShahkarPredictionYearDto>();
 }
 
 export function createShahkarPrediction(payload: ShahkarPredictionPayload) {
@@ -310,6 +275,7 @@ export function fetchSmsPredictionYears(serviceId: number, companyType?: string 
 			searchParams: buildPredictionListSearchParams({
 				service: serviceId,
 				company_type: companyType ?? undefined,
+				page_size: PREDICTION_YEARS_PAGE_SIZE,
 			}),
 		})
 		.json<Paginated<SmsPredictionYearDto>>();
@@ -321,12 +287,6 @@ export function listSmsPredictions(params: PredictionListParams) {
 			searchParams: buildPredictionListSearchParams(params),
 		})
 		.json<Paginated<SmsPredictionYearDto>>();
-}
-
-export function fetchSmsPredictionDetail(id: number) {
-	return request
-		.get(`predictions/sms/years/${id}/`)
-		.json<SmsPredictionYearDto>();
 }
 
 export function createSmsPrediction(payload: SmsPredictionPayload) {
@@ -351,6 +311,7 @@ export function fetchTrafficPredictionYears(serviceId: number, companyType?: str
 			searchParams: buildPredictionListSearchParams({
 				service: serviceId,
 				company_type: companyType ?? undefined,
+				page_size: PREDICTION_YEARS_PAGE_SIZE,
 			}),
 		})
 		.json<Paginated<TrafficPredictionYearDto>>();
@@ -362,12 +323,6 @@ export function listTrafficPredictions(params: PredictionListParams) {
 			searchParams: buildPredictionListSearchParams(params),
 		})
 		.json<Paginated<TrafficPredictionYearDto>>();
-}
-
-export function fetchTrafficPredictionDetail(id: number) {
-	return request
-		.get(`prediction/traffic/year/${id}/`)
-		.json<TrafficPredictionYearDto>();
 }
 
 export function createTrafficPrediction(payload: TrafficPredictionPayload) {

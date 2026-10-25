@@ -1,6 +1,8 @@
 import { addendumSchema } from "#src/features/contract/components/addenda/addenda.schema.js";
 import { contractTypeSchema } from "#src/features/contract/components/contract-type/contract-type.schema";
+import { i18n } from "#src/locales";
 import { z } from "zod";
+import { TRAFFIC_COLLOCATION_SLAS } from "./traffic.sla";
 
 const isOfficialSchema = z.preprocess(
 	v => (v === "" || v == null ? true : v),
@@ -20,7 +22,7 @@ const premiumRevenuePercentSchema = z.preprocess(
 		}
 		return v;
 	},
-	z.number().min(0, "درصد باید بین 0 تا 100 باشد").max(100, "درصد باید بین 0 تا 100 باشد").nullable(),
+	z.number().min(0, { error: () => i18n.t("contract.validation.percentRange") }).max(100, { error: () => i18n.t("contract.validation.percentRange") }).nullable(),
 ).optional();
 
 export const trafficServiceFieldsSchema = z
@@ -31,17 +33,10 @@ export const trafficServiceFieldsSchema = z
 		tehranPricing: contractTypeSchema.optional(),
 		provincePricing: contractTypeSchema.optional(),
 		addenda: z.array(addendumSchema).default([]).optional(),
+		sla: z.preprocess(v => (v === "" || v == null ? null : v), z.enum(TRAFFIC_COLLOCATION_SLAS).nullable()).optional(),
 		collocationPartnerType: z.enum(["COLLOCATION", "CP"]).nullable().optional(),
 		datacenter: z.preprocess(v => (v === "" || v == null ? null : v), z.string().nullable().optional()),
 		datacenters: z.array(z.any()).optional(),
-		datacenterBandwidthUnitRate: z.any().optional(),
-		datacenterIpRate: z.any().optional(),
-		datacenterPortItems: z.array(z.any()).optional(),
-		datacenterRackItems: z.array(z.any()).optional(),
-		datacenterElectricityAmpRate: z.any().optional(),
-		datacenterElectricityExemptionThreshold: z.any().optional(),
-		realStartYear: z.any().optional(),
-		realStartMonth: z.any().optional(),
 		telecomRackCount: z.any().optional(),
 		telecomUnitsPerRack: z.any().optional(),
 		telecomMonthlyRackRent: z.any().optional(),
@@ -53,6 +48,9 @@ export const trafficServiceFieldsSchema = z
 		provinceBasedTire: z.boolean().optional(),
 		tehranContractModel: z.enum(["LEGACY", "VARIABLE_TABLE"]).optional(),
 		provinceContractModel: z.enum(["LEGACY", "VARIABLE_TABLE"]).optional(),
+
+		tehranEnabled: z.boolean().optional(),
+		provinceEnabled: z.boolean().optional(),
 
 		tehranUnit: z.enum(["GB/month", "Mbps"]).nullable().optional(),
 		provinceUnit: z.enum(["GB/month", "Mbps"]).nullable().optional(),
@@ -71,14 +69,14 @@ export const trafficServiceFieldsSchema = z
 					ctx.addIssue({
 						code: "custom",
 						path: [...path, "tehranPricing"],
-						message: "نوع قرارداد تهران در الحاقیه الزامی است",
+						message: i18n.t("contract.traffic.validation.tehranModelRequired"),
 					});
 				}
 				if (requiresProvince && addendum?.provincePricing == null) {
 					ctx.addIssue({
 						code: "custom",
 						path: [...path, "provincePricing"],
-						message: "نوع قرارداد مراکز استانی در الحاقیه الزامی است",
+						message: i18n.t("contract.traffic.validation.provinceModelRequired"),
 					});
 				}
 				if (Array.isArray(addendum?.children))

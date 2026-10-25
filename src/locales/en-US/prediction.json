@@ -17,6 +17,12 @@
 		"editPrediction": "Edit Prediction"
 	},
 	"labels": {
+		"allocationMode": "Allocation mode",
+		"supplementaryInfo": "Supplementary information",
+		"predictionYear": "Prediction for year {{year}}",
+		"quarter": "Quarter {{index}}",
+		"details": "Details",
+		"registeredPredictions": "Registered predictions ({{total}})",
 		"service": "Service",
 		"fiscalYear": "Fiscal Year",
 		"openapiModel": "OpenAPI Model",
@@ -41,26 +47,31 @@
 	},
 	"sections": {
 		"quarters": "Quarter Distribution",
-		"companyShares": "Company Shares"
+		"companyShares": "Company Shares",
+		"channels": "Channels"
 	},
 	"operations": {
 		"billInquiry": "Bill Inquiry",
 		"receiptRegister": "Receipt Register",
-		"smsTotal": "SMS Total",
-		"trafficTotal": "Traffic Total",
 		"psp": "PSP",
 		"shahkar": "Shahkar",
 		"sms": "SMS",
-		"traffic": "Traffic"
+		"traffic": "Traffic",
+		"billInquiryMidterm": "Mid-term Bill Inquiry",
+		"billInquiryEndterm": "End-term Bill Inquiry",
+		"receiptRegisterConnected": "Connected Receipt Register",
+		"receiptRegisterDisconnected": "Disconnected Receipt Register"
 	},
 	"openapi": {
 		"models": {
 			"legacy": "Legacy",
+			"legacy2": "Split (Legacy 2)",
 			"package": "Package"
 		}
 	},
 	"metrics": {
 		"value": "Value",
+		"smsCount": "SMS Count",
 		"valueReceive": "Received Value",
 		"trafficSentVolume": "Sent Volume",
 		"trafficReceivedVolume": "Received Volume",
@@ -71,11 +82,20 @@
 		"tehran": "Tehran",
 		"province": "Province Centers"
 	},
+	"smsChannels": {
+		"IRANCELL_FA": "Irancell - Persian",
+		"IRANCELL_EN": "Irancell - English",
+		"MCI_FA": "MCI - Persian",
+		"MCI_EN": "MCI - English",
+		"OTHER_FA": "Other - Persian",
+		"OTHER_EN": "Other - English"
+	},
 	"shareModes": {
 		"auto": "Auto",
 		"manual": "Manual"
 	},
 	"placeholders": {
+		"selectCompanyTypeFirst": "Select the company type first",
 		"selectService": "Select service",
 		"selectFiscalYear": "Select fiscal year",
 		"selectOpenapiModel": "Select OpenAPI model",
@@ -89,6 +109,8 @@
 		"note": "e.g. short note about the prediction"
 	},
 	"messages": {
+		"registeredLoadFailed": "Failed to load registered predictions",
+		"registeredEmpty": "No registered predictions found",
 		"unknownError": "Unknown error",
 		"submitError": "Prediction submission failed",
 		"fixFormErrors": "Please fix the form errors",
@@ -109,7 +131,8 @@
 			"preview": "Summary",
 			"note": "Note",
 			"updatedAt": "Updated At",
-			"ordering": "Ordering"
+			"ordering": "Ordering",
+			"quarters": "Quarters (1-4)"
 		},
 		"placeholders": {
 			"ordering": "Select ordering"
@@ -126,7 +149,7 @@
 			"income": "Income",
 			"price": "Sell Price",
 			"companyType": "Company Type",
-			"locations": "Locations"
+			"priceBuy": "Buy price"
 		}
 	},
 	"errors": {
@@ -141,11 +164,13 @@
 		},
 		"quarters": {
 			"allRequired": "All quarter percentages are required",
-			"range": "Each quarter percentage must be between 0 and 100",
+			"range": "Each quarter percentage must be between 1 and 100",
+			"sumOfThreeTooLarge": "The first three quarters must add up to less than 100",
 			"sumMustBeHundred": "Quarter percentages must add up to 100"
 		},
 		"openapi": {
-			"nonNegativeNumber": "This value must be zero or greater"
+			"nonNegativeNumber": "This value must be zero or greater",
+			"amountRequired": "Value is required"
 		},
 		"psp": {
 			"valueRequired": "Annual value is required and must be zero or greater",
@@ -160,7 +185,8 @@
 			"incomeRequired": "Annual income is required and must be zero or greater",
 			"expenseRequired": "Annual expense is required and must be zero or greater",
 			"priceBuyRequired": "SMS buy price is required and must be zero or greater",
-			"priceSellRequired": "SMS sell price is required and must be zero or greater"
+			"priceSellRequired": "SMS sell price is required and must be zero or greater",
+			"channelsRequired": "All channel percentages are required"
 		},
 		"traffic": {
 			"nonNegativeNumber": "This value must be zero or greater",

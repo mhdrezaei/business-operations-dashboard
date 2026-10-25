@@ -2,7 +2,6 @@ import type { PredictionFormValues } from "../../model/prediction.form.types";
 import type { PredictionListParams, PredictionListRow } from "../../model/prediction.list.types";
 import {
 	createPspPrediction,
-	fetchPspPredictionDetail,
 	fetchPspPredictionYears,
 	listPspPredictions,
 	updatePspPrediction,
@@ -23,7 +22,6 @@ export const pspPredictionService = {
 		findPspPredictionByFiscalYear(records as any[], selection.fiscalYear, selection.serviceFields),
 	fetchYears: (serviceId: number, companyType?: string | null) => fetchPspPredictionYears(serviceId, companyType) as Promise<any>,
 	fetchList: (params: PredictionListParams) => listPspPredictions(params) as Promise<any>,
-	fetchDetail: (id: number) => fetchPspPredictionDetail(id) as Promise<any>,
 	getYearsQueryKey: (serviceId: number | null | undefined, companyType?: string | null) =>
 		pspPredictionYearsQuery(serviceId, companyType).queryKey,
 	createRecord: (payload: Record<string, unknown>) => createPspPrediction(payload as any),
@@ -32,6 +30,6 @@ export const pspPredictionService = {
 		record: unknown,
 		context: { serviceId: number, serviceCode: PredictionListRow["serviceCode"], serviceLabel: string },
 	) => yearlyValueIncomePredictionToListRow(record as any, context),
-	toPayload: (values: PredictionFormValues, context: { companies: any[] }) =>
-		pspPredictionFormToPayload(values, context.companies) as unknown as Record<string, unknown>,
+	toPayload: (values: PredictionFormValues) =>
+		pspPredictionFormToPayload(values) as unknown as Record<string, unknown>,
 } as const;

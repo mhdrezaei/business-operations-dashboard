@@ -1,4 +1,4 @@
-import type { PredictionFormValues } from "../../shared/model/prediction.form.types";
+import type { PredictionFormValues, PredictionSubmitMode } from "../../shared/model/prediction.form.types";
 import type { PredictionListRow } from "../../shared/model/prediction.list.types";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -14,6 +14,12 @@ const emptyPredictionValues: PredictionFormValues = {
 	fiscalYear: null,
 	note: "",
 	serviceFields: {},
+};
+
+const SUBMIT_SUCCESS_MESSAGE_KEYS: Record<PredictionSubmitMode, string> = {
+	create_reset: "prediction.messages.createSuccess",
+	create_another: "prediction.messages.createAndAnotherSuccess",
+	create_and_edit: "prediction.messages.createAndEditSuccess",
 };
 
 function CreatePrediction() {
@@ -41,13 +47,33 @@ function CreatePrediction() {
 		<PredictionForm
 			initialValues={initialValues}
 			submitting={submitting}
-			onSubmit={async (values, form) => {
+			onSubmit={async (values, form, submitMode) => {
 				setSubmitting(true);
 				try {
 					const wasUpdate = Boolean(values.recordId);
-					await submitPrediction(values);
-					window.$message?.success(t(wasUpdate ? "prediction.messages.updateSuccess" : "prediction.messages.createSuccess"));
-					form.reset(emptyPredictionValues);
+					const saved = await submitPrediction(values) as { id: number };
+					window.$message?.success(t(
+						wasUpdate
+							? "prediction.messages.updateSuccess"
+							: SUBMIT_SUCCESS_MESSAGE_KEYS[submitMode],
+					));
+					if (submitMode === "create_and_edit") {
+						form.reset({ ...values, recordId: saved.id });
+					}
+					else if (submitMode === "create_another") {
+						form.reset({
+							...emptyPredictionValues,
+							serviceId: values.serviceId,
+							serviceCode: values.serviceCode,
+							fiscalYear: values.fiscalYear,
+							serviceFields: {
+								...predictionServiceRegistry[values.serviceCode!]?.createEmptyServiceFields(values.serviceFields),
+							},
+						});
+					}
+					else {
+						form.reset(emptyPredictionValues);
+					}
 					if (editRow)
 						navigate("/predictions/new", { replace: true, state: null });
 				}

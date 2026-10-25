@@ -1,0 +1,26 @@
+{
+	"title": "Telecom frame master data",
+	"subtitle": "Manage the BO (department / general office / person) and PO (division / person) structure",
+	"levels": {
+		"department": "Department",
+		"generalOffice": "General office",
+		"boPerson": "Person (BO)",
+		"division": "Division / technology",
+		"poPerson": "Person (PO)"
+	},
+	"people": "People",
+	"name": "Name",
+	"fullName": "Full name",
+	"personTitle": "Position",
+	"companyTypes": "Allowed company types",
+	"noCompanyTypes": "No company type selected",
+	"active": "Active",
+	"inactive": "Inactive",
+	"save": "Save",
+	"add": "Add",
+	"edit": "Edit",
+	"selectParentFirst": "Select the parent item first",
+	"empty": "Nothing here.",
+	"saved": "Saved.",
+	"deleted": "Deleted."
+}

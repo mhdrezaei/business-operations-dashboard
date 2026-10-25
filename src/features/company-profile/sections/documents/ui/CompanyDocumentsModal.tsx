@@ -7,8 +7,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Card, Form, Modal } from "antd";
 import React, { useEffect, useMemo } from "react";
 
-import { FormProvider, useForm } from "react-hook-form";
-import { DOC_TYPE_OPTIONS, VERIFICATION_STATUS_OPTIONS } from "../model/company-documents.constants";
+import { FormProvider, useForm, useWatch } from "react-hook-form";
+import { DOC_TYPE_OPTIONS, getCompanyDocumentAccept, VERIFICATION_STATUS_OPTIONS } from "../model/company-documents.constants";
 import { companyDocumentSchema } from "../model/company-documents.schema";
 
 interface Props {
@@ -39,8 +39,10 @@ export default function CompanyDocumentsModal({
 	const {
 		handleSubmit,
 		reset,
+		control,
 		formState: { isDirty, isValid, isSubmitting },
 	} = methods;
+	const docType = useWatch({ control, name: "doc_type" });
 
 	useEffect(() => {
 		if (open) {
@@ -106,9 +108,9 @@ export default function CompanyDocumentsModal({
 							<div className="col-span-2">
 								<RHFProUploadButton<CompanyDocumentFormValues, "file">
 									name="file"
-									label="فایل PDF"
+									label={docType === "LOGO" ? "فایل لوگو" : "فایل PDF"}
 									uploadProps={{
-										accept: "application/pdf",
+										accept: getCompanyDocumentAccept(docType),
 										maxCount: 1,
 										beforeUpload: () => false,
 										disabled,

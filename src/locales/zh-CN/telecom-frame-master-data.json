@@ -1,0 +1,26 @@
+{
+	"title": "电信框架基础数据",
+	"subtitle": "管理 BO（部门/总办公室/人员）与 PO（分部/人员）结构",
+	"levels": {
+		"department": "部门",
+		"generalOffice": "总办公室",
+		"boPerson": "人员 (BO)",
+		"division": "分部/技术",
+		"poPerson": "人员 (PO)"
+	},
+	"people": "人员",
+	"name": "名称",
+	"fullName": "姓名",
+	"personTitle": "职位",
+	"companyTypes": "允许的公司类型",
+	"noCompanyTypes": "未选择公司类型",
+	"active": "启用",
+	"inactive": "停用",
+	"save": "保存",
+	"add": "添加",
+	"edit": "编辑",
+	"selectParentFirst": "请先选择上级项目",
+	"empty": "暂无数据。",
+	"saved": "已保存。",
+	"deleted": "已删除。"
+}

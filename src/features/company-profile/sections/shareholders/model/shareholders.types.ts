@@ -13,7 +13,7 @@ export interface ShareholderDto {
 	company: number
 	full_name: string
 	national_id: string
-	ownership_percent: OwnershipPercentValue
+	ownership_percent: OwnershipPercentValue | null
 	note: string
 	created_at: string
 	updated_at: string

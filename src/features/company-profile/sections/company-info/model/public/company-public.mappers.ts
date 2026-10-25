@@ -12,23 +12,45 @@ function cleanArray(v: unknown): string[] {
 	return s.split(/\n|,/g).map(x => x.trim()).filter(Boolean);
 }
 
-function parseSocialLinks(raw: string | null | undefined): SocialLinkItem[] {
+export function parseSocialLinks(raw: unknown): SocialLinkItem[] {
 	if (!raw)
 		return [];
-	try {
-		const parsed = JSON.parse(raw);
-		return Array.isArray(parsed) ? parsed : [];
+	if (Array.isArray(raw)) {
+		return raw
+			.map((item) => {
+				const entry = (item ?? {}) as Record<string, unknown>;
+				return {
+					label: String(entry.name ?? entry.label ?? entry.key ?? "").trim(),
+					url: String(entry.url ?? entry.value ?? "").trim(),
+				};
+			})
+			.filter(item => item.label || item.url);
 	}
-	catch {
-		return [];
+	if (typeof raw === "object")
+		return Object.entries(raw).map(([label, url]) => ({ label: label.trim(), url: String(url ?? "").trim() }));
+	if (typeof raw === "string") {
+		try {
+			return parseSocialLinks(JSON.parse(raw.trim()));
+		}
+		catch {
+			return [];
+		}
 	}
+	return [];
 }
 
-function serializeSocialLinks(items: SocialLinkItem[]): string | null {
-	const cleaned = items
-		.map(i => ({ label: i.label.trim(), url: i.url.trim() }))
-		.filter(i => i.label && i.url);
-	return cleaned.length ? JSON.stringify(cleaned) : null;
+export function serializeSocialLinks(items: SocialLinkItem[]): Record<string, string> | undefined {
+	const entries = items
+		.map(i => [i.label.trim(), i.url.trim()] as const)
+		.filter(([label, url]) => label && url);
+	return entries.length ? Object.fromEntries(entries) : undefined;
+}
+
+export function normalizeWebsiteUrl(value: string): string {
+	const trimmed = value.trim();
+	if (!trimmed || /^https?:\/\//i.test(trimmed))
+		return trimmed;
+	return `https://${trimmed}`;
 }
 
 export interface PublicProfileFormValues {
@@ -107,7 +129,7 @@ export function publicFormToPayload(values: PublicProfileFormValues): UpsertPubl
 		fax: values.fax.map(x => x.trim()).filter(Boolean),
 		email: values.email.map(x => x.trim()).filter(Boolean),
 
-		website: values.website.trim() || null,
+		website: normalizeWebsiteUrl(values.website) || null,
 		working_hours: values.working_hours.trim() || null,
 		social_links: serializeSocialLinks(values.social_links),
 	};

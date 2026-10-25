@@ -28,7 +28,7 @@ const socialLinksSchema = z.preprocess(
 );
 
 export const publicProfileSchema = z.object({
-	legal_name: z.string().trim().min(2, "نام حقوقی الزامی است"),
+	legal_name: z.string().trim().default(""),
 	brand_name: z.string().trim().default(""),
 
 	legal_address: z.string().trim().default(""),

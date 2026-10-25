@@ -292,6 +292,8 @@ export function PerformanceForm({
 						: null}
 				</FixedStartSection>
 
+				{serviceCode === "commercial" && module?.Fields ? <module.Fields /> : null}
+
 				{showActionSection
 					? (
 						<div className="mt-4 w-full">

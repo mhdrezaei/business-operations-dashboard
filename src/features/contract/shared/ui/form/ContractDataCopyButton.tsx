@@ -1,15 +1,21 @@
-import type { ContractServicePath } from "#src/features/contract/api/contracts.api";
 import type { ContractFormValues } from "../../model/contract.form.types";
 import { fetchCompaniesByService } from "#src/api/common/common.api";
+import { contractDetailToFormValues } from "#src/features/contract/api/contract-detail.mappers";
 import { fetchCompanyContracts, fetchContractDetail } from "#src/features/contract/api/contracts.api";
-import { companyTypeMatches, isIxpCompanyName } from "#src/features/contract/shared/utils";
+import { filterSelectableCompanyTypes } from "#src/features/contract/shared/model/company-type-options";
+import { isCollocationCostContext, resolveContractServicePath } from "#src/features/contract/shared/model/contract-service-path";
+import { collocationCostCompanyQuery } from "#src/features/contract/shared/queries/contract.queries";
+import { isTelecomFrameCode } from "#src/features/contract/shared/services/telecom-frame/telecom-frame.types";
+import { companyTypeMatches } from "#src/features/contract/shared/utils";
 import { useAccess } from "#src/hooks";
+import { i18n } from "#src/locales";
 import { notification } from "#src/utils";
 import { CopyOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Alert, Button, Checkbox, Modal, Select, Spin } from "antd";
 import { useMemo, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 function asNumber(value: unknown): number | null {
 	if (value == null || value === "")
@@ -37,7 +43,7 @@ function contractLabel(row: Record<string, any>) {
 		end = new Intl.DateTimeFormat("fa-IR-u-ca-persian", { dateStyle: "short", timeZone: "UTC" }).format(date);
 	}
 	end ??= dateLabel(row.end_date ?? row.endDate) ?? `${String(row.end_jy ?? row.endYear ?? "—")}/${String(row.end_jm ?? row.endMonth ?? "—")}`;
-	return `${start} تا ${end}`;
+	return i18n.t("contract.copy.rangeLabel", { start, end, interpolation: { escapeValue: false } });
 }
 
 function addendumOptions(addenda: unknown, depth = 0): Array<{ value: string, label: string }> {
@@ -46,7 +52,7 @@ function addendumOptions(addenda: unknown, depth = 0): Array<{ value: string, la
 		const id = asNumber(row.id);
 		const number = row.display_addendum_number ?? row.displayAddendumNumber ?? row.contract_number ?? row.contractNumber ?? index + 1;
 		return [
-			...(id == null ? [] : [{ value: `addendum:${id}`, label: `${"— ".repeat(depth)}الحاقیه ${number}` }]),
+			...(id == null ? [] : [{ value: `addendum:${id}`, label: `${"— ".repeat(depth)}${i18n.t("contract.copy.addendumLabel", { number, interpolation: { escapeValue: false } })}` }]),
 			...addendumOptions(row.children, depth + 1),
 		];
 	});
@@ -64,22 +70,32 @@ function findAddendum(addenda: unknown, id: number): Record<string, any> | null 
 	return null;
 }
 
-function contractPath(code: unknown, companyType: unknown, counterparty: unknown): ContractServicePath | null {
-	const service = String(code ?? "").trim().toLowerCase();
-	if (service === "sms" || service.startsWith("sms/"))
-		return counterparty === "gov_ops" || service === "sms/vendor" ? "sms/vendor" : "sms/client";
-	if (service === "sms-commission" || service === "sms_commission")
-		return "sms-commission";
-	if (service === "sales_agency" || service === "sales-agency")
-		return String(companyType ?? "").trim().toUpperCase() === "SALES_REP_MANAGEMENT" ? "sales-agency/rep-management" : "sales-agency/outbound";
-	if (["openapi", "traffic", "psp", "commercial", "shahkar"].includes(service))
-		return service as ContractServicePath;
+const OMIT_FIELDS = new Set(["addenda", "agent", "isSigned", "isOfficial", "id", "children", "startYear", "startMonth", "endYear", "endMonth", "contractNumber", "description"]);
+// فیلدهای مخصوص قرارداد اصلی که روی الحاقیه مقصد معنا ندارند
+const ADDENDUM_TARGET_OMIT_FIELDS = new Set(["collocationPartnerType", "realStartYear", "realStartMonth", "displayAddendumNumber", "parentAddendumId", "fieldArrayId"]);
+const MAIN_TARGET_PATH = "serviceFields";
+
+function hasValue(value: unknown) {
+	return value != null && value !== "";
+}
+
+/** منبع هزینه رک مخابرات (cost) یا دیتاسنترهای شرکای تجاری؛ اگر هیچ‌کدام تشخیص داده نشد null. */
+function getCollocationSourceKind(source: Record<string, any>): "cost" | "partners" | null {
+	if (hasValue(source.telecomRackCount) || hasValue(source.telecomMonthlyRackRent))
+		return "cost";
+	if (Array.isArray(source.datacenters) && source.datacenters.length > 0)
+		return "partners";
 	return null;
 }
 
-const OMIT_FIELDS = new Set(["addenda", "agent", "isSigned", "isOfficial", "id", "children", "startYear", "startMonth", "endYear", "endMonth", "contractNumber", "description"]);
+interface ContractDataCopyButtonProps {
+	/** مسیر مقصد: قرارداد اصلی (serviceFields) یا مسیر یک الحاقیه */
+	targetPath?: string
+}
 
-export function ContractDataCopyButton() {
+export function ContractDataCopyButton({ targetPath = MAIN_TARGET_PATH }: ContractDataCopyButtonProps) {
+	const { t } = useTranslation();
+	const isAddendumTarget = targetPath !== MAIN_TARGET_PATH;
 	const { control, setValue } = useFormContext<ContractFormValues>();
 	const { getPermittedCompanyTypes } = useAccess();
 	const serviceId = useWatch({ control, name: "serviceId" });
@@ -87,7 +103,7 @@ export function ContractDataCopyButton() {
 	const serviceCode = useWatch({ control, name: "serviceCode" });
 	const companyType = useWatch<ContractFormValues, "companyType">({ control, name: "companyType" });
 	const counterparty = useWatch({ control, name: "counterpartyType" });
-	const path = contractPath(serviceCode, companyType, counterparty);
+	const path = resolveContractServicePath({ serviceCode, companyType, counterpartyType: counterparty });
 	const [open, setOpen] = useState(false);
 	const [confirming, setConfirming] = useState(false);
 	const [otherCompany, setOtherCompany] = useState(false);
@@ -98,26 +114,31 @@ export function ContractDataCopyButton() {
 	const [receiving, setReceiving] = useState(false);
 	const normalizedServiceCode = String(serviceCode ?? "").trim().toLowerCase();
 	const isSalesAgency = normalizedServiceCode === "sales_agency" || normalizedServiceCode === "sales-agency";
-	const hasSourceCompanyType = ["sms", "traffic", "psp"].includes(normalizedServiceCode) || isSalesAgency;
+	const isTelecomFrame = isTelecomFrameCode(normalizedServiceCode);
+	const hasSourceCompanyType = ["sms", "traffic", "psp"].includes(normalizedServiceCode) || isSalesAgency || isTelecomFrame;
 	const sourceCompanyTypeLabel = isSalesAgency
-		? "نوع همکاری (عاملیت فروش)"
+		? t("contract.field.salesAgencyType")
 		: normalizedServiceCode === "sms"
-			? "نوع شرکت (SMS)"
+			? t("contract.field.smsCompanyType")
 			: normalizedServiceCode === "traffic"
-				? "نوع شرکت (ترافیک)"
-				: "نوع شرکت (PSP)";
-	const sourceCompanyLabel = isSalesAgency || normalizedServiceCode === "psp" ? "نام شرکت" : "شرکت";
+				? t("contract.field.trafficCompanyType")
+				: isTelecomFrame ? t("contract.copy.telecomFrameCompanyType") : t("contract.field.pspCompanyType");
+	const sourceCompanyLabel = isSalesAgency || normalizedServiceCode === "psp" ? t("contract.field.companyName") : t("contract.formLabel.companyName");
 	const sourceCompanyTypeOptions = useMemo(() => {
 		if (!hasSourceCompanyType || serviceId == null)
 			return [];
 
-		const options = getPermittedCompanyTypes("contracts", "create", serviceId)
+		return filterSelectableCompanyTypes(serviceCode, getPermittedCompanyTypes("contracts", "create", serviceId))
 			.map(item => ({ label: item.value, value: item.key }));
-		if (normalizedServiceCode === "traffic" && !options.some(option => String(option.value).toUpperCase() === "IXP"))
-			options.push({ label: "IXP", value: "IXP" });
-		return options;
-	}, [getPermittedCompanyTypes, hasSourceCompanyType, normalizedServiceCode, serviceId]);
-	const sourcePath = contractPath(serviceCode, otherCompany ? sourceCompanyType : companyType, counterparty);
+	}, [getPermittedCompanyTypes, hasSourceCompanyType, serviceCode, serviceId]);
+	const sourcePath = resolveContractServicePath({ serviceCode, companyType: otherCompany ? sourceCompanyType : companyType, counterpartyType: counterparty });
+	// SMS vendor شرکت ندارد و قرارداد هزینه رک مخابرات شرکت سراسری BE را دارد
+	const isCostContext = isCollocationCostContext({ serviceCode, companyType, counterpartyType: counterparty });
+	const companyOptional = path === "sms/vendor";
+	const costCompany = useQuery({
+		...collocationCostCompanyQuery(serviceId ?? 0),
+		enabled: open && isCostContext && serviceId != null,
+	});
 
 	const companies = useQuery({
 		queryKey: ["common", "companies", "contract-copy", serviceId ?? null, sourceCompanyType ?? null],
@@ -130,8 +151,6 @@ export function ContractDataCopyButton() {
 			.filter((item) => {
 				if (!hasSourceCompanyType || !sourceCompanyType)
 					return !hasSourceCompanyType;
-				if (normalizedServiceCode === "traffic" && sourceCompanyType.toUpperCase() === "IXP")
-					return isIxpCompanyName(item.name);
 				return companyTypeMatches(item.company_type, sourceCompanyType);
 			})
 			.map(item => ({ label: item.name, value: Number(item.id) })),
@@ -140,11 +159,11 @@ export function ContractDataCopyButton() {
 	const selectedCompanyType = otherCompany
 		? sourceCompanyType
 		: typeof companyType === "string" ? companyType : null;
-	const resolvedCompanyId = otherCompany ? sourceCompanyId : companyId;
+	const resolvedCompanyId = otherCompany ? sourceCompanyId : companyId ?? (isCostContext ? costCompany.data ?? null : null);
 	const contracts = useQuery({
 		queryKey: ["contracts", "contract-copy", sourcePath, resolvedCompanyId ?? null, selectedCompanyType ?? null, serviceId ?? null],
-		queryFn: () => fetchCompanyContracts(sourcePath!, resolvedCompanyId!, selectedCompanyType, serviceId),
-		enabled: open && sourcePath != null && resolvedCompanyId != null && serviceId != null,
+		queryFn: () => fetchCompanyContracts(sourcePath!, resolvedCompanyId, selectedCompanyType, serviceId),
+		enabled: open && sourcePath != null && (resolvedCompanyId != null || (!otherCompany && companyOptional)) && serviceId != null,
 	});
 	const detail = useQuery({
 		queryKey: ["contracts", "contract-copy-detail", sourcePath, contractId ?? null],
@@ -155,7 +174,7 @@ export function ContractDataCopyButton() {
 		() => (contracts.data?.results ?? []).map((row: any) => ({ value: Number(row.id), label: contractLabel(row) })),
 		[contracts.data],
 	);
-	const partOptions = useMemo(() => [{ value: "main", label: "قرارداد اصلی" }, ...addendumOptions(detail.data?.addenda)], [detail.data]);
+	const partOptions = useMemo(() => [{ value: "main", label: t("contract.copy.mainContract") }, ...addendumOptions(detail.data?.addenda)], [detail.data, t]);
 
 	async function receive() {
 		if (contractId == null || part == null || sourcePath == null)
@@ -163,27 +182,34 @@ export function ContractDataCopyButton() {
 		setReceiving(true);
 		try {
 			const sourceDto = await fetchContractDetail(sourcePath, contractId);
-			const { contractDetailToFormValues } = await import("#src/features/contract/list/ui/components/ContractDetailModal");
 			const normalized = contractDetailToFormValues(sourceDto, sourcePath);
 			const source = part === "main"
 				? normalized.serviceFields
 				: findAddendum(normalized.serviceFields.addenda, Number(part.replace("addendum:", "")));
 			if (!source) {
-				notification.error({ message: "بخش انتخاب‌شده در قرارداد منبع یافت نشد.", placement: "topRight" });
+				notification.error({ message: t("contract.copy.sourcePartMissing"), placement: "topRight" });
+				return;
+			}
+			const isCollocationTarget = String(companyType ?? "").trim().toUpperCase() === "COLLOCATION";
+			const sourceKind = isCollocationTarget ? getCollocationSourceKind(source) : null;
+			if (sourceKind != null && sourceKind !== (counterparty === "gov_ops" ? "cost" : "partners")) {
+				notification.error({ message: t(`contract.copy.incompatible.${sourceKind}`), placement: "topRight" });
 				return;
 			}
 			for (const [key, value] of Object.entries(source)) {
-				if (!OMIT_FIELDS.has(key))
-					setValue((`serviceFields.${key}`) as any, value as any, { shouldDirty: true, shouldValidate: true });
+				// ردیف‌های تاریخچه وضعیت متعلق به قرارداد منبع‌اند؛ شناسه‌شان کپی نمی‌شود
+				const copied = key === "statusTimeline" && Array.isArray(value) ? value.map(({ id: _id, ...row }) => row) : value;
+				if (!OMIT_FIELDS.has(key) && !(isAddendumTarget && ADDENDUM_TARGET_OMIT_FIELDS.has(key)))
+					setValue((`${targetPath}.${key}`) as any, copied as any, { shouldDirty: true, shouldValidate: true });
 			}
 			setOpen(false);
 			setConfirming(false);
 			setContractId(null);
 			setPart(null);
-			notification.success({ message: "اطلاعات منبع با موفقیت دریافت شد.", placement: "topRight" });
+			notification.success({ message: t("contract.copy.success"), placement: "topRight" });
 		}
 		catch {
-			notification.error({ message: "دریافت اطلاعات قرارداد منبع ناموفق بود.", placement: "topRight" });
+			notification.error({ message: t("contract.copy.failure"), placement: "topRight" });
 		}
 		finally {
 			setReceiving(false);
@@ -204,25 +230,25 @@ export function ContractDataCopyButton() {
 				<Button
 					icon={<CopyOutlined />}
 					className="w-full"
-					disabled={companyId == null || serviceId == null || path == null}
+					disabled={(companyId == null && !isCostContext && !companyOptional) || serviceId == null || path == null}
 					onClick={() => setOpen(true)}
 				>
-					دریافت اطلاعات از قرارداد یا الحاقیه دیگر
+					{t("contract.copy.openButton")}
 				</Button>
 			</div>
 			<Modal
 				open={open}
-				title="دریافت اطلاعات از قرارداد یا الحاقیه دیگر"
+				title={t("contract.copy.openButton")}
 				onCancel={close}
 				onOk={() => setConfirming(true)}
-				okText="دریافت اطلاعات"
-				cancelText="انصراف"
+				okText={t("contract.copy.receive")}
+				cancelText={t("common.cancel")}
 				okButtonProps={{ disabled: part == null || detail.isLoading }}
 				destroyOnHidden
 			>
 				<div className="grid gap-4">
-					<div className="text-textSecondary">اطلاعات سرویس را از قرارداد اصلی یا الحاقیه‌ی ثبت‌شده در همین شرکت یا شرکت دیگری دریافت کنید.</div>
-					<div className="rounded-xl border border-yellow-500/20 bg-yellow-500/10 px-4 py-3 text-yellow-700 backdrop-blur-md">فقط فیلدهای سرویس جایگزین می‌شوند؛ شرکت، سرویس، شماره و تاریخ قرارداد، وضعیت امضا و الحاقیه‌های مقصد بدون تغییر می‌مانند. فقط اطلاعات ثبت‌شده‌ی منبع دریافت می‌شود.</div>
+					<div className="text-textSecondary">{t("contract.copy.intro")}</div>
+					<div className="rounded-xl border border-yellow-500/20 bg-yellow-500/10 px-4 py-3 text-yellow-700 backdrop-blur-md">{t("contract.copy.replaceNotice")}</div>
 					<Checkbox
 						checked={otherCompany}
 						onChange={(event) => {
@@ -233,7 +259,7 @@ export function ContractDataCopyButton() {
 							setPart(null);
 						}}
 					>
-						جستجو در شرکت‌های دیگر
+						{t("contract.copy.otherCompanies")}
 					</Checkbox>
 					{otherCompany
 						? (
@@ -243,7 +269,7 @@ export function ContractDataCopyButton() {
 										<div className="grid gap-2">
 											<div className="font-medium">{sourceCompanyTypeLabel}</div>
 											<Select
-												placeholder={`${sourceCompanyTypeLabel} را انتخاب کنید`}
+												placeholder={t("contract.copy.selectCompanyType", { type: sourceCompanyTypeLabel })}
 												value={sourceCompanyType ?? undefined}
 												onChange={(value) => {
 													setSourceCompanyType(value);
@@ -261,7 +287,7 @@ export function ContractDataCopyButton() {
 									<Select
 										showSearch
 										optionFilterProp="label"
-										placeholder={isSalesAgency || normalizedServiceCode === "psp" ? "نام شرکت را انتخاب کنید" : "شرکت منبع را انتخاب کنید"}
+										placeholder={isSalesAgency || normalizedServiceCode === "psp" ? t("contract.copy.selectCompanyName") : t("contract.copy.selectSourceCompany")}
 										value={sourceCompanyId ?? undefined}
 										onChange={(id) => {
 											setSourceCompanyId(id);
@@ -271,48 +297,48 @@ export function ContractDataCopyButton() {
 										options={companyOptions}
 										disabled={hasSourceCompanyType && sourceCompanyType == null}
 										loading={companies.isLoading}
-										notFoundContent="شرکتی یافت نشد"
+										notFoundContent={t("contract.copy.noCompany")}
 									/>
 								</div>
 							</div>
 						)
 						: null}
 					<div className="grid gap-2">
-						<div className="font-medium">انتخاب قرارداد منبع</div>
+						<div className="font-medium">{t("contract.copy.sourceContract")}</div>
 						{contracts.isLoading
 							? <div className="flex justify-center py-3"><Spin size="small" /></div>
 							: (
 								<Select
 									showSearch
 									optionFilterProp="label"
-									placeholder="قراردادی را انتخاب کنید"
+									placeholder={t("contract.copy.selectContract")}
 									value={contractId ?? undefined}
 									onChange={(id) => {
 										setContractId(id);
 										setPart(null);
 									}}
 									options={contractOptions}
-									notFoundContent="قراردادی یافت نشد"
+									notFoundContent={t("contract.copy.noContract")}
 								/>
 							)}
 					</div>
 					{contractId != null
 						? (
 							<div className="grid gap-2">
-								<div className="font-medium">انتخاب بخش منبع</div>
-								{detail.isLoading ? <div className="flex justify-center py-3"><Spin size="small" /></div> : <Select placeholder="قرارداد اصلی یا الحاقیه را انتخاب کنید" value={part ?? undefined} onChange={setPart} options={partOptions} />}
+								<div className="font-medium">{t("contract.copy.sourcePart")}</div>
+								{detail.isLoading ? <div className="flex justify-center py-3"><Spin size="small" /></div> : <Select placeholder={t("contract.copy.selectPart")} value={part ?? undefined} onChange={setPart} options={partOptions} />}
 							</div>
 						)
 						: null}
-					{contracts.isError ? <Alert type="error" showIcon message="دریافت قراردادهای منبع ناموفق بود" /> : null}
-					{detail.isError ? <Alert type="error" showIcon message="دریافت اطلاعات قرارداد منبع ناموفق بود" /> : null}
+					{contracts.isError ? <Alert type="error" showIcon message={t("contract.copy.contractsLoadFailed")} /> : null}
+					{detail.isError ? <Alert type="error" showIcon message={t("contract.copy.detailLoadFailed")} /> : null}
 				</div>
 			</Modal>
-			<Modal open={confirming} title={null} onCancel={() => setConfirming(false)} onOk={receive} confirmLoading={receiving} okText="تأیید" cancelText="انصراف" centered width={520} zIndex={1100}>
+			<Modal open={confirming} title={null} onCancel={() => setConfirming(false)} onOk={receive} confirmLoading={receiving} okText={t("common.confirm")} cancelText={t("common.cancel")} centered width={520} zIndex={1100}>
 				<div className="grid justify-items-center gap-4 px-2 py-2 text-center">
 					<ExclamationCircleOutlined className="text-[72px] leading-none text-orange-300" />
-					<div className="text-2xl font-extrabold leading-tight">دریافت اطلاعات از منبع انتخاب‌شده</div>
-					<div className="max-w-[420px] text-base font-semibold leading-7 text-text">فیلدهای سرویس با مقادیر ثبت‌شده‌ی منبع انتخاب‌شده جایگزین می‌شوند.</div>
+					<div className="text-2xl font-extrabold leading-tight">{t("contract.copy.confirmTitle")}</div>
+					<div className="max-w-[420px] text-base font-semibold leading-7 text-text">{t("contract.copy.confirmDescription")}</div>
 				</div>
 			</Modal>
 		</>

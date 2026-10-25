@@ -15,10 +15,7 @@ export async function submitPrediction(values: PredictionFormValues) {
 
 	const companies = await fetchCompaniesByService(values.serviceId);
 	const companyList = companies.results ?? [];
-	const payload = module.toPayload(values, {
-		companyIds: companyList.map(company => company.id),
-		companies: companyList,
-	});
+	const payload = module.toPayload(values, { companies: companyList });
 
 	const operation = values.recordId ? "update" : "create";
 

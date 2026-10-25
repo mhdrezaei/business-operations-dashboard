@@ -16,6 +16,8 @@ export interface LegalProfileFormValues {
 	tax_registration_number: string
 	registration_place: string
 	registration_date: string | null
+	official_gazette_number: string
+	official_gazette_date: string | null
 	legal_person_type: LegalPersonType | null
 	branch_code: string
 }
@@ -29,6 +31,8 @@ export const emptyLegalProfileValues: LegalProfileFormValues = {
 	tax_registration_number: "",
 	registration_place: "",
 	registration_date: null,
+	official_gazette_number: "",
+	official_gazette_date: null,
 	legal_person_type: null,
 	branch_code: "",
 };
@@ -43,6 +47,8 @@ export function dtoToLegalForm(dto: LegalProfileDto, meta: { serviceId: number, 
 		tax_registration_number: dto.tax_registration_number ?? "",
 		registration_place: dto.registration_place ?? "",
 		registration_date: dto.registration_date ?? null,
+		official_gazette_number: dto.official_gazette_number ?? "",
+		official_gazette_date: dto.official_gazette_date ?? null,
 		legal_person_type: (dto.legal_person_type as any) ?? null,
 		branch_code: dto.branch_code ?? "",
 	};
@@ -58,7 +64,9 @@ export function legalFormToPayload(values: LegalProfileFormValues): UpsertLegalP
 		registration_number: values.registration_number.trim() || null,
 		tax_registration_number: values.tax_registration_number.trim() || null,
 		registration_place: values.registration_place.trim() || null,
-		registration_date: values.registration_date ?? null,
+		registration_date: values.registration_date || null,
+		official_gazette_number: values.official_gazette_number.trim() || null,
+		official_gazette_date: values.official_gazette_date || null,
 
 		legal_person_type: values.legal_person_type ?? null,
 		branch_code: values.branch_code.trim() || null,

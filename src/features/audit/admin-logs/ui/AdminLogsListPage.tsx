@@ -7,6 +7,7 @@ import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { fetchAuditLogsList } from "../api/admin-logs.api";
+import { formatAuditLogDateParam } from "../model/admin-logs.utils";
 import { AdminLogDetailsModal } from "./components/AdminLogDetailsModal";
 import { getAdminLogsColumns } from "./constants/admin-logs.columns";
 
@@ -18,6 +19,9 @@ function getAuditLogsQuery(params: Record<string, unknown>): AuditLogsListQuery 
 			? Number(rawStatusCode)
 			: undefined;
 
+	const [createdFrom, createdTo] = Array.isArray(params.created_at_range) ? params.created_at_range : [];
+	const actor = Number(params.actor);
+
 	return {
 		page: Number(params.current) || 1,
 		page_size: Number(params.pageSize) || 20,
@@ -25,6 +29,9 @@ function getAuditLogsQuery(params: Record<string, unknown>): AuditLogsListQuery 
 		ordering: typeof params.ordering === "string" && params.ordering.trim() ? params.ordering.trim() : "-created_at",
 		method: typeof params.method === "string" && params.method.trim() ? params.method.trim() : undefined,
 		status_code: Number.isFinite(statusCode) ? statusCode : undefined,
+		actor: Number.isInteger(actor) && actor > 0 ? actor : undefined,
+		created_at__gte: formatAuditLogDateParam(createdFrom),
+		created_at__lte: formatAuditLogDateParam(createdTo),
 	};
 }
 

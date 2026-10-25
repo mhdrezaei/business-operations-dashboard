@@ -97,9 +97,13 @@ function parseRoleLabels(rolesField: unknown, roleNameById: Map<number, string>)
 export function getAdminUsersColumns({
 	t,
 	roleNameById,
+	userNameById,
+	getServiceLabel,
 }: {
 	t: TFunction<"translation", undefined>
 	roleNameById: Map<number, string>
+	userNameById: Map<number, string>
+	getServiceLabel: (serviceId: number) => string
 }): ProColumns<AdminUserDto>[] {
 	return [
 		{
@@ -188,6 +192,25 @@ export function getAdminUsersColumns({
 
 				return <Tag>کاربر عادی</Tag>;
 			},
+		},
+		{
+			title: "سرویس‌های قابل مدیریت",
+			dataIndex: "service_admin_service_ids",
+			ellipsis: true,
+			width: 220,
+			search: false,
+			render: (_, r) => {
+				const serviceIds = r.service_admin_service_ids ?? [];
+				return serviceIds.length ? serviceIds.map(serviceId => <Tag key={serviceId}>{getServiceLabel(serviceId)}</Tag>) : "-";
+			},
+		},
+		{
+			title: "ادمین سرویس والد",
+			dataIndex: "deputy_service_admin_id",
+			ellipsis: true,
+			width: 180,
+			search: false,
+			render: (_, r) => (r.deputy_service_admin_id != null ? userNameById.get(r.deputy_service_admin_id) ?? `#${r.deputy_service_admin_id}` : "-"),
 		},
 		{
 			title: "وضعیت",

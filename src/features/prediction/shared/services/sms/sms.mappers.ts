@@ -5,7 +5,6 @@ import type {
 	PredictionServiceCode,
 	PredictionShareMode,
 	PredictionShareSectionValue,
-	SmsChannelCode,
 	SmsChannelSharesValue,
 	SmsManualSharesValue,
 	SmsPredictionServiceFields,
@@ -19,6 +18,7 @@ import {
 	createEmptySmsFields,
 	createEmptySmsManualShares,
 	SMS_CHANNEL_OPTIONS,
+	SMS_METRIC_KEYS,
 } from "./sms.config";
 
 function isShareMode(value: unknown): value is PredictionShareMode {
@@ -91,23 +91,26 @@ function normalizeChannelShares(value: unknown): SmsChannelSharesValue {
 	if (!value || typeof value !== "object")
 		return fallback;
 
-	const raw = value as Record<string, unknown>;
-	const channels = raw.channels;
-	const channelValue = channels && typeof channels === "object"
-		? (channels as Record<string, unknown>).value
-		: null;
-
-	if (!channelValue || typeof channelValue !== "object")
+	const channels = (value as Record<string, unknown>).channels;
+	if (!channels || typeof channels !== "object")
 		return fallback;
 
-	return {
-		value: Object.fromEntries(
-			SMS_CHANNEL_OPTIONS.map(channel => [
-				channel.key,
-				toNullableNumber((channelValue as Record<string, unknown>)[channel.key]),
-			]),
-		) as Record<SmsChannelCode, number | null>,
-	};
+	return Object.fromEntries(
+		SMS_METRIC_KEYS.map((metric) => {
+			const metricChannels = (channels as Record<string, unknown>)[metric];
+			return [
+				metric,
+				Object.fromEntries(
+					SMS_CHANNEL_OPTIONS.map(channel => [
+						channel.key,
+						metricChannels && typeof metricChannels === "object"
+							? toNullableNumber((metricChannels as Record<string, unknown>)[channel.key])
+							: null,
+					]),
+				),
+			];
+		}),
+	) as SmsChannelSharesValue;
 }
 
 function buildSharePayload(
@@ -123,7 +126,7 @@ function buildSharePayload(
 		.filter(companyId => Number.isInteger(companyId) && companyId > 0));
 
 	return Object.fromEntries(
-		(["value", "income", "expense"] as const).map((metric) => {
+		SMS_METRIC_KEYS.map((metric) => {
 			const state = manualShares[metric];
 
 			if (state.mode !== "manual")
@@ -145,16 +148,22 @@ function buildSharePayload(
 	);
 }
 
-function buildChannelPayload(channels: SmsChannelSharesValue) {
-	const value = Object.fromEntries(
-		SMS_CHANNEL_OPTIONS
-			.map(channel => [channel.key, toNumberOrZero(channels.value[channel.key])] as const)
-			.filter(([, amount]) => amount > 0),
+function buildChannelPayload(channels: SmsChannelSharesValue, manualShares: SmsManualSharesValue) {
+	const payload = Object.fromEntries(
+		SMS_METRIC_KEYS
+			.filter(metric => manualShares[metric].mode === "manual")
+			.map(metric => [
+				metric,
+				Object.fromEntries(
+					SMS_CHANNEL_OPTIONS
+						.map(channel => [channel.key, toNullableNumber(channels[metric][channel.key])] as const)
+						.filter(([, amount]) => amount != null),
+				),
+			] as const)
+			.filter(([, metricChannels]) => Object.keys(metricChannels).length > 0),
 	);
 
-	return Object.keys(value).length > 0
-		? { value }
-		: null;
+	return Object.keys(payload).length > 0 ? payload : null;
 }
 
 export function dtoToSmsPredictionForm(record: SmsPredictionYearDto): Partial<PredictionFormValues> {
@@ -190,17 +199,17 @@ export function smsPredictionFormToPayload(
 		...createEmptySmsFields(),
 		...(values.serviceFields as Partial<SmsPredictionServiceFields>),
 	};
-	const channelPayload = buildChannelPayload(fields.channels);
+	const channelPayload = buildChannelPayload(fields.channels, fields.manualShares);
 
 	return {
 		service: Number(values.serviceId),
 		fiscal_year: Number(values.fiscalYear),
 		company_type: String(fields.companyType ?? ""),
-		value_year: toNumberOrZero(fields.valueYear),
+		value_year: Number(fields.valueYear),
 		income_year: toNumberOrZero(fields.incomeYear),
 		expense_year: toNumberOrZero(fields.expenseYear),
-		price_buy: toNumberOrZero(fields.priceBuy),
-		price_sell: toNumberOrZero(fields.priceSell),
+		price_buy: Number(fields.priceBuy),
+		price_sell: Number(fields.priceSell),
 		q1_percent: Number(fields.q1Percent ?? 0),
 		q2_percent: Number(fields.q2Percent ?? 0),
 		q3_percent: Number(fields.q3Percent ?? 0),
@@ -238,7 +247,7 @@ export function smsPredictionToListRow(
 		serviceCode: context.serviceCode,
 		serviceLabel: context.serviceLabel,
 		fiscalYear: toNullableNumber(record.fiscal_year),
-		preview: `${i18next.t("prediction.list.preview.companyType")}: ${getCompanyTypeToken(record.company_type) ?? "-"} | ${i18next.t("prediction.list.preview.value")}: ${formatPredictionNumber(record.value_year)} | ${i18next.t("prediction.list.preview.price")}: ${formatPredictionNumber(record.price_sell)}`,
+		preview: `${i18next.t("prediction.list.preview.companyType")}: ${getCompanyTypeToken(record.company_type) ?? "-"} | ${i18next.t("prediction.list.preview.value")}: ${formatPredictionNumber(record.value_year)} | ${i18next.t("prediction.list.preview.priceBuy")}: ${formatPredictionNumber(record.price_buy)} | ${i18next.t("prediction.list.preview.price")}: ${formatPredictionNumber(record.price_sell)}`,
 		note: String(record.note ?? ""),
 		createdAt: record.created_at ?? null,
 		updatedAt: record.updated_at ?? null,

@@ -1,4 +1,4 @@
-import type { PerformanceContractServicePath, PerformanceReportPeriodType } from "#src/features/performance/api/performances.api";
+import type { PerformanceContractServicePath, PerformanceReportAvailabilityQuery } from "#src/features/performance/api/performances.api";
 import { fetchCompaniesByService, fetchServices } from "#src/api/common/common.api";
 import {
 	fetchMonthlyContractStatus,
@@ -9,10 +9,10 @@ import {
 } from "#src/features/performance/api/performances.api";
 import { queryOptions } from "@tanstack/react-query";
 
-export function servicesQuery() {
+export function servicesQuery(domain?: string) {
 	return queryOptions({
-		queryKey: ["common", "services"],
-		queryFn: fetchServices,
+		queryKey: ["common", "services", { domain }],
+		queryFn: () => fetchServices({ domain }),
 		staleTime: 5 * 60 * 1000,
 	});
 }
@@ -51,15 +51,17 @@ export function performanceContractsQuery({
 	servicePath,
 	serviceId,
 	companyId,
+	companyType,
 }: {
 	servicePath: PerformanceContractServicePath | null
 	serviceId: number | null | undefined
 	companyId: number | null | undefined
+	companyType?: string | null | undefined
 }) {
 	return queryOptions({
-		queryKey: ["performances", "contracts", { servicePath, serviceId, companyId }],
+		queryKey: ["performances", "contracts", { servicePath, serviceId, companyId, companyType }],
 		enabled: !!servicePath && !!serviceId && !!companyId,
-		queryFn: () => fetchPerformanceContracts(servicePath!, serviceId!, companyId!),
+		queryFn: () => fetchPerformanceContracts(servicePath!, serviceId!, companyId!, companyType),
 		staleTime: 30 * 1000,
 	});
 }
@@ -102,26 +104,11 @@ export function smsCommissionAgentsQuery(enabled: boolean) {
 	});
 }
 
-export function performanceReportAvailabilityQuery({
-	serviceId,
-	shPeriods,
-	companyType,
-	periodType,
-}: {
-	serviceId: number | null | undefined
-	shPeriods?: string[]
-	companyType?: string | null | undefined
-	periodType?: PerformanceReportPeriodType | null | undefined
-}) {
-	const periodsKey = (shPeriods ?? [])
-		.map(item => String(item ?? "").trim())
-		.filter(Boolean)
-		.join(",");
-
+export function performanceReportAvailabilityQuery(params: PerformanceReportAvailabilityQuery | null) {
 	return queryOptions({
-		queryKey: ["performances", "report", "availability", { serviceId, periods: periodsKey, companyType, periodType }],
-		enabled: !!serviceId,
-		queryFn: () => fetchPerformanceReportAvailability(serviceId!, shPeriods, companyType, periodType),
+		queryKey: ["performances", "report", "availability", params],
+		enabled: !!params,
+		queryFn: () => fetchPerformanceReportAvailability(params!),
 		staleTime: 30 * 1000,
 	});
 }

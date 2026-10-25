@@ -6,6 +6,52 @@
 		"performanceReportResultsSubtitle": "Report results appear after selecting the filters.",
 		"performanceReportPeriodCount": "{{periodCount}} periods"
 	},
+	"smsGatewayImport": {
+		"summary": {
+			"imported_count": "New SMS service records registered",
+			"updated_count": "SMS service records updated",
+			"commission_imported_count": "New SMS agency service records registered",
+			"commission_updated_count": "SMS agency service records updated",
+			"skipped_count": "Skipped records"
+		},
+		"jobStatus": {
+			"PENDING": "Queued",
+			"RUNNING": "Running",
+			"SUCCESS": "Succeeded",
+			"FAILED": "Failed"
+		},
+		"processingTitle": "Processing...",
+		"processingDescription": "The import is running in the background, please wait.",
+		"jobFailed": "Import processing failed",
+		"pollTimeout": "Still processing, please check again later.",
+		"searchPlaceholder": "Search by company name...",
+		"selectAll": "Select all",
+		"selectedCount": "{{selected}} of {{total}} selected",
+		"noSearchResult": "No company found with this name.",
+		"pollFailed": "Could not check the import status; please check the import history.",
+		"status": {
+			"will_create": "Will be created",
+			"will_update": "Will be updated",
+			"no_contract": "No contract",
+			"unmapped": "Unmapped"
+		},
+		"selectYear": "Select year",
+		"shMonth": "Jalali month",
+		"refreshPreview": "Refresh preview",
+		"preview": "Preview",
+		"confirmAndRegister": "Confirm and register",
+		"emptyInline": "Select a year and month to display the data automatically",
+		"emptyManual": "Select a year and month, then fetch the preview",
+		"previewResult": "Preview result",
+		"itemUnit": "items",
+		"unmatchedCompany": "Company not matched",
+		"gatewayName": "Gateway name",
+		"type": "Type",
+		"modalTitle": "Register performance from SMS Gateway",
+		"successTitle": "Data registered successfully",
+		"successSummary": "Registration summary:",
+		"ok": "OK"
+	},
 	"actions": {
 		"clearForm": "Clear Form",
 		"submit": "Submit",
@@ -14,7 +60,9 @@
 		"editPerformance": "Edit Performance",
 		"deletePerformance": "Delete Performance",
 		"downloadPdf": "Download PDF",
-		"downloadExcel": "Download Excel"
+		"downloadExcel": "Download Excel",
+		"submitPerformance": "Register performance",
+		"createPerformance": "Create performance"
 	},
 	"columns": {
 		"id": "ID",
@@ -79,7 +127,22 @@
 		"customerNationalId": "Customer National ID",
 		"provinceCode": "Province Code",
 		"commercialServiceType": "Commercial Service Type",
-		"valueReceive": "Received Value"
+		"valueReceive": "Received Value",
+		"collocationMode": "Mode",
+		"totalCost": "Total cost",
+		"totalSales": "Total monthly sales",
+		"creditTotal": "Total monthly credit",
+		"rackFullCount": "Full rack (count)",
+		"rackQuarterCount": "Quarter rack (count)",
+		"rackUnitCount": "Rack unit (count)",
+		"rackFullIncome": "Full rack income",
+		"rackQuarterIncome": "Quarter rack income",
+		"rackUnitIncome": "Rack unit income",
+		"newCustomerCount": "New customers",
+		"newCustomerIncome": "New customer income",
+		"performanceIncome": "Net performance income",
+		"costItems": "Cost breakdown",
+		"rowType": "Row type"
 	},
 	"ordering": {
 		"newestId": "Newest (ID)",
@@ -98,6 +161,7 @@
 	"operator": {
 		"irancell": "Irancell",
 		"mci": "MCI",
+		"rightel": "Rightel",
 		"other": "Other"
 	},
 	"operationType": {
@@ -134,7 +198,9 @@
 		"example60000": "e.g. 60000",
 		"example80000": "e.g. 80000",
 		"example120000000": "e.g. 120000000",
-		"example450": "e.g. 450"
+		"example450": "e.g. 450",
+		"allYears": "All years",
+		"exampleConversionRatio": "e.g. 1.5"
 	},
 	"labels": {
 		"baseInformation": "Base Performance Information",
@@ -161,12 +227,14 @@
 		"byCompany": "Aggregation by Company",
 		"byMonth": "Aggregation by Month",
 		"byOperator": "Aggregation by Operator",
-		"byLanguage": "Aggregation by Language"
+		"byLanguage": "Aggregation by Language",
+		"byDataCenter": "Aggregate by data center"
 	},
 	"smsReportType": {
 		"normal": "Normal Report",
 		"finance": "Finance Report",
-		"summary": "Summary Report"
+		"summary": "Summary Report",
+		"operatorGovernment": "Operators and government"
 	},
 	"periodType": {
 		"sh": "Solar (Jalali) Year/Month",
@@ -197,7 +265,11 @@
 		"noReportData": "There is no data to export",
 		"popupBlocked": "The PDF window was blocked by the browser",
 		"registerSuccess": "Performance registered successfully",
-		"updateSuccess": "Performance updated successfully"
+		"updateSuccess": "Performance updated successfully",
+		"noCreateAccess": "No permission to create",
+		"noEditAccess": "No permission to edit",
+		"editBeforeCutoff": "Editing is not allowed for periods before 1404/4.",
+		"reportActionsAggregated": "Creating or editing a performance is not available in aggregated mode."
 	},
 	"modal": {
 		"registerPerformance": "Register Performance",
@@ -229,24 +301,31 @@
 		"monthlyPerformanceFileRequired": "Monthly performance file is required",
 		"trafficTehranRequired": "Tehran sent and received values are required",
 		"trafficCountyRequiredWhenEnabled": "County sent and received values are required when county entry is enabled",
-		"allCommercialFilesRequired": "All commercial service files must be selected",
 		"serviceNotSelected": "Service is not selected",
 		"deleteCompositeKeyIncomplete": "Composite key for delete operation is incomplete",
 		"deleteUniqueKeyNotFound": "ID or unique key was not found for deleting record",
-		"invalidSalesAgentId": "Sales agent id is invalid"
+		"invalidSalesAgentId": "Sales agent id is invalid",
+		"trafficAtLeastOneLocation": "Enable at least one of the Tehran or County centers performance sections"
 	},
 	"contractModel": {
 		"legacy": "Legacy",
-		"package": "Package"
+		"package": "Package",
+		"legacy_2": "Separated"
 	},
 	"badges": {
 		"usedAddendum": "Based on addendum",
 		"hasCountyContract": "Has county contract",
-		"noCountyContract": "No county contract"
+		"noCountyContract": "No county contract",
+		"official": "Official",
+		"unofficial": "Unofficial"
 	},
 	"traffic": {
 		"tehranContractUnit": "Tehran effective unit this month",
 		"countyContractUnit": "County centers effective unit this month",
+		"created": "Created",
+		"stepDownload": "Download template file",
+		"stepUpload": "Upload performance file",
+		"stepImport": "Import values",
 		"excelTitle": "Traffic Performance Excel",
 		"submitMethod": "Submission Method",
 		"templateUpload": "Template Upload",
@@ -269,7 +348,40 @@
 			"download": "Download Edit Template",
 			"upload": "Upload Edited File",
 			"resultTitle": "Traffic File Upload Result",
-			"hint": "Select year and month first, then download the template, edit it and upload it again."
+			"hint": "Select year and month first, then download the template, edit it and upload it again.",
+			"totalRows": "Total rows",
+			"filledRows": "Filled rows",
+			"updated": "Updated",
+			"skippedEmpty": "Skipped (empty)",
+			"rejected": "Rejected",
+			"rejectionReasons": "Rejection reasons",
+			"noReasons": "Nothing to show.",
+			"rejectedRows": "Rejected rows",
+			"row": "Row",
+			"reason": "Reason",
+			"noRejectedRows": "No rows were rejected.",
+			"stepDownload": "Download the monthly performance template",
+			"stepUpload": "Upload the traffic performance Excel file",
+			"stepImport": "Import the Excel values into performance",
+			"bulkTitle": "Bulk edit traffic performance"
+		},
+		"tehranAdd": "Add Tehran performance",
+		"countyAdd": "Add County centers performance",
+		"collocation": {
+			"partnerType": "Partner type",
+			"selectPartnerFirst": "Select the partner type first",
+			"loadingContracts": "Loading datacenter contracts...",
+			"noRows": "No datacenter has been selected for this performance yet.",
+			"noActiveContract": "No active datacenter contract was found for this company in the selected period.",
+			"addDatacenter": "Add datacenter",
+			"addDatacenterPlaceholder": "Select a datacenter from the contract",
+			"noMoreDatacenters": "No other datacenter is available in the contract",
+			"datacenterFallback": "Datacenter {{id}}",
+			"metrics": {
+				"ipCount": "IP count",
+				"bandwidthUsed": "Bandwidth used",
+				"ampereUsed": "Ampere used"
+			}
 		}
 	},
 	"commercial": {
@@ -277,7 +389,10 @@
 		"uploadOnlyDescription": "Manual registration is not available for this service and only file upload is supported.",
 		"servicesFile": "Upload Services File",
 		"provinceCodeFile": "Upload Province Code File",
-		"monthlyPerformanceFile": "Upload Monthly Performance"
+		"monthlyPerformanceFile": "Upload Monthly Performance",
+		"selectFile": "Select a file.",
+		"upload": "Upload file",
+		"uploadSuccess": "{{title}} uploaded successfully."
 	},
 	"fields": {
 		"psp": {
@@ -301,7 +416,13 @@
 			"billInquiryValue": "Bill Inquiry Performance",
 			"receiptRegisterValue": "Receipt Register Performance",
 			"trafficRevenue": "Traffic Revenue",
-			"trafficPackageCount": "Traffic Package Count"
+			"trafficPackageCount": "Traffic Package Count",
+			"billInquiryMidtermValue": "Mid-term Bill Inquiry Performance",
+			"billInquiryEndtermValue": "End-term Bill Inquiry Performance",
+			"receiptRegisterConnectedValue": "Connected Receipt Register Performance",
+			"receiptRegisterDisconnectedValue": "Disconnected Receipt Register Performance",
+			"walletWasCharged": "Wallet was charged",
+			"packagePerformanceValue": "SMS performance value"
 		},
 		"traffic": {
 			"tehranValue": "Sent Traffic in Tehran",
@@ -353,7 +474,11 @@
 			"billInquiryValueRequired": "Bill inquiry performance value is required",
 			"receiptRegisterValueRequired": "Receipt register performance value is required",
 			"trafficRevenueRequired": "Traffic revenue is required",
-			"trafficPackageCountRequired": "Traffic package count is required"
+			"trafficPackageCountRequired": "Traffic package count is required",
+			"billInquiryMidtermValueRequired": "Mid-term bill inquiry performance value is required",
+			"billInquiryEndtermValueRequired": "End-term bill inquiry performance value is required",
+			"receiptRegisterConnectedValueRequired": "Connected receipt register performance value is required",
+			"receiptRegisterDisconnectedValueRequired": "Disconnected receipt register performance value is required"
 		},
 		"psp": {
 			"performanceValueRequired": "Performance value is required",
@@ -377,13 +502,351 @@
 			"tehranValueReceiveRequired": "Tehran received traffic value is required",
 			"countyValueRequired": "County sent traffic value is required",
 			"countyValueReceiveRequired": "County received traffic value is required",
-			"conversionRatioRange": "Conversion ratio must be between 0 and 10"
+			"conversionRatioRange": "Conversion ratio must be between 0 and 10",
+			"conversionRatioDecimals": "Conversion ratio can have at most 3 decimal places",
+			"tehranConversionRatioRequired": "Tehran conversion ratio is required",
+			"countyConversionRatioRequired": "County centers conversion ratio is required",
+			"collocationPartnerRequired": "Select the collocation partner type.",
+			"collocationFieldRequired": "Enter all fields of the selected datacenters."
 		},
-		"commercial": {
-			"servicesFileRequired": "Services file is required",
-			"provinceCodeFileRequired": "Province code file is required",
-			"monthlyPerformanceFileRequired": "Monthly performance file is required"
+		"requiredField": "This field is required",
+		"salesAgency": {
+			"amountInvalid": "Amount must be a number",
+			"amountNegative": "Amount must be zero or more",
+			"costTitleRequired": "Enter a title and amount for every cost row",
+			"costItemsRequired": "Add at least one cost row"
+		}
+	},
+	"smsGatewayReport": {
+		"lockedNotice": "Your previous request is not ready yet; please wait. You cannot change filters or submit a new request until it finishes.",
+		"jobFailed": "Report generation failed.",
+		"requestFailed": "Could not reach the server. Please try again.",
+		"companiesLoadFailed": "Failed to load the company list.",
+		"saveFailed": "Failed to save the invoice.",
+		"updateFailed": "Failed to update the invoice.",
+		"duplicateInvoice": "An invoice is already registered for this year, month and operator."
+	},
+	"rowType": {
+		"government": "Government share",
+		"profit": "Karashab share",
+		"overall": "Overall"
+	},
+	"operatorGovernment": {
+		"mode": "Report type",
+		"modes": {
+			"operators": "Operators",
+			"government": "Government share"
 		},
-		"requiredField": "This field is required"
+		"smsServiceType": "SMS service type",
+		"scope": {
+			"both": "SMS + agency",
+			"commissionOnly": "Agency only",
+			"smsOnly": "SMS only"
+		},
+		"allOperators": "All operators",
+		"allLanguages": "All languages"
+	},
+	"list": {
+		"county": "County",
+		"traffic": "Traffic",
+		"performance": "Performance",
+		"customer": "Customer",
+		"noPerformanceForYear": "No performance has been registered for this company in the selected year.",
+		"selectFromList": "Select a performance from the list.",
+		"sidebarLabel": "Performance filters and list",
+		"selectServiceAndCompany": "Select service and company",
+		"companyPerformances": "Company performances",
+		"selectShYear": "Select year (Jalali)",
+		"noYearWithPerformance": "No year with performance found",
+		"fetchFailed": "Failed to fetch performances.",
+		"retry": "Try again",
+		"noEditAccess": "You do not have edit access",
+		"selectToEdit": "To edit, first select a service and company from the right column, then pick one of the performances from the list."
+	},
+	"detail": {
+		"services": {
+			"salesAgencyOutbound": "Country Sales Agency Service",
+			"salesAgencyRepManagement": "Sales Representatives Management",
+			"openapi": "OpenAPI Service",
+			"psp": "PSP Service",
+			"sms": "SMS Service",
+			"smsCommission": "SMS Agency Service",
+			"shahkar": "Shahkar Service"
+		},
+		"salesAgencyEditTitle": "Edit country sales agency performance",
+		"totalSalesRial": "Total monthly sales (IRR)",
+		"creditTotalRial": "Total monthly credit (IRR)",
+		"totalIncomeRial": "Total income (IRR)",
+		"costs": "Costs",
+		"smsCommissionEditTitle": "Edit SMS agency performance",
+		"billInquiryIncome": "Bill inquiry income this month",
+		"billInquiryExpense": "Bill inquiry expense this month",
+		"receiptRegisterIncome": "Receipt registration income this month",
+		"baseInfo": "Basic information",
+		"breakdown": "Cost and income breakdown"
+	},
+	"predictionsSummary": {
+		"periodModes": {
+			"shamsi_months": "Jalali year and month",
+			"fiscal_months": "Fiscal year and month",
+			"shamsi_quarters": "Jalali year and quarter",
+			"fiscal_quarters": "Fiscal year and quarter"
+		},
+		"sections": {
+			"performance": "Performance",
+			"predictions": "Forecast"
+		},
+		"calendar": {
+			"fiscal": "Fiscal",
+			"shamsi": "Jalali"
+		},
+		"columns": {
+			"section": "Section",
+			"type": "Type",
+			"period": "Period",
+			"calendar": "Calendar",
+			"realMonths": "Actual months"
+		},
+		"quarter": "Quarter {{value}}",
+		"yearPrefix": "Year {{year}}: ",
+		"monthRange": "{{from}} to {{to}}",
+		"monthRangeCrossYear": "{{from}} {{fromYear}} to {{to}} {{toYear}}",
+		"periodMonth": "{{year}} / Month {{month}}",
+		"periodQuarter": "{{year}} / Quarter {{quarter}}",
+		"periodMonths": "{{year}} / Months {{months}}",
+		"listSeparator": ", ",
+		"total": "Total",
+		"types": {
+			"BILL_INQUIRY_MIDTERM": "Mid-term bill inquiry",
+			"BILL_INQUIRY_ENDTERM": "End-term bill inquiry",
+			"RECEIPT_REGISTER_CONNECTED": "Connected receipt registration",
+			"RECEIPT_REGISTER_DISCONNECTED": "Disconnected receipt registration",
+			"SMS": "SMS",
+			"TRAFFIC": "Traffic",
+			"KARASHAB": "Karashab",
+			"NON_TELECOM": "Non-telecom",
+			"TELECOM": "Telecom"
+		},
+		"regions": {
+			"tehran": "Tehran",
+			"county": "Provincial areas"
+		},
+		"trafficType": "{{type}} ({{region}})",
+		"collocation": {
+			"rackFull": "Full rack",
+			"rackHalf": "Half rack",
+			"rackQuarter": "Quarter rack",
+			"rackUnit": "Rack unit",
+			"ip": "IP",
+			"port": "Port",
+			"bandwidth": "BW"
+		},
+		"validation": {
+			"selectService": "Select at least one service.",
+			"addYear": "Add at least one year.",
+			"selectPeriodValues": "Select at least one month or quarter for each year."
+		},
+		"messages": {
+			"exportFailed": "Failed to build or download the Excel file.",
+			"popupBlocked": "The browser popup is blocked. Please allow popups."
+		},
+		"meta": {
+			"services": "Services: {{value}}",
+			"periodType": "Period type: {{value}}",
+			"periods": "Periods: {{value}}",
+			"prices": "Prices: {{value}}"
+		},
+		"brand": "Negah",
+		"servicesCount": "{{total}} services",
+		"noPeriods": "There are no periods for this service.",
+		"noRows": "No data available.",
+		"filters": {
+			"title": "Report filters",
+			"subtitle": "Select the services, report type and periods you need.",
+			"open": "Expand filters",
+			"close": "Collapse filters"
+		},
+		"services": "Services",
+		"servicesPlaceholder": "Select services",
+		"reportMode": "Report mode",
+		"reportModes": {
+			"separated": "Separated",
+			"total": "Aggregated"
+		},
+		"outputMode": "File output type",
+		"outputModes": {
+			"classic": "Classic",
+			"singleTable": "Aggregated - single table"
+		},
+		"picker": {
+			"quarter": {
+				"section": "Report years and quarters",
+				"value": "Select quarter",
+				"selected": "Selected quarters",
+				"unit": "quarter",
+				"empty": "Select a year and quarter, then click \"Add date\"."
+			},
+			"month": {
+				"section": "Report years and months",
+				"value": "Select month",
+				"selected": "Selected months",
+				"unit": "month",
+				"empty": "Select a year and month, then click \"Add date\"."
+			}
+		},
+		"conversionRatio": {
+			"label": "Default conversion ratio",
+			"placeholder": "e.g. 1.25",
+			"hint": "If CP records have no conversion ratio, this value is used as a fallback."
+		},
+		"showRial": "Show amounts in Rial",
+		"apply": "Apply report",
+		"error": {
+			"title": "Failed to load the report",
+			"description": "Fetching the report data failed. Please try again."
+		},
+		"resultsSubtitle": "Performance and forecast results for the selected services and periods",
+		"exportExcel": "Excel export",
+		"exportPdf": "PDF export",
+		"emptyPrompt": "Select and apply the filters to view the report."
+	},
+	"smsGatewayPages": {
+		"operators": {
+			"MCI": "Hamrah-e Avval (MCI)",
+			"MTN": "Irancell (MTN)",
+			"RTL": "Rightel (RTL)",
+			"RIGHTEL": "Rightel (RIGHTEL)",
+			"UNKNOWN_OPERATOR": "Unknown operators",
+			"IRANCELL": "Irancell (IRANCELL)"
+		},
+		"shared": {
+			"registered": "Registered",
+			"notRegistered": "Not registered",
+			"preparing": "The report is being prepared…",
+			"save": "Save"
+		},
+		"traffic": {
+			"title": "Gateway SMS Traffic Report",
+			"subtitle": "SMS traffic by company, operator and delivery status",
+			"filters": "Filters",
+			"dateFrom": "From date",
+			"dateTo": "To date",
+			"pickDate": "Select date",
+			"company": "Company",
+			"allCompanies": "All permitted companies",
+			"operator": "Operator",
+			"allOperators": "All operators",
+			"deliveryStatus": "Delivery status",
+			"allStatuses": "All statuses",
+			"apply": "Apply filters",
+			"clear": "Clear filters",
+			"summary": "Report summary",
+			"grandTotal": "Grand total",
+			"companiesCount": "Number of companies",
+			"status": "Status",
+			"ready": "Ready",
+			"totalByOperator": "Total by operator",
+			"totalByStatus": "Total by delivery status",
+			"companyDetails": "Company details",
+			"noData": "No data to display.",
+			"selectFilters": "Select and apply filters to view the report.",
+			"closeSection": "Collapse {{title}}",
+			"openSection": "Expand {{title}}"
+		},
+		"invoices": {
+			"pageTitle": "SMS Operator Invoices",
+			"pageSubtitle": "Register and view the SMS count and cost invoiced by each operator",
+			"createTitle": "Register a new operator invoice",
+			"yearShamsi": "Year (Jalali)",
+			"monthShamsi": "Month (Jalali)",
+			"selectYearAndMonthFirst": "Select year and month first",
+			"smsCount": "SMS count",
+			"smsCost": "SMS cost (IRR)",
+			"faCountRequired": "Persian SMS count is required.",
+			"enCountRequired": "English SMS count is required.",
+			"submit": "Register invoice",
+			"listTitle": "Operator invoices",
+			"listSubtitle": "View, edit or delete registered invoices.",
+			"editInvoice": "Edit invoice",
+			"deleteInvoice": "Delete invoice",
+			"confirmDelete": "Delete this invoice?",
+			"faCountColumn": "Persian count",
+			"enCountColumn": "English count",
+			"faCostColumn": "Persian cost (IRR)",
+			"enCostColumn": "English cost (IRR)",
+			"reportTitle": "Monthly comparison report",
+			"showReport": "Show report",
+			"downloadPdf": "Download PDF",
+			"reportDocTitle": "Monthly comparison report of operator invoices",
+			"reportPeriod": "Report period: {{month}} {{year}}",
+			"summaryTableTitle": "Total per operator (Persian + English)",
+			"detailTableTitle": "By operator and language",
+			"detailTableSubtitle": "Operator invoice compared with the Negah system and Gateway.",
+			"editModalTitle": "Edit operator invoice",
+			"logoAlt": "Negah",
+			"columns": {
+				"invoiceStatus": "Invoice status",
+				"invoiceCount": "Invoice count",
+				"invoiceCost": "Invoice cost (IRR)",
+				"internalCount": "Negah system count",
+				"internalCost": "Negah system cost (IRR)",
+				"gatewayCount": "Gateway count",
+				"countDiff": "Count difference",
+				"costDiff": "Cost difference (IRR)",
+				"detailInvoiceStatus": "Operator invoice status",
+				"detailInvoiceCount": "Operator invoice count",
+				"detailInvoiceCost": "Operator invoice cost (IRR)",
+				"detailGatewayCount": "Gateway system count"
+			},
+			"messages": {
+				"selectYearMonth": "Please select year and month.",
+				"reportFailed": "Failed to fetch the report.",
+				"reportStatusFailed": "Failed to fetch the report status.",
+				"created": "Operator invoice registered successfully.",
+				"deleted": "Invoice deleted.",
+				"deleteFailed": "Failed to delete the invoice.",
+				"updated": "Invoice updated.",
+				"popupBlocked": "The browser popup is blocked. Please allow popups.",
+				"pdfFailed": "Failed to generate the PDF."
+			}
+		}
+	},
+	"reportPage": {
+		"filterTitle": "Service and report information",
+		"summaryCardsLabel": "Report totals",
+		"export": {
+			"summary": "Summary",
+			"generatedAt": "Generated on",
+			"brandName": "Negah",
+			"footer": "This report was generated automatically by the system."
+		},
+		"settings": {
+			"title": "Report settings",
+			"financialColumns": "Show financial columns",
+			"aggregation": "Aggregate totals",
+			"auditColumns": "Show created and edited columns"
+		},
+		"companyPicker": {
+			"title": "Company list",
+			"show": "Show company list",
+			"hide": "Hide company list",
+			"searchPlaceholder": "Search companies...",
+			"completeFilters": "Complete the report period filters first.",
+			"noSearchResult": "No company found with this name.",
+			"noCompanies": "No company found for this period."
+		},
+		"periodPicker": {
+			"section": "Report period and range",
+			"selectMonth": "Select month",
+			"selected": "Selected periods",
+			"unit": "period",
+			"empty": "Select a year and month, then click \"Add date\".",
+			"add": "Add date",
+			"selectYear": "Select year",
+			"yearPlaceholder": "Select a year",
+			"noneAdded": "No {{unit}} added yet",
+			"removeAll": "Remove all",
+			"removePeriod": "Remove period {{period}}"
+		}
 	}
 }

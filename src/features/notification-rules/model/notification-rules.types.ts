@@ -50,7 +50,7 @@ export interface NotificationRuleUpsertPayload {
 	service_names: string[]
 	days_before_end: number[]
 	channels: NotificationRuleChannel[]
-	payload_template: NotificationRulePayloadTemplate
+	payload_template?: NotificationRulePayloadTemplate
 	recipients: NotificationRuleRecipientDto[]
 }
 
@@ -61,12 +61,18 @@ export interface NotificationRunMeta {
 	fanout_event_ids?: number[]
 	created_event_ids?: number[]
 	scanned_contracts?: number
+	total_targets?: number
+	sent_count?: number
+	failed_count?: number
+	missing_mobile_user_ids?: number[]
+	failed_users?: unknown[]
 	[key: string]: unknown
 }
 
 export interface NotificationRunDto {
 	id: number
 	job_name: string
+	task_id?: string
 	started_at: string
 	finished_at: string | null
 	status: string
@@ -74,3 +80,4 @@ export interface NotificationRunDto {
 }
 
 export type NotificationRulesPaginatedResponse = Paginated<NotificationRuleDto>;
+export type NotificationRunsPaginatedResponse = Paginated<NotificationRunDto>;

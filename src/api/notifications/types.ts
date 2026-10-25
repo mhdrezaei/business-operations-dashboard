@@ -5,6 +5,9 @@ export interface NotificationInboxQuery {
 	page_size?: number
 	is_read?: boolean
 	channel?: string
+	rule_code?: string
+	items_page?: number
+	items_page_size?: number
 }
 
 export interface NotificationInboxDto {
@@ -47,7 +50,9 @@ export interface NotificationInboxResponse extends Paginated<NotificationItem> {
 }
 
 export interface NotificationMarkReadPayload {
-	ids: number[]
+	ids?: number[]
+	/** کل صندوق (بدون در نظر گرفتن صفحه/فیلتر) */
+	all?: boolean
 }
 
 export interface NotificationMarkStatePayload extends NotificationMarkReadPayload {

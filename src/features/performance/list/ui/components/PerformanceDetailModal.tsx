@@ -1,11 +1,14 @@
 import type { CompanyDto } from "#src/api/common/common.types.js";
 import type { PerformanceListItem, PerformanceServicePath } from "#src/features/performance/api/performances.api";
 import type { OpenApiContractModel } from "#src/features/performance/shared/model/performance.form.types";
+import type { CollocationRow } from "#src/features/performance/shared/services/traffic/traffic-collocation";
 import type { SectionTone } from "#src/shared/ui/section-card";
 import type { CSSProperties, ReactNode } from "react";
 import type { PerformanceListRow } from "../../model/performance.list.types";
+import type { TrafficLocation } from "../../model/traffic-locations";
 import { MONTH_OPTIONS } from "#src/features/contract/constant/jalali-date-options.js";
 import {
+	fetchMonthlyContractStatus,
 	fetchPerformanceContracts,
 	fetchPerformanceDetail,
 	fetchPerformanceList,
@@ -15,29 +18,40 @@ import {
 	upsertPerformance,
 } from "#src/features/performance/api/performances.api";
 import {
-	contractHasNewCustomerRate,
+	normalizeOpenApiContractModel,
 	normalizePerformanceRecord,
 	pickActiveContract,
 	pickCompanyTypeToken,
 	toNullableNumber,
 } from "#src/features/performance/shared/model/performance.helpers";
+import { monthlyContractStatusQuery, performanceContractsQuery } from "#src/features/performance/shared/queries/performance.queries";
 import { SalesAgencyPerformanceFields } from "#src/features/performance/shared/services/sales-agency/sales-agency.fields";
 import { salesAgencyFieldsSchema } from "#src/features/performance/shared/services/sales-agency/sales-agency.schema";
+import {
+	buildCollocationRowsFromPerformances,
+	buildCollocationRowsPayload,
+	collocationModeFromPerformances,
+	extractContractDatacenters,
+	isCollocationCompanyType,
+} from "#src/features/performance/shared/services/traffic/traffic-collocation";
+import { TrafficCollocationRows } from "#src/features/performance/shared/services/traffic/TrafficCollocationRows";
 import {
 	AlignedFormField,
 	useAlignedLabelWidth,
 } from "#src/shared/ui/aligned-form-field";
 import { DashedBorder } from "#src/shared/ui/dashed-border";
 import { DashedCard } from "#src/shared/ui/dashed-card";
-import { RHFProNumber, RHFProText } from "#src/shared/ui/rhf-pro";
+import { RHFProCheckbox, RHFProNumber, RHFProText } from "#src/shared/ui/rhf-pro";
 import { SectionCard } from "#src/shared/ui/section-card";
-
 import { DeleteOutlined, EditOutlined, ReloadOutlined } from "@ant-design/icons";
+
+import { useQuery } from "@tanstack/react-query";
 import { Button, Card, Modal, Popconfirm, Spin, Tag, theme } from "antd";
 import i18next from "i18next";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { isTrafficLocationRequired, TRAFFIC_LOCATIONS } from "../../model/traffic-locations";
 import "#src/shared/ui/form-layout/styles.css";
 
 type EditFormValues = Record<string, unknown>;
@@ -45,7 +59,7 @@ type EditFormValues = Record<string, unknown>;
 interface EditableFieldConfig {
 	key: string
 	label: string
-	type: "number" | "text"
+	type: "number" | "text" | "checkbox"
 	required?: boolean
 }
 
@@ -86,8 +100,8 @@ const SERVICE_DETAIL_KEYS: Record<PerformanceServicePath, string[]> = {
 	"sms-commission": [],
 	"traffic": ["company_type", "is_official"],
 	"commercial": ["customer_name", "customer_nic", "province_code", "service_type", "value", "income", "expense", "profit"],
-	"sales-agency/outbound": ["company_type", "total_sales"],
-	"sales-agency/rep-management": ["company_type", "credit_total", "income", "cost_items"],
+	"sales-agency/outbound": ["company_type", "total_sales", "income", "expense", "profit"],
+	"sales-agency/rep-management": ["company_type", "credit_total", "income", "total_cost", "profit"],
 };
 
 const HIDDEN_DETAIL_KEYS = new Set([
@@ -114,31 +128,31 @@ const HIDDEN_DETAIL_KEYS = new Set([
 	"traffic_has_county_contract",
 ]);
 
-const OPENAPI_PACKAGE_PERFORMANCE_LABEL = "مقدار عملکرد پیامک";
+const LEGACY_2_OPERATIONS = [
+	{ type: "BILL_INQUIRY_MIDTERM", field: "bill_inquiry_midterm_value", labelKey: "billInquiryMidtermValue" },
+	{ type: "BILL_INQUIRY_ENDTERM", field: "bill_inquiry_endterm_value", labelKey: "billInquiryEndtermValue" },
+	{ type: "RECEIPT_REGISTER_CONNECTED", field: "receipt_register_connected_value", labelKey: "receiptRegisterConnectedValue" },
+	{ type: "RECEIPT_REGISTER_DISCONNECTED", field: "receipt_register_disconnected_value", labelKey: "receiptRegisterDisconnectedValue" },
+] as const;
 
-function getSmsPerformanceFieldAddon(fieldKey: string) {
-	switch (fieldKey) {
-		case "sms_irancell_fa":
-		case "irancellFa":
-			return "ایرانسل - فارسی";
-		case "sms_irancell_en":
-		case "irancellEn":
-			return "ایرانسل - انگلیسی";
-		case "sms_mci_fa":
-		case "mciFa":
-			return "همراه اول - فارسی";
-		case "sms_mci_en":
-		case "mciEn":
-			return "همراه اول - انگلیسی";
-		case "sms_other_fa":
-		case "otherFa":
-			return "سایر - فارسی";
-		case "sms_other_en":
-		case "otherEn":
-			return "سایر - انگلیسی";
-		default:
-			return undefined;
-	}
+const SMS_FIELD_ADDON_PARTS: Record<string, [operator: string, language: string]> = {
+	sms_irancell_fa: ["IRANCELL", "FA"],
+	irancellFa: ["IRANCELL", "FA"],
+	sms_irancell_en: ["IRANCELL", "EN"],
+	irancellEn: ["IRANCELL", "EN"],
+	sms_mci_fa: ["MCI", "FA"],
+	mciFa: ["MCI", "FA"],
+	sms_mci_en: ["MCI", "EN"],
+	mciEn: ["MCI", "EN"],
+	sms_other_fa: ["OTHER", "FA"],
+	otherFa: ["OTHER", "FA"],
+	sms_other_en: ["OTHER", "EN"],
+	otherEn: ["OTHER", "EN"],
+};
+
+function getSmsPerformanceFieldAddon(fieldKey: string, t: (key: string) => string) {
+	const parts = SMS_FIELD_ADDON_PARTS[fieldKey];
+	return parts ? `${getOperatorLabel(parts[0], t)} - ${getLanguageLabel(parts[1], t)}` : undefined;
 }
 
 interface Props {
@@ -236,19 +250,19 @@ function resolveMonthLabel(value: unknown) {
 function resolveServiceDisplayName(service: PerformanceServicePath | null, value: unknown) {
 	const text = String(value ?? "").trim();
 	if (service === "sales-agency/outbound")
-		return "سرویس عاملیت فروش کشور";
+		return i18next.t("performance.detail.services.salesAgencyOutbound");
 	if (service === "sales-agency/rep-management")
-		return "مدیریت نمایندگان فروش";
+		return i18next.t("performance.detail.services.salesAgencyRepManagement");
 	if (service === "openapi")
-		return "سرویس OpenAPI";
+		return i18next.t("performance.detail.services.openapi");
 	if (service === "psp")
-		return "سرویس PSP";
+		return i18next.t("performance.detail.services.psp");
 	if (service === "sms")
-		return "سرویس پیامک";
+		return i18next.t("performance.detail.services.sms");
 	if (service === "sms-commission")
-		return "سرویس پیامک عاملیت";
+		return i18next.t("performance.detail.services.smsCommission");
 	if (service === "shahkar")
-		return "کلاسه شاهکار";
+		return i18next.t("performance.detail.services.shahkar");
 	return text || "-";
 }
 
@@ -396,6 +410,9 @@ function applyOpenApiInitialValues(
 			initialValues[targetKey] = fallbackValue;
 	};
 
+	LEGACY_2_OPERATIONS.forEach(operation => assignValue(operation.field, [operation.field], operation.type));
+	const walletRow = LEGACY_2_OPERATIONS.map(operation => operationRows.get(operation.type)).find(Boolean);
+	initialValues.wallet_was_charged = Boolean(walletRow?.wallet_charged ?? walletRow?.wallet_was_charged);
 	assignValue("bill_inquiry_value", ["bill_inquiry_value"], "BILL_INQUIRY");
 	assignValue("receipt_register_value", ["receipt_register_value"], "RECEIPT_REGISTER");
 	assignValue("traffic_income", ["traffic_income"], "TRAFFIC", ["income"]);
@@ -420,17 +437,6 @@ function getOpenApiOperationRowValue(
 	return getFirstDefinedValue(matchedRow as Record<string, unknown>, keys);
 }
 
-function normalizeOpenApiContractModel(value: unknown): OpenApiContractModel | null {
-	if (typeof value !== "string")
-		return null;
-
-	const normalized = value.trim().toLowerCase();
-	if (normalized === "legacy" || normalized === "package")
-		return normalized;
-
-	return null;
-}
-
 function resolveOpenApiContractModel(
 	detail: Record<string, unknown> | null,
 	record: PerformanceListRow | null,
@@ -452,6 +458,9 @@ function resolveOpenApiContractModel(
 			.map(row => toUpperText((row as Record<string, unknown>).operation_type))
 			.filter(Boolean),
 	);
+
+	if (LEGACY_2_OPERATIONS.some(operation => operationTypes.has(operation.type)))
+		return "legacy_2";
 
 	if (
 		operationTypes.has("TRAFFIC")
@@ -477,36 +486,6 @@ function resolveOpenApiContractModel(
 		return "legacy";
 
 	return null;
-}
-
-function buildOpenApiUpdatePayload(
-	row: PerformanceListItem,
-	basePayload: Record<string, unknown>,
-	fieldKey: string,
-	value: unknown,
-) {
-	return {
-		...basePayload,
-		operation_type: row.operation_type ?? null,
-		value: toPayloadValue(value),
-		[fieldKey]: toPayloadValue(value),
-	};
-}
-
-function buildOpenApiTrafficUpdatePayload(
-	row: PerformanceListItem,
-	basePayload: Record<string, unknown>,
-	trafficIncome: unknown,
-	trafficPackageCount: unknown,
-) {
-	return {
-		...basePayload,
-		operation_type: row.operation_type ?? null,
-		value: toPayloadValue(trafficPackageCount),
-		income: toPayloadValue(trafficIncome),
-		traffic_income: toPayloadValue(trafficIncome),
-		traffic_package_count: toPayloadValue(trafficPackageCount),
-	};
 }
 
 function getTrafficLocationKey(value: unknown) {
@@ -550,21 +529,17 @@ function applyTrafficInitialValues(
 function buildTrafficPayloadFields(values: EditFormValues, locations: Set<"TEHRAN" | "COUNTY">, isCp: boolean) {
 	const payload: Record<string, unknown> = {};
 
-	if (locations.has("TEHRAN")) {
-		payload.tehran_value = toPayloadValue(values.tehranValue);
-		payload.tehran_value_receive = toPayloadValue(values.tehranValueReceive);
-		payload.tehran_conversion_ratio = isCp ? toPayloadValue(values.tehranConversionRatio) : null;
-	}
-
-	if (locations.has("COUNTY")) {
-		const countyValue = toPayloadValue(values.countyValue);
-		const countyValueReceive = toPayloadValue(values.countyValueReceive);
-		if (countyValue != null || countyValueReceive != null) {
-			payload.county_value = countyValue;
-			payload.county_value_receive = countyValueReceive;
-			payload.county_conversion_ratio = isCp ? toPayloadValue(values.countyConversionRatio) : null;
+	TRAFFIC_LOCATIONS.forEach(({ location, prefix }) => {
+		if (!locations.has(location))
+			return;
+		const value = toPayloadValue(values[`${prefix}Value`]);
+		const valueReceive = toPayloadValue(values[`${prefix}ValueReceive`]);
+		if (value != null || valueReceive != null) {
+			payload[`${prefix}_value`] = value;
+			payload[`${prefix}_value_receive`] = valueReceive;
+			payload[`${prefix}_conversion_ratio`] = isCp ? toPayloadValue(values[`${prefix}ConversionRatio`]) : null;
 		}
-	}
+	});
 
 	return payload;
 }
@@ -688,6 +663,7 @@ export function PerformanceDetailModal({
 		() => normalizePerformanceRecord(record ?? {}),
 		[record],
 	);
+	const isCollocationRecord = service === "traffic" && !isUnregisteredMode && isCollocationCompanyType(normalizedRecord.companyType);
 	const hasSavedShahkarNewCustomerCount = [
 		detail?.new_customer_count,
 		detail?.newCustomerCount,
@@ -703,7 +679,7 @@ export function PerformanceDetailModal({
 		t("performance.fields.openapi.billInquiryValue"),
 		t("performance.fields.openapi.trafficRevenue"),
 		t("performance.fields.openapi.trafficPackageCount"),
-		OPENAPI_PACKAGE_PERFORMANCE_LABEL,
+		t("performance.fields.openapi.packagePerformanceValue"),
 	]);
 	const pspAlignedLabelStyle = useAlignedLabelWidth([
 		t("performance.fields.psp.performanceValue"),
@@ -714,6 +690,18 @@ export function PerformanceDetailModal({
 			return null;
 
 		if (service === "openapi") {
+			if (openApiContractModel === "legacy_2") {
+				return {
+					title: t("performance.modal.titles.openapi"),
+					readonlyKeys: [],
+					editableFields: [
+						...LEGACY_2_OPERATIONS.map(operation => ({ key: operation.field, label: t(`performance.fields.openapi.${operation.labelKey}`), type: "number" as const, required: true })),
+						{ key: "wallet_was_charged", label: t("performance.fields.openapi.walletWasCharged"), type: "checkbox" as const },
+					],
+					payloadKeys: [...LEGACY_2_OPERATIONS.map(operation => operation.field), "wallet_was_charged"],
+				};
+			}
+
 			if (openApiContractModel === "package") {
 				return {
 					title: t("performance.modal.titles.openapi"),
@@ -783,21 +771,21 @@ export function PerformanceDetailModal({
 
 		if (service === "sales-agency/outbound") {
 			return {
-				title: "ویرایش عملکرد عاملیت فروش کشور",
+				title: t("performance.detail.salesAgencyEditTitle"),
 				readonlyKeys: ["company_type"],
-				editableFields: [{ key: "total_sales", label: "فروش کل ماه (ریال)", type: "number", required: true }],
+				editableFields: [{ key: "total_sales", label: t("performance.detail.totalSalesRial"), type: "number", required: true }],
 				payloadKeys: ["company_type", "total_sales"],
 			};
 		}
 
 		if (service === "sales-agency/rep-management") {
 			return {
-				title: "ویرایش عملکرد عاملیت فروش کشور",
+				title: t("performance.detail.salesAgencyEditTitle"),
 				readonlyKeys: ["company_type"],
 				editableFields: [
-					{ key: "credit_total", label: "اعتبار کل ماهیانه (ریال)", type: "number", required: true },
-					{ key: "income", label: "درآمد کل (ریال)", type: "number", required: true },
-					{ key: "cost_items", label: "هزینه‌ها", type: "text", required: true },
+					{ key: "credit_total", label: t("performance.detail.creditTotalRial"), type: "number", required: true },
+					{ key: "income", label: t("performance.detail.totalIncomeRial"), type: "number", required: true },
+					{ key: "cost_items", label: t("performance.detail.costs"), type: "text", required: true },
 				],
 				payloadKeys: ["company_type", "credit_total", "income", "cost_items"],
 			};
@@ -821,7 +809,7 @@ export function PerformanceDetailModal({
 
 		if (service === "sms-commission") {
 			return {
-				title: "ویرایش عملکرد پیامک عاملیت",
+				title: t("performance.detail.smsCommissionEditTitle"),
 				readonlyKeys: ["sales_agent", "operator", "language"],
 				editableFields: [
 					{ key: "irancellFa", label: t("performance.fields.sms.irancellFa"), type: "number", required: true },
@@ -835,8 +823,16 @@ export function PerformanceDetailModal({
 			};
 		}
 
+		if (service === "traffic" && isCollocationRecord) {
+			return {
+				title: t("performance.modal.titles.traffic"),
+				readonlyKeys: ["company_type"],
+				editableFields: [],
+				payloadKeys: ["company_type"],
+			};
+		}
+
 		if (service === "traffic") {
-			const countyRequired = !isUnregisteredMode;
 			const isCpType = normalizedRecord.companyType?.toUpperCase() === "CP";
 			return {
 				title: t("performance.modal.titles.traffic"),
@@ -845,8 +841,8 @@ export function PerformanceDetailModal({
 					{ key: "tehranValue", label: t("performance.fields.traffic.tehranValue"), type: "number", required: true },
 					{ key: "tehranValueReceive", label: t("performance.fields.traffic.tehranValueReceive"), type: "number", required: true },
 					...(isCpType ? [{ key: "tehranConversionRatio", label: t("performance.fields.traffic.tehranConversionRatio"), type: "number" as const, required: false }] : []),
-					{ key: "countyValue", label: t("performance.fields.traffic.countyValue"), type: "number", required: countyRequired },
-					{ key: "countyValueReceive", label: t("performance.fields.traffic.countyValueReceive"), type: "number", required: countyRequired },
+					{ key: "countyValue", label: t("performance.fields.traffic.countyValue"), type: "number", required: true },
+					{ key: "countyValueReceive", label: t("performance.fields.traffic.countyValueReceive"), type: "number", required: true },
 					...(isCpType ? [{ key: "countyConversionRatio", label: t("performance.fields.traffic.countyConversionRatio"), type: "number" as const, required: false }] : []),
 				],
 				payloadKeys: ["company_type", "tehranValue", "tehranValueReceive", "tehranConversionRatio", "countyValue", "countyValueReceive", "countyConversionRatio"],
@@ -861,7 +857,7 @@ export function PerformanceDetailModal({
 			],
 			payloadKeys: ["customer_name", "customer_nic", "province_code", "service_type", "value"],
 		};
-	}, [service, openApiContractModel, isUnregisteredMode, normalizedRecord.companyType, showShahkarNewCustomerCount, t]);
+	}, [service, openApiContractModel, isUnregisteredMode, isCollocationRecord, normalizedRecord.companyType, showShahkarNewCustomerCount, t]);
 	const isOpenApiPackageEditLayout = service === "openapi" && openApiContractModel === "package";
 	const isSmsEditAlignedLayout = service === "sms" || service === "sms-commission";
 	const isPspEditLayout = service === "psp";
@@ -873,8 +869,11 @@ export function PerformanceDetailModal({
 		sh_month: t("performance.columns.month"),
 		value: t("performance.columns.value"),
 		value_receive: t("performance.columns.valueReceive"),
-		income: service === "traffic" ? t("performance.fields.traffic.sentTraffic") : "درآمد استعلام قبض این ماه",
-		expense: service === "traffic" ? t("performance.fields.traffic.receivedTraffic") : "هزینه استعلام قبض این ماه",
+		income: service === "traffic" ? t("performance.fields.traffic.sentTraffic") : t("performance.columns.income"),
+		expense: service === "traffic" ? t("performance.fields.traffic.receivedTraffic") : t("performance.columns.expense"),
+		total_cost: t("performance.columns.totalCost"),
+		total_sales: t("performance.columns.totalSales"),
+		credit_total: t("performance.columns.creditTotal"),
 		profit: t("performance.columns.profit"),
 		bill_inquiry_value: t("performance.fields.openapi.billInquiryValue"),
 		receipt_register_value: t("performance.fields.openapi.receiptRegisterValue"),
@@ -952,7 +951,35 @@ export function PerformanceDetailModal({
 		const found = companies?.find(company => company.id === companyId) as Record<string, unknown> | undefined;
 		return pickCompanyTypeToken(found?.company_type);
 	}, [companies, mergedDetail, normalizedRecord.companyType, record, service]);
-	const isTrafficUnitVisible = typeof selectedCompanyType === "string" && ["CP", "PREMIUM", "IXP", "TCI"].includes(selectedCompanyType.toUpperCase());
+	const isTrafficLocationEdit = service === "traffic" && !isUnregisteredMode && !isCollocationRecord;
+	const trafficStatus = useQuery(monthlyContractStatusQuery({
+		serviceId: isTrafficLocationEdit ? normalizedRecord.serviceId : null,
+		companyId: normalizedRecord.companyId,
+		companyType: selectedCompanyType,
+		year: normalizedRecord.year,
+		month: normalizedRecord.month,
+	}));
+	const trafficContractsQuery = useQuery(performanceContractsQuery({
+		servicePath: isCollocationRecord ? "traffic" : null,
+		serviceId: normalizedRecord.serviceId,
+		companyId: normalizedRecord.companyId,
+		companyType: "COLLOCATION",
+	}));
+	const collocationDatacenters = useMemo(
+		() => (normalizedRecord.year != null && normalizedRecord.month != null
+			? extractContractDatacenters(trafficContractsQuery.data?.results ?? [], normalizedRecord.year, normalizedRecord.month)
+			: []),
+		[trafficContractsQuery.data, normalizedRecord.year, normalizedRecord.month],
+	);
+	const existingTrafficLocations = useMemo(() => {
+		const locations = new Set<TrafficLocation>();
+		getTrafficRowsFromSources(mergedDetail, record as Record<string, unknown> ?? {}, trafficPerformances).forEach((row) => {
+			const location = getTrafficLocationKey((row as Record<string, unknown>).location);
+			if (location === "TEHRAN" || location === "COUNTY")
+				locations.add(location);
+		});
+		return locations;
+	}, [mergedDetail, record, trafficPerformances]);
 	const visibleTrafficLocations = useMemo(() => {
 		if (service !== "traffic")
 			return new Set<"TEHRAN" | "COUNTY">();
@@ -966,20 +993,17 @@ export function PerformanceDetailModal({
 			return new Set<"TEHRAN" | "COUNTY">(["TEHRAN", "COUNTY"]);
 		}
 
-		const trafficRows = getTrafficRowsFromSources(
-			mergedDetail,
-			record as Record<string, unknown> ?? {},
-			trafficPerformances,
-		);
-		const locations = new Set<"TEHRAN" | "COUNTY">();
-		trafficRows.forEach((row) => {
-			const location = getTrafficLocationKey((row as Record<string, unknown>).location);
-			if (location === "TEHRAN" || location === "COUNTY")
-				locations.add(location);
-		});
+		if (isCollocationRecord)
+			return new Set<"TEHRAN" | "COUNTY">();
+
+		const locations = new Set(existingTrafficLocations);
+		if (trafficStatus.data?.has_contract)
+			locations.add("TEHRAN");
+		if (trafficStatus.data?.traffic?.has_county_contract)
+			locations.add("COUNTY");
 
 		return locations.size > 0 ? locations : new Set<"TEHRAN" | "COUNTY">(["TEHRAN", "COUNTY"]);
-	}, [service, isUnregisteredMode, mergedDetail, record, trafficPerformances]);
+	}, [service, isUnregisteredMode, isCollocationRecord, mergedDetail, record, existingTrafficLocations, trafficStatus.data]);
 	const visibleEditableFields = useMemo(() => {
 		if (!config)
 			return [];
@@ -1006,11 +1030,11 @@ export function PerformanceDetailModal({
 		?? mergedDetail.profit;
 
 		return [
-			{ key: "income", label: "درآمد استعلام قبض این ماه", value: formatNumberLike(billInquiryIncome) },
-			{ key: "expense", label: "هزینه استعلام قبض این ماه", value: formatNumberLike(billInquiryExpense) },
+			{ key: "income", label: t("performance.detail.billInquiryIncome"), value: formatNumberLike(billInquiryIncome) },
+			{ key: "expense", label: t("performance.detail.billInquiryExpense"), value: formatNumberLike(billInquiryExpense) },
 			{
 				key: openApiContractModel === "package" ? "traffic_income" : "profit",
-				label: openApiContractModel === "package" ? t("performance.fields.openapi.trafficRevenue") : "درآمد ثبت وصولی این ماه",
+				label: openApiContractModel === "package" ? t("performance.fields.openapi.trafficRevenue") : t("performance.detail.receiptRegisterIncome"),
 				value: formatNumberLike(openApiContractModel === "package" ? packageTrafficIncome : receiptRegisterIncome),
 			},
 		];
@@ -1028,7 +1052,7 @@ export function PerformanceDetailModal({
 
 		return [
 			...newCustomerFields,
-			{ key: "income", label: "درآمد این ماه", value: formatNumberLike(mergedDetail.income) },
+			{ key: "income", label: t("performance.fields.psp.monthlyRevenue"), value: formatNumberLike(mergedDetail.income) },
 		];
 	}, [service, mergedDetail, showShahkarNewCustomerCount]);
 	const pspSummaryFields = useMemo(() => {
@@ -1154,6 +1178,12 @@ export function PerformanceDetailModal({
 			pushField(key);
 		});
 
+		if (service === "sales-agency/rep-management" && Array.isArray(mergedDetail.cost_items)) {
+			(mergedDetail.cost_items as Array<{ cost_title?: string, amount?: unknown }>).forEach((item, index) => {
+				result.push({ key: `cost-item-${index}`, label: `${item.cost_title ?? "-"}:`, value: formatNumberLike(item.amount) });
+			});
+		}
+
 		return result;
 	}, [service, config, mergedDetail, isUnregisteredMode, record, fieldLabels, operationTypeLabels, t]);
 
@@ -1252,31 +1282,45 @@ export function PerformanceDetailModal({
 	}, [isSmsLikeService, mergedDetail.items, smsContract, smsPerformances, t]);
 
 	const smsCommissionSummaryLabels = useMemo(() => ({
-		value: "مقدار عملکرد",
-		price: "قیمت واحد",
-		income: "درآمد کاراشاب",
-		profit: "سود کاراشاب",
-		expense: "هزینه کاراشاب",
-		incomeTci: "درآمد مخابرات",
-		incomeFirstSide: "درآمد طرف اول",
-		incomeArea: "درآمد منطقه",
-		incomeSalesAgent: "درآمد نماینده فروش",
-	}), []);
+		value: t("performance.labels.performanceValue"),
+		price: t("performance.columns.unitPrice"),
+		income: t("performance.columns.karashabIncome"),
+		profit: t("performance.columns.karashabProfit"),
+		expense: t("performance.columns.karashabExpense"),
+		incomeTci: t("performance.columns.telecomIncome"),
+		incomeFirstSide: t("performance.columns.firstPartyIncome"),
+		incomeArea: t("performance.columns.regionIncome"),
+		incomeSalesAgent: t("performance.columns.salesAgentIncome"),
+	}), [t]);
 
 	const form = useForm<EditFormValues>({
 		defaultValues: {},
 		mode: "all",
 		shouldUnregister: true,
 	});
+	const collocationForm = useForm<{ rows: CollocationRow[] }>({
+		defaultValues: { rows: [] },
+		mode: "all",
+		shouldUnregister: false,
+	});
+	const initialCollocationRowsRef = useRef<CollocationRow[]>([]);
+	const collocationRows = useWatch({ control: collocationForm.control, name: "rows" });
+	const collocationMode = useMemo(
+		() => collocationModeFromPerformances(getTrafficRowsFromSources(mergedDetail, record as Record<string, unknown> ?? {}, trafficPerformances)),
+		[mergedDetail, record, trafficPerformances],
+	);
 	const initialFormValuesRef = useRef<EditFormValues>({});
 	const watchedEditValues = useWatch({ control: form.control }) as EditFormValues;
 	const hasMeaningfulChanges = useMemo(() => {
+		if (isCollocationRecord)
+			return JSON.stringify(collocationRows) !== JSON.stringify(initialCollocationRowsRef.current);
 		return visibleEditableFields.some((field) => {
 			const currentValue = toPayloadValue(watchedEditValues?.[field.key]);
 			const initialValue = toPayloadValue(initialFormValuesRef.current[field.key]);
 			return !Object.is(currentValue, initialValue);
 		});
-	}, [visibleEditableFields, watchedEditValues]);
+	}, [isCollocationRecord, collocationRows, visibleEditableFields, watchedEditValues]);
+	const canEdit = visibleEditableFields.length > 0 || isCollocationRecord;
 
 	useEffect(() => {
 		if (!open || !service || !record)
@@ -1345,11 +1389,10 @@ export function PerformanceDetailModal({
 		setShahkarHasNewCustomerRate(false);
 		(async () => {
 			try {
-				const response = await fetchPerformanceContracts("shahkar", serviceId, companyId);
+				const response = await fetchMonthlyContractStatus({ serviceId, companyId, year, month });
 				if (cancelled)
 					return;
-				const active = pickActiveContract(response?.results ?? [], year, month);
-				setShahkarHasNewCustomerRate(contractHasNewCustomerRate(active, year, month));
+				setShahkarHasNewCustomerRate(response.shahkar?.has_new_customer_rate === true);
 			}
 			catch {
 				if (!cancelled)
@@ -1571,7 +1614,11 @@ export function PerformanceDetailModal({
 		}
 		initialFormValuesRef.current = initialValues;
 		form.reset(initialValues);
-	}, [service, record, detail, config, form, smsBreakdownCards, openApiPerformances, trafficPerformances, isUnregisteredMode]);
+		if (isCollocationRecord) {
+			initialCollocationRowsRef.current = buildCollocationRowsFromPerformances(getTrafficRowsFromSources(detail, record as Record<string, unknown>, trafficPerformances));
+			collocationForm.reset({ rows: initialCollocationRowsRef.current });
+		}
+	}, [service, record, detail, config, form, collocationForm, isCollocationRecord, smsBreakdownCards, openApiPerformances, trafficPerformances, isUnregisteredMode]);
 
 	const handleSubmit = form.handleSubmit(async (values) => {
 		if (!service || !config)
@@ -1593,6 +1640,9 @@ export function PerformanceDetailModal({
 		let hasError = false;
 		visibleEditableFields.forEach((field) => {
 			if (!field.required)
+				return;
+			const trafficLocation = service === "traffic" ? getTrafficFieldLocation(field.key) : null;
+			if (trafficLocation && !isTrafficLocationRequired(trafficLocation, existingTrafficLocations))
 				return;
 			if (!isEmptyValue(values[field.key]))
 				return;
@@ -1625,6 +1675,9 @@ export function PerformanceDetailModal({
 		config.payloadKeys.forEach((key) => {
 			payload[key] = toPayloadValue(values[key]);
 		});
+		// An omitted count keeps the stored value on the backend; an explicit null would wipe it.
+		if (payload.new_customer_count == null)
+			delete payload.new_customer_count;
 
 		if (service === "sms" || service === "sms-commission") {
 			payload.items = [
@@ -1649,7 +1702,16 @@ export function PerformanceDetailModal({
 			payload.company_type = pickCompanyTypeToken(payload.company_type) ?? selectedCompanyType;
 		}
 
-		if (service === "traffic") {
+		if (isCollocationRecord) {
+			const rows = collocationForm.getValues("rows") ?? [];
+			if (!collocationMode || rows.length < 1 || rows.some(row => [row.ipCount, row.bandwidthUsed, row.ampereUsed].some(metric => metric == null))) {
+				window.$message?.error(i18next.t("performance.validation.traffic.collocationFieldRequired"));
+				return;
+			}
+			payload.company_type = "COLLOCATION";
+			payload.collocation_rows = buildCollocationRowsPayload(rows, collocationMode);
+		}
+		else if (service === "traffic") {
 			const isCpEdit = typeof selectedCompanyType === "string" && selectedCompanyType.toUpperCase() === "CP";
 			Object.assign(payload, buildTrafficPayloadFields(values, visibleTrafficLocations, isCpEdit));
 			delete payload.tehranValue;
@@ -1678,59 +1740,8 @@ export function PerformanceDetailModal({
 				}
 				await updateSmsCommissionPerformanceByComposite(companyId, salesAgentId, year, month, payload);
 			}
-			else if (service === "sms") {
-				await updatePerformanceByComposite(service, companyId, year, month, payload);
-			}
-			else if (service === "traffic") {
-				await updatePerformanceByComposite(service, companyId, year, month, payload);
-			}
-			else if (service === "openapi" && openApiPerformances.length > 0) {
-				const operationFields = openApiContractModel === "package"
-					? [
-						["BILL_INQUIRY", "bill_inquiry_value"],
-						["SMS_IRANCELL_FA", "sms_irancell_fa"],
-						["SMS_IRANCELL_EN", "sms_irancell_en"],
-						["SMS_MCI_FA", "sms_mci_fa"],
-						["SMS_MCI_EN", "sms_mci_en"],
-						["SMS_OTHER_FA", "sms_other_fa"],
-						["SMS_OTHER_EN", "sms_other_en"],
-					] as const
-					: [
-						["BILL_INQUIRY", "bill_inquiry_value"],
-						["RECEIPT_REGISTER", "receipt_register_value"],
-					] as const;
-
-				const rowMap = new Map(
-					openApiPerformances.map(row => [toUpperText((row as Record<string, unknown>).operation_type), row] as const),
-				);
-
-				if (openApiContractModel === "package") {
-					const trafficRow = rowMap.get("TRAFFIC");
-					if (trafficRow?.id != null) {
-						await updatePerformanceById(
-							service,
-							trafficRow.id,
-							buildOpenApiTrafficUpdatePayload(
-								trafficRow,
-								payload,
-								values.traffic_income,
-								values.traffic_package_count,
-							),
-						);
-					}
-				}
-
-				for (const [operationType, fieldKey] of operationFields) {
-					const row = rowMap.get(operationType);
-					if (row?.id == null)
-						continue;
-
-					await updatePerformanceById(
-						service,
-						row.id,
-						buildOpenApiUpdatePayload(row, payload, fieldKey, values[fieldKey]),
-					);
-				}
+			else if (service === "sms" || service === "traffic" || service === "openapi") {
+				await updatePerformanceByComposite(service, companyId, year, month, payload, service === "traffic" ? selectedCompanyType : null);
 			}
 			else if (normalizedRecord.id != null) {
 				await updatePerformanceById(service, normalizedRecord.id, payload);
@@ -1754,7 +1765,10 @@ export function PerformanceDetailModal({
 			setSaving(false);
 		}
 	});
-	const resetChanges = () => form.reset(initialFormValuesRef.current);
+	const resetChanges = () => {
+		form.reset(initialFormValuesRef.current);
+		collocationForm.reset({ rows: initialCollocationRowsRef.current });
+	};
 	const sectionActions = (
 		<div className="performance-detail-section__edit-actions">
 			{onDelete
@@ -1766,7 +1780,7 @@ export function PerformanceDetailModal({
 						onConfirm={() => onDelete()}
 					>
 						<Button size="small" danger loading={deleting} icon={<DeleteOutlined />}>
-							حذف
+							{t("common.delete")}
 						</Button>
 					</Popconfirm>
 				)
@@ -1774,11 +1788,11 @@ export function PerformanceDetailModal({
 			{hasMeaningfulChanges
 				? (
 					<Button size="small" icon={<ReloadOutlined />} onClick={resetChanges}>
-						بازنشانی
+						{t("common.reset")}
 					</Button>
 				)
 				: null}
-			{visibleEditableFields.length > 0
+			{canEdit
 				? (
 					<Button
 						size="small"
@@ -1788,7 +1802,7 @@ export function PerformanceDetailModal({
 						disabled={!hasMeaningfulChanges || saving}
 						onClick={() => void handleSubmit()}
 					>
-						ویرایش
+						{t("common.edit")}
 					</Button>
 				)
 				: null}
@@ -1810,7 +1824,7 @@ export function PerformanceDetailModal({
 				<FormProvider {...form}>
 					<Card bordered={!embedded} className={embedded ? "performance-detail-inline__card" : undefined}>
 						<div className="performance-detail-sections">
-							<DetailSection title="اطلاعات پایه">
+							<DetailSection title={t("performance.detail.baseInfo")}>
 								<DetailValueRows
 									fields={[
 										{ key: "service", label: `${t("performance.columns.service")}:`, value: resolveServiceDisplayName(service, mergedDetail.service_name ?? service) },
@@ -1824,7 +1838,7 @@ export function PerformanceDetailModal({
 								/>
 							</DetailSection>
 
-							<DetailSection title="ریز هزینه‌ها و درآمدها">
+							<DetailSection title={t("performance.detail.breakdown")}>
 
 								{plainBreakdownFields.length > 0
 									? <DetailValueRows fields={plainBreakdownFields} />
@@ -1888,7 +1902,19 @@ export function PerformanceDetailModal({
 
 							</DetailSection>
 
-							<DetailSection title="مقدار عملکرد" tone="success" extra={sectionActions} collapsible={false}>
+							<DetailSection title={t("performance.labels.performanceValue")} tone="success" extra={sectionActions} collapsible={false}>
+								{isCollocationRecord
+									? (
+										<FormProvider {...collocationForm}>
+											<TrafficCollocationRows
+												name="rows"
+												datacenters={collocationDatacenters}
+												partnerType={collocationMode}
+												loading={trafficContractsQuery.isLoading}
+											/>
+										</FormProvider>
+									)
+									: null}
 								{service === "sales-agency/outbound" || service === "sales-agency/rep-management"
 									? <SalesAgencyPerformanceFields prefix="" companyType={selectedCompanyType} companyId={normalizedRecord.companyId} serviceId={normalizedRecord.serviceId} year={normalizedRecord.year} month={normalizedRecord.month} editLayout />
 									: null}
@@ -1901,9 +1927,9 @@ export function PerformanceDetailModal({
 														<div className="performance-traffic-edit-location">
 															<DashedBorder />
 															<div className="performance-traffic-edit-location__header">
-																<Tag bordered={false}>عملکرد تهران</Tag>
+																<Tag bordered={false}>{t("performance.traffic.tehranPerformance")}</Tag>
 															</div>
-															{isTrafficUnitVisible && trafficContractUnits.tehran && (
+															{trafficContractUnits.tehran && (
 																<div className="performance-traffic-edit-location__unit mb-3 px-4 py-2 text-right text-sm">
 																	{t("performance.traffic.tehranContractUnit")}
 																	{": "}
@@ -1919,7 +1945,7 @@ export function PerformanceDetailModal({
 																			name={field.key as any}
 																			label={field.label}
 																			inputProps={field.key.includes("ConversionRatio")
-																				? { placeholder: "مثلاً 1.5" } as any
+																				? { placeholder: t("performance.placeholders.exampleConversionRatio") } as any
 																				: { placeholder: t("performance.modal.placeholders.enterNumber") } as any}
 																			decimal={field.key.includes("ConversionRatio")}
 																			enableGrouping={!field.key.includes("ConversionRatio")}
@@ -1933,9 +1959,9 @@ export function PerformanceDetailModal({
 														<div className="performance-traffic-edit-location">
 															<DashedBorder />
 															<div className="performance-traffic-edit-location__header">
-																<Tag bordered={false}>عملکرد مراکز استان</Tag>
+																<Tag bordered={false}>{t("performance.traffic.countyPerformance")}</Tag>
 															</div>
-															{isTrafficUnitVisible && trafficContractUnits.county && (
+															{trafficContractUnits.county && (
 																<div className="performance-traffic-edit-location__unit mb-3 px-4 py-2 text-right text-sm">
 																	{t("performance.traffic.countyContractUnit")}
 																	{": "}
@@ -1951,7 +1977,7 @@ export function PerformanceDetailModal({
 																			name={field.key as any}
 																			label={field.label}
 																			inputProps={field.key.includes("ConversionRatio")
-																				? { placeholder: "مثلاً 1.5" } as any
+																				? { placeholder: t("performance.placeholders.exampleConversionRatio") } as any
 																				: { placeholder: t("performance.modal.placeholders.enterNumber") } as any}
 																			decimal={field.key.includes("ConversionRatio")}
 																			enableGrouping={!field.key.includes("ConversionRatio")}
@@ -1998,7 +2024,7 @@ export function PerformanceDetailModal({
 																className={`aligned-form-grid aligned-form-grid--two gap-3${isSmsEditAlignedLayout ? " performance-detail-sms-grid" : ""}`}
 															>
 																{visibleEditableFields.map((field) => {
-																	const smsAddon = getSmsPerformanceFieldAddon(field.key);
+																	const smsAddon = getSmsPerformanceFieldAddon(field.key, t);
 																	const isCurrencyField = field.key === "traffic_income" || field.key === "trafficRevenue";
 																	const addonAfter = isSmsEditAlignedLayout
 																		? undefined
@@ -2049,6 +2075,16 @@ export function PerformanceDetailModal({
 															className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3"
 														>
 															{visibleEditableFields.map((field) => {
+																if (field.type === "checkbox") {
+																	return (
+																		<RHFProCheckbox<EditFormValues, any>
+																			key={field.key}
+																			name={field.key as any}
+																			checkboxLabel={field.label}
+																		/>
+																	);
+																}
+
 																if (field.type === "number") {
 																	return (
 																		<RHFProNumber<EditFormValues, any>
@@ -2082,7 +2118,7 @@ export function PerformanceDetailModal({
 						className="flex justify-end mt-2 gap-2"
 					>
 						{!embedded ? <Button onClick={onClose}>{t("common.cancel")}</Button> : null}
-						{visibleEditableFields.length > 0 && hasMeaningfulChanges && !embedded
+						{canEdit && hasMeaningfulChanges && !embedded
 							? <Button type="primary" onClick={() => void handleSubmit()}>{t("performance.actions.editPerformance")}</Button>
 							: null}
 					</div>

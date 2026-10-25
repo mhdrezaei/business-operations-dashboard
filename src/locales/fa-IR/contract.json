@@ -5,7 +5,6 @@
 		"commercial": "سرویس های تجاری",
 		"sms": "sms",
 		"traffic": "traffic"
-
 	},
 	"tableTitle": {
 		"listTitle": "لیست قراردادها",
@@ -17,17 +16,14 @@
 		"isOfficial": "آیا قرارداد رسمی است؟",
 		"startDate": "تاریخ شروع",
 		"endDate": "تاریخ پایان",
-		"sort": "مرتب سازی",
-		"searchTerm": "کلمه جستجو",
-		"orderBy": "مرتب سازی بر اساس"
-
+		"searchTerm": "کلمه جستجو"
 	},
 	"formLabel": {
 		"contractType": "نوع قرارداد ",
 		"companyName": "شرکت",
 		"startYear": "سال شروع",
 		"startMonth": "ماه شروع",
-		"endYear": "سال پایان ",
+		"endYear": "سال پایان",
 		"endMonth": "ماه پایان"
 	},
 	"shamsiMonth": {
@@ -43,5 +39,612 @@
 		"day": "دی",
 		"bahman": "بهمن",
 		"esfand": "اسفند"
+	},
+	"realStart": {
+		"pair": "سال و ماه شروع واقعی باید همزمان وارد شوند.",
+		"min": "حداقل شروع واقعی قرارداد باید از 1400/1 باشد.",
+		"max-year": "سال شروع واقعی قرارداد باید حداکثر 1404 باشد.",
+		"max-month": "در سال 1404 فقط ماه‌های فروردین تا خرداد مجاز هستند.",
+		"trigger": "ارسال شروع واقعی فقط زمانی مجاز است که شروع قرارداد اصلی دقیقاً 1404/4 باشد."
+	},
+	"gapHint": {
+		"cp": "قرارداد فعالی در هزینه رک یا در سرویس cp برای این شرکت موجود نیست.",
+		"colo": "برای محاسبه گپ کولوکیشن ابتدا قرارداد هزینه رک باید ثبت شود."
+	},
+	"traffic": {
+		"nonOfficialLocation": "قرارداد غیررسمی — فیلدهای محاسباتی غیرفعال",
+		"minLocation": "حداقل یکی از محل‌ها را فعال کنید",
+		"validation": {
+			"tehranModelRequired": "نوع قرارداد تهران در الحاقیه الزامی است",
+			"provinceModelRequired": "نوع قرارداد مراکز استانی در الحاقیه الزامی است"
+		},
+		"models": {
+			"legacy": "قدیمی",
+			"variableTable": "جدول متغیر"
+		},
+		"rateHelpVariableTable": "مقدار فی بر اساس ضرب مقدار فی که وارد کرده‌اید در درصد نرخ محاسبه می‌شود.",
+		"rateHelpLegacy": "در مدل قرارداد قدیمی، درصد نرخ اختیاری است و محاسبات مالی بر اساس مقدار فی (ریال) نمایش داده می‌شود؛ این درصد هیچ تاثیری بر روی محاسبات مالی ندارد.",
+		"unit": "واحد",
+		"selectUnit": "انتخاب واحد",
+		"percentPlaceholder": "بین ۰ تا ۱۰۰",
+		"basedTire": "محاسبه پله بر اساس پله بالاتر انجام شود",
+		"contractModel": "مدل قرارداد",
+		"selectContractModel": "انتخاب مدل قرارداد",
+		"pricingTitle": "بهای ترافیک",
+		"nonOfficialNotice": "قرارداد غیررسمی است؛ فیلدهای محاسباتی ارسال نمی‌شوند.",
+		"tehranContract": "قرارداد ترافیک تهران",
+		"provinceContract": "قرارداد ترافیک مراکز استان‌ها",
+		"tehranRevenueShare": "درصد سهم درآمد (تهران)",
+		"provinceRevenueShare": "درصد سهم درآمد (مراکز استان‌ها)",
+		"addTehran": "افزودن قرارداد تهران",
+		"addProvince": "افزودن قرارداد مراکز استانی"
+	},
+	"create": {
+		"success": "قرارداد با موفقیت ثبت شد",
+		"addCompany": "افزودن شرکت جدید",
+		"uploadFailed": "آپلود فایل «{{name}}» ناموفق بود",
+		"submit": "ثبت قرارداد",
+		"invalidService": "کد سرویس معتبر نیست.",
+		"costCompanyMissing": "شناسه شرکت قرارداد شرکت مخابرات ایران یافت نشد.",
+		"costTitleIdMissing": "شناسه عنوان هزینه «{{title}}» دریافت نشد."
+	},
+	"edit": {
+		"updated": "قرارداد با موفقیت به‌روزرسانی شد.",
+		"delete": "حذف قرارداد",
+		"deleteConfirm": "آیا از حذف این قرارداد مطمئن هستید؟ این عملیات غیرقابل بازگشت است.",
+		"deleted": "قرارداد با موفقیت حذف شد.",
+		"notFound": "اطلاعات قرارداد یافت نشد",
+		"loadFailed": "دریافت اطلاعات قرارداد ناموفق بود",
+		"loading": "در حال دریافت اطلاعات قرارداد",
+		"save": "ذخیره تغییرات",
+		"noAccess": "دسترسی ویرایش این قرارداد را ندارید",
+		"backToList": "بازگشت به لیست قراردادها"
+	},
+	"createPanel": {
+		"officialFilter": "فیلتر قرارداد ترافیک",
+		"all": "همه قراردادها",
+		"official": "رسمی",
+		"unofficial": "غیررسمی",
+		"edit": "ویرایش این قرارداد"
+	},
+	"documents": {
+		"type": "فایل «{{name}}» مجاز نیست؛ فقط PDF، PNG و JPG پذیرفته می‌شود.",
+		"size": "حجم فایل «{{name}}» بیش از ۵۰ مگابایت است.",
+		"preview": "پیش‌نمایش فایل",
+		"previewFailed": "نمایش فایل ناموفق بود",
+		"uploadSuccess": "فایل با موفقیت افزوده شد",
+		"uploadFailed": "افزودن فایل ناموفق بود",
+		"deleted": "فایل حذف شد",
+		"deleteFailed": "حذف فایل ناموفق بود",
+		"downloadFailed": "دریافت فایل ناموفق بود",
+		"title": "فایل‌های پیوست",
+		"empty": "فایلی پیوست نشده است",
+		"deleteTitle": "حذف فایل",
+		"deleteConfirm": "این فایل حذف شود؟",
+		"count": "حداکثر ۱۰ فایل قابل افزودن است."
+	},
+	"smsCommission": {
+		"finalBelowInitial": "کارمزد دریافت نهایی باید بزرگ‌تر یا مساوی کارمزد اولیه باشد.",
+		"validation": {
+			"expertTelecomTotal": "مجموع درصد کاراشاب و درصد مخابرات باید ۱۰۰ باشد",
+			"sharesTotal": "مجموع درصد سهم طرف اول، منطقه و نماینده فروش باید ۱۰۰ باشد",
+			"agent": "نماینده فروش الزامی است",
+			"initialCommission": "کارمزد دریافت اولیه الزامی است",
+			"finalCommission": "کارمزد دریافت نهایی الزامی است",
+			"expertPercent": "درصد کاراشاب الزامی است",
+			"telecomPercent": "درصد مخابرات الزامی است",
+			"firstPartyShare": "درصد سهم طرف اول الزامی است",
+			"regionShare": "درصد سهم منطقه الزامی است",
+			"salesAgentShare": "درصد سهم نماینده فروش الزامی است"
+		}
+	},
+	"openapi": {
+		"separated": {
+			"connected": "ثبت وصولی متصل",
+			"disconnected": "ثبت وصولی غیرمتصل",
+			"walletRequired": "درصد تخفیف شارژ کیف پول را وارد کنید.",
+			"walletRange": "درصد تخفیف شارژ کیف پول باید بین ۰ تا ۱۰۰ باشد.",
+			"sharesRequired": "درصد سهم کاراشاب و طرف قرارداد «{{title}}» را وارد کنید.",
+			"sharesRange": "درصد سهم‌ها «{{title}}» باید بین ۰ تا ۱۰۰ باشد.",
+			"sharesTotal": "مجموع درصد سهم کاراشاب و طرف قرارداد «{{title}}» باید دقیقاً ۱۰۰ باشد.",
+			"invalidNumber": "مقدار نامعتبر است.",
+			"karashabShare": "درصد سهم کاراشاب",
+			"partnerShare": "درصد سهم طرف قرارداد",
+			"midterm": "استعلام قبض میان‌دوره",
+			"endterm": "استعلام قبض پایان‌دوره",
+			"walletLabel": "درصد تخفیف شارژ کیف‌پول"
+		},
+		"modelLabel": "مدل قرارداد این الحاقیه",
+		"models": {
+			"legacy": "قدیمی",
+			"separated": "تفکیکی",
+			"package": "بسته‌ای"
+		},
+		"modelRequired": "نوع قرارداد الزامی است",
+		"separatedIncomplete": "اطلاعات مدل تفکیکی را تکمیل کنید",
+		"package": {
+			"mode": "حالت بسته",
+			"plan": "پلن بسته {{index}}",
+			"remove": "حذف",
+			"add": "افزودن پلن جدید",
+			"smsMin": "حداقل پیامک",
+			"smsMax": "حداکثر پیامک",
+			"smsRate": "نرخ فروش پیامک",
+			"billMin": "حداقل استعلام قبض",
+			"billMax": "حداکثر استعلام قبض",
+			"billRate": "نرخ استعلام قبض",
+			"partnerShare": "سهم شریک (٪)",
+			"karashabShare": "سهم کاراشاب (٪)",
+			"trafficProfit": "درصد سود ترافیک (۰ تا ۱۰۰)",
+			"trafficPartnerShare": "درصد سهم شریک ترافیک (۰ تا ۱۰۰)",
+			"errors": {
+				"modeRequired": "مدل بسته‌ای را انتخاب کنید.",
+				"partnerShareRequired": "درصد سهم شریک را وارد کنید.",
+				"karashabShareRequired": "درصد سهم کاراشاب را وارد کنید.",
+				"sharesTotal": "مجموع سهم شریک و کاراشاب باید 100 باشد.",
+				"fixedPriceRequired": "مبلغ ثابت را وارد کنید.",
+				"smsContinuity": "حداقل پیامک باید برابر با حداکثر پیامک پلن قبلی باشد.",
+				"billContinuity": "حداقل استعلام قبض باید برابر با حداکثر پلن قبلی باشد.",
+				"trafficProfitRange": "درصد سود ترافیک باید بین 0 تا 100 باشد.",
+				"trafficShareRange": "درصد سهم شریک ترافیک باید بین 0 تا 100 باشد."
+			}
+		},
+		"paymentRegistrationPrice": "بهای ثبت وصولی",
+		"billInquiryPrice": "بهای استعلام قبض",
+		"tieredModePlaceholder": "انتخاب نوع پلکانی در این بخش",
+		"modelCardTitle": "مدل قرارداد OpenAPI",
+		"modelPlaceholder": "مدل قرارداد را انتخاب کنید",
+		"modelLocked": "مدل قرارداد پایه پس از ثبت قابل تغییر نیست",
+		"selectModelFirst": "ابتدا مدل قرارداد را انتخاب کنید."
+	},
+	"collocation": {
+		"slaPlaceholder": "انتخاب کنید",
+		"slaRequired": "برای قرارداد COLLOCATION سمت شرکای تجاری، انتخاب sla الزامی است.",
+		"sla": {
+			"DIAMOND": "الماس",
+			"GOLD": "طلایی",
+			"BRONZE": "برنزی"
+		},
+		"validation": {
+			"bandwidthRate": "نرخ هر واحد پهنای باند الزامی است",
+			"ipRate": "نرخ هر IP الزامی است",
+			"ampRate": "نرخ هر آمپر الزامی است",
+			"ampThreshold": "آستانه معافیت آمپر الزامی است",
+			"portItemsRequired": "حداقل یک آیتم پورت الزامی است.",
+			"rackItemsRequired": "حداقل یک آیتم رک الزامی است.",
+			"count": "تعداد الزامی است",
+			"speed": "سرعت الزامی است",
+			"unitPrice": "قیمت هر واحد الزامی است",
+			"rackType": "نوع رک الزامی است",
+			"countPositive": "تعداد باید عدد صحیح مثبت باشد",
+			"speedPositive": "سرعت باید عدد مثبت باشد",
+			"tierFrom": "از الزامی است",
+			"tierTo": "تا الزامی است",
+			"tierPercent": "درصد تخفیف الزامی است",
+			"tierPercentRange": "درصد تخفیف باید بین 0 تا 100 باشد",
+			"addendumRackCount": "تعداد رک الحاقیه باید عدد مثبت باشد.",
+			"addendumUnitsPerRack": "تعداد یونیت در هر رک الحاقیه باید عدد مثبت باشد.",
+			"addendumMonthlyRent": "هزینه ماهانه هر رک الحاقیه باید صفر یا عدد مثبت باشد.",
+			"addendumDatacenters": "حداقل یک دیتاسنتر برای الحاقیه کولوکیشن اضافه کنید.",
+			"addendumSla": "انتخاب sla برای الحاقیه کولوکیشن الزامی است."
+		},
+		"rackTypes": {
+			"full": "رک کامل",
+			"half": "نیم رک",
+			"quarter": "یک چهارم رک",
+			"unit": "یونیت"
+		},
+		"telecom": {
+			"rackCount": "تعداد رک",
+			"unitsPerRack": "تعداد یونیت هر رک",
+			"monthlyRent": "اجاره ماهیانه تمامی رک‌ها (ریال)"
+		},
+		"rackDiscountTiers": "پلکان تخفیف رک (فقط برای دیتاسنتر بهشتی)",
+		"firstRange": "بازه اول",
+		"secondRange": "بازه دوم",
+		"discountPercent": "درصد تخفیف",
+		"from": "از",
+		"to": "تا",
+		"percent": "درصد",
+		"removeRow": "حذف ردیف",
+		"nextRangeAuto": "مقدار شروع بازه جدید به‌طور خودکار تنظیم می‌شود.",
+		"addRow": "افزودن ردیف",
+		"selectedDatacenter": "دیتاسنتر انتخاب‌شده",
+		"closeDetails": "بستن جزئیات",
+		"bandwidthRate": "نرخ هر واحد پهنای باند (ریال)",
+		"ipRate": "نرخ هر IP (ریال)",
+		"portItems": "آیتم‌های پورت",
+		"item": "آیتم",
+		"unitPrice": "قیمت هر واحد (ریال)",
+		"speed": "سرعت",
+		"count": "تعداد",
+		"addItem": "افزودن آیتم",
+		"rackItems": "آیتم‌های رک",
+		"rackType": "نوع رک",
+		"ampRate": "نرخ هر آمپر (ریال)",
+		"ampThreshold": "آستانه معافیت آمپر",
+		"selectDatacenterLabel": "انتخاب دیتاسنتر",
+		"datacentersLoading": "در حال دریافت دیتاسنترها...",
+		"selectDatacenter": "دیتاسنتر را انتخاب کنید",
+		"noDatacentersLeft": "دیتاسنتری برای انتخاب باقی نمانده"
+	},
+	"salesAgency": {
+		"costTitles": "عنوان‌های هزینه‌ها",
+		"addendumPercentRange": "درصد درآمد و درصد هزینه الحاقیه باید عددی بین ۰ تا ۱۰۰ باشد.",
+		"costTitlePlaceholder": "عنوان هزینه را بنویسید یا انتخاب کنید",
+		"costTitleNotFound": "موردی یافت نشد. برای افزودن مورد جدید Enter بزنید.",
+		"add": "افزودن",
+		"costTitlesLoadFailed": "دریافت عنوان‌های هزینه ناموفق بود.",
+		"income": "درصد درآمد",
+		"expense": "درصد هزینه",
+		"percentPlaceholder": "مثلاً 20",
+		"selectType": "ابتدا نوع همکاری (عاملیت فروش) را انتخاب کنید.",
+		"outboundTitle": "پورسانت نمایندگی فروش",
+		"repTitle": "مدیریت نمایندگان فروش"
+	},
+	"telecomFrame": {
+		"title": "فریم مخابرات",
+		"contractTypesTitle": "انواع قرارداد و درآمد",
+		"addendumContractTypesTitle": "انواع قرارداد این الحاقیه",
+		"contractTypesEmpty": "حداقل یک نوع قرارداد باید انتخاب شود.",
+		"revenue": "درآمد",
+		"revenuePlaceholder": "درآمد (ریال)",
+		"manHours": "نفر ساعت",
+		"contractTypes": {
+			"DEVELOPMENT": "توسعه",
+			"SUPPORT": "پشتیبانی",
+			"UPDATE": "به‌روزرسانی",
+			"MAINTENANCE": "نگهداری"
+		},
+		"boPersons": "اشخاص BO",
+		"poPersons": "اشخاص PO",
+		"department": "معاونت",
+		"generalOffice": "اداره کل",
+		"division": "بخش/فناوری",
+		"person": "شخص",
+		"noPersons": "هنوز شخصی انتخاب نشده است.",
+		"penalty": {
+			"enabled": "جریمه تأخیر دارد",
+			"initialGraceDays": "مهلت اولیه (روز)",
+			"toleranceDays": "مهلت اغماض (روز)",
+			"penaltyPercent": "درصد جریمه"
+		},
+		"timeline": {
+			"title": "تایم‌لاین وضعیت (اختیاری)",
+			"empty": "در صورت خالی بودن، کل بازه قرارداد «فعال» در نظر گرفته می‌شود.",
+			"add": "افزودن وضعیت",
+			"status": "وضعیت",
+			"startDate": "تاریخ شروع",
+			"endDate": "تاریخ پایان",
+			"note": "توضیح"
+		},
+		"statuses": {
+			"ACTIVE": "فعال",
+			"SUSPENDED": "تعلیق",
+			"TERMINATED": "خاتمه‌یافته",
+			"CANCELLED": "فسخ‌شده"
+		},
+		"errors": {
+			"contractTypesRequired": "حداقل یک نوع قرارداد را انتخاب کنید.",
+			"addendumContractTypesRequired": "برای هر الحاقیه حداقل یک نوع قرارداد را انتخاب کنید.",
+			"revenuePositive": "درآمد هر نوع قرارداد باید عددی مثبت باشد.",
+			"manHoursNonNegative": "نفر ساعت هر نوع قرارداد باید عددی غیرمنفی باشد.",
+			"penaltyFieldInvalid": "مقدار جریمه باید عددی غیرمنفی باشد.",
+			"endAfterStart": "تاریخ پایان باید بعد از تاریخ شروع باشد."
+		}
+	},
+	"copy": {
+		"incompatible": {
+			"cost": "قرارداد منبع از نوع «هزینه سرویس کولوکیشن» است و با این فرم (سمت شرکای تجاری) سازگار نیست.",
+			"partners": "قرارداد منبع از نوع «هزینه سرویس کولوکیشن» نیست."
+		},
+		"sourcePartMissing": "بخش انتخاب‌شده در قرارداد منبع یافت نشد.",
+		"success": "اطلاعات منبع با موفقیت دریافت شد.",
+		"failure": "دریافت اطلاعات قرارداد منبع ناموفق بود.",
+		"telecomFrameCompanyType": "نوع شرکت (فریم مخابرات)",
+		"rangeLabel": "{{start}} تا {{end}}",
+		"addendumLabel": "الحاقیه {{number}}",
+		"mainContract": "قرارداد اصلی",
+		"openButton": "دریافت اطلاعات از قرارداد یا الحاقیه دیگر",
+		"receive": "دریافت اطلاعات",
+		"intro": "اطلاعات سرویس را از قرارداد اصلی یا الحاقیه‌ی ثبت‌شده در همین شرکت یا شرکت دیگری دریافت کنید.",
+		"replaceNotice": "فقط فیلدهای سرویس جایگزین می‌شوند؛ شرکت، سرویس، شماره و تاریخ قرارداد، وضعیت امضا و الحاقیه‌های مقصد بدون تغییر می‌مانند. فقط اطلاعات ثبت‌شده‌ی منبع دریافت می‌شود.",
+		"otherCompanies": "جستجو در شرکت‌های دیگر",
+		"selectCompanyType": "{{type}} را انتخاب کنید",
+		"selectCompanyName": "نام شرکت را انتخاب کنید",
+		"selectSourceCompany": "شرکت منبع را انتخاب کنید",
+		"noCompany": "شرکتی یافت نشد",
+		"sourceContract": "انتخاب قرارداد منبع",
+		"selectContract": "قراردادی را انتخاب کنید",
+		"noContract": "قراردادی یافت نشد",
+		"sourcePart": "انتخاب بخش منبع",
+		"selectPart": "قرارداد اصلی یا الحاقیه را انتخاب کنید",
+		"contractsLoadFailed": "دریافت قراردادهای منبع ناموفق بود",
+		"detailLoadFailed": "دریافت اطلاعات قرارداد منبع ناموفق بود",
+		"confirmTitle": "دریافت اطلاعات از منبع انتخاب‌شده",
+		"confirmDescription": "فیلدهای سرویس با مقادیر ثبت‌شده‌ی منبع انتخاب‌شده جایگزین می‌شوند."
+	},
+	"addenda": {
+		"period": {
+			"invalid-range": "بازه تاریخ الحاقیه نامعتبر است",
+			"start-outside-parent": "شروع الحاقیه باید داخل بازه والد باشد یا دقیقاً از ماه بعد از پایان والد شروع شود.",
+			"overlap": "دو الحاقیه هم‌سطح نمی‌توانند روی یک بازه هم‌پوشانی داشته باشند؛ در این حالت باید زیرالحاقیه ثبت شود."
+		},
+		"selectCounterparty": "ابتدا طرف قرارداد را انتخاب کنید.",
+		"title": "الحاقیه‌های قرارداد (اختیاری)",
+		"selectContractDates": "ابتدا تاریخ شروع و پایان قرارداد را انتخاب کنید.",
+		"completePrevious": "ابتدا تاریخ‌های الحاقیه قبلی را کامل کنید.",
+		"completeThis": "ابتدا تاریخ شروع و پایان این الحاقیه را کامل کنید.",
+		"validation": {
+			"newCustomerRate": "نرخ مشتریان جدید الزامی است",
+			"startYear": "سال شروع الحاقیه الزامی است",
+			"startMonth": "ماه شروع الحاقیه الزامی است",
+			"endYear": "سال پایان الحاقیه الزامی است",
+			"endMonth": "ماه پایان الحاقیه الزامی است"
+		},
+		"removeAddendum": "حذف الحاقیه",
+		"startYear": "سال شروع الحاقیه",
+		"endYear": "سال پایان الحاقیه",
+		"startMonth": "ماه شروع",
+		"endMonth": "ماه پایان",
+		"contractNumber": "شماره قرارداد الحاقیه",
+		"contractNumberPlaceholder": "مثلاً ADD-1405-01",
+		"description": "توضیح الحاقیه",
+		"descriptionPlaceholder": "توضیح اختیاری برای این الحاقیه",
+		"addSubAddendum": "افزودن زیرالحاقیه",
+		"selectDatesHint": "برای افزودن الحاقیه، ابتدا تاریخ شروع و پایان قرارداد را انتخاب کنید.",
+		"add": "افزودن الحاقیه",
+		"rangeHint": "({{startYear}}/{{startMonth}} تا {{endYear}}/{{endMonth}})"
+	},
+	"type": {
+		"required": "نوع قرارداد را انتخاب کنید",
+		"validation": {
+			"amountRequired": "مبلغ الزامی است",
+			"rowsRequired": "حداقل یک ردیف باید اضافه شود",
+			"fromRequired": "مقدار شروع الزامی است",
+			"toRequired": "تا الزامی است",
+			"toGreaterThanFrom": "مقدار «تا» باید بزرگتر از «از» باشد",
+			"fromAfterPrevious": "مقدار «از» باید از «تا» ردیف قبلی شروع شود",
+			"sectionsRequired": "حداقل یک بخش باید اضافه شود",
+			"modeRequired": "نوع محاسبه الزامی است",
+			"sectionRowsRequired": "حداقل یک ردیف برای این بخش لازم است",
+			"sectionFromMatchesPrevious": "مقدار «از» اولین ردیف این بخش باید برابر «تا» آخرین ردیف بخش قبلی باشد"
+		},
+		"blendedModePlaceholder": "انتخاب نوع محاسبه",
+		"calculationModel": "مدل محاسبه",
+		"fixedAmountRial": "مبلغ ثابت (ریال)",
+		"unitAmount": "مبلغ هر واحد",
+		"amountPlaceholder": "برای مثال ۱۲۰",
+		"ratePercentage": "درصد نرخ",
+		"ratePercentageHelp": "توضیحات درصد نرخ",
+		"percentRangePlaceholder": "بین 0 تا 100",
+		"removeSection": "حذف بخش",
+		"addCalculationModel": "افزودن مدل محاسبه",
+		"calculationType": "نوع محاسبه"
+	},
+	"summary": {
+		"title": "خلاصه قرارداد",
+		"service": "سرویس",
+		"company": "شرکت",
+		"type": "نوع قرارداد",
+		"fixedAmount": "مبلغ ثابت",
+		"rial": "{{value}} ریال",
+		"empty": "لطفاً ابتدا سرویس و شرکت را انتخاب کنید."
+	},
+	"list": {
+		"approval": {
+			"approved": "تأیید شده",
+			"rejected": "رد شده",
+			"pending": "در انتظار",
+			"notApproved": "تأیید نشده",
+			"signed": "امضا شده",
+			"unsigned": "امضا نشده",
+			"undecided": "بدون تصمیم",
+			"reject": "رد",
+			"submit": "ثبت",
+			"saved": "وضعیت تأیید با موفقیت ثبت شد",
+			"title": "وضعیت تأیید و تاریخچه",
+			"loadFailed": "دریافت وضعیت تأیید ناموفق بود",
+			"unofficialBlocked": "این قرارداد غیررسمی است و تأیید برای آن مجاز نیست.",
+			"mainContract": "قرارداد اصلی",
+			"addendumTitle": "الحاقیه {{number}}",
+			"commentPlaceholder": "توضیحات (اختیاری)"
+		},
+		"column": {
+			"id": "شناسه",
+			"contractNumber": "شماره قرارداد",
+			"companyType": "نوع شرکت",
+			"isBusinessApproved": "تأیید تجاری",
+			"isSigned": "تأیید اداره قراردادها",
+			"realSignedAt": "امضای قرارداد",
+			"businessApprovedAddenda": "تأیید تجاری الحاقیه",
+			"signedAddenda": "تأیید شده الحاقیه",
+			"realSignedAddenda": "امضای الحاقیه",
+			"createdBy": "ایجادکننده",
+			"updatedBy": "ویرایش‌کننده"
+		},
+		"filter": {
+			"realSigned": "وضعیت امضای قرارداد",
+			"contractKind": "نوع قرارداد",
+			"allContracts": "همه قراردادها",
+			"officialOnly": "فقط رسمی",
+			"unofficialOnly": "فقط غیررسمی",
+			"approvalPlaceholder": "همه",
+			"smsParty": "طرف قرارداد",
+			"smsVendor": "اپراتورها و دولت",
+			"smsClient": "شرکای تجاری",
+			"selectService": "نوع سرویس را انتخاب کنید",
+			"selectCompanyType": "نوع شرکت را انتخاب کنید"
+		},
+		"pdfDisabled": {
+			"psp": "دانلود فایل PDF قرارداد برای سرویس PSP امکان‌پذیر نیست، زیرا این سرویس فاقد محاسبات هزینه و درآمد است.",
+			"unofficialTraffic": "برای قرارداد غیررسمی سرویس ترافیک، دانلود PDF غیرفعال است."
+		},
+		"smsVendorCompany": "اپراتورها و دولت",
+		"actions": {
+			"createFromRow": "ایجاد قرارداد جدید از روی این ردیف",
+			"edit": "ویرایش قرارداد",
+			"preview": "پیش‌نمایش قرارداد",
+			"downloadPdf": "دانلود PDF قرارداد",
+			"print": "چاپ قرارداد"
+		},
+		"message": {
+			"noDeleteAccess": "دسترسی حذف قرارداد ندارید.",
+			"popupBlocked": "پاپ‌آپ مرورگر مسدود است. لطفا آن را فعال کنید.",
+			"downloadFailed": "دریافت فایل قرارداد ناموفق بود.",
+			"officialUploaded": "نسخه رسمی این قرارداد قبلا آپلود شده و در حال گرفتن تایید می باشد",
+			"officialStatusFailed": "خطا در بررسی وضعیت نسخه رسمی",
+			"signFlowFailed": "خطا در دریافت اطلاعات گردش کار"
+		},
+		"page": {
+			"filterTitle": "جستجوی قرارداد",
+			"filterSubtitle": "برای جستجو، فیلتر و مرتب‌سازی قراردادها، نوع سرویس و شرکت را انتخاب کنید.",
+			"tableSubtitle": "قراردادهای ثبت شده را مشاهده و مدیریت کنید. برای ایجاد قرارداد جدید، از کلید ایجاد قرارداد جدید استفاده کنید."
+		}
+	},
+	"validation": {
+		"percentRange": "درصد باید بین 0 تا 100 باشد"
+	},
+	"schema": {
+		"serviceType": "نوع سرویس الزامی است",
+		"serviceCode": "کد سرویس الزامی است",
+		"startYear": "سال شروع الزامی است",
+		"startMonth": "ماه شروع الزامی است",
+		"endYear": "سال پایان الزامی است",
+		"endMonth": "ماه پایان الزامی است",
+		"endBeforeStart": "سال/ماه پایان قرارداد نمی‌تواند قبل از سال/ماه شروع باشد",
+		"counterparty": "طرف قرارداد الزامی است",
+		"smsCompanyType": "نوع شرکت (SMS) الزامی است",
+		"company": "شرکت الزامی است",
+		"companyNotNeeded": "در این حالت نیازی به انتخاب شرکت نیست",
+		"companyTypeNotNeeded": "در این حالت نیازی به انتخاب نوع شرکت نیست",
+		"salesAgencyCompanyType": "نوع همکاری (عاملیت فروش) الزامی است",
+		"trafficCompanyType": "نوع شرکت (ترافیک) الزامی است",
+		"companyType": "نوع شرکت الزامی است",
+		"incomePercentage": "درصد درآمد الزامی است",
+		"expensePercentage": "درصد هزینه الزامی است",
+		"costTitles": "عنوان‌های هزینه را تکمیل کنید",
+		"partnerType": "نوع شریک الزامی است",
+		"rackCount": "تعداد رک الزامی است",
+		"unitsPerRack": "تعداد یونیت هر رک الزامی است",
+		"monthlyRent": "اجاره ماهیانه تمامی رک‌ها الزامی است",
+		"datacenters": "حداقل یک دیتاسنتر باید انتخاب شود",
+		"tehranUnit": "واحد (تهران) الزامی است",
+		"provinceUnit": "واحد (مراکز استانی) الزامی است",
+		"ratePercent": "درصد نرخ الزامی است",
+		"tehranRevenueShare": "درصد سهم درآمد (تهران) الزامی است",
+		"provinceRevenueShare": "درصد سهم درآمد (مراکز استانی) الزامی است"
+	},
+	"unit": {
+		"rial": "ریال"
+	},
+	"placeholder": {
+		"year": "سال",
+		"month": "ماه",
+		"select": "انتخاب کنید",
+		"selectYear": "انتخاب سال",
+		"selectMonth": "انتخاب ماه"
+	},
+	"shahkar": {
+		"addendumHasNewCustomerRate": "این الحاقیه نرخ مشتریان جدید دارد",
+		"newCustomerRate": "نرخ مشتریان جدید",
+		"unitPrice": "بهای هر واحد",
+		"contractHasNewCustomerRate": "این قرارداد نرخ مشتریان جدید دارد"
+	},
+	"preview": {
+		"unknown": "نامشخص",
+		"invalidRoute": "اطلاعات مسیر پیش‌نمایش قرارداد معتبر نیست",
+		"latestStatus": "آخرین وضعیت:"
+	},
+	"sms": {
+		"operators": {
+			"irancellFa": "ایرانسل - فارسی",
+			"irancellEn": "ایرانسل - انگلیسی",
+			"hamrahAvalFa": "همراه اول - فارسی",
+			"hamrahAvalEn": "همراه اول - انگلیسی",
+			"otherFa": "سایر - فارسی",
+			"otherEn": "سایر - انگلیسی"
+		},
+		"operatorRevenue": "درآمد اپراتورها",
+		"minProfit": "حداقل کارمزد",
+		"optional": "اختیاری",
+		"governmentShare": "سهم دولت",
+		"feeAndShare": "تعیین کارمزد و سهم"
+	},
+	"companyPlaceholder": {
+		"selectServiceFirst": "ابتدا نوع سرویس را انتخاب کنید",
+		"loading": "در حال دریافت لیست شرکت‌ها...",
+		"selectCompanyTypeFirst": "ابتدا نوع شرکت را انتخاب کنید",
+		"selectTypeFirst": "ابتدا {{type}} را انتخاب کنید",
+		"select": "شرکت را انتخاب کنید"
+	},
+	"field": {
+		"salesAgencyType": "نوع همکاری (عاملیت فروش)",
+		"smsCompanyType": "نوع شرکت (SMS)",
+		"trafficCompanyType": "نوع شرکت (ترافیک)",
+		"pspCompanyType": "نوع شرکت (PSP)",
+		"companyType": "نوع شرکت",
+		"companyName": "نام شرکت",
+		"serviceType": "نوع سرویس",
+		"counterparty": "طرف قرارداد",
+		"salesAgent": "نماینده فروش",
+		"realStartYear": "سال شروع واقعی قرارداد",
+		"realStartMonth": "ماه شروع واقعی قرارداد",
+		"partnerType": "نوع شریک",
+		"selectCompany": "انتخاب شرکت",
+		"datacenters": "دیتاسنترها",
+		"contractInfo": "اطلاعات قرارداد",
+		"contractInfoHint": "شماره قرارداد و سایر مشخصات",
+		"period": "بازه زمانی",
+		"periodHint": "تاریخ شروع و پایان قرارداد",
+		"financialDetails": "جزئیات مالی",
+		"telecomFinancialHint": "هزینه رک‌ها و محاسبات کولوکیشن",
+		"partnersFinancialHint": "اطلاعات دیتاسنترها و نرخ‌های کولوکیشن",
+		"contractDatacenters": "دیتاسنترهای قرارداد",
+		"change": "تغییر",
+		"previous": "قبلی",
+		"next": "بعدی",
+		"basicInfo": "اطلاعات پایه قرارداد",
+		"partnerTypeLabel": "نوع شریک:",
+		"companyNameLabel": "نام شرکت:",
+		"selectPartnerTypeFirst": "ابتدا نوع شریک را انتخاب کنید",
+		"selectService": "سرویس را انتخاب کنید",
+		"officialContract": "قرارداد رسمی است",
+		"contractNumberExample": "مثلا CN-1405-001",
+		"contractNumberExampleLegacy": "مثلا CN-1404-001",
+		"salesAgentSelectCompanyFirst": "ابتدا شرکت را انتخاب کنید",
+		"salesAgentLoading": "در حال دریافت نماینده فروش...",
+		"salesAgentAuto": "نماینده فروش به صورت خودکار انتخاب می‌شود",
+		"salesAgentNotFound": "نماینده فروشی برای این شرکت یافت نشد",
+		"collocationStepCounterparty": "انتخاب طرف قرارداد"
+	},
+	"form": {
+		"submitError": "خطا در ثبت/ویرایش",
+		"unknownError": "خطای نامشخص",
+		"fixErrors": "لطفاً خطاهای فرم را اصلاح کنید",
+		"selectContractHint": "جهت مشاهده، یک قرارداد را از پنل سمت چپ انتخاب کنید"
+	},
+	"supplementary": {
+		"title": "اطلاعات تکمیلی",
+		"description": "توضیحات",
+		"descriptionPlaceholder": "توضیحات قرارداد",
+		"attachments": "مدارک پیوستی",
+		"draggerTitle": "فایل‌ها را بکشید یا برای انتخاب اینجا کلیک کنید",
+		"draggerHint": "امکان آپلود هم‌زمان فایل‌های PNG، JPG و PDF"
+	},
+	"counterparty": {
+		"partners": "شرکای تجاری",
+		"govOps": "قرارداد شرکت مخابرات ایران"
+	},
+	"companyContracts": {
+		"to": "تا",
+		"contractNumber": "قرارداد شماره",
+		"activeRange": "بازه فعال",
+		"startDate": "تاریخ شروع",
+		"endDate": "تاریخ پایان",
+		"title": "قراردادهای شرکت",
+		"loadFailed": "دریافت قراردادهای شرکت ناموفق بود",
+		"empty": "قرارداد دیگری یافت نشد",
+		"selectFirst": "ابتدا سرویس و شرکت را انتخاب کنید"
 	}
 }

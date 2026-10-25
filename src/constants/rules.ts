@@ -3,6 +3,7 @@ import type { TFunction } from "i18next";
 import {
 	ALPHA_NUMERIC_ONLY_REGEXP,
 	MOBILE_PHONE_REGEXP,
+	NO_ARABIC_SCRIPT_REGEXP,
 	TELEPHONE_REGEXP,
 	UNIFIED_SOCIAL_CREDIT_CODE_REGEXP,
 	USERNAME_REGEXP,
@@ -37,7 +38,7 @@ export function PASSWORD_RULES(t: TFunction<"translation", undefined>) {
 			message: t("form.password.required"),
 		},
 		{
-			pattern: /^(?=.*\d)(?=.*[a-z])[\w~!@#$%^&*+.\-]{8,50}$/i,
+			pattern: NO_ARABIC_SCRIPT_REGEXP,
 			message: t("form.password.invalid"),
 		},
 	];

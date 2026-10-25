@@ -2,31 +2,40 @@ import type { ArrayPath, Path } from "react-hook-form";
 import type { ContractFormValues } from "../../../model/contract.form.types";
 import { BasicContent } from "#src/components/";
 import { ContractAddendaSection } from "#src/features/contract/components/addenda/ContractAddendaSection";
-import { ContractTypeSection } from "#src/features/contract/components/contract-type/ContractTypeSection";
 import { ContractDataCopyButton } from "#src/features/contract/shared/ui/form/ContractDataCopyButton";
 import { useAccess } from "#src/hooks";
 import { AlignedFormField, useAlignedLabelWidth } from "#src/shared/ui/aligned-form-field";
-import { RHFProCheckbox, RHFProNumber, RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
+import { RHFProCheckbox, RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { SectionCard } from "#src/shared/ui/section-card";
-import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
+import { toPersianDigits } from "#src/utils";
+import { PlusOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
-import { Button, Card, Steps, Tooltip } from "antd";
-import { AnimatePresence, motion } from "framer-motion";
+import { Alert, Button, Card, Steps } from "antd";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
-import { companiesByServiceQuery, contractGapsQuery, servicesQuery, smsCommissionAgentsQuery, trafficDatacentersQuery } from "../../../queries/contract.queries";
-import { companyTypeMatches, isIxpCompanyName } from "../../../utils";
+import { useFormContext, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { Link } from "react-router";
+import { filterSelectableCompanyTypes, hasSmsVendorCompanyType } from "../../../model/company-type-options";
+import { buildFallbackMonthsByYear, getRealStartMonths, getRealStartYears, isRealStartTrigger } from "../../../model/contract-dates";
+import { resolveContractGapsScope } from "../../../model/contract-gaps";
+import { CONTRACT_NUMBER_MAX_LENGTH } from "../../../model/contract-number";
+import { companiesByServiceQuery, contractGapsQuery, servicesQuery, smsCommissionAgentsQuery } from "../../../queries/contract.queries";
+import { isTelecomFrameCode } from "../../../services/telecom-frame/telecom-frame.types";
+import { useCollocationSlaOptions } from "../../../services/traffic/use-collocation-sla-options";
+import { companyTypeMatches, isSmsVendorCompany } from "../../../utils";
 import { MONTH_OPTIONS } from "../constants/jalali-date-options";
+import { CollocationAddendumFields, TelecomRackCostFields } from "./CollocationAddendumFields";
+import { CollocationDatacentersField, CollocationStepPane } from "./CollocationDatacentersField";
 import { FixedEndSection } from "./FixedEndSection";
 
 const COUNTERPARTY_OPTIONS = [
-	{ label: "شرکای تجاری", value: "partners" },
-	{ label: "قرارداد شرکت مخابرات ایران", value: "gov_ops" },
-];
+	{ labelKey: "contract.counterparty.partners", value: "partners" },
+	{ labelKey: "contract.counterparty.govOps", value: "gov_ops" },
+] as const;
 
 const COLLOCATION_COUNTERPARTY_OPTIONS = [
-	{ label: "شرکای تجاری", description: "Business Partner", value: "partners" },
-	{ label: "قرارداد شرکت مخابرات ایران", description: "Telecommunication Company of Iran", value: "gov_ops" },
+	{ labelKey: "contract.counterparty.partners", description: "Business Partner", value: "partners" },
+	{ labelKey: "contract.counterparty.govOps", description: "Telecommunication Company of Iran", value: "gov_ops" },
 ] as const;
 
 const COLLOCATION_COMPANY_TYPE_FALLBACK_OPTIONS = [
@@ -34,22 +43,15 @@ const COLLOCATION_COMPANY_TYPE_FALLBACK_OPTIONS = [
 	{ label: "CP", description: "Content Provider", value: "CP" },
 ] as const;
 
-const COLLOCATION_ADDENDA_LOCATION_OPTIONS = [
-	{ label: "تهران", value: "TEHRAN" },
-	{ label: "مراکز استانی", value: "PROVINCE" },
-];
-
-const COLLOCATION_RACK_TYPE_OPTIONS = [
-	{ label: "رک کامل", value: "full" },
-	{ label: "نیم رک", value: "half" },
-	{ label: "یک چهارم رک", value: "quarter" },
-	{ label: "یونیت", value: "unit" },
-];
-
-const REAL_START_MIN_YEAR = 1400;
-const REAL_START_TRIGGER_YEAR = 1404;
-const REAL_START_TRIGGER_MONTH = 4;
-const BEHESHTI_DATACENTER_TAG = "DEFAULT_BEHESHTI";
+function AddCompanyLink() {
+	const { t } = useTranslation();
+	return (
+		<Link to="/company/management" className="inline-flex items-center gap-1 whitespace-nowrap text-xs">
+			<PlusOutlined />
+			{t("contract.create.addCompany")}
+		</Link>
+	);
+}
 
 function isSmsCommissionCode(code: string | null | undefined) {
 	const normalized = typeof code === "string" ? code.trim().toLowerCase() : "";
@@ -119,6 +121,8 @@ function isJalaliRangeAvailable(
 
 interface FixedStartSectionProps {
 	mode?: "create" | "edit"
+	/** ویرایش: تا انتخاب قرارداد، تک‌گزینه‌ها خودکار انتخاب می‌شوند (فرم بارگذاری‌شده دست‌نخورده می‌ماند). */
+	awaitingContractSelection?: boolean
 	preserveDatesDuringResetRef?: React.MutableRefObject<boolean>
 }
 
@@ -127,154 +131,6 @@ interface CollocationChoiceButtonProps {
 	description?: string
 	selected: boolean
 	onClick: () => void
-}
-
-interface CollocationStepPaneProps {
-	active: boolean
-	children: React.ReactNode
-}
-
-interface CollocationRackDiscountTierTableProps {
-	name: string
-	active: boolean
-}
-
-function CollocationStepPane({ active, children }: CollocationStepPaneProps) {
-	return (
-		<motion.div
-			initial={false}
-			animate={active
-				? {
-					opacity: 1,
-					y: 0,
-					height: "auto",
-					visibility: "visible",
-				}
-				: {
-					opacity: 0,
-					y: 10,
-					height: 0,
-					transitionEnd: { visibility: "hidden" },
-				}}
-			transition={{ duration: 0.22, ease: "easeOut" }}
-			style={{
-				overflow: "hidden",
-				pointerEvents: active ? "auto" : "none",
-			}}
-			aria-hidden={!active}
-		>
-			{children}
-		</motion.div>
-	);
-}
-
-function CollocationRackDiscountTierTable({ name, active }: CollocationRackDiscountTierTableProps) {
-	const { control, setValue } = useFormContext<ContractFormValues>();
-	const { fields, append, remove } = useFieldArray({ control, name: name as any });
-	const rows = useWatch({ control, name: name as any }) as Array<{ from: number | null, to: number | null, discountPercent: number | null }> | undefined;
-
-	useEffect(() => {
-		if (!active || (rows && rows.length > 0))
-			return;
-
-		append({ from: null, to: null, discountPercent: null } as any);
-	}, [active, rows, append]);
-
-	useEffect(() => {
-		if (!rows || rows.length < 2)
-			return;
-
-		for (let index = 1; index < rows.length; index++) {
-			const previousTo = rows[index - 1]?.to ?? null;
-			const currentFrom = rows[index]?.from ?? null;
-			if (currentFrom !== previousTo) {
-				setValue(`${name}.${index}.from` as any, previousTo as any, {
-					shouldDirty: true,
-					shouldValidate: true,
-				});
-			}
-		}
-	}, [rows, name, setValue]);
-
-	function handleAddRow() {
-		const previousTo = rows && rows.length > 0 ? rows[rows.length - 1]?.to ?? null : null;
-		append({ from: previousTo, to: null, discountPercent: null } as any);
-	}
-
-	return (
-		<div className="mt-5">
-			<div className="mb-3 text-right text-base font-semibold">پلکان تخفیف رک (فقط برای دیتاسنتر بهشتی)</div>
-			<Card variant="outlined" className="rounded-xl [&_.ant-pro-card-body]:p-3">
-				<div className="overflow-hidden">
-					<div className="grid grid-cols-[1fr_1fr_1fr_64px]">
-						<div className="p-3 text-center font-semibold">بازه اول</div>
-						<div className="p-3 text-center font-semibold">بازه دوم</div>
-						<div className="p-3 text-center font-semibold">درصد تخفیف</div>
-						<div />
-					</div>
-
-					{fields.map((field, index) => (
-						<div
-							key={field.id}
-							className="grid grid-cols-[1fr_1fr_1fr_64px] border-t border-t-[rgba(255,255,255,0.08)]"
-						>
-							<div className="p-3">
-								<RHFProNumber<ContractFormValues, any>
-									name={`${name}.${index}.from` as any}
-									label=""
-									enableGrouping
-									inputProps={{
-										placeholder: "از",
-										inputMode: "numeric",
-										disabled: index > 0,
-									} as any}
-									formItemProps={{ className: "mb-0" }}
-								/>
-							</div>
-
-							<div className="p-3">
-								<RHFProNumber<ContractFormValues, any>
-									name={`${name}.${index}.to` as any}
-									label=""
-									enableGrouping
-									inputProps={{ placeholder: "تا", inputMode: "numeric" } as any}
-									formItemProps={{ className: "mb-0" }}
-								/>
-							</div>
-
-							<div className="p-3">
-								<RHFProNumber<ContractFormValues, any>
-									name={`${name}.${index}.discountPercent` as any}
-									label=""
-									inputProps={{ placeholder: "درصد", inputMode: "decimal" } as any}
-									formItemProps={{ className: "mb-0" }}
-								/>
-							</div>
-
-							<div className="flex items-center justify-center p-3">
-								<Tooltip title="حذف ردیف">
-									<Button
-										type="text"
-										danger
-										icon={<DeleteOutlined />}
-										onClick={() => remove(index)}
-									/>
-								</Tooltip>
-							</div>
-						</div>
-					))}
-
-					<div className="p-3">
-						<Tooltip title="مقدار شروع بازه جدید به‌طور خودکار تنظیم می‌شود.">
-							<Button icon={<PlusOutlined />} onClick={handleAddRow}>
-								افزودن ردیف
-							</Button>
-						</Tooltip>
-					</div>
-				</div>
-			</Card>
-		</div>
-	);
 }
 
 function CollocationChoiceButton({
@@ -301,8 +157,10 @@ function CollocationChoiceButton({
 	);
 }
 
-export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef }: FixedStartSectionProps) {
-	const { setValue, control, trigger, formState, resetField, setFocus } = useFormContext<ContractFormValues>();
+export function FixedStartSection({ mode = "create", awaitingContractSelection = false, preserveDatesDuringResetRef }: FixedStartSectionProps) {
+	const autoSelectSingle = mode !== "edit" || awaitingContractSelection;
+	const { t } = useTranslation();
+	const { setValue, control, trigger, formState, resetField } = useFormContext<ContractFormValues>();
 	const { getPermittedCompanyTypes, getPermittedServiceIds } = useAccess();
 	const permissionAction = mode === "edit" ? "update" : "create";
 	const [collocationStep, setCollocationStep] = useState(0);
@@ -343,7 +201,6 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 	const selectedAgentId = useWatch({ control, name: "serviceFields.agent" as any });
 	const serviceIsOfficial = useWatch({ control, name: "serviceFields.isOfficial" as any }) as boolean | null | undefined;
 	const collocationPartnerType = useWatch({ control, name: "serviceFields.collocationPartnerType" as any }) as string | null | undefined;
-	const datacenters = useWatch({ control, name: "serviceFields.datacenters" as any }) as Array<Record<string, any>> | undefined;
 
 	const permittedCreateServiceIdList = getPermittedServiceIds("contracts", permissionAction);
 	const permittedCreateServiceIds = useMemo(
@@ -352,7 +209,6 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 	);
 
 	const companies = useQuery(companiesByServiceQuery(serviceId));
-	const contractGaps = useQuery(contractGapsQuery({ serviceId, companyId, companyType }));
 
 	const isSms = serviceCode === "sms";
 	const isPsp = serviceCode === "psp";
@@ -360,13 +216,15 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 	const isSalesAgency = serviceCode === "sales_agency" || serviceCode === "sales-agency";
 	const isCollocation = isTraffic && String(companyType ?? "").trim().toUpperCase() === "COLLOCATION";
 	const isTelecomCollocation = isCollocation && counterpartyType === "gov_ops";
-	const requiresCompanyType = isSms || isPsp || isTraffic || isSalesAgency;
+	const isTelecomFrame = isTelecomFrameCode(serviceCode);
+	const requiresCompanyType = isSms || isPsp || isTraffic || isSalesAgency || isTelecomFrame;
 	const isSmsPartnersFlow = isSms && counterpartyType === "partners";
 	const shouldSelectCompany = !isSms || isSmsPartnersFlow;
 	const showCompanyTypeSelect = requiresCompanyType && shouldSelectCompany;
 	const isSmsCommission = isSmsCommissionCode(serviceCode);
 	const smsCommissionAgents = useQuery(smsCommissionAgentsQuery(isSmsCommission && !!companyId));
-	const trafficDatacenters = useQuery(trafficDatacentersQuery(isCollocation));
+	const gapsScope = resolveContractGapsScope({ serviceCode, counterpartyType, companyId, companyType });
+	const contractGaps = useQuery(contractGapsQuery({ serviceId, ...gapsScope }));
 
 	useEffect(() => {
 		if (!isSms && !isTraffic)
@@ -543,15 +401,24 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 				.map(service => ({ label: service.name, value: service.id })),
 		[services.data, permittedCreateServiceIdList.join(",")],
 	);
+	const permittedCompanyTypes = useMemo(
+		() => (serviceId ? getPermittedCompanyTypes("contracts", permissionAction, serviceId) : []),
+		[serviceId, permissionAction, getPermittedCompanyTypes],
+	);
+	// طرف قرارداد SMS از روی نوع‌های مجاز تعیین می‌شود (VENDOR = اپراتورها و دولت، بقیه = شرکای تجاری)
+	const smsPartyOptions = useMemo(() => {
+		const options = COUNTERPARTY_OPTIONS.filter(option => option.value === "gov_ops"
+			? hasSmsVendorCompanyType(permittedCompanyTypes)
+			: filterSelectableCompanyTypes("sms", permittedCompanyTypes).length > 0);
+		return (options.length > 0 ? options : COUNTERPARTY_OPTIONS).map(option => ({ label: t(option.labelKey), value: option.value }));
+	}, [permittedCompanyTypes, t]);
 	const companyTypeOptions = useMemo(() => {
 		if (!requiresCompanyType || !shouldSelectCompany || !serviceId)
 			return [];
 
-		const options = getPermittedCompanyTypes("contracts", permissionAction, serviceId).map(item => ({ label: item.value, value: item.key }));
-		if (isTraffic && !options.some(option => String(option.value).toUpperCase() === "IXP"))
-			options.push({ label: "IXP", value: "IXP" });
-		return options;
-	}, [requiresCompanyType, shouldSelectCompany, serviceId, permissionAction, getPermittedCompanyTypes, isTraffic]);
+		return filterSelectableCompanyTypes(serviceCode, permittedCompanyTypes)
+			.map(item => ({ label: item.value, value: item.key }));
+	}, [requiresCompanyType, shouldSelectCompany, serviceId, permittedCompanyTypes, serviceCode]);
 	const collocationCompanyTypeOptions = useMemo(() => {
 		const allowedValues = new Set(COLLOCATION_COMPANY_TYPE_FALLBACK_OPTIONS.map(option => option.value));
 		const permittedOptions = companyTypeOptions
@@ -571,10 +438,12 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 
 	const companyOptionsDefault = useMemo(
 		() =>
-			(companies.data?.results ?? []).map((c: any) => ({
-				label: c.name,
-				value: c.id,
-			})),
+			(companies.data?.results ?? [])
+				.filter((c: any) => !isSmsVendorCompany(c))
+				.map((c: any) => ({
+					label: c.name,
+					value: c.id,
+				})),
 		[companies.data],
 	);
 
@@ -582,22 +451,20 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 		const list = companies.data?.results ?? [];
 		if (!companyType)
 			return [];
-		const normalizedCompanyType = String(companyType).trim().toUpperCase();
 		return list
-			.filter((c: any) => normalizedCompanyType === "IXP"
-				? isIxpCompanyName(c.name)
-				: companyTypeMatches(c.company_type, companyType))
+			.filter((c: any) => !isSmsVendorCompany(c) && companyTypeMatches(c.company_type, companyType))
 			.map((c: any) => ({ label: c.name, value: c.id }));
 	}, [companies.data, companyType]);
 	const collocationCompanyOptions = useMemo(() => {
 		const list = companies.data?.results ?? [];
-		const targetType = collocationPartnerType || companyType;
+		// تا نوع شریک انتخاب نشده شرکتی پیشنهاد نمی‌شود (مثل old)
+		const targetType = collocationPartnerType;
 		if (!targetType)
 			return [];
 		return list
-			.filter((c: any) => companyTypeMatches(c.company_type, targetType))
+			.filter((c: any) => !isSmsVendorCompany(c) && companyTypeMatches(c.company_type, targetType))
 			.map((c: any) => ({ label: c.name, value: c.id }));
-	}, [companies.data, companyType, collocationPartnerType]);
+	}, [companies.data, collocationPartnerType]);
 
 	const smsCommissionAgentOptions = useMemo(() => {
 		if (!companyId)
@@ -611,86 +478,67 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 			}));
 	}, [smsCommissionAgents.data, companyId]);
 
-	const trafficDatacenterOptions = useMemo(() => {
-		const raw = trafficDatacenters.data;
-		const list = Array.isArray(raw) ? raw : raw?.results ?? [];
-
-		return list
-			.map((item: any) => {
-				const value = item?.id ?? item?.value ?? item?.code ?? item?.name;
-				if (value == null)
-					return null;
-
-				return {
-					label: String(item?.name ?? item?.title ?? item?.code ?? value),
-					value: String(value),
-					systemTag: typeof item?.system_tag === "string" ? item.system_tag : null,
-				};
-			})
-			.filter((item): item is { label: string, value: string, systemTag: string | null } => Boolean(item));
-	}, [trafficDatacenters.data]);
-	const selectedDatacenterValues = useMemo(
-		() => new Set((datacenters ?? []).map(item => String(item?.datacenter ?? "")).filter(Boolean)),
-		[datacenters],
-	);
-	const availableTrafficDatacenterOptions = useMemo(
-		() => trafficDatacenterOptions.filter(option => !selectedDatacenterValues.has(String(option.value))),
-		[trafficDatacenterOptions, selectedDatacenterValues],
-	);
+	const slaOptions = useCollocationSlaOptions();
 
 	const smsCommissionAgentPlaceholder
 		= !companyId
-			? "ابتدا شرکت را انتخاب کنید"
+			? t("contract.field.salesAgentSelectCompanyFirst")
 			: smsCommissionAgents.isLoading
-				? "در حال دریافت نماینده فروش..."
+				? t("contract.field.salesAgentLoading")
 				: smsCommissionAgentOptions.length > 0
-					? "نماینده فروش به صورت خودکار انتخاب می‌شود"
-					: "نماینده فروشی برای این شرکت یافت نشد";
+					? t("contract.field.salesAgentAuto")
+					: t("contract.field.salesAgentNotFound");
 
 	useEffect(() => {
-		if (!isSmsCommission)
+		// تا رسیدن لیست نماینده‌ها مقدار بارگذاری‌شده (ویرایش) پاک و فرم dirty نمی‌شود
+		if (!isSmsCommission || !smsCommissionAgents.isSuccess)
 			return;
 
+		// در ویرایش، انتخاب خودکار بدون دخالت کاربر فرم را dirty نمی‌کند
+		const shouldDirty = mode !== "edit";
 		if (!companyId || smsCommissionAgentOptions.length === 0) {
-			setValue("serviceFields.agent" as any, null, { shouldDirty: true, shouldValidate: false });
+			if (selectedAgentId != null)
+				setValue("serviceFields.agent" as any, null, { shouldDirty, shouldValidate: false });
 			return;
 		}
 
 		const hasSelected = smsCommissionAgentOptions.some(option => option.value === selectedAgentId);
 		if (!hasSelected) {
 			setValue("serviceFields.agent" as any, smsCommissionAgentOptions[0].value, {
-				shouldDirty: true,
+				shouldDirty,
 				shouldValidate: false,
 			});
 		}
-	}, [isSmsCommission, companyId, smsCommissionAgentOptions, selectedAgentId, setValue]);
+	}, [isSmsCommission, smsCommissionAgents.isSuccess, mode, companyId, smsCommissionAgentOptions, selectedAgentId, setValue]);
 
 	const showCompanySelect = shouldSelectCompany && (!requiresCompanyType || !!companyType) && !isCollocation;
-	const companyTypeLabel = isSalesAgency ? "نوع همکاری (عاملیت فروش)" : isTraffic ? "نوع شرکت (ترافیک)" : isSms ? "نوع شرکت (SMS)" : "نوع شرکت";
-	const companyLabel = isSalesAgency ? "نام شرکت" : "شرکت";
+	const companyTypeLabel = isSalesAgency ? t("contract.field.salesAgencyType") : isTraffic ? t("contract.field.trafficCompanyType") : isSms ? t("contract.field.smsCompanyType") : t("contract.field.companyType");
+	const companyLabel = isSalesAgency ? t("contract.field.companyName") : t("contract.formLabel.companyName");
 	const visibleLabels = useMemo(() => {
 		const labels = [
-			"نوع سرویس",
-			"سال شروع",
-			"ماه شروع",
-			"سال پایان",
-			"ماه پایان",
-			"شماره قرارداد",
+			t("contract.field.serviceType"),
+			t("contract.formLabel.startYear"),
+			t("contract.formLabel.startMonth"),
+			t("contract.formLabel.endYear"),
+			t("contract.formLabel.endMonth"),
+			t("contract.list.column.contractNumber"),
 		];
 		if (isSms)
-			labels.push("طرف قرارداد");
+			labels.push(t("contract.field.counterparty"));
 		if (showCompanyTypeSelect)
 			labels.push(companyTypeLabel);
 		if (showCompanySelect)
 			labels.push(companyLabel);
 		if (isSmsCommission)
-			labels.push("نماینده فروش");
-		if (isCollocation) {
-			labels.push("سال شروع واقعی قرارداد");
-			labels.push("ماه شروع واقعی قرارداد");
+			labels.push(t("contract.field.salesAgent"));
+		if (isCollocation)
+			labels.push("SLA");
+		if (isRealStartTrigger(startYear, startMonth)) {
+			labels.push(t("contract.field.realStartYear"));
+			labels.push(t("contract.field.realStartMonth"));
 		}
 		return labels;
-	}, [isSms, showCompanyTypeSelect, companyTypeLabel, showCompanySelect, companyLabel, isSmsCommission, isCollocation]);
+	}, [isSms, showCompanyTypeSelect, companyTypeLabel, showCompanySelect, companyLabel, isSmsCommission, isCollocation, startYear, startMonth, t]);
 	const alignedLabelStyle = useAlignedLabelWidth(visibleLabels);
 
 	const companyOptions = requiresCompanyType ? companyOptionsByType : companyOptionsDefault;
@@ -699,16 +547,16 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 
 	const companyPlaceholder
 		= !serviceId
-			? "ابتدا نوع سرویس را انتخاب کنید"
+			? t("contract.companyPlaceholder.selectServiceFirst")
 			: companies.isLoading
-				? "در حال دریافت لیست شرکت‌ها..."
+				? t("contract.companyPlaceholder.loading")
 				: requiresCompanyType && shouldSelectCompany && !companyType
-					? `ابتدا ${companyTypeLabel} را انتخاب کنید`
-					: "شرکت را انتخاب کنید";
+					? t("contract.companyPlaceholder.selectTypeFirst", { type: companyTypeLabel })
+					: t("contract.companyPlaceholder.select");
 
 	const missingMonthsByYear = useMemo(() => {
-		const output = new Map<number, number[]>();
 		const raw = contractGaps.data?.missing_months_by_year;
+		const output = raw ? new Map<number, number[]>() : buildFallbackMonthsByYear();
 
 		Object.entries(raw ?? {}).forEach(([yearStr, months]) => {
 			const year = Number(yearStr);
@@ -732,7 +580,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 	}, [contractGaps.data, mode, startYear, startMonth, endYear, endMonth, dateFieldsAreDirty]);
 
 	useEffect(() => {
-		if (!preserveDatesDuringResetRef?.current || !serviceId || !companyId)
+		if (!preserveDatesDuringResetRef?.current || !contractGaps.data)
 			return;
 
 		if (contractGaps.isLoading || contractGaps.isFetching)
@@ -752,8 +600,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 
 		preserveDatesDuringResetRef.current = false;
 	}, [
-		serviceId,
-		companyId,
+		contractGaps.data,
 		contractGaps.isLoading,
 		contractGaps.isFetching,
 		missingMonthsByYear,
@@ -806,22 +653,19 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 		() => baseEndMonthOptions,
 		[baseEndMonthOptions],
 	);
-	const realStartYearOptions = useMemo(() => {
-		const maxYear = startYear;
-		if (maxYear == null || maxYear < REAL_START_MIN_YEAR)
-			return [];
-
-		return Array.from({ length: maxYear - REAL_START_MIN_YEAR + 1 }, (_, idx) => {
-			const year = REAL_START_MIN_YEAR + idx;
-			return { label: String(year), value: year };
-		});
-	}, [startYear]);
-	const realStartMonthOptions = useMemo(() => [...MONTH_OPTIONS], []);
-	const shouldShowRealStartFields = (
-		isCollocation
-		&& startYear === REAL_START_TRIGGER_YEAR
-		&& startMonth === REAL_START_TRIGGER_MONTH
+	const realStartYear = useWatch({ control, name: "serviceFields.realStartYear" as any }) as number | null | undefined;
+	const realStartYearOptions = useMemo(
+		() => getRealStartYears().map(year => ({ label: String(year), value: year })),
+		[],
 	);
+	const selectedRealStartMonth = useWatch({ control, name: "serviceFields.realStartMonth" as any }) as number | null | undefined;
+	const realStartMonthOptions = useMemo(() => mapMonthsToOptions(getRealStartMonths(realStartYear)), [realStartYear]);
+	const shouldShowRealStartFields = isRealStartTrigger(startYear, startMonth);
+
+	useEffect(() => {
+		if (realStartYear != null && selectedRealStartMonth != null && !getRealStartMonths(realStartYear).includes(selectedRealStartMonth))
+			setValue("serviceFields.realStartMonth" as any, null, { shouldDirty: true, shouldValidate: false });
+	}, [realStartYear, selectedRealStartMonth, setValue]);
 
 	useEffect(() => {
 		if (shouldShowRealStartFields)
@@ -831,21 +675,28 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 		setValue("serviceFields.realStartMonth" as any, null, { shouldDirty: false, shouldValidate: false });
 	}, [shouldShowRealStartFields, setValue]);
 
-	const canQueryDateGaps = !!serviceId && !!companyId;
-	const isDateOptionsLoading = canQueryDateGaps && (contractGaps.isLoading || contractGaps.isFetching);
+	const showCollocationGapHint = (
+		isCollocation
+		&& !isTelecomCollocation
+		&& !!serviceId
+		&& !!contractGaps.data
+		&& !contractGaps.isFetching
+		&& ![...missingMonthsByYear.values()].some(months => months.length > 0)
+	);
+	const isDateOptionsLoading = contractGaps.isLoading || contractGaps.isFetching;
 	const compactFormItemStyle = { className: "mb-0" };
 	const selectedCollocationPartner = collocationCompanyTypeOptions.find(option => option.value === collocationPartnerType);
 	const selectedCollocationCompany = collocationCompanyOptions.find(option => option.value === companyId);
 	const collocationSteps = isTelecomCollocation
 		? [
-			{ title: "انتخاب طرف قرارداد" },
-			{ title: "اطلاعات قرارداد" },
+			{ title: t("contract.field.collocationStepCounterparty") },
+			{ title: t("contract.field.contractInfo") },
 		]
 		: [
-			{ title: "انتخاب طرف قرارداد" },
-			{ title: "نوع شریک" },
-			{ title: "انتخاب شرکت" },
-			{ title: "دیتاسنترها" },
+			{ title: t("contract.field.collocationStepCounterparty") },
+			{ title: t("contract.field.partnerType") },
+			{ title: t("contract.field.selectCompany") },
+			{ title: t("contract.field.datacenters") },
 		];
 	const collocationMaxStep = isTelecomCollocation
 		? 1
@@ -882,354 +733,58 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 		setCollocationStep(normalizedStep);
 	}
 
-	function addDatacenter(value: string | null) {
-		if (!value)
-			return;
-		const current = Array.isArray(datacenters) ? datacenters : [];
-		if (current.some(item => String(item?.datacenter) === String(value)))
-			return;
-		const selectedOption = trafficDatacenterOptions.find(option => String(option.value) === String(value));
-		const nextIndex = current.length;
+	function renderRealStartFields(idSuffix: string) {
+		return (
+			<CollocationStepPane active={shouldShowRealStartFields}>
+				<div className="mt-4 aligned-form-grid aligned-form-grid--two aligned-form-date-grid" style={alignedLabelStyle}>
+					<AlignedFormField label={t("contract.field.realStartYear")} labelId={`contract-form-label-real-start-year-${idSuffix}`}>
+						<RHFSelect<ContractFormValues, any, number | null>
+							name={"serviceFields.realStartYear" as any}
+							formItemProps={compactFormItemStyle}
+							options={realStartYearOptions}
+							selectProps={{
+								"allowClear": true,
+								"placeholder": t("contract.placeholder.year"),
+								"aria-labelledby": `contract-form-label-real-start-year-${idSuffix}`,
+							} as any}
+						/>
+					</AlignedFormField>
 
-		setValue("serviceFields.datacenters" as any, [
-			...current,
-			{
-				rowKey: crypto.randomUUID(),
-				datacenter: value,
-				datacenterSystemTag: selectedOption?.systemTag ?? null,
-				portItems: [{ rowKey: crypto.randomUUID(), count: null, speed: null, unitPrice: null }],
-				rackItems: [{ rowKey: crypto.randomUUID(), rackType: null, count: null, unitPrice: null }],
-			},
-		], {
-			shouldDirty: true,
-			shouldValidate: false,
-		});
-		setValue("serviceFields.datacenter" as any, null, { shouldDirty: true, shouldValidate: false });
-		window.setTimeout(() => {
-			setFocus(`serviceFields.datacenters.${nextIndex}.bandwidthUnitRate` as any);
-		}, 0);
+					<AlignedFormField label={t("contract.field.realStartMonth")} labelId={`contract-form-label-real-start-month-${idSuffix}`}>
+						<RHFSelect<ContractFormValues, any, number | null>
+							name={"serviceFields.realStartMonth" as any}
+							formItemProps={compactFormItemStyle}
+							options={realStartMonthOptions}
+							selectProps={{
+								"allowClear": true,
+								"placeholder": t("contract.placeholder.month"),
+								"aria-labelledby": `contract-form-label-real-start-month-${idSuffix}`,
+							} as any}
+						/>
+					</AlignedFormField>
+				</div>
+			</CollocationStepPane>
+		);
 	}
-
-	function removeDatacenter(index: number) {
-		const current = Array.isArray(datacenters) ? datacenters : [];
-		setValue("serviceFields.datacenters" as any, current.filter((_, idx) => idx !== index), {
-			shouldDirty: true,
-			shouldValidate: true,
-		});
-	}
-
-	function addDatacenterPortItem(datacenterIndex: number) {
-		const current = Array.isArray(datacenters) ? [...datacenters] : [];
-		const item = current[datacenterIndex] ?? {};
-		const portItems = Array.isArray(item.portItems) ? item.portItems : [];
-		current[datacenterIndex] = {
-			...item,
-			portItems: [...portItems, { rowKey: crypto.randomUUID(), count: null, speed: null, unitPrice: null }],
-		};
-		setValue("serviceFields.datacenters" as any, current, {
-			shouldDirty: true,
-			shouldValidate: false,
-		});
-	}
-
-	function removeDatacenterPortItem(datacenterIndex: number, itemIndex: number) {
-		const current = Array.isArray(datacenters) ? [...datacenters] : [];
-		const item = current[datacenterIndex] ?? {};
-		const portItems = Array.isArray(item.portItems) ? item.portItems : [];
-		current[datacenterIndex] = {
-			...item,
-			portItems: portItems.filter((_, idx) => idx !== itemIndex),
-		};
-		setValue("serviceFields.datacenters" as any, current, {
-			shouldDirty: true,
-			shouldValidate: true,
-		});
-	}
-
-	function addDatacenterRackItem(datacenterIndex: number) {
-		const current = Array.isArray(datacenters) ? [...datacenters] : [];
-		const item = current[datacenterIndex] ?? {};
-		const rackItems = Array.isArray(item.rackItems) ? item.rackItems : [];
-		current[datacenterIndex] = {
-			...item,
-			rackItems: [...rackItems, { rowKey: crypto.randomUUID(), rackType: null, count: null, unitPrice: null }],
-		};
-		setValue("serviceFields.datacenters" as any, current, {
-			shouldDirty: true,
-			shouldValidate: false,
-		});
-	}
-
-	function removeDatacenterRackItem(datacenterIndex: number, itemIndex: number) {
-		const current = Array.isArray(datacenters) ? [...datacenters] : [];
-		const item = current[datacenterIndex] ?? {};
-		const rackItems = Array.isArray(item.rackItems) ? item.rackItems : [];
-		current[datacenterIndex] = {
-			...item,
-			rackItems: rackItems.filter((_, idx) => idx !== itemIndex),
-		};
-		setValue("serviceFields.datacenters" as any, current, {
-			shouldDirty: true,
-			shouldValidate: true,
-		});
-	}
-
-	// if (false && isCollocation) {
-	// 	return (
-	// 		<Card className="w-full">
-	// 			<BasicContent className="w-full">
-	// 				<div className="aligned-form-grid aligned-form-grid--two" style={alignedLabelStyle}>
-	// 					<AlignedFormField label="نوع سرویس" labelId="contract-form-label-service">
-	// 						<RHFSelect<ContractFormValues, "serviceId", number | null>
-	// 							name="serviceId"
-	// 							formItemProps={compactFormItemStyle}
-	// 							loading={services.isLoading}
-	// 							options={serviceOptions}
-	// 							onValueChange={() => setCollocationStep(0)}
-	// 							selectProps={{
-	// 								"allowClear": true,
-	// 								"placeholder": "سرویس را انتخاب کنید",
-	// 								"aria-labelledby": "contract-form-label-service",
-	// 							} as any}
-	// 						/>
-	// 					</AlignedFormField>
-	//
-	// 					<AlignedFormField label={companyTypeLabel} labelId="contract-form-label-company-type">
-	// 						<RHFSelect<ContractFormValues, "companyType", any>
-	// 							name="companyType"
-	// 							formItemProps={compactFormItemStyle}
-	// 							options={companyTypeOptions}
-	// 							onValueChange={() => {
-	// 								setCollocationStep(0);
-	// 								setValue("serviceFields.collocationPartnerType" as any, null, {
-	// 									shouldDirty: true,
-	// 									shouldValidate: false,
-	// 								});
-	// 								setValue("companyId", null, { shouldDirty: true, shouldValidate: false });
-	// 							}}
-	// 							selectProps={{
-	// 								"allowClear": true,
-	// 								"placeholder": "انتخاب کنید",
-	// 								"aria-labelledby": "contract-form-label-company-type",
-	// 							} as any}
-	// 						/>
-	// 					</AlignedFormField>
-	// 				</div>
-	//
-	// 				<Card
-	// 					bordered
-	// 					className="mt-4 rounded-2xl [&_.ant-pro-card-body]:p-5"
-	// 				>
-	// 					{/*<Steps*/}
-	// 					{/*	current={activeCollocationStep}*/}
-	// 					{/*	items={collocationSteps}*/}
-	// 					{/*	responsive*/}
-	// 					{/*	className="mb-8"*/}
-	// 					{/*/>*/}
-	//
-	// 					{activeCollocationStep === 0
-	// 						? (
-	// 							<div className="grid gap-3 md:grid-cols-2">
-	// 								{COLLOCATION_COUNTERPARTY_OPTIONS.map(option => (
-	// 									<CollocationChoiceButton
-	// 										key={option.value}
-	// 										label={option.label}
-	// 										description={option.description}
-	// 										selected={counterpartyType === option.value}
-	// 										onClick={() => {
-	// 											setValue("counterpartyType", option.value, { shouldDirty: true, shouldValidate: true });
-	// 											setValue("serviceFields.collocationPartnerType" as any, null, { shouldDirty: true, shouldValidate: false });
-	// 											setValue("companyId", null, { shouldDirty: true, shouldValidate: false });
-	// 											setValue("serviceFields.datacenters" as any, [], { shouldDirty: true, shouldValidate: false });
-	// 											setValue("serviceFields.datacenter" as any, null, { shouldDirty: true, shouldValidate: false });
-	// 										}}
-	// 									/>
-	// 								))}
-	// 							</div>
-	// 						)
-	// 						: null}
-	//
-	// 					{activeCollocationStep === 1
-	// 						? (
-	// 							<div className="grid gap-3 md:grid-cols-2">
-	// 								{collocationCompanyTypeOptions.map(option => (
-	// 									<CollocationChoiceButton
-	// 										key={option.value}
-	// 										label={option.label}
-	// 										description={option.description}
-	// 										selected={collocationPartnerType === option.value}
-	// 										onClick={() => {
-	// 											setValue("serviceFields.collocationPartnerType" as any, option.value, { shouldDirty: true, shouldValidate: true });
-	// 											setValue("companyId", null, { shouldDirty: true, shouldValidate: false });
-	// 										}}
-	// 									/>
-	// 								))}
-	// 							</div>
-	// 						)
-	// 						: null}
-	//
-	// 					{activeCollocationStep === 2
-	// 						? (
-	// 							<div className="aligned-form-grid aligned-form-grid--two" style={alignedLabelStyle}>
-	// 								<AlignedFormField label="شرکت" labelId="contract-form-label-company">
-	// 									<RHFSelect<ContractFormValues, "companyId", number | null>
-	// 										name="companyId"
-	// 										formItemProps={compactFormItemStyle}
-	// 										loading={companies.isLoading}
-	// 										options={collocationCompanyOptions as any}
-	// 										selectProps={{
-	// 											"allowClear": true,
-	// 											"disabled": !collocationPartnerType || companies.isLoading,
-	// 											"placeholder": !collocationPartnerType ? "ابتدا نوع شریک را انتخاب کنید" : companyPlaceholder,
-	// 											"style": !collocationPartnerType || companies.isLoading ? { cursor: "not-allowed" } : undefined,
-	// 											"open": !collocationPartnerType || companies.isLoading ? false : undefined,
-	// 											"aria-labelledby": "contract-form-label-company",
-	// 										}}
-	// 									/>
-	// 								</AlignedFormField>
-	// 							</div>
-	// 						)
-	// 						: null}
-	//
-	// 					{activeCollocationStep === 3
-	// 						? (
-	// 							<Card bordered className="rounded-xl">
-	// 								<div className="text-sm text-[var(--ant-color-text-secondary)]">
-	// 									دیتاسنترها پس از انتخاب شرکت قابل تکمیل هستند.
-	// 								</div>
-	// 							</Card>
-	// 						)
-	// 						: null}
-	//
-	// 					<div className="mt-4 flex items-center justify-between border-t border-[var(--ant-color-border)] pt-4">
-	// 						{activeCollocationStep > 0
-	// 							? (
-	// 								<Button onClick={goToPreviousCollocationStep}>
-	// 									قبلی
-	// 								</Button>
-	// 							)
-	// 							: <span />}
-	// 						{activeCollocationStep < collocationSteps.length - 1
-	// 							? (
-	// 								<Button
-	// 									type="primary"
-	// 									onClick={goToNextCollocationStep}
-	// 									disabled={!canGoNextInCollocationStep}
-	// 								>
-	// 									بعدی
-	// 								</Button>
-	// 							)
-	// 							: null}
-	// 					</div>
-	// 				</Card>
-	//
-	// 				{companyId != null
-	// 					? (
-	// 						<>
-	// 							<div
-	// 								className="aligned-form-grid aligned-form-grid--four aligned-form-date-grid"
-	// 								style={{ ...alignedLabelStyle, marginTop: 12 }}
-	// 							>
-	// 								<AlignedFormField label="سال شروع" labelId="contract-form-label-start-year">
-	// 									<RHFSelect<ContractFormValues, "startYear", number | null>
-	// 										name="startYear"
-	// 										formItemProps={compactFormItemStyle}
-	// 										loading={isDateOptionsLoading}
-	// 										options={startYearOptions}
-	// 										selectProps={{
-	// 											"allowClear": true,
-	// 											"placeholder": "انتخاب سال",
-	// 											"aria-labelledby": "contract-form-label-start-year",
-	// 										} as any}
-	// 									/>
-	// 								</AlignedFormField>
-	//
-	// 								<AlignedFormField label="ماه شروع" labelId="contract-form-label-start-month">
-	// 									<RHFSelect<ContractFormValues, "startMonth", number | null>
-	// 										name="startMonth"
-	// 										formItemProps={compactFormItemStyle}
-	// 										loading={isDateOptionsLoading}
-	// 										options={startMonthOptions}
-	// 										selectProps={{
-	// 											"allowClear": true,
-	// 											"placeholder": "انتخاب ماه",
-	// 											"aria-labelledby": "contract-form-label-start-month",
-	// 										} as any}
-	// 									/>
-	// 								</AlignedFormField>
-	//
-	// 								<AlignedFormField label="سال پایان" labelId="contract-form-label-end-year">
-	// 									<RHFSelect<ContractFormValues, "endYear", number | null>
-	// 										name="endYear"
-	// 										formItemProps={compactFormItemStyle}
-	// 										loading={isDateOptionsLoading}
-	// 										options={endYearOptions}
-	// 										selectProps={{
-	// 											"allowClear": true,
-	// 											"placeholder": "انتخاب سال",
-	// 											"aria-labelledby": "contract-form-label-end-year",
-	// 										} as any}
-	// 									/>
-	// 								</AlignedFormField>
-	//
-	// 								<AlignedFormField label="ماه پایان" labelId="contract-form-label-end-month">
-	// 									<RHFSelect<ContractFormValues, "endMonth", number | null>
-	// 										name="endMonth"
-	// 										formItemProps={compactFormItemStyle}
-	// 										loading={isDateOptionsLoading}
-	// 										options={endMonthOptions}
-	// 										selectProps={{
-	// 											"allowClear": true,
-	// 											"placeholder": "انتخاب ماه",
-	// 											"aria-labelledby": "contract-form-label-end-month",
-	// 										} as any}
-	// 									/>
-	// 								</AlignedFormField>
-	// 							</div>
-	//
-	// 							<div
-	// 								className="aligned-form-grid aligned-form-grid--two"
-	// 								style={{ ...alignedLabelStyle, marginTop: 12 }}
-	// 							>
-	// 								<AlignedFormField
-	// 									label="شماره قرارداد"
-	// 									labelId="contract-form-label-contract-number"
-	// 								>
-	// 									<RHFProText<ContractFormValues, "contractNumber">
-	// 										name="contractNumber"
-	// 										formItemProps={compactFormItemStyle}
-	// 										inputProps={{
-	// 											"placeholder": "مثلا CN-1404-001",
-	// 											"aria-labelledby": "contract-form-label-contract-number",
-	// 										}}
-	// 									/>
-	// 								</AlignedFormField>
-	// 							</div>
-	// 						</>
-	// 					)
-	// 					: null}
-	// 			</BasicContent>
-	// 		</Card>
-	// 	);
-	// }
 
 	return (
-		<SectionCard title="اطلاعات پایه قرارداد" className="w-full">
+		<SectionCard title={t("contract.field.basicInfo")} className="w-full">
 			<BasicContent className="w-full">
 				<div className="aligned-form-grid aligned-form-grid--two" style={alignedLabelStyle}>
-					<AlignedFormField label="نوع سرویس" labelId="contract-form-label-service">
+					<AlignedFormField label={t("contract.field.serviceType")} labelId="contract-form-label-service">
 						<RHFSelect<ContractFormValues, "serviceId", number | null>
 							name="serviceId"
 							formItemProps={compactFormItemStyle}
 							loading={services.isLoading}
 							options={serviceOptions}
+							autoSelectSingle={autoSelectSingle}
 							onValueChange={() => {
 								setValue("companyId", null, { shouldDirty: true, shouldValidate: false });
 								setCollocationStep(0);
 							}}
 							selectProps={{
 								"allowClear": true,
-								"placeholder": "سرویس را انتخاب کنید",
+								"placeholder": t("contract.field.selectService"),
 								"aria-labelledby": "contract-form-label-service",
 							} as any}
 						/>
@@ -1237,14 +792,15 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 
 					{isSms
 						? (
-							<AlignedFormField label="طرف قرارداد" labelId="contract-form-label-counterparty">
+							<AlignedFormField label={t("contract.field.counterparty")} labelId="contract-form-label-counterparty">
 								<RHFSelect<ContractFormValues, "counterpartyType", "partners" | "gov_ops" | null>
 									name="counterpartyType"
 									formItemProps={compactFormItemStyle}
-									options={COUNTERPARTY_OPTIONS}
+									options={smsPartyOptions}
+									autoSelectSingle={autoSelectSingle}
 									selectProps={{
 										"allowClear": true,
-										"placeholder": "انتخاب کنید",
+										"placeholder": t("contract.placeholder.select"),
 										"aria-labelledby": "contract-form-label-counterparty",
 									} as any}
 								/>
@@ -1259,6 +815,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 									name="companyType"
 									formItemProps={compactFormItemStyle}
 									options={companyTypeOptions}
+									autoSelectSingle={autoSelectSingle}
 									onValueChange={() => {
 										setCollocationStep(0);
 										setValue("serviceFields.collocationPartnerType" as any, null, {
@@ -1269,7 +826,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 									}}
 									selectProps={{
 										"allowClear": true,
-										"placeholder": "انتخاب کنید",
+										"placeholder": t("contract.placeholder.select"),
 										"aria-labelledby": "contract-form-label-company-type",
 									} as any}
 								/>
@@ -1280,27 +837,33 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 					{showCompanySelect
 						? (
 							<AlignedFormField label={companyLabel} labelId="contract-form-label-company">
-								<RHFSelect<ContractFormValues, "companyId", number | null>
-									name="companyId"
-									formItemProps={compactFormItemStyle}
-									loading={companies.isLoading}
-									options={companyOptions as any}
-									selectProps={{
-										"allowClear": true,
-										"disabled": isCompanyDisabled,
-										"placeholder": companyPlaceholder,
-										"style": isCompanyDisabled ? { cursor: "not-allowed" } : undefined,
-										"open": isCompanyDisabled ? false : undefined,
-										"aria-labelledby": "contract-form-label-company",
-									}}
-								/>
+								<div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+									<div className="min-w-0 flex-1 basis-48">
+										<RHFSelect<ContractFormValues, "companyId", number | null>
+											name="companyId"
+											formItemProps={compactFormItemStyle}
+											loading={companies.isLoading}
+											options={companyOptions as any}
+											autoSelectSingle={autoSelectSingle}
+											selectProps={{
+												"allowClear": true,
+												"disabled": isCompanyDisabled,
+												"placeholder": companyPlaceholder,
+												"style": isCompanyDisabled ? { cursor: "not-allowed" } : undefined,
+												"open": isCompanyDisabled ? false : undefined,
+												"aria-labelledby": "contract-form-label-company",
+											}}
+										/>
+									</div>
+									{mode === "edit" ? null : <AddCompanyLink />}
+								</div>
 							</AlignedFormField>
 						)
 						: null}
 
 					{isSmsCommission
 						? (
-							<AlignedFormField label="نماینده فروش" labelId="contract-form-label-agent">
+							<AlignedFormField label={t("contract.field.salesAgent")} labelId="contract-form-label-agent">
 								<RHFSelect<ContractFormValues, any, number | null>
 									name={"serviceFields.agent" as any}
 									formItemProps={compactFormItemStyle}
@@ -1338,7 +901,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 									{COLLOCATION_COUNTERPARTY_OPTIONS.map(option => (
 										<CollocationChoiceButton
 											key={option.value}
-											label={option.label}
+											label={t(option.labelKey)}
 											description={option.description}
 											selected={counterpartyType === option.value}
 											onClick={() => {
@@ -1370,16 +933,17 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 
 							<CollocationStepPane active={!isTelecomCollocation && activeCollocationStep === 2}>
 								<div className="aligned-form-grid aligned-form-grid--two" style={alignedLabelStyle}>
-									<AlignedFormField label="شرکت" labelId="contract-form-label-company">
+									<AlignedFormField label={t("contract.formLabel.companyName")} labelId="contract-form-label-company">
 										<RHFSelect<ContractFormValues, "companyId", number | null>
 											name="companyId"
 											formItemProps={compactFormItemStyle}
 											loading={companies.isLoading}
-											options={collocationCompanyOptions as any}
+											options={collocationCompanyOptions}
+											autoSelectSingle={autoSelectSingle && !isTelecomCollocation && activeCollocationStep === 2}
 											selectProps={{
 												"allowClear": true,
 												"disabled": !collocationPartnerType || companies.isLoading,
-												"placeholder": !collocationPartnerType ? "ابتدا نوع شریک را انتخاب کنید" : companyPlaceholder,
+												"placeholder": !collocationPartnerType ? t("contract.field.selectPartnerTypeFirst") : companyPlaceholder,
 												"style": !collocationPartnerType || companies.isLoading ? { cursor: "not-allowed" } : undefined,
 												"open": !collocationPartnerType || companies.isLoading ? false : undefined,
 												"aria-labelledby": "contract-form-label-company",
@@ -1393,49 +957,47 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 								<div className="flex flex-col gap-5">
 									<Card bordered className="rounded-xl">
 										<div className="text-right text-sm font-semibold text-[var(--ant-color-text)]">
-											قرارداد شرکت مخابرات ایران
+											{t("contract.counterparty.govOps")}
 										</div>
 									</Card>
 
 									<div>
 										<div className="mb-3 text-right">
-											<div className="text-base font-semibold">اطلاعات قرارداد</div>
-											<div className="text-sm text-[var(--ant-color-text-secondary)]">شماره قرارداد و سایر مشخصات</div>
+											<div className="text-base font-semibold">{t("contract.field.contractInfo")}</div>
+											<div className="text-sm text-[var(--ant-color-text-secondary)]">{t("contract.field.contractInfoHint")}</div>
 										</div>
 										<div className="aligned-form-grid aligned-form-grid--two" style={alignedLabelStyle}>
 											<AlignedFormField
-												label="شماره قرارداد"
+												label={t("contract.list.column.contractNumber")}
 												labelId="contract-form-label-contract-number-telecom"
 											>
 												<RHFProText<ContractFormValues, "contractNumber">
 													name="contractNumber"
 													formItemProps={compactFormItemStyle}
+													transformValue={toPersianDigits}
 													inputProps={{
-														"placeholder": "مثلا CN-1405-001",
+														"maxLength": CONTRACT_NUMBER_MAX_LENGTH,
+														"placeholder": t("contract.field.contractNumberExample"),
 														"aria-labelledby": "contract-form-label-contract-number-telecom",
 													}}
 												/>
 											</AlignedFormField>
-											{mode !== "edit"
-												? (
-													<AlignedFormField label="" className="aligned-form-field--copy-button" labelId="contract-form-label-copy-contract-data-collocation">
-														<ContractDataCopyButton />
-													</AlignedFormField>
-												)
-												: null}
+											<AlignedFormField label="" className="aligned-form-field--copy-button" labelId="contract-form-label-copy-contract-data-collocation">
+												<ContractDataCopyButton />
+											</AlignedFormField>
 										</div>
 									</div>
 
 									<div>
 										<div className="mb-3 text-right">
-											<div className="text-base font-semibold">بازه زمانی</div>
-											<div className="text-sm text-[var(--ant-color-text-secondary)]">تاریخ شروع و پایان قرارداد</div>
+											<div className="text-base font-semibold">{t("contract.field.period")}</div>
+											<div className="text-sm text-[var(--ant-color-text-secondary)]">{t("contract.field.periodHint")}</div>
 										</div>
 										<div
 											className="aligned-form-grid aligned-form-grid--four aligned-form-date-grid"
 											style={alignedLabelStyle}
 										>
-											<AlignedFormField label="سال شروع" labelId="contract-form-label-start-year-telecom">
+											<AlignedFormField label={t("contract.formLabel.startYear")} labelId="contract-form-label-start-year-telecom">
 												<RHFSelect<ContractFormValues, "startYear", number | null>
 													name="startYear"
 													formItemProps={compactFormItemStyle}
@@ -1443,7 +1005,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													options={startYearOptions}
 													selectProps={{
 														"allowClear": true,
-														"placeholder": "سال",
+														"placeholder": t("contract.placeholder.year"),
 														"placement": "bottomRight",
 														"dropdownAlign": { overflow: { adjustY: false } },
 														"aria-labelledby": "contract-form-label-start-year-telecom",
@@ -1451,7 +1013,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 												/>
 											</AlignedFormField>
 
-											<AlignedFormField label="ماه شروع" labelId="contract-form-label-start-month-telecom">
+											<AlignedFormField label={t("contract.formLabel.startMonth")} labelId="contract-form-label-start-month-telecom">
 												<RHFSelect<ContractFormValues, "startMonth", number | null>
 													name="startMonth"
 													formItemProps={compactFormItemStyle}
@@ -1459,7 +1021,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													options={startMonthOptions}
 													selectProps={{
 														"allowClear": true,
-														"placeholder": "ماه",
+														"placeholder": t("contract.placeholder.month"),
 														"placement": "bottomRight",
 														"dropdownAlign": { overflow: { adjustY: false } },
 														"aria-labelledby": "contract-form-label-start-month-telecom",
@@ -1467,7 +1029,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 												/>
 											</AlignedFormField>
 
-											<AlignedFormField label="سال پایان" labelId="contract-form-label-end-year-telecom">
+											<AlignedFormField label={t("contract.formLabel.endYear")} labelId="contract-form-label-end-year-telecom">
 												<RHFSelect<ContractFormValues, "endYear", number | null>
 													name="endYear"
 													formItemProps={compactFormItemStyle}
@@ -1475,7 +1037,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													options={endYearOptions}
 													selectProps={{
 														"allowClear": true,
-														"placeholder": "سال",
+														"placeholder": t("contract.placeholder.year"),
 														"placement": "bottomRight",
 														"dropdownAlign": { overflow: { adjustY: false } },
 														"aria-labelledby": "contract-form-label-end-year-telecom",
@@ -1483,7 +1045,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 												/>
 											</AlignedFormField>
 
-											<AlignedFormField label="ماه پایان" labelId="contract-form-label-end-month-telecom">
+											<AlignedFormField label={t("contract.formLabel.endMonth")} labelId="contract-form-label-end-month-telecom">
 												<RHFSelect<ContractFormValues, "endMonth", number | null>
 													name="endMonth"
 													formItemProps={compactFormItemStyle}
@@ -1491,7 +1053,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													options={endMonthOptions}
 													selectProps={{
 														"allowClear": true,
-														"placeholder": "ماه",
+														"placeholder": t("contract.placeholder.month"),
 														"placement": "bottomRight",
 														"dropdownAlign": { overflow: { adjustY: false } },
 														"aria-labelledby": "contract-form-label-end-month-telecom",
@@ -1499,33 +1061,16 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 												/>
 											</AlignedFormField>
 										</div>
+										{renderRealStartFields("telecom")}
 									</div>
 
 									<div>
 										<div className="mb-3 text-right">
-											<div className="text-base font-semibold">جزئیات مالی</div>
-											<div className="text-sm text-[var(--ant-color-text-secondary)]">هزینه رک‌ها و محاسبات کولوکیشن</div>
+											<div className="text-base font-semibold">{t("contract.field.financialDetails")}</div>
+											<div className="text-sm text-[var(--ant-color-text-secondary)]">{t("contract.field.telecomFinancialHint")}</div>
 										</div>
-										<div className="aligned-form-grid aligned-form-grid--two" style={alignedLabelStyle}>
-											<RHFProNumber<ContractFormValues, any>
-												name={"serviceFields.telecomRackCount" as any}
-												label="تعداد رک"
-												formItemProps={compactFormItemStyle}
-												enableGrouping
-											/>
-											<RHFProNumber<ContractFormValues, any>
-												name={"serviceFields.telecomUnitsPerRack" as any}
-												label="تعداد یونیت هر رک"
-												formItemProps={compactFormItemStyle}
-												enableGrouping
-											/>
-											<RHFProNumber<ContractFormValues, any>
-												name={"serviceFields.telecomMonthlyRackRent" as any}
-												label="اجاره ماهیانه تمامی رک‌ها (ریال)"
-												formItemProps={compactFormItemStyle}
-												enableGrouping
-												enableWordsTooltip
-											/>
+										<div style={alignedLabelStyle}>
+											<TelecomRackCostFields basePath="serviceFields" />
 										</div>
 									</div>
 								</div>
@@ -1537,61 +1082,59 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 										<div className="flex items-center justify-between gap-3 text-sm">
 											<div className="flex flex-col gap-1 text-right">
 												<span>
-													نوع شریک:
+													{t("contract.field.partnerTypeLabel")}
 													{" "}
 													<b>{selectedCollocationPartner?.label ?? "-"}</b>
 												</span>
 												<span>
-													نام شرکت:
+													{t("contract.field.companyNameLabel")}
 													{" "}
 													<b>{selectedCollocationCompany?.label ?? "-"}</b>
 												</span>
 											</div>
 											<Button type="link" onClick={() => setCollocationStep(1)}>
-												تغییر
+												{t("contract.field.change")}
 											</Button>
 										</div>
 									</Card>
 
 									<div>
 										<div className="mb-3 text-right">
-											<div className="text-base font-semibold">اطلاعات قرارداد</div>
-											<div className="text-sm text-[var(--ant-color-text-secondary)]">شماره قرارداد و سایر مشخصات</div>
+											<div className="text-base font-semibold">{t("contract.field.contractInfo")}</div>
+											<div className="text-sm text-[var(--ant-color-text-secondary)]">{t("contract.field.contractInfoHint")}</div>
 										</div>
 										<div className="aligned-form-grid aligned-form-grid--two" style={alignedLabelStyle}>
 											<AlignedFormField
-												label="شماره قرارداد"
+												label={t("contract.list.column.contractNumber")}
 												labelId="contract-form-label-contract-number"
 											>
 												<RHFProText<ContractFormValues, "contractNumber">
 													name="contractNumber"
 													formItemProps={compactFormItemStyle}
+													transformValue={toPersianDigits}
 													inputProps={{
-														"placeholder": "مثلا CN-1405-001",
+														"maxLength": CONTRACT_NUMBER_MAX_LENGTH,
+														"placeholder": t("contract.field.contractNumberExample"),
 														"aria-labelledby": "contract-form-label-contract-number",
 													}}
 												/>
 											</AlignedFormField>
-											{mode !== "edit"
-												? (
-													<AlignedFormField label="" className="aligned-form-field--copy-button" labelId="contract-form-label-copy-contract-data-collocation-main">
-														<ContractDataCopyButton />
-													</AlignedFormField>
-												)
-												: null}
+											<AlignedFormField label="" className="aligned-form-field--copy-button" labelId="contract-form-label-copy-contract-data-collocation-main">
+												<ContractDataCopyButton />
+											</AlignedFormField>
 										</div>
 									</div>
 
 									<div>
 										<div className="mb-3 text-right">
-											<div className="text-base font-semibold">بازه زمانی</div>
-											<div className="text-sm text-[var(--ant-color-text-secondary)]">تاریخ شروع و پایان قرارداد</div>
+											<div className="text-base font-semibold">{t("contract.field.period")}</div>
+											<div className="text-sm text-[var(--ant-color-text-secondary)]">{t("contract.field.periodHint")}</div>
 										</div>
 										<div
 											className="aligned-form-grid aligned-form-grid--four aligned-form-date-grid"
 											style={alignedLabelStyle}
 										>
-											<AlignedFormField label="سال شروع" labelId="contract-form-label-start-year">
+											<AlignedFormField label={t("contract.formLabel.startYear")} labelId="contract-form-label-start-year">
 												<RHFSelect<ContractFormValues, "startYear", number | null>
 													name="startYear"
 													formItemProps={compactFormItemStyle}
@@ -1599,7 +1142,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													options={startYearOptions}
 													selectProps={{
 														"allowClear": true,
-														"placeholder": "سال",
+														"placeholder": t("contract.placeholder.year"),
 														"placement": "bottomRight",
 														"dropdownAlign": { overflow: { adjustY: false } },
 														"aria-labelledby": "contract-form-label-start-year",
@@ -1607,7 +1150,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 												/>
 											</AlignedFormField>
 
-											<AlignedFormField label="ماه شروع" labelId="contract-form-label-start-month">
+											<AlignedFormField label={t("contract.formLabel.startMonth")} labelId="contract-form-label-start-month">
 												<RHFSelect<ContractFormValues, "startMonth", number | null>
 													name="startMonth"
 													formItemProps={compactFormItemStyle}
@@ -1615,7 +1158,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													options={startMonthOptions}
 													selectProps={{
 														"allowClear": true,
-														"placeholder": "ماه",
+														"placeholder": t("contract.placeholder.month"),
 														"placement": "bottomRight",
 														"dropdownAlign": { overflow: { adjustY: false } },
 														"aria-labelledby": "contract-form-label-start-month",
@@ -1623,7 +1166,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 												/>
 											</AlignedFormField>
 
-											<AlignedFormField label="سال پایان" labelId="contract-form-label-end-year">
+											<AlignedFormField label={t("contract.formLabel.endYear")} labelId="contract-form-label-end-year">
 												<RHFSelect<ContractFormValues, "endYear", number | null>
 													name="endYear"
 													formItemProps={compactFormItemStyle}
@@ -1631,7 +1174,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													options={endYearOptions}
 													selectProps={{
 														"allowClear": true,
-														"placeholder": "سال",
+														"placeholder": t("contract.placeholder.year"),
 														"placement": "bottomRight",
 														"dropdownAlign": { overflow: { adjustY: false } },
 														"aria-labelledby": "contract-form-label-end-year",
@@ -1639,7 +1182,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 												/>
 											</AlignedFormField>
 
-											<AlignedFormField label="ماه پایان" labelId="contract-form-label-end-month">
+											<AlignedFormField label={t("contract.formLabel.endMonth")} labelId="contract-form-label-end-month">
 												<RHFSelect<ContractFormValues, "endMonth", number | null>
 													name="endMonth"
 													formItemProps={compactFormItemStyle}
@@ -1647,7 +1190,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 													options={endMonthOptions}
 													selectProps={{
 														"allowClear": true,
-														"placeholder": "ماه",
+														"placeholder": t("contract.placeholder.month"),
 														"placement": "bottomRight",
 														"dropdownAlign": { overflow: { adjustY: false } },
 														"aria-labelledby": "contract-form-label-end-month",
@@ -1655,235 +1198,46 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 												/>
 											</AlignedFormField>
 										</div>
-										<CollocationStepPane active={shouldShowRealStartFields}>
-											<div className="mt-4 aligned-form-grid aligned-form-grid--two aligned-form-date-grid" style={alignedLabelStyle}>
-												<AlignedFormField label="سال شروع واقعی قرارداد" labelId="contract-form-label-real-start-year">
-													<RHFSelect<ContractFormValues, any, number | null>
-														name={"serviceFields.realStartYear" as any}
-														formItemProps={compactFormItemStyle}
-														options={realStartYearOptions}
-														selectProps={{
-															"allowClear": true,
-															"placeholder": "سال",
-															"aria-labelledby": "contract-form-label-real-start-year",
-														} as any}
-													/>
-												</AlignedFormField>
-
-												<AlignedFormField label="ماه شروع واقعی قرارداد" labelId="contract-form-label-real-start-month">
-													<RHFSelect<ContractFormValues, any, number | null>
-														name={"serviceFields.realStartMonth" as any}
-														formItemProps={compactFormItemStyle}
-														options={realStartMonthOptions}
-														selectProps={{
-															"allowClear": true,
-															"placeholder": "ماه",
-															"aria-labelledby": "contract-form-label-real-start-month",
-														} as any}
-													/>
-												</AlignedFormField>
-											</div>
-										</CollocationStepPane>
+										{showCollocationGapHint
+											? (
+												<Alert
+													className="mt-4"
+													type="info"
+													showIcon
+													message={t(collocationPartnerType === "CP" ? "contract.gapHint.cp" : "contract.gapHint.colo")}
+												/>
+											)
+											: null}
+										{renderRealStartFields("collocation")}
 									</div>
 
 									<div>
 										<div className="mb-3 text-right">
-											<div className="text-base font-semibold">جزئیات مالی</div>
-											<div className="text-sm text-[var(--ant-color-text-secondary)]">اطلاعات دیتاسنترها و نرخ‌های کولوکیشن</div>
+											<div className="text-base font-semibold">{t("contract.field.financialDetails")}</div>
+											<div className="text-sm text-[var(--ant-color-text-secondary)]">{t("contract.field.partnersFinancialHint")}</div>
 										</div>
 										<Card bordered className="rounded-xl">
-											<div className="mb-3 text-right text-base font-semibold">دیتاسنترهای قرارداد</div>
-											<div className="flex flex-col gap-5">
-												<AnimatePresence initial={false}>
-													{(datacenters ?? []).map((datacenterItem, datacenterIndex) => {
-														const datacenterValue = String(datacenterItem?.datacenter ?? "");
-														const selectedDatacenterOption = trafficDatacenterOptions.find(option => option.value === datacenterValue);
-														const datacenterLabel = selectedDatacenterOption?.label ?? "دیتاسنتر انتخاب‌شده";
-														const shouldShowRackDiscountTiers = collocationPartnerType === "CP" && selectedDatacenterOption?.systemTag === BEHESHTI_DATACENTER_TAG;
-														const portItems = Array.isArray(datacenterItem?.portItems) && datacenterItem.portItems.length > 0
-															? datacenterItem.portItems
-															: [{ rowKey: "initial-port", count: null, speed: null, unitPrice: null }];
-														const rackItems = Array.isArray(datacenterItem?.rackItems) && datacenterItem.rackItems.length > 0
-															? datacenterItem.rackItems
-															: [{ rowKey: "initial-rack", rackType: null, count: null, unitPrice: null }];
-
-														return (
-															<motion.div
-																key={String(datacenterItem?.rowKey ?? datacenterValue)}
-																initial={{ opacity: 0, y: 12, scale: 0.99 }}
-																animate={{ opacity: 1, y: 0, scale: 1 }}
-																exit={{ opacity: 0, y: -8, scale: 0.99 }}
-																transition={{ duration: 0.24, ease: "easeOut" }}
-															>
-																<Card bordered className="rounded-xl">
-																	<div className="mb-4 flex items-center justify-between gap-3">
-																		<div className="text-right">
-																			<div className="text-base font-semibold">
-																				{datacenterLabel}
-																			</div>
-																			<div className="text-sm text-[var(--ant-color-text-secondary)]">بستن جزئیات</div>
-																		</div>
-																		<Button
-																			danger
-																			onClick={() => removeDatacenter(datacenterIndex)}
-																		>
-																			حذف
-																		</Button>
-																	</div>
-
-																	<div className="grid gap-4 md:grid-cols-2">
-																		<RHFProNumber<ContractFormValues, any>
-																			name={`serviceFields.datacenters.${datacenterIndex}.bandwidthUnitRate` as any}
-																			label="نرخ هر واحد پهنای باند (ریال)"
-																			formItemProps={compactFormItemStyle}
-																			enableGrouping
-																			enableWordsTooltip
-																		/>
-																		<RHFProNumber<ContractFormValues, any>
-																			name={`serviceFields.datacenters.${datacenterIndex}.ipRate` as any}
-																			label="نرخ هر IP (ریال)"
-																			formItemProps={compactFormItemStyle}
-																			enableGrouping
-																			enableWordsTooltip
-																		/>
-																	</div>
-
-																	<div className="mt-5">
-																		<div className="mb-3 text-right text-base font-semibold">آیتم‌های پورت</div>
-																		<div className="flex flex-col gap-3">
-																			{portItems.map((item: any, idx: number) => (
-																				<Card key={String(item?.rowKey ?? `port-${item?.count ?? "empty"}-${item?.speed ?? "empty"}-${item?.unitPrice ?? "empty"}`)} bordered className="rounded-xl">
-																					<div className="mb-3 flex items-center justify-between gap-3">
-																						<div className="text-right">
-																							آیتم
-																							{" "}
-																							{idx + 1}
-																						</div>
-																						<Button danger onClick={() => removeDatacenterPortItem(datacenterIndex, idx)}>
-																							حذف
-																						</Button>
-																					</div>
-																					<div className="grid gap-4 md:grid-cols-3">
-																						<RHFProNumber<ContractFormValues, any>
-																							name={`serviceFields.datacenters.${datacenterIndex}.portItems.${idx}.unitPrice` as any}
-																							label="قیمت هر واحد (ریال)"
-																							formItemProps={compactFormItemStyle}
-																							enableGrouping
-																							enableWordsTooltip
-																						/>
-																						<RHFProNumber<ContractFormValues, any>
-																							name={`serviceFields.datacenters.${datacenterIndex}.portItems.${idx}.speed` as any}
-																							label="سرعت"
-																							formItemProps={compactFormItemStyle}
-																							enableGrouping
-																						/>
-																						<RHFProNumber<ContractFormValues, any>
-																							name={`serviceFields.datacenters.${datacenterIndex}.portItems.${idx}.count` as any}
-																							label="تعداد"
-																							formItemProps={compactFormItemStyle}
-																							enableGrouping
-																						/>
-																					</div>
-																				</Card>
-																			))}
-																		</div>
-																		<div className="mt-3 flex justify-end">
-																			<Button onClick={() => addDatacenterPortItem(datacenterIndex)}>افزودن آیتم</Button>
-																		</div>
-																	</div>
-
-																	<div className="mt-5">
-																		<div className="mb-3 text-right text-base font-semibold">آیتم‌های رک</div>
-																		<div className="flex flex-col gap-3">
-																			{rackItems.map((item: any, idx: number) => (
-																				<Card key={String(item?.rowKey ?? `rack-${item?.rackType ?? "empty"}-${item?.count ?? "empty"}-${item?.unitPrice ?? "empty"}`)} bordered className="rounded-xl">
-																					<div className="mb-3 flex items-center justify-between gap-3">
-																						<div className="text-right">
-																							آیتم
-																							{" "}
-																							{idx + 1}
-																						</div>
-																						<Button danger onClick={() => removeDatacenterRackItem(datacenterIndex, idx)}>
-																							حذف
-																						</Button>
-																					</div>
-																					<div className="grid gap-4 md:grid-cols-3">
-																						<RHFProNumber<ContractFormValues, any>
-																							name={`serviceFields.datacenters.${datacenterIndex}.rackItems.${idx}.unitPrice` as any}
-																							label="قیمت هر واحد (ریال)"
-																							formItemProps={compactFormItemStyle}
-																							enableGrouping
-																							enableWordsTooltip
-																						/>
-																						<RHFProNumber<ContractFormValues, any>
-																							name={`serviceFields.datacenters.${datacenterIndex}.rackItems.${idx}.count` as any}
-																							label="تعداد"
-																							formItemProps={compactFormItemStyle}
-																							enableGrouping
-																						/>
-																						<RHFSelect<ContractFormValues, any, string | null>
-																							name={`serviceFields.datacenters.${datacenterIndex}.rackItems.${idx}.rackType` as any}
-																							label="نوع رک"
-																							formItemProps={compactFormItemStyle}
-																							options={COLLOCATION_RACK_TYPE_OPTIONS}
-																							selectProps={{ allowClear: true, placeholder: "انتخاب کنید" }}
-																						/>
-																					</div>
-																				</Card>
-																			))}
-																		</div>
-																		<div className="mt-3 flex justify-end">
-																			<Button onClick={() => addDatacenterRackItem(datacenterIndex)}>افزودن آیتم</Button>
-																		</div>
-																	</div>
-
-																	<div className="mt-5 grid gap-4 md:grid-cols-2">
-																		<RHFProNumber<ContractFormValues, any>
-																			name={`serviceFields.datacenters.${datacenterIndex}.electricityAmpRate` as any}
-																			label="نرخ هر آمپر (ریال)"
-																			formItemProps={compactFormItemStyle}
-																			enableGrouping
-																			enableWordsTooltip
-																		/>
-																		<RHFProNumber<ContractFormValues, any>
-																			name={`serviceFields.datacenters.${datacenterIndex}.electricityExemptionThreshold` as any}
-																			label="آستانه معافیت آمپر"
-																			formItemProps={compactFormItemStyle}
-																			enableGrouping
-																		/>
-																	</div>
-
-																	<CollocationStepPane active={shouldShowRackDiscountTiers}>
-																		<CollocationRackDiscountTierTable
-																			name={`serviceFields.datacenters.${datacenterIndex}.rackDiscountTiers`}
-																			active={shouldShowRackDiscountTiers}
-																		/>
-																	</CollocationStepPane>
-																</Card>
-															</motion.div>
-														);
-													})}
-												</AnimatePresence>
-
-												<AlignedFormField label="انتخاب دیتاسنتر" labelId="contract-form-label-datacenter">
+											<div className="aligned-form-grid aligned-form-grid--two mb-5" style={alignedLabelStyle}>
+												<AlignedFormField label="SLA" labelId="contract-form-label-sla">
 													<RHFSelect<ContractFormValues, any, string | null>
-														name={"serviceFields.datacenter" as any}
+														name={"serviceFields.sla" as any}
 														formItemProps={compactFormItemStyle}
-														loading={trafficDatacenters.isLoading || trafficDatacenters.isFetching}
-														options={availableTrafficDatacenterOptions}
-														onValueChange={value => addDatacenter(value)}
+														options={slaOptions}
 														selectProps={{
 															"allowClear": true,
-															"placeholder": trafficDatacenters.isLoading || trafficDatacenters.isFetching
-																? "در حال دریافت دیتاسنترها..."
-																: availableTrafficDatacenterOptions.length > 0
-																	? "دیتاسنتر را انتخاب کنید"
-																	: "دیتاسنتری برای انتخاب باقی نمانده",
-															"disabled": trafficDatacenters.isLoading || trafficDatacenters.isFetching || availableTrafficDatacenterOptions.length === 0,
-															"aria-labelledby": "contract-form-label-datacenter",
+															"placeholder": t("contract.collocation.slaPlaceholder"),
+															"aria-labelledby": "contract-form-label-sla",
 														} as any}
 													/>
 												</AlignedFormField>
+											</div>
+											<div className="mb-3 text-right text-base font-semibold">{t("contract.field.contractDatacenters")}</div>
+											<div className="flex flex-col gap-5">
+												<CollocationDatacentersField
+													name="serviceFields.datacenters"
+													selectName="serviceFields.datacenter"
+													partnerType={collocationPartnerType}
+												/>
 											</div>
 										</Card>
 									</div>
@@ -1894,7 +1248,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 								{activeCollocationStep > 0
 									? (
 										<Button onClick={goToPreviousCollocationStep}>
-											قبلی
+											{t("contract.field.previous")}
 										</Button>
 									)
 									: <span />}
@@ -1905,7 +1259,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 											onClick={goToNextCollocationStep}
 											disabled={!canGoNextInCollocationStep}
 										>
-											بعدی
+											{t("contract.field.next")}
 										</Button>
 									)
 									: null}
@@ -1913,23 +1267,12 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 
 							<div className="mt-5 border-t border-[var(--ant-color-border)] pt-5">
 								<ContractAddendaSection<ContractFormValues>
-									title="الحاقیه‌های قرارداد (اختیاری)"
+									title={t("contract.addenda.title")}
 									name={"serviceFields.addenda" as ArrayPath<ContractFormValues>}
 									contractTypeTitle=""
 									contractTypeFieldKey="contractPricing"
 									renderAddendumFields={base => (
-										<>
-											<RHFSelect
-												name={`${base}.location` as any}
-												label="موقعیت"
-												options={COLLOCATION_ADDENDA_LOCATION_OPTIONS}
-												selectProps={{ placeholder: "انتخاب نوع محاسبه", allowClear: true }}
-											/>
-											<ContractTypeSection
-												title="نوع قرارداد"
-												name={`${base}.contractPricing` as any}
-											/>
-										</>
+										<CollocationAddendumFields base={base} isTelecom={isTelecomCollocation} partnerType={collocationPartnerType} />
 									)}
 									contractStartYearPath={"startYear" as Path<ContractFormValues>}
 									contractStartMonthPath={"startMonth" as Path<ContractFormValues>}
@@ -1939,7 +1282,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 							</div>
 
 							<div className="mt-5">
-								<FixedEndSection showSignedCheckbox />
+								<FixedEndSection />
 							</div>
 						</Card>
 					)
@@ -1949,7 +1292,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 					className="aligned-form-grid aligned-form-grid--four aligned-form-date-grid"
 					style={{ ...alignedLabelStyle, marginTop: 12, display: isCollocation ? "none" : undefined }}
 				>
-					<AlignedFormField label="سال شروع" labelId="contract-form-label-start-year">
+					<AlignedFormField label={t("contract.formLabel.startYear")} labelId="contract-form-label-start-year">
 						<RHFSelect<ContractFormValues, "startYear", number | null>
 							name="startYear"
 							formItemProps={compactFormItemStyle}
@@ -1957,7 +1300,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 							options={startYearOptions}
 							selectProps={{
 								"allowClear": true,
-								"placeholder": "انتخاب سال",
+								"placeholder": t("contract.placeholder.selectYear"),
 								"placement": "bottomRight",
 								"dropdownAlign": { overflow: { adjustY: false } },
 								"aria-labelledby": "contract-form-label-start-year",
@@ -1965,7 +1308,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 						/>
 					</AlignedFormField>
 
-					<AlignedFormField label="ماه شروع" labelId="contract-form-label-start-month">
+					<AlignedFormField label={t("contract.formLabel.startMonth")} labelId="contract-form-label-start-month">
 						<RHFSelect<ContractFormValues, "startMonth", number | null>
 							name="startMonth"
 							formItemProps={compactFormItemStyle}
@@ -1973,7 +1316,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 							options={startMonthOptions}
 							selectProps={{
 								"allowClear": true,
-								"placeholder": "انتخاب ماه",
+								"placeholder": t("contract.placeholder.selectMonth"),
 								"placement": "bottomRight",
 								"dropdownAlign": { overflow: { adjustY: false } },
 								"aria-labelledby": "contract-form-label-start-month",
@@ -1981,7 +1324,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 						/>
 					</AlignedFormField>
 
-					<AlignedFormField label="سال پایان" labelId="contract-form-label-end-year">
+					<AlignedFormField label={t("contract.formLabel.endYear")} labelId="contract-form-label-end-year">
 						<RHFSelect<ContractFormValues, "endYear", number | null>
 							name="endYear"
 							formItemProps={compactFormItemStyle}
@@ -1989,7 +1332,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 							options={endYearOptions}
 							selectProps={{
 								"allowClear": true,
-								"placeholder": "انتخاب سال",
+								"placeholder": t("contract.placeholder.selectYear"),
 								"placement": "bottomRight",
 								"dropdownAlign": { overflow: { adjustY: false } },
 								"aria-labelledby": "contract-form-label-end-year",
@@ -1997,7 +1340,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 						/>
 					</AlignedFormField>
 
-					<AlignedFormField label="ماه پایان" labelId="contract-form-label-end-month">
+					<AlignedFormField label={t("contract.formLabel.endMonth")} labelId="contract-form-label-end-month">
 						<RHFSelect<ContractFormValues, "endMonth", number | null>
 							name="endMonth"
 							formItemProps={compactFormItemStyle}
@@ -2005,7 +1348,7 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 							options={endMonthOptions}
 							selectProps={{
 								"allowClear": true,
-								"placeholder": "انتخاب ماه",
+								"placeholder": t("contract.placeholder.selectMonth"),
 								"placement": "bottomRight",
 								"dropdownAlign": { overflow: { adjustY: false } },
 								"aria-labelledby": "contract-form-label-end-month",
@@ -2013,6 +1356,8 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 						/>
 					</AlignedFormField>
 				</div>
+
+				{isCollocation ? null : renderRealStartFields("main")}
 
 				<div
 					className="aligned-form-grid aligned-form-grid--two"
@@ -2023,35 +1368,33 @@ export function FixedStartSection({ mode = "create", preserveDatesDuringResetRef
 						style={{ ...alignedLabelStyle, marginTop: 12 }}
 					>
 						<AlignedFormField
-							label="شماره قرارداد"
+							label={t("contract.list.column.contractNumber")}
 							labelId="contract-form-label-contract-number"
 						>
 							<RHFProText<ContractFormValues, "contractNumber">
 								name="contractNumber"
 								formItemProps={compactFormItemStyle}
+								transformValue={toPersianDigits}
 								inputProps={{
-									"placeholder": "مثلا CN-1404-001",
+									"maxLength": CONTRACT_NUMBER_MAX_LENGTH,
+									"placeholder": t("contract.field.contractNumberExampleLegacy"),
 									"aria-labelledby": "contract-form-label-contract-number",
 								}}
 							/>
 						</AlignedFormField>
-						{mode !== "edit"
-							? (
-								<AlignedFormField label="" className="aligned-form-field--copy-button" labelId="contract-form-label-copy-contract-data">
-									<ContractDataCopyButton />
-								</AlignedFormField>
-							)
-							: null}
+						<AlignedFormField label="" className="aligned-form-field--copy-button" labelId="contract-form-label-copy-contract-data">
+							<ContractDataCopyButton />
+						</AlignedFormField>
 					</div>
 				</div>
 
-				{isSms
+				{isSmsPartnersFlow
 					? (
 						<div className="contract-form-official-row">
 							<RHFProCheckbox<ContractFormValues, any>
 								name={"serviceFields.isOfficial" as any}
 								label=""
-								checkboxLabel="قرارداد رسمی است"
+								checkboxLabel={t("contract.field.officialContract")}
 								checkboxProps={{}}
 							/>
 						</div>

@@ -1,0 +1,26 @@
+{
+	"title": "Stammdaten Telekom-Rahmen",
+	"subtitle": "BO- (Abteilung / Hauptbüro / Person) und PO-Struktur (Bereich / Person) verwalten",
+	"levels": {
+		"department": "Abteilung",
+		"generalOffice": "Hauptbüro",
+		"boPerson": "Person (BO)",
+		"division": "Bereich / Technologie",
+		"poPerson": "Person (PO)"
+	},
+	"people": "Personen",
+	"name": "Name",
+	"fullName": "Vollständiger Name",
+	"personTitle": "Position",
+	"companyTypes": "Zulässige Unternehmenstypen",
+	"noCompanyTypes": "Kein Unternehmenstyp ausgewählt",
+	"active": "Aktiv",
+	"inactive": "Inaktiv",
+	"save": "Speichern",
+	"add": "Hinzufügen",
+	"edit": "Bearbeiten",
+	"selectParentFirst": "Zuerst das übergeordnete Element auswählen",
+	"empty": "Keine Einträge.",
+	"saved": "Gespeichert.",
+	"deleted": "Gelöscht."
+}

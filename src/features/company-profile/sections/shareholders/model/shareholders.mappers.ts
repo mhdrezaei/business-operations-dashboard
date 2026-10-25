@@ -1,4 +1,5 @@
 import type { ShareholderDto, ShareholderFormValues } from "./shareholders.types";
+import { normalizeDigitsToLatin } from "#src/utils/formated";
 
 export const emptyShareholderValues: ShareholderFormValues = {
 	full_name: "",
@@ -26,7 +27,7 @@ export function shareholderFormToPayload(
 		company: meta.company,
 		full_name: values.full_name.trim(),
 		national_id: values.national_id.trim() || "",
-		ownership_percent: ownership || "-",
+		ownership_percent: ownership ? Number(normalizeDigitsToLatin(ownership)) : null,
 		note: values.note.trim() || "",
 	};
 }
