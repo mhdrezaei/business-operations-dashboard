@@ -7,14 +7,14 @@ import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import { companiesByServiceQuery, servicesQuery } from "#src/features/contract/create/queries/contract.queries";
 import { useAccess } from "#src/hooks";
 import { TableActionDownloadIcon, TableActionEditIcon, TableActionEyeIcon, TableActionTrashIcon } from "#src/icons";
-import { PlusCircleOutlined, PrinterOutlined } from "@ant-design/icons";
+import { ExclamationCircleOutlined, PlusCircleOutlined, PrinterOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 
-import { Button, Popconfirm, theme } from "antd";
+import { App, Button, Modal, Popconfirm, theme } from "antd";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
-import { checkOfficialPdfStatus, fetchContractDetail, fetchContractsList, fetchDeleteContract, fetchSignFlowPreview } from "../../api/contracts.api";
+import { checkOfficialPdfStatus, fetchContractDetail, fetchContractPrintData, fetchContractsList, fetchDeleteContract, fetchSignFlowPreview } from "../../api/contracts.api";
 import { companyTypeMatches, pickCompanyTypeToken } from "../../shared/utils";
 import { buildContractEditPath } from "../../shared/utils/contract-routes";
 import { useContractAddendaTableStyles } from "./components/contract-addenda-table.styles";
@@ -24,9 +24,26 @@ import { SignFlowPreviewModal } from "./components/SignFlowPreviewModal";
 import { getContractColumns } from "./constants";
 import { openContractPdfPrint } from "./utils/contract-pdf";
 
+function extractSignFlowId(realSignFlow: any): number | string | null {
+	if (realSignFlow === null || realSignFlow === undefined || realSignFlow === false) {
+		return null;
+	}
+	if (typeof realSignFlow === "number" || typeof realSignFlow === "string") {
+		return realSignFlow;
+	}
+	if (typeof realSignFlow === "object") {
+		const candidate = realSignFlow.id ?? realSignFlow.sign_flow_id ?? realSignFlow.flow_id;
+		if (candidate !== null && candidate !== undefined && candidate !== "") {
+			return candidate;
+		}
+	}
+	return null;
+}
+
 export default function ContractListPage() {
 	const { t } = useTranslation();
 	const { token } = theme.useToken();
+	const { modal } = App.useApp();
 	const addendaTableClasses = useContractAddendaTableStyles();
 	const {
 		hasDomainPermission,
@@ -234,6 +251,89 @@ export default function ContractListPage() {
 		}
 	};
 
+	const showActiveSignFlowModal = (signFlowId: number | string | null) => {
+		const confirmFn = modal?.confirm ?? window.$modal?.confirm ?? Modal.confirm;
+		confirmFn({
+			title: "گردش امضای فعال",
+			icon: <ExclamationCircleOutlined />,
+			content: "یک گردش امضای فعال برای این قرارداد موجود است. آیا مایل به هدایت شدن به آن هستید؟",
+			okText: "تایید و هدایت",
+			cancelText: "انصراف",
+			onOk: () => {
+				if (signFlowId !== null && signFlowId !== undefined) {
+					navigate(`/contracts/sign-flows/${signFlowId}`);
+				}
+				else {
+					navigate("/contracts/sign-flows");
+				}
+			},
+		});
+	};
+
+	const handleSignFlowClick = async (record: ContractListItemType, addendumGroupId?: string | null) => {
+		try {
+			const service = resolveServicePath(record);
+			const printData = await fetchContractPrintData(service, record.id, addendumGroupId);
+			const activeSignFlow = printData?.real_sign_flow;
+
+			if (activeSignFlow !== null && activeSignFlow !== undefined) {
+				const signFlowId = extractSignFlowId(activeSignFlow);
+				showActiveSignFlowModal(signFlowId);
+				return;
+			}
+
+			const status = await checkOfficialPdfStatus(service, record.id, addendumGroupId);
+			if (status?.real_sign_flow !== null && status?.real_sign_flow !== undefined) {
+				const signFlowId = extractSignFlowId(status.real_sign_flow);
+				showActiveSignFlowModal(signFlowId);
+				return;
+			}
+
+			if (!status.can_upload && status.has_official_pdf) {
+				window.$message?.warning("نسخه رسمی این قرارداد قبلا آپلود شده و در حال گرفتن تایید می باشد");
+				return;
+			}
+		}
+		catch (error) {
+			console.error(error);
+			window.$message?.error("خطا در بررسی وضعیت قرارداد");
+			return;
+		}
+
+		setPrintRecord(record);
+		setPrintAddendumGroupId(addendumGroupId ?? null);
+		setSignFlowLoading(true);
+		setSignFlowModalOpen(true);
+		try {
+			const data = await fetchSignFlowPreview(resolveServicePath(record), record.id, addendumGroupId);
+			const previewActiveSignFlow = data?.real_sign_flow;
+			const previewSignFlowId = extractSignFlowId(previewActiveSignFlow)
+			  ?? (data?.has_active_flow && data?.active_flow_id ? data.active_flow_id : null);
+
+			if (previewActiveSignFlow != null) {
+				setSignFlowModalOpen(false);
+				showActiveSignFlowModal(previewSignFlowId);
+				return;
+			}
+
+			if (data?.has_active_flow && data?.active_flow_id) {
+				setSignFlowModalOpen(false);
+				showActiveSignFlowModal(data.active_flow_id);
+				return;
+			}
+
+			setSignFlowData(data);
+		}
+		catch (err) {
+			console.error(err);
+			window.$message?.error("خطا در دریافت اطلاعات گردش کار");
+			setSignFlowModalOpen(false);
+		}
+		finally {
+			setSignFlowLoading(false);
+		}
+	};
+
 	const baseColumns = useMemo(
 		() =>
 			getContractColumns({
@@ -340,36 +440,7 @@ export default function ContractListPage() {
 								size="large"
 								title="چاپ قرارداد"
 								icon={<PrinterOutlined />}
-								onClick={async () => {
-									try {
-										const status = await checkOfficialPdfStatus(resolveServicePath(record), record.id);
-										if (!status.can_upload && status.has_official_pdf) {
-											window.$message?.warning("نسخه رسمی این قرارداد قبلا آپلود شده و در حال گرفتن تایید می باشد");
-											return;
-										}
-									}
-									catch (error) {
-										console.error(error);
-										window.$message?.error("خطا در بررسی وضعیت نسخه رسمی");
-										return;
-									}
-									setPrintRecord(record);
-									setPrintAddendumGroupId(null);
-									setSignFlowLoading(true);
-									setSignFlowModalOpen(true);
-									try {
-										const data = await fetchSignFlowPreview(resolveServicePath(record), record.id);
-										setSignFlowData(data);
-									}
-									catch (err) {
-										console.error(err);
-										window.$message?.error("خطا در دریافت اطلاعات گردش کار");
-										setSignFlowModalOpen(false);
-									}
-									finally {
-										setSignFlowLoading(false);
-									}
-								}}
+								onClick={() => handleSignFlowClick(record)}
 							/>,
 						);
 					}
@@ -411,36 +482,7 @@ export default function ContractListPage() {
 						<ContractAddendaExpandedRow
 							contract={record}
 							service={resolveServicePath(record)}
-							onPrint={canSignRow(record) ? async (addendumGroupId) => {
-								try {
-									const status = await checkOfficialPdfStatus(resolveServicePath(record), record.id, addendumGroupId);
-									if (!status.can_upload && status.has_official_pdf) {
-										window.$message?.warning("نسخه رسمی این قرارداد قبلا آپلود شده و در حال گرفتن تایید می باشد");
-										return;
-									}
-								}
-								catch (error) {
-									console.error(error);
-									window.$message?.error("خطا در بررسی وضعیت نسخه رسمی");
-									return;
-								}
-								setPrintRecord(record);
-								setPrintAddendumGroupId(addendumGroupId);
-								setSignFlowLoading(true);
-								setSignFlowModalOpen(true);
-								try {
-									const data = await fetchSignFlowPreview(resolveServicePath(record), record.id, addendumGroupId);
-									setSignFlowData(data);
-								}
-								catch (err) {
-									console.error(err);
-									window.$message?.error("خطا در دریافت اطلاعات گردش کار");
-									setSignFlowModalOpen(false);
-								}
-								finally {
-									setSignFlowLoading(false);
-								}
-							} : undefined}
+							onPrint={canSignRow(record) ? addendumGroupId => handleSignFlowClick(record, addendumGroupId) : undefined}
 						/>
 					),
 				}}
