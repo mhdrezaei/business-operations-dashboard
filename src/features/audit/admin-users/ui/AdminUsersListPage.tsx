@@ -29,7 +29,7 @@ import { getAdminUsersColumns } from "./constants/admin-users.columns";
 
 export default function AdminUsersListPage() {
 	const { t } = useTranslation();
-	const { hasAdminPanelAccess } = useAccess();
+	const { hasAdminPanelAccess, hasAdminAction } = useAccess();
 
 	const actionRef = useRef<ActionType>(null);
 	const formRef = useRef<ProFormInstance | undefined>(undefined);
@@ -46,13 +46,12 @@ export default function AdminUsersListPage() {
 	const [loadingServiceAdminDetail, setLoadingServiceAdminDetail] = useState(false);
 
 	// permissions
-	const canManageUsers = hasAdminPanelAccess("users");
-	const canManageRoles = hasAdminPanelAccess("roles");
-	const canCreate = canManageUsers;
-	const canUpdate = canManageUsers;
-	const canDelete = canManageUsers;
-	const canSetRoles = canManageUsers || canManageRoles;
-	const canToggleActive = canManageUsers;
+	const canCreate = hasAdminAction("users", "create");
+	const canUpdate = hasAdminAction("users", "update");
+	const canDelete = hasAdminAction("users", "delete");
+	const canSetRoles = hasAdminAction("users", "update") || hasAdminAction("roles", "update");
+	const canToggleActive = hasAdminAction("users", "update");
+	const canViewServiceAdmins = hasAdminPanelAccess("service_admins");
 
 	const rolesQuery = useQuery(adminRolesQuery());
 
@@ -149,8 +148,8 @@ export default function AdminUsersListPage() {
 	};
 
 	const handleOpenServiceAdmin = async (row: AdminUserDto) => {
-		if (!canManageUsers) {
-			window.$message?.warning("دسترسی تغییر وضعیت ادمین سرویس ندارید.");
+		if (!canViewServiceAdmins) {
+			window.$message?.warning("دسترسی به ادمین سرویس ندارید.");
 			return;
 		}
 
@@ -206,7 +205,7 @@ export default function AdminUsersListPage() {
 						);
 					}
 
-					if (canManageUsers) {
+					if (canViewServiceAdmins) {
 						actions.push(
 							<BasicButton
 								key="service-admin"
@@ -268,7 +267,7 @@ export default function AdminUsersListPage() {
 				},
 			},
 		];
-	}, [baseColumns, canDelete, canManageUsers, canSetRoles, canToggleActive, canUpdate, t]);
+	}, [baseColumns, canDelete, canSetRoles, canToggleActive, canUpdate, canViewServiceAdmins, t]);
 
 	return (
 		<BasicContent className="h-full">

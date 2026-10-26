@@ -45,6 +45,7 @@ export interface SignFlowPreviewResponse {
 	}>
 	has_active_flow: boolean
 	active_flow_id: number | null
+	real_sign_flow?: { id: number, [key: string]: any } | number | string | null
 }
 
 export interface ContractGapsResponse {
@@ -324,6 +325,12 @@ export function requestOfficialPdf(service: ContractServicePath, contractId: num
 		.json<any>(); // Assuming it returns some success status
 }
 
+export interface CheckOfficialPdfStatusResponse {
+	can_upload: boolean
+	has_official_pdf: boolean
+	real_sign_flow?: { id: number, [key: string]: any } | number | string | null
+}
+
 export function checkOfficialPdfStatus(service: ContractServicePath, contractId: number, addendumGroupId?: string | null) {
 	const searchParams: Record<string, string> = {};
 	if (addendumGroupId) {
@@ -331,7 +338,7 @@ export function checkOfficialPdfStatus(service: ContractServicePath, contractId:
 	}
 	return request
 		.get(`contracts/${service}/${contractId}/official-pdf/status/`, { searchParams })
-		.json<{ can_upload: boolean, has_official_pdf: boolean }>();
+		.json<CheckOfficialPdfStatusResponse>();
 }
 
 /* ===================== DETAIL ===================== */

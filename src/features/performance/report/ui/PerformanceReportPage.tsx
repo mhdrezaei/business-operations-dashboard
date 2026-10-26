@@ -106,11 +106,7 @@ export function PerformanceReportPage() {
 	const [totalsRows, setTotalsRows] = useState<PerformanceReportRow[]>([]);
 	const [operatorGovernmentFilters, setOperatorGovernmentFilters] = useState<OperatorGovernmentFilters>(DEFAULT_OPERATOR_GOVERNMENT_FILTERS);
 
-	const permittedViewIdsFromPerformances = getPermittedServiceIds("performances", "view");
-	const permittedViewIdsFromContracts = getPermittedServiceIds("contracts", "view");
-	const permittedViewServiceIdsList = permittedViewIdsFromPerformances.length > 0
-		? permittedViewIdsFromPerformances
-		: permittedViewIdsFromContracts;
+	const permittedViewServiceIdsList = getPermittedServiceIds("performances", "view");
 
 	const permittedViewServiceIds = useMemo(
 		() => new Set(permittedViewServiceIdsList),

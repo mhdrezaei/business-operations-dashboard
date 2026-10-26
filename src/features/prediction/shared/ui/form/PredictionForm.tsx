@@ -1,6 +1,7 @@
 import type { Resolver, UseFormReturn } from "react-hook-form";
 import type { PredictionFormValues, PredictionSubmitMode } from "../../model/prediction.form.types";
 import { BasicContent } from "#src/components";
+import { useAccess } from "#src/hooks";
 import { RHFProTextArea } from "#src/shared/ui/rhf-pro";
 import { SectionCard } from "#src/shared/ui/section-card";
 import { notification } from "#src/utils";
@@ -127,6 +128,7 @@ export function PredictionForm({
 	submitting,
 }: Props) {
 	const { t } = useTranslation();
+	const { hasDomainPermissionByServiceId } = useAccess();
 
 	const resolveSubmitErrorMessage = useCallback(async (error: any) => {
 		if (error?.response) {
@@ -217,7 +219,18 @@ export function PredictionForm({
 	const module = serviceCode ? predictionServiceRegistry[serviceCode] : undefined;
 	const requiresCompanyType = serviceCode === "sms" || serviceCode === "psp" || serviceCode === "traffic";
 	const canShowServiceForm = !!serviceCode && fiscalYear != null && (!requiresCompanyType || !!companyType);
-	const canShowRegisteredPredictions = !!serviceId && !!serviceCode && !!module && (!requiresCompanyType || !!companyType);
+	const canViewRegisteredPredictions = hasDomainPermissionByServiceId(
+		"predictions",
+		"view",
+		serviceId,
+		typeof companyType === "string" ? companyType : null,
+	);
+	const canShowRegisteredPredictions = !!serviceId && !!serviceCode && !!module && (!requiresCompanyType || !!companyType) && canViewRegisteredPredictions;
+
+	const canSubmit = recordId
+		? hasDomainPermissionByServiceId("predictions", "update", serviceId, typeof companyType === "string" ? companyType : null)
+		: hasDomainPermissionByServiceId("predictions", "create", serviceId, typeof companyType === "string" ? companyType : null);
+
 	const baseSelectionKey = `${mode}:${serviceId ?? ""}:${fiscalYear ?? ""}`;
 	const hasMeaningfulChange = useMemo(() => {
 		if (interaction?.baseKey !== baseSelectionKey)
@@ -267,6 +280,8 @@ export function PredictionForm({
 	);
 
 	function triggerSubmit(submitMode: PredictionSubmitMode) {
+		if (!canSubmit)
+			return;
 		submitModeRef.current = submitMode;
 		void submit();
 	}
@@ -357,12 +372,16 @@ export function PredictionForm({
 							? (
 								<>
 									<ProseNote />
-									<ActionSection
-										submitting={submitting}
-										disabled={!hasMeaningfulChange}
-										onSubmit={triggerSubmit}
-										onClear={clearForm}
-									/>
+									{canSubmit
+										? (
+											<ActionSection
+												submitting={submitting}
+												disabled={!hasMeaningfulChange}
+												onSubmit={triggerSubmit}
+												onClear={clearForm}
+											/>
+										)
+										: null}
 								</>
 							)
 							: null}

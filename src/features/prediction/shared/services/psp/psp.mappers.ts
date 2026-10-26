@@ -196,6 +196,7 @@ export function yearlyValueIncomePredictionToListRow(
 		serviceId: context.serviceId,
 		serviceCode: context.serviceCode,
 		serviceLabel: context.serviceLabel,
+		companyType: getCompanyTypeToken(record.company_type),
 		fiscalYear: toNullableNumber(record.fiscal_year),
 		preview,
 		note: String(record.note ?? ""),

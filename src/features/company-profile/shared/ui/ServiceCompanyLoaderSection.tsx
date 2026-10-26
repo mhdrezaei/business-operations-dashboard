@@ -14,7 +14,7 @@ import { useFormContext, useWatch } from "react-hook-form";
 
 import { companiesByServiceQuery, servicesQuery, trafficDatacentersQuery } from "../../queries/company-profile.queries";
 import CompanyDataCopyModal from "../../sections/company-data-copy/ui/CompanyDataCopyModal";
-import { companyTypeKey, companyTypeMatches, isSmsCommissionServiceCode, serviceRequiresCompanyType, serviceRequiresCompanyTypeOnCreate } from "../utils";
+import { companyTypeKey, companyTypeMatches, isSmsCommissionServiceCode, serviceRequiresCompanyTypeOnCreate } from "../utils";
 import { useCompanyTypeOptions } from "../utils/use-company-type-options";
 
 import CompanyCreateModal from "./CompanyCreateModal";
@@ -32,6 +32,7 @@ export function ServiceCompanyLoaderSection({ onCompanyDataCopied }: ServiceComp
 	const filterRadius = typeof configuredCardRadius === "number" ? configuredCardRadius : token.borderRadiusLG;
 	const { setValue, control } = useFormContext<CompanyProfileFormValues>();
 	const {
+		getPermittedCompanyTypes,
 		getPermittedServiceIds,
 		hasCompanyCardAccess,
 		hasDomainPermissionByServiceId,
@@ -56,7 +57,12 @@ export function ServiceCompanyLoaderSection({ onCompanyDataCopied }: ServiceComp
 			return "";
 		return String((services.data?.results ?? []).find(item => item.id === serviceId)?.code ?? "").trim().toLowerCase();
 	}, [serviceId, services.data]);
-	const requiresCompanyType = serviceRequiresCompanyType(selectedServiceCode);
+	const permittedCompanyTypeOptions = useMemo(
+		() => (serviceId ? getPermittedCompanyTypes("company_profile", "view", serviceId) : []),
+		[serviceId, getPermittedCompanyTypes],
+	);
+
+	const requiresCompanyType = permittedCompanyTypeOptions.length > 0 || serviceRequiresCompanyTypeOnCreate(selectedServiceCode);
 	const isCollocation = selectedServiceCode === "traffic" && String(companyType ?? "").toUpperCase() === "COLLOCATION";
 	const isDatacenterMode = isCollocation && colocationMode === "DATACENTER";
 	const datacenters = useQuery(trafficDatacentersQuery(isDatacenterMode));
@@ -349,34 +355,38 @@ export function ServiceCompanyLoaderSection({ onCompanyDataCopied }: ServiceComp
 						</div>
 
 						<div className="company-profile-filter-actions">
-							<Button
-								type="default"
-								icon={<PlusOutlined />}
-								disabled={!serviceId || !canCreateCompany || (requiresCompanyType && !companyType)}
-								onClick={() => setCreateOpen(true)}
-							>
-								{isDatacenterMode ? "ایجاد دیتاسنتر جدید" : "ایجاد شرکت جدید"}
-							</Button>
+							{canCreateCompany ? (
+								<Button
+									type="default"
+									icon={<PlusOutlined />}
+									disabled={!serviceId || (requiresCompanyType && !companyType)}
+									onClick={() => setCreateOpen(true)}
+								>
+									{isDatacenterMode ? "ایجاد دیتاسنتر جدید" : "ایجاد شرکت جدید"}
+								</Button>
+							) : null}
 
-							<Button
-								type="primary"
-								icon={<EditOutlined />}
-								disabled={!companyId || !canUpdateCompany || (requiresCompanyType && !companyType)}
-								onClick={() => setRenameOpen(true)}
-							>
-								{isDatacenterMode ? "ویرایش نام دیتاسنتر" : "ویرایش نام شرکت"}
-							</Button>
+							{canUpdateCompany ? (
+								<Button
+									type="primary"
+									icon={<EditOutlined />}
+									disabled={!companyId || (requiresCompanyType && !companyType)}
+									onClick={() => setRenameOpen(true)}
+								>
+									{isDatacenterMode ? "ویرایش نام دیتاسنتر" : "ویرایش نام شرکت"}
+								</Button>
+							) : null}
 
-							{!isDatacenterMode && (
+							{!isDatacenterMode && (canCreateCompany || canUpdateCompany) && copyableSections.length > 0 ? (
 								<Button
 									type="default"
 									icon={<CopyOutlined />}
-									disabled={!companyId || !(canCreateCompany || canUpdateCompany) || copyableSections.length === 0}
+									disabled={!companyId || (requiresCompanyType && !companyType)}
 									onClick={() => setCopyOpen(true)}
 								>
 									کپی اطلاعات
 								</Button>
-							)}
+							) : null}
 						</div>
 					</Form>
 				)}

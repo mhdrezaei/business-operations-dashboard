@@ -163,6 +163,7 @@ interface Props {
 	onClose: () => void
 	onUpdated?: () => void
 	onDelete?: (target?: PerformanceListRow) => void
+	canUpdate?: boolean
 	deleting?: boolean
 	mode?: "default" | "unregistered"
 	embedded?: boolean
@@ -644,6 +645,7 @@ export function PerformanceDetailModal({
 	onClose,
 	onUpdated,
 	onDelete,
+	canUpdate = true,
 	deleting = false,
 	mode = "default",
 	embedded = false,
@@ -1785,14 +1787,14 @@ export function PerformanceDetailModal({
 					</Popconfirm>
 				)
 				: null}
-			{hasMeaningfulChanges
+			{canUpdate && hasMeaningfulChanges
 				? (
 					<Button size="small" icon={<ReloadOutlined />} onClick={resetChanges}>
 						{t("common.reset")}
 					</Button>
 				)
 				: null}
-			{canEdit
+			{canUpdate && canEdit
 				? (
 					<Button
 						size="small"
@@ -2118,7 +2120,7 @@ export function PerformanceDetailModal({
 						className="flex justify-end mt-2 gap-2"
 					>
 						{!embedded ? <Button onClick={onClose}>{t("common.cancel")}</Button> : null}
-						{canEdit && hasMeaningfulChanges && !embedded
+						{canUpdate && canEdit && hasMeaningfulChanges && !embedded
 							? <Button type="primary" onClick={() => void handleSubmit()}>{t("performance.actions.editPerformance")}</Button>
 							: null}
 					</div>

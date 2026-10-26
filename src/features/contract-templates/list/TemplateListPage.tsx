@@ -3,6 +3,7 @@ import type { ActionType, ProColumns } from "@ant-design/pro-components";
 import type { TemplateListItemType } from "../model/templates.list.types";
 
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
+import { useAccess } from "#src/hooks";
 import { TableActionEditIcon, TableActionTrashIcon } from "#src/icons";
 import { PlusCircleOutlined } from "@ant-design/icons";
 import { Button, Popconfirm } from "antd";
@@ -16,6 +17,13 @@ import { getTemplateColumns } from "./constants";
 export default function TemplateListPage() {
 	const { t } = useTranslation();
 	const actionRef = useRef<ActionType>(null);
+	const { hasDomainPermission } = useAccess();
+
+	const canCreate = hasDomainPermission("contract_template", "create");
+	const canUpdateRow = (row: TemplateListItemType) =>
+		hasDomainPermission("contract_template", "update", row.service, row.company_type);
+	const canDeleteRow = (row: TemplateListItemType) =>
+		hasDomainPermission("contract_template", "delete", row.service, row.company_type);
 
 	const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 	const [editingTemplateId, setEditingTemplateId] = useState<number | null>(null);
@@ -69,35 +77,45 @@ export default function TemplateListPage() {
 				width: 120,
 				fixed: "right",
 				align: "center",
-				render: (_, record) => [
-					<BasicButton
-						key="edit"
-						type="link"
-						size="large"
-						title="ویرایش قالب"
-						icon={<TableActionEditIcon />}
-						onClick={(e) => {
-							handleOpenEditModal(e, record.id);
-						}}
-					/>,
-					<Popconfirm
-						key="delete"
-						title="آیا از حذف این تمپلیت مطمئن هستید؟"
-						okText={t("common.confirm")}
-						cancelText={t("common.cancel")}
-						onConfirm={() => handleDeleteRow(record)}
-					>
-						<BasicButton
-							type="link"
-							size="large"
-							title="حذف قالب"
-							icon={<TableActionTrashIcon />}
-						/>
-					</Popconfirm>,
-				],
+				render: (_, record) => {
+					const actions: React.ReactNode[] = [];
+					if (canUpdateRow(record)) {
+						actions.push(
+							<BasicButton
+								key="edit"
+								type="link"
+								size="large"
+								title="ویرایش قالب"
+								icon={<TableActionEditIcon />}
+								onClick={(e) => {
+									handleOpenEditModal(e, record.id);
+								}}
+							/>,
+						);
+					}
+					if (canDeleteRow(record)) {
+						actions.push(
+							<Popconfirm
+								key="delete"
+								title="آیا از حذف این تمپلیت مطمئن هستید؟"
+								okText={t("common.confirm")}
+								cancelText={t("common.cancel")}
+								onConfirm={() => handleDeleteRow(record)}
+							>
+								<BasicButton
+									type="link"
+									size="large"
+									title="حذف قالب"
+									icon={<TableActionTrashIcon />}
+								/>
+							</Popconfirm>,
+						);
+					}
+					return actions;
+				},
 			},
 		];
-	}, [baseColumns, t]);
+	}, [baseColumns, canUpdateRow, canDeleteRow, t]);
 
 	return (
 		<BasicContent className="h-full">
@@ -123,16 +141,21 @@ export default function TemplateListPage() {
 					};
 				}}
 				headerTitle="قالب‌های قرارداد"
-				toolBarRender={() => [
-					<Button
-						key="addNewTemplate"
-						icon={<PlusCircleOutlined />}
-						type="primary"
-						onClick={handleOpenCreateModal}
-					>
-						قالب جدید
-					</Button>,
-				]}
+				toolBarRender={() => {
+					if (!canCreate) {
+						return [];
+					}
+					return [
+						<Button
+							key="addNewTemplate"
+							icon={<PlusCircleOutlined />}
+							type="primary"
+							onClick={handleOpenCreateModal}
+						>
+							قالب جدید
+						</Button>,
+					];
+				}}
 			/>
 
 			<TemplateCreateModal

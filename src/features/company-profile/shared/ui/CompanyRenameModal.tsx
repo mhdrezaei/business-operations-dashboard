@@ -1,5 +1,6 @@
 import type { TFunction } from "i18next";
 
+import { useAccess } from "#src/hooks";
 import { RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { request } from "#src/utils/request/";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -61,6 +62,7 @@ export default function CompanyRenameModal({
 	const qc = useQueryClient();
 	const { t } = useTranslation();
 	const { modal } = App.useApp();
+	const { hasDomainPermissionByServiceId } = useAccess();
 	const renameCompanySchema = useMemo(() => createRenameCompanySchema(t), [t]);
 	const [saving, setSaving] = useState(false);
 	const [deleting, setDeleting] = useState(false);
@@ -73,6 +75,9 @@ export default function CompanyRenameModal({
 		() => (agentsQuery.data ?? []).find(agent => agentCompanyId(agent) === companyId),
 		[agentsQuery.data, companyId],
 	);
+
+	const canUpdateCompany = hasDomainPermissionByServiceId("company_profile", "update", serviceId, companyType);
+	const canDeleteCompany = hasDomainPermissionByServiceId("company_profile", "delete", serviceId, companyType);
 
 	const defaultValues = useMemo<RenameCompanyFormValues>(() => ({
 		company_type: companyType,
@@ -249,23 +254,27 @@ export default function CompanyRenameModal({
 
 					<div className="flex justify-between mt-4">
 						<div className="flex gap-3">
-							<Button
-								type="primary"
-								loading={saving}
-								disabled={isDisabled || deleting || !isChanged}
-								onClick={methods.handleSubmit(v => submit(v))}
-							>
-								{t("companyProfile.applyChanges")}
-							</Button>
+							{canUpdateCompany ? (
+								<Button
+									type="primary"
+									loading={saving}
+									disabled={isDisabled || deleting || !isChanged}
+									onClick={methods.handleSubmit(v => submit(v))}
+								>
+									{t("companyProfile.applyChanges")}
+								</Button>
+							) : null}
 
-							<Button
-								danger
-								loading={deleting}
-								disabled={isDisabled || saving}
-								onClick={confirmDelete}
-							>
-								{t(`companyProfile.${kind}.delete`)}
-							</Button>
+							{canDeleteCompany ? (
+								<Button
+									danger
+									loading={deleting}
+									disabled={isDisabled || saving}
+									onClick={confirmDelete}
+								>
+									{t(`companyProfile.${kind}.delete`)}
+								</Button>
+							) : null}
 						</div>
 
 						<Button onClick={onClose} disabled={saving || deleting}>

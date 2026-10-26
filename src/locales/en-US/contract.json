@@ -463,6 +463,11 @@
 			"downloadPdf": "Download contract PDF",
 			"print": "Print contract"
 		},
+		"activeSignFlow": {
+			"title": "Active signing workflow",
+			"content": "An active signing workflow already exists for this contract. Do you want to be redirected to it?",
+			"ok": "Confirm and go"
+		},
 		"message": {
 			"noDeleteAccess": "You do not have permission to delete contracts.",
 			"popupBlocked": "The browser popup is blocked. Please enable it.",

@@ -49,36 +49,44 @@ export function ProfileFormActions({
 		});
 	}
 
+	if (submitDisabled && (!hasProfile || deleteDisabled)) {
+		return null;
+	}
+
 	return (
 		<FormActionBar
 			primaryActions={(
 				<>
-					{hasProfile && (
-						<>
-							<Button
-								danger
-								loading={isDeleting}
-								disabled={deleteDisabled || isSubmitting}
-								onClick={confirmDelete}
-							>
-								{t("companyProfile.profile.delete")}
-							</Button>
-							<Button
-								disabled={submitDisabled || isSubmitting || isDeleting || !isDirty}
-								onClick={onReset}
-							>
-								{t("companyProfile.profile.reset")}
-							</Button>
-						</>
-					)}
-					<Button
-						type="primary"
-						loading={isSubmitting}
-						disabled={submitDisabled || isDeleting || !isDirty || !isValid}
-						onClick={onSubmit}
-					>
-						{t("companyProfile.profile.submit")}
-					</Button>
+					{hasProfile && !deleteDisabled ? (
+						<Button
+							danger
+							loading={isDeleting}
+							disabled={isSubmitting}
+							onClick={confirmDelete}
+						>
+							{t("companyProfile.profile.delete")}
+						</Button>
+					) : null}
+
+					{hasProfile && !submitDisabled ? (
+						<Button
+							disabled={isSubmitting || isDeleting || !isDirty}
+							onClick={onReset}
+						>
+							{t("companyProfile.profile.reset")}
+						</Button>
+					) : null}
+
+					{!submitDisabled ? (
+						<Button
+							type="primary"
+							loading={isSubmitting}
+							disabled={isDeleting || !isDirty || !isValid}
+							onClick={onSubmit}
+						>
+							{t("companyProfile.profile.submit")}
+						</Button>
+					) : null}
 				</>
 			)}
 		/>

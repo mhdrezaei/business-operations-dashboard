@@ -18,8 +18,9 @@ export function generateMenuItemsFromRoutes(routeList: AppRouteRecordRaw[], user
 			? generateMenuItemsFromRoutes(noIndexRoute, user)
 			: [];
 		const canShowCurrentRoute = !user || hasRouteAccess(item, user);
+		const hasAccess = canShowCurrentRoute && (noIndexRoute.length === 0 || childMenuItems.length > 0);
 
-		if (item?.handle?.hideInMenu || (!canShowCurrentRoute && childMenuItems.length === 0)) {
+		if (item?.handle?.hideInMenu || !hasAccess) {
 			return acc;
 		}
 

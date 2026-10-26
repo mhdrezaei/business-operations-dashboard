@@ -41,7 +41,7 @@ const routes: AppRouteRecordRaw[] = [
 					icon: createElement(TableOutlined),
 					title: "\u0648\u06CC\u0631\u0627\u06CC\u0634 \u067E\u06CC\u0634 \u0628\u06CC\u0646\u06CC\u200C\u0647\u0627",
 					accessDomain: "predictions",
-					accessAction: "view",
+					accessAction: "update",
 				},
 			},
 		],

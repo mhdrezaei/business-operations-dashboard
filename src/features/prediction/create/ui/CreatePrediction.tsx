@@ -46,6 +46,8 @@ function CreatePrediction() {
 	return (
 		<PredictionForm
 			initialValues={initialValues}
+			mode={editRow ? "edit" : "create"}
+			titleKey={editRow ? "prediction.titles.edit" : "prediction.titles.create"}
 			submitting={submitting}
 			onSubmit={async (values, form, submitMode) => {
 				setSubmitting(true);

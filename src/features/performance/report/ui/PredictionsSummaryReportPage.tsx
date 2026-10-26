@@ -555,11 +555,12 @@ export function PredictionsSummaryReportPage() {
 	const [validationError, setValidationError] = useState<string | null>(null);
 
 	const services = useQuery(servicesQuery());
-	const permittedIds = [...new Set([
-		...getPermittedServiceIds("performances", "view"),
-		...getPermittedServiceIds("predictions", "view"),
-	])];
-	const permittedIdSet = useMemo(() => new Set(permittedIds), [permittedIds.join(",")]);
+	const permittedPerformanceIds = getPermittedServiceIds("performances", "view");
+	const permittedPredictionIds = getPermittedServiceIds("predictions", "view");
+	const permittedIdSet = useMemo(() => {
+		const predictionSet = new Set(permittedPredictionIds);
+		return new Set(permittedPerformanceIds.filter(id => predictionSet.has(id)));
+	}, [permittedPerformanceIds.join(","), permittedPredictionIds.join(",")]);
 
 	const serviceOptions = useMemo(() => {
 		return (services.data?.results ?? [])
@@ -570,7 +571,7 @@ export function PredictionsSummaryReportPage() {
 			}))
 			.filter(option => SUMMARY_SERVICE_CODES.includes(option.value))
 			.sort((a, b) => SUMMARY_SERVICE_CODES.indexOf(a.value) - SUMMARY_SERVICE_CODES.indexOf(b.value));
-	}, [services.data, permittedIds.join(",")]);
+	}, [services.data, permittedIdSet]);
 
 	const serviceNameByCode = useMemo(() => {
 		return new Map(serviceOptions.map(option => [option.value, option.label]));

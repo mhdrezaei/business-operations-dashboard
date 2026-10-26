@@ -41,7 +41,7 @@ function renderRunStatus(status?: string | null) {
 
 export default function AdminNotificationRulesPage() {
 	const { t } = useTranslation();
-	const { hasAdminPanelAccess } = useAccess();
+	const { hasAdminAction } = useAccess();
 	const queryClient = useQueryClient();
 
 	const actionRef = useRef<ActionType>(null);
@@ -51,10 +51,9 @@ export default function AdminNotificationRulesPage() {
 	const [upsertMode, setUpsertMode] = useState<"create" | "edit">("create");
 	const [selectedRule, setSelectedRule] = useState<NotificationRuleDto | null>(null);
 
-	const canManagePolicies = hasAdminPanelAccess("policies");
-	const canCreate = canManagePolicies;
-	const canUpdate = canManagePolicies;
-	const canDelete = canManagePolicies;
+	const canCreate = hasAdminAction("notification_rules", "create") || hasAdminAction("policies", "create");
+	const canUpdate = hasAdminAction("notification_rules", "update") || hasAdminAction("policies", "update");
+	const canDelete = hasAdminAction("notification_rules", "delete") || hasAdminAction("policies", "delete");
 
 	const servicesQuery = useQuery(notificationRuleServicesQuery());
 	const usersQuery = useQuery(notificationRuleUsersQuery());
@@ -248,7 +247,7 @@ export default function AdminNotificationRulesPage() {
 							اجرای دستی Job
 						</Typography.Title>
 						<Space wrap className="mr-auto">
-							{manualJobs.map(job => (
+							{canUpdate && manualJobs.map(job => (
 								<Button
 									key={job.key}
 									type="primary"

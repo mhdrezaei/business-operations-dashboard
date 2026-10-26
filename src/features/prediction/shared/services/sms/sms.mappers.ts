@@ -246,6 +246,7 @@ export function smsPredictionToListRow(
 		serviceId: context.serviceId,
 		serviceCode: context.serviceCode,
 		serviceLabel: context.serviceLabel,
+		companyType: getCompanyTypeToken(record.company_type),
 		fiscalYear: toNullableNumber(record.fiscal_year),
 		preview: `${i18next.t("prediction.list.preview.companyType")}: ${getCompanyTypeToken(record.company_type) ?? "-"} | ${i18next.t("prediction.list.preview.value")}: ${formatPredictionNumber(record.value_year)} | ${i18next.t("prediction.list.preview.priceBuy")}: ${formatPredictionNumber(record.price_buy)} | ${i18next.t("prediction.list.preview.price")}: ${formatPredictionNumber(record.price_sell)}`,
 		note: String(record.note ?? ""),

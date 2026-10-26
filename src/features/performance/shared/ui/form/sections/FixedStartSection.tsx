@@ -114,11 +114,7 @@ export function FixedStartSection({
 		return { submitMode: trafficSubmitMode, ...(collocationMode ? { collocationMode } : {}) };
 	}, [isTraffic, trafficSubmitMode, collocationMode]);
 
-	const permittedCreateIdsFromPerformance = getPermittedServiceIds("performances", "create");
-	const permittedCreateIdsFromContracts = getPermittedServiceIds("contracts", "create");
-	const permittedCreateServiceIdList = permittedCreateIdsFromPerformance.length > 0
-		? permittedCreateIdsFromPerformance
-		: permittedCreateIdsFromContracts;
+	const permittedCreateServiceIdList = getPermittedServiceIds("performances", "create");
 
 	const permittedCreateServiceIds = useMemo(
 		() => new Set(permittedCreateServiceIdList),

@@ -1,5 +1,6 @@
 import type { DragEndEvent } from "@dnd-kit/core";
 import type { CSSProperties } from "react";
+import type { CompanyProfileFormValues } from "../../../model/company-profile.form.types";
 import type { BankAccountDto } from "../model/bank-accounts.types";
 import { BasicContent } from "#src/components";
 import { useAccess } from "#src/hooks";
@@ -19,6 +20,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { useQuery } from "@tanstack/react-query";
 import { Alert, Button, Empty, Popconfirm, Skeleton, Tooltip } from "antd";
 import React, { useMemo, useState } from "react";
+import { useWatch } from "react-hook-form";
 import { deleteBankAccount, updateBankAccount } from "../../../api/bank-accounts.api";
 import { bankAccountsByCompanyQuery } from "../../../queries/bank-accounts.queries";
 import { CONTRACT_ORDER_MAX } from "../../../shared/utils/contract-order";
@@ -97,51 +99,63 @@ function AccountCard({
 					</div>
 				</div>
 
-				<div className="bank-account-card__actions">
-					<Button icon={<EditOutlined />} disabled={!canUpdate || busy} onClick={() => onEdit(account)}>ویرایش</Button>
-					<Popconfirm
-						title="این حساب حذف شود؟"
-						description="اطلاعات حساب پس از حذف قابل بازیابی نیست."
-						okText="حذف"
-						cancelText="انصراف"
-						okButtonProps={{ danger: true }}
-						onConfirm={() => onDelete(account)}
-					>
-						<Button danger icon={<DeleteOutlined />} disabled={!canDelete || busy}>حذف</Button>
-					</Popconfirm>
-				</div>
+				{(canUpdate || canDelete) ? (
+					<div className="bank-account-card__actions">
+						{canUpdate ? (
+							<Button icon={<EditOutlined />} disabled={busy} onClick={() => onEdit(account)}>ویرایش</Button>
+						) : null}
+						{canDelete ? (
+							<Popconfirm
+								title="این حساب حذف شود؟"
+								description="اطلاعات حساب پس از حذف قابل بازیابی نیست."
+								okText="حذف"
+								cancelText="انصراف"
+								okButtonProps={{ danger: true }}
+								onConfirm={() => onDelete(account)}
+							>
+								<Button danger icon={<DeleteOutlined />} disabled={busy}>حذف</Button>
+							</Popconfirm>
+						) : null}
+					</div>
+				) : null}
 
-				{displayedOrder != null && onMove
+				{displayedOrder != null
 					? (
 						<div className="bank-account-card__order">
-							<Tooltip title="برای جابه‌جایی بکشید">
-								<Button
-									className="bank-account-card__handle"
-									icon={<HolderOutlined />}
-									disabled={!canUpdate || busy}
-									aria-label={`جابجایی حساب ${account.bank_name}`}
-									{...attributes}
-									{...listeners}
-								/>
-							</Tooltip>
+							{canUpdate && onMove ? (
+								<Tooltip title="برای جابه‌جایی بکشید">
+									<Button
+										className="bank-account-card__handle"
+										icon={<HolderOutlined />}
+										disabled={busy}
+										aria-label={`جابجایی حساب ${account.bank_name}`}
+										{...attributes}
+										{...listeners}
+									/>
+								</Tooltip>
+							) : null}
 							<span className="bank-account-card__priority" aria-label={`اولویت ${displayedOrder}`}>{displayedOrder}</span>
 							<span className="bank-account-card__order-label">جایگاه در قرارداد</span>
-							<Button icon={<ArrowUpOutlined />} disabled={!canUpdate || busy || displayedOrder === 1} aria-label="انتقال به جایگاه بالاتر" onClick={() => onMove(account, displayedOrder - 1)} />
-							<Button icon={<ArrowDownOutlined />} disabled={!canUpdate || busy || displayedOrder === count} aria-label="انتقال به جایگاه پایین‌تر" onClick={() => onMove(account, displayedOrder + 1)} />
-							<Tooltip title="حذف از ترتیب قرارداد؛ اطلاعات حساب باقی می‌ماند">
-								<Button danger icon={<DeleteOutlined />} disabled={!canUpdate || busy} aria-label="حذف از قرارداد" onClick={() => onMove(account, 0)} />
-							</Tooltip>
+							{canUpdate && onMove ? (
+								<>
+									<Button icon={<ArrowUpOutlined />} disabled={busy || displayedOrder === 1} aria-label="انتقال به جایگاه بالاتر" onClick={() => onMove(account, displayedOrder - 1)} />
+									<Button icon={<ArrowDownOutlined />} disabled={busy || displayedOrder === count} aria-label="انتقال به جایگاه پایین‌تر" onClick={() => onMove(account, displayedOrder + 1)} />
+									<Tooltip title="حذف از ترتیب قرارداد؛ اطلاعات حساب باقی می‌ماند">
+										<Button danger icon={<DeleteOutlined />} disabled={busy} aria-label="حذف از قرارداد" onClick={() => onMove(account, 0)} />
+									</Tooltip>
+								</>
+							) : null}
 						</div>
 					)
-					: onAddToContract
+					: (canUpdate && onAddToContract
 						? (
 							<div className="bank-account-card__add">
-								<Button type="dashed" icon={<PlusOutlined />} disabled={!canUpdate || busy} loading={busy} onClick={() => onAddToContract(account)}>
+								<Button type="dashed" icon={<PlusOutlined />} disabled={busy} loading={busy} onClick={() => onAddToContract(account)}>
 									افزودن به قرارداد
 								</Button>
 							</div>
 						)
-						: null}
+						: null)}
 			</div>
 		</article>
 	);
@@ -177,7 +191,7 @@ function OrderedAccounts({ accounts, onMove, ...cardProps }: OrderedAccountsProp
 							account={account}
 							order={account.contract_order ?? undefined}
 							count={accounts.length}
-							draggable
+							draggable={cardProps.canUpdate}
 							onMove={onMove}
 						/>
 					))}
@@ -189,15 +203,16 @@ function OrderedAccounts({ accounts, onMove, ...cardProps }: OrderedAccountsProp
 
 export default function BankAccountsTable({ serviceId, companyId }: Props) {
 	const { hasDomainPermissionByServiceId } = useAccess();
+	const companyType = useWatch<CompanyProfileFormValues, "companyType">({ name: "companyType" });
 	const [optimisticAccounts, setOptimisticAccounts] = useState<BankAccountDto[] | null>(null);
 	const [openModal, setOpenModal] = useState(false);
 	const [editing, setEditing] = useState<BankAccountDto | null>(null);
 	const [busyId, setBusyId] = useState<number | null>(null);
 	const accountsQuery = useQuery(bankAccountsByCompanyQuery(companyId));
 
-	const canCreate = hasDomainPermissionByServiceId("company_profile", "create", serviceId);
-	const canUpdate = hasDomainPermissionByServiceId("company_profile", "update", serviceId);
-	const canDelete = hasDomainPermissionByServiceId("company_profile", "delete", serviceId);
+	const canCreate = hasDomainPermissionByServiceId("company_profile", "create", serviceId, companyType);
+	const canUpdate = hasDomainPermissionByServiceId("company_profile", "update", serviceId, companyType);
+	const canDelete = hasDomainPermissionByServiceId("company_profile", "delete", serviceId, companyType);
 	const accounts = optimisticAccounts ?? accountsQuery.data?.results ?? [];
 	const orderedAccounts = useMemo(
 		() => accounts.filter(account => account.contract_order != null).sort((a, b) => (a.contract_order ?? 0) - (b.contract_order ?? 0)),
@@ -326,11 +341,10 @@ export default function BankAccountsTable({ serviceId, companyId }: Props) {
 					tone="primary"
 					collapsible={false}
 					className="company-profile-section company-profile-section--general bank-accounts-toolbar"
-					extra={(
+					extra={canCreate ? (
 						<Button
 							type="primary"
 							icon={<PlusOutlined />}
-							disabled={!canCreate}
 							onClick={() => {
 								setEditing(null);
 								setOpenModal(true);
@@ -338,7 +352,7 @@ export default function BankAccountsTable({ serviceId, companyId }: Props) {
 						>
 							افزودن حساب
 						</Button>
-					)}
+					) : null}
 				>
 					<Alert
 						showIcon

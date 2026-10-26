@@ -47,6 +47,11 @@ export interface RouteMeta {
 	accessAction?: DomainPermissionAction
 
 	/**
+	 * Service code constraint for service-specific routes (e.g. "sms").
+	 */
+	serviceCode?: string
+
+	/**
 	 * Admin-panel permission scope from /audit/access snapshot.
 	 */
 	adminAccess?: AdminAccessTarget

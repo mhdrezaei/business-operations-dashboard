@@ -11,6 +11,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { deletePrediction } from "../../api/predictions.api";
+import { getCompanyTypeToken } from "../../shared/model/company-type.helpers";
 import { getRecordQuarterPercents, isAvailablePredictionCompanyType, isSupportedPredictionService, PREDICTION_FISCAL_YEAR_OPTIONS } from "../../shared/model/prediction.helpers";
 import { predictionServicesQuery } from "../../shared/queries/prediction.queries";
 import { predictionServiceRegistry } from "../../shared/services/registry";
@@ -236,7 +237,9 @@ export default function PredictionListPage() {
 				align: "center",
 				render: (_, row) => {
 					const actions = [] as React.ReactNode[];
-					if (hasDomainPermissionByServiceId("predictions", "update", row.serviceId)) {
+					const rowCompanyType = row.companyType ?? getCompanyTypeToken((row.raw as any)?.company_type);
+
+					if (hasDomainPermissionByServiceId("predictions", "update", row.serviceId, rowCompanyType)) {
 						actions.push(
 							<BasicButton
 								key="edit"
@@ -249,7 +252,10 @@ export default function PredictionListPage() {
 						);
 					}
 
-					if (hasDomainPermissionByServiceId("predictions", "delete", row.serviceId)) {
+					if (
+						DELETABLE_PREDICTION_SERVICES.includes(row.serviceCode as typeof DELETABLE_PREDICTION_SERVICES[number])
+						&& hasDomainPermissionByServiceId("predictions", "delete", row.serviceId, rowCompanyType)
+					) {
 						actions.push(
 							<Popconfirm
 								key="delete"

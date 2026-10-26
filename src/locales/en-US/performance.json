@@ -552,6 +552,7 @@
 		"performance": "Performance",
 		"customer": "Customer",
 		"noPerformanceForYear": "No performance has been registered for this company in the selected year.",
+		"noEditablePerformance": "No editable performance was found for this company in the selected year.",
 		"selectFromList": "Select a performance from the list.",
 		"sidebarLabel": "Performance filters and list",
 		"selectServiceAndCompany": "Select service and company",
@@ -560,7 +561,6 @@
 		"noYearWithPerformance": "No year with performance found",
 		"fetchFailed": "Failed to fetch performances.",
 		"retry": "Try again",
-		"noEditAccess": "You do not have edit access",
 		"selectToEdit": "To edit, first select a service and company from the right column, then pick one of the performances from the list."
 	},
 	"detail": {

@@ -1,5 +1,6 @@
 import type { Resolver, UseFormReturn } from "react-hook-form";
 import type { PerformanceFormValues } from "../../model/performance.form.types";
+import { useAccess } from "#src/hooks";
 import { notification } from "#src/utils";
 import { HistoryOutlined } from "@ant-design/icons";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -168,9 +169,19 @@ export function PerformanceForm({
 		});
 	}, [initialValues, mergedInitialValues, form]);
 
+	const { hasDomainPermissionByServiceId } = useAccess();
+
+	const serviceId = useWatch({
+		control: form.control,
+		name: "serviceId",
+	});
 	const serviceCode = useWatch({
 		control: form.control,
 		name: "serviceCode",
+	});
+	const companyType = useWatch({
+		control: form.control,
+		name: "companyType",
 	});
 	const year = useWatch({
 		control: form.control,
@@ -191,6 +202,7 @@ export function PerformanceForm({
 	const module = serviceCode ? performanceServiceRegistry[serviceCode] : undefined;
 	const requiresMonthlyStatusContract = serviceCode === "openapi" || (serviceCode === "traffic" && trafficSubmitMode === "single");
 	const canShowServiceForm = year != null	&& month != null && (!requiresMonthlyStatusContract || contractId != null);
+	const canSubmitAndEdit = serviceId != null && hasDomainPermissionByServiceId("performances", "update", serviceId, companyType);
 	const [smsGatewayMode, setSmsGatewayMode] = useState<"manual" | "gateway">("manual");
 
 	const submitIntentRef = useRef<PerformanceSubmitIntent>("submit");
@@ -304,6 +316,7 @@ export function PerformanceForm({
 								onSubmitAndEdit={() => triggerSubmit("submit_and_edit")}
 								onReset={resetForm}
 								showSubmitAndCreateAnother={!lockPrerequisites}
+								showSubmitAndEdit={canSubmitAndEdit}
 								showSmsGatewayImport={false}
 								onSmsGatewayImportHistory={() => setIsSmsGatewayImportHistoryOpen(true)}
 							/>

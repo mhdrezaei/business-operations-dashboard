@@ -1,5 +1,6 @@
 import type { SalesAgencyExpenseTitle, SalesAgencyExpenseTitlePayload } from "../model/sales-agency-expense-title.types";
 import { BasicContent } from "#src/components";
+import { useAccess } from "#src/hooks";
 import { EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert, Button, Card, Empty, Form, Input, Modal, Spin, Switch, Tag, Typography } from "antd";
@@ -9,6 +10,10 @@ import { createSalesAgencyExpenseTitle, fetchSalesAgencyExpenseTitles, updateSal
 const queryKey = ["sales-agency", "expense-titles"];
 
 export default function SalesAgencyExpenseTitlesPage() {
+	const { hasAdminAction } = useAccess();
+	const canCreate = hasAdminAction("policies", "create") || hasAdminAction("notification_rules", "create");
+	const canUpdate = hasAdminAction("policies", "update") || hasAdminAction("notification_rules", "update");
+
 	const queryClient = useQueryClient();
 	const [modalOpen, setModalOpen] = useState(false);
 	const [selected, setSelected] = useState<SalesAgencyExpenseTitle | null>(null);
@@ -50,9 +55,11 @@ export default function SalesAgencyExpenseTitlesPage() {
 				</div>
 
 				<Card title="فهرست عنوان‌ها" className="shadow-sm">
-					<div className="mb-4 flex justify-end">
-						<Button type="primary" icon={<PlusOutlined />} onClick={() => openModal(null)}>افزودن عنوان هزینه</Button>
-					</div>
+					{canCreate && (
+						<div className="mb-4 flex justify-end">
+							<Button type="primary" icon={<PlusOutlined />} onClick={() => openModal(null)}>افزودن عنوان هزینه</Button>
+						</div>
+					)}
 					{titlesQuery.isLoading
 						? <div className="py-12 text-center"><Spin /></div>
 						: titlesQuery.isError
@@ -74,7 +81,9 @@ export default function SalesAgencyExpenseTitlesPage() {
 													{title.name}
 													{title.is_active ? null : <Tag className="!ms-2">غیرفعال</Tag>}
 												</Typography.Text>
-												<Button aria-label={`ویرایش ${title.name}`} icon={<EditOutlined />} onClick={() => openModal(title)} />
+												{canUpdate && (
+													<Button aria-label={`ویرایش ${title.name}`} icon={<EditOutlined />} onClick={() => openModal(title)} />
+												)}
 											</div>
 										))}
 									</div>

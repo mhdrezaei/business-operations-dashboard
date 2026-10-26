@@ -10,14 +10,14 @@ import { sortToOrdering } from "#src/components/basic-table/sort";
 import { companiesByServiceQuery, servicesQuery } from "#src/features/contract/shared/queries/contract.queries";
 import { useAccess } from "#src/hooks";
 import { TableActionDownloadIcon, TableActionEditIcon, TableActionEyeIcon, TableActionTrashIcon } from "#src/icons";
-import { PlusCircleOutlined, PrinterOutlined } from "@ant-design/icons";
+import { ExclamationCircleOutlined, PlusCircleOutlined, PrinterOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 
-import { Button, Popconfirm, theme } from "antd";
+import { App, Button, Modal, Popconfirm, theme } from "antd";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
-import { checkOfficialPdfStatus, fetchContractDetail, fetchContractsList, fetchDeleteContract, fetchSignFlowPreview } from "../../api/contracts.api";
+import { checkOfficialPdfStatus, fetchContractDetail, fetchContractPrintData, fetchContractsList, fetchDeleteContract, fetchSignFlowPreview } from "../../api/contracts.api";
 import { isTelecomFrameCode } from "../../shared/services/telecom-frame/telecom-frame.types";
 import { companyTypeMatches, pickCompanyTypeToken } from "../../shared/utils";
 import { buildContractEditPath } from "../../shared/utils/contract-routes";
@@ -36,9 +36,26 @@ import { SignFlowPreviewModal } from "./components/SignFlowPreviewModal";
 import { getContractColumns } from "./constants";
 import { openContractPdfPrint } from "./utils/contract-pdf";
 
+function extractSignFlowId(realSignFlow: any): number | string | null {
+	if (realSignFlow === null || realSignFlow === undefined || realSignFlow === false) {
+		return null;
+	}
+	if (typeof realSignFlow === "number" || typeof realSignFlow === "string") {
+		return realSignFlow;
+	}
+	if (typeof realSignFlow === "object") {
+		const candidate = realSignFlow.id ?? realSignFlow.sign_flow_id ?? realSignFlow.flow_id;
+		if (candidate !== null && candidate !== undefined && candidate !== "") {
+			return candidate;
+		}
+	}
+	return null;
+}
+
 export default function ContractListPage() {
 	const { t } = useTranslation();
 	const { token } = theme.useToken();
+	const { modal } = App.useApp();
 	const addendaTableClasses = useContractAddendaTableStyles();
 	const {
 		hasDomainPermission,
@@ -217,15 +234,17 @@ export default function ContractListPage() {
 			autoSelectFilter({ company_id: companyOptions[0].value });
 	}, [isCompanyDisabled, companyOptions]);
 
+	const canViewRow = (row: ContractListItemType) =>
+		hasDomainPermissionByServiceId("contracts", "view", Number(row.service_id), getRowCompanyType(row));
 	const canUpdateRow = (row: ContractListItemType) =>
 		hasDomainPermissionByServiceId("contracts", "update", Number(row.service_id), getRowCompanyType(row));
 	const canDeleteRow = (row: ContractListItemType) =>
 		hasDomainPermissionByServiceId("contracts", "delete", Number(row.service_id), getRowCompanyType(row));
 	const canCreateRow = (row: ContractListItemType) =>
 		hasDomainPermissionByServiceId("contracts", "create", Number(row.service_id), getRowCompanyType(row));
-	// Old `canOpenContractDetails`: view, update or delete lets the user open, print and download a contract.
-	const canOpenRow = (row: ContractListItemType) =>
-		(["view", "update", "delete"] as const).some(action => hasDomainPermissionByServiceId("contracts", action, Number(row.service_id), getRowCompanyType(row)));
+	const canSignRow = (row: ContractListItemType) =>
+		hasDomainPermissionByServiceId("contracts", "sign", Number(row.service_id), getRowCompanyType(row))
+		|| hasDomainPermissionByServiceId("contracts", "update", Number(row.service_id), getRowCompanyType(row));
 
 	const handleDeleteRow = async (row: ContractListItemType, action?: ProCoreActionType<object>) => {
 		if (!canDeleteRow(row)) {
@@ -252,6 +271,89 @@ export default function ContractListPage() {
 		}
 		finally {
 			setDownloadingPdfId(null);
+		}
+	};
+
+	const showActiveSignFlowModal = (signFlowId: number | string | null) => {
+		const confirmFn = modal?.confirm ?? window.$modal?.confirm ?? Modal.confirm;
+		confirmFn({
+			title: t("contract.list.activeSignFlow.title"),
+			icon: <ExclamationCircleOutlined />,
+			content: t("contract.list.activeSignFlow.content"),
+			okText: t("contract.list.activeSignFlow.ok"),
+			cancelText: t("common.cancel"),
+			onOk: () => {
+				if (signFlowId !== null && signFlowId !== undefined) {
+					navigate(`/contracts/sign-flows/${signFlowId}`);
+				}
+				else {
+					navigate("/contracts/sign-flows");
+				}
+			},
+		});
+	};
+
+	const handleSignFlowClick = async (record: ContractListItemType, addendumGroupId?: string | null) => {
+		try {
+			const service = resolveServicePath(record);
+			const printData = await fetchContractPrintData(service, record.id, addendumGroupId);
+			const activeSignFlow = printData?.real_sign_flow;
+
+			if (activeSignFlow !== null && activeSignFlow !== undefined) {
+				const signFlowId = extractSignFlowId(activeSignFlow);
+				showActiveSignFlowModal(signFlowId);
+				return;
+			}
+
+			const status = await checkOfficialPdfStatus(service, record.id, addendumGroupId);
+			if (status?.real_sign_flow !== null && status?.real_sign_flow !== undefined) {
+				const signFlowId = extractSignFlowId(status.real_sign_flow);
+				showActiveSignFlowModal(signFlowId);
+				return;
+			}
+
+			if (!status.can_upload && status.has_official_pdf) {
+				window.$message?.warning(t("contract.list.message.officialUploaded"));
+				return;
+			}
+		}
+		catch (error) {
+			console.error(error);
+			window.$message?.error(t("contract.list.message.officialStatusFailed"));
+			return;
+		}
+
+		setPrintRecord(record);
+		setPrintAddendumGroupId(addendumGroupId ?? null);
+		setSignFlowLoading(true);
+		setSignFlowModalOpen(true);
+		try {
+			const data = await fetchSignFlowPreview(resolveServicePath(record), record.id, addendumGroupId);
+			const previewActiveSignFlow = data?.real_sign_flow;
+			const previewSignFlowId = extractSignFlowId(previewActiveSignFlow)
+			  ?? (data?.has_active_flow && data?.active_flow_id ? data.active_flow_id : null);
+
+			if (previewActiveSignFlow != null) {
+				setSignFlowModalOpen(false);
+				showActiveSignFlowModal(previewSignFlowId);
+				return;
+			}
+
+			if (data?.has_active_flow && data?.active_flow_id) {
+				setSignFlowModalOpen(false);
+				showActiveSignFlowModal(data.active_flow_id);
+				return;
+			}
+
+			setSignFlowData(data);
+		}
+		catch (err) {
+			console.error(err);
+			window.$message?.error(t("contract.list.message.signFlowFailed"));
+			setSignFlowModalOpen(false);
+		}
+		finally {
+			setSignFlowLoading(false);
 		}
 	};
 
@@ -325,7 +427,6 @@ export default function ContractListPage() {
 					const companyType = getRowCompanyType(record) ?? "";
 
 					const pdfBlockReason = getContractPdfBlockReason(service, record.is_official);
-					const canOpen = canOpenRow(record);
 
 					if (canCreateRow(record)) {
 						const isSmsVendorRow = service === "sms/vendor";
@@ -363,73 +464,44 @@ export default function ContractListPage() {
 						);
 					}
 
-					actions.push(
-						<BasicButton
-							key="preview"
-							type="link"
-							size="large"
-							title={t("contract.list.actions.preview")}
-							disabled={!canOpen}
-							icon={<TableActionEyeIcon />}
-							onClick={() => navigate(`/contracts/${record.id}/preview?service=${encodeURIComponent(service)}&serviceId=${record.service_id}&companyType=${encodeURIComponent(companyType)}`)}
-						/>,
-					);
+					if (canViewRow(record)) {
+						actions.push(
+							<BasicButton
+								key="preview"
+								type="link"
+								size="large"
+								title={t("contract.list.actions.preview")}
+								icon={<TableActionEyeIcon />}
+								onClick={() => navigate(`/contracts/${record.id}/preview?service=${encodeURIComponent(service)}&serviceId=${record.service_id}&companyType=${encodeURIComponent(companyType)}`)}
+							/>,
+						);
 
-					actions.push(
-						<BasicButton
-							key="pdf"
-							type="link"
-							size="large"
-							title={pdfBlockReason ? t(`contract.list.pdfDisabled.${pdfBlockReason}`) : t("contract.list.actions.downloadPdf")}
-							icon={<TableActionDownloadIcon />}
-							disabled={!canOpen || pdfBlockReason !== null}
-							loading={downloadingPdfId === record.id}
-							onClick={() => handleDownloadPdf(record)}
-						>
+						actions.push(
+							<BasicButton
+								key="pdf"
+								type="link"
+								size="large"
+								title={pdfBlockReason ? t(`contract.list.pdfDisabled.${pdfBlockReason}`) : t("contract.list.actions.downloadPdf")}
+								icon={<TableActionDownloadIcon />}
+								disabled={pdfBlockReason !== null}
+								loading={downloadingPdfId === record.id}
+								onClick={() => handleDownloadPdf(record)}
+							/>,
+						);
+					}
 
-						</BasicButton>,
-					);
-
-					actions.push(
-						<BasicButton
-							key="print"
-							type="link"
-							size="large"
-							title={t("contract.list.actions.print")}
-							disabled={!canOpen}
-							icon={<PrinterOutlined />}
-							onClick={async () => {
-								try {
-									const status = await checkOfficialPdfStatus(resolveServicePath(record), record.id);
-									if (!status.can_upload && status.has_official_pdf) {
-										window.$message?.warning(t("contract.list.message.officialUploaded"));
-										return;
-									}
-								}
-								catch (error) {
-									console.error(error);
-									window.$message?.error(t("contract.list.message.officialStatusFailed"));
-									return;
-								}
-								setPrintRecord(record);
-								setPrintAddendumGroupId(null);
-								setSignFlowLoading(true);
-								setSignFlowModalOpen(true);
-								try {
-									const data = await fetchSignFlowPreview(resolveServicePath(record), record.id);
-									setSignFlowData(data);
-								}
-								catch (err) {
-									console.error(err);
-									window.$message?.error(t("contract.list.message.signFlowFailed"));
-									setSignFlowModalOpen(false);
-								}
-								finally {
-									setSignFlowLoading(false);
-								}
-							}}
-						/>,
-					);
+					if (canSignRow(record)) {
+						actions.push(
+							<BasicButton
+								key="print"
+								type="link"
+								size="large"
+								title={t("contract.list.actions.print")}
+								icon={<PrinterOutlined />}
+								onClick={() => handleSignFlowClick(record)}
+							/>,
+						);
+					}
 
 					if (canDeleteRow(record)) {
 						actions.push(
@@ -468,36 +540,7 @@ export default function ContractListPage() {
 						<ContractAddendaExpandedRow
 							contract={record}
 							service={resolveServicePath(record)}
-							onPrint={async (addendumGroupId) => {
-								try {
-									const status = await checkOfficialPdfStatus(resolveServicePath(record), record.id, addendumGroupId);
-									if (!status.can_upload && status.has_official_pdf) {
-										window.$message?.warning(t("contract.list.message.officialUploaded"));
-										return;
-									}
-								}
-								catch (error) {
-									console.error(error);
-									window.$message?.error(t("contract.list.message.officialStatusFailed"));
-									return;
-								}
-								setPrintRecord(record);
-								setPrintAddendumGroupId(addendumGroupId);
-								setSignFlowLoading(true);
-								setSignFlowModalOpen(true);
-								try {
-									const data = await fetchSignFlowPreview(resolveServicePath(record), record.id, addendumGroupId);
-									setSignFlowData(data);
-								}
-								catch (err) {
-									console.error(err);
-									window.$message?.error(t("contract.list.message.signFlowFailed"));
-									setSignFlowModalOpen(false);
-								}
-								finally {
-									setSignFlowLoading(false);
-								}
-							}}
+							onPrint={canSignRow(record) ? addendumGroupId => handleSignFlowClick(record, addendumGroupId) : undefined}
 						/>
 					),
 				}}

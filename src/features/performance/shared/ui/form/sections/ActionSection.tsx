@@ -13,6 +13,7 @@ interface Props {
 	onSmsGatewayImport?: () => void
 	onSmsGatewayImportHistory?: () => void
 	showSubmitAndCreateAnother?: boolean
+	showSubmitAndEdit?: boolean
 }
 
 export function ActionSection({
@@ -25,6 +26,7 @@ export function ActionSection({
 	onSmsGatewayImport,
 	onSmsGatewayImportHistory,
 	showSubmitAndCreateAnother = true,
+	showSubmitAndEdit = true,
 }: Props) {
 	const { t } = useTranslation();
 
@@ -52,9 +54,13 @@ export function ActionSection({
 							</Button>
 						)
 						: null}
-					<Button loading={!!submitting} onClick={onSubmitAndEdit}>
-						{t("performance.actions.submitAndEdit")}
-					</Button>
+					{showSubmitAndEdit
+						? (
+							<Button loading={!!submitting} onClick={onSubmitAndEdit}>
+								{t("performance.actions.submitAndEdit")}
+							</Button>
+						)
+						: null}
 					<Button type="primary" loading={!!submitting} onClick={onSubmit}>
 						{t("performance.actions.submit")}
 					</Button>

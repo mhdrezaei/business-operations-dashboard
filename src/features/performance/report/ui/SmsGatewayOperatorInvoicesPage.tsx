@@ -7,6 +7,7 @@ import { createSmsOperatorInvoice, createSmsOperatorInvoiceMonthlyReport, delete
 import { formatInvoiceDifference, formatNullableNumber, getDifferenceTextType, getInvoiceDifference, getInvoiceYears, getNextFreeOperator, getTakenOperators, isMonthFullyInvoiced, OPERATOR_INVOICE_CODES, sortOperatorInvoices, toOperatorOptions, trafficOperatorLabel } from "#src/features/performance/report/model/sms-gateway-report";
 import { getRequestErrorMessage } from "#src/features/performance/report/queries/sms-gateway-request-error";
 import { smsOperatorInvoicesQuery, smsOperatorInvoicesQueryKey } from "#src/features/performance/report/queries/sms-gateway.queries";
+import { useAccess } from "#src/hooks";
 import { TableActionEditIcon, TableActionTrashIcon } from "#src/icons";
 import { dayjs } from "#src/shared/lib/dayjs-jalali";
 import { SectionCard } from "#src/shared/ui/section-card";
@@ -46,6 +47,11 @@ export function SmsGatewayOperatorInvoicesPage() {
 	const monthOptions = months.map((label, i) => ({ label, value: i + 1 }));
 	const OPS = toOperatorOptions(t, OPERATOR_INVOICE_CODES);
 	const name = (v: SmsOperatorCode) => trafficOperatorLabel(t, v);
+	const { hasDomainPermission } = useAccess();
+	const canCreateInvoice = hasDomainPermission("performances", "create", "sms");
+	const canUpdateInvoice = hasDomainPermission("performances", "update", "sms");
+	const canDeleteInvoice = hasDomainPermission("performances", "delete", "sms");
+
 	const [form] = Form.useForm<SmsOperatorInvoicePayload>(); const [reportForm] = Form.useForm<{ sh_year?: number, sh_month?: number }>(); const client = useQueryClient();
 	const invoices = useQuery(smsOperatorInvoicesQuery());
 	const invoicesTableActionRef = useRef<ActionType>(null);
@@ -153,20 +159,26 @@ export function SmsGatewayOperatorInvoicesPage() {
 		{ title: t("performance.smsGatewayPages.invoices.enCountColumn"), dataIndex: "en_count", search: false, render: (_, item) => number(item.en_count) },
 		{ title: t("performance.smsGatewayPages.invoices.faCostColumn"), dataIndex: "fa_cost", search: false, render: (_, item) => <Typography.Text type="success">{number(item.fa_cost)}</Typography.Text> },
 		{ title: t("performance.smsGatewayPages.invoices.enCostColumn"), dataIndex: "en_cost", search: false, render: (_, item) => <Typography.Text type="success">{number(item.en_cost)}</Typography.Text> },
-		{
-			title: t("common.action"),
-			valueType: "option",
-			key: "actions",
-			width: 120,
-			fixed: "right",
-			align: "center",
-			render: (_, item, __, action) => [
-				<BasicButton key="edit" type="link" size="large" title={t("performance.smsGatewayPages.invoices.editInvoice")} icon={<TableActionEditIcon />} onClick={() => openEdit(item)} />,
-				<Popconfirm key="delete" title={t("performance.smsGatewayPages.invoices.confirmDelete")} okText={t("common.delete")} cancelText={t("common.cancel")} onConfirm={() => remove(item, action)}>
-					<BasicButton type="link" size="large" title={t("performance.smsGatewayPages.invoices.deleteInvoice")} icon={<TableActionTrashIcon />} />
-				</Popconfirm>,
-			],
-		},
+		...(canUpdateInvoice || canDeleteInvoice
+			? [{
+				title: t("common.action"),
+				valueType: "option" as const,
+				key: "actions",
+				width: 120,
+				fixed: "right" as const,
+				align: "center" as const,
+				render: (_: unknown, item: SmsOperatorInvoice, __: unknown, action: ProCoreActionType<object> | undefined) => [
+					canUpdateInvoice ? <BasicButton key="edit" type="link" size="large" title={t("performance.smsGatewayPages.invoices.editInvoice")} icon={<TableActionEditIcon />} onClick={() => openEdit(item)} /> : null,
+					canDeleteInvoice
+						? (
+							<Popconfirm key="delete" title={t("performance.smsGatewayPages.invoices.confirmDelete")} okText={t("common.delete")} cancelText={t("common.cancel")} onConfirm={() => remove(item, action)}>
+								<BasicButton type="link" size="large" title={t("performance.smsGatewayPages.invoices.deleteInvoice")} icon={<TableActionTrashIcon />} />
+							</Popconfirm>
+						)
+						: null,
+				].filter(Boolean),
+			}]
+			: []),
 	];
 	return (
 		<BasicContent className="h-full overflow-y-auto">
@@ -175,34 +187,38 @@ export function SmsGatewayOperatorInvoicesPage() {
 					<Typography.Title level={4} className="!mb-1">{t("performance.smsGatewayPages.invoices.pageTitle")}</Typography.Title>
 					<Typography.Text type="secondary">{t("performance.smsGatewayPages.invoices.pageSubtitle")}</Typography.Text>
 				</div>
-				<SectionCard
-					title={t("performance.smsGatewayPages.invoices.createTitle")}
-					tone="primary"
-					className="sms-gateway-invoice-entry"
-				>
-					<Form form={form} layout="vertical" onFinish={save} initialValues={{ fa_cost: 0, en_cost: 0 }}>
-						<div className="aligned-form-grid aligned-form-grid--three sms-gateway-invoice-entry__filters">
-							<Form.Item name="sh_year" label={t("performance.smsGatewayPages.invoices.yearShamsi")} rules={[{ required: true }]}><Select options={yearOptions} placeholder={t("performance.placeholders.select")} /></Form.Item>
-							<Form.Item name="sh_month" label={t("performance.smsGatewayPages.invoices.monthShamsi")} rules={[{ required: true }]}><Select options={getAvailableMonths(year)} placeholder={!year ? t("performance.placeholders.selectYearFirst") : t("performance.placeholders.select")} disabled={!year} /></Form.Item>
-							<Form.Item name="operator" label={t("performance.columns.operator")} rules={[{ required: true }]}><Select options={activeOps} disabled={!year || !month} placeholder={!year || !month ? t("performance.smsGatewayPages.invoices.selectYearAndMonthFirst") : t("performance.placeholders.select")} /></Form.Item>
-						</div>
-						<div className="sms-gateway-invoice-entry__metrics">
-							<SectionCard title={t("performance.smsGatewayPages.invoices.smsCount")} tone="blue" className="sms-gateway-invoice-entry__metric">
-								<div className="sms-gateway-invoice-entry__metric-fields">
-									<Form.Item name="fa_count" label={t("performance.language.fa")} rules={[{ required: true, validator: (_, value) => value == null || value === "" ? Promise.reject(new Error(t("performance.smsGatewayPages.invoices.faCountRequired"))) : Promise.resolve() }]}><InputNumber min={0} precision={0} placeholder="0" className="w-full" onFocus={selectNumberInput} onKeyDown={preventNonNumericInput} /></Form.Item>
-									<Form.Item name="en_count" label={t("performance.language.en")} rules={[{ required: true, validator: (_, value) => value == null || value === "" ? Promise.reject(new Error(t("performance.smsGatewayPages.invoices.enCountRequired"))) : Promise.resolve() }]}><InputNumber min={0} precision={0} placeholder="0" className="w-full" onFocus={selectNumberInput} onKeyDown={preventNonNumericInput} /></Form.Item>
+				{canCreateInvoice
+					? (
+						<SectionCard
+							title={t("performance.smsGatewayPages.invoices.createTitle")}
+							tone="primary"
+							className="sms-gateway-invoice-entry"
+						>
+							<Form form={form} layout="vertical" onFinish={save} initialValues={{ fa_cost: 0, en_cost: 0 }}>
+								<div className="aligned-form-grid aligned-form-grid--three sms-gateway-invoice-entry__filters">
+									<Form.Item name="sh_year" label={t("performance.smsGatewayPages.invoices.yearShamsi")} rules={[{ required: true }]}><Select options={yearOptions} placeholder={t("performance.placeholders.select")} /></Form.Item>
+									<Form.Item name="sh_month" label={t("performance.smsGatewayPages.invoices.monthShamsi")} rules={[{ required: true }]}><Select options={getAvailableMonths(year)} placeholder={!year ? t("performance.placeholders.selectYearFirst") : t("performance.placeholders.select")} disabled={!year} /></Form.Item>
+									<Form.Item name="operator" label={t("performance.columns.operator")} rules={[{ required: true }]}><Select options={activeOps} disabled={!year || !month} placeholder={!year || !month ? t("performance.smsGatewayPages.invoices.selectYearAndMonthFirst") : t("performance.placeholders.select")} /></Form.Item>
 								</div>
-							</SectionCard>
-							<SectionCard title={t("performance.smsGatewayPages.invoices.smsCost")} tone="purple" className="sms-gateway-invoice-entry__metric">
-								<div className="sms-gateway-invoice-entry__metric-fields">
-									<Form.Item name="fa_cost" label={t("performance.language.fa")}><InputNumber min={0} precision={0} className="w-full" onFocus={selectNumberInput} onKeyDown={preventNonNumericInput} /></Form.Item>
-									<Form.Item name="en_cost" label={t("performance.language.en")}><InputNumber min={0} precision={0} className="w-full" onFocus={selectNumberInput} onKeyDown={preventNonNumericInput} /></Form.Item>
+								<div className="sms-gateway-invoice-entry__metrics">
+									<SectionCard title={t("performance.smsGatewayPages.invoices.smsCount")} tone="blue" className="sms-gateway-invoice-entry__metric">
+										<div className="sms-gateway-invoice-entry__metric-fields">
+											<Form.Item name="fa_count" label={t("performance.language.fa")} rules={[{ required: true, validator: (_, value) => value == null || value === "" ? Promise.reject(new Error(t("performance.smsGatewayPages.invoices.faCountRequired"))) : Promise.resolve() }]}><InputNumber min={0} precision={0} placeholder="0" className="w-full" onFocus={selectNumberInput} onKeyDown={preventNonNumericInput} /></Form.Item>
+											<Form.Item name="en_count" label={t("performance.language.en")} rules={[{ required: true, validator: (_, value) => value == null || value === "" ? Promise.reject(new Error(t("performance.smsGatewayPages.invoices.enCountRequired"))) : Promise.resolve() }]}><InputNumber min={0} precision={0} placeholder="0" className="w-full" onFocus={selectNumberInput} onKeyDown={preventNonNumericInput} /></Form.Item>
+										</div>
+									</SectionCard>
+									<SectionCard title={t("performance.smsGatewayPages.invoices.smsCost")} tone="purple" className="sms-gateway-invoice-entry__metric">
+										<div className="sms-gateway-invoice-entry__metric-fields">
+											<Form.Item name="fa_cost" label={t("performance.language.fa")}><InputNumber min={0} precision={0} className="w-full" onFocus={selectNumberInput} onKeyDown={preventNonNumericInput} /></Form.Item>
+											<Form.Item name="en_cost" label={t("performance.language.en")}><InputNumber min={0} precision={0} className="w-full" onFocus={selectNumberInput} onKeyDown={preventNonNumericInput} /></Form.Item>
+										</div>
+									</SectionCard>
 								</div>
-							</SectionCard>
-						</div>
-						<div className="mt-2 flex justify-end"><Button type="primary" htmlType="submit" loading={saving} disabled={activeOps.length === 0}>{t("performance.smsGatewayPages.invoices.submit")}</Button></div>
-					</Form>
-				</SectionCard>
+								<div className="mt-2 flex justify-end"><Button type="primary" htmlType="submit" loading={saving} disabled={activeOps.length === 0}>{t("performance.smsGatewayPages.invoices.submit")}</Button></div>
+							</Form>
+						</SectionCard>
+					)
+					: null}
 				<BasicTable<SmsOperatorInvoice>
 					rowKey="id"
 					columns={invoiceColumns}

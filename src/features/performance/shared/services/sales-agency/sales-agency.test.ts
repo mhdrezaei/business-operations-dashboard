@@ -15,7 +15,18 @@ vi.mock("#src/features/performance/api/performances.api", () => ({
 
 describe("sales agency performance", () => {
 	it("offers the two cooperation types while preserving explicit access restrictions", () => {
-		const service = { id: 8, code: "sales_agency", name: "عاملیت فروش", permissions: { performances: { create: true, view: true, update: true, delete: false } } } as AccessServiceType;
+		const service = {
+			id: 8,
+			code: "sales_agency",
+			name: "عاملیت فروش",
+			permissions: { performances: { create: true, view: true, update: true, delete: false, sign: false, business_approve: false } },
+			company_type_permissions: {
+				performances: {
+					create: [{ SALES_REP_MANAGEMENT: "مدیریت نمایندگان فروش" }, { OUTBOUND: "فروش Outbound" }],
+					view: [{ SALES_REP_MANAGEMENT: "مدیریت نمایندگان فروش" }, { OUTBOUND: "فروش Outbound" }],
+				},
+			},
+		} as AccessServiceType;
 		expect(getPermittedCompanyTypesForDomain([service], "performances", "create", 8).map(item => item.key)).toEqual(["SALES_REP_MANAGEMENT", "OUTBOUND"]);
 		const restricted = { ...service, company_type_permissions: { performances: { create: [] } } };
 		expect(getPermittedCompanyTypesForDomain([restricted], "performances", "create", 8)).toEqual([]);
