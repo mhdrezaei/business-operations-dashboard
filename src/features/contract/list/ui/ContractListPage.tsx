@@ -18,6 +18,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { checkOfficialPdfStatus, fetchContractDetail, fetchContractPrintData, fetchContractsList, fetchDeleteContract, fetchSignFlowPreview } from "../../api/contracts.api";
+import { getContractAccessCompanyType } from "../../shared/model/company-type-options";
 import { isTelecomFrameCode } from "../../shared/services/telecom-frame/telecom-frame.types";
 import { companyTypeMatches, pickCompanyTypeToken } from "../../shared/utils";
 import { buildContractEditPath } from "../../shared/utils/contract-routes";
@@ -234,17 +235,18 @@ export default function ContractListPage() {
 			autoSelectFilter({ company_id: companyOptions[0].value });
 	}, [isCompanyDisabled, companyOptions]);
 
+	const getRowAccessCompanyType = (row: ContractListItemType) => getContractAccessCompanyType(resolveServicePath(row), getRowCompanyType(row));
 	const canViewRow = (row: ContractListItemType) =>
-		hasDomainPermissionByServiceId("contracts", "view", Number(row.service_id), getRowCompanyType(row));
+		hasDomainPermissionByServiceId("contracts", "view", Number(row.service_id), getRowAccessCompanyType(row));
 	const canUpdateRow = (row: ContractListItemType) =>
-		hasDomainPermissionByServiceId("contracts", "update", Number(row.service_id), getRowCompanyType(row));
+		hasDomainPermissionByServiceId("contracts", "update", Number(row.service_id), getRowAccessCompanyType(row));
 	const canDeleteRow = (row: ContractListItemType) =>
-		hasDomainPermissionByServiceId("contracts", "delete", Number(row.service_id), getRowCompanyType(row));
+		hasDomainPermissionByServiceId("contracts", "delete", Number(row.service_id), getRowAccessCompanyType(row));
 	const canCreateRow = (row: ContractListItemType) =>
-		hasDomainPermissionByServiceId("contracts", "create", Number(row.service_id), getRowCompanyType(row));
+		hasDomainPermissionByServiceId("contracts", "create", Number(row.service_id), getRowAccessCompanyType(row));
 	const canSignRow = (row: ContractListItemType) =>
-		hasDomainPermissionByServiceId("contracts", "sign", Number(row.service_id), getRowCompanyType(row))
-		|| hasDomainPermissionByServiceId("contracts", "update", Number(row.service_id), getRowCompanyType(row));
+		hasDomainPermissionByServiceId("contracts", "sign", Number(row.service_id), getRowAccessCompanyType(row))
+		|| hasDomainPermissionByServiceId("contracts", "update", Number(row.service_id), getRowAccessCompanyType(row));
 
 	const handleDeleteRow = async (row: ContractListItemType, action?: ProCoreActionType<object>) => {
 		if (!canDeleteRow(row)) {
