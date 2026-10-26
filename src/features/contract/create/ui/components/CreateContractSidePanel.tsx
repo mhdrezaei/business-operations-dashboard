@@ -1,6 +1,7 @@
 import type { ContractFormSelectionContext } from "#src/features/contract/shared/ui/form/ContractForm";
 import { useAccess } from "#src/hooks";
 import { useNavigate } from "react-router";
+import { getContractAccessCompanyType } from "../../../shared/model/company-type-options";
 import { isCollocationCostContext, resolveContractServicePath } from "../../../shared/model/contract-service-path";
 import { ScopedCompanyContractsPanel } from "../../../shared/ui/ScopedCompanyContractsPanel";
 import { buildContractEditPath } from "../../../shared/utils/contract-routes";
@@ -18,7 +19,7 @@ export function CreateContractSidePanel({ context }: Props) {
 	const service = context ? resolveContractServicePath(context) : null;
 	const serviceId = context?.serviceId ?? null;
 	const companyType = context?.companyType ?? null;
-	const canEdit = serviceId != null && hasDomainPermissionByServiceId("contracts", "update", serviceId, companyType);
+	const canEdit = serviceId != null && hasDomainPermissionByServiceId("contracts", "update", serviceId, getContractAccessCompanyType(service, companyType));
 
 	return (
 		<>

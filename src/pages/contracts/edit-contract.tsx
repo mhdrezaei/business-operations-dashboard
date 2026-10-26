@@ -3,6 +3,7 @@ import type { ComponentProps } from "react";
 
 import { ContractEditForm } from "#src/features/contract/list/ui/components/ContractDetailModal";
 import { ContractEditSelector } from "#src/features/contract/list/ui/components/ContractEditSelector";
+import { getContractAccessCompanyType } from "#src/features/contract/shared/model/company-type-options";
 import { useAccess } from "#src/hooks";
 import { Button, Result } from "antd";
 import { useEffect, useState } from "react";
@@ -44,7 +45,12 @@ export default function EditContractFormPage() {
 	useEffect(() => {
 		setSelection({ contractId, serviceId, companyType, service });
 	}, [contractId, serviceId, companyType, service]);
-	const canUpdate = selection.serviceId != null && hasDomainPermissionByServiceId("contracts", "update", selection.serviceId, selection.companyType);
+	const accessCompanyType = getContractAccessCompanyType(selection.service, selection.companyType);
+	const canUpdate = selection.serviceId != null && hasDomainPermissionByServiceId("contracts", "update", selection.serviceId, accessCompanyType);
+	// فقط تأییدکننده (business_approve یا sign): فرم فقط‌خواندنی است ولی بخش تأیید فعال می‌ماند.
+	const canApproveOnly = !canUpdate && selection.serviceId != null
+	  && (hasDomainPermissionByServiceId("contracts", "business_approve", selection.serviceId, accessCompanyType)
+	    || hasDomainPermissionByServiceId("contracts", "sign", selection.serviceId, accessCompanyType));
 
 	const handleContractSelect: ComponentProps<typeof ContractEditForm>["onContractSelect"] = (selectedContractId, selectedServiceId, selectedCompanyType, selectedService) => {
 		setSelection({
@@ -58,7 +64,7 @@ export default function EditContractFormPage() {
 	if (!selection.contractId || !selection.service || !selection.serviceId)
 		return <ContractEditSelector onContractSelect={handleContractSelect} />;
 
-	if (!canUpdate) {
+	if (!canUpdate && !canApproveOnly) {
 		return (
 			<Result
 				status="403"
@@ -72,6 +78,7 @@ export default function EditContractFormPage() {
 		<ContractEditForm
 			contractId={selection.contractId}
 			service={selection.service}
+			readOnly={canApproveOnly}
 			onContractSelect={handleContractSelect}
 			onDeleted={() => setSelection({ contractId: null, serviceId: null, companyType: undefined, service: null })}
 		/>

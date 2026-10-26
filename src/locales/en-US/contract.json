@@ -626,5 +626,8 @@
 		"loadFailed": "Failed to load company contracts",
 		"empty": "No other contract found",
 		"selectFirst": "Select the service and company first"
+	},
+	"signFlow": {
+		"templateAccessDenied": "You need the contract template view permission to open this sign flow document. Please contact your system administrator."
 	}
 }

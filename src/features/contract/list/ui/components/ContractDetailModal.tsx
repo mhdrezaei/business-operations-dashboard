@@ -5,6 +5,7 @@ import type { ContractServicePath } from "../../../api/contracts.api";
 import { contractDetailToFormValues } from "#src/features/contract/api/contract-detail.mappers";
 import { listContractDocuments } from "#src/features/contract/api/contract-documents.api";
 import { ContractReadOnlyDetails } from "#src/features/contract/preview/ui/ContractReadOnlyDetails";
+import { getContractAccessCompanyType } from "#src/features/contract/shared/model/company-type-options";
 import { formValuesToApiPayload } from "#src/features/contract/shared/model/contract.payload";
 import { resolveContractCompanyId } from "#src/features/contract/shared/queries/resolve-contract-company";
 import { ContractForm } from "#src/features/contract/shared/ui/form/ContractForm";
@@ -174,7 +175,7 @@ export function ContractEditForm({ contractId, service, readOnlyHeader, onUpdate
 		};
 	}, [contractId, service, reloadKey]);
 
-	const canDelete = hasDomainPermissionByServiceId("contracts", "delete", initialValues?.serviceId, pickCompanyTypeToken(initialValues?.companyType));
+	const canDelete = hasDomainPermissionByServiceId("contracts", "delete", initialValues?.serviceId, getContractAccessCompanyType(resolvedService, pickCompanyTypeToken(initialValues?.companyType)));
 
 	async function handleDelete() {
 		if (resolvedService == null || loadedContractId == null)
@@ -297,6 +298,7 @@ export function ContractEditForm({ contractId, service, readOnlyHeader, onUpdate
 													contractId={loadedContractId}
 													service={resolvedService}
 													detail={contractDetail}
+													serviceId={initialValues.serviceId}
 													companyType={pickCompanyTypeToken(initialValues.companyType)}
 													canDecide={readOnly}
 												/>

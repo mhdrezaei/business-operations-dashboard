@@ -1,3 +1,5 @@
+import type { ContractServicePath } from "../../api/contracts.api";
+
 const SMS_VENDOR_COMPANY_TYPE = "VENDOR";
 const PSP_COMPANY_TYPE = "IPG";
 
@@ -14,4 +16,9 @@ export function filterSelectableCompanyTypes<T extends { key: string }>(serviceC
 
 export function hasSmsVendorCompanyType(items: Array<{ key: string }>) {
 	return items.some(item => String(item.key).toUpperCase() === SMS_VENDOR_COMPANY_TYPE);
+}
+
+/** نوع شرکتِ مورد استفاده در بررسی دسترسی: قرارداد SMS با طرف vendor با توکن `VENDOR` کنترل می‌شود. */
+export function getContractAccessCompanyType(service: ContractServicePath | null | undefined, companyType?: string | null) {
+	return service === "sms/vendor" ? SMS_VENDOR_COMPANY_TYPE : companyType;
 }

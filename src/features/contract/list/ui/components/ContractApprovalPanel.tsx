@@ -1,3 +1,4 @@
+import type { DomainPermissionAction } from "#src/api/user/types";
 import type {
 	ContractApprovalField,
 	ContractApprovalHistorySubjectDto,
@@ -5,6 +6,7 @@ import type {
 	ContractServicePath,
 } from "../../../api/contracts.api";
 import type { ContractApprovalDecision } from "../../model/contract-approval-payload";
+import { useAccess } from "#src/hooks";
 import { toPersianDigits } from "#src/utils/formated";
 
 import { DownOutlined, UpOutlined } from "@ant-design/icons";
@@ -13,6 +15,7 @@ import { Alert, Button, Card, Collapse, Input, Modal, Spin, Tooltip } from "antd
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { updateContractApproval } from "../../../api/contracts.api";
+import { getContractAccessCompanyType } from "../../../shared/model/company-type-options";
 import { contractApprovalQuery } from "../../../shared/queries/contract.queries";
 import { buildContractApprovalPayload } from "../../model/contract-approval-payload";
 import { ContractApprovalPolicy } from "../../model/contract-approval-policy";
@@ -25,6 +28,7 @@ interface ContractApprovalPanelProps {
 	service: ContractServicePath
 	/** Raw contract detail, used for `is_official` and `real_signed_at` (lock) state. */
 	detail: Record<string, unknown> | null
+	serviceId?: number | null
 	companyType?: string | null
 	/** Shows the approve/reject actions; otherwise only statuses and history (old: hidden while editing). */
 	canDecide?: boolean
@@ -37,6 +41,12 @@ interface PendingDecision extends ContractApprovalDecision {
 const FIELD_LABEL_KEYS: Record<ContractApprovalField, string> = {
 	is_business_approved: "contract.list.column.isBusinessApproved",
 	is_signed: "contract.list.column.isSigned",
+};
+
+/** Each approval field needs its own contracts permission (old: `canBusinessApprove` / `canSign`). */
+const FIELD_PERMISSIONS: Record<ContractApprovalField, DomainPermissionAction> = {
+	is_business_approved: "business_approve",
+	is_signed: "sign",
 };
 
 const APPROVAL_FIELDS = Object.keys(FIELD_LABEL_KEYS) as ContractApprovalField[];
@@ -53,12 +63,15 @@ function collectRealSignedIds(addenda: unknown, ids = new Set<number>()) {
 	return ids;
 }
 
-export function ContractApprovalPanel({ contractId, service, detail, companyType, canDecide = false }: ContractApprovalPanelProps) {
+export function ContractApprovalPanel({ contractId, service, detail, serviceId, companyType, canDecide = false }: ContractApprovalPanelProps) {
 	const { t } = useTranslation();
+	const { hasDomainPermissionByServiceId } = useAccess();
 	const classes = useContractApprovalHistoryStyles();
 	const queryClient = useQueryClient();
 	const approvalQuery = contractApprovalQuery(service, contractId);
 	const { data, isPending, isError } = useQuery(approvalQuery);
+	const canDecideField = (field: ContractApprovalField) =>
+		canDecide && hasDomainPermissionByServiceId("contracts", FIELD_PERMISSIONS[field], serviceId, getContractAccessCompanyType(service, companyType));
 	const [decision, setDecision] = useState<PendingDecision | null>(null);
 	const [comment, setComment] = useState("");
 	// Accordion: only one subject (main contract or addendum) stays expanded at a time.
@@ -133,7 +146,7 @@ export function ContractApprovalPanel({ contractId, service, detail, companyType
 											<span>{t(FIELD_LABEL_KEYS[field])}</span>
 											<ContractApprovalStatusTag value={subject[field]} />
 										</div>
-										{canDecide
+										{canDecideField(field)
 											? (
 												<div className="flex gap-2">
 													{[true, false].map((value) => {

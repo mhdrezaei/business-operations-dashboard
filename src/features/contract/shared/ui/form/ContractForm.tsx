@@ -12,6 +12,8 @@ import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
+import { getContractAccessCompanyType } from "../../model/company-type-options";
+import { resolveContractServicePath } from "../../model/contract-service-path";
 import { buildContractSchema, mergeContractValues, normalizeContractValue } from "../../model/contract.schema";
 import { serviceRegistry } from "../../services/registry";
 import { findFirstError } from "../../utils";
@@ -141,7 +143,7 @@ export function ContractForm({
 	});
 	const watchedValues = useWatch({ control: form.control, defaultValue: mergedInitialValues as any });
 	const { hasDomainPermissionByServiceId } = useAccess();
-	const canUpdateSelectedService = watchedValues.serviceId != null && hasDomainPermissionByServiceId("contracts", "update", watchedValues.serviceId, watchedValues.companyType);
+	const canUpdateSelectedService = watchedValues.serviceId != null && hasDomainPermissionByServiceId("contracts", "update", watchedValues.serviceId, getContractAccessCompanyType(resolveContractServicePath({ serviceCode: watchedValues.serviceCode, companyType: watchedValues.companyType, counterpartyType: watchedValues.counterpartyType }), watchedValues.companyType));
 	const { dirtyFields } = form.formState;
 	const isDirty = useMemo(() => {
 		return hasMeaningfulDirtyField(dirtyFields, watchedValues, mergedInitialValues);

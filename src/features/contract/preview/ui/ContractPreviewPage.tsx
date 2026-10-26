@@ -4,6 +4,7 @@ import { BasicContent } from "#src/components";
 import { fetchContractApprovalHistory, fetchContractDetail } from "#src/features/contract/api/contracts.api";
 import { formatHistoryDate } from "#src/features/contract/list/ui/components/contract-approval-history.utils";
 import { ContractEditForm } from "#src/features/contract/list/ui/components/ContractDetailModal";
+import { getContractAccessCompanyType } from "#src/features/contract/shared/model/company-type-options";
 import { buildContractEditPath } from "#src/features/contract/shared/utils/contract-routes";
 import { useAccess } from "#src/hooks";
 import { ClockCircleOutlined, UserOutlined } from "@ant-design/icons";
@@ -63,8 +64,9 @@ export default function ContractPreviewPage() {
 	const contract = (detail.data ?? {}) as Record<string, unknown>;
 	const isSigned = contract.is_signed === true;
 	const isBusinessApproved = contract.is_business_approved === true;
-	const canUpdate = serviceId != null && hasDomainPermissionByServiceId("contracts", "update", serviceId, companyType);
-	const canView = serviceId != null && hasDomainPermissionByServiceId("contracts", "view", serviceId, companyType);
+	const accessCompanyType = getContractAccessCompanyType(service, companyType);
+	const canUpdate = serviceId != null && hasDomainPermissionByServiceId("contracts", "update", serviceId, accessCompanyType);
+	const canView = serviceId != null && hasDomainPermissionByServiceId("contracts", "view", serviceId, accessCompanyType);
 	const latestHistory = [...(approvalHistory.data?.sign_approval_history ?? [])]
 		.sort((a, b) => new Date(b.changed_at).getTime() - new Date(a.changed_at).getTime())[0];
 	const latestField = latestHistory?.field_name ?? (isSigned ? "is_signed" : "is_business_approved");
