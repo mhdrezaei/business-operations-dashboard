@@ -22,11 +22,11 @@ export const TRAFFIC_LOCATION_OPTIONS = [
 ] as const satisfies Array<{ labelKey: string, value: TrafficLocationCode }>;
 
 export const TRAFFIC_METRICS = [
-	{ key: "value", titleKey: "prediction.metrics.trafficSentVolume" },
-	{ key: "valueReceive", titleKey: "prediction.metrics.trafficReceivedVolume" },
-	{ key: "income", titleKey: "prediction.metrics.income" },
-	{ key: "expense", titleKey: "prediction.metrics.expense" },
-] as const satisfies Array<{ key: TrafficPredictionMetricCode, titleKey: string }>;
+	{ key: "value", apiKey: "value", titleKey: "prediction.metrics.trafficSentVolume" },
+	{ key: "valueReceive", apiKey: "value_receive", titleKey: "prediction.metrics.trafficReceivedVolume" },
+	{ key: "income", apiKey: "income", titleKey: "prediction.metrics.income" },
+	{ key: "expense", apiKey: "expense", titleKey: "prediction.metrics.expense" },
+] as const satisfies Array<{ key: TrafficPredictionMetricCode, apiKey: string, titleKey: string }>;
 
 export function isTrafficCompanyType(value: unknown): value is TrafficCompanyType {
 	return TRAFFIC_COMPANY_TYPE_OPTIONS.some(option => option.value === value);

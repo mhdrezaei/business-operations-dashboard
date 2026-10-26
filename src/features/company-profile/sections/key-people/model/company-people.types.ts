@@ -6,6 +6,8 @@ export type CompanyPersonRole	= | "BOARD"
   | "OTHER"
   | "REPRESENTATIVE";
 
+export type CompanyPersonGender = "MALE" | "FEMALE";
+
 export interface CompanyPersonDto {
 	id: number
 	company: number
@@ -17,6 +19,9 @@ export interface CompanyPersonDto {
 	phone: string[] | null
 	email: string[] | null
 	is_signatory: boolean
+	gender?: CompanyPersonGender | null
+	official_gazette_number?: string | null
+	official_gazette_date?: string | null
 	contract_order: number | null
 	role_slot_index?: number | null
 	role_slot_group?: string | null
@@ -33,11 +38,14 @@ export interface CompanyPersonPayload {
 	service: number
 	role: CompanyPersonRole
 	full_name: string
-	national_id: string | null
-	title: string | null
+	national_id: string
+	title: string
+	gender: CompanyPersonGender | null
 	phone: string[] | null
 	email: string[] | null
 	is_signatory: boolean
+	official_gazette_number: string | null
+	official_gazette_date: string | null
 	contract_order: number | null
 }
 
@@ -56,6 +64,9 @@ export interface CompanyPersonFormValues {
 	is_signatory: boolean
 	national_id: string
 	title: string
+	gender: CompanyPersonGender | null
+	official_gazette_number: string
+	official_gazette_date: string
 	phone: CompanyPersonContactItem[]
 	email: CompanyPersonContactItem[]
 }

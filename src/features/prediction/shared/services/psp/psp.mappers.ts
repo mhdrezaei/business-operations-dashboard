@@ -1,4 +1,3 @@
-import type { CompanyDto } from "#src/api/common/common.types";
 import type { PspPredictionPayload, PspPredictionYearDto } from "../../../api/predictions.api";
 import type {
 	PredictionFormValues,
@@ -81,15 +80,7 @@ export function normalizeYearlyValueIncomeManualShares(value: unknown): YearlyVa
 	};
 }
 
-export function buildYearlyValueIncomeSharePayload(
-	manualShares: YearlyValueIncomeManualSharesValue,
-	allCompanyIds: number[],
-) {
-	const allowedCompanyIds = new Set(
-		Array.from(new Set(allCompanyIds))
-			.filter(companyId => Number.isInteger(companyId) && companyId > 0),
-	);
-
+export function buildYearlyValueIncomeSharePayload(manualShares: YearlyValueIncomeManualSharesValue) {
 	return Object.fromEntries(
 		(["value", "income"] as const).map((metric) => {
 			const state = manualShares[metric];
@@ -99,7 +90,6 @@ export function buildYearlyValueIncomeSharePayload(
 
 			const shares = Object.fromEntries(
 				state.selectedCompanyIds
-					.filter(companyId => allowedCompanyIds.has(companyId))
 					.map((companyId) => {
 						const companyKey = String(companyId);
 						return [companyKey, toNumberOrZero(state.shares[companyKey])] as const;
@@ -111,16 +101,6 @@ export function buildYearlyValueIncomeSharePayload(
 		})
 			.filter(([, shares]) => shares != null),
 	);
-}
-
-function getCompanyIdsForType(companies: CompanyDto[], companyType: string | null | undefined) {
-	if (!companyType)
-		return [];
-
-	return companies
-		.filter(company => companyTypeMatches(company.company_type, companyType))
-		.map(company => company.id)
-		.filter(companyId => Number.isInteger(companyId) && companyId > 0);
 }
 
 export function dtoToYearlyValueIncomePredictionForm(record: PspPredictionYearDto): Partial<PredictionFormValues> {
@@ -146,28 +126,24 @@ export function dtoToYearlyValueIncomePredictionForm(record: PspPredictionYearDt
 
 export function yearlyValueIncomePredictionFormToPayload(
 	values: PredictionFormValues,
-	companies: CompanyDto[] | number[],
 	options: { includeCompanyType?: boolean } = {},
 ): PspPredictionPayload {
 	const fields = {
 		...createEmptyYearlyValueIncomeFields(),
 		...(values.serviceFields as Partial<PspPredictionServiceFields>),
 	};
-	const allCompanyIds = Array.isArray(companies) && typeof companies[0] === "object"
-		? getCompanyIdsForType(companies as CompanyDto[], fields.companyType)
-		: companies as number[];
 
 	return {
 		service: Number(values.serviceId),
 		fiscal_year: Number(values.fiscalYear),
 		...(options.includeCompanyType ? { company_type: String(fields.companyType ?? "") } : {}),
-		value_year: toNumberOrZero(fields.valueYear),
-		income_year: toNumberOrZero(fields.incomeYear),
+		value_year: Number(fields.valueYear),
+		income_year: Number(fields.incomeYear),
 		q1_percent: Number(fields.q1Percent ?? 0),
 		q2_percent: Number(fields.q2Percent ?? 0),
 		q3_percent: Number(fields.q3Percent ?? 0),
 		q4_percent: Number(fields.q4Percent ?? 0),
-		manual_shares: buildYearlyValueIncomeSharePayload(fields.manualShares, allCompanyIds),
+		manual_shares: buildYearlyValueIncomeSharePayload(fields.manualShares),
 		note: String(values.note ?? ""),
 	};
 }
@@ -190,11 +166,8 @@ export function dtoToPspPredictionForm(record: PspPredictionYearDto): Partial<Pr
 	return dtoToYearlyValueIncomePredictionForm(record);
 }
 
-export function pspPredictionFormToPayload(
-	values: PredictionFormValues,
-	companies: CompanyDto[],
-): PspPredictionPayload {
-	return yearlyValueIncomePredictionFormToPayload(values, companies, { includeCompanyType: true });
+export function pspPredictionFormToPayload(values: PredictionFormValues): PspPredictionPayload {
+	return yearlyValueIncomePredictionFormToPayload(values, { includeCompanyType: true });
 }
 
 export function findPspPredictionByFiscalYear(

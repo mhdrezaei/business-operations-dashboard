@@ -1,3 +1,10 @@
+export interface ContractListUser {
+	first_name?: string | null
+	last_name?: string | null
+}
+
+export type ContractApprovalFilter = "true" | "false" | "pending";
+
 export interface ContractListItemType {
 	id: number
 
@@ -12,8 +19,14 @@ export interface ContractListItemType {
 	signed_addenda_count?: number
 	business_approved_addenda_count?: number
 
+	contract_number?: string | null
+	is_official?: boolean | null
 	is_signed?: boolean | null
 	is_business_approved?: boolean | null
+	real_signed_at?: string | null
+	real_signed_addenda_count?: number
+	created_by_user?: ContractListUser | null
+	updated_by_user?: ContractListUser | null
 
 	start_jy: number | null
 	start_jm: number | null
@@ -23,11 +36,7 @@ export interface ContractListItemType {
 	start_date: string // "YYYY-MM-DD"
 	end_date: string // "YYYY-MM-DD" یا ممکن است null باشد (طبق API شما)
 
-	// traffic only
-	traffic_company_type?: "TCI" | "IXP" | "CP" | "PREMIUM" | null
-	traffic_is_official?: boolean | null
-
-	// sms only
+	// sms only (the list API does not return it; see resolveSmsParty)
 	sms_party?: "vendor" | "client" | null
 }
 
@@ -49,12 +58,15 @@ export interface ContractsListQuery {
 	service_id?: number
 	company_id?: number
 
-	// traffic-only
-	company_type?: "TCI" | "IXP" | "CP" | "PREMIUM"
+	company_type?: string
 	is_official?: boolean
 
 	// sms-only
 	sms_party?: "vendor" | "client"
+
+	is_business_approved?: ContractApprovalFilter
+	is_signed?: ContractApprovalFilter
+	real_signed?: boolean
 
 	ordering?: string
 }

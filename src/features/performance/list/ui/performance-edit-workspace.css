@@ -209,8 +209,7 @@
 	line-height: 2;
 }
 
-.traffic-update-template-editor,
-.traffic-update-template-result {
+.traffic-update-template-editor {
 	display: grid;
 	gap: var(--ant-margin-lg);
 }
@@ -225,50 +224,6 @@
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
 	gap: var(--ant-margin);
-}
-
-.traffic-update-template-result__icon {
-	display: grid;
-	width: 72px;
-	height: 72px;
-	place-items: center;
-	justify-self: center;
-	border: 4px solid var(--ant-colorInfo);
-	border-radius: 50%;
-	color: var(--ant-colorInfo);
-	font-size: 34px;
-}
-
-.traffic-update-template-stats {
-	display: grid;
-	grid-template-columns: repeat(4, minmax(0, 1fr));
-	gap: var(--ant-margin-sm);
-}
-
-.traffic-update-template-result__row {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: var(--ant-margin);
-	padding: var(--ant-padding-sm) var(--ant-padding-md);
-	border: 1px solid var(--ant-colorSplit);
-	border-radius: var(--ant-border-radius-lg);
-}
-
-.traffic-update-template-rejections {
-	overflow-x: auto;
-	border: 1px solid var(--ant-colorSplit);
-	border-radius: var(--ant-border-radius-lg);
-}
-
-.traffic-update-template-rejections__header {
-	display: grid;
-	grid-template-columns: 140px minmax(180px, 1fr) minmax(220px, 1.2fr);
-	gap: var(--ant-margin-sm);
-	min-width: 620px;
-	padding: var(--ant-padding-md) 18px;
-	background: var(--ant-colorFillSecondary);
-	font-weight: 700;
 }
 
 .performance-detail-inline,
@@ -620,8 +575,7 @@
 		grid-template-columns: minmax(0, 1fr);
 	}
 
-	.traffic-update-template-period,
-	.traffic-update-template-stats {
+	.traffic-update-template-period {
 		grid-template-columns: minmax(0, 1fr);
 	}
 
@@ -636,4 +590,13 @@
 	.performance-detail-value-row .performance-detail-value + .performance-detail-value {
 		border-top: var(--performance-detail-divider-width, 1px) solid var(--performance-detail-divider-color, #2b3b60);
 	}
+}
+
+.performance-edit-list-item__meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--ant-margin-xs);
+	color: var(--ant-colorTextSecondary);
+	font-size: var(--ant-font-size-sm);
 }

@@ -1,6 +1,6 @@
 import type { ServiceDto } from "#src/api/common/common.types";
 import type { CSSProperties } from "react";
-import type { SmsGatewayCustomerDto } from "../model/sms-gateway.types";
+import type { SmsGatewayCustomerDto, SmsGatewayMappingPayload } from "../model/sms-gateway.types";
 import { useAccess } from "#src/hooks";
 import { SectionCard } from "#src/shared/ui/section-card";
 import {
@@ -8,6 +8,7 @@ import {
 	DeleteOutlined,
 	LinkOutlined,
 	ReloadOutlined,
+	SaveOutlined,
 	SearchOutlined,
 	WarningFilled,
 } from "@ant-design/icons";
@@ -24,9 +25,14 @@ import {
 	Tag,
 	theme,
 } from "antd";
-import React, { useMemo, useState } from "react";
-import { createSmsGatewayMapping, deleteSmsGatewayMapping } from "../api/sms-gateway.api";
-import { getOtherGatewayCustomerNames } from "../model/sms-gateway.helpers";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation } from "react-router";
+import { createSmsGatewayMapping, deleteSmsGatewayMapping, updateSmsGatewayMapping } from "../api/sms-gateway.api";
+import {
+	findGatewayCustomerByName,
+	getOtherGatewayCustomerNames,
+	isGatewayUnavailableError,
+} from "../model/sms-gateway.helpers";
 import {
 	smsGatewayCompaniesQuery,
 	smsGatewayCustomersQuery,
@@ -50,12 +56,18 @@ export default function SmsGatewayMappingPanel({ services, initialServiceId }: S
 	const { token } = theme.useToken();
 	const { modal } = App.useApp();
 	const queryClient = useQueryClient();
-	const [search, setSearch] = useState("");
-	const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
+	const { state: locationState } = useLocation() as { state: { gatewayCustomerSearch?: string } | null };
+	const deepLinkCustomerName = locationState?.gatewayCustomerSearch ?? "";
+	const lockedRetryRef = useRef(false);
+	const [search, setSearch] = useState(deepLinkCustomerName);
+	const [pickedCustomerId, setPickedCustomerId] = useState<number | null | undefined>(undefined);
 	const [serviceId, setServiceId] = useState<number | null>(initialServiceId);
 	const [companyId, setCompanyId] = useState<number | null>(null);
 
 	const customersQuery = useQuery(smsGatewayCustomersQuery());
+	const selectedCustomerId = pickedCustomerId !== undefined
+		? pickedCustomerId
+		: findGatewayCustomerByName(customersQuery.data ?? [], deepLinkCustomerName)?.id ?? null;
 	const selectedCustomer = useMemo(
 		() => customersQuery.data?.find(customer => customer.id === selectedCustomerId) ?? null,
 		[customersQuery.data, selectedCustomerId],
@@ -66,8 +78,22 @@ export default function SmsGatewayMappingPanel({ services, initialServiceId }: S
 	) ?? null;
 	const mappedServiceId = selectedCustomerMapping?.service ?? null;
 	const effectiveServiceId = selectedCustomer?.is_mapped ? mappedServiceId ?? serviceId : serviceId;
-	const effectiveCompanyId = selectedCustomer?.is_mapped ? selectedCustomer.mapped_company_id : companyId;
+	const effectiveCompanyId = companyId ?? (selectedCustomer?.is_mapped ? selectedCustomer.mapped_company_id : null);
+	const isLocked = !!selectedCustomer?.is_mapped && customerMappingsQuery.isSuccess && !selectedCustomerMapping;
+	const isRetryingLocked = isLocked && customerMappingsQuery.isFetching;
 	const companiesQuery = useQuery(smsGatewayCompaniesQuery(effectiveServiceId));
+
+	useEffect(() => {
+		if (!isLocked) {
+			lockedRetryRef.current = false;
+			return;
+		}
+		if (lockedRetryRef.current || customerMappingsQuery.isFetching)
+			return;
+
+		lockedRetryRef.current = true;
+		void customerMappingsQuery.refetch();
+	}, [isLocked, customerMappingsQuery]);
 
 	const { hasDomainPermissionByServiceId } = useAccess();
 	const canCreateMapping = hasDomainPermissionByServiceId("company_profile", "create", effectiveServiceId);
@@ -119,6 +145,16 @@ export default function SmsGatewayMappingPanel({ services, initialServiceId }: S
 		onError: () => window.$message?.error("ثبت مپینگ انجام نشد؛ دوباره تلاش کنید"),
 	});
 
+	const updateMutation = useMutation({
+		mutationFn: ({ id, ...payload }: { id: number } & SmsGatewayMappingPayload) => updateSmsGatewayMapping(id, payload),
+		onSuccess: async () => {
+			window.$notification?.success({ message: "مپینگ ویرایش شد" });
+			setCompanyId(null);
+			await refreshGatewayData();
+		},
+		onError: () => window.$message?.error("ویرایش مپینگ انجام نشد؛ دوباره تلاش کنید"),
+	});
+
 	const deleteMutation = useMutation({
 		mutationFn: deleteSmsGatewayMapping,
 		onSuccess: async () => {
@@ -141,8 +177,15 @@ export default function SmsGatewayMappingPanel({ services, initialServiceId }: S
 		createMutation.mutate({ company: companyId, gateway_customer_id: selectedCustomerId });
 	}
 
+	function handleUpdate() {
+		if (!selectedCustomerMapping || !companyId || companyId === selectedCustomer?.mapped_company_id)
+			return;
+
+		updateMutation.mutate({ id: selectedCustomerMapping.id, company: companyId, gateway_customer_id: selectedCustomerMapping.gateway_customer_id });
+	}
+
 	function handleCustomerSelect(customerId: number) {
-		setSelectedCustomerId(customerId);
+		setPickedCustomerId(customerId);
 		setCompanyId(null);
 	}
 
@@ -195,6 +238,7 @@ export default function SmsGatewayMappingPanel({ services, initialServiceId }: S
 					selectedCustomerId={selectedCustomerId}
 					isLoading={customersQuery.isLoading}
 					isError={customersQuery.isError}
+					isGatewayUnavailable={isGatewayUnavailableError(customersQuery.error)}
 					onSearch={setSearch}
 					onSelect={handleCustomerSelect}
 					onRetry={() => void customersQuery.refetch()}
@@ -203,7 +247,7 @@ export default function SmsGatewayMappingPanel({ services, initialServiceId }: S
 				<SectionCard
 					className="company-profile-section company-profile-section--contact sms-gateway__mapping-section"
 					tone="geekblue"
-					title={selectedCustomer?.is_mapped ? "مدیریت مپینگ" : "مپ کردن شرکت"}
+					title={isLocked ? "وضعیت مپینگ" : selectedCustomer?.is_mapped ? "مدیریت مپینگ" : "مپ کردن شرکت"}
 				>
 					{!selectedCustomer
 						? (
@@ -212,86 +256,115 @@ export default function SmsGatewayMappingPanel({ services, initialServiceId }: S
 								description="از فهرست، یک مشتری Gateway را انتخاب کنید."
 							/>
 						)
-						: (
-							<div className="sms-gateway__form">
-								<div className="sms-gateway__selected-customer">
-									<SmsGatewayDashedBorder />
-									<span>مشتری Gateway</span>
-									<strong>{selectedCustomer.value}</strong>
-								</div>
+						: isRetryingLocked
+							? <div className="sms-gateway__form" aria-busy="true"><Spin tip="در حال دریافت اطلاعات…"><div /></Spin></div>
+							: isLocked
+								? (
+									<div className="sms-gateway__form">
+										<Alert
+											type="info"
+											showIcon
+											message={`«${selectedCustomer.value}» قبلاً به شرکت «${selectedCustomer.mapped_company_name ?? `#${selectedCustomer.mapped_company_id}`}» مپ شده است.`}
+											description={<Button size="small" onClick={() => void customerMappingsQuery.refetch()}>تلاش دوباره</Button>}
+										/>
+										<div className="sms-gateway__actions">
+											<Button type="text" onClick={() => setPickedCustomerId(null)}>انصراف</Button>
+										</div>
+									</div>
+								)
+								: (
+									<div className="sms-gateway__form">
+										<div className="sms-gateway__selected-customer">
+											<SmsGatewayDashedBorder />
+											<span>مشتری Gateway</span>
+											<strong>{selectedCustomer.value}</strong>
+										</div>
 
-								<label className="sms-gateway__field">
-									<span>نام سرویس</span>
-									<Select
-										value={effectiveServiceId}
-										onChange={(value) => {
-											setServiceId(value);
-											setCompanyId(null);
-										}}
-										options={smsServices.map(service => ({ label: service.name, value: service.id }))}
-										placeholder="سرویس را انتخاب کنید"
-										disabled={selectedCustomer.is_mapped}
-										aria-label="نام سرویس"
-									/>
-								</label>
+										<label className="sms-gateway__field">
+											<span>نام سرویس</span>
+											<Select
+												value={effectiveServiceId}
+												onChange={(value) => {
+													setServiceId(value);
+													setCompanyId(null);
+												}}
+												options={smsServices.map(service => ({ label: service.name, value: service.id }))}
+												placeholder="سرویس را انتخاب کنید"
+												disabled={selectedCustomer.is_mapped}
+												aria-label="نام سرویس"
+											/>
+										</label>
 
-								<label className="sms-gateway__field">
-									<span>شرکت</span>
-									<Select
-										showSearch
-										optionFilterProp="label"
-										value={effectiveCompanyId}
-										onChange={setCompanyId}
-										options={companyOptions}
-										loading={companiesQuery.isLoading}
-										placeholder={effectiveServiceId ? "شرکت را انتخاب کنید" : "ابتدا سرویس را انتخاب کنید"}
-										disabled={!effectiveServiceId || selectedCustomer.is_mapped}
-										aria-label="شرکت"
-										notFoundContent={companiesQuery.isLoading ? <Spin size="small" /> : "شرکتی یافت نشد"}
-									/>
-								</label>
+										<label className="sms-gateway__field">
+											<span>شرکت</span>
+											<Select
+												showSearch
+												optionFilterProp="label"
+												value={effectiveCompanyId}
+												onChange={setCompanyId}
+												options={companyOptions}
+												loading={companiesQuery.isLoading}
+												placeholder={effectiveServiceId ? "شرکت را انتخاب کنید" : "ابتدا سرویس را انتخاب کنید"}
+												disabled={!effectiveServiceId || (selectedCustomer.is_mapped && !selectedCustomerMapping)}
+												aria-label="شرکت"
+												notFoundContent={companiesQuery.isLoading ? <Spin size="small" /> : "شرکتی یافت نشد"}
+											/>
+										</label>
 
-								{otherGatewayNames.length > 0 && (
-									<div className="sms-gateway__related-mappings" role="status">
-										<WarningFilled aria-hidden="true" />
-										<span>
-											این شرکت به
-											{" "}
-											<strong>{otherGatewayNames.join("، ")}</strong>
-											{" "}
-											هم متصل است.
-										</span>
+										{otherGatewayNames.length > 0 && (
+											<div className="sms-gateway__related-mappings" role="status">
+												<WarningFilled aria-hidden="true" />
+												<span>
+													این شرکت به
+													{" "}
+													<strong>{otherGatewayNames.join("، ")}</strong>
+													{" "}
+													هم متصل است.
+												</span>
+											</div>
+										)}
+
+										<div className="sms-gateway__actions">
+											{selectedCustomer.is_mapped
+												? (
+													<>
+														<Button
+															type="primary"
+															icon={<SaveOutlined />}
+															loading={updateMutation.isPending}
+															disabled={!selectedCustomerMapping || !companyId || companyId === selectedCustomer.mapped_company_id}
+															onClick={handleUpdate}
+														>
+															ذخیره تغییرات
+														</Button>
+														{canDeleteMapping ? (
+															<Button
+																danger
+																icon={<DeleteOutlined />}
+																loading={deleteMutation.isPending}
+																disabled={!selectedCustomerMapping}
+																onClick={handleDelete}
+															>
+																حذف مپینگ
+															</Button>
+														) : null}
+													</>
+												)
+												: (canCreateMapping ? (
+													<Button
+														type="primary"
+														icon={<LinkOutlined />}
+														loading={createMutation.isPending}
+														disabled={!serviceId || !companyId}
+														onClick={handleCreate}
+													>
+														ثبت مپینگ
+													</Button>
+												) : null)}
+											<Button type="text" onClick={() => setPickedCustomerId(null)}>انصراف</Button>
+										</div>
 									</div>
 								)}
-
-								<div className="sms-gateway__actions">
-									{selectedCustomer.is_mapped
-										? (canDeleteMapping ? (
-											<Button
-												danger
-												icon={<DeleteOutlined />}
-												loading={deleteMutation.isPending}
-												disabled={customerMappingsQuery.isLoading || !customerMappingsQuery.data?.length}
-												onClick={handleDelete}
-											>
-												حذف مپینگ
-											</Button>
-										) : null)
-										: (canCreateMapping ? (
-											<Button
-												type="primary"
-												icon={<LinkOutlined />}
-												loading={createMutation.isPending}
-												disabled={!serviceId || !companyId}
-												onClick={handleCreate}
-											>
-												ثبت مپینگ
-											</Button>
-										) : null)}
-									<Button type="text" onClick={() => setSelectedCustomerId(null)}>انصراف</Button>
-								</div>
-							</div>
-						)}
 				</SectionCard>
 			</div>
 		</section>
@@ -305,6 +378,7 @@ interface CustomerListCardProps {
 	selectedCustomerId: number | null
 	isLoading: boolean
 	isError: boolean
+	isGatewayUnavailable: boolean
 	onSearch: (value: string) => void
 	onSelect: (id: number) => void
 	onRetry: () => void
@@ -317,6 +391,7 @@ function CustomerListCard({
 	selectedCustomerId,
 	isLoading,
 	isError,
+	isGatewayUnavailable,
 	onSearch,
 	onSelect,
 	onRetry,
@@ -351,7 +426,7 @@ function CustomerListCard({
 					<Alert
 						type="error"
 						showIcon
-						message="دریافت مشتریان Gateway ناموفق بود"
+						message={isGatewayUnavailable ? "سامانه Gateway در دسترس نیست (خطای ۵۰۲). لطفاً بعداً تلاش کنید." : "دریافت مشتریان Gateway ناموفق بود"}
 						description={<Button size="small" onClick={onRetry}>تلاش دوباره</Button>}
 					/>
 				)}

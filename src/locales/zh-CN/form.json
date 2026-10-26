@@ -7,7 +7,7 @@
 	},
 	"password": {
 		"required": "请输入密码",
-		"invalid": "8-16 位必须包含字母和数字"
+		"invalid": "仅限英文字符"
 	},
 	"code": {
 		"required": "请输入验证码"
@@ -23,13 +23,6 @@
 	"email": {
 		"required": "请输入邮箱",
 		"invalid": "邮箱格式错误"
-	},
-	"confirmPassword": {
-		"required": "请再次输入密码",
-		"invalid": "两次输入的密码不一致"
-	},
-	"agree": {
-		"required": "请同意隐私政策和条款"
 	},
 	"alphanumeric": {
 		"required": "请输入字母或数字",

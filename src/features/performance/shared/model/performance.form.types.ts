@@ -1,7 +1,7 @@
 import type { ServiceDto } from "#src/api/common/common.types";
 
 export type CompanyType = string;
-export type OpenApiContractModel = "legacy" | "package";
+export type OpenApiContractModel = "legacy" | "package" | "legacy_2";
 
 export type PerformanceServiceCode = ServiceDto["code"] | "sms-commission" | "sms_commission";
 

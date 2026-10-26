@@ -82,7 +82,7 @@ function getExternalUserIdHeader() {
 	};
 }
 
-function toPositiveInt(value: unknown) {
+export function toPositiveInt(value: unknown) {
 	const numeric = Number(value);
 	return Number.isInteger(numeric) && numeric > 0 ? numeric : null;
 }
@@ -153,14 +153,16 @@ export async function markNotificationInboxRead(payload: NotificationMarkReadPay
 
 export async function markNotificationInboxState(payload: NotificationMarkStatePayload) {
 	const ids = (payload.ids ?? []).filter(id => Number.isInteger(id) && id > 0);
-	if (ids.length === 0)
+	if (!payload.all && ids.length === 0)
 		return;
+
+	const target = payload.all ? { all: true } : { ids };
 
 	const headers = getExternalUserIdHeader();
 	if (payload.isRead) {
 		await request.post("notifications/inbox/mark-read/", {
 			headers,
-			json: { ids },
+			json: target,
 		});
 		return;
 	}
@@ -169,17 +171,17 @@ export async function markNotificationInboxState(payload: NotificationMarkStateP
 		() =>
 			request.post("notifications/inbox/mark-unread/", {
 				headers,
-				json: { ids },
+				json: target,
 			}),
 		() =>
 			request.post("notifications/inbox/mark-read/", {
 				headers,
-				json: { ids, is_read: false },
+				json: { ...target, is_read: false },
 			}),
 		() =>
 			request.patch("notifications/inbox/mark-read/", {
 				headers,
-				json: { ids, is_read: false },
+				json: { ...target, is_read: false },
 			}),
 	];
 

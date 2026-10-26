@@ -5,23 +5,25 @@ import type { CSSProperties } from "react";
 import type { ArrayPath, Path } from "react-hook-form";
 import { ContractAddendaSection } from "#src/features/contract/components/addenda/ContractAddendaSection";
 import { ContractTypeSection } from "#src/features/contract/components/contract-type/ContractTypeSection";
+import { i18n } from "#src/locales";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
 import { getSectionToneColors, SectionCard, SectionToneContext } from "#src/shared/ui/section-card";
 
 import { Tag, theme } from "antd";
 import { useContext, useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import "./sms.fields.css";
 
 const sf = (path: string) => `serviceFields.${path}` as any;
 
 const SMS_OPERATOR_PRICING_FIELDS = [
-	{ key: "irancellFa", title: "ایرانسل - فارسی", color: "gold" },
-	{ key: "irancellEn", title: "ایرانسل - انگلیسی", color: "gold" },
-	{ key: "hamrahAvalFa", title: "همراه اول - فارسی", color: "blue" },
-	{ key: "hamrahAvalEn", title: "همراه اول - انگلیسی", color: "blue" },
-	{ key: "otherFa", title: "سایر - فارسی", color: "geekblue" },
-	{ key: "otherEn", title: "سایر - انگلیسی", color: "geekblue" },
+	{ key: "irancellFa", titleKey: "contract.sms.operators.irancellFa", color: "gold" },
+	{ key: "irancellEn", titleKey: "contract.sms.operators.irancellEn", color: "gold" },
+	{ key: "hamrahAvalFa", titleKey: "contract.sms.operators.hamrahAvalFa", color: "blue" },
+	{ key: "hamrahAvalEn", titleKey: "contract.sms.operators.hamrahAvalEn", color: "blue" },
+	{ key: "otherFa", titleKey: "contract.sms.operators.otherFa", color: "geekblue" },
+	{ key: "otherEn", titleKey: "contract.sms.operators.otherEn", color: "geekblue" },
 ] as const;
 
 function getOperatorTagStyle(token: GlobalToken, color: "gold" | "blue" | "geekblue", toneOverride: SectionTone | null): CSSProperties {
@@ -50,6 +52,7 @@ function getOperatorTagStyle(token: GlobalToken, color: "gold" | "blue" | "geekb
 }
 
 function SmsOperatorPricingFields({ base }: { base: string }) {
+	const { t } = useTranslation();
 	const { token } = theme.useToken();
 	const inheritedTone = useContext(SectionToneContext);
 
@@ -60,7 +63,7 @@ function SmsOperatorPricingFields({ base }: { base: string }) {
 					key={operator.key}
 					title={(
 						<Tag className="sms-operator-tag" style={getOperatorTagStyle(token, operator.color, inheritedTone)}>
-							{operator.title}
+							{t(operator.titleKey)}
 						</Tag>
 					)}
 					name={`${base}.${operator.key}` as any}
@@ -73,8 +76,9 @@ function SmsOperatorPricingFields({ base }: { base: string }) {
 }
 
 function SmsOperatorRevenueCard({ base }: { base: string }) {
+	const { t } = useTranslation();
 	return (
-		<SectionCard title="درآمد اپراتورها" className="sms-operator-revenue-card">
+		<SectionCard title={t("contract.sms.operatorRevenue")} className="sms-operator-revenue-card">
 			<SmsOperatorPricingFields base={base} />
 		</SectionCard>
 	);
@@ -84,10 +88,10 @@ function renderMinProfitField(name: string) {
 	return (
 		<RHFProNumber
 			name={name as any}
-			label="حداقل کارمزد"
+			label={i18n.t("contract.sms.minProfit")}
 			inputProps={{
-				placeholder: "اختیاری",
-				addonAfter: "ریال",
+				placeholder: i18n.t("contract.sms.optional"),
+				addonAfter: i18n.t("contract.unit.rial"),
 			}}
 			formItemProps={{ className: "contract-type-currency-field mb-0" }}
 			enableGrouping
@@ -97,6 +101,7 @@ function renderMinProfitField(name: string) {
 }
 
 export function SmsFields() {
+	const { t } = useTranslation();
 	const { control } = useFormContext<ContractFormValues>();
 
 	const startYear = useWatch({ control, name: "startYear" });
@@ -121,9 +126,9 @@ export function SmsFields() {
 			{isPartners
 				? (
 					<>
-						<ContractTypeSection title="سهم دولت" name={sf("governmentRevenue")} />
+						<ContractTypeSection title={t("contract.sms.governmentShare")} name={sf("governmentRevenue")} />
 						<ContractTypeSection
-							title="تعیین کارمزد و سهم"
+							title={t("contract.sms.feeAndShare")}
 							name={sf("profit.pricing")}
 							topAside={renderMinProfitField(sf("profit.minProfit"))}
 						/>
@@ -133,17 +138,19 @@ export function SmsFields() {
 
 			{isGovOps
 				? (
-					<ContractTypeSection title="سهم دولت" name={sf("governmentRate")} />
+					<ContractTypeSection title={t("contract.sms.governmentShare")} name={sf("governmentRate")} />
 				)
 				: null}
 
 			{showAddenda
 				? (
 					<ContractAddendaSection<ContractFormValues>
-						title="الحاقیه‌های قرارداد (اختیاری)"
+						title={t("contract.addenda.title")}
 						name={sf("addenda") as ArrayPath<ContractFormValues>}
 						contractTypeTitle=""
 						contractTypeFieldKey="contractPricing"
+						canAddAddendum={isGovOps || isPartners}
+						addendumAddBlockedMessage={t("contract.addenda.selectCounterparty")}
 						renderAddendumFields={base => (
 							<>
 								<SmsOperatorRevenueCard base={`${base}.operatorRevenue`} />
@@ -151,9 +158,9 @@ export function SmsFields() {
 								{isPartners
 									? (
 										<>
-											<ContractTypeSection title="سهم دولت" name={`${base}.governmentRevenue` as any} />
+											<ContractTypeSection title={t("contract.sms.governmentShare")} name={`${base}.governmentRevenue` as any} />
 											<ContractTypeSection
-												title="تعیین کارمزد و سهم"
+												title={t("contract.sms.feeAndShare")}
 												name={`${base}.profit.pricing` as any}
 												topAside={renderMinProfitField(`${base}.profit.minProfit`)}
 											/>
@@ -163,7 +170,7 @@ export function SmsFields() {
 
 								{isGovOps
 									? (
-										<ContractTypeSection title="سهم دولت" name={`${base}.governmentRate` as any} />
+										<ContractTypeSection title={t("contract.sms.governmentShare")} name={`${base}.governmentRate` as any} />
 									)
 									: null}
 							</>

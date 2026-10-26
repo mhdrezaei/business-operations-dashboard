@@ -1,7 +1,7 @@
 import type {
-	CreateSmsGatewayMappingPayload,
 	SmsGatewayCustomerDto,
 	SmsGatewayMappingDto,
+	SmsGatewayMappingPayload,
 } from "../model/sms-gateway.types";
 import { request } from "#src/utils/request";
 
@@ -38,9 +38,15 @@ export async function listSmsGatewayMappings(params?: {
 	return toItems(data);
 }
 
-export async function createSmsGatewayMapping(payload: CreateSmsGatewayMappingPayload) {
+export async function createSmsGatewayMapping(payload: SmsGatewayMappingPayload) {
 	return request
 		.post("sms-gateway/mappings/", { json: payload })
+		.json<SmsGatewayMappingDto>();
+}
+
+export async function updateSmsGatewayMapping(mappingId: number, payload: SmsGatewayMappingPayload) {
+	return request
+		.put(`sms-gateway/mappings/${mappingId}/`, { json: payload })
 		.json<SmsGatewayMappingDto>();
 }
 

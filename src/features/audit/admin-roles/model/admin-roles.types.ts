@@ -4,6 +4,9 @@ import type {
 	AdminRolePermissionAction,
 } from "./admin-roles.schema";
 
+/** Domains a policy row can belong to; the editor only exposes {@link AdminRoleDomainKey}, `contract_template` is carried through. */
+export type AdminRolePolicyDomain = AdminRoleDomainKey | "contract_template";
+
 export type AdminRoleScope = "global" | "service_admin" | (string & {});
 
 export interface AdminRoleUserRef {
@@ -40,12 +43,15 @@ export interface AdminRoleUpsertPayload {
 
 export interface AdminRolePolicyUpsertItem {
 	service: number
-	domain: "contracts" | "performances" | "predictions" | "company_profile"
+	domain: AdminRolePolicyDomain
 	can_view: boolean
 	can_create: boolean
 	can_update: boolean
 	can_delete: boolean
-	traffic_company_types?: string[]
+	can_sign: boolean
+	can_business_approve: boolean
+	/** Required by the backend for services scoped by company type (traffic, sms, psp, telecom_frame, sales_agency). */
+	company_types?: string[]
 	company_visible_cards?: string[]
 }
 
@@ -59,15 +65,17 @@ export interface AdminRolePolicyDto {
 	service: number
 	service_code: string
 	service_name: string
-	domain: AdminRoleDomainKey
+	domain: AdminRolePolicyDomain
 	can_view: boolean
 	can_create: boolean
 	can_update: boolean
 	can_delete: boolean
+	can_sign: boolean
+	can_business_approve: boolean
 	company_visible_cards: string[]
-	actor_traffic_company_type_permissions: Record<AdminRolePermissionAction, string[]>
+	company_types: string[]
+	actor_company_type_permissions: Record<AdminRolePermissionAction, string[]> | null
 	updated_at: string
-	traffic_company_types: string[]
 }
 
 export type AdminRolesPaginatedResponse = Paginated<AdminRoleDto>;

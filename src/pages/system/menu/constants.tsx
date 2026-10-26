@@ -2,7 +2,7 @@ import type { MenuItemType } from "#src/api/system";
 import type { ProColumns } from "@ant-design/pro-components";
 import type { TFunction } from "i18next";
 
-import { getBooleanOptions, getYesNoOptions } from "#src/constants";
+import { getYesNoOptions } from "#src/constants";
 
 import { Tag } from "antd";
 

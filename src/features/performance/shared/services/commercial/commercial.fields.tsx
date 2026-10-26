@@ -1,55 +1,62 @@
-import type { UploadProps } from "antd";
-import type { PerformanceFormValues } from "../../model/performance.form.types";
+import type { CommercialExcelImportKind } from "#src/features/performance/api/performances.api";
+import type { UploadFile, UploadProps } from "antd";
+import { uploadCommercialExcelImport } from "#src/features/performance/api/performances.api";
 import { FieldCard } from "#src/shared/ui/dashed-card";
-import { Form, Upload } from "antd";
-import { Controller, useFormContext } from "react-hook-form";
+import { CloudUploadOutlined } from "@ant-design/icons";
+import { Button, Upload } from "antd";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-const sf = (path: string) => `serviceFields.${path}` as const;
+const uploadProps: Omit<UploadProps, "fileList" | "onChange"> = {
+	beforeUpload: () => false,
+	maxCount: 1,
+	accept: ".xlsx,.xls",
+};
 
-function UploadCard({
-	title,
-	name,
-}: {
-	title: string
-	name: string
-}) {
+function UploadCard({ title, kind }: { title: string, kind: CommercialExcelImportKind }) {
 	const { t } = useTranslation();
-	const { control } = useFormContext<PerformanceFormValues>();
+	const [fileList, setFileList] = useState<UploadFile[]>([]);
+	const [uploading, setUploading] = useState(false);
 
-	const uploadProps: Omit<UploadProps, "fileList" | "onChange"> = {
-		beforeUpload: () => false,
-		maxCount: 1,
-		accept: ".xlsx,.xls",
-	};
+	async function handleUpload() {
+		const file = fileList[0]?.originFileObj;
+		if (!file) {
+			window.$message?.error(t("performance.commercial.selectFile"));
+			return;
+		}
+
+		setUploading(true);
+		try {
+			await uploadCommercialExcelImport(kind, file);
+			window.$message?.success(t("performance.commercial.uploadSuccess", { title }));
+			setFileList([]);
+		}
+		finally {
+			setUploading(false);
+		}
+	}
 
 	return (
-		<Controller
-			name={name as any}
-			control={control}
-			render={({ field, fieldState, formState }) => (
-				<FieldCard title={title}>
-					<Form.Item
-						help={(formState.isSubmitted || fieldState.isTouched)
-							? fieldState.error?.message
-							: undefined}
-						validateStatus={(formState.isSubmitted || fieldState.isTouched) && fieldState.error?.message
-							? "error"
-							: undefined}
-						className="mb-0"
-					>
-						<Upload.Dragger
-							{...uploadProps}
-							fileList={field.value ?? []}
-							onChange={info => field.onChange(info.fileList.slice(-1))}
-						>
-							<p className="m-0 text-lg">{t("performance.labels.selectExcelFile")}</p>
-							<p className="m-0 mt-2">{t("performance.labels.allowedFormatsXls")}</p>
-						</Upload.Dragger>
-					</Form.Item>
-				</FieldCard>
-			)}
-		/>
+		<FieldCard title={title}>
+			<Upload.Dragger
+				{...uploadProps}
+				fileList={fileList}
+				onChange={info => setFileList(info.fileList.slice(-1))}
+			>
+				<p className="m-0 text-lg">{t("performance.labels.selectExcelFile")}</p>
+				<p className="m-0 mt-2">{t("performance.labels.allowedFormatsXls")}</p>
+			</Upload.Dragger>
+			<Button
+				className="mt-3"
+				block
+				icon={<CloudUploadOutlined />}
+				disabled={fileList.length < 1}
+				loading={uploading}
+				onClick={() => void handleUpload()}
+			>
+				{t("performance.commercial.upload")}
+			</Button>
+		</FieldCard>
 	);
 }
 
@@ -57,7 +64,7 @@ export function CommercialPerformanceFields() {
 	const { t } = useTranslation();
 
 	return (
-		<div className="performance-field-group">
+		<div className="performance-field-group w-full">
 			<div className="performance-field-group__header">
 				<h3 className="performance-field-group__title">{t("performance.commercial.title")}</h3>
 			</div>
@@ -66,9 +73,9 @@ export function CommercialPerformanceFields() {
 			</div>
 
 			<div className="performance-field-grid performance-field-grid--three">
-				<UploadCard title={t("performance.commercial.servicesFile")} name={sf("servicesFile")} />
-				<UploadCard title={t("performance.commercial.provinceCodeFile")} name={sf("provinceCodeFile")} />
-				<UploadCard title={t("performance.commercial.monthlyPerformanceFile")} name={sf("monthlyPerformanceFile")} />
+				<UploadCard title={t("performance.commercial.servicesFile")} kind="serviceTypes" />
+				<UploadCard title={t("performance.commercial.provinceCodeFile")} kind="provinces" />
+				<UploadCard title={t("performance.commercial.monthlyPerformanceFile")} kind="monthly" />
 			</div>
 		</div>
 	);

@@ -95,7 +95,7 @@ function normalizeManualShares(value: unknown): TrafficManualSharesValue {
 				Object.fromEntries(
 					TRAFFIC_METRICS.map(metric => [
 						metric.key,
-						normalizeShareSection(locationRaw?.[metric.key]),
+						normalizeShareSection(locationRaw?.[metric.apiKey]),
 					]),
 				),
 			];
@@ -224,7 +224,7 @@ export function trafficPredictionFormToPayload(
 					const locationShares = Object.fromEntries(
 						TRAFFIC_METRICS
 							.map(metric => [
-								metric.key,
+								metric.apiKey,
 								buildLocationSharePayload(fields.manualShares[locationCode][metric.key], relevantCompanyIds),
 							] as const)
 							.filter(([, shareValue]) => shareValue != null),
@@ -253,6 +253,24 @@ export function findTrafficPredictionBySelection(
 	) ?? null;
 }
 
+function buildTrafficPreview(record: TrafficPredictionYearDto) {
+	const locations = TRAFFIC_LOCATION_OPTIONS.map((locationOption) => {
+		const location = (record.locations ?? []).find(item => normalizeTrafficLocationCode(item.location) === locationOption.value);
+		const values = [
+			[TRAFFIC_METRICS[0].titleKey, location?.value_year],
+			[TRAFFIC_METRICS[1].titleKey, location?.value_receive_year],
+			[TRAFFIC_METRICS[2].titleKey, location?.income_year],
+			[TRAFFIC_METRICS[3].titleKey, location?.expense_year],
+		].map(([titleKey, amount]) => `${i18next.t(titleKey as string)}: ${formatPredictionNumber(amount)}`);
+		return `${i18next.t(locationOption.labelKey)} (${values.join("، ")})`;
+	});
+
+	return [
+		`${i18next.t("prediction.list.preview.companyType")}: ${getCompanyTypeToken(record.company_type) ?? "-"}`,
+		...locations,
+	].join(" | ");
+}
+
 export function trafficPredictionToListRow(
 	record: TrafficPredictionYearDto,
 	context: { serviceId: number, serviceCode: PredictionServiceCode, serviceLabel: string },
@@ -264,7 +282,7 @@ export function trafficPredictionToListRow(
 		serviceLabel: context.serviceLabel,
 		companyType: getCompanyTypeToken(record.company_type),
 		fiscalYear: toNullableNumber(record.fiscal_year),
-		preview: `${i18next.t("prediction.list.preview.companyType")}: ${getCompanyTypeToken(record.company_type) ?? "-"} | ${i18next.t("prediction.list.preview.locations")}: ${formatPredictionNumber(record.locations?.length ?? 0)}`,
+		preview: buildTrafficPreview(record),
 		note: String(record.note ?? ""),
 		createdAt: record.created_at ?? null,
 		updatedAt: record.updated_at ?? null,

@@ -1,21 +1,9 @@
-import type { PredictionShareSectionValue, PspPredictionServiceFields } from "../../model/prediction.form.types";
+import type { PspPredictionServiceFields } from "../../model/prediction.form.types";
 import i18next from "i18next";
 import { z } from "zod";
+import { getShareTotal } from "../../model/manual-share-template";
+import { addQuarterIssues, quarterPercentSchema, requiredNonNegativeNumber } from "../../model/prediction.validation";
 import { createEmptyPspManualShares } from "./psp.config";
-
-function nullableNonNegativeNumber(message: string) {
-	return z.number({ message }).nullable().refine(value => value == null || value >= 0, { message });
-}
-
-const quarterRangeMessage = i18next.t("prediction.validation.quarters.range", {
-	defaultValue: "درصد هر کوارتر باید بین 0 تا 100 باشد",
-});
-
-const quarterPercentSchema = z.number()
-	.int({ message: quarterRangeMessage })
-	.min(0, { message: quarterRangeMessage })
-	.max(100, { message: quarterRangeMessage })
-	.nullable();
 
 const shareSectionSchema = z.object({
 	mode: z.enum(["auto", "manual"]).default("auto"),
@@ -27,13 +15,6 @@ const shareSectionSchema = z.object({
 	shares: {},
 });
 
-function getShareTotal(section: PredictionShareSectionValue) {
-	return section.selectedCompanyIds.reduce((total, companyId) => {
-		const amount = section.shares[String(companyId)] ?? 0;
-		return Number(total) + Number(amount ?? 0);
-	}, 0);
-}
-
 export const pspPredictionSchema = z.object({
 	companyType: z.preprocess(
 		value => value == null || value === "" ? null : String(value).trim().toUpperCase(),
@@ -43,8 +24,8 @@ export const pspPredictionSchema = z.object({
 	q2Percent: quarterPercentSchema,
 	q3Percent: quarterPercentSchema,
 	q4Percent: quarterPercentSchema,
-	valueYear: nullableNonNegativeNumber(i18next.t("prediction.validation.psp.valueRequired")),
-	incomeYear: nullableNonNegativeNumber(i18next.t("prediction.validation.psp.incomeRequired")),
+	valueYear: requiredNonNegativeNumber(i18next.t("prediction.validation.psp.valueRequired")),
+	incomeYear: requiredNonNegativeNumber(i18next.t("prediction.validation.psp.incomeRequired")),
 	manualShares: z.object({
 		value: shareSectionSchema,
 		income: shareSectionSchema,
@@ -65,8 +46,8 @@ export function createValidatedYearlyValueIncomePredictionSchema(
 		q2Percent: quarterPercentSchema,
 		q3Percent: quarterPercentSchema,
 		q4Percent: quarterPercentSchema,
-		valueYear: nullableNonNegativeNumber(valueMessage),
-		incomeYear: nullableNonNegativeNumber(incomeMessage),
+		valueYear: requiredNonNegativeNumber(valueMessage),
+		incomeYear: requiredNonNegativeNumber(incomeMessage),
 		manualShares: z.object({
 			value: shareSectionSchema,
 			income: shareSectionSchema,
@@ -80,24 +61,8 @@ export function createValidatedYearlyValueIncomePredictionSchema(
 			});
 		}
 
-		const quarterValues = [value.q1Percent, value.q2Percent, value.q3Percent, value.q4Percent];
-		if (quarterValues.some(item => item == null)) {
-			ctx.addIssue({
-				code: "custom",
-				path: ["q1Percent"],
-				message: i18next.t("prediction.validation.quarters.allRequired"),
-			});
+		if (!addQuarterIssues([value.q1Percent, value.q2Percent, value.q3Percent, value.q4Percent], ctx))
 			return;
-		}
-
-		const quarterTotal = quarterValues.reduce((total, item) => Number(total) + Number(item ?? 0), 0);
-		if (quarterTotal !== 100) {
-			ctx.addIssue({
-				code: "custom",
-				path: ["q1Percent"],
-				message: i18next.t("prediction.validation.quarters.sumMustBeHundred"),
-			});
-		}
 
 		(["value", "income"] as const).forEach((metric) => {
 			const state = value.manualShares[metric];

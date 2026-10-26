@@ -2,7 +2,7 @@ import { fetchServices } from "#src/api/common/common.api";
 import { fetchAdminRolesList } from "#src/features/audit/admin-roles/api/admin-roles.api";
 import { fetchAdminUsersList } from "#src/features/audit/admin-users/api/admin-users.api";
 import { queryOptions } from "@tanstack/react-query";
-import { fetchLatestNotificationRun } from "../api/notification-rules.api";
+import { fetchRecentNotificationRuns } from "../api/notification-rules.api";
 
 export function notificationRuleServicesQuery() {
 	return queryOptions({
@@ -28,14 +28,14 @@ export function notificationRuleRolesQuery() {
 	});
 }
 
-export function latestNotificationRunQuery() {
+export function recentNotificationRunsQuery() {
 	return queryOptions({
 		queryKey: ["notifications", "runs", "latest"],
-		queryFn: fetchLatestNotificationRun,
+		queryFn: fetchRecentNotificationRuns,
 		staleTime: 30 * 1000,
 		refetchInterval: (query) => {
-			const status = query.state.data?.status;
-			return status === "RUNNING" || status === "QUEUED" ? 5000 : false;
+			const isRunning = query.state.data?.some(run => run.status === "RUNNING" || run.status === "QUEUED");
+			return isRunning ? 5000 : false;
 		},
 	});
 }

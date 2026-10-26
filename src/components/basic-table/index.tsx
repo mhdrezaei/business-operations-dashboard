@@ -17,6 +17,7 @@ import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { BASIC_TABLE_ROOT_CLASS_NAME } from "./constants";
+import { normalizeFixedColumns } from "./fixed-columns";
 import { useStyles } from "./styles";
 
 export interface BasicTableProps<D, U, V> extends ProTableProps<D, U, V> {
@@ -348,6 +349,7 @@ export function BasicTable<
 				rowKey="id"
 				dateFormatter="string"
 				{...props}
+				columns={normalizeFixedColumns(props.columns, antdContext.direction === "rtl")}
 				headerTitle={tableHeader}
 				options={{
 					fullScreen: true,

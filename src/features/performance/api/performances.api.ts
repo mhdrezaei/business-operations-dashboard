@@ -119,6 +119,8 @@ export interface PerformanceReportListItem {
 	sh_month: number
 	fiscal_year?: number | null
 	fiscal_month?: number | null
+	/** Calendar year kept beside the fiscal one on fiscal operator-government rows. */
+	sh_year_shamsi?: number | null
 	value: number
 	operation_type: string
 	company_name: string
@@ -170,14 +172,95 @@ export interface PerformanceReportQuery {
 	company_ids?: string
 	company_type?: string
 	is_official?: boolean
+	raw_values?: boolean
 	default_conversion_ratio?: number
 	by_company?: boolean
+	by_month?: boolean
+	by_operator?: boolean
+	by_language?: boolean
+	by_data_center?: boolean
+	overall_sms_performance?: boolean
+	page?: number
+	page_size?: number
+	total?: boolean
+}
+
+export type OperatorGovernmentMode = "operators" | "government";
+
+export interface OperatorGovernmentReportQuery {
+	service_id: number
+	mode: OperatorGovernmentMode
+	sh_periods?: string
+	fiscal_periods?: string
+	operators?: string
+	languages?: string
+	is_official?: boolean
+	/** true = commission only, false = sms only, omitted = both. */
+	sms_commission?: boolean
 	by_month?: boolean
 	by_operator?: boolean
 	by_language?: boolean
 	page?: number
 	page_size?: number
 	total?: boolean
+}
+
+export interface FinanceDepartmentChannel {
+	operator?: string | null
+	language?: string | null
+	value?: number | string | null
+	price?: number | string | null
+	income_operator?: number | string | null
+}
+
+export interface FinanceDepartmentItem {
+	service_id?: number | null
+	service_code?: string | null
+	company_id?: number | null
+	company_name?: string | null
+	company_type?: string | Record<string, string> | null
+	sh_year?: number | null
+	sh_month?: number | null
+	fiscal_year?: number | null
+	fiscal_month?: number | null
+	is_official?: boolean | null
+	total_value?: number | string | null
+	price_government?: number | string | null
+	price_profit?: number | string | null
+	total_income_government?: number | string | null
+	total_profit?: number | string | null
+	channels?: FinanceDepartmentChannel[]
+}
+
+export interface FinanceDepartmentTotals {
+	total_value?: number | string | null
+	total_income_operator?: number | string | null
+	total_income_government?: number | string | null
+	total_profit?: number | string | null
+	total_income?: number | string | null
+}
+
+export interface FinanceDepartmentResponse extends Paginated<FinanceDepartmentItem> {
+	totals?: FinanceDepartmentTotals | null
+}
+
+/** `totals` is a list of per-service rows. */
+export interface OperatorGovernmentResponse extends Paginated<PerformanceReportListItem> {
+	totals?: PerformanceReportListItem[] | null
+}
+
+export interface PerformanceReportAvailabilityQuery {
+	service_id: number
+	period_type?: PerformanceReportPeriodType
+	sh_periods?: string
+	fiscal_periods?: string
+	company_type?: string
+	is_official?: boolean
+	overall_sms_performance?: boolean
+	by_company?: boolean
+	by_month?: boolean
+	by_operator?: boolean
+	by_language?: boolean
 }
 
 export type PredictionSummaryPeriodMode = "shamsi_months" | "fiscal_months" | "shamsi_quarters" | "fiscal_quarters";
@@ -312,6 +395,9 @@ export interface MonthlyContractStatusResponse {
 	openapi?: {
 		contract_model: string | null
 	} | null
+	shahkar?: {
+		has_new_customer_rate: boolean
+	} | null
 	traffic?: {
 		has_county_contract: boolean
 		location_units?: Record<string, string>
@@ -403,10 +489,14 @@ export interface SmsGatewayImportOperator {
 	value: number
 }
 
+export type SmsGatewayImportJobStatus = "PENDING" | "RUNNING" | "SUCCESS" | "FAILED";
+
 export interface SmsGatewayManualImportResponse {
 	sh_year: number
 	sh_month: number
 	confirmed: boolean
+	queued?: boolean
+	job_id?: number
 	items: Array<{
 		status: SmsGatewayImportStatus
 		gateway_customer_name: string
@@ -416,12 +506,13 @@ export interface SmsGatewayManualImportResponse {
 		service: string | null
 		operators: SmsGatewayImportOperator[]
 	}>
-	summary: {
-		will_create: number
-		will_update: number
-		no_contract: number
-		unmapped: number
-	}
+	summary: Record<string, number>
+}
+
+export interface SmsGatewayImportJob {
+	status: SmsGatewayImportJobStatus
+	summary?: Record<string, number>
+	error?: string | null
 }
 
 export interface SmsGatewayImportHistoryItem {
@@ -435,6 +526,7 @@ export interface SmsGatewayImportHistoryItem {
 	started_at?: string | null
 	finished_at?: string | null
 	status?: string
+	error?: string | null
 	confirmed?: boolean
 	summary?: Record<string, number>
 	[key: string]: unknown
@@ -512,13 +604,14 @@ export function fetchMonthlyContractStatus({
 		.json<MonthlyContractStatusResponse>();
 }
 
-export function fetchPerformanceContracts(service: PerformanceContractServicePath, serviceId: number, companyId: number) {
+export function fetchPerformanceContracts(service: PerformanceContractServicePath, serviceId: number, companyId: number, companyType?: string | null) {
 	return request
 		.get(buildContractsPath(service), {
-			searchParams: {
+			searchParams: compactSearchParams({
 				service: serviceId,
 				company: companyId,
-			},
+				company_type: companyType,
+			}),
 		})
 		.json<Paginated<PerformanceContractListItem>>();
 }
@@ -549,9 +642,13 @@ export function updatePerformanceByComposite(
 	year: number,
 	month: number,
 	payload: Record<string, unknown>,
+	companyType?: string | null,
 ) {
 	return request
-		.put(buildPerformancePath(service, companyId, year, month), { json: payload })
+		.put(buildPerformancePath(service, companyId, year, month), {
+			json: payload,
+			searchParams: compactSearchParams({ company_type: companyType }),
+		})
 		.json<Record<string, unknown>>();
 }
 
@@ -575,9 +672,11 @@ export function deletePerformanceById(service: PerformanceServicePath, id: numbe
 		.json<Record<string, unknown>>();
 }
 
-export function deletePerformanceByComposite(service: PerformanceServicePath, companyId: number, year: number, month: number) {
+export function deletePerformanceByComposite(service: PerformanceServicePath, companyId: number, year: number, month: number, companyType?: string | null) {
 	return request
-		.delete(buildPerformancePath(service, companyId, year, month))
+		.delete(buildPerformancePath(service, companyId, year, month), {
+			searchParams: compactSearchParams({ company_type: companyType }),
+		})
 		.json<Record<string, unknown>>();
 }
 
@@ -637,6 +736,21 @@ export function uploadPerformanceFiles({
 			suppressErrorNotification,
 		})
 		.json<any>();
+}
+
+export type CommercialExcelImportKind = "serviceTypes" | "provinces" | "monthly";
+
+const COMMERCIAL_EXCEL_IMPORT_PATHS: Record<CommercialExcelImportKind, string> = {
+	serviceTypes: "performances/commercial/service-types/excel-import/",
+	provinces: "performances/commercial/provinces/excel-import/",
+	monthly: "performances/commercial/excel-import/",
+};
+
+export function uploadCommercialExcelImport(kind: CommercialExcelImportKind, file: File) {
+	const body = new FormData();
+	body.append("file", file);
+
+	return request.post(COMMERCIAL_EXCEL_IMPORT_PATHS[kind], { body }).json<unknown>();
 }
 
 export function uploadTrafficExcelImport({
@@ -730,12 +844,16 @@ export function fetchSmsCommissionAgents() {
 		.json<Paginated<SmsCommissionAgentDto>>();
 }
 
-export function importSmsGatewayPerformance(shYear: number, shMonth: number, confirmed: boolean) {
+export function importSmsGatewayPerformance(shYear: number, shMonth: number, confirmed: boolean, selected?: number[]) {
 	return request
 		.post("sms-gateway/manual-import/", {
-			json: { sh_year: shYear, sh_month: shMonth, confirm: confirmed },
+			json: { sh_year: shYear, sh_month: shMonth, confirm: confirmed, ...(selected && { selected }) },
 		})
 		.json<SmsGatewayManualImportResponse>();
+}
+
+export function fetchSmsGatewayImportStatus(jobId: number) {
+	return request.get(`sms-gateway/manual-import/status/${jobId}/`).json<SmsGatewayImportJob>();
 }
 
 export function fetchSmsGatewayImportHistory() {
@@ -752,25 +870,10 @@ export function fetchUnregisteredPerformanceList(params: UnregisterdPerformanceL
 		.json<Paginated<PerformanceListItem>>();
 }
 
-export function fetchPerformanceReportAvailability(
-	serviceId: number,
-	shPeriods?: string[],
-	companyType?: string | null,
-	periodType?: PerformanceReportPeriodType | null,
-) {
-	const periods = (shPeriods ?? [])
-		.map(item => String(item ?? "").trim())
-		.filter(Boolean)
-		.join(",");
-
+export function fetchPerformanceReportAvailability(params: PerformanceReportAvailabilityQuery) {
 	return request
 		.get("performances/report/availability/", {
-			searchParams: compactSearchParams({
-				service_id: serviceId,
-				sh_periods: periods,
-				company_type: companyType,
-				period_type: periodType,
-			}),
+			searchParams: compactSearchParams(params as unknown as Record<string, unknown>),
 		})
 		.json<PerformanceReportAvailability>();
 }
@@ -781,6 +884,22 @@ export function fetchPerformanceReport(params: PerformanceReportQuery) {
 			searchParams: compactSearchParams(params as unknown as Record<string, unknown>),
 		})
 		.json<PerformanceReportListResponse>();
+}
+
+export function fetchPerformanceReportFinanceDepartment(params: PerformanceReportQuery) {
+	return request
+		.get("performances/report/finance-department/", {
+			searchParams: compactSearchParams(params as unknown as Record<string, unknown>),
+		})
+		.json<FinanceDepartmentResponse>();
+}
+
+export function fetchOperatorGovernmentReport(params: OperatorGovernmentReportQuery) {
+	return request
+		.get("performances/report/operator-government-report/", {
+			searchParams: compactSearchParams(params as unknown as Record<string, unknown>),
+		})
+		.json<OperatorGovernmentResponse>();
 }
 
 export function fetchPredictionPerformanceSummary(params: PredictionSummaryQuery) {
@@ -803,9 +922,12 @@ export interface SmsGatewayTrafficReportItem {
 	}>
 }
 
+export type SmsGatewayJobStatus = "PENDING" | "RUNNING" | "SUCCESS" | "FAILED";
+
 export interface SmsGatewayTrafficReportResult {
 	job_id: number
-	status: "PENDING" | "RUNNING" | "SUCCESS" | "FAILURE" | string
+	status: SmsGatewayJobStatus
+	error?: string | null
 	started_at?: string | null
 	finished_at?: string | null
 	count?: number
@@ -816,11 +938,25 @@ export interface SmsGatewayTrafficReportResult {
 }
 
 export interface SmsGatewayTrafficReportFilters {
-	start_date?: string
-	end_date?: string
-	company_ids?: number[]
-	operators?: string[]
-	delivery_statuses?: string[]
+	date_from?: string
+	date_to?: string
+	company_id?: number
+	operator?: string
+	delivery_status_id?: number
+}
+
+export interface SmsGatewayDeliveryStatus {
+	id: number
+	value: string
+}
+
+export interface SmsGatewayTrafficReportPagination {
+	page?: number
+	pageSize?: number
+}
+
+function trafficReportPageParams({ page, pageSize }: SmsGatewayTrafficReportPagination) {
+	return { page: page ?? 1, page_size: pageSize ?? 20 };
 }
 
 export function createSmsGatewayTrafficReport(filters: SmsGatewayTrafficReportFilters) {
@@ -830,16 +966,20 @@ export function createSmsGatewayTrafficReport(filters: SmsGatewayTrafficReportFi
 	}).json<SmsGatewayTrafficReportResult>();
 }
 
-export function fetchSmsGatewayTrafficReport() {
+export function fetchSmsGatewayTrafficReport(pagination: SmsGatewayTrafficReportPagination = {}) {
 	return request
-		.get("sms-gateway/traffic-report/", { suppressErrorNotification: true })
+		.get("sms-gateway/traffic-report/", { searchParams: trafficReportPageParams(pagination), suppressErrorNotification: true })
 		.json<SmsGatewayTrafficReportResult>();
 }
 
-export function fetchSmsGatewayTrafficReportStatus(jobId: number, page = 1, pageSize = 20) {
+export function fetchSmsGatewayTrafficReportStatus(jobId: number, pagination: SmsGatewayTrafficReportPagination = {}) {
 	return request
-		.get(`sms-gateway/traffic-report/status/${jobId}/`, { searchParams: { page, page_size: pageSize } })
+		.get(`sms-gateway/traffic-report/status/${jobId}/`, { searchParams: trafficReportPageParams(pagination), suppressErrorNotification: true })
 		.json<SmsGatewayTrafficReportResult>();
+}
+
+export function fetchSmsGatewayDeliveryStatuses() {
+	return request.get("sms-gateway/delivery-statuses/").json<SmsGatewayDeliveryStatus[]>();
 }
 
 export type SmsOperatorCode = "MCI" | "IRANCELL" | "RIGHTEL";
@@ -885,7 +1025,8 @@ export function deleteSmsOperatorInvoice(id: number) {
 
 export interface SmsOperatorInvoiceMonthlyReport {
 	job_id: number
-	status: "PENDING" | "RUNNING" | "SUCCESS" | "FAILURE" | string
+	status: SmsGatewayJobStatus
+	error?: string | null
 	sh_year: number
 	sh_month: number
 	started_at?: string

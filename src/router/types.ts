@@ -42,9 +42,9 @@ export interface RouteMeta {
 	accessDomain?: string
 
 	/**
-	 * Required CRUD action in the selected accessDomain.
+	 * Required action in the selected accessDomain; with a list, any one of them is enough.
 	 */
-	accessAction?: DomainPermissionAction
+	accessAction?: DomainPermissionAction | DomainPermissionAction[]
 
 	/**
 	 * Service code constraint for service-specific routes (e.g. "sms").

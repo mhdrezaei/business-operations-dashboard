@@ -3,6 +3,7 @@ import type { PredictionListRow } from "../../shared/model/prediction.list.types
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import { useAccess } from "#src/hooks";
 import { TableActionEditIcon, TableActionTrashIcon } from "#src/icons";
+import { SingleOptionSync } from "#src/shared/ui/rhf-pro";
 import { PlusCircleOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Popconfirm } from "antd";
@@ -11,8 +12,8 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { deletePrediction } from "../../api/predictions.api";
 import { getCompanyTypeToken } from "../../shared/model/company-type.helpers";
-import { buildFiscalYearOptions, isAvailablePredictionCompanyType, isSupportedPredictionService } from "../../shared/model/prediction.helpers";
-import { predictionServicesQuery } from "../../shared/queries/prediction.queries";
+import { getRecordQuarterPercents, isAvailablePredictionCompanyType, isSupportedPredictionService, PREDICTION_FISCAL_YEAR_OPTIONS } from "../../shared/model/prediction.helpers";
+import { servicesQuery } from "../../shared/queries/prediction.queries";
 import { predictionServiceRegistry } from "../../shared/services/registry";
 
 const ORDERING_OPTIONS = [
@@ -53,7 +54,7 @@ export default function PredictionListPage() {
 		[permittedViewServiceIdsList.join(",")],
 	);
 
-	const services = useQuery(predictionServicesQuery());
+	const services = useQuery(servicesQuery());
 
 	const serviceOptions = useMemo(() => {
 		return (services.data?.results ?? [])
@@ -102,16 +103,15 @@ export default function PredictionListPage() {
 		});
 	}, [selectedServiceId, serviceOptions]);
 
-	const fiscalYearOptions = useMemo(
-		() => buildFiscalYearOptions([]).map(option => ({
-			label: option.label,
-			value: option.value,
-		})),
-		[],
-	);
-
 	function handleOpenEdit(row: PredictionListRow) {
 		navigate("/predictions/new", { state: { editPrediction: row } });
+	}
+
+	function selectService(serviceId: number | null) {
+		const nextService = serviceOptions.find(option => option.value === serviceId) ?? null;
+		setSelectedServiceId(serviceId);
+		setSelectedServiceCode(nextService?.code ?? null);
+		formRef.current?.setFieldsValue({ company_type: undefined });
 	}
 
 	function refreshTable() {
@@ -172,7 +172,7 @@ export default function PredictionListPage() {
 				hideInTable: true,
 				valueType: "select",
 				fieldProps: {
-					options: fiscalYearOptions,
+					options: PREDICTION_FISCAL_YEAR_OPTIONS,
 					allowClear: true,
 					showSearch: true,
 					optionFilterProp: "label",
@@ -198,6 +198,13 @@ export default function PredictionListPage() {
 				dataIndex: "fiscalYear",
 				search: false,
 				width: 120,
+			},
+			{
+				title: t("prediction.list.columns.quarters"),
+				dataIndex: "quarters",
+				search: false,
+				width: 200,
+				render: (_, row) => getRecordQuarterPercents(row.raw).map(value => value ?? "-").join(" / "),
 			},
 			{
 				title: t("prediction.list.columns.preview"),
@@ -266,10 +273,31 @@ export default function PredictionListPage() {
 				},
 			},
 		];
-	}, [companyTypeOptions, fiscalYearOptions, hasDomainPermissionByServiceId, selectedServiceRequiresCompanyType, serviceOptions, t]);
+	}, [companyTypeOptions, hasDomainPermissionByServiceId, selectedServiceRequiresCompanyType, serviceOptions, t]);
 
 	return (
 		<BasicContent className="h-full">
+			<SingleOptionSync
+				options={serviceOptions}
+				value={selectedServiceId}
+				onSelect={(value) => {
+					formRef.current?.setFieldsValue({ service: Number(value) });
+					selectService(Number(value));
+					formRef.current?.submit();
+				}}
+			/>
+			{selectedServiceRequiresCompanyType
+				? (
+					<SingleOptionSync
+						options={companyTypeOptions}
+						value={formRef.current?.getFieldValue("company_type")}
+						onSelect={(value) => {
+							formRef.current?.setFieldsValue({ company_type: String(value) });
+							formRef.current?.submit();
+						}}
+					/>
+				)
+				: null}
 			<BasicTable<PredictionListRow>
 				adaptive
 				rowKey="id"
@@ -281,11 +309,7 @@ export default function PredictionListPage() {
 						if (!Object.prototype.hasOwnProperty.call(changedValues, "service"))
 							return;
 
-						const nextServiceId = changedValues.service == null ? null : Number(changedValues.service);
-						const nextService = serviceOptions.find(option => option.value === nextServiceId) ?? null;
-						setSelectedServiceId(nextServiceId);
-						setSelectedServiceCode(nextService?.code ?? null);
-						formRef.current?.setFieldsValue({ company_type: undefined });
+						selectService(changedValues.service == null ? null : Number(changedValues.service));
 					},
 				}}
 				request={async (params) => {

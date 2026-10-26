@@ -9,7 +9,6 @@ export const LEGAL_PERSON_TYPE_OPTIONS = [
 export const VAT_STATUS_OPTIONS = [
 	{ value: "SUBJECT", label: "مشمول" },
 	{ value: "EXEMPT", label: "معاف" },
-	{ value: "UNKNOWN", label: "نامشخص" },
 ];
 
 export const COOPERATION_STATUS_OPTIONS = [
@@ -21,11 +20,11 @@ export const COOPERATION_STATUS_OPTIONS = [
 export const SETTLEMENT_TERM_OPTIONS = [
 	{ value: "CASH", label: "نقدی" },
 	{ value: "CREDIT", label: "اعتباری" },
-	{ value: "INSTALLMENT", label: "اقساطی" },
+	{ value: "MONTHLY", label: "ماهانه" },
+	{ value: "PERIODIC", label: "دوره‌ای" },
 ];
 
 export const INFO_VERIFICATION_STATUS_OPTIONS = [
 	{ value: "PENDING", label: "در انتظار" },
 	{ value: "VERIFIED", label: "تایید شده" },
-	{ value: "REJECTED", label: "رد شده" },
 ];

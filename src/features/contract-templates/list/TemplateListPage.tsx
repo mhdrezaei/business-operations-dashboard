@@ -5,6 +5,7 @@ import type { TemplateListItemType } from "../model/templates.list.types";
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import { useAccess } from "#src/hooks";
 import { TableActionEditIcon, TableActionTrashIcon } from "#src/icons";
+import { useUserStore } from "#src/store";
 import { PlusCircleOutlined } from "@ant-design/icons";
 import { Button, Popconfirm } from "antd";
 import React, { useMemo, useRef, useState } from "react";
@@ -18,12 +19,17 @@ export default function TemplateListPage() {
 	const { t } = useTranslation();
 	const actionRef = useRef<ActionType>(null);
 	const { hasDomainPermission } = useAccess();
+	const currentUserId = Number(useUserStore(state => state.id));
 
 	const canCreate = hasDomainPermission("contract_template", "create");
-	const canUpdateRow = (row: TemplateListItemType) =>
-		hasDomainPermission("contract_template", "update", row.service, row.company_type);
-	const canDeleteRow = (row: TemplateListItemType) =>
-		hasDomainPermission("contract_template", "delete", row.service, row.company_type);
+	// قانون مالکیت بک‌اند: سازنده‌ی قالب با پرمیشن create هم می‌تواند قالب خودش را ویرایش/حذف کند.
+	const canManageRow = (row: TemplateListItemType, action: "update" | "delete") =>
+		hasDomainPermission("contract_template", action, row.service, row.company_type)
+		|| (Number.isFinite(currentUserId)
+		  && Number(row.created_by) === currentUserId
+		  && hasDomainPermission("contract_template", "create", row.service, row.company_type));
+	const canUpdateRow = (row: TemplateListItemType) => canManageRow(row, "update");
+	const canDeleteRow = (row: TemplateListItemType) => canManageRow(row, "delete");
 
 	const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 	const [editingTemplateId, setEditingTemplateId] = useState<number | null>(null);

@@ -23,6 +23,7 @@ import React, { useMemo, useState } from "react";
 import { useWatch } from "react-hook-form";
 import { deleteBankAccount, updateBankAccount } from "../../../api/bank-accounts.api";
 import { bankAccountsByCompanyQuery } from "../../../queries/bank-accounts.queries";
+import { CONTRACT_ORDER_MAX } from "../../../shared/utils/contract-order";
 import { formatCardNumber, formatIban } from "../model/bank-accounts.constants";
 import { bankAccountDtoToPayload } from "../model/bank-accounts.mappers";
 import BankAccountModal from "./BankAccountModal";
@@ -292,8 +293,11 @@ export default function BankAccountsTable({ serviceId, companyId }: Props) {
 	}
 
 	async function addToContract(account: BankAccountDto) {
-		const lastOrder = orderedAccounts.reduce((maximum, item) => Math.max(maximum, item.contract_order ?? 0), 0);
-		await changeContractOrder(account, lastOrder + 1);
+		if (orderedAccounts.length >= CONTRACT_ORDER_MAX) {
+			window.$message?.error(`حداکثر ${CONTRACT_ORDER_MAX} مورد می‌توانند در قرارداد نمایش داده شوند.`);
+			return;
+		}
+		await changeContractOrder(account, orderedAccounts.length + 1);
 	}
 
 	async function removeAccount(account: BankAccountDto) {

@@ -1,5 +1,4 @@
 import type {
-	OpenApiChannelCode,
 	OpenApiOperationCode,
 	OpenApiPredictionModel,
 	PredictionCompanyOption,
@@ -12,17 +11,20 @@ import { RHFProNumber, RHFSegmentedSwitch, RHFSelect } from "#src/shared/ui/rhf-
 import { SectionCard } from "#src/shared/ui/section-card";
 import { DeleteOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
-import { Button, Card, Form, Select, Typography } from "antd";
+import { Button, Form, Select, Typography } from "antd";
 import { useEffect, useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { applyManualShareTemplate } from "../../model/manual-share-template";
 import { predictionCompaniesByServiceQuery } from "../../queries/prediction.queries";
 import { QuarterDistributionSection } from "../../ui/form/sections/QuarterDistributionSection";
 import {
+	createEmptyOpenApiManualShares,
+	getOpenApiAmountField,
 	getOpenApiOperationSections,
-	OPENAPI_CHANNEL_OPTIONS,
 	OPENAPI_METRICS,
 	OPENAPI_MODEL_OPTIONS,
+	OPENAPI_PACKAGE_MODEL_OPTION,
 } from "./openapi.config";
 
 const sf = (path: string) => `serviceFields.${path}` as const;
@@ -54,10 +56,6 @@ function getShareFieldPath(operationKey: OpenApiOperationCode, metricKey: Predic
 	return `serviceFields.manualShares.${operationKey}.${metricKey}` as const;
 }
 
-function getChannelFieldPath(channelKey: OpenApiChannelCode) {
-	return `serviceFields.channels.value.${channelKey}` as const;
-}
-
 function getSelectedCompanyOptions(
 	companyOptions: PredictionCompanyOption[],
 	selectedCompanyIds: number[],
@@ -84,6 +82,7 @@ function CompanyShareEditor({
 		control,
 		formState,
 		getFieldState,
+		getValues,
 		register,
 		setValue,
 	} = useFormContext<PredictionFormValues>();
@@ -141,12 +140,21 @@ function CompanyShareEditor({
 			<div className="prediction-share-editor__controls">
 				<RHFSegmentedSwitch
 					name={`${fieldPath}.mode` as any}
-					label="نحوه تخصیص"
+					label={t("prediction.labels.allocationMode")}
 					options={[
 						{ label: t("prediction.shareModes.auto"), value: "auto" },
 						{ label: t("prediction.shareModes.manual"), value: "manual" },
 					]}
 					formItemProps={{ className: "mb-0" }}
+					onValueChange={(mode) => {
+						if (mode === "manual") {
+							applyManualShareTemplate({
+								getValues: path => getValues(path as any),
+								setValue: (path, value, options) => setValue(path as any, value as any, options),
+								targetPath: fieldPath,
+							});
+						}
+					}}
 				/>
 				{shareState.mode === "manual"
 					? (
@@ -212,18 +220,15 @@ function CompanyShareEditor({
 
 export function OpenApiPredictionFields() {
 	const { t } = useTranslation();
-	const { control, register, setValue } = useFormContext<PredictionFormValues>();
+	const { control, setValue } = useFormContext<PredictionFormValues>();
 	const serviceId = useWatch({ control, name: "serviceId" });
-	const activeModel = "LEGACY" as OpenApiPredictionModel;
+	const activeModel = (useWatch({ control, name: sf("openapiModel") as any }) ?? "LEGACY") as OpenApiPredictionModel;
 
-	useEffect(() => {
-		register(sf("openapiModel") as any);
-		setValue(sf("openapiModel") as any, "LEGACY", {
-			shouldDirty: false,
-			shouldTouch: false,
-			shouldValidate: false,
-		});
-	}, [register, setValue]);
+	// cleared only on a user-initiated change, not when a record is hydrated
+	const handleModelChange = () => setValue(sf("manualShares") as any, createEmptyOpenApiManualShares(), {
+		shouldDirty: true,
+		shouldValidate: false,
+	});
 
 	const companies = useQuery(predictionCompaniesByServiceQuery(serviceId));
 	const companyOptions = useMemo(
@@ -244,40 +249,26 @@ export function OpenApiPredictionFields() {
 		() => getOpenApiOperationSections(activeModel),
 		[activeModel],
 	);
-	const channelValues = useWatch({ control, name: "serviceFields.channels.value" as any }) as Record<string, number | null> | undefined;
-	const channelTotal = useMemo(
-		() => OPENAPI_CHANNEL_OPTIONS.reduce((total, channel) => total + Number(channelValues?.[channel.key] ?? 0), 0),
-		[channelValues],
-	);
+
+	const modelOptions = activeModel === "PACKAGE"
+		? [...OPENAPI_MODEL_OPTIONS, OPENAPI_PACKAGE_MODEL_OPTION]
+		: OPENAPI_MODEL_OPTIONS;
 
 	return (
 		<div className="flex flex-col gap-4">
-			{false
-				? (
-					<Card
-						bordered
-						className="rounded-2xl"
-					>
-						<div className="grid gap-3 md:grid-cols-2">
-							<RHFSelect<PredictionFormValues, any, OpenApiPredictionModel>
-								name={sf("openapiModel") as any}
-								label={t("prediction.labels.openapiModel", { defaultValue: "مدل OpenAPI" })}
-								options={OPENAPI_MODEL_OPTIONS.map(option => ({
-									label: t(option.labelKey, {
-										defaultValue: option.value === "PACKAGE" ? "بسته‌ای (Package)" : "قدیمی (Legacy)",
-									}),
-									value: option.value,
-								}))}
-								selectProps={{
-									placeholder: t("prediction.placeholders.selectOpenapiModel", {
-										defaultValue: "مدل OpenAPI را انتخاب کنید",
-									}),
-								}}
-							/>
-						</div>
-					</Card>
-				)
-				: null}
+			<SectionCard title={t("prediction.labels.openapiModel")} tone="blue">
+				<RHFSelect<PredictionFormValues, any, OpenApiPredictionModel>
+					name={sf("openapiModel") as any}
+					label=""
+					options={modelOptions.map(option => ({
+						label: t(option.labelKey),
+						value: option.value,
+						disabled: option.value === "PACKAGE",
+					}))}
+					onValueChange={handleModelChange}
+					selectProps={{ placeholder: t("prediction.placeholders.selectOpenapiModel") }}
+				/>
+			</SectionCard>
 
 			<QuarterDistributionSection />
 
@@ -289,21 +280,21 @@ export function OpenApiPredictionFields() {
 				>
 					<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
 						<RHFProNumber<PredictionFormValues, any>
-							name={sf(section.fields.value) as any}
+							name={sf(getOpenApiAmountField(section.key, "value")) as any}
 							label={t("prediction.labels.annualValue")}
 							inputProps={{ placeholder: t("prediction.placeholders.amountExample") }}
 							enableGrouping
 							enableWordsTooltip
 						/>
 						<RHFProNumber<PredictionFormValues, any>
-							name={sf(section.fields.income) as any}
+							name={sf(getOpenApiAmountField(section.key, "income")) as any}
 							label={t("prediction.labels.annualIncome")}
 							inputProps={{ placeholder: t("prediction.placeholders.amountExample") }}
 							enableGrouping
 							enableWordsTooltip
 						/>
 						<RHFProNumber<PredictionFormValues, any>
-							name={sf(section.fields.expense) as any}
+							name={sf(getOpenApiAmountField(section.key, "expense")) as any}
 							label={t("prediction.labels.annualExpense")}
 							inputProps={{ placeholder: t("prediction.placeholders.amountExample") }}
 							enableGrouping
@@ -339,35 +330,6 @@ export function OpenApiPredictionFields() {
 							</div>
 						</DashedCard>
 					))}
-
-					{activeModel === "PACKAGE"
-						? (
-							<DashedCard
-								title={t("prediction.openapi.sections.channels", { defaultValue: "کانال‌ها" })}
-							>
-								<div className="grid gap-4 xl:grid-cols-3">
-									{OPENAPI_CHANNEL_OPTIONS.map(channel => (
-										<RHFProNumber<PredictionFormValues, any>
-											key={channel.key}
-											name={getChannelFieldPath(channel.key) as any}
-											label={t(channel.titleKey, { defaultValue: channel.key })}
-											inputProps={{
-												placeholder: t("prediction.placeholders.percentExample"),
-												addonAfter: "%",
-											}}
-										/>
-									))}
-								</div>
-
-								<Typography.Text type={channelTotal === 100 ? "success" : "danger"}>
-									{t("prediction.messages.manualShareSum", {
-										title: t("prediction.openapi.sections.channels", { defaultValue: "کانال‌ها" }),
-										total: channelTotal,
-									})}
-								</Typography.Text>
-							</DashedCard>
-						)
-						: null}
 				</div>
 			</SectionCard>
 		</div>

@@ -6,6 +6,7 @@ import { salesAgencyContractService } from "./sales-agency/sales-agency.registry
 import { shahkarService } from "./shahkar/shahkar.registry";
 import { smsCommissionService } from "./sms-commission/sms-commission.registry";
 import { smsService } from "./sms/sms.registry";
+import { telecomFrameService } from "./telecom-frame/telecom-frame.registry";
 import { trafficService } from "./traffic/traffic.registry";
 // import { pspService } from "./psp/psp.registry" ...
 
@@ -26,5 +27,7 @@ export const serviceRegistry: Partial<Record<ContractServiceCode, ServiceModule>
 	"traffic": trafficService,
 	"sales_agency": salesAgencyContractService,
 	"sales-agency": salesAgencyContractService,
+	"telecom_frame": telecomFrameService,
+	"telecom-frame": telecomFrameService,
 	// ...
 };

@@ -3,7 +3,7 @@ import type {
 	NotificationRulesListQuery,
 	NotificationRulesPaginatedResponse,
 	NotificationRuleUpsertPayload,
-	NotificationRunDto,
+	NotificationRunsPaginatedResponse,
 } from "../model/notification-rules.types";
 import { request } from "#src/utils/request";
 
@@ -48,10 +48,12 @@ export function fetchDeleteNotificationRule(id: number) {
 	return request.delete(`${RULES_BASE}/${id}/`);
 }
 
-export function fetchLatestNotificationRun() {
+/** Recent runs of every job (newest first); the page picks the latest one per job. */
+export function fetchRecentNotificationRuns() {
 	return request
-		.get(`${RUNS_BASE}/latest/`)
-		.json<NotificationRunDto>();
+		.get(`${RUNS_BASE}/`, { searchParams: { page_size: 100 } })
+		.json<NotificationRunsPaginatedResponse>()
+		.then(response => response.results);
 }
 
 export function fetchRunNotificationJob(job: NotificationManualJob) {

@@ -25,14 +25,5 @@
 	"email": "E-Mail",
 	"sendResetLink": "Link zum Zurücksetzen senden",
 	"logout": "Abmelden",
-	"register": "Registrieren",
-	"alreadyHaveAnAccount": "Haben Sie bereits ein Konto?",
-	"goToLogin": "Zur Anmeldung",
-	"goToRegister": "Zur Registrierung",
-	"noAccountYet": "Noch kein Konto?",
-	"confirmPassword": "Passwort bestätigen",
-	"logoutConfirm": "Möchten Sie sich wirklich abmelden?",
-	"agree": "Ich habe die <0>Datenschutzerklärung</0> und die <1>Nutzungsbedingungen</1> gelesen und stimme ihnen zu",
-	"privacyPolicy": "Datenschutzerklärung",
-	"termsOfService": "Nutzungsbedingungen"
+	"logoutConfirm": "Möchten Sie sich wirklich abmelden?"
 }

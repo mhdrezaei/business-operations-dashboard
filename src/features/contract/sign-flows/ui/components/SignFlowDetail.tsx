@@ -1,5 +1,6 @@
 import { Scrollbar } from "#src/components";
 import { cancelSignFlow, decideSignFlow, fetchSignFlowDetail, fetchSignFlowHistory, fetchSignFlowOfficialPdf } from "#src/features/contract/api/contracts.api";
+import { useAccess } from "#src/hooks";
 import { dayjs } from "#src/shared/lib/dayjs-jalali";
 import { useUserStore } from "#src/store";
 import { ArrowRightOutlined, CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, EyeOutlined, FilePdfOutlined, StopOutlined } from "@ant-design/icons";
@@ -7,6 +8,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Button, Card, Col, Descriptions, Divider, Empty, Input, message, Modal, Row, Space, Spin, Steps, Tag, Typography } from "antd";
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { SIGN_FLOW_STATE_MAP } from "../constants";
 
 const { Title, Text } = Typography;
@@ -23,7 +25,9 @@ export interface SignFlowDetailProps {
 }
 
 export function SignFlowDetail({ id, onBack }: SignFlowDetailProps) {
+	const { t } = useTranslation();
 	const user = useUserStore();
+	const { isFullAdmin, hasDomainPermission } = useAccess();
 	const queryClient = useQueryClient();
 	const [historyId, setHistoryId] = useState<number | null>(null);
 	const [prevPropId, setPrevPropId] = useState(id);
@@ -60,9 +64,16 @@ export function SignFlowDetail({ id, onBack }: SignFlowDetailProps) {
 		enabled: !!detail?.contract_id,
 	});
 
+	// قالب قرارداد همان سرویس گردش؛ بدون دسترسی مشاهده، PDF رسمی باز نمی‌شود (مثل old)
+	const canViewTemplate = hasDomainPermission("contract_template", "view", detail?.service);
+
 	const handleViewOfficialPdf = async () => {
 		if (!detail?.id)
 			return;
+		if (!canViewTemplate) {
+			Modal.warning({ title: t("contract.signFlow.templateAccessDenied") });
+			return;
+		}
 
 		const newTab = window.open("about:blank", "_blank");
 		try {
@@ -106,15 +117,6 @@ export function SignFlowDetail({ id, onBack }: SignFlowDetailProps) {
 		}
 	};
 
-	const isAdmin = Boolean(
-		user.is_superuser
-		|| user.is_staff
-		|| user.is_service_admin
-		|| user.roles?.some(r => r.toLowerCase() === "admin")
-		|| user.role?.toLowerCase() === "admin"
-		|| user.admin_role?.toLowerCase() === "admin",
-	);
-
 	const isCreator = Boolean(
 		detail
 		&& (
@@ -123,14 +125,13 @@ export function SignFlowDetail({ id, onBack }: SignFlowDetailProps) {
 		),
 	);
 
-	const canCancel = (isAdmin || isCreator) && detail?.state === "in_progress";
+	const canCancel = (isFullAdmin || isCreator) && detail?.state === "in_progress";
 
 	const currentActiveStep = detail?.steps.find(s => s.order === detail?.current_step_order);
 	const isStepApprover = Boolean(
 		detail?.is_waiting_for_me
 		|| currentActiveStep?.recipients?.some(r => Number(r.user_id) === Number(user.id) || r.username === user.username)
-		|| currentActiveStep?.assignments?.some(a => Number(a.user_id) === Number(user.id) || a.username === user.username)
-		|| isAdmin,
+		|| currentActiveStep?.assignments?.some(a => Number(a.user_id) === Number(user.id) || a.username === user.username),
 	);
 
 	const canDecide = detail?.state === "in_progress" && isStepApprover;

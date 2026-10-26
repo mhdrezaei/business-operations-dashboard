@@ -25,14 +25,5 @@
 	"email": "邮箱",
 	"sendResetLink": "发送重置链接",
 	"logout": "退出登录",
-	"register": "注册",
-	"alreadyHaveAnAccount": "已有账号？",
-	"goToLogin": "去登录",
-	"goToRegister": "去注册",
-	"noAccountYet": "还没有账号？",
-	"confirmPassword": "确认密码",
-	"logoutConfirm": "确认退出登录吗？",
-	"agree": "我已阅读并同意《<0>隐私政策</0>》和《<1>服务条款</1>》",
-	"privacyPolicy": "隐私政策",
-	"termsOfService": "服务条款"
+	"logoutConfirm": "确认退出登录吗？"
 }

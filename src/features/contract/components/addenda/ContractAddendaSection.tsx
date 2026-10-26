@@ -1,45 +1,30 @@
 import type { ArrayPath, FieldValues, Path, PathValue } from "react-hook-form";
-import type { AddendaMonthsByYear } from "./addenda.gaps";
 import { DashedCard } from "#src/shared/ui/dashed-card";
 import { RHFProText, RHFProTextArea, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { SectionCard, SectionToneContext } from "#src/shared/ui/section-card";
 
-import { message } from "#src/utils";
+import { message, toPersianDigits } from "#src/utils";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import { useQuery } from "@tanstack/react-query";
 import { Button, Collapse } from "antd";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { MONTH_OPTIONS, YEAR_OPTIONS } from "../../constant/jalali-date-options";
-import { contractGapsQuery } from "../../shared/queries/contract.queries";
+import { CONTRACT_NUMBER_MAX_LENGTH } from "../../shared/model/contract-number";
+import { ContractDataCopyButton } from "../../shared/ui/form/ContractDataCopyButton";
 import { ContractTypeSection } from "../contract-type/ContractTypeSection";
 import {
-	buildAddendaMonthsByYear,
-	isAvailableAddendaMonth,
-} from "./addenda.gaps";
+	buildAllowedStartMonths,
+	buildDefaultAddendumPeriod,
+	getAddendumEndMonths,
+	periodKey,
+	toAddendumRange,
+	validateAddendaPeriods,
+} from "./addenda.periods";
 import { defaultAddendumValue } from "./addenda.types";
 
 const p = (base: string, path: string) => `${base}.${path}` as any;
-
-function toNum(v: any): number | null {
-	if (v === "" || v == null)
-		return null;
-	const n = typeof v === "number" ? v : Number(v);
-	return Number.isFinite(n) ? n : null;
-}
-
-// YYYY/MM -> Comparable number
-function ymToKey(y: number | string | null | undefined, m: number | string | null | undefined) {
-	const yn = toNum(y);
-	const mn = toNum(m);
-	if (yn == null || mn == null)
-		return null;
-	return yn * 100 + mn;
-}
-function overlap(aStart: number, aEnd: number, bStart: number, bEnd: number) {
-	return aStart <= bEnd && aEnd >= bStart;
-}
 
 function readDisplayNumber(value: unknown) {
 	if (value == null || typeof value !== "object")
@@ -77,6 +62,8 @@ interface Props<TFV extends FieldValues> {
 	renderAddendumFields?: (basePath: string, index: number) => React.ReactNode
 	canAddAddendum?: boolean
 	addendumAddBlockedMessage?: React.ReactNode
+	/** حداکثر عمق درخت الحاقیه‌ها (۱ = بدون زیرالحاقیه)؛ پیش‌فرض نامحدود. */
+	maxDepth?: number
 
 	contractStartYearPath: Path<TFV>
 	contractStartMonthPath: Path<TFV>
@@ -91,17 +78,17 @@ interface Props<TFV extends FieldValues> {
 		endYear?: number | null
 		endMonth?: number | null
 	}
-	availableMonthsFallback?: AddendaMonthsByYear
 }
 
 export function ContractAddendaSection<TFV extends FieldValues>({
 	name,
-	title = "الحاقیه‌های قرارداد (اختیاری)",
+	title,
 	contractTypeTitle = "",
 	contractTypeFieldKey = "pricing",
 	renderAddendumFields,
 	canAddAddendum = true,
 	addendumAddBlockedMessage,
+	maxDepth,
 	contractStartYearPath,
 	contractStartMonthPath,
 	contractEndYearPath,
@@ -110,9 +97,9 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 	displayPrefix,
 	addendaFallback,
 	contractRangeFallback,
-	availableMonthsFallback,
 }: Props<TFV>) {
 	const { control, getValues, setValue, setError, clearErrors, trigger } = useFormContext<TFV>();
+	const { t } = useTranslation();
 	const initialAddendaRef = useRef<unknown[]>((() => {
 		const initialValue = getValues(name as unknown as Path<TFV>);
 		return Array.isArray(initialValue) ? initialValue : (addendaFallback ?? []);
@@ -124,14 +111,6 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 		disabled: level > 0,
 	}) as PathValue<TFV, typeof name> | undefined;
 	const addendaValues = level === 0 ? watchedAddendaValues : addendaFallback;
-	const watchedServiceId = useWatch({ control, name: "serviceId" as Path<TFV>, disabled: level > 0 }) as number | null | undefined;
-	const watchedCompanyId = useWatch({ control, name: "companyId" as Path<TFV>, disabled: level > 0 }) as number | null | undefined;
-	const watchedCompanyType = useWatch({ control, name: "companyType" as Path<TFV>, disabled: level > 0 }) as string | null | undefined;
-	const contractGaps = useQuery(contractGapsQuery({
-		serviceId: level === 0 ? watchedServiceId : null,
-		companyId: level === 0 ? watchedCompanyId : null,
-		companyType: level === 0 ? watchedCompanyType : null,
-	}));
 	const stableAddendaRef = useRef<unknown[]>(initialAddendaRef.current);
 	const fields = useMemo(() => {
 		const watchedRows = Array.isArray(addendaValues) ? addendaValues : stableAddendaRef.current;
@@ -167,33 +146,17 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 	const contractEndYear = level === 0 ? watchedContractEndYear : contractRangeFallback?.endYear;
 	const contractEndMonth = level === 0 ? watchedContractEndMonth : contractRangeFallback?.endMonth;
 
-	const contractStartKey = ymToKey(contractStartYear, contractStartMonth);
-	const contractEndKey = ymToKey(contractEndYear, contractEndMonth);
+	const contractStartKey = periodKey(contractStartYear, contractStartMonth);
+	const contractEndKey = periodKey(contractEndYear, contractEndMonth);
+	const contractRange = useMemo(
+		() => toAddendumRange({ startYear: contractStartYear, startMonth: contractStartMonth, endYear: contractEndYear, endMonth: contractEndMonth }),
+		[contractStartYear, contractStartMonth, contractEndYear, contractEndMonth],
+	);
 	const contractRangeReady = contractStartKey != null && contractEndKey != null && contractStartKey <= contractEndKey;
+	// شروع هر الحاقیه نسبت به والدش سنجیده می‌شود (ریشه: بازه قرارداد اصلی)
 	const availableMonthsByYear = useMemo(
-		() => level === 0
-			? buildAddendaMonthsByYear(
-				contractGaps.data?.missing_months_by_year,
-				contractRangeReady
-					? {
-						startYear: Number(contractStartYear),
-						startMonth: Number(contractStartMonth),
-						endYear: Number(contractEndYear),
-						endMonth: Number(contractEndMonth),
-					}
-					: null,
-			)
-			: (availableMonthsFallback ?? new Map()),
-		[
-			level,
-			contractGaps.data?.missing_months_by_year,
-			contractRangeReady,
-			contractStartYear,
-			contractStartMonth,
-			contractEndYear,
-			contractEndMonth,
-			availableMonthsFallback,
-		],
+		() => buildAllowedStartMonths(contractRangeReady ? contractRange : null),
+		[contractRangeReady, contractRange],
 	);
 
 	const [activeKey, setActiveKey] = useState<string | undefined>(undefined);
@@ -212,7 +175,6 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 		return (fields[idx] as Record<string, unknown> | undefined)?.[key];
 	};
 
-	// Every addendum at every depth gets the same gaps options as the original contract.
 	const allowedYears = useMemo(() => {
 		const years = new Set(availableMonthsByYear.keys());
 		return (YEAR_OPTIONS as any[]).filter(o => years.has(Number(o.value)));
@@ -230,59 +192,32 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 		const ey = getAddendumValue(idx, "endYear") as number | null;
 		const em = getAddendumValue(idx, "endMonth") as number | null;
 
-		const sKey = ymToKey(sy, sm);
-		const eKey = ymToKey(ey, em);
-
 		// Don't show anything until it's complete.
-		if (sKey == null || eKey == null) {
+		if (periodKey(sy, sm) == null || periodKey(ey, em) == null) {
 			clearErrors(p(base, "startYear"));
 			return false;
 		}
 
-		// invalid
-		if (sKey > eKey) {
-			setError(p(base, "startYear"), { type: "custom", message: "بازه تاریخ الحاقیه نامعتبر است" } as any);
+		const rows = fields.map((_, index) => ({
+			startYear: getAddendumValue(index, "startYear"),
+			startMonth: getAddendumValue(index, "startMonth"),
+			endYear: getAddendumValue(index, "endYear"),
+			endMonth: getAddendumValue(index, "endMonth"),
+		}));
+		const issue = validateAddendaPeriods(rows, contractRange, [])
+			.find(item => item.path[0] === idx);
+		if (issue) {
+			setError(p(base, "startYear"), { type: "custom", message: t(`contract.addenda.period.${issue.code}`) } as any);
 			return false;
 		}
 
-		if (
-			!isAvailableAddendaMonth(availableMonthsByYear, Number(sy), Number(sm))
-			|| !isAvailableAddendaMonth(availableMonthsByYear, Number(ey), Number(em))
-		) {
-			setError(p(base, "startYear"), { type: "custom", message: "تاریخ شروع و پایان الحاقیه باید در بازه‌های مجاز API gaps باشد" } as any);
-			return false;
-		}
-
-		// overlap with others
-		for (let i = 0; i < fields.length; i++) {
-			if (i === idx)
-				continue;
-
-			const osy = getAddendumValue(i, "startYear") as number | null;
-			const osm = getAddendumValue(i, "startMonth") as number | null;
-			const oey = getAddendumValue(i, "endYear") as number | null;
-			const oem = getAddendumValue(i, "endMonth") as number | null;
-
-			const osKey = ymToKey(osy, osm);
-			const oeKey = ymToKey(oey, oem);
-
-			if (osKey == null || oeKey == null)
-				continue;
-
-			if (overlap(sKey, eKey, osKey, oeKey)) {
-				setError(p(base, "startYear"), { type: "custom", message: "این بازه با یکی از الحاقیه‌های قبلی هم‌پوشانی دارد" } as any);
-				return false;
-			}
-		}
-
-		// If everything was OK
 		clearErrors(p(base, "startYear"));
 		return true;
 	};
 
 	const addAddendum = async () => {
 		if (!contractRangeReady) {
-			message.warning("ابتدا تاریخ شروع و پایان قرارداد را انتخاب کنید.");
+			message.warning(t("contract.addenda.selectContractDates"));
 			return;
 		}
 		if (!canAddAddendum) {
@@ -301,8 +236,8 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 			const ey = getAddendumValue(lastIdx, "endYear");
 			const em = getAddendumValue(lastIdx, "endMonth");
 
-			if (ymToKey(sy, sm) == null || ymToKey(ey, em) == null) {
-				message.warning("ابتدا تاریخ‌های الحاقیه قبلی را کامل کنید.");
+			if (periodKey(sy, sm) == null || periodKey(ey, em) == null) {
+				message.warning(t("contract.addenda.completePrevious"));
 				setActiveKey(String(lastIdx));
 				return;
 			}
@@ -319,6 +254,10 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 		const idx = fields.length;
 		const nextAddendum = structuredClone(defaultAddendumValue);
 		nextAddendum.displayAddendumNumber = getNextDisplayNumber(fields, displayPrefix);
+		Object.assign(nextAddendum, buildDefaultAddendumPeriod(
+			contractRange!,
+			fields[fields.length - 1] as Record<string, unknown> | undefined,
+		));
 		const nextFields = [...fields, nextAddendum];
 		stableAddendaRef.current = nextFields;
 		setValue(name as unknown as Path<TFV>, nextFields as any, {
@@ -340,17 +279,17 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 	};
 
 	const addChildAddendum = (idx: number, parentDisplayNumber?: string) => {
-		const startKey = ymToKey(
+		const startKey = periodKey(
 			getAddendumValue(idx, "startYear"),
 			getAddendumValue(idx, "startMonth"),
 		);
-		const endKey = ymToKey(
+		const endKey = periodKey(
 			getAddendumValue(idx, "endYear"),
 			getAddendumValue(idx, "endMonth"),
 		);
 
 		if (startKey == null || endKey == null || startKey > endKey) {
-			message.warning("ابتدا تاریخ شروع و پایان این الحاقیه را کامل کنید.");
+			message.warning(t("contract.addenda.completeThis"));
 			return;
 		}
 
@@ -358,6 +297,15 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 		const childItems = Array.isArray(children) ? children : [];
 		const nextChild = structuredClone(defaultAddendumValue);
 		nextChild.displayAddendumNumber = getNextDisplayNumber(childItems, parentDisplayNumber);
+		Object.assign(nextChild, buildDefaultAddendumPeriod(
+			toAddendumRange({
+				startYear: getAddendumValue(idx, "startYear"),
+				startMonth: getAddendumValue(idx, "startMonth"),
+				endYear: getAddendumValue(idx, "endYear"),
+				endMonth: getAddendumValue(idx, "endMonth"),
+			})!,
+			childItems[childItems.length - 1] as Record<string, unknown> | undefined,
+		));
 		setValue(
 			p(`${name}.${idx}`, "children"),
 			[...childItems, nextChild] as any,
@@ -393,14 +341,13 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 			const ey = addendum.endYear as number | null;
 			const em = addendum.endMonth as number | null;
 
-			const headerHint = sy && sm && ey && em ? `(${sy}/${sm} تا ${ey}/${em})` : null;
+			const headerHint = sy && sm && ey && em ? t("contract.addenda.rangeHint", { startYear: sy, startMonth: sm, endYear: ey, endMonth: em }) : null;
 			const startMonthOptions = sy
 				? (MONTH_OPTIONS as any[]).filter(option => availableMonthsByYear.get(Number(sy))?.includes(Number(option.value)))
 				: [];
 
-			const endMonthOptions = ey
-				? (MONTH_OPTIONS as any[]).filter(option => availableMonthsByYear.get(Number(ey))?.includes(Number(option.value)))
-				: [];
+			const endYearOptions = sy ? (YEAR_OPTIONS as any[]).filter(option => option.value >= Number(sy)) : [];
+			const endMonthOptions = (MONTH_OPTIONS as any[]).filter(option => getAddendumEndMonths(ey, sy, sm).includes(option.value));
 
 			return {
 				reactKey: String(
@@ -432,7 +379,7 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 									removeAddendum(idx);
 								}}
 							>
-								حذف الحاقیه
+								{t("contract.addenda.removeAddendum")}
 							</Button>
 						</div>
 					),
@@ -441,9 +388,9 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 							<div className="grid grid-cols-4 gap-3 mt-2">
 								<RHFSelect
 									name={p(base, "startYear")}
-									label="سال شروع الحاقیه"
+									label={t("contract.addenda.startYear")}
 									options={allowedYears as any}
-									selectProps={{ placeholder: "سال", allowClear: true }}
+									selectProps={{ placeholder: t("contract.placeholder.year"), allowClear: true }}
 									onValueChange={async () => {
 										await trigger([
 											p(base, "startYear") as any,
@@ -457,7 +404,7 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 
 								<RHFSelect
 									name={p(base, "startMonth")}
-									label="ماه شروع"
+									label={t("contract.addenda.startMonth")}
 									options={startMonthOptions as any}
 									onValueChange={async () => {
 										await trigger([
@@ -469,15 +416,15 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 										validateAddendumRangeNow(idx);
 									}}
 									selectProps={{
-										placeholder: "ماه",
+										placeholder: t("contract.placeholder.month"),
 										allowClear: true,
 									}}
 								/>
 
 								<RHFSelect
 									name={p(base, "endYear")}
-									label="سال پایان الحاقیه"
-									options={allowedYears as any}
+									label={t("contract.addenda.endYear")}
+									options={endYearOptions as any}
 									onValueChange={async () => {
 										await trigger([
 											p(base, "startYear") as any,
@@ -488,14 +435,14 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 										validateAddendumRangeNow(idx);
 									}}
 									selectProps={{
-										placeholder: "سال",
+										placeholder: t("contract.placeholder.year"),
 										allowClear: true,
 									}}
 								/>
 
 								<RHFSelect
 									name={p(base, "endMonth")}
-									label="ماه پایان"
+									label={t("contract.addenda.endMonth")}
 									options={endMonthOptions as any}
 									onValueChange={async () => {
 										await trigger([
@@ -507,7 +454,7 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 										validateAddendumRangeNow(idx);
 									}}
 									selectProps={{
-										placeholder: "ماه",
+										placeholder: t("contract.placeholder.month"),
 										allowClear: true,
 									}}
 								/>
@@ -516,9 +463,14 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 							<div className="mt-3">
 								<RHFProText
 									name={p(base, "contractNumber")}
-									label="شماره قرارداد الحاقیه"
-									inputProps={{ placeholder: "مثلاً ADD-1405-01" }}
+									label={t("contract.addenda.contractNumber")}
+									transformValue={toPersianDigits}
+									inputProps={{ placeholder: t("contract.addenda.contractNumberPlaceholder"), maxLength: CONTRACT_NUMBER_MAX_LENGTH }}
 								/>
+							</div>
+
+							<div className="mt-3">
+								<ContractDataCopyButton targetPath={base} />
 							</div>
 
 							<div className="mt-3">
@@ -530,21 +482,25 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 							<div className="mt-3">
 								<RHFProTextArea
 									name={p(base, "description")}
-									label="توضیح الحاقیه"
-									textAreaProps={{ placeholder: "توضیح اختیاری برای این الحاقیه" }}
+									label={t("contract.addenda.description")}
+									textAreaProps={{ placeholder: t("contract.addenda.descriptionPlaceholder") }}
 								/>
 							</div>
 
-							<div className="mt-3 flex justify-end">
-								<Button
-									className="contract-dashed-action"
-									icon={<PlusOutlined />}
-									onClick={() => addChildAddendum(idx, displayNumber ?? undefined)}
-									disabled={!canAddAddendum}
-								>
-									افزودن زیرالحاقیه
-								</Button>
-							</div>
+							{maxDepth == null || level + 1 < maxDepth
+								? (
+									<div className="mt-3 flex justify-end">
+										<Button
+											className="contract-dashed-action"
+											icon={<PlusOutlined />}
+											onClick={() => addChildAddendum(idx, displayNumber ?? undefined)}
+											disabled={!canAddAddendum}
+										>
+											{t("contract.addenda.addSubAddendum")}
+										</Button>
+									</div>
+								)
+								: null}
 						</div>
 					),
 				},
@@ -565,6 +521,8 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 		renderAddendumFields,
 		canAddAddendum,
 		addendumAddBlockedMessage,
+		maxDepth,
+		level,
 		trigger,
 		displayPrefix,
 	]);
@@ -573,7 +531,7 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 		<>
 			{!contractRangeReady
 				? (
-					<div className="opacity-75">برای افزودن الحاقیه، ابتدا تاریخ شروع و پایان قرارداد را انتخاب کنید.</div>
+					<div className="opacity-75">{t("contract.addenda.selectDatesHint")}</div>
 				)
 				: null}
 			{contractRangeReady && !canAddAddendum && addendumAddBlockedMessage
@@ -615,17 +573,17 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 											renderAddendumFields={renderAddendumFields}
 											canAddAddendum={canAddAddendum}
 											addendumAddBlockedMessage={addendumAddBlockedMessage}
+											maxDepth={maxDepth}
 											contractStartYearPath={p(`${name}.${idx}`, "startYear")}
 											contractStartMonthPath={p(`${name}.${idx}`, "startMonth")}
 											contractEndYearPath={p(`${name}.${idx}`, "endYear")}
 											contractEndMonthPath={p(`${name}.${idx}`, "endMonth")}
 											contractRangeFallback={{
-												startYear: contractStartYear,
-												startMonth: contractStartMonth,
-												endYear: contractEndYear,
-												endMonth: contractEndMonth,
+												startYear: item.addendum.startYear,
+												startMonth: item.addendum.startMonth,
+												endYear: item.addendum.endYear,
+												endMonth: item.addendum.endMonth,
 											}}
-											availableMonthsFallback={availableMonthsByYear}
 											level={level + 1}
 										/>
 									</div>
@@ -643,12 +601,12 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 	return (
 		<SectionToneContext.Provider value="addenda">
 			<SectionCard
-				title={title}
+				title={title ?? t("contract.addenda.title")}
 				tone="addenda"
 				className="contract-addenda-section mt-3"
 				extra={(
 					<Button className="contract-dashed-action" icon={<PlusOutlined />} onClick={addAddendum} disabled={!contractRangeReady || !canAddAddendum}>
-						افزودن الحاقیه
+						{t("contract.addenda.add")}
 					</Button>
 				)}
 			>

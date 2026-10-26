@@ -7,8 +7,10 @@ import {
 import { buildMonthsByYearMap } from "#src/features/performance/shared/model/performance.helpers";
 import { performanceGapsQuery } from "#src/features/performance/shared/queries/performance.queries";
 import { MONTH_OPTIONS } from "#src/features/performance/shared/ui/form/constants/jalali-date-options";
+import { TrafficExcelResult, UploadStatCard } from "#src/features/performance/shared/ui/traffic-excel-result";
 import { SectionCard } from "#src/shared/ui/section-card";
-import { CloudUploadOutlined, DownloadOutlined, InboxOutlined, InfoCircleOutlined } from "@ant-design/icons";
+import { downloadBlob } from "#src/utils/download-blob";
+import { CloudUploadOutlined, DownloadOutlined, InboxOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Modal, Select, Upload } from "antd";
 import { useEffect, useMemo, useState } from "react";
@@ -21,57 +23,12 @@ function getMonthLabel(month: number) {
 	return found?.label ?? String(month);
 }
 
-function downloadBlob(blob: Blob, filename: string) {
-	const url = URL.createObjectURL(blob);
-	const link = document.createElement("a");
-	link.href = url;
-	link.download = filename;
-	link.click();
-	URL.revokeObjectURL(url);
-}
-
-function UploadStatCard({
-	label,
-	value,
-	danger,
-}: {
-	label: string
-	value: number
-	danger?: boolean
-}) {
-	return (
-		<div className="flex items-center justify-between gap-4 rounded-[14px] border border-[rgba(255,255,255,0.12)] px-4 py-3">
-			<span className="opacity-[0.88]">{label}</span>
-			<strong className={danger ? "text-[#ff7875]" : undefined}>{value.toLocaleString("fa-IR")}</strong>
-		</div>
-	);
-}
-
-function UploadRejectedRow({
-	item,
-	index,
-}: {
-	item: TrafficExcelUpdateResponse["rejected_items"][number]
-	index: number
-}) {
-	return (
-		<div
-			className={index === 0
-				? "grid grid-cols-[140px_minmax(0,1fr)_minmax(220px,1.2fr)] items-center gap-3 px-[18px] py-[14px]"
-				: "grid grid-cols-[140px_minmax(0,1fr)_minmax(220px,1.2fr)] items-center gap-3 border-t border-t-[rgba(255,255,255,0.08)] px-[18px] py-[14px]"}
-		>
-			<div>{item.row_no}</div>
-			<div>{item.company_name || "-"}</div>
-			<div className="text-[#ff7875]">{item.reason}</div>
-		</div>
-	);
-}
-
 export interface TrafficUpdateTemplateModalProps {
 	open: boolean
 	serviceId: number | null
 	companyTypeOptions: Array<{ label: string, value: string }>
 	onClose?: () => void
+	onUploaded?: () => void
 	embedded?: boolean
 }
 
@@ -80,6 +37,7 @@ export function TrafficUpdateTemplateModal({
 	serviceId,
 	companyTypeOptions,
 	onClose,
+	onUploaded,
 	embedded = false,
 }: TrafficUpdateTemplateModalProps) {
 	const { t } = useTranslation();
@@ -91,11 +49,6 @@ export function TrafficUpdateTemplateModal({
 	const [downloading, setDownloading] = useState(false);
 	const [uploading, setUploading] = useState(false);
 	const [uploadResult, setUploadResult] = useState<TrafficExcelUpdateResponse | null>(null);
-
-	const rejectionReasons = useMemo(
-		() => Object.entries(uploadResult?.rejected_by_reason ?? {}),
-		[uploadResult],
-	);
 
 	const gaps = useQuery(performanceGapsQuery({
 		serviceId: open ? serviceId : null,
@@ -210,6 +163,7 @@ export function TrafficUpdateTemplateModal({
 				suppressErrorNotification: true,
 			});
 			setUploadResult(result);
+			onUploaded?.();
 		}
 		finally {
 			setUploading(false);
@@ -221,47 +175,17 @@ export function TrafficUpdateTemplateModal({
 
 	const content = uploadResult
 		? (
-			<div className="traffic-update-template-result">
-				<div className="traffic-update-template-result__icon"><InfoCircleOutlined /></div>
-				<div className="traffic-update-template-stats">
-					<UploadStatCard label="کل ردیف‌ها" value={uploadResult.total_rows_in_file} />
-					<UploadStatCard label="ردیف‌های پر شده" value={uploadResult.filled_rows} />
-					<UploadStatCard label="ویرایش شده" value={uploadResult.updated} />
-					<UploadStatCard label="رد شده" value={uploadResult.rejected} danger />
-				</div>
-				<div className="grid gap-2.5">
-					<div className="font-bold">دلایل رد</div>
-					<div className="grid gap-2">
-						{rejectionReasons.length > 0
-							? rejectionReasons.map(([reason, count]) => (
-								<div key={reason} className="traffic-update-template-result__row">
-									<span>{reason}</span>
-									<strong>{count.toLocaleString("fa-IR")}</strong>
-								</div>
-							))
-							: <div className="traffic-update-template-result__row">موردی برای نمایش وجود ندارد.</div>}
-					</div>
-				</div>
-				<div className="grid gap-2.5">
-					<div className="font-bold">ردیف‌های رد شده</div>
-					<div className="traffic-update-template-rejections">
-						<div className="traffic-update-template-rejections__header">
-							<div>ردیف</div>
-							<div>نام شرکت</div>
-							<div>دلیل</div>
-						</div>
-						{uploadResult.rejected_items.length > 0
-							? uploadResult.rejected_items.map((item, index) => (
-								// eslint-disable-next-line react/no-array-index-key
-								<UploadRejectedRow key={`${item.row_no}-${index}`} item={item} index={index} />
-							))
-							: <div className="p-[18px] opacity-80">ردیفی رد نشده است.</div>}
-					</div>
-				</div>
-				<div className="flex justify-end">
-					<Button type="primary" onClick={resetState}>{t("common.confirm")}</Button>
-				</div>
-			</div>
+			<TrafficExcelResult
+				rejected_by_reason={uploadResult.rejected_by_reason}
+				rejected_items={uploadResult.rejected_items}
+				onConfirm={resetState}
+			>
+				<UploadStatCard label={t("performance.traffic.editTemplate.totalRows")} value={uploadResult.total_rows_in_file} />
+				<UploadStatCard label={t("performance.traffic.editTemplate.filledRows")} value={uploadResult.filled_rows} />
+				<UploadStatCard label={t("performance.traffic.editTemplate.updated")} value={uploadResult.updated} />
+				<UploadStatCard label={t("performance.traffic.editTemplate.skippedEmpty")} value={uploadResult.skipped_empty ?? 0} />
+				<UploadStatCard label={t("performance.traffic.editTemplate.rejected")} value={uploadResult.rejected} danger />
+			</TrafficExcelResult>
 		)
 		: (
 			<div className="traffic-update-template-editor">
@@ -307,7 +231,7 @@ export function TrafficUpdateTemplateModal({
 					<div className="performance-traffic-step">
 						<div className="performance-traffic-step__number">۱</div>
 						<div className="performance-traffic-step__content">
-							<div className="performance-traffic-step__title">دانلود فایل تمپلیت عملکرد ماهیانه</div>
+							<div className="performance-traffic-step__title">{t("performance.traffic.editTemplate.stepDownload")}</div>
 						</div>
 						<Button icon={<DownloadOutlined />} disabled={!canDownload} loading={downloading} onClick={() => void handleDownload()}>
 							{t("performance.traffic.editTemplate.download")}
@@ -317,7 +241,7 @@ export function TrafficUpdateTemplateModal({
 					<div className="performance-traffic-step performance-traffic-step--upload">
 						<div className="performance-traffic-step__number">۲</div>
 						<div className="performance-traffic-step__content">
-							<div className="performance-traffic-step__title">آپلود فایل اکسل عملکرد ترافیک</div>
+							<div className="performance-traffic-step__title">{t("performance.traffic.editTemplate.stepUpload")}</div>
 						</div>
 						<div className="performance-traffic-step__dropzone">
 							<Upload.Dragger {...uploadProps} fileList={fileList ?? []} onChange={info => setFileList(info.fileList.slice(-1))}>
@@ -331,7 +255,7 @@ export function TrafficUpdateTemplateModal({
 					<div className="performance-traffic-step">
 						<div className="performance-traffic-step__number">۳</div>
 						<div className="performance-traffic-step__content">
-							<div className="performance-traffic-step__title">ایمپورت مقادیر فایل اکسل برای عملکرد</div>
+							<div className="performance-traffic-step__title">{t("performance.traffic.editTemplate.stepImport")}</div>
 						</div>
 						<Button type="primary" icon={<CloudUploadOutlined />} disabled={!canUpload} loading={uploading} onClick={() => void handleUpload()}>
 							{t("performance.traffic.editTemplate.upload")}
@@ -343,7 +267,7 @@ export function TrafficUpdateTemplateModal({
 
 	if (embedded) {
 		return (
-			<SectionCard title="ویرایش گروهی عملکرد ترافیک" tone="traffic" defaultExpanded>
+			<SectionCard title={t("performance.traffic.editTemplate.bulkTitle")} tone="traffic" defaultExpanded>
 				{content}
 			</SectionCard>
 		);

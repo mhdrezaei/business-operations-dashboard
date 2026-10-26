@@ -1,27 +1,15 @@
-import type { OpenApiPredictionServiceFields, PredictionShareSectionValue } from "../../model/prediction.form.types";
+import type { OpenApiAmountField, OpenApiPredictionServiceFields } from "../../model/prediction.form.types";
 import i18next from "i18next";
 import { z } from "zod";
+import { getShareTotal } from "../../model/manual-share-template";
+import { addQuarterIssues, quarterPercentSchema, requiredNonNegativeNumber } from "../../model/prediction.validation";
 import {
-	createEmptyOpenApiChannelShares,
 	createEmptyOpenApiManualShares,
+	getOpenApiAmountField,
 	getOpenApiOperationSections,
-	OPENAPI_CHANNEL_OPTIONS,
 	OPENAPI_METRICS,
+	OPENAPI_OPERATION_SECTIONS,
 } from "./openapi.config";
-
-function nullableNonNegativeNumber(message: string) {
-	return z.number({ message }).nullable().refine(value => value == null || value >= 0, { message });
-}
-
-const quarterRangeMessage = i18next.t("prediction.validation.quarters.range", {
-	defaultValue: "درصد هر کوارتر باید بین 0 تا 100 باشد",
-});
-
-const quarterPercentSchema = z.number()
-	.int({ message: quarterRangeMessage })
-	.min(0, { message: quarterRangeMessage })
-	.max(100, { message: quarterRangeMessage })
-	.nullable();
 
 const shareSectionSchema = z.object({
 	mode: z.enum(["auto", "manual"]).default("auto"),
@@ -39,20 +27,14 @@ const metricShareSchema = z.object({
 	expense: shareSectionSchema,
 });
 
-const channelSharesSchema = z.object({
-	value: z.object(
-		Object.fromEntries(
-			OPENAPI_CHANNEL_OPTIONS.map(channel => [channel.key, z.number().nullable()]),
-		),
+const amountShape = Object.fromEntries(
+	OPENAPI_OPERATION_SECTIONS.flatMap(section =>
+		OPENAPI_METRICS.map(metric => [
+			getOpenApiAmountField(section.key, metric.key),
+			requiredNonNegativeNumber(i18next.t("prediction.validation.openapi.nonNegativeNumber")).nullable(),
+		] as const),
 	),
-});
-
-function getShareTotal(section: PredictionShareSectionValue) {
-	return section.selectedCompanyIds.reduce((total, companyId) => {
-		const amount = section.shares[String(companyId)] ?? 0;
-		return Number(total) + Number(amount ?? 0);
-	}, 0);
-}
+) as unknown as Record<OpenApiAmountField, z.ZodType<number | null>>;
 
 function addManualShareIssue(
 	ctx: z.RefinementCtx,
@@ -68,54 +50,33 @@ function addManualShareIssue(
 }
 
 export const openApiPredictionSchema = z.object({
-	openapiModel: z.enum(["LEGACY", "PACKAGE"]).default("LEGACY"),
+	openapiModel: z.enum(["LEGACY", "LEGACY_2", "PACKAGE"]).default("LEGACY"),
+	packageExtras: z.record(z.string(), z.unknown()).optional(),
 	q1Percent: quarterPercentSchema,
 	q2Percent: quarterPercentSchema,
 	q3Percent: quarterPercentSchema,
 	q4Percent: quarterPercentSchema,
-	billInquiryValueYear: nullableNonNegativeNumber(i18next.t("prediction.validation.openapi.nonNegativeNumber")),
-	billInquiryIncomeYear: nullableNonNegativeNumber(i18next.t("prediction.validation.openapi.nonNegativeNumber")),
-	billInquiryExpenseYear: nullableNonNegativeNumber(i18next.t("prediction.validation.openapi.nonNegativeNumber")),
-	receiptRegisterValueYear: nullableNonNegativeNumber(i18next.t("prediction.validation.openapi.nonNegativeNumber")),
-	receiptRegisterIncomeYear: nullableNonNegativeNumber(i18next.t("prediction.validation.openapi.nonNegativeNumber")),
-	receiptRegisterExpenseYear: nullableNonNegativeNumber(i18next.t("prediction.validation.openapi.nonNegativeNumber")),
-	smsTotalValueYear: nullableNonNegativeNumber(i18next.t("prediction.validation.openapi.nonNegativeNumber")),
-	smsTotalIncomeYear: nullableNonNegativeNumber(i18next.t("prediction.validation.openapi.nonNegativeNumber")),
-	smsTotalExpenseYear: nullableNonNegativeNumber(i18next.t("prediction.validation.openapi.nonNegativeNumber")),
-	trafficTotalValueYear: nullableNonNegativeNumber(i18next.t("prediction.validation.openapi.nonNegativeNumber")),
-	trafficTotalIncomeYear: nullableNonNegativeNumber(i18next.t("prediction.validation.openapi.nonNegativeNumber")),
-	trafficTotalExpenseYear: nullableNonNegativeNumber(i18next.t("prediction.validation.openapi.nonNegativeNumber")),
-	manualShares: z.object({
-		billInquiry: metricShareSchema,
-		receiptRegister: metricShareSchema,
-		smsTotal: metricShareSchema,
-		trafficTotal: metricShareSchema,
-	}).default(createEmptyOpenApiManualShares()),
-	channels: channelSharesSchema.default(createEmptyOpenApiChannelShares()),
-}) satisfies z.ZodType<OpenApiPredictionServiceFields>;
+	...amountShape,
+	manualShares: z.object(
+		Object.fromEntries(OPENAPI_OPERATION_SECTIONS.map(section => [section.key, metricShareSchema])),
+	).default(createEmptyOpenApiManualShares()),
+}) as unknown as z.ZodType<OpenApiPredictionServiceFields>;
 
 export const validatedOpenApiPredictionSchema = openApiPredictionSchema.superRefine((value, ctx) => {
-	const quarterValues = [value.q1Percent, value.q2Percent, value.q3Percent, value.q4Percent];
-	if (quarterValues.some(item => item == null)) {
-		ctx.addIssue({
-			code: "custom",
-			path: ["q1Percent"],
-			message: i18next.t("prediction.validation.quarters.allRequired"),
-		});
+	if (!addQuarterIssues([value.q1Percent, value.q2Percent, value.q3Percent, value.q4Percent], ctx))
 		return;
-	}
-
-	const quarterTotal = quarterValues.reduce((total, item) => Number(total) + Number(item ?? 0), 0);
-	if (quarterTotal !== 100) {
-		ctx.addIssue({
-			code: "custom",
-			path: ["q1Percent"],
-			message: i18next.t("prediction.validation.quarters.sumMustBeHundred"),
-		});
-	}
 
 	getOpenApiOperationSections(value.openapiModel).forEach((section) => {
 		OPENAPI_METRICS.forEach((metric) => {
+			const amountField = getOpenApiAmountField(section.key, metric.key);
+			if (value[amountField] == null) {
+				ctx.addIssue({
+					code: "custom",
+					path: [amountField],
+					message: i18next.t("prediction.validation.openapi.amountRequired"),
+				});
+			}
+
 			const shareState = value.manualShares[section.key][metric.key];
 			if (shareState.mode !== "manual")
 				return;
@@ -141,18 +102,4 @@ export const validatedOpenApiPredictionSchema = openApiPredictionSchema.superRef
 			}
 		});
 	});
-
-	if (value.openapiModel === "PACKAGE") {
-		const channelTotal = OPENAPI_CHANNEL_OPTIONS.reduce((total, channel) => {
-			return total + Number(value.channels.value[channel.key] ?? 0);
-		}, 0);
-
-		if (channelTotal !== 100) {
-			ctx.addIssue({
-				code: "custom",
-				path: ["channels", "value"],
-				message: i18next.t("prediction.validation.manualShares.sumMustBeHundred"),
-			});
-		}
-	}
 });

@@ -17,6 +17,12 @@
 		"editPrediction": "ویرایش پیش‌بینی"
 	},
 	"labels": {
+		"allocationMode": "نحوه تخصیص",
+		"supplementaryInfo": "اطلاعات تکمیلی",
+		"predictionYear": "پیش‌بینی سال {{year}}",
+		"quarter": "کوارتر {{index}}",
+		"details": "جزئیات",
+		"registeredPredictions": "پیش‌بینی‌های ثبت‌شده ({{total}})",
 		"service": "نام سرویس",
 		"fiscalYear": "سال مالی",
 		"annualValue": "مقدار سالانه",
@@ -30,7 +36,8 @@
 		"trafficLocation": "موقعیت",
 		"trafficAnnualValueReceive": "مقدار دریافتی سالانه",
 		"companySelect": "انتخاب شرکت",
-		"note": "توضیحات (اختیاری)"
+		"note": "توضیحات (اختیاری)",
+		"openapiModel": "مدل OpenAPI"
 	},
 	"quarters": {
 		"q1": "کوارتر اول",
@@ -40,20 +47,24 @@
 	},
 	"sections": {
 		"quarters": "توزیع فصلی",
-		"companyShares": "سهم شرکت‌ها"
+		"companyShares": "سهم شرکت‌ها",
+		"channels": "کانال‌ها"
 	},
 	"operations": {
 		"billInquiry": "استعلام قبض",
 		"receiptRegister": "ثبت وصولی",
-		"smsTotal": "جمع کل پیامک",
-		"trafficTotal": "جمع کل بسته های ترافیک",
 		"psp": "PSP",
 		"shahkar": "شاهکار",
 		"sms": "سرویس پیامک",
-		"traffic": "سرویس ترافیک"
+		"traffic": "سرویس ترافیک",
+		"billInquiryMidterm": "استعلام قبض میان‌دوره",
+		"billInquiryEndterm": "استعلام قبض پایان‌دوره",
+		"receiptRegisterConnected": "ثبت وصولی متصل",
+		"receiptRegisterDisconnected": "ثبت وصولی غیرمتصل"
 	},
 	"metrics": {
 		"value": "مقدار",
+		"smsCount": "تعداد پیامک",
 		"valueReceive": "مقدار دریافتی",
 		"trafficSentVolume": "حجم ارسالی",
 		"trafficReceivedVolume": "حجم دریافتی",
@@ -64,11 +75,20 @@
 		"tehran": "تهران",
 		"province": "مراکز استان"
 	},
+	"smsChannels": {
+		"IRANCELL_FA": "ایرانسل - فارسی",
+		"IRANCELL_EN": "ایرانسل - انگلیسی",
+		"MCI_FA": "همراه اول - فارسی",
+		"MCI_EN": "همراه اول - انگلیسی",
+		"OTHER_FA": "سایر - فارسی",
+		"OTHER_EN": "سایر - انگلیسی"
+	},
 	"shareModes": {
 		"auto": "اتومات",
 		"manual": "اختصاصی"
 	},
 	"placeholders": {
+		"selectCompanyTypeFirst": "ابتدا نوع شرکت را انتخاب کنید",
 		"selectService": "سرویس را انتخاب کنید",
 		"selectFiscalYear": "سال مالی را انتخاب کنید",
 		"selectCompanies": "شرکت‌ها را انتخاب کنید",
@@ -78,9 +98,12 @@
 		"amountExample": "مثلاً 10000000",
 		"smsPriceBuy": "مثلاً 120",
 		"smsPriceSell": "مثلاً 180",
-		"note": "مثلاً توضیح کوتاه درباره پیش‌بینی"
+		"note": "مثلاً توضیح کوتاه درباره پیش‌بینی",
+		"selectOpenapiModel": "مدل را انتخاب کنید"
 	},
 	"messages": {
+		"registeredLoadFailed": "دریافت پیش‌بینی‌های ثبت‌شده ناموفق بود",
+		"registeredEmpty": "پیش‌بینی ثبت‌شده‌ای یافت نشد",
 		"unknownError": "خطای نامشخص",
 		"submitError": "خطا در ثبت پیش‌بینی",
 		"fixFormErrors": "لطفاً خطاهای فرم را اصلاح کنید",
@@ -101,7 +124,8 @@
 			"preview": "خلاصه",
 			"note": "توضیحات",
 			"updatedAt": "آخرین ویرایش",
-			"ordering": "مرتب‌سازی"
+			"ordering": "مرتب‌سازی",
+			"quarters": "کوارترها (۱ تا ۴)"
 		},
 		"placeholders": {
 			"ordering": "مرتب‌سازی را انتخاب کنید"
@@ -118,7 +142,7 @@
 			"income": "درآمد",
 			"price": "قیمت فروش",
 			"companyType": "نوع شرکت",
-			"locations": "تعداد موقعیت"
+			"priceBuy": "قیمت خرید"
 		}
 	},
 	"errors": {
@@ -133,10 +157,13 @@
 		},
 		"quarters": {
 			"allRequired": "درصد هر چهار کوارتر باید وارد شود",
+			"range": "درصد هر کوارتر باید بین 1 تا 100 باشد",
+			"sumOfThreeTooLarge": "جمع سه کوارتر باید کمتر از 100 باشد",
 			"sumMustBeHundred": "مجموع درصد کوارترها باید 100 باشد"
 		},
 		"openapi": {
-			"nonNegativeNumber": "مقدار این فیلد باید صفر یا بیشتر باشد"
+			"nonNegativeNumber": "مقدار این فیلد باید صفر یا بیشتر باشد",
+			"amountRequired": "مقدار را وارد کنید"
 		},
 		"psp": {
 			"valueRequired": "مقدار سالانه الزامی است و باید صفر یا بیشتر باشد",
@@ -151,7 +178,8 @@
 			"incomeRequired": "درآمد سالانه الزامی است و باید صفر یا بیشتر باشد",
 			"expenseRequired": "هزینه سالانه الزامی است و باید صفر یا بیشتر باشد",
 			"priceBuyRequired": "قیمت خرید هر پیامک الزامی است و باید صفر یا بیشتر باشد",
-			"priceSellRequired": "قیمت فروش هر پیامک الزامی است و باید صفر یا بیشتر باشد"
+			"priceSellRequired": "قیمت فروش هر پیامک الزامی است و باید صفر یا بیشتر باشد",
+			"channelsRequired": "درصد همه کانال‌ها باید وارد شود"
 		},
 		"traffic": {
 			"nonNegativeNumber": "مقدار این فیلد باید صفر یا بیشتر باشد",
@@ -167,6 +195,13 @@
 		"manualShares": {
 			"companyRequired": "حداقل یک شرکت باید انتخاب شود",
 			"sumMustBeHundred": "مجموع درصد شرکت‌ها باید 100 باشد"
+		}
+	},
+	"openapi": {
+		"models": {
+			"legacy": "قدیمی (Legacy)",
+			"legacy2": "تفکیکی (Legacy 2)",
+			"package": "بسته‌ای (Package)"
 		}
 	}
 }

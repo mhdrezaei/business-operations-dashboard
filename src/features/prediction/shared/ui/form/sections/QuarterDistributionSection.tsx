@@ -58,10 +58,9 @@ export function QuarterDistributionSection() {
 		}
 
 		const completedFirstThree = firstThree.map(value => Number(value ?? 0));
-		const nextQ4Percent = Math.max(
-			0,
-			100 - completedFirstThree.reduce((total, value) => total + value, 0),
-		);
+		const remaining = 100 - completedFirstThree.reduce((total, value) => total + value, 0);
+		// like the old form, Q4 must stay at least 1; otherwise it is left empty and the schema reports the error
+		const nextQ4Percent = remaining >= 1 ? remaining : null;
 		if (q4Percent === nextQ4Percent) {
 			return;
 		}

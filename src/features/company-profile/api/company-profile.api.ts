@@ -34,7 +34,7 @@ export interface PublicProfileDto {
 	email: string[]
 	website: string
 	working_hours: string
-	social_links: string
+	social_links: unknown
 	created_at: string
 	updated_at: string
 }
@@ -55,7 +55,7 @@ export interface UpsertPublicProfilePayload {
 	email: string[]
 	website: string | null
 	working_hours: string | null
-	social_links: string | null
+	social_links?: Record<string, string>
 }
 
 export async function getPublicProfile(params: { company: number, service: number, company_type?: string | null }) {
@@ -90,6 +90,8 @@ export interface LegalProfileDto {
 	tax_registration_number: string
 	registration_place: string
 	registration_date: string
+	official_gazette_number: string | null
+	official_gazette_date: string | null
 	legal_person_type: string
 	branch_code: string
 	created_at: string
@@ -105,6 +107,8 @@ export interface UpsertLegalProfilePayload {
 	tax_registration_number: string | null
 	registration_place: string | null
 	registration_date: string | null
+	official_gazette_number: string | null
+	official_gazette_date: string | null
 	legal_person_type: string | null
 	branch_code: string | null
 }

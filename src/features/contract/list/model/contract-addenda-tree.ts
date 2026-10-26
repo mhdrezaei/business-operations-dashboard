@@ -1,3 +1,5 @@
+import { toNumberOrNull } from "../../shared/utils/value-coercion";
+
 export interface ContractAddendumTreeNode {
 	key: string
 	id: number | null
@@ -19,14 +21,6 @@ interface CollectedNode {
 	order: number
 	row: Record<string, unknown>
 	children: CollectedNode[]
-}
-
-function toNumberOrNull(value: unknown) {
-	if (value === null || value === undefined || value === "")
-		return null;
-
-	const result = Number(value);
-	return Number.isFinite(result) ? result : null;
 }
 
 function toText(value: unknown) {

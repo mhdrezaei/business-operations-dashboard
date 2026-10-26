@@ -4,7 +4,17 @@
 		"id": "Role Id",
 		"addRole": "Add Role",
 		"editRole": "Edit Role",
-		"assignMenu": "Assign Menu"
+		"assignMenu": "Assign Menu",
+		"permissions": {
+			"sign": "Contract approval",
+			"businessApprove": "Business approval",
+			"companyTypes": "Allowed company types",
+			"selectAll": "Select all",
+			"clearAll": "Clear all",
+			"selectedCount": "{{count}} of {{total}} selected",
+			"noGrantableTypes": "There is no company type you may grant for the selected permissions of this service.",
+			"typesRequired": "Select at least one company type while any of view, create, update or delete is enabled."
+		}
 	},
 	"user": {
 		"name": "User Name",

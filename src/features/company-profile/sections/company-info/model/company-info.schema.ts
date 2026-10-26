@@ -1,11 +1,11 @@
 import type { CompanyInfoFormValues } from "./company-info.types";
 import { z } from "zod";
 
-const LegalPersonTypeEnum = z.enum(["PRIVATE_JOINT_STOCK", "PUBLIC_JOINT_STOCK", "LIMITED_LIABILITY"]);
-const VatStatusEnum = z.enum(["SUBJECT", "EXEMPT", "UNKNOWN"]);
+const LegalPersonTypeEnum = z.enum(["PRIVATE_JOINT_STOCK", "PUBLIC_JOINT_STOCK", "LIMITED_LIABILITY", "INSTITUTE", "OTHER"]);
+const VatStatusEnum = z.enum(["SUBJECT", "EXEMPT"]);
 const CooperationStatusEnum = z.enum(["ACTIVE", "INACTIVE", "SUSPENDED"]);
-const SettlementTermEnum = z.enum(["CASH", "CREDIT", "INSTALLMENT"]);
-const InfoVerificationStatusEnum = z.enum(["PENDING", "VERIFIED", "REJECTED"]);
+const SettlementTermEnum = z.enum(["CASH", "CREDIT", "MONTHLY", "PERIODIC"]);
+const InfoVerificationStatusEnum = z.enum(["PENDING", "VERIFIED"]);
 
 export const companyInfoSchema = z
 	.object({

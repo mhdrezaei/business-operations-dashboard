@@ -5,23 +5,35 @@ import {
 	deleteContractDocument,
 	downloadContractDocument,
 } from "#src/features/contract/api/contract-documents.api";
-import { RHFProCheckbox, RHFProTextArea, RHFProUploadButton } from "#src/shared/ui/rhf-pro";
+import { RHFProTextArea, RHFProUploadButton } from "#src/shared/ui/rhf-pro";
 import { SectionCard } from "#src/shared/ui/section-card";
+import { Upload } from "antd";
+import { useTranslation } from "react-i18next";
+import { CONTRACT_DOCUMENT_ACCEPT, CONTRACT_DOCUMENT_MAX_COUNT, getContractDocumentRejection } from "../../../model/contract-documents";
 
 interface FixedEndSectionProps {
-	showSignedCheckbox?: boolean
 	contractId?: number | null
 	showDocuments?: boolean
 }
 
-export function FixedEndSection({ showSignedCheckbox = false, contractId = null, showDocuments = true }: FixedEndSectionProps) {
-	// در حالت ایجاد قرارداد (بدون contractId) فایل‌ها فقط محلی نگه‌داشته می‌شوند
-	// و بعد از ثبت موفق قرارداد، توسط فراخواننده (CreateContract) به سرور ارسال می‌شوند.
+export function FixedEndSection({ contractId = null, showDocuments = true }: FixedEndSectionProps) {
+	const { t } = useTranslation();
+	const beforeUpload: UploadProps["beforeUpload"] = (file) => {
+		const rejection = getContractDocumentRejection(file);
+		if (rejection) {
+			window.$message?.warning(t(`contract.documents.${rejection}`, { name: file.name }));
+			return Upload.LIST_IGNORE;
+		}
+		// در حالت ایجاد قرارداد (بدون contractId) فایل‌ها فقط محلی نگه‌داشته می‌شوند
+		// و بعد از ثبت موفق قرارداد، توسط فراخواننده (CreateContract) به سرور ارسال می‌شوند.
+		return !!contractId;
+	};
 	const uploadProps: UploadProps = contractId
 		? {
 			multiple: true,
-			maxCount: 10,
-			accept: ".pdf,.png,.jpg,.jpeg",
+			maxCount: CONTRACT_DOCUMENT_MAX_COUNT,
+			accept: CONTRACT_DOCUMENT_ACCEPT,
+			beforeUpload,
 			showUploadList: {
 				showDownloadIcon: true,
 				showRemoveIcon: true,
@@ -51,22 +63,22 @@ export function FixedEndSection({ showSignedCheckbox = false, contractId = null,
 		}
 		: {
 			multiple: true,
-			maxCount: 10,
-			accept: ".pdf,.png,.jpg,.jpeg",
-			beforeUpload: () => false,
+			maxCount: CONTRACT_DOCUMENT_MAX_COUNT,
+			accept: CONTRACT_DOCUMENT_ACCEPT,
+			beforeUpload,
 		};
 
 	return (
-		<SectionCard title="اطلاعات تکمیلی" className="w-full mt-3">
+		<SectionCard title={t("contract.supplementary.title")} className="w-full mt-3">
 			<div className="contract-supplementary-fields">
 				<div className="contract-supplementary-control contract-supplementary-description-control">
-					<div className="contract-supplementary-control__label">توضیحات</div>
+					<div className="contract-supplementary-control__label">{t("contract.supplementary.description")}</div>
 					<RHFProTextArea<ContractFormValues, "description">
 						name="description"
 						label=""
 						formItemProps={{ className: "contract-supplementary-field mb-0" }}
 						textAreaProps={{
-							placeholder: "توضیحات قرارداد",
+							placeholder: t("contract.supplementary.descriptionPlaceholder"),
 							autoSize: { minRows: 1, maxRows: 4 },
 							maxLength: 2000,
 						} as any}
@@ -76,28 +88,17 @@ export function FixedEndSection({ showSignedCheckbox = false, contractId = null,
 				{showDocuments
 					? (
 						<div className="contract-supplementary-control contract-supplementary-upload-control">
-							<div className="contract-supplementary-control__label">مدارک پیوستی</div>
+							<div className="contract-supplementary-control__label">{t("contract.supplementary.attachments")}</div>
 							<RHFProUploadButton<ContractFormValues, "documents">
 								name="documents"
 								label=""
 								variant="dragger"
-								draggerTitle="فایل‌ها را بکشید یا برای انتخاب اینجا کلیک کنید"
-								draggerHint="امکان آپلود هم‌زمان فایل‌های PNG، JPG و PDF"
+								draggerTitle={t("contract.supplementary.draggerTitle")}
+								draggerHint={t("contract.supplementary.draggerHint")}
 								itemProps={{ className: "contract-supplementary-field mb-0" }}
 								uploadProps={uploadProps}
 							/>
 						</div>
-					)
-					: null}
-
-				{showSignedCheckbox
-					? (
-						<RHFProCheckbox<ContractFormValues, any>
-							name={"serviceFields.isOfficial" as any}
-							label=""
-							checkboxLabel="قرارداد امضا شده است"
-							checkboxProps={{}}
-						/>
 					)
 					: null}
 			</div>

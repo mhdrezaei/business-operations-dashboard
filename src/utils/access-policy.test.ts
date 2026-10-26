@@ -3,8 +3,12 @@ import {
 	getPermittedCompanyTypesForDomain,
 	getPermittedServiceIdsForDomain,
 	hasAdminAccess,
+	hasAdminCapability,
 	hasAdminSectionAction,
+	hasAnyDomainPermissionForServices,
 	hasDomainPermissionForServices,
+	isFullAdmin,
+	normalizeDeputyPermissions,
 } from "./access-policy";
 
 const serviceWithStringId = {
@@ -111,25 +115,27 @@ describe("admin panel granular permissions", () => {
 		expect(hasAdminSectionAction(userWithSpecificActions, "roles", "delete")).toBe(true);
 	});
 
-	it("allows only view on service_admins, logs, and notification_rules", () => {
+	it("allows only view on service_admins", () => {
 		expect(hasAdminAccess(userWithSpecificActions, "service_admins")).toBe(true);
 		expect(hasAdminSectionAction(userWithSpecificActions, "service_admins", "view")).toBe(true);
 		expect(hasAdminSectionAction(userWithSpecificActions, "service_admins", "update")).toBe(false);
+	});
 
-		expect(hasAdminAccess(userWithSpecificActions, "audit_logs")).toBe(true);
-		expect(hasAdminSectionAction(userWithSpecificActions, "audit_logs", "view")).toBe(true);
-		expect(hasAdminSectionAction(userWithSpecificActions, "audit_logs", "delete")).toBe(false);
+	it("keeps audit logs and notification/sign-flow rules for full admins only", () => {
+		for (const target of ["audit_logs", "logs", "notification_rules", "policies"] as const) {
+			expect(hasAdminAccess(userWithSpecificActions, target)).toBe(false);
+			expect(hasAdminSectionAction(userWithSpecificActions, target, "view")).toBe(false);
+		}
+		expect(hasAdminAccess({ role: "staff_admin" } as any, "audit_logs")).toBe(true);
+		expect(hasAdminAccess({ is_superuser: true } as any, "policies")).toBe(true);
+	});
 
-		expect(hasAdminAccess(userWithSpecificActions, "notification_rules")).toBe(true);
-		expect(hasAdminSectionAction(userWithSpecificActions, "notification_rules", "view")).toBe(true);
-		expect(hasAdminSectionAction(userWithSpecificActions, "notification_rules", "create")).toBe(false);
-		expect(hasAdminSectionAction(userWithSpecificActions, "notification_rules", "update")).toBe(false);
-		expect(hasAdminSectionAction(userWithSpecificActions, "notification_rules", "delete")).toBe(false);
-
-		// policies alias maps to notification_rules
-		expect(hasAdminAccess(userWithSpecificActions, "policies")).toBe(true);
-		expect(hasAdminSectionAction(userWithSpecificActions, "policies", "view")).toBe(true);
-		expect(hasAdminSectionAction(userWithSpecificActions, "policies", "create")).toBe(false);
+	it("grants non-CRUD user-management capabilities to service admins and granted deputies only", () => {
+		expect(hasAdminCapability({ role: "superuser" } as any, "manage_deputies")).toBe(true);
+		expect(hasAdminCapability({ role: "service_admin" } as any, "assign_roles")).toBe(true);
+		const deputy = { role: "deputy_service_admin", deputy_permissions: normalizeDeputyPermissions(["assign_roles"]) } as any;
+		expect(hasAdminCapability(deputy, "assign_roles")).toBe(true);
+		expect(hasAdminCapability(deputy, "manage_deputies")).toBe(false);
 	});
 
 	it("gives superuser and staff full access to all admin actions", () => {
@@ -140,5 +146,41 @@ describe("admin panel granular permissions", () => {
 		const staff = { is_staff: true } as any;
 		expect(hasAdminSectionAction(staff, "notification_rules", "delete")).toBe(true);
 		expect(hasAdminSectionAction(staff, "roles", "delete")).toBe(true);
+	});
+});
+
+describe("deputy permissions and full admin", () => {
+	it("turns the backend string list into boolean flags", () => {
+		expect(normalizeDeputyPermissions(["create_users", "manage_policies"])).toEqual({
+			can_create_users: true,
+			can_create_roles: false,
+			can_edit_users: false,
+			can_assign_roles: false,
+			can_manage_policies: true,
+		});
+		expect(normalizeDeputyPermissions(undefined).can_create_users).toBe(false);
+		expect(normalizeDeputyPermissions({ can_edit_users: true } as any).can_edit_users).toBe(true);
+	});
+
+	it("treats superuser, staff_admin and django staff as full admins", () => {
+		expect(isFullAdmin({ role: "superuser" } as any)).toBe(true);
+		expect(isFullAdmin({ admin_role: "staff_admin" } as any)).toBe(true);
+		expect(isFullAdmin({ is_staff: true } as any)).toBe(true);
+		expect(isFullAdmin({ role: "service_admin" } as any)).toBe(false);
+	});
+});
+
+describe("any-of route actions", () => {
+	const salesAgency = {
+		id: 7,
+		code: "sales_agency",
+		name: "عاملیت فروش",
+		permissions: { contracts: ["update"] },
+	} as unknown as AccessServiceType;
+
+	it("opens the route when one of the actions is granted on the service", () => {
+		expect(hasAnyDomainPermissionForServices([salesAgency], "contracts", ["view", "create", "update"], { serviceCode: "sales_agency" })).toBe(true);
+		expect(hasAnyDomainPermissionForServices([salesAgency], "contracts", ["view", "create"], { serviceCode: "sales_agency" })).toBe(false);
+		expect(hasAnyDomainPermissionForServices([salesAgency], "contracts", "update", { serviceCode: "sms" })).toBe(false);
 	});
 });

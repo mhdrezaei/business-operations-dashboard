@@ -12,6 +12,7 @@ import {
 	ArrowUpOutlined,
 	DeleteOutlined,
 	EditOutlined,
+	EyeOutlined,
 	HolderOutlined,
 	PlusOutlined,
 } from "@ant-design/icons";
@@ -19,14 +20,16 @@ import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useQuery } from "@tanstack/react-query";
-import { Alert, Button, Empty, Popconfirm, Select, Skeleton, Switch, Tag, Tooltip } from "antd";
+import { Alert, Button, Empty, Input, Popconfirm, Select, Skeleton, Switch, Tag, Tooltip } from "antd";
 import React, { useMemo, useState } from "react";
 import { useWatch } from "react-hook-form";
 import { deleteCompanyPerson, updateCompanyPerson } from "../../../api/key-people.api";
 import { companyPeopleListQuery } from "../../../queries/company-people.queries";
 import { COMPANY_PERSON_ROLE_OPTIONS } from "../model/company-people.constants";
+import { getAddToContractError, getNextContractOrder } from "../model/company-people.contract-order";
 import { companyPersonDtoToPayload } from "../model/company-people.mappers";
 import CompanyPeopleModal from "./CompanyPeopleModal";
+import CompanyPersonViewModal from "./CompanyPersonViewModal";
 import "#src/shared/ui/form-layout/styles.css";
 import "./company-people-panel.css";
 
@@ -38,6 +41,7 @@ interface PersonRowProps {
 	busy: boolean
 	canUpdate: boolean
 	canDelete: boolean
+	onView: (person: CompanyPersonDto) => void
 	onEdit: (person: CompanyPersonDto) => void
 	onDelete: (person: CompanyPersonDto) => Promise<void>
 	onMove?: (person: CompanyPersonDto, order: number) => Promise<void>
@@ -56,6 +60,7 @@ function PersonRow({
 	busy,
 	canUpdate,
 	canDelete,
+	onView,
 	onEdit,
 	onDelete,
 	onMove,
@@ -100,25 +105,24 @@ function PersonRow({
 					</div>
 				</div>
 
-				{(canUpdate || canDelete) ? (
-					<div className="company-person-row__actions">
-						{canUpdate ? (
-							<Button icon={<EditOutlined />} disabled={busy} onClick={() => onEdit(person)}>ویرایش</Button>
-						) : null}
-						{canDelete ? (
-							<Popconfirm
-								title="این شخص حذف شود؟"
-								description="اطلاعات شخص پس از حذف قابل بازیابی نیست."
-								okText="حذف"
-								cancelText="انصراف"
-								okButtonProps={{ danger: true }}
-								onConfirm={() => onDelete(person)}
-							>
-								<Button danger icon={<DeleteOutlined />} disabled={busy}>حذف</Button>
-							</Popconfirm>
-						) : null}
-					</div>
-				) : null}
+				<div className="company-person-row__actions">
+					<Button icon={<EyeOutlined />} onClick={() => onView(person)}>مشاهده</Button>
+					{canUpdate ? (
+						<Button icon={<EditOutlined />} disabled={busy} onClick={() => onEdit(person)}>ویرایش</Button>
+					) : null}
+					{canDelete ? (
+						<Popconfirm
+							title="این شخص حذف شود؟"
+							description="اطلاعات شخص پس از حذف قابل بازیابی نیست."
+							okText="حذف"
+							cancelText="انصراف"
+							okButtonProps={{ danger: true }}
+							onConfirm={() => onDelete(person)}
+						>
+							<Button danger icon={<DeleteOutlined />} disabled={busy}>حذف</Button>
+						</Popconfirm>
+					) : null}
+				</div>
 
 				{displayedOrder != null
 					? (
@@ -255,7 +259,9 @@ export default function CompanyPeoplePanel() {
 	const { hasDomainPermissionByServiceId } = useAccess();
 	const [optimisticPeople, setOptimisticPeople] = useState<CompanyPersonDto[] | null>(null);
 	const [role, setRole] = useState<CompanyPersonRole | undefined>();
+	const [search, setSearch] = useState("");
 	const [onlySignatories, setOnlySignatories] = useState(false);
+	const [viewedPerson, setViewedPerson] = useState<CompanyPersonDto | null>(null);
 	const [openModal, setOpenModal] = useState(false);
 	const [selectedId, setSelectedId] = useState<number | null>(null);
 	const [busyId, setBusyId] = useState<number | null>(null);
@@ -267,10 +273,14 @@ export default function CompanyPeoplePanel() {
 
 	const people = optimisticPeople ?? peopleQuery.data?.results ?? [];
 
-	const filteredPeople = useMemo(
-		() => people.filter(person => (!role || person.role === role) && (!onlySignatories || person.is_signatory)),
-		[onlySignatories, people, role],
-	);
+	const filteredPeople = useMemo(() => {
+		const keyword = search.trim().toLowerCase();
+		return people.filter(person =>
+			(!role || person.role === role)
+			&& (!onlySignatories || person.is_signatory)
+			&& (!keyword || person.full_name.toLowerCase().includes(keyword)),
+		);
+	}, [onlySignatories, people, role, search]);
 
 	const activeGroups = useMemo(() => COMPANY_PERSON_ROLE_OPTIONS
 		.map(option => ({
@@ -359,10 +369,12 @@ export default function CompanyPeoplePanel() {
 	}
 
 	async function addToContract(person: CompanyPersonDto) {
-		const lastOrder = people
-			.filter(item => item.role === person.role && item.contract_order != null)
-			.reduce((maximum, item) => Math.max(maximum, item.contract_order ?? 0), 0);
-		await changeContractOrder(person, lastOrder + 1);
+		const error = getAddToContractError(people, person);
+		if (error) {
+			window.$message?.error(error);
+			return;
+		}
+		await changeContractOrder(person, getNextContractOrder(people, person.role));
 	}
 
 	async function removePerson(person: CompanyPersonDto) {
@@ -401,7 +413,7 @@ export default function CompanyPeoplePanel() {
 		return null;
 
 	const hasVisiblePeople = activeGroups.length > 0 || unassignedPeople.length > 0;
-	const rowProps = { busy: false, canUpdate, canDelete, onEdit: editPerson, onDelete: removePerson };
+	const rowProps = { busy: false, canUpdate, canDelete, onView: setViewedPerson, onEdit: editPerson, onDelete: removePerson };
 
 	return (
 		<BasicContent>
@@ -418,6 +430,7 @@ export default function CompanyPeoplePanel() {
 					) : null}
 				>
 					<div className="company-people-filters">
+						<Input allowClear placeholder="جستجو بر اساس نام و نام خانوادگی" value={search} onChange={event => setSearch(event.target.value)} />
 						<Select allowClear placeholder="همه نقش‌ها" options={COMPANY_PERSON_ROLE_OPTIONS} value={role} onChange={setRole} />
 						<label className="company-people-filters__switch">
 							<Switch size="small" checked={onlySignatories} onChange={setOnlySignatories} />
@@ -469,6 +482,8 @@ export default function CompanyPeoplePanel() {
 							)
 							: <Empty description={people.length ? "شخصی با این فیلترها پیدا نشد" : "هنوز شخصی ثبت نشده است"} />}
 			</div>
+
+			<CompanyPersonViewModal person={viewedPerson} onClose={() => setViewedPerson(null)} />
 
 			{serviceId && (
 				<CompanyPeopleModal

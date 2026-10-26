@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ALL_COMPANY_TYPES, getReportCompanyTypeLabel, hasMixedCompanyTypeIncluding, isOnlyCompanyType, normalizeCompanyTypeFilter } from "./company-type";
+import { ALL_COMPANY_TYPES, getReportCompanyTypeLabel, hasMixedCompanyTypeIncluding, isOnlyCompanyType, isUnitConversionCompanyType, normalizeCompanyTypeFilter } from "./company-type";
 
 const options = [{ label: "شرکت‌های CP", value: "CP" }];
 
@@ -34,5 +34,18 @@ describe("normalizeCompanyTypeFilter", () => {
 	it("detects collocation only when it is part of a mixed selection", () => {
 		expect(hasMixedCompanyTypeIncluding(["CP", "COLLOCATION"], "COLLOCATION")).toBe(true);
 		expect(hasMixedCompanyTypeIncluding(["COLLOCATION"], "COLLOCATION")).toBe(false);
+	});
+});
+
+describe("isUnitConversionCompanyType", () => {
+	it("applies to CP, IXP, TCI and PREMIUM selections", () => {
+		expect(isUnitConversionCompanyType(["CP"])).toBe(true);
+		expect(isUnitConversionCompanyType(["TCI", "IXP", "PREMIUM"])).toBe(true);
+	});
+
+	it("opts out when COLLOCATION is selected or nothing is", () => {
+		expect(isUnitConversionCompanyType(["COLLOCATION"])).toBe(false);
+		expect(isUnitConversionCompanyType(["CP", "COLLOCATION"])).toBe(false);
+		expect(isUnitConversionCompanyType(null)).toBe(false);
 	});
 });

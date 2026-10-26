@@ -1,0 +1,1 @@
+export const CONTRACT_NUMBER_MAX_LENGTH = 128;

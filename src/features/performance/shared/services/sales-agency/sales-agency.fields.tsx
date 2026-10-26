@@ -31,12 +31,14 @@ export function SalesAgencyPerformanceFields({ prefix = "serviceFields.", compan
 	const titles = useMemo(() => salesAgencyCostTitles(contracts.data?.results ?? [], selectedYear, selectedMonth), [contracts.data, selectedYear, selectedMonth]);
 	const availableTitlesForRow = (index: number) => {
 		const selectedTitle = costItems?.[index]?.cost_title;
-		return titles
+		const rowTitles = selectedTitle && !titles.includes(selectedTitle) ? [selectedTitle, ...titles] : titles;
+		return rowTitles
 			.filter(title => title === selectedTitle || !costItems?.some((item, itemIndex) => itemIndex !== index && item?.cost_title === title))
 			.map(title => ({ label: title, value: title }));
 	};
 	useEffect(() => {
-		if (companyType === "SALES_REP_MANAGEMENT") {
+		// In edit the saved cost rows stay as they are; contract titles only feed the dropdown.
+		if (companyType === "SALES_REP_MANAGEMENT" && !editLayout) {
 			const fieldName = prefix ? `${prefix}cost_items` : "cost_items";
 			const currentItems = getValues(fieldName) as Array<{ cost_title?: string, amount?: unknown }> | undefined;
 			const amountByTitle = new Map((currentItems ?? []).map(item => [item.cost_title, item.amount]));
@@ -45,7 +47,7 @@ export function SalesAgencyPerformanceFields({ prefix = "serviceFields.", compan
 				: (currentItems?.length ? currentItems : [{ cost_title: "", amount: null }]);
 			setValue(fieldName, nextItems);
 		}
-	}, [prefix, companyType, titles, getValues, setValue]);
+	}, [prefix, companyType, editLayout, titles, getValues, setValue]);
 	const { fields, append, remove } = useFieldArray({ control, name: `${prefix}cost_items` });
 	const moneyField = (key: string, label: string) => {
 		const input = (

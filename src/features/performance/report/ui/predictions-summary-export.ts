@@ -1,6 +1,10 @@
+import type { TFunction } from "i18next";
+import type { PredictionSummaryMetric } from "./predictions-summary-format";
+import { downloadExcelHtml } from "./export";
+import { formatDecimal, formatSummaryNumber } from "./predictions-summary-format";
+
 export type PredictionSummarySection = "performance" | "predictions";
-type PredictionSummaryMetric = "value" | "income" | "expense" | "profit";
-type PredictionSummaryPeriodMode = "shamsi_months" | "fiscal_months" | "shamsi_quarters" | "fiscal_quarters";
+export type PredictionSummaryPeriodMode = "shamsi_months" | "fiscal_months" | "shamsi_quarters" | "fiscal_quarters";
 
 export interface PredictionSummaryDisplayRow {
 	key: string
@@ -9,7 +13,7 @@ export interface PredictionSummaryDisplayRow {
 	periodKey: string
 	periodLabel: string
 	periodMonthsLabel: string
-	calendarLabel: string
+	isFiscal: boolean
 	yearLabel: string
 	section: PredictionSummarySection
 	typeLabel: string
@@ -27,13 +31,17 @@ export interface PredictionSummaryDisplayRow {
 	income: unknown
 	expense: unknown
 	profit: unknown
+	newCustomerCount: unknown
+	newCustomerIncome: unknown
+	performanceIncome: unknown
 }
 
 interface PredictionSummaryExportMeta {
-	serviceCount: number
-	periodCount: number
+	servicesLabel: string
+	periodsLabel: string
 	periodMode: PredictionSummaryPeriodMode
 	showRial: boolean
+	t: TFunction
 }
 
 interface SingleTablePeriod {
@@ -48,12 +56,66 @@ interface SingleTableRow {
 	values: Record<string, string>
 }
 
-const METRICS: Array<{ key: PredictionSummaryMetric, label: string }> = [
-	{ key: "value", label: "تعداد" },
-	{ key: "income", label: "درآمد" },
-	{ key: "expense", label: "هزینه" },
-	{ key: "profit", label: "سود" },
-];
+interface ExportMetric {
+	key: PredictionSummaryMetric
+	label: string
+}
+
+const SHAHKAR_METRIC_KEYS: PredictionSummaryMetric[] = ["new_customer_count", "new_customer_income", "performance_income"];
+
+const METRIC_LABEL_KEYS: Record<PredictionSummaryMetric, string> = {
+	value: "performance.columns.count",
+	value_receive: "performance.fields.traffic.receivedTraffic",
+	income: "performance.columns.income",
+	expense: "performance.columns.expense",
+	profit: "performance.columns.profit",
+	new_customer_count: "performance.columns.newCustomerCount",
+	new_customer_income: "performance.columns.newCustomerIncome",
+	performance_income: "performance.columns.performanceIncome",
+};
+
+export function getMetricLabel(metric: PredictionSummaryMetric, t: TFunction) {
+	return t(METRIC_LABEL_KEYS[metric]);
+}
+
+export function getSectionLabel(section: PredictionSummarySection, t: TFunction) {
+	return t(`performance.predictionsSummary.sections.${section}`);
+}
+
+export function getCurrencyLabel(showRial: boolean, t: TFunction) {
+	return t(showRial ? "performance.columns.rial" : "performance.columns.toman");
+}
+
+export function getPeriodModeLabel(periodMode: PredictionSummaryPeriodMode, t: TFunction) {
+	return t(`performance.predictionsSummary.periodModes.${periodMode}`);
+}
+
+const ROW_FIELD_BY_METRIC: Record<PredictionSummaryMetric, keyof PredictionSummaryDisplayRow> = {
+	value: "value",
+	value_receive: "receivedTraffic",
+	income: "income",
+	expense: "expense",
+	profit: "profit",
+	new_customer_count: "newCustomerCount",
+	new_customer_income: "newCustomerIncome",
+	performance_income: "performanceIncome",
+};
+
+function getExportMetrics(rows: PredictionSummaryDisplayRow[], withShahkar: boolean, t: TFunction): ExportMetric[] {
+	const trafficOnly = rows.length > 0 && rows.every(row => row.serviceCode === "traffic");
+	const keys: PredictionSummaryMetric[] = [
+		"value",
+		...(trafficOnly ? ["value_receive" as const] : []),
+		"income",
+		"expense",
+		"profit",
+		...(withShahkar && rows.some(row => row.serviceCode === "shahkar") ? SHAHKAR_METRIC_KEYS : []),
+	];
+	return keys.map(key => ({
+		key,
+		label: key === "value" && trafficOnly ? t("performance.fields.traffic.sentTraffic") : getMetricLabel(key, t),
+	}));
+}
 
 function escapeHtml(value: unknown) {
 	return String(value ?? "-")
@@ -64,41 +126,36 @@ function escapeHtml(value: unknown) {
 		.replaceAll("'", "&#39;");
 }
 
-function formatNumber(value: unknown, showRial = true) {
-	if (value === null || value === undefined || value === "")
-		return "-";
-	const numeric = Number(value);
-	if (!Number.isFinite(numeric))
-		return "-";
-	return (showRial ? numeric : numeric / 10).toLocaleString("fa-IR", { maximumFractionDigits: 4 });
+export function formatTrafficValues(row: PredictionSummaryDisplayRow, direction: "sent" | "received") {
+	const sent = direction === "sent";
+	const parts = [
+		formatTrafficValue(sent ? row.sentTrafficGbMonth : row.receivedTrafficGbMonth, "GB/month"),
+		formatTrafficValue(sent ? row.sentTrafficMbps : row.receivedTrafficMbps, "Mbps"),
+	].filter(part => part !== "-");
+	return parts.length > 0
+		? parts.join("\n")
+		: formatTrafficValue(sent ? row.sentTraffic : row.receivedTraffic, sent ? row.sentTrafficUnit : row.receivedTrafficUnit);
 }
 
 function formatTrafficValue(value: unknown, unit: string | null) {
-	const formatted = formatNumber(value);
+	const formatted = formatDecimal(value);
 	return formatted === "-" || !unit ? formatted : `${unit}: ${formatted}`;
 }
 
-function formatTrafficCount(row: PredictionSummaryDisplayRow) {
-	if (row.isTrafficCollocation)
-		return row.trafficResourcesLabel;
-	const values = [
-		formatTrafficValue(row.sentTrafficGbMonth, "GB/month"),
-		formatTrafficValue(row.sentTrafficMbps, "Mbps"),
-	].filter(value => value !== "-");
-	return values.length > 0 ? values.join("\n") : formatTrafficValue(row.sentTraffic, row.sentTrafficUnit);
-}
-
-function formatCell(row: PredictionSummaryDisplayRow, metric: PredictionSummaryMetric, showRial: boolean) {
-	if (metric === "value" && row.serviceCode === "traffic")
-		return formatTrafficCount(row);
-	return formatNumber(row[metric], metric === "value" || showRial);
+export function formatSummaryMetric(row: PredictionSummaryDisplayRow, metric: PredictionSummaryMetric, showRial: boolean) {
+	if (row.serviceCode === "traffic" && (metric === "value" || metric === "value_receive")) {
+		if (row.isTrafficCollocation)
+			return metric === "value" ? row.trafficResourcesLabel : "-";
+		return formatTrafficValues(row, metric === "value" ? "sent" : "received");
+	}
+	return formatSummaryNumber(row[ROW_FIELD_BY_METRIC[metric]], metric, showRial);
 }
 
 function getCellKey(section: PredictionSummarySection, metric: PredictionSummaryMetric, periodKey: string) {
 	return `${section}:${metric}:${periodKey}`;
 }
 
-function createSingleTableModel(rows: PredictionSummaryDisplayRow[], showRial: boolean) {
+function createSingleTableModel(rows: PredictionSummaryDisplayRow[], metrics: ExportMetric[], showRial: boolean) {
 	const periods: SingleTablePeriod[] = [];
 	const seenPeriods = new Set<string>();
 	const groupedRows = new Map<string, SingleTableRow>();
@@ -116,30 +173,22 @@ function createSingleTableModel(rows: PredictionSummaryDisplayRow[], showRial: b
 			groupedRows.set(rowKey, groupedRow);
 		}
 
-		METRICS.forEach((metric) => {
-			groupedRow!.values[getCellKey(row.section, metric.key, row.periodKey)] = formatCell(row, metric.key, showRial);
+		metrics.forEach((metric) => {
+			groupedRow!.values[getCellKey(row.section, metric.key, row.periodKey)] = formatSummaryMetric(row, metric.key, showRial);
 		});
 	});
 
 	return { periods, rows: Array.from(groupedRows.values()) };
 }
 
-function getPeriodModeLabel(periodMode: PredictionSummaryPeriodMode) {
-	const labels: Record<PredictionSummaryPeriodMode, string> = {
-		shamsi_months: "سال و ماه شمسی",
-		fiscal_months: "سال و ماه مالی",
-		shamsi_quarters: "سال و کوارتر شمسی",
-		fiscal_quarters: "سال و کوارتر مالی",
-	};
-	return labels[periodMode];
-}
-
 function getMetadata(meta: PredictionSummaryExportMeta) {
+	const { t } = meta;
+	const raw = { interpolation: { escapeValue: false } };
 	return [
-		`سرویس‌ها: ${meta.serviceCount.toLocaleString("fa-IR")} سرویس`,
-		`نوع دوره: ${getPeriodModeLabel(meta.periodMode)}`,
-		`بازه‌ها: ${meta.periodCount.toLocaleString("fa-IR")} بازه`,
-		`قیمت‌ها: ${meta.showRial ? "ریال" : "تومان"}`,
+		t("performance.predictionsSummary.meta.services", { value: meta.servicesLabel, ...raw }),
+		t("performance.predictionsSummary.meta.periodType", { value: getPeriodModeLabel(meta.periodMode, t), ...raw }),
+		t("performance.predictionsSummary.meta.periods", { value: meta.periodsLabel, ...raw }),
+		t("performance.predictionsSummary.meta.prices", { value: getCurrencyLabel(meta.showRial, t), ...raw }),
 	].join(" | ");
 }
 
@@ -148,7 +197,7 @@ function getLogoUrl() {
 }
 
 function buildHeader(columnsCount: number, meta: PredictionSummaryExportMeta) {
-	return `<table class="report-header"><tr><td class="title" colspan="${columnsCount}">گزارش تجمیعی عملکرد و پیش‌بینی</td></tr><tr><td class="meta" colspan="${columnsCount}">${escapeHtml(getMetadata(meta))}</td></tr><tr><td colspan="${columnsCount}" style="text-align:right"><img src="${escapeHtml(getLogoUrl())}" alt="Logo" /></td></tr></table>`;
+	return `<table class="report-header"><tr><td class="title" colspan="${columnsCount}">${escapeHtml(meta.t("common.menu.predictionsSummaryReport"))}</td></tr><tr><td class="meta" colspan="${columnsCount}">${escapeHtml(getMetadata(meta))}</td></tr><tr><td colspan="${columnsCount}" style="text-align:right"><img src="${escapeHtml(getLogoUrl())}" alt="Logo" /></td></tr></table>`;
 }
 
 function buildExcelDocument(content: string) {
@@ -157,37 +206,49 @@ function buildExcelDocument(content: string) {
 	</style></head><body>${content}</body></html>`;
 }
 
-function stripMonthsPrefix(value: string) {
-	return value.replace("ماه‌های واقعی: ", "").replace("ماه‌های واقعی:", "");
+const CLASSIC_LEADING_HEADER_KEYS = [
+	"performance.columns.service",
+	"performance.predictionsSummary.columns.section",
+	"performance.predictionsSummary.columns.type",
+	"performance.columns.year",
+	"performance.predictionsSummary.columns.period",
+	"performance.predictionsSummary.columns.calendar",
+	"performance.predictionsSummary.columns.realMonths",
+];
+
+function buildClassicTable(rows: PredictionSummaryDisplayRow[], meta: PredictionSummaryExportMeta, multiline: boolean) {
+	const { t } = meta;
+	const metrics = getExportMetrics(rows, false, t);
+	const headers = [...CLASSIC_LEADING_HEADER_KEYS.map(key => t(key)), ...metrics.map(metric => metric.label)];
+	const body = rows.map((row) => {
+		const metricCells = metrics.map((metric) => {
+			const cell = escapeHtml(formatSummaryMetric(row, metric.key, meta.showRial));
+			return `<td>${multiline ? cell.replaceAll("\n", "<br />") : cell}</td>`;
+		}).join("");
+		return `<tr><td>${escapeHtml(row.serviceName)}</td><td>${getSectionLabel(row.section, t)}</td><td>${escapeHtml(row.typeLabel)}</td><td>${escapeHtml(row.yearLabel)}</td><td>${escapeHtml(row.periodLabel)}</td><td>${t(row.isFiscal ? "performance.predictionsSummary.calendar.fiscal" : "performance.predictionsSummary.calendar.shamsi")}</td><td>${escapeHtml(row.periodMonthsLabel)}</td>${metricCells}</tr>`;
+	}).join("");
+	return { headers, table: `<table><thead><tr>${headers.map(header => `<th>${header}</th>`).join("")}</tr></thead><tbody>${body}</tbody></table>` };
 }
 
 function buildClassicExcel(rows: PredictionSummaryDisplayRow[], meta: PredictionSummaryExportMeta) {
-	const headers = ["سرویس", "بخش", "نوع", "سال", "بازه", "تقویم", "ماه‌های واقعی", "تعداد", "درآمد", "هزینه", "سود"];
-	const body = rows.map(row => `<tr><td>${escapeHtml(row.serviceName)}</td><td>${row.section === "performance" ? "عملکرد" : "پیش‌بینی"}</td><td>${escapeHtml(row.typeLabel)}</td><td>${escapeHtml(row.yearLabel)}</td><td>${escapeHtml(row.periodLabel)}</td><td>${row.calendarLabel.includes("مالی") ? "مالی" : "شمسی"}</td><td>${escapeHtml(stripMonthsPrefix(row.periodMonthsLabel))}</td><td>${escapeHtml(formatCell(row, "value", meta.showRial))}</td><td>${escapeHtml(formatCell(row, "income", meta.showRial))}</td><td>${escapeHtml(formatCell(row, "expense", meta.showRial))}</td><td>${escapeHtml(formatCell(row, "profit", meta.showRial))}</td></tr>`).join("");
-	return buildExcelDocument(`${buildHeader(headers.length, meta)}<table><thead><tr>${headers.map(header => `<th>${header}</th>`).join("")}</tr></thead><tbody>${body}</tbody></table>`);
+	const { headers, table } = buildClassicTable(rows, meta, false);
+	return buildExcelDocument(`${buildHeader(headers.length, meta)}${table}`);
 }
 
 function buildSingleTableExcel(rows: PredictionSummaryDisplayRow[], meta: PredictionSummaryExportMeta) {
-	const model = createSingleTableModel(rows, meta.showRial);
+	const { t } = meta;
+	const metrics = getExportMetrics(rows, true, t);
+	const model = createSingleTableModel(rows, metrics, meta.showRial);
 	const periodCount = Math.max(model.periods.length, 1);
-	const columnsCount = 2 + periodCount * METRICS.length * 2;
-	const metricHeaders = (prediction: boolean) => METRICS.map((metric, index) => `<th colspan="${periodCount}" class="${(prediction && index === 0) || index > 0 ? "group-start" : ""}">${metric.label}</th>`).join("");
-	const periodHeaders = (section: PredictionSummarySection) => METRICS.flatMap((metric, metricIndex) => model.periods.map((period, periodIndex) => `<th class="${(section === "predictions" && metricIndex === 0 && periodIndex === 0) || (metricIndex > 0 && periodIndex === 0) ? "group-start" : ""}">${escapeHtml(period.label)}</th>`)).join("");
-	const body = model.rows.map(row => `<tr><td>${escapeHtml(row.serviceName)}</td><td>${escapeHtml(row.typeLabel)}</td>${(["performance", "predictions"] as PredictionSummarySection[]).flatMap(section => METRICS.flatMap(metric => model.periods.map(period => `<td>${escapeHtml(row.values[getCellKey(section, metric.key, period.key)] ?? "-")}</td>`))).join("")}</tr>`).join("");
-	return buildExcelDocument(`${buildHeader(columnsCount, meta)}<table><thead><tr><th rowspan="3">سرویس</th><th rowspan="3">نوع</th><th colspan="${periodCount * METRICS.length}">عملکرد</th><th colspan="${periodCount * METRICS.length}" class="group-start">پیش‌بینی</th></tr><tr>${metricHeaders(false)}${metricHeaders(true)}</tr><tr>${periodHeaders("performance")}${periodHeaders("predictions")}</tr></thead><tbody>${body}</tbody></table>`);
+	const columnsCount = 2 + periodCount * metrics.length * 2;
+	const metricHeaders = (prediction: boolean) => metrics.map((metric, index) => `<th colspan="${periodCount}" class="${(prediction && index === 0) || index > 0 ? "group-start" : ""}">${metric.label}</th>`).join("");
+	const periodHeaders = (section: PredictionSummarySection) => metrics.flatMap((metric, metricIndex) => model.periods.map((period, periodIndex) => `<th class="${(section === "predictions" && metricIndex === 0 && periodIndex === 0) || (metricIndex > 0 && periodIndex === 0) ? "group-start" : ""}">${escapeHtml(period.label)}</th>`)).join("");
+	const body = model.rows.map(row => `<tr><td>${escapeHtml(row.serviceName)}</td><td>${escapeHtml(row.typeLabel)}</td>${(["performance", "predictions"] as PredictionSummarySection[]).flatMap(section => metrics.flatMap(metric => model.periods.map(period => `<td>${escapeHtml(row.values[getCellKey(section, metric.key, period.key)] ?? "-")}</td>`))).join("")}</tr>`).join("");
+	return buildExcelDocument(`${buildHeader(columnsCount, meta)}<table><thead><tr><th rowspan="3">${t("performance.columns.service")}</th><th rowspan="3">${t("performance.predictionsSummary.columns.type")}</th><th colspan="${periodCount * metrics.length}">${getSectionLabel("performance", t)}</th><th colspan="${periodCount * metrics.length}" class="group-start">${getSectionLabel("predictions", t)}</th></tr><tr>${metricHeaders(false)}${metricHeaders(true)}</tr><tr>${periodHeaders("performance")}${periodHeaders("predictions")}</tr></thead><tbody>${body}</tbody></table>`);
 }
 
 function downloadHtml(filename: string, html: string) {
-	const blob = new Blob([`\uFEFF${html}`], { type: "application/vnd.ms-excel;charset=utf-8" });
-	const url = URL.createObjectURL(blob);
-	const anchor = document.createElement("a");
-	anchor.href = url;
-	anchor.download = filename;
-	anchor.style.display = "none";
-	document.body.appendChild(anchor);
-	anchor.click();
-	anchor.remove();
-	setTimeout(() => URL.revokeObjectURL(url), 1000);
+	downloadExcelHtml(html, filename);
 }
 
 export function downloadPredictionSummaryExcel(args: {
@@ -200,12 +261,11 @@ export function downloadPredictionSummaryExcel(args: {
 }
 
 function buildPrintHtml(rows: PredictionSummaryDisplayRow[], meta: PredictionSummaryExportMeta) {
-	const headers = ["سرویس", "بخش", "نوع", "سال", "بازه", "تقویم", "ماه‌های واقعی", "تعداد", "درآمد", "هزینه", "سود"];
-	const body = rows.map(row => `<tr><td>${escapeHtml(row.serviceName)}</td><td>${row.section === "performance" ? "عملکرد" : "پیش‌بینی"}</td><td>${escapeHtml(row.typeLabel)}</td><td>${escapeHtml(row.yearLabel)}</td><td>${escapeHtml(row.periodLabel)}</td><td>${row.calendarLabel.includes("مالی") ? "مالی" : "شمسی"}</td><td>${escapeHtml(stripMonthsPrefix(row.periodMonthsLabel))}</td><td>${escapeHtml(formatCell(row, "value", meta.showRial)).replaceAll("\n", "<br />")}</td><td>${escapeHtml(formatCell(row, "income", meta.showRial))}</td><td>${escapeHtml(formatCell(row, "expense", meta.showRial))}</td><td>${escapeHtml(formatCell(row, "profit", meta.showRial))}</td></tr>`).join("");
+	const { table } = buildClassicTable(rows, meta, true);
 	const origin = typeof window === "undefined" ? "" : window.location.origin;
-	return `<!doctype html><html lang="fa" dir="rtl"><head><meta charset="UTF-8" /><title>گزارش تجمیعی عملکرد و پیش‌بینی</title><style>
+	return `<!doctype html><html lang="fa" dir="rtl"><head><meta charset="UTF-8" /><title>${escapeHtml(meta.t("common.menu.predictionsSummaryReport"))}</title><style>
 	@font-face{font-family:IranYekan;src:url("${origin}/fonts/woff/iranyekanwebregularfanum.woff") format("woff")}@page{size:A4 landscape;margin:11mm}*{box-sizing:border-box}body{direction:rtl;font-family:IranYekan,Tahoma,Arial,sans-serif;margin:0;color:#0f172a}.header{align-items:center;display:grid;grid-template-columns:120px 1fr 120px;margin-bottom:10px}.header img{justify-self:start;width:95px}h1{font-size:18px;margin:0 0 4px;text-align:center}.meta{color:#64748b;font-size:9px;text-align:center}table{border:1px solid #dbe4f0;border-collapse:collapse;table-layout:fixed;width:100%}thead{display:table-header-group}tr{break-inside:avoid}th,td{border:1px solid #dbe4f0;font-size:7.5px;line-height:1.55;overflow-wrap:anywhere;padding:4px 3px;text-align:center;vertical-align:middle}th{font-weight:700}
-	</style></head><body><div class="header"><img src="${escapeHtml(getLogoUrl())}" alt="نگاه" /><div><h1>گزارش تجمیعی عملکرد و پیش‌بینی</h1><div class="meta">${escapeHtml(getMetadata(meta))}</div></div><div></div></div><table><thead><tr>${headers.map(header => `<th>${header}</th>`).join("")}</tr></thead><tbody>${body}</tbody></table></body></html>`;
+	</style></head><body><div class="header"><img src="${escapeHtml(getLogoUrl())}" alt="${escapeHtml(meta.t("performance.predictionsSummary.brand"))}" /><div><h1>${escapeHtml(meta.t("common.menu.predictionsSummaryReport"))}</h1><div class="meta">${escapeHtml(getMetadata(meta))}</div></div><div></div></div>${table}</body></html>`;
 }
 
 export function openPredictionSummaryPdfPrint(rows: PredictionSummaryDisplayRow[], meta: PredictionSummaryExportMeta) {

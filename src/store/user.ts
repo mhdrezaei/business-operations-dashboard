@@ -1,5 +1,6 @@
 import type { UserInfoType } from "#src/api/user/types";
 import { fetchAuditAccess, fetchUserInfo } from "#src/api/user";
+import { normalizeDeputyPermissions } from "#src/utils/access-policy";
 
 import { create } from "zustand";
 
@@ -73,7 +74,7 @@ export const useUserStore = create<UserState & UserAction>()(
 				admin_sections: accessSnapshot.admin_sections ?? [],
 				admin_section_actions: accessSnapshot.admin_section_actions ?? {},
 				deputy_service_admin_id: accessSnapshot.deputy_service_admin_id ?? null,
-				deputy_permissions: accessSnapshot.deputy_permissions ?? initialState.deputy_permissions,
+				deputy_permissions: normalizeDeputyPermissions(accessSnapshot.deputy_permissions),
 				can_manage_users: accessSnapshot.can_manage_users ?? false,
 				can_manage_roles: accessSnapshot.can_manage_roles ?? false,
 				portal_viewer: accessSnapshot.portal_viewer ?? null,

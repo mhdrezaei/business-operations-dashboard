@@ -29,9 +29,49 @@
 	"notificationRefresh": "به‌روزرسانی",
 	"notificationMarkAsRead": "علامت‌گذاری به‌عنوان خوانده‌شده",
 	"notificationMarkAsUnread": "علامت‌گذاری به‌عنوان خوانده‌نشده",
-	"notificationReadAllOnPage": "خواندن همه",
+	"notificationReadAll": "خواندن همه",
 	"notificationSentAt": "ارسال",
 	"notificationEmpty": "اعلانی یافت نشد",
 	"notificationUnreadCount": "صندوق نوتیفیکیشن (خوانده‌نشده: {{count}})",
-	"notificationRelatedCompanies": "شرکت‌های مرتبط"
+	"notificationRelatedCompanies": "شرکت‌های مرتبط",
+	"notificationUnreadAll": "نخواندن همه",
+	"notificationCategory": {
+		"all": "همه رویدادها",
+		"real_sign_flow": "درخواست امضا",
+		"contract_expiry": "قرارداد",
+		"performance_missing": "عملکرد",
+		"business_approval_pending": "تایید تجاری",
+		"sign_pending": "تایید اداره قراردادها",
+		"sms_gateway_auto_import": "گزارش ثبت عملکرد خودکار پیامک"
+	},
+	"notificationViewSignFlow": "مشاهده گردش امضا",
+	"notificationActionEditContract": "ویرایش قرارداد",
+	"notificationActionRegisterPerformance": "ثبت عملکرد",
+	"notificationSmsVendor": "اپراتورها و دولت",
+	"notificationPendingItems": "موارد مشمول ({{count}})",
+	"notificationPendingTruncated": "فقط بخشی از موارد در این صفحه نمایش داده شده است.",
+	"notificationPendingDays": "{{count}} روز",
+	"notificationObjectContract": "قرارداد",
+	"notificationObjectAddendum": "الحاقیه",
+	"notificationPendingPage": "صفحه {{page}} از {{count}}",
+	"notificationPendingPrevious": "صفحه قبل",
+	"notificationPendingNext": "صفحه بعد",
+	"notificationSmsCompanyType": {
+		"CP": "شرکت های cp",
+		"TELECOM": "شرکت های مخابراتی",
+		"NON_TELECOM": "شرکت های غیر مخابرات",
+		"KARASHAB": "کاراشابی"
+	},
+	"notificationSmsImport": {
+		"title": "جزئیات — {{month}}",
+		"commission": "عاملیت",
+		"sms": "پیامک",
+		"unmappedTag": "مپ‌نشده",
+		"imported": "ثبت شد ({{count}} شرکت)",
+		"updated": "آپدیت شد ({{count}} شرکت)",
+		"noContract": "بدون قرارداد ({{count}} شرکت)",
+		"unmapped": "مپ نشده در سیستم ({{count}})",
+		"editPerformance": "ویرایش عملکرد",
+		"createContract": "ایجاد قرارداد"
+	}
 }

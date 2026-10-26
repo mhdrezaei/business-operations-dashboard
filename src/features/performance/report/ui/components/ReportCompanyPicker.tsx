@@ -3,6 +3,7 @@ import { DashedBorder } from "#src/shared/ui/dashed-border";
 import { DownOutlined, SearchOutlined, UpOutlined } from "@ant-design/icons";
 import { Checkbox, Input, Spin } from "antd";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import "./report-company-picker.css";
 
 interface ReportCompanyPickerProps {
@@ -24,6 +25,7 @@ export function ReportCompanyPicker({
 	loading = false,
 	onChange,
 }: ReportCompanyPickerProps) {
+	const { t } = useTranslation();
 	const [collapsed, setCollapsed] = useState(false);
 	const [searchValue, setSearchValue] = useState("");
 	const selectedSet = useMemo(() => new Set(selectedCompanyIds), [selectedCompanyIds]);
@@ -52,18 +54,18 @@ export function ReportCompanyPicker({
 	};
 
 	return (
-		<section className="report-company-picker" aria-label="لیست شرکت‌ها">
+		<section className="report-company-picker" aria-label={t("performance.reportPage.companyPicker.title")}>
 			<DashedBorder />
 			<div className="report-company-picker__content">
 				<div className="report-company-picker__heading">
 					<div className="report-company-picker__title">
 						<span className="report-company-picker__search-icon" aria-hidden="true"><SearchOutlined /></span>
-						<span>لیست شرکت‌ها</span>
+						<span>{t("performance.reportPage.companyPicker.title")}</span>
 					</div>
 					<button
 						type="button"
 						className="report-company-picker__toggle"
-						aria-label={collapsed ? "نمایش لیست شرکت‌ها" : "بستن لیست شرکت‌ها"}
+						aria-label={collapsed ? t("performance.reportPage.companyPicker.show") : t("performance.reportPage.companyPicker.hide")}
 						aria-expanded={!collapsed}
 						aria-controls="report-company-picker-content"
 						onClick={() => setCollapsed(current => !current)}
@@ -78,7 +80,7 @@ export function ReportCompanyPicker({
 						className="report-company-picker__search"
 						value={searchValue}
 						disabled={disabled || loading}
-						placeholder="جستجوی شرکت..."
+						placeholder={t("performance.reportPage.companyPicker.searchPlaceholder")}
 						onChange={event => setSearchValue(event.target.value)}
 					/>
 
@@ -86,15 +88,15 @@ export function ReportCompanyPicker({
 						{loading && (
 							<div className="report-company-picker__empty">
 								<Spin size="small" />
-								<span>در حال دریافت شرکت‌ها...</span>
+								<span>{t("performance.placeholders.loadingCompanies")}</span>
 							</div>
 						)}
 						{!loading && disabled && (
-							<div className="report-company-picker__empty">ابتدا فیلترهای دوره گزارش را کامل کنید.</div>
+							<div className="report-company-picker__empty">{t("performance.reportPage.companyPicker.completeFilters")}</div>
 						)}
 						{!loading && !disabled && visibleOptions.length === 0 && (
 							<div className="report-company-picker__empty">
-								{hasSearchValue ? "شرکتی با این نام پیدا نشد." : "شرکتی برای این دوره یافت نشد."}
+								{hasSearchValue ? t("performance.reportPage.companyPicker.noSearchResult") : t("performance.reportPage.companyPicker.noCompanies")}
 							</div>
 						)}
 						{!loading && !disabled && !hasSearchValue && companyIds.length > 0 && (
@@ -104,7 +106,7 @@ export function ReportCompanyPicker({
 								indeterminate={!allCompaniesSelected && selectedCompanyCount > 0}
 								onChange={event => toggleAllCompanies(event.target.checked)}
 							>
-								انتخاب همه
+								{t("performance.labels.selectAll")}
 							</Checkbox>
 						)}
 						{!loading && !disabled && visibleOptions.map((option) => {

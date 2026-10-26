@@ -29,9 +29,49 @@
 	"notificationRefresh": "Aktualisieren",
 	"notificationMarkAsRead": "Als gelesen markieren",
 	"notificationMarkAsUnread": "Als ungelesen markieren",
-	"notificationReadAllOnPage": "Alle als gelesen",
+	"notificationReadAll": "Alle als gelesen markieren",
 	"notificationSentAt": "Gesendet",
 	"notificationEmpty": "Keine Benachrichtigungen gefunden",
 	"notificationUnreadCount": "Benachrichtigungs-Postfach (Ungelesen: {{count}})",
-	"notificationRelatedCompanies": "Zugehörige Unternehmen"
+	"notificationRelatedCompanies": "Zugehörige Unternehmen",
+	"notificationUnreadAll": "Alle als ungelesen markieren",
+	"notificationCategory": {
+		"all": "Alle Ereignisse",
+		"real_sign_flow": "Signaturanfrage",
+		"contract_expiry": "Vertrag",
+		"performance_missing": "Leistung",
+		"business_approval_pending": "Geschäftsfreigabe",
+		"sign_pending": "Freigabe Vertragsbüro",
+		"sms_gateway_auto_import": "Bericht zum automatischen SMS-Leistungsimport"
+	},
+	"notificationViewSignFlow": "Signaturablauf ansehen",
+	"notificationActionEditContract": "Vertrag bearbeiten",
+	"notificationActionRegisterPerformance": "Leistung erfassen",
+	"notificationSmsVendor": "Betreiber und Behörden",
+	"notificationPendingItems": "Enthaltene Einträge ({{count}})",
+	"notificationPendingTruncated": "Auf dieser Seite wird nur ein Teil der Einträge angezeigt.",
+	"notificationPendingDays": "{{count}} Tage",
+	"notificationObjectContract": "Vertrag",
+	"notificationObjectAddendum": "Nachtrag",
+	"notificationPendingPage": "Seite {{page}} von {{count}}",
+	"notificationPendingPrevious": "Vorherige Seite",
+	"notificationPendingNext": "Nächste Seite",
+	"notificationSmsCompanyType": {
+		"CP": "CP-Unternehmen",
+		"TELECOM": "Telekommunikationsunternehmen",
+		"NON_TELECOM": "Nicht-Telekom-Unternehmen",
+		"KARASHAB": "Karashab"
+	},
+	"notificationSmsImport": {
+		"title": "Details - {{month}}",
+		"commission": "Vertrieb",
+		"sms": "SMS",
+		"unmappedTag": "Nicht zugeordnet",
+		"imported": "Erfasst ({{count}} Unternehmen)",
+		"updated": "Aktualisiert ({{count}} Unternehmen)",
+		"noContract": "Ohne Vertrag ({{count}} Unternehmen)",
+		"unmapped": "Im System nicht zugeordnet ({{count}})",
+		"editPerformance": "Leistung bearbeiten",
+		"createContract": "Vertrag erstellen"
+	}
 }

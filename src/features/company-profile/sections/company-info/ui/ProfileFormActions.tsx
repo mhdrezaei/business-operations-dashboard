@@ -1,6 +1,7 @@
 import { FormActionBar } from "#src/shared/ui/form-action-bar";
 import { App, Button } from "antd";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface Props {
 	hasProfile: boolean
@@ -25,15 +26,16 @@ export function ProfileFormActions({
 	onReset,
 	onDelete,
 }: Props) {
+	const { t } = useTranslation();
 	const { modal } = App.useApp();
 	const [isDeleting, setIsDeleting] = useState(false);
 
 	function confirmDelete() {
 		modal.confirm({
-			title: "حذف پروفایل",
-			content: "با حذف پروفایل، اطلاعات این بخش پاک می‌شود. آیا مطمئن هستید؟",
-			okText: "حذف پروفایل",
-			cancelText: "انصراف",
+			title: t("companyProfile.profile.deleteTitle"),
+			content: t("companyProfile.profile.deleteContent"),
+			okText: t("companyProfile.profile.delete"),
+			cancelText: t("common.cancel"),
 			okButtonProps: { danger: true },
 			onOk: async () => {
 				setIsDeleting(true);
@@ -62,7 +64,7 @@ export function ProfileFormActions({
 							disabled={isSubmitting}
 							onClick={confirmDelete}
 						>
-							حذف پروفایل
+							{t("companyProfile.profile.delete")}
 						</Button>
 					) : null}
 
@@ -71,7 +73,7 @@ export function ProfileFormActions({
 							disabled={isSubmitting || isDeleting || !isDirty}
 							onClick={onReset}
 						>
-							بازنشانی تغییرات
+							{t("companyProfile.profile.reset")}
 						</Button>
 					) : null}
 
@@ -82,7 +84,7 @@ export function ProfileFormActions({
 							disabled={isDeleting || !isDirty || !isValid}
 							onClick={onSubmit}
 						>
-							ثبت
+							{t("companyProfile.profile.submit")}
 						</Button>
 					) : null}
 				</>

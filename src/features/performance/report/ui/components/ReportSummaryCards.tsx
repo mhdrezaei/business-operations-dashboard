@@ -1,4 +1,5 @@
 import { DashedBorder } from "#src/shared/ui/dashed-border";
+import { useTranslation } from "react-i18next";
 import "./report-summary-cards.css";
 
 export interface ReportSummaryItem {
@@ -12,11 +13,13 @@ interface ReportSummaryCardsProps {
 }
 
 export function ReportSummaryCards({ items }: ReportSummaryCardsProps) {
+	const { t } = useTranslation();
+
 	if (items.length === 0)
 		return null;
 
 	return (
-		<div className="report-summary-cards" role="list" aria-label="جمع کل گزارش">
+		<div className="report-summary-cards" role="list" aria-label={t("performance.reportPage.summaryCardsLabel")}>
 			{items.map(item => (
 				<div key={item.key} className="report-summary-cards__item" role="listitem">
 					<DashedBorder />

@@ -33,6 +33,7 @@ import {
 	deleteShareholder,
 	listShareholders,
 } from "../../../api/shareholders.api";
+import { parseSocialLinks, serializeSocialLinks } from "../../company-info/model/public/company-public.mappers";
 import { COMPANY_COPY_SECTION_KEYS } from "../model/company-data-copy.types";
 
 export async function getCompanyDataSnapshot(
@@ -94,7 +95,7 @@ async function copyPublic(source: CompanyDataSnapshot, destination: CompanyDataS
 		email: source.public.email,
 		website: source.public.website,
 		working_hours: source.public.working_hours,
-		social_links: source.public.social_links,
+		social_links: serializeSocialLinks(parseSocialLinks(source.public.social_links)),
 	};
 
 	if (destination.public)
@@ -116,6 +117,8 @@ async function copyLegal(source: CompanyDataSnapshot, destination: CompanyDataSn
 		tax_registration_number: source.legal.tax_registration_number,
 		registration_place: source.legal.registration_place,
 		registration_date: source.legal.registration_date,
+		official_gazette_number: source.legal.official_gazette_number,
+		official_gazette_date: source.legal.official_gazette_date,
 		legal_person_type: source.legal.legal_person_type,
 		branch_code: source.legal.branch_code,
 	};
@@ -176,11 +179,14 @@ async function copyPeople(source: CompanyDataSnapshot, destination: CompanyDataS
 			service: endpoint.serviceId,
 			role: person.role,
 			full_name: person.full_name,
-			national_id: person.national_id,
+			national_id: person.national_id ?? "",
 			title: person.title ?? "",
+			gender: person.gender ?? null,
 			phone: person.phone,
 			email: person.email,
 			is_signatory: person.is_signatory,
+			official_gazette_number: person.official_gazette_number ?? null,
+			official_gazette_date: person.official_gazette_date ?? null,
 			contract_order: person.contract_order,
 		});
 	}

@@ -3,8 +3,15 @@ import { request } from "#src/utils/request";
 
 const BASE = "contracts/sales-agency/expense-titles";
 
-export function fetchSalesAgencyExpenseTitles() {
-	return request.get(`${BASE}/`).json<SalesAgencyExpenseTitlesResponse>();
+/** Every title, following the pagination (the list is not limited to the first page). */
+export async function fetchSalesAgencyExpenseTitles() {
+	const titles: SalesAgencyExpenseTitle[] = [];
+	for (let page = 1, hasNext = true; hasNext; page += 1) {
+		const response = await request.get(`${BASE}/`, { searchParams: { page } }).json<SalesAgencyExpenseTitlesResponse>();
+		titles.push(...response.results);
+		hasNext = Boolean(response.next);
+	}
+	return titles;
 }
 
 export function createSalesAgencyExpenseTitle(payload: SalesAgencyExpenseTitlePayload) {

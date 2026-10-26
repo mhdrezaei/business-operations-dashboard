@@ -37,8 +37,9 @@ export default function AdminRolesListPage() {
 	const [selectedRole, setSelectedRole] = useState<AdminRoleDto | null>(null);
 
 	const canCreate = hasAdminAction("roles", "create");
-	const canUpdate = hasAdminAction("roles", "update") || hasAdminAction("policies", "update");
-	const canDelete = hasAdminAction("roles", "delete");
+	// old: edit and delete share one permission (service admin / full admin, or a deputy with manage_policies)
+	const canUpdate = hasAdminAction("roles", "update");
+	const canDelete = canUpdate;
 
 	const servicesQuery = useQuery(adminRoleServicesQuery());
 

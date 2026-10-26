@@ -66,6 +66,9 @@ export default function LegalProfileForm({ disabled, submitDisabled, hasProfile,
 						<RHFProText name="registration_place" label={"\u0645\u062D\u0644 \u062B\u0628\u062A"} inputProps={{ placeholder: "\u0645\u062D\u0644 \u062B\u0628\u062A", disabled }} />
 						<RHFProDate name="registration_date" label={"\u062A\u0627\u0631\u06CC\u062E \u062B\u0628\u062A"} itemProps={{ placeholder: "\u062A\u0627\u0631\u06CC\u062E \u062B\u0628\u062A", disabled }} />
 
+						<RHFProText name="official_gazette_number" label="شماره روزنامه رسمی" inputProps={{ placeholder: "شماره روزنامه رسمی", disabled }} />
+						<RHFProDate name="official_gazette_date" label="تاریخ روزنامه رسمی" itemProps={{ placeholder: "تاریخ روزنامه رسمی", disabled }} />
+
 						<RHFProText name="branch_code" label={"\u06A9\u062F \u0634\u0639\u0628\u0647"} inputProps={{ placeholder: "\u06A9\u062F \u0634\u0639\u0628\u0647", disabled }} />
 					</div>
 				</SectionCard>

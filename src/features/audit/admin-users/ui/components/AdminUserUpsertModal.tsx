@@ -1,6 +1,8 @@
+import type { AdminUserFormValues } from "../../model/admin-user-upsert.schema";
 import type { AdminUserDto, AdminUserUpsertPayload } from "../../model/admin-users.types";
 
 import { BasicButton } from "#src/components";
+import { normalizeIranMobile, toBackendMobile } from "#src/shared/lib/iran-mobile";
 import { RHFProText } from "#src/shared/ui/rhf-pro"; // اگر کامپوننت‌های RHF شما متفاوت است جایگزین کن
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,7 +25,7 @@ interface Props {
 export function AdminUserUpsertModal({ open, mode, loading, initial, onClose, onSubmit }: Props) {
 	const [saving, setSaving] = useState(false);
 
-	const defaultValues = useMemo<AdminUserUpsertPayload>(() => {
+	const defaultValues = useMemo<AdminUserFormValues>(() => {
 		if (!initial) {
 			return {
 				username: "",
@@ -34,8 +36,8 @@ export function AdminUserUpsertModal({ open, mode, loading, initial, onClose, on
 				national_code: "",
 				is_active: true,
 				is_staff: false,
-				is_superuser: false,
 				password: "",
+				confirmPassword: "",
 			};
 		}
 
@@ -44,16 +46,16 @@ export function AdminUserUpsertModal({ open, mode, loading, initial, onClose, on
 			first_name: initial.first_name ?? "",
 			last_name: initial.last_name ?? "",
 			email: initial.email ?? "",
-			mobile: initial.mobile ?? "",
+			mobile: normalizeIranMobile(initial.mobile ?? ""),
 			national_code: initial.national_code ?? "",
 			is_active: !!initial.is_active,
 			is_staff: !!initial.is_staff,
-			is_superuser: !!initial.is_superuser,
 			password: "",
+			confirmPassword: "",
 		};
 	}, [initial]);
 
-	const form = useForm<AdminUserUpsertPayload>({
+	const form = useForm<AdminUserFormValues>({
 		defaultValues,
 		resolver: zodResolver(adminUserUpsertSchema(mode)) as any,
 		mode: "onTouched",
@@ -88,8 +90,13 @@ export function AdminUserUpsertModal({ open, mode, loading, initial, onClose, on
 									setSaving(true);
 									try {
 										// در حالت edit اگر پسورد خالی بود، ارسالش نکن
-										const payload: AdminUserUpsertPayload = { ...values };
-										if (mode === "edit" && !payload.password) {
+										const { confirmPassword: _confirmPassword, ...rest } = values;
+										const payload: AdminUserUpsertPayload = {
+											...rest,
+											mobile: toBackendMobile(values.mobile),
+											national_code: values.national_code || null,
+										};
+										if (!payload.password) {
 											delete payload.password;
 										}
 										await onSubmit(payload);
@@ -115,6 +122,13 @@ export function AdminUserUpsertModal({ open, mode, loading, initial, onClose, on
 										<RHFProText
 											name="password"
 											label={mode === "create" ? "رمز عبور" : "رمز عبور جدید (اختیاری)"}
+											inputProps={{ type: "password" }}
+											formItemProps={{ className: `${fieldClassName} admin-user-upsert-field--long-label` }}
+										/>
+										<RHFProText
+											name="confirmPassword"
+											label="تکرار رمز عبور"
+											inputProps={{ type: "password" }}
 											formItemProps={{ className: `${fieldClassName} admin-user-upsert-field--long-label` }}
 										/>
 

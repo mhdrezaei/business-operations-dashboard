@@ -5,11 +5,11 @@ export interface Paginated<T> {
 	results: T[]
 }
 
-export type LegalPersonType = "PRIVATE_JOINT_STOCK" | "PUBLIC_JOINT_STOCK" | "LIMITED_LIABILITY";
-export type VatStatus = "SUBJECT" | "EXEMPT" | "UNKNOWN";
+export type LegalPersonType = "PRIVATE_JOINT_STOCK" | "PUBLIC_JOINT_STOCK" | "LIMITED_LIABILITY" | "INSTITUTE" | "OTHER";
+export type VatStatus = "SUBJECT" | "EXEMPT";
 export type CooperationStatus = "ACTIVE" | "INACTIVE" | "SUSPENDED";
-export type SettlementTerm = "CASH" | "CREDIT" | "INSTALLMENT";
-export type InfoVerificationStatus = "PENDING" | "VERIFIED" | "REJECTED";
+export type SettlementTerm = "CASH" | "CREDIT" | "MONTHLY" | "PERIODIC";
+export type InfoVerificationStatus = "PENDING" | "VERIFIED";
 
 export interface CompanyProfileDto {
 	id: number

@@ -4,7 +4,6 @@ import i18next from "i18next";
 import { createElement } from "react";
 import {
 	createShahkarPrediction,
-	fetchShahkarPredictionDetail,
 	fetchShahkarPredictionYears,
 	listShahkarPredictions,
 	updateShahkarPrediction,
@@ -41,7 +40,6 @@ export const shahkarPredictionService = {
 		findYearlyValueIncomePredictionByFiscalYear(records as any[], selection.fiscalYear),
 	fetchYears: (serviceId: number) => fetchShahkarPredictionYears(serviceId) as Promise<any>,
 	fetchList: (params: PredictionListParams) => listShahkarPredictions(params) as Promise<any>,
-	fetchDetail: (id: number) => fetchShahkarPredictionDetail(id) as Promise<any>,
 	getYearsQueryKey: (serviceId: number | null | undefined) =>
 		shahkarPredictionYearsQuery(serviceId).queryKey,
 	createRecord: (payload: Record<string, unknown>) => createShahkarPrediction(payload as any),
@@ -50,6 +48,6 @@ export const shahkarPredictionService = {
 		record: unknown,
 		context: { serviceId: number, serviceCode: PredictionListRow["serviceCode"], serviceLabel: string },
 	) => yearlyValueIncomePredictionToListRow(record as any, context),
-	toPayload: (values: PredictionFormValues, context: { companyIds: number[] }) =>
-		yearlyValueIncomePredictionFormToPayload(values, context.companyIds) as unknown as Record<string, unknown>,
+	toPayload: (values: PredictionFormValues) =>
+		yearlyValueIncomePredictionFormToPayload(values) as unknown as Record<string, unknown>,
 } as const;

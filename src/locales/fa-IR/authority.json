@@ -31,14 +31,5 @@
 	"email": "ایمیل",
 	"sendResetLink": "ارسال لینک بازنشانی",
 	"logout": "خروج",
-	"register": "ثبت‌نام",
-	"alreadyHaveAnAccount": "از قبل حساب کاربری دارید؟",
-	"goToLogin": "رفتن به صفحه ورود",
-	"goToRegister": "رفتن به صفحه ثبت‌نام",
-	"noAccountYet": "هنوز حساب کاربری ندارید؟",
-	"confirmPassword": "تأیید رمز عبور",
-	"logoutConfirm": "آیا از خروج اطمینان دارید؟",
-	"agree": "من <0>سیاست حفظ حریم خصوصی</0> و <1>شرایط استفاده</1> را خوانده و قبول دارم",
-	"privacyPolicy": "سیاست حفظ حریم خصوصی",
-	"termsOfService": "شرایط استفاده"
+	"logoutConfirm": "آیا از خروج اطمینان دارید؟"
 }

@@ -1,5 +1,7 @@
 import { addendumSchema } from "#src/features/contract/components/addenda/addenda.schema";
+import { i18n } from "#src/locales";
 import { z } from "zod";
+import { toNumberOrNull } from "../../utils/value-coercion";
 
 const nullableNumberSchema = z.preprocess(
 	(v) => {
@@ -30,48 +32,51 @@ const nullablePercentSchema = z.preprocess(
 		}
 		return v;
 	},
-	z.number().min(0, "درصد باید بین 0 تا 100 باشد").max(100, "درصد باید بین 0 تا 100 باشد").nullable(),
+	z.number().min(0, { error: () => i18n.t("contract.validation.percentRange") }).max(100, { error: () => i18n.t("contract.validation.percentRange") }).nullable(),
 );
 
-function numericPercent(value: unknown) {
-	if (value == null || value === "")
-		return null;
-	const numberValue = Number(value);
-	return Number.isFinite(numberValue) ? numberValue : null;
-}
+function validateCommissionRules(value: Record<string, unknown>, ctx: z.RefinementCtx, path: Array<string | number> = []) {
+	const initialCommission = toNumberOrNull(value.initialCommission);
+	const finalCommission = toNumberOrNull(value.finalCommission);
+	if (initialCommission != null && finalCommission != null && finalCommission < initialCommission) {
+		ctx.addIssue({
+			code: "custom",
+			path: [...path, "finalCommission"],
+			message: i18n.t("contract.smsCommission.finalBelowInitial"),
+		});
+	}
 
-function validatePercentTotals(value: Record<string, unknown>, ctx: z.RefinementCtx, path: Array<string | number> = []) {
-	const expertPercent = numericPercent(value.expertPercent);
-	const telecomPercent = numericPercent(value.telecomPercent);
+	const expertPercent = toNumberOrNull(value.expertPercent);
+	const telecomPercent = toNumberOrNull(value.telecomPercent);
 	if (expertPercent != null && telecomPercent != null && expertPercent + telecomPercent !== 100) {
 		ctx.addIssue({
 			code: "custom",
 			path: [...path, "telecomPercent"],
-			message: "مجموع درصد کاراشاب و درصد مخابرات باید ۱۰۰ باشد",
+			message: i18n.t("contract.smsCommission.validation.expertTelecomTotal"),
 		});
 	}
 
-	const firstParty = numericPercent(value.firstPartySharePercent);
-	const region = numericPercent(value.regionSharePercent);
-	const salesAgent = numericPercent(value.salesAgentSharePercent);
+	const firstParty = toNumberOrNull(value.firstPartySharePercent);
+	const region = toNumberOrNull(value.regionSharePercent);
+	const salesAgent = toNumberOrNull(value.salesAgentSharePercent);
 	if (firstParty != null && region != null && salesAgent != null && firstParty + region + salesAgent !== 100) {
 		ctx.addIssue({
 			code: "custom",
 			path: [...path, "salesAgentSharePercent"],
-			message: "مجموع درصد سهم طرف اول، منطقه و نماینده فروش باید ۱۰۰ باشد",
+			message: i18n.t("contract.smsCommission.validation.sharesTotal"),
 		});
 	}
 
 	const addenda = Array.isArray(value.addenda) ? value.addenda : [];
 	addenda.forEach((addendum, index) => {
 		if (addendum && typeof addendum === "object")
-			validatePercentTotals(addendum as Record<string, unknown>, ctx, [...path, "addenda", index]);
+			validateCommissionRules(addendum as Record<string, unknown>, ctx, [...path, "addenda", index]);
 	});
 
 	const children = Array.isArray(value.children) ? value.children : [];
 	children.forEach((child, index) => {
 		if (child && typeof child === "object")
-			validatePercentTotals(child as Record<string, unknown>, ctx, [...path, "children", index]);
+			validateCommissionRules(child as Record<string, unknown>, ctx, [...path, "children", index]);
 	});
 }
 
@@ -88,30 +93,30 @@ export const smsCommissionServiceFieldsSchema = z
 		addenda: z.array(addendumSchema).default([]).optional(),
 	})
 	.superRefine((val, ctx) => {
-		validatePercentTotals(val, ctx);
+		validateCommissionRules(val, ctx);
 		if (val.agent == null) {
-			ctx.addIssue({ code: "custom", path: ["agent"], message: "نماینده فروش الزامی است" });
+			ctx.addIssue({ code: "custom", path: ["agent"], message: i18n.t("contract.smsCommission.validation.agent") });
 		}
 		if (val.initialCommission == null) {
-			ctx.addIssue({ code: "custom", path: ["initialCommission"], message: "کارمزد دریافت اولیه الزامی است" });
+			ctx.addIssue({ code: "custom", path: ["initialCommission"], message: i18n.t("contract.smsCommission.validation.initialCommission") });
 		}
 		if (val.finalCommission == null) {
-			ctx.addIssue({ code: "custom", path: ["finalCommission"], message: "کارمزد دریافت نهایی الزامی است" });
+			ctx.addIssue({ code: "custom", path: ["finalCommission"], message: i18n.t("contract.smsCommission.validation.finalCommission") });
 		}
 		if (val.expertPercent == null) {
-			ctx.addIssue({ code: "custom", path: ["expertPercent"], message: "درصد کاراشاب الزامی است" });
+			ctx.addIssue({ code: "custom", path: ["expertPercent"], message: i18n.t("contract.smsCommission.validation.expertPercent") });
 		}
 		if (val.telecomPercent == null) {
-			ctx.addIssue({ code: "custom", path: ["telecomPercent"], message: "درصد مخابرات الزامی است" });
+			ctx.addIssue({ code: "custom", path: ["telecomPercent"], message: i18n.t("contract.smsCommission.validation.telecomPercent") });
 		}
 		if (val.firstPartySharePercent == null) {
-			ctx.addIssue({ code: "custom", path: ["firstPartySharePercent"], message: "درصد سهم طرف اول الزامی است" });
+			ctx.addIssue({ code: "custom", path: ["firstPartySharePercent"], message: i18n.t("contract.smsCommission.validation.firstPartyShare") });
 		}
 		if (val.regionSharePercent == null) {
-			ctx.addIssue({ code: "custom", path: ["regionSharePercent"], message: "درصد سهم منطقه الزامی است" });
+			ctx.addIssue({ code: "custom", path: ["regionSharePercent"], message: i18n.t("contract.smsCommission.validation.regionShare") });
 		}
 		if (val.salesAgentSharePercent == null) {
-			ctx.addIssue({ code: "custom", path: ["salesAgentSharePercent"], message: "درصد سهم نماینده فروش الزامی است" });
+			ctx.addIssue({ code: "custom", path: ["salesAgentSharePercent"], message: i18n.t("contract.smsCommission.validation.salesAgentShare") });
 		}
 	})
 	.passthrough();

@@ -43,6 +43,9 @@ export interface AuditLogsListQuery {
 	action?: string
 	method?: string
 	status_code?: number
+	actor?: number
+	created_at__gte?: string
+	created_at__lte?: string
 }
 
 export type AuditLogsPaginatedResponse = Paginated<AuditLogDto>;

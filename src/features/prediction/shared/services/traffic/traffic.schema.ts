@@ -1,10 +1,11 @@
 import type {
-	PredictionShareSectionValue,
 	TrafficLocationCode,
 	TrafficPredictionServiceFields,
 } from "../../model/prediction.form.types";
 import i18next from "i18next";
 import { z } from "zod";
+import { getShareTotal } from "../../model/manual-share-template";
+import { addQuarterIssues, quarterPercentSchema } from "../../model/prediction.validation";
 import {
 	createEmptyTrafficManualShares,
 	isTrafficLocationCode,
@@ -17,16 +18,6 @@ function nullableNonNegativeNumber() {
 		message: i18next.t("prediction.validation.traffic.nonNegativeNumber"),
 	});
 }
-
-const quarterRangeMessage = i18next.t("prediction.validation.quarters.range", {
-	defaultValue: "درصد هر کوارتر باید بین 0 تا 100 باشد",
-});
-
-const quarterPercentSchema = z.number()
-	.int({ message: quarterRangeMessage })
-	.min(0, { message: quarterRangeMessage })
-	.max(100, { message: quarterRangeMessage })
-	.nullable();
 
 const shareSectionSchema = z.object({
 	mode: z.enum(["auto", "manual"]).default("auto"),
@@ -45,13 +36,6 @@ const trafficLocationSchema = z.object({
 	incomeYear: nullableNonNegativeNumber(),
 	expenseYear: nullableNonNegativeNumber(),
 });
-
-function getShareTotal(section: PredictionShareSectionValue) {
-	return section.selectedCompanyIds.reduce((total, companyId) => {
-		const amount = section.shares[String(companyId)] ?? 0;
-		return Number(total) + Number(amount ?? 0);
-	}, 0);
-}
 
 export const trafficPredictionSchema = z.object({
 	companyType: z.preprocess(
@@ -80,24 +64,8 @@ export const trafficPredictionSchema = z.object({
 }) satisfies z.ZodType<TrafficPredictionServiceFields>;
 
 export const validatedTrafficPredictionSchema = trafficPredictionSchema.superRefine((value, ctx) => {
-	const quarterValues = [value.q1Percent, value.q2Percent, value.q3Percent, value.q4Percent];
-	if (quarterValues.some(item => item == null)) {
-		ctx.addIssue({
-			code: "custom",
-			path: ["q1Percent"],
-			message: i18next.t("prediction.validation.quarters.allRequired"),
-		});
+	if (!addQuarterIssues([value.q1Percent, value.q2Percent, value.q3Percent, value.q4Percent], ctx))
 		return;
-	}
-
-	const quarterTotal = quarterValues.reduce((total, item) => Number(total) + Number(item ?? 0), 0);
-	if (quarterTotal !== 100) {
-		ctx.addIssue({
-			code: "custom",
-			path: ["q1Percent"],
-			message: i18next.t("prediction.validation.quarters.sumMustBeHundred"),
-		});
-	}
 
 	if (value.companyType == null) {
 		ctx.addIssue({

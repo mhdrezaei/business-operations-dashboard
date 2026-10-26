@@ -1,4 +1,5 @@
 import type {
+	PredictionMetricCode,
 	PredictionShareSectionValue,
 	SmsChannelCode,
 	SmsChannelSharesValue,
@@ -8,15 +9,15 @@ import type {
 import { getCompanyTypeToken } from "../../model/company-type.helpers";
 
 export const SMS_CHANNEL_OPTIONS = [
-	{ key: "IRANCELL_FA", title: "ایرانسل - فارسی" },
-	{ key: "IRANCELL_EN", title: "ایرانسل - انگلیسی" },
-	{ key: "MCI_FA", title: "همراه اول - فارسی" },
-	{ key: "MCI_EN", title: "همراه اول - انگلیسی" },
-	{ key: "OTHER_FA", title: "سایر - فارسی" },
-	{ key: "OTHER_EN", title: "سایر - انگلیسی" },
+	{ key: "IRANCELL_FA", titleKey: "prediction.smsChannels.IRANCELL_FA" },
+	{ key: "IRANCELL_EN", titleKey: "prediction.smsChannels.IRANCELL_EN" },
+	{ key: "MCI_FA", titleKey: "prediction.smsChannels.MCI_FA" },
+	{ key: "MCI_EN", titleKey: "prediction.smsChannels.MCI_EN" },
+	{ key: "OTHER_FA", titleKey: "prediction.smsChannels.OTHER_FA" },
+	{ key: "OTHER_EN", titleKey: "prediction.smsChannels.OTHER_EN" },
 ] as const satisfies ReadonlyArray<{
 	key: SmsChannelCode
-	title: string
+	titleKey: string
 }>;
 
 function createEmptyShareSection(): PredictionShareSectionValue {
@@ -35,13 +36,21 @@ export function createEmptySmsManualShares(): SmsManualSharesValue {
 	};
 }
 
+export function createEmptySmsChannelMetricShares() {
+	return Object.fromEntries(
+		SMS_CHANNEL_OPTIONS.map(channel => [channel.key, null]),
+	) as Record<SmsChannelCode, number | null>;
+}
+
 export function createEmptySmsChannelShares(): SmsChannelSharesValue {
 	return {
-		value: Object.fromEntries(
-			SMS_CHANNEL_OPTIONS.map(channel => [channel.key, null]),
-		) as Record<SmsChannelCode, number | null>,
+		value: createEmptySmsChannelMetricShares(),
+		income: createEmptySmsChannelMetricShares(),
+		expense: createEmptySmsChannelMetricShares(),
 	};
 }
+
+export const SMS_METRIC_KEYS = ["value", "income", "expense"] as const satisfies readonly PredictionMetricCode[];
 
 export function createEmptySmsFields(
 	previous?: Record<string, unknown>,

@@ -36,6 +36,7 @@ export function getShareholderColumns(): ProColumns<ShareholderDto>[] {
 			dataIndex: "ownership_percent",
 			search: false,
 			width: 140,
+			render: (_, r) => r.ownership_percent ?? "-",
 		},
 		{
 			title: "یادداشت",

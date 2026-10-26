@@ -1,7 +1,7 @@
 import type { InternalProfileFormValues } from "./company-internal.mappers";
 import { z } from "zod";
 
-const InfoVerificationStatusEnum = z.enum(["PENDING", "VERIFIED", "REJECTED"]);
+const InfoVerificationStatusEnum = z.enum(["PENDING", "VERIFIED"]);
 
 export const internalProfileSchema = z.object({
 	internal_code: z.string().trim().default(""),

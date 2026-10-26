@@ -33,6 +33,12 @@ export type RHFProTextProps<
 
 	/** نمایش tooltip تبدیل عدد به حروف */
 	showNumericTooltip?: boolean
+
+	/** تبدیل مقدار تایپ‌شده قبل از ذخیره (فقط وقتی numericGuard غیرفعال است) */
+	transformValue?: (value: string) => string
+
+	/** نرمال‌سازی مقدار هنگام خروج از فیلد (blur) */
+	normalizeOnBlur?: (value: string) => string
 };
 
 export function RHFProText<
@@ -87,7 +93,7 @@ export function RHFProText<
 									const next = e.target.value;
 
 									if (!numericGuardEnabled) {
-										field.onChange(next);
+										field.onChange(props.transformValue ? props.transformValue(next) : next);
 										return;
 									}
 
@@ -135,7 +141,11 @@ export function RHFProText<
 											: merged,
 									);
 								}}
-								onBlur={field.onBlur}
+								onBlur={() => {
+									if (props.normalizeOnBlur)
+										field.onChange(props.normalizeOnBlur(rawValue));
+									field.onBlur();
+								}}
 								ref={field.ref}
 								status={err ? "error" : undefined}
 								autoComplete="off"

@@ -16,6 +16,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { companyTypeMatches } from "../../model/company-type.helpers";
+import { applyManualShareTemplate } from "../../model/manual-share-template";
 import { predictionCompaniesByServiceQuery } from "../../queries/prediction.queries";
 import { QuarterDistributionSection } from "../../ui/form/sections/QuarterDistributionSection";
 import {
@@ -73,7 +74,7 @@ function TrafficShareEditor({
 	metricTitle: string
 }) {
 	const { t } = useTranslation();
-	const { control, formState, getFieldState, register, setValue } = useFormContext<PredictionFormValues>();
+	const { control, formState, getFieldState, getValues, register, setValue } = useFormContext<PredictionFormValues>();
 	const fieldPath = `serviceFields.manualShares.${locationCode}.${metricKey}` as const;
 	const shareState = normalizeShareValue(useWatch({ control, name: fieldPath as any }));
 	const shareError = getFieldState(fieldPath as any, formState).error?.message;
@@ -127,12 +128,21 @@ function TrafficShareEditor({
 			<div className="prediction-share-editor__controls">
 				<RHFSegmentedSwitch
 					name={`${fieldPath}.mode` as any}
-					label="نحوه تخصیص"
+					label={t("prediction.labels.allocationMode")}
 					options={[
 						{ label: t("prediction.shareModes.auto"), value: "auto" },
 						{ label: t("prediction.shareModes.manual"), value: "manual" },
 					]}
 					formItemProps={{ className: "mb-0" }}
+					onValueChange={(mode) => {
+						if (mode === "manual") {
+							applyManualShareTemplate({
+								getValues: path => getValues(path as any),
+								setValue: (path, value, options) => setValue(path as any, value as any, options),
+								targetPath: fieldPath,
+							});
+						}
+					}}
 				/>
 				{shareState.mode === "manual"
 					? (

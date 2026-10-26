@@ -1,15 +1,17 @@
 import type { ContractServicePath } from "#src/features/contract/api/contracts.api";
-
 import { BasicContent } from "#src/components";
+
 import { fetchContractApprovalHistory, fetchContractDetail } from "#src/features/contract/api/contracts.api";
 import { formatHistoryDate } from "#src/features/contract/list/ui/components/contract-approval-history.utils";
 import { ContractEditForm } from "#src/features/contract/list/ui/components/ContractDetailModal";
+import { getContractAccessCompanyType } from "#src/features/contract/shared/model/company-type-options";
 import { buildContractEditPath } from "#src/features/contract/shared/utils/contract-routes";
 import { useAccess } from "#src/hooks";
 import { ClockCircleOutlined, UserOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Card, Empty, Spin, Tag } from "antd";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Navigate, useNavigate, useParams, useSearchParams } from "react-router";
 
 const SERVICES = new Set<ContractServicePath>([
@@ -23,6 +25,7 @@ const SERVICES = new Set<ContractServicePath>([
 	"sms/client",
 	"sms/vendor",
 	"sms-commission",
+	"telecom-frame",
 ]);
 
 function parseId(value: string | undefined | null) {
@@ -31,6 +34,7 @@ function parseId(value: string | undefined | null) {
 }
 
 export default function ContractPreviewPage() {
+	const { t } = useTranslation();
 	const navigate = useNavigate();
 	const { hasDomainPermissionByServiceId } = useAccess();
 	const { contractId: idParam } = useParams();
@@ -60,21 +64,25 @@ export default function ContractPreviewPage() {
 	const contract = (detail.data ?? {}) as Record<string, unknown>;
 	const isSigned = contract.is_signed === true;
 	const isBusinessApproved = contract.is_business_approved === true;
-	const canUpdate = serviceId != null && hasDomainPermissionByServiceId("contracts", "update", serviceId, companyType);
-	const canView = serviceId != null && hasDomainPermissionByServiceId("contracts", "view", serviceId, companyType);
+	const accessCompanyType = getContractAccessCompanyType(service, companyType);
+	const canUpdate = serviceId != null && hasDomainPermissionByServiceId("contracts", "update", serviceId, accessCompanyType);
+	const canView = serviceId != null && hasDomainPermissionByServiceId("contracts", "view", serviceId, accessCompanyType);
 	const latestHistory = [...(approvalHistory.data?.sign_approval_history ?? [])]
 		.sort((a, b) => new Date(b.changed_at).getTime() - new Date(a.changed_at).getTime())[0];
 	const latestField = latestHistory?.field_name ?? (isSigned ? "is_signed" : "is_business_approved");
 	const latestValue = latestHistory?.new_value ?? (latestField === "is_signed" ? isSigned : isBusinessApproved);
-	const latestStatusTitle = latestField === "is_signed" ? "تأیید اداره قراردادها" : "تأیید تجاری";
-	const latestStatusText = latestValue === true ? "تأیید شده" : latestValue === false ? "رد شده" : "نامشخص";
+	const latestStatusTitle = latestField === "is_signed" ? t("contract.list.column.isSigned") : t("contract.list.column.isBusinessApproved");
+	const latestStatusText = latestValue === true ? t("contract.list.approval.approved") : latestValue === false ? t("contract.list.approval.rejected") : t("contract.preview.unknown");
 	const updatedBy = contract.updated_by_user as Record<string, unknown> | undefined;
 	const createdBy = contract.created_by_user as Record<string, unknown> | undefined;
 	const latestActor = latestHistory?.changed_by?.name ?? String(updatedBy?.name ?? createdBy?.name ?? "—");
 	const latestDate = latestHistory?.changed_at ?? String(contract.updated_at ?? contract.created_at ?? "");
 
 	if (!contractId || !service || !serviceId)
-		return <Empty description="اطلاعات مسیر پیش‌نمایش قرارداد معتبر نیست" />;
+		return <Empty description={t("contract.preview.invalidRoute")} />;
+
+	if (!canView)
+		return <Navigate to="/contracts/list" replace />;
 
 	const editUrl = buildContractEditPath({ contractId, service, serviceId, companyType });
 
@@ -91,7 +99,7 @@ export default function ContractPreviewPage() {
 								<div className="flex w-full items-center justify-between gap-4">
 									<div className="flex flex-wrap items-center gap-x-5 gap-y-2">
 										<div className="flex items-center gap-2">
-											<span className="text-sm text-[var(--ant-color-text-secondary)]">آخرین وضعیت:</span>
+											<span className="text-sm text-[var(--ant-color-text-secondary)]">{t("contract.preview.latestStatus")}</span>
 											<span className="text-base font-semibold">{latestStatusTitle}</span>
 											<Tag bordered={false} color={latestValue === true ? "success" : latestValue === false ? "error" : "default"}>{latestStatusText}</Tag>
 										</div>
@@ -109,7 +117,7 @@ export default function ContractPreviewPage() {
 											: null}
 									</div>
 									{canUpdate
-										? <Button size="large" className="!h-10 !w-28 !whitespace-nowrap !border-primary !px-4 !text-primary" onClick={() => navigate(editUrl)}>ویرایش قرارداد</Button>
+										? <Button size="large" className="!h-10 !w-28 !whitespace-nowrap !border-primary !px-4 !text-primary" onClick={() => navigate(editUrl)}>{t("contract.list.actions.edit")}</Button>
 										: null}
 								</div>
 							</Card>

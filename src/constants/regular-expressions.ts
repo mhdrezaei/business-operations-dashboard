@@ -10,6 +10,9 @@
 // اعتبارسنجي نام کاربري، 4 تا 16 کاراکتر (حروف، اعداد، زيرخط، خط تيره)
 export const USERNAME_REGEXP = /^[\w-]{4,16}$/;
 
+// رشته بدون هيچ کاراکتر خط عربي/فارسي (ورودي فقط انگليسي)
+export const NO_ARABIC_SCRIPT_REGEXP = /^[^\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]*$/;
+
 // فقط شامل حروف بزرگ، کوچک و اعداد
 export const ALPHA_NUMERIC_ONLY_REGEXP = /^[A-Z0-9]+$/i;
 

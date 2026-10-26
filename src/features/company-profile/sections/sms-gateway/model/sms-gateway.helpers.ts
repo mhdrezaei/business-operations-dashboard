@@ -15,3 +15,15 @@ export function getOtherGatewayCustomerNames(
 		.map(customer => customer.value)
 		.filter(Boolean)));
 }
+
+export function isGatewayUnavailableError(error: unknown) {
+	return (error as { response?: { status?: number } } | null)?.response?.status === 502;
+}
+
+export function findGatewayCustomerByName(customers: SmsGatewayCustomerDto[], name: string) {
+	const normalized = name.trim().toLocaleLowerCase("fa");
+	if (!normalized)
+		return null;
+
+	return customers.find(customer => customer.value.toLocaleLowerCase("fa") === normalized) ?? null;
+}

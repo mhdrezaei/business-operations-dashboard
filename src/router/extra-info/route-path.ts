@@ -4,8 +4,6 @@
  */
 
 export const loginPath = "/login";
-export const privacyPolicyPath = "/privacy-policy";
-export const termsOfServicePath = "/terms-of-service";
 
 export const exceptionPath = "/exception";
 export const exception403Path = `${exceptionPath}/403`;

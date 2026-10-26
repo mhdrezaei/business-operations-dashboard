@@ -6,6 +6,9 @@ const formValues: CompanyPersonFormValues = {
 	full_name: "  شخص نمونه  ",
 	national_id: "0023475662",
 	title: "  مدیرعامل  ",
+	gender: null,
+	official_gazette_number: " 123 ",
+	official_gazette_date: "",
 	phone: [{ value: "09101922459" }],
 	email: [{ value: "sample@example.com" }],
 	is_signatory: true,
@@ -17,6 +20,9 @@ describe("company people payloads", () => {
 			company: 114,
 			service: 2,
 			full_name: "شخص نمونه",
+			gender: null,
+			official_gazette_number: "123",
+			official_gazette_date: null,
 			contract_order: null,
 		});
 	});
@@ -47,7 +53,10 @@ describe("company people payloads", () => {
 			title: "مدیر مدیره",
 			phone: ["09101922459"],
 			email: ["sample@example.com"],
+			gender: null,
 			is_signatory: false,
+			official_gazette_number: null,
+			official_gazette_date: null,
 			contract_order: 2,
 		});
 	});

@@ -33,7 +33,7 @@ export function NotificationContainer({ ...restProps }: ButtonProps) {
 	}, [queryClient]);
 
 	const markReadMutation = useMutation({
-		mutationFn: async (payload: { ids: number[], isRead: boolean }) => {
+		mutationFn: async (payload: { ids?: number[], all?: boolean, isRead: boolean }) => {
 			await markNotificationInboxState(payload);
 		},
 		onSuccess: async () => {
@@ -60,15 +60,11 @@ export function NotificationContainer({ ...restProps }: ButtonProps) {
 	};
 
 	const handleMarkAllRead = async () => {
-		const unreadIds = notifications
-			.filter(item => !item.isRead)
-			.map(item => item.id);
-
-		if (!unreadIds.length)
+		if (!unreadCount)
 			return;
 
 		try {
-			await markReadMutation.mutateAsync({ ids: unreadIds, isRead: true });
+			await markReadMutation.mutateAsync({ all: true, isRead: true });
 			window.$message?.success(t("common.success"));
 		}
 		catch {

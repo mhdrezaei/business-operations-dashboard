@@ -1,18 +1,16 @@
 import type { CompanyDto } from "#src/api/common/common.types";
-import type { PerformanceServicePath } from "#src/features/performance/api/performances.api";
+import type { CompanyTypeOption } from "#src/api/user/types";
 import type { UnregisteredPerformancePreset } from "#src/features/performance/shared/model/performance-registration-preset";
 import type { PerformanceServiceCode } from "#src/features/performance/shared/model/performance.form.types";
 import type { ActionType, ProColumns, ProFormInstance } from "@ant-design/pro-components";
 import type { PerformanceListRow } from "../model/performance.list.types";
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
+import { sortToOrdering } from "#src/components/basic-table/sort";
+import { isSmsVendorCompany } from "#src/features/contract/shared/utils";
 import { fetchUnregisteredPerformanceList } from "#src/features/performance/api/performances.api";
 import { buildUnregisteredPerformanceSearch } from "#src/features/performance/shared/model/performance-registration-preset";
-import { normalizePerformanceRecord, resolvePerformanceServicePath } from "#src/features/performance/shared/model/performance.helpers";
-import {
-	companiesByServiceQuery,
-	servicesQuery,
-	smsCommissionAgentsQuery,
-} from "#src/features/performance/shared/queries/performance.queries";
+import { normalizePerformanceRecord, pickCompanyTypeToken, resolvePerformanceServicePath } from "#src/features/performance/shared/model/performance.helpers";
+import { servicesQuery } from "#src/features/performance/shared/queries/performance.queries";
 import { useAccess } from "#src/hooks";
 import { PlusCircleOutlined } from "@ant-design/icons";
 import { useQueries, useQuery } from "@tanstack/react-query";
@@ -20,17 +18,13 @@ import { Button } from "antd";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
+import {
+	getUnregisteredPerformanceRowKey,
+	isCompanyTypeFilterService,
+} from "../model/unregistered-performance.model";
+import { unregisteredCompaniesQuery } from "../queries/unregistered-companies.queries";
 import { getPerformanceColumns } from "./constants";
 import "./unregistered-performance-list.css";
-
-function isSmsCommissionServicePath(service: PerformanceServicePath | null) {
-	return service === "sms-commission";
-}
-
-function serviceRequiresCompanyType(serviceCode: string | null | undefined) {
-	const normalized = String(serviceCode ?? "").trim().toLowerCase();
-	return normalized === "sms" || normalized === "psp" || normalized === "traffic" || normalized === "sales_agency";
-}
 
 function normalizeNumberList(values: unknown) {
 	if (!Array.isArray(values))
@@ -46,34 +40,6 @@ function normalizeNumberList(values: unknown) {
 	return Array.from(dedup);
 }
 
-function getRowValue(record: PerformanceListRow, keys: string[]) {
-	for (const key of keys) {
-		const value = (record as Record<string, unknown>)[key];
-		if (value != null && value !== "")
-			return value;
-	}
-	return "";
-}
-
-function getUnregisteredPerformanceRowKey(record: PerformanceListRow) {
-	const id = getRowValue(record, ["id"]);
-	if (id !== "")
-		return String(id);
-
-	return [
-		getRowValue(record, ["service", "service_id", "service_code", "service_name"]),
-		getRowValue(record, ["company", "company_id", "company_name"]),
-		getRowValue(record, ["sh_year"]),
-		getRowValue(record, ["sh_month"]),
-		getRowValue(record, ["operation_type"]),
-		getRowValue(record, ["operator"]),
-		getRowValue(record, ["language"]),
-		getRowValue(record, ["sales_agent", "sales_agent_id", "sales_agent_name"]),
-		getRowValue(record, ["location"]),
-		getRowValue(record, ["customer_nic", "customer_name"]),
-	].map(value => String(value)).join("-");
-}
-
 export default function UnregisteredPerformanceList() {
 	const { t } = useTranslation();
 	const navigate = useNavigate();
@@ -83,11 +49,8 @@ export default function UnregisteredPerformanceList() {
 	const formRef = useRef<ProFormInstance | undefined>(undefined);
 
 	const [selectedServiceIds, setSelectedServiceIds] = useState<number[]>([]);
-	const [selectedServiceCode, setSelectedServiceCode] = useState<string | null>(null);
-	const applySelectedServicesState = useCallback((serviceIds: number[], serviceCode: string | null) => {
-		setSelectedServiceIds(serviceIds);
-		setSelectedServiceCode(serviceCode);
-	}, []);
+	const [selectedCompanyType, setSelectedCompanyType] = useState<string | undefined>();
+	const [hasCollocationRows, setHasCollocationRows] = useState(false);
 
 	const permittedViewServiceIdsList = getPermittedServiceIds("performances", "view");
 
@@ -97,23 +60,7 @@ export default function UnregisteredPerformanceList() {
 	);
 
 	const services = useQuery(servicesQuery());
-	const companyQueries = useQueries({
-		queries: selectedServiceIds.map(serviceId => companiesByServiceQuery(serviceId)),
-	});
 	const selectedServiceId = selectedServiceIds.length === 1 ? selectedServiceIds[0] : null;
-	const selectedCompanyType = formRef.current?.getFieldValue("company_type") ?? null;
-	const selectedServicePath = useMemo(
-		() => resolvePerformanceServicePath(selectedServiceCode as any, selectedCompanyType),
-		[selectedServiceCode, selectedCompanyType],
-	);
-	const isSmsCommission = isSmsCommissionServicePath(selectedServicePath);
-	const smsCommissionAgents = useQuery(smsCommissionAgentsQuery(isSmsCommission));
-	const permittedCompanyTypeOptions = useMemo(
-		() => serviceRequiresCompanyType(selectedServiceCode) && selectedServiceId
-			? getPermittedCompanyTypes("performances", "view", selectedServiceId)
-			: [],
-		[selectedServiceCode, selectedServiceId, getPermittedCompanyTypes],
-	);
 
 	const serviceOptions = useMemo(() => {
 		return (services.data?.results ?? [])
@@ -125,6 +72,46 @@ export default function UnregisteredPerformanceList() {
 			}));
 	}, [services.data, permittedViewServiceIdsList.join(",")]);
 
+	const selectedServices = useMemo(
+		() => serviceOptions.filter(option => selectedServiceIds.includes(option.value)),
+		[serviceOptions, selectedServiceIds],
+	);
+	const selectedServiceCodes = useMemo(() => selectedServices.map(service => service.code), [selectedServices]);
+	const selectedServiceCode = selectedServiceCodes.length === 1 ? selectedServiceCodes[0] : null;
+
+	// SMS/traffic are reported per company type, so each such service is only queried for the types the user may view.
+	const allowedCompanyTypesByService = useMemo(() => {
+		const byService = new Map<number, CompanyTypeOption[]>();
+		selectedServices
+			.filter(service => isCompanyTypeFilterService(service.code))
+			.forEach(service => byService.set(service.value, getPermittedCompanyTypes("performances", "view", service.value)));
+		return byService;
+	}, [selectedServices, getPermittedCompanyTypes]);
+
+	const permittedCompanyTypeOptions = useMemo(() => {
+		const dedup = new Map<string, CompanyTypeOption>();
+		allowedCompanyTypesByService.forEach(types => types.forEach(type => dedup.has(type.key) || dedup.set(type.key, type)));
+		return Array.from(dedup.values());
+	}, [allowedCompanyTypesByService]);
+
+	const hasCompanyTypeAccess = Array.from(allowedCompanyTypesByService.values()).every(types => types.length > 0);
+	const canRequestReport = selectedServiceIds.length > 0 && hasCompanyTypeAccess;
+
+	const companyQuerySpecs = useMemo(() => {
+		if (!canRequestReport)
+			return [];
+		return selectedServices.flatMap<{ service: (typeof serviceOptions)[number], companyType: string | undefined }>((service) => {
+			const allowedKeys = allowedCompanyTypesByService.get(service.value)?.map(type => type.key);
+			if (!allowedKeys)
+				return [{ service, companyType: undefined }];
+			const types = selectedCompanyType && allowedKeys.includes(selectedCompanyType) ? [selectedCompanyType] : allowedKeys;
+			return types.map(companyType => ({ service, companyType }));
+		});
+	}, [canRequestReport, selectedServices, allowedCompanyTypesByService, selectedCompanyType]);
+	const companyQueries = useQueries({
+		queries: companyQuerySpecs.map(({ service, companyType }) => unregisteredCompaniesQuery(service.value, companyType)),
+	});
+
 	useEffect(() => {
 		if (selectedServiceIds.length === 0)
 			return;
@@ -132,75 +119,42 @@ export default function UnregisteredPerformanceList() {
 		if (nextServiceIds.length === selectedServiceIds.length)
 			return;
 
-		if (nextServiceIds.length === 1) {
-			const selected = serviceOptions.find(option => option.value === nextServiceIds[0]);
-			applySelectedServicesState(nextServiceIds, selected?.code ?? null);
-		}
-		else {
-			applySelectedServicesState(nextServiceIds, null);
-		}
+		setSelectedServiceIds(nextServiceIds);
 		formRef.current?.setFieldsValue({
 			service_ids: nextServiceIds.length > 0 ? nextServiceIds : undefined,
 			company_ids: undefined,
 		});
-	}, [selectedServiceIds, permittedViewServiceIdsList.join(","), serviceOptions, applySelectedServicesState]);
+	}, [selectedServiceIds, permittedViewServiceIdsList.join(",")]);
 
-	const companyItems = useMemo<CompanyDto[]>(() => {
+	useEffect(() => {
+		if (!selectedCompanyType || permittedCompanyTypeOptions.some(type => type.key === selectedCompanyType))
+			return;
+		setSelectedCompanyType(undefined);
+		formRef.current?.setFieldsValue({ company_type: undefined, company_ids: undefined });
+	}, [selectedCompanyType, permittedCompanyTypeOptions]);
+
+	const companyOptions = useMemo(() => {
 		const dedup = new Map<number, CompanyDto>();
-		companyQueries.forEach((query) => {
+		companyQueries.forEach((query, index) => {
+			const isSms = companyQuerySpecs[index]?.service.code === "sms";
 			(query.data?.results ?? []).forEach((company) => {
-				if (company.id != null && !dedup.has(company.id))
+				if (company.id != null && !dedup.has(company.id) && (isSms || !isSmsVendorCompany(company)))
 					dedup.set(company.id, company);
 			});
 		});
-		return Array.from(dedup.values());
-	}, [companyQueries]);
-
-	const companyOptions = useMemo(
-		() => companyItems.map(company => ({
-			label: company.name,
-			value: company.id,
-		})),
-		[companyItems],
-	);
+		return Array.from(dedup.values()).map(company => ({ label: company.name, value: company.id }));
+	}, [companyQueries, companyQuerySpecs]);
 	const companiesLoading = companyQueries.some(query => query.isLoading);
 
-	const salesAgentOptions = useMemo(() => {
-		const all = smsCommissionAgents.data?.results ?? [];
-		return all
-			.map(agent => ({
-				label: agent.name,
-				value: agent.id,
-			}));
-	}, [smsCommissionAgents.data]);
-
-	const clearDependentFilters = () => {
-		formRef.current?.setFieldsValue({
-			company_ids: undefined,
-			search: undefined,
-			sh_year: undefined,
-			sh_month: undefined,
-			ordering: undefined,
-			gr_month_start_after: undefined,
-			gr_month_start_before: undefined,
-			operation_type: undefined,
-			operator: undefined,
-			language: undefined,
-			sales_agent: undefined,
-			location: undefined,
-			company_type: undefined,
-			is_official: undefined,
-			customer_name: undefined,
-			customer_nic: undefined,
-			province_code: undefined,
-			service_type: undefined,
-		});
+	const setSelectedServices = (serviceIds: number[]) => {
+		setSelectedServiceIds(serviceIds);
+		setSelectedCompanyType(undefined);
+		formRef.current?.setFieldsValue({ company_ids: undefined, company_type: undefined });
 	};
 
-	const setSelectedServices = (serviceIds: number[], serviceCode: string | null) => {
-		setSelectedServiceIds(serviceIds);
-		setSelectedServiceCode(serviceCode);
-		clearDependentFilters();
+	const changeSelectedCompanyType = (companyType: string | undefined) => {
+		setSelectedCompanyType(companyType);
+		formRef.current?.setFieldsValue({ company_ids: undefined });
 	};
 
 	const canCreatePerformance = useMemo(() => {
@@ -251,25 +205,25 @@ export default function UnregisteredPerformanceList() {
 		() =>
 			getPerformanceColumns({
 				t,
-				selectedServiceIds,
-				selectedServiceCode,
+				selectedServiceCodes,
 				permittedCompanyTypeOptions,
 				setSelectedServices,
+				setSelectedCompanyType: changeSelectedCompanyType,
 				serviceOptions,
 				companyOptions,
 				isCompanyDisabled: selectedServiceIds.length === 0 || companiesLoading,
 				companyPlaceholder: selectedServiceIds.length > 0 ? t("performance.placeholders.selectCompany") : t("performance.placeholders.selectServiceFirst"),
-				salesAgentOptions,
+				showCollocationMode: hasCollocationRows,
 			}),
 		[
 			t,
-			selectedServiceIds,
-			selectedServiceCode,
+			selectedServiceCodes,
+			selectedServiceIds.length,
 			permittedCompanyTypeOptions,
-			serviceOptions,
 			companyOptions,
+			serviceOptions,
 			companiesLoading,
-			salesAgentOptions,
+			hasCollocationRows,
 		],
 	);
 
@@ -315,11 +269,11 @@ export default function UnregisteredPerformanceList() {
 				columns={columns}
 				actionRef={actionRef}
 				formRef={formRef}
-				request={async (params) => {
+				request={async (params, sort) => {
 					const serviceIds = normalizeNumberList((params as any).service_ids);
 					const effectiveServiceIds = serviceIds.length > 0 ? serviceIds : selectedServiceIds;
 
-					if (effectiveServiceIds.length === 0) {
+					if (effectiveServiceIds.length === 0 || !canRequestReport) {
 						return {
 							data: [],
 							total: 0,
@@ -328,31 +282,15 @@ export default function UnregisteredPerformanceList() {
 					}
 
 					const companyIds = normalizeNumberList((params as any).company_ids);
-					const query = {
+					const responseData = await fetchUnregisteredPerformanceList({
 						page: params.current ?? 1,
 						page_size: params.pageSize ?? 10,
-						search: (params as any).search,
 						service_ids: effectiveServiceIds.join(","),
 						company_ids: companyIds.length > 0 ? companyIds.join(",") : undefined,
-						sh_year: (params as any).sh_year,
-						sh_month: (params as any).sh_month,
-						ordering: (params as any).ordering,
-						gr_month_start_after: (params as any).gr_month_start_after,
-						gr_month_start_before: (params as any).gr_month_start_before,
-						operation_type: (params as any).operation_type,
-						operator: (params as any).operator,
-						language: (params as any).language,
-						sales_agent: (params as any).sales_agent,
-						location: (params as any).location,
-						company_type: (params as any).company_type,
-						is_official: (params as any).is_official,
-						customer_name: (params as any).customer_name,
-						customer_nic: (params as any).customer_nic,
-						province_code: (params as any).province_code,
-						service_type: (params as any).service_type,
-					};
-
-					const responseData = await fetchUnregisteredPerformanceList(query);
+						company_type: selectedCompanyType ? (params as any).company_type : undefined,
+						ordering: sortToOrdering(sort),
+					});
+					setHasCollocationRows(responseData.results.some(row => pickCompanyTypeToken(row.company_type) === "COLLOCATION"));
 					return {
 						data: responseData.results,
 						total: responseData.count,

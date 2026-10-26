@@ -1,28 +1,36 @@
 import type { ServiceDto } from "#src/api/common/common.types";
+import type { CompanyTypeOption } from "#src/api/user/types";
+import type { AdminRolePermissionFlags } from "../../model/admin-roles.payload";
 import type {
+	AdminRoleContractExtraAction,
 	AdminRoleDomainKey,
 	AdminRolePermissionAction,
 } from "../../model/admin-roles.schema";
 import type {
 	AdminRolePoliciesBulkUpsertPayload,
 	AdminRolePolicyDto,
-	AdminRolePolicyUpsertItem,
 } from "../../model/admin-roles.types";
 
+import { useAccess } from "#src/hooks";
 import { cn } from "#src/utils/cn";
 import { useQueries } from "@tanstack/react-query";
 import { Button, Checkbox, Empty, Spin, Tabs, Typography } from "antd";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
+import { buildAdminRolePoliciesPayload, isCompanyTypeScoped } from "../../model/admin-roles.payload";
 import {
+	adminRoleContractExtraActionValues,
 	adminRolePermissionActions,
+	adminRolePermissionActionValues,
 	adminRolePermissionTabs,
 	companyProfileCardOptions,
-	trafficCompanyTypes,
+	isAdminRoleDomainKey,
 } from "../../model/admin-roles.schema";
 import { adminRoleServicesByDomainQuery } from "../../queries/admin-roles.queries";
+import { AdminRoleCompanyTypesPanel } from "./AdminRoleCompanyTypesPanel";
 
-type PermissionFlags = Record<AdminRolePermissionAction, boolean>;
+type PermissionFlags = AdminRolePermissionFlags;
 type DomainPermissionMap = Partial<Record<number, PermissionFlags>>;
 type PermissionMatrix = Record<AdminRoleDomainKey, DomainPermissionMap>;
 interface CompanyProfileCardGroup {
@@ -33,6 +41,17 @@ interface CompanyProfileCardGroup {
 interface InitialEditorState {
 	permissionMatrix: PermissionMatrix
 	selectedCompanyCards: string[]
+	/** Company types picked per `domain:serviceId`; a missing key means "everything selectable". */
+	companyTypesByKey: Record<string, string[]>
+}
+
+type GetPermittedCompanyTypes = (domain: string, action: AdminRolePermissionAction, serviceId: number) => CompanyTypeOption[];
+
+interface CompanyTypesProps {
+	options: CompanyTypeOption[]
+	selected: string[]
+	isRequired: boolean
+	onChange: (nextKeys: string[]) => void
 }
 
 interface Props {
@@ -46,11 +65,14 @@ interface ServicePermissionCardProps {
 	domain: AdminRoleDomainKey
 	service: ServiceDto
 	permissions: PermissionFlags
+	/** Present for company-type scoped services once a CRUD action is enabled. */
+	companyTypes?: CompanyTypesProps
+	canGrantApproval: (serviceId: number, action: AdminRoleContractExtraAction) => boolean
 	onToggleService: (domain: AdminRoleDomainKey, serviceId: number, checked: boolean) => void
 	onToggleAction: (
 		domain: AdminRoleDomainKey,
 		serviceId: number,
-		action: AdminRolePermissionAction,
+		action: AdminRolePermissionAction | AdminRoleContractExtraAction,
 		checked: boolean,
 	) => void
 }
@@ -69,7 +91,38 @@ const defaultPermissionFlags: PermissionFlags = {
 	create: false,
 	update: false,
 	delete: false,
+	sign: false,
+	business_approve: false,
 };
+
+/** Actions listed for a domain: contracts also carry the sign / business approval checkboxes. */
+function getDomainActionValues(domain: AdminRoleDomainKey): Array<AdminRolePermissionAction | AdminRoleContractExtraAction> {
+	return domain === "contracts"
+		? [...adminRolePermissionActionValues, ...adminRoleContractExtraActionValues]
+		: [...adminRolePermissionActionValues];
+}
+
+function companyTypesKey(domain: string, serviceId: number) {
+	return `${domain}:${serviceId}`;
+}
+
+/** Types the signed-in admin may hand out for every enabled CRUD action (the backend rejects anything beyond that). */
+function getSelectableCompanyTypes(
+	getPermitted: GetPermittedCompanyTypes,
+	domain: AdminRoleDomainKey,
+	serviceId: number,
+	flags: PermissionFlags | undefined,
+): CompanyTypeOption[] {
+	const [head = [], ...tail] = adminRolePermissionActionValues
+		.filter(action => flags?.[action])
+		.map(action => getPermitted(domain, action, serviceId));
+	return head.filter(type => tail.every(list => list.some(item => item.key === type.key)));
+}
+
+function pickSelectedCompanyTypes(selectable: CompanyTypeOption[], picked: string[] | undefined): string[] {
+	const keys = selectable.map(type => type.key);
+	return picked ? keys.filter(key => picked.includes(key)) : keys;
+}
 
 const companyProfileCardGroups: CompanyProfileCardGroup[] = [
 	{
@@ -84,21 +137,24 @@ const companyProfileCardGroups: CompanyProfileCardGroup[] = [
 	},
 ];
 
-function createPermissionFlags(enabled: boolean): PermissionFlags {
+function createPermissionFlags(enabled: boolean, domain: AdminRoleDomainKey): PermissionFlags {
 	return {
+		...defaultPermissionFlags,
 		view: enabled,
 		create: enabled,
 		update: enabled,
 		delete: enabled,
+		sign: enabled && domain === "contracts",
+		business_approve: enabled && domain === "contracts",
 	};
 }
 
-function isAllActionsEnabled(permissions: PermissionFlags): boolean {
-	return adminRolePermissionActions.every(action => permissions[action.value]);
+function isAllActionsEnabled(permissions: PermissionFlags, domain: AdminRoleDomainKey): boolean {
+	return getDomainActionValues(domain).every(action => permissions[action]);
 }
 
-function isSomeActionsEnabled(permissions: PermissionFlags): boolean {
-	return adminRolePermissionActions.some(action => permissions[action.value]);
+function isSomeActionsEnabled(permissions: PermissionFlags, domain: AdminRoleDomainKey): boolean {
+	return getDomainActionValues(domain).some(action => permissions[action]);
 }
 
 function buildPermissionMatrix(
@@ -110,7 +166,7 @@ function buildPermissionMatrix(
 
 		result[tab.value] = domainServices.reduce<DomainPermissionMap>((domainResult, service) => {
 			const isEnabled = initialAllowedServiceIds.includes(service.id);
-			domainResult[service.id] = createPermissionFlags(isEnabled);
+			domainResult[service.id] = createPermissionFlags(isEnabled, tab.value);
 			return domainResult;
 		}, {});
 
@@ -143,81 +199,49 @@ function buildInitialEditorState(
 		return {
 			permissionMatrix: buildPermissionMatrix(servicesByDomain, initialAllowedServiceIds),
 			selectedCompanyCards: [],
+			companyTypesByKey: {},
 		};
 	}
 
 	const permissionMatrix = buildPermissionMatrix(servicesByDomain, []);
+	const companyTypesByKey: Record<string, string[]> = {};
 
 	for (const policy of initialPolicies) {
+		if (!isAdminRoleDomainKey(policy.domain)) {
+			continue;
+		}
 		const domainPermissions = permissionMatrix[policy.domain] ?? {};
 		domainPermissions[policy.service] = {
 			view: policy.can_view,
 			create: policy.can_create,
 			update: policy.can_update,
 			delete: policy.can_delete,
+			sign: policy.can_sign,
+			business_approve: policy.can_business_approve,
 		};
 		permissionMatrix[policy.domain] = domainPermissions;
+		if (isCompanyTypeScoped(policy.service_code) && policy.company_types.length > 0) {
+			companyTypesByKey[companyTypesKey(policy.domain, policy.service)] = policy.company_types;
+		}
 	}
 
 	return {
 		permissionMatrix,
 		selectedCompanyCards: normalizeCompanyVisibleCards(initialPolicies),
+		companyTypesByKey,
 	};
-}
-
-function buildPoliciesPayload(
-	servicesByDomain: Record<AdminRoleDomainKey, ServiceDto[]>,
-	permissionMatrix: PermissionMatrix,
-	selectedCompanyCards: string[],
-): AdminRolePoliciesBulkUpsertPayload {
-	const allCompanyCardCodes = companyProfileCardOptions.map(card => card.code);
-	const normalizedCompanyCards = selectedCompanyCards.length === allCompanyCardCodes.length
-		? ["all"]
-		: selectedCompanyCards;
-
-	const items = adminRolePermissionTabs.flatMap((tab) => {
-		const domain = tab.value;
-		const services = servicesByDomain[domain] ?? [];
-
-		return services.flatMap<AdminRolePolicyUpsertItem>((service) => {
-			const permissions = permissionMatrix[domain]?.[service.id];
-
-			if (!permissions || !isSomeActionsEnabled(permissions)) {
-				return [];
-			}
-
-			const item: AdminRolePolicyUpsertItem = {
-				service: service.id,
-				domain,
-				can_view: permissions.view,
-				can_create: permissions.create,
-				can_update: permissions.update,
-				can_delete: permissions.delete,
-			};
-
-			if (service.code === "traffic") {
-				item.traffic_company_types = [...trafficCompanyTypes];
-			}
-
-			if (domain === "company_profile") {
-				item.company_visible_cards = normalizedCompanyCards;
-			}
-
-			return [item];
-		});
-	});
-
-	return { items };
 }
 
 function PermissionActionItem({
 	action,
 	checked,
+	disabled = false,
 	serviceName,
 	onChange,
 }: {
-	action: { label: string, value: AdminRolePermissionAction }
+	action: { label: string, value: AdminRolePermissionAction | AdminRoleContractExtraAction }
 	checked: boolean
+	disabled?: boolean
 	serviceName: string
 	onChange: (checked: boolean) => void
 }) {
@@ -230,6 +254,7 @@ function PermissionActionItem({
 			<span className="text-sm font-medium">{action.label}</span>
 			<Checkbox
 				checked={checked}
+				disabled={disabled}
 				onChange={handleChange}
 				aria-label={`${action.label} برای ${serviceName}`}
 			/>
@@ -241,17 +266,24 @@ function ServicePermissionCard({
 	domain,
 	service,
 	permissions,
+	companyTypes,
+	canGrantApproval,
 	onToggleService,
 	onToggleAction,
 }: ServicePermissionCardProps) {
-	const allChecked = isAllActionsEnabled(permissions);
-	const someChecked = isSomeActionsEnabled(permissions);
+	const { t } = useTranslation();
+	const allChecked = isAllActionsEnabled(permissions, domain);
+	const someChecked = isSomeActionsEnabled(permissions, domain);
+	const approvalActions = [
+		{ label: t("system.role.permissions.sign"), value: "sign" },
+		{ label: t("system.role.permissions.businessApprove"), value: "business_approve" },
+	] as const;
 
 	function handleToggleAll(event: { target: { checked: boolean } }) {
 		onToggleService(domain, service.id, event.target.checked);
 	}
 
-	function handleToggleAction(action: AdminRolePermissionAction) {
+	function handleToggleAction(action: AdminRolePermissionAction | AdminRoleContractExtraAction) {
 		return (checked: boolean) => {
 			onToggleAction(domain, service.id, action, checked);
 		};
@@ -289,7 +321,21 @@ function ServicePermissionCard({
 						onChange={handleToggleAction(action.value)}
 					/>
 				))}
+				{domain === "contracts"
+					? approvalActions.map(action => (
+						<PermissionActionItem
+							key={`${service.id}-${action.value}`}
+							action={action}
+							checked={permissions[action.value]}
+							disabled={!canGrantApproval(service.id, action.value)}
+							serviceName={service.name}
+							onChange={handleToggleAction(action.value)}
+						/>
+					))
+					: null}
 			</fieldset>
+
+			{companyTypes ? <AdminRoleCompanyTypesPanel {...companyTypes} /> : null}
 		</article>
 	);
 }
@@ -298,17 +344,21 @@ function PermissionDomainPanel({
 	domain,
 	services,
 	permissions,
+	getCompanyTypes,
+	canGrantApproval,
 	onToggleService,
 	onToggleAction,
 }: {
 	domain: AdminRoleDomainKey
 	services: ServiceDto[]
 	permissions: DomainPermissionMap
+	getCompanyTypes: (domain: AdminRoleDomainKey, service: ServiceDto) => CompanyTypesProps | undefined
+	canGrantApproval: (serviceId: number, action: AdminRoleContractExtraAction) => boolean
 	onToggleService: (domain: AdminRoleDomainKey, serviceId: number, checked: boolean) => void
 	onToggleAction: (
 		domain: AdminRoleDomainKey,
 		serviceId: number,
-		action: AdminRolePermissionAction,
+		action: AdminRolePermissionAction | AdminRoleContractExtraAction,
 		checked: boolean,
 	) => void
 }) {
@@ -325,6 +375,8 @@ function PermissionDomainPanel({
 						domain={domain}
 						service={service}
 						permissions={permissions[service.id] ?? defaultPermissionFlags}
+						companyTypes={getCompanyTypes(domain, service)}
+						canGrantApproval={canGrantApproval}
 						onToggleService={onToggleService}
 						onToggleAction={onToggleAction}
 					/>
@@ -438,6 +490,13 @@ export function AdminRolePermissionsEditor({
 	const [activeDomain, setActiveDomain] = useState<AdminRoleDomainKey>("contracts");
 	const [selectedCompanyCards, setSelectedCompanyCards] = useState<string[]>([]);
 
+	const [companyTypesByKey, setCompanyTypesByKey] = useState<Record<string, string[]>>({});
+
+	const { getPermittedCompanyTypes, hasDomainPermissionByServiceId } = useAccess();
+	// kept in a ref: the access helpers are recreated on every render and must not retrigger the payload effect
+	const getPermittedCompanyTypesRef = useRef(getPermittedCompanyTypes);
+	getPermittedCompanyTypesRef.current = getPermittedCompanyTypes;
+
 	const serviceQueries = useQueries({
 		queries: adminRolePermissionTabs.map(tab => adminRoleServicesByDomainQuery(tab.value)),
 	});
@@ -479,13 +538,45 @@ export function AdminRolePermissionsEditor({
 	useEffect(() => {
 		setPermissionMatrix(initialEditorState.permissionMatrix);
 		setSelectedCompanyCards(initialEditorState.selectedCompanyCards);
+		setCompanyTypesByKey(initialEditorState.companyTypesByKey);
 	}, [initialEditorState]);
 
 	useEffect(() => {
-		const currentPayload = buildPoliciesPayload(servicesByDomain, permissionMatrix, selectedCompanyCards);
+		const currentPayload = buildAdminRolePoliciesPayload({
+			servicesByDomain,
+			permissionMatrix,
+			selectedCompanyCards,
+			initialPolicies,
+			getSelectedCompanyTypes: (domain, serviceId, flags) => pickSelectedCompanyTypes(
+				getSelectableCompanyTypes(getPermittedCompanyTypesRef.current, domain, serviceId, flags),
+				companyTypesByKey[companyTypesKey(domain, serviceId)],
+			),
+		});
 
 		onChange?.(currentPayload);
-	}, [onChange, permissionMatrix, selectedCompanyCards, servicesByDomain]);
+	}, [onChange, permissionMatrix, selectedCompanyCards, companyTypesByKey, servicesByDomain, initialPolicies]);
+
+	function getCompanyTypes(domain: AdminRoleDomainKey, service: ServiceDto): CompanyTypesProps | undefined {
+		const flags = permissionMatrix[domain]?.[service.id];
+		const isRequired = adminRolePermissionActionValues.some(action => flags?.[action]);
+		if (!isCompanyTypeScoped(service.code) || !isRequired) {
+			return undefined;
+		}
+
+		const options = getSelectableCompanyTypes(getPermittedCompanyTypes, domain, service.id, flags);
+		const key = companyTypesKey(domain, service.id);
+		return {
+			options,
+			selected: pickSelectedCompanyTypes(options, companyTypesByKey[key]),
+			isRequired,
+			onChange: nextKeys => setCompanyTypesByKey(current => ({ ...current, [key]: nextKeys })),
+		};
+	}
+
+	// non-full admins can only hand out the approvals they hold themselves
+	function canGrantApproval(serviceId: number, action: AdminRoleContractExtraAction) {
+		return hasDomainPermissionByServiceId("contracts", action, serviceId);
+	}
 
 	function handleTabChange(key: string) {
 		const nextDomain = adminRolePermissionTabs.find(tab => tab.value === key)?.value;
@@ -514,13 +605,13 @@ export function AdminRolePermissionsEditor({
 	}
 
 	function handleToggleService(domain: AdminRoleDomainKey, serviceId: number, checked: boolean) {
-		updateServicePermissions(domain, serviceId, () => createPermissionFlags(checked));
+		updateServicePermissions(domain, serviceId, () => createPermissionFlags(checked, domain));
 	}
 
 	function handleToggleAction(
 		domain: AdminRoleDomainKey,
 		serviceId: number,
-		action: AdminRolePermissionAction,
+		action: AdminRolePermissionAction | AdminRoleContractExtraAction,
 		checked: boolean,
 	) {
 		updateServicePermissions(domain, serviceId, current => ({
@@ -535,7 +626,7 @@ export function AdminRolePermissionsEditor({
 		setPermissionMatrix(current => ({
 			...current,
 			[activeDomain]: domainServices.reduce<DomainPermissionMap>((result, service) => {
-				result[service.id] = createPermissionFlags(checked);
+				result[service.id] = createPermissionFlags(checked, activeDomain);
 				return result;
 			}, {}),
 		}));
@@ -587,6 +678,8 @@ export function AdminRolePermissionsEditor({
 					domain={activeDomain}
 					services={servicesByDomain[activeDomain] ?? []}
 					permissions={permissionMatrix[activeDomain] ?? {}}
+					getCompanyTypes={getCompanyTypes}
+					canGrantApproval={canGrantApproval}
 					onToggleService={handleToggleService}
 					onToggleAction={handleToggleAction}
 				/>

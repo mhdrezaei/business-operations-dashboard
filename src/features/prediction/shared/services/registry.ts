@@ -15,7 +15,6 @@ export interface PredictionRecordSelection {
 }
 
 export interface PredictionPayloadContext {
-	companyIds: number[]
 	companies: CompanyDto[]
 }
 
@@ -36,7 +35,6 @@ export interface PredictionServiceModule {
 	findRecordBySelection: (records: unknown[], selection: PredictionRecordSelection) => unknown | null
 	fetchYears: (serviceId: number, companyType?: string | null) => Promise<Paginated<unknown>>
 	fetchList: (params: PredictionListParams) => Promise<Paginated<unknown>>
-	fetchDetail: (id: number) => Promise<unknown>
 	getYearsQueryKey: (
 		serviceId: number | null | undefined,
 		companyType?: string | null,

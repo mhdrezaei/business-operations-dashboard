@@ -1,10 +1,13 @@
 import type { ActionType, ProColumns, ProCoreActionType, ProFormInstance } from "@ant-design/pro-components";
 
 import type { ContractServicePath } from "../../api/contracts.api";
+import type { ContractCreateRouteState } from "../../shared/utils/contract-routes";
+import type { ContractListFormParams } from "../model/contract-list";
 import type { ContractListItemType } from "../model/contracts.list.types";
 
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
-import { companiesByServiceQuery, servicesQuery } from "#src/features/contract/create/queries/contract.queries";
+import { sortToOrdering } from "#src/components/basic-table/sort";
+import { companiesByServiceQuery, servicesQuery } from "#src/features/contract/shared/queries/contract.queries";
 import { useAccess } from "#src/hooks";
 import { TableActionDownloadIcon, TableActionEditIcon, TableActionEyeIcon, TableActionTrashIcon } from "#src/icons";
 import { ExclamationCircleOutlined, PlusCircleOutlined, PrinterOutlined } from "@ant-design/icons";
@@ -15,8 +18,18 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { checkOfficialPdfStatus, fetchContractDetail, fetchContractPrintData, fetchContractsList, fetchDeleteContract, fetchSignFlowPreview } from "../../api/contracts.api";
+import { getContractAccessCompanyType } from "../../shared/model/company-type-options";
+import { isTelecomFrameCode } from "../../shared/services/telecom-frame/telecom-frame.types";
 import { companyTypeMatches, pickCompanyTypeToken } from "../../shared/utils";
 import { buildContractEditPath } from "../../shared/utils/contract-routes";
+import {
+	CONTRACT_LIST_DEFAULT_PAGE_SIZE,
+	CONTRACT_LIST_PAGE_SIZE_OPTIONS,
+	CONTRACT_LIST_SORT_ALIASES,
+	getContractPdfBlockReason,
+	resolveListServicePath,
+	toContractListQuery,
+} from "../model/contract-list";
 import { useContractAddendaTableStyles } from "./components/contract-addenda-table.styles";
 import { ContractAddendaExpandedRow } from "./components/ContractAddendaExpandedRow";
 import { ContractTemplatePrintModal } from "./components/ContractTemplatePrintModal";
@@ -56,6 +69,7 @@ export default function ContractListPage() {
 	const formRef = useRef<ProFormInstance | undefined>(undefined);
 	const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
 	const [selectedTrafficCompanyType, setSelectedTrafficCompanyType] = useState<string | null>(null);
+	const [selectedSmsParty, setSelectedSmsParty] = useState<"vendor" | "client" | null>(null);
 	const [downloadingPdfId, setDownloadingPdfId] = useState<number | null>(null);
 	const [printModalOpen, setPrintModalOpen] = useState(false);
 	const [printRecord, setPrintRecord] = useState<ContractListItemType | null>(null);
@@ -103,37 +117,8 @@ export default function ContractListPage() {
 		return m;
 	}, [services.data]);
 
-	const resolveServicePath = (row: ContractListItemType): ContractServicePath => {
-		const rawCode = serviceCodeById.get(Number(row.service_id)) ?? null;
-		const code = typeof rawCode === "string" ? rawCode.trim().toLowerCase() : null;
-		if (code === "psp")
-			return "psp";
-
-		if (code === "traffic")
-			return "traffic";
-
-		if (code === "shahkar")
-			return "shahkar";
-
-		if (code === "commercial")
-			return "commercial";
-		if (code === "sales_agency" || code === "sales-agency") {
-			return pickCompanyTypeToken(row.company_type) === "SALES_REP_MANAGEMENT"
-				? "sales-agency/rep-management"
-				: "sales-agency/outbound";
-		}
-
-		if (code === "sms-commission" || code === "sms_commission")
-			return "sms-commission";
-
-		if (code === "sms") {
-			return row.sms_party === "client"
-				? "sms/client"
-				: "sms/vendor";
-		}
-
-		return "openapi";
-	};
+	const resolveServicePath = (row: ContractListItemType): ContractServicePath =>
+		resolveListServicePath(row, serviceCodeById.get(Number(row.service_id)));
 
 	const selectedService = useMemo(() => {
 		if (!selectedServiceId)
@@ -145,6 +130,15 @@ export default function ContractListPage() {
 	const isTrafficService = selectedServiceCode === "traffic";
 	const isSmsService = selectedServiceCode === "sms";
 	const isCompanyTypeService = selectedServiceCode === "traffic" || selectedServiceCode === "sms" || selectedServiceCode === "psp" || selectedServiceCode === "sales_agency" || selectedServiceCode === "sales-agency";
+	const hasServiceOfKind = (matches: (code: string) => boolean) =>
+		(services.data?.results ?? []).some((service: any) => matches(String(service?.code ?? "").trim().toLowerCase()));
+	// Old: with a service selected only that service decides, otherwise any visible service of that kind does.
+	const showCompanyTypeColumn = selectedServiceId
+		? isCompanyTypeService || isTelecomFrameCode(selectedServiceCode)
+		: hasServiceOfKind(code => ["traffic", "sms", "psp", "sales_agency", "sales-agency"].includes(code) || isTelecomFrameCode(code));
+	const showOfficialColumn = selectedServiceId
+		? isTrafficService || isSmsService
+		: hasServiceOfKind(code => code === "traffic" || code === "sms");
 	const permittedTrafficCompanyTypeOptions = useMemo(
 		() => isCompanyTypeService ? getPermittedCompanyTypes("contracts", "view", selectedServiceId) : [],
 		[isCompanyTypeService, selectedServiceId, getPermittedCompanyTypes],
@@ -164,9 +158,9 @@ export default function ContractListPage() {
 			company_type: undefined,
 			company_id: undefined,
 		});
-	}, [isCompanyTypeService, selectedTrafficCompanyType, permittedTrafficCompanyTypeOptions]);
+	}, [isCompanyTypeService, isSmsService, selectedSmsParty, selectedTrafficCompanyType, permittedTrafficCompanyTypeOptions]);
 
-	const companies = useQuery(companiesByServiceQuery(selectedServiceId));
+	const companies = useQuery(companiesByServiceQuery(selectedServiceId, { includeInternal: true }));
 
 	const serviceOptions = useMemo(
 		() =>
@@ -191,18 +185,19 @@ export default function ContractListPage() {
 	}, [companies.data, isCompanyTypeService, selectedTrafficCompanyType]);
 
 	const isCompanyDisabled
-		= !selectedServiceId || companies.isLoading || (isCompanyTypeService && !selectedTrafficCompanyType);
+		= !selectedServiceId || companies.isLoading || (isCompanyTypeService && !selectedTrafficCompanyType) || (isSmsService && selectedSmsParty === "vendor");
 
 	const companyPlaceholder
 		= !selectedServiceId
-			? "ابتدا نوع سرویس را انتخاب کنید"
+			? t("contract.companyPlaceholder.selectServiceFirst")
 			: companies.isLoading
-				? "در حال دریافت لیست شرکت‌ها..."
+				? t("contract.companyPlaceholder.loading")
 				: isCompanyTypeService && !selectedTrafficCompanyType
-					? "ابتدا نوع شرکت را انتخاب کنید"
-					: "شرکت را انتخاب کنید";
+					? t("contract.companyPlaceholder.selectCompanyTypeFirst")
+					: t("contract.companyPlaceholder.select");
 
 	const clearDependentFilters = () => {
+		setSelectedSmsParty(null);
 		formRef.current?.setFieldsValue({
 			company_id: undefined,
 			company_type: undefined,
@@ -210,22 +205,52 @@ export default function ContractListPage() {
 			sms_party: undefined,
 		});
 	};
-	const getRowCompanyType = (row: ContractListItemType) =>
-		pickCompanyTypeToken((row as any).traffic_company_type ?? (row as any).company_type);
+	const getRowCompanyType = (row: ContractListItemType) => pickCompanyTypeToken(row.company_type);
 
+	// Single-option filters are picked automatically (old behaviour); the form is re-submitted to apply them.
+	const autoSelectFilter = (values: Record<string, unknown>) => {
+		formRef.current?.setFieldsValue(values);
+		formRef.current?.submit();
+	};
+
+	useEffect(() => {
+		if (!selectedServiceId && serviceOptions.length === 1) {
+			// eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
+			setSelectedServiceId(Number(serviceOptions[0].value));
+			autoSelectFilter({ service_id: serviceOptions[0].value });
+		}
+	}, [selectedServiceId, serviceOptions]);
+
+	useEffect(() => {
+		if (isCompanyTypeService && !(isSmsService && selectedSmsParty === "vendor") && !selectedTrafficCompanyType && permittedTrafficCompanyTypeOptions.length === 1) {
+			const [only] = permittedTrafficCompanyTypeOptions;
+			// eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
+			setSelectedTrafficCompanyType(only.key);
+			autoSelectFilter({ company_type: only.key });
+		}
+	}, [isCompanyTypeService, isSmsService, selectedSmsParty, selectedTrafficCompanyType, permittedTrafficCompanyTypeOptions]);
+
+	useEffect(() => {
+		if (!isCompanyDisabled && companyOptions.length === 1 && !formRef.current?.getFieldValue("company_id"))
+			autoSelectFilter({ company_id: companyOptions[0].value });
+	}, [isCompanyDisabled, companyOptions]);
+
+	const getRowAccessCompanyType = (row: ContractListItemType) => getContractAccessCompanyType(resolveServicePath(row), getRowCompanyType(row));
 	const canViewRow = (row: ContractListItemType) =>
-		hasDomainPermissionByServiceId("contracts", "view", Number(row.service_id), getRowCompanyType(row));
+		hasDomainPermissionByServiceId("contracts", "view", Number(row.service_id), getRowAccessCompanyType(row));
 	const canUpdateRow = (row: ContractListItemType) =>
-		hasDomainPermissionByServiceId("contracts", "update", Number(row.service_id), getRowCompanyType(row));
+		hasDomainPermissionByServiceId("contracts", "update", Number(row.service_id), getRowAccessCompanyType(row));
 	const canDeleteRow = (row: ContractListItemType) =>
-		hasDomainPermissionByServiceId("contracts", "delete", Number(row.service_id), getRowCompanyType(row));
+		hasDomainPermissionByServiceId("contracts", "delete", Number(row.service_id), getRowAccessCompanyType(row));
+	const canCreateRow = (row: ContractListItemType) =>
+		hasDomainPermissionByServiceId("contracts", "create", Number(row.service_id), getRowAccessCompanyType(row));
 	const canSignRow = (row: ContractListItemType) =>
-		hasDomainPermissionByServiceId("contracts", "sign", Number(row.service_id), getRowCompanyType(row))
-		|| hasDomainPermissionByServiceId("contracts", "update", Number(row.service_id), getRowCompanyType(row));
+		hasDomainPermissionByServiceId("contracts", "sign", Number(row.service_id), getRowAccessCompanyType(row))
+		|| hasDomainPermissionByServiceId("contracts", "update", Number(row.service_id), getRowAccessCompanyType(row));
 
 	const handleDeleteRow = async (row: ContractListItemType, action?: ProCoreActionType<object>) => {
 		if (!canDeleteRow(row)) {
-			window.$message?.warning("دسترسی حذف قرارداد ندارید.");
+			window.$message?.warning(t("contract.list.message.noDeleteAccess"));
 			return;
 		}
 		await fetchDeleteContract(resolveServicePath(row), row.id);
@@ -241,10 +266,10 @@ export default function ContractListPage() {
 		}
 		catch (error: any) {
 			if (error?.message === "POPUP_BLOCKED") {
-				window.$message?.error("پاپ‌آپ مرورگر مسدود است. لطفا آن را فعال کنید.");
+				window.$message?.error(t("contract.list.message.popupBlocked"));
 				return;
 			}
-			window.$message?.error("دریافت فایل قرارداد ناموفق بود.");
+			window.$message?.error(t("contract.list.message.downloadFailed"));
 		}
 		finally {
 			setDownloadingPdfId(null);
@@ -254,11 +279,11 @@ export default function ContractListPage() {
 	const showActiveSignFlowModal = (signFlowId: number | string | null) => {
 		const confirmFn = modal?.confirm ?? window.$modal?.confirm ?? Modal.confirm;
 		confirmFn({
-			title: "گردش امضای فعال",
+			title: t("contract.list.activeSignFlow.title"),
 			icon: <ExclamationCircleOutlined />,
-			content: "یک گردش امضای فعال برای این قرارداد موجود است. آیا مایل به هدایت شدن به آن هستید؟",
-			okText: "تایید و هدایت",
-			cancelText: "انصراف",
+			content: t("contract.list.activeSignFlow.content"),
+			okText: t("contract.list.activeSignFlow.ok"),
+			cancelText: t("common.cancel"),
 			onOk: () => {
 				if (signFlowId !== null && signFlowId !== undefined) {
 					navigate(`/contracts/sign-flows/${signFlowId}`);
@@ -290,13 +315,13 @@ export default function ContractListPage() {
 			}
 
 			if (!status.can_upload && status.has_official_pdf) {
-				window.$message?.warning("نسخه رسمی این قرارداد قبلا آپلود شده و در حال گرفتن تایید می باشد");
+				window.$message?.warning(t("contract.list.message.officialUploaded"));
 				return;
 			}
 		}
 		catch (error) {
 			console.error(error);
-			window.$message?.error("خطا در بررسی وضعیت قرارداد");
+			window.$message?.error(t("contract.list.message.officialStatusFailed"));
 			return;
 		}
 
@@ -326,7 +351,7 @@ export default function ContractListPage() {
 		}
 		catch (err) {
 			console.error(err);
-			window.$message?.error("خطا در دریافت اطلاعات گردش کار");
+			window.$message?.error(t("contract.list.message.signFlowFailed"));
 			setSignFlowModalOpen(false);
 		}
 		finally {
@@ -348,6 +373,14 @@ export default function ContractListPage() {
 				isTrafficService: !!isTrafficService,
 				isCompanyTypeService: !!isCompanyTypeService,
 				isSmsService: !!isSmsService,
+				selectedSmsParty,
+				setSelectedSmsParty: (v) => {
+					setSelectedSmsParty(v);
+					setSelectedTrafficCompanyType(null);
+					formRef.current?.setFieldsValue({ company_type: undefined, company_id: undefined });
+				},
+				showCompanyTypeColumn,
+				showOfficialColumn,
 				selectedTrafficCompanyType,
 				setSelectedTrafficCompanyType: (v) => {
 					setSelectedTrafficCompanyType(v);
@@ -367,6 +400,9 @@ export default function ContractListPage() {
 			isTrafficService,
 			isCompanyTypeService,
 			isSmsService,
+			selectedSmsParty,
+			showCompanyTypeColumn,
+			showOfficialColumn,
 			selectedTrafficCompanyType,
 			permittedTrafficCompanyTypeOptions,
 			serviceOptions,
@@ -392,13 +428,36 @@ export default function ContractListPage() {
 					const service = resolveServicePath(record);
 					const companyType = getRowCompanyType(record) ?? "";
 
+					const pdfBlockReason = getContractPdfBlockReason(service, record.is_official);
+
+					if (canCreateRow(record)) {
+						const isSmsVendorRow = service === "sms/vendor";
+						actions.push(
+							<BasicButton
+								key="create"
+								type="link"
+								size="large"
+								title={t("contract.list.actions.createFromRow")}
+								icon={<PlusCircleOutlined />}
+								onClick={() => navigate("/contracts/new", {
+									state: {
+										serviceId: record.service_id,
+										companyId: isSmsVendorRow ? null : record.company_id,
+										companyType: companyType || null,
+										counterpartyType: isSmsVendorRow ? "gov_ops" : service === "sms/client" ? "partners" : null,
+									} satisfies ContractCreateRouteState,
+								})}
+							/>,
+						);
+					}
+
 					if (canUpdateRow(record)) {
 						actions.push(
 							<BasicButton
 								key="edit"
 								type="link"
 								size="large"
-								title="ویرایش قرارداد"
+								title={t("contract.list.actions.edit")}
 								icon={<TableActionEditIcon />}
 								onClick={() => {
 									navigate(buildContractEditPath({ contractId: record.id, service, serviceId: record.service_id, companyType }));
@@ -413,7 +472,7 @@ export default function ContractListPage() {
 								key="preview"
 								type="link"
 								size="large"
-								title="پیش‌نمایش قرارداد"
+								title={t("contract.list.actions.preview")}
 								icon={<TableActionEyeIcon />}
 								onClick={() => navigate(`/contracts/${record.id}/preview?service=${encodeURIComponent(service)}&serviceId=${record.service_id}&companyType=${encodeURIComponent(companyType)}`)}
 							/>,
@@ -424,8 +483,9 @@ export default function ContractListPage() {
 								key="pdf"
 								type="link"
 								size="large"
-								title="دانلود PDF قرارداد"
+								title={pdfBlockReason ? t(`contract.list.pdfDisabled.${pdfBlockReason}`) : t("contract.list.actions.downloadPdf")}
 								icon={<TableActionDownloadIcon />}
+								disabled={pdfBlockReason !== null}
 								loading={downloadingPdfId === record.id}
 								onClick={() => handleDownloadPdf(record)}
 							/>,
@@ -438,7 +498,7 @@ export default function ContractListPage() {
 								key="print"
 								type="link"
 								size="large"
-								title="چاپ قرارداد"
+								title={t("contract.list.actions.print")}
 								icon={<PrinterOutlined />}
 								onClick={() => handleSignFlowClick(record)}
 							/>,
@@ -454,7 +514,7 @@ export default function ContractListPage() {
 								cancelText={t("common.cancel")}
 								onConfirm={() => handleDeleteRow(record, action)}
 							>
-								<BasicButton type="link" size="large" title="حذف قرارداد" icon={<TableActionTrashIcon />}>
+								<BasicButton type="link" size="large" title={t("contract.edit.delete")} icon={<TableActionTrashIcon />}>
 								</BasicButton>
 							</Popconfirm>,
 						);
@@ -470,9 +530,9 @@ export default function ContractListPage() {
 		<BasicContent className="h-full">
 			<BasicTable<ContractListItemType>
 				rootClassName={addendaTableClasses.contractTable}
-				filterTitle="جستجوی قرارداد"
-				filterSubtitle="برای جستجو، فیلتر و مرتب‌سازی قراردادها، نوع سرویس و شرکت را انتخاب کنید."
-				tableSubtitle="قراردادهای ثبت شده را مشاهده و مدیریت کنید. برای ایجاد قرارداد جدید، از کلید ایجاد قرارداد جدید استفاده کنید."
+				filterTitle={t("contract.list.page.filterTitle")}
+				filterSubtitle={t("contract.list.page.filterSubtitle")}
+				tableSubtitle={t("contract.list.page.tableSubtitle")}
 				rowKey="id"
 				columns={columns}
 				expandable={{
@@ -500,20 +560,10 @@ export default function ContractListPage() {
 					actionRef.current?.reload?.();
 				}}
 
-				request={async (params) => {
-					const query = {
-						page: params.current ?? 1,
-						page_size: params.pageSize ?? 20,
-						search: (params as any).search,
-						service_id: (params as any).service_id,
-						company_id: (params as any).company_id,
-						company_type: (params as any).company_type,
-						is_official: (params as any).is_official,
-						sms_party: (params as any).sms_party,
-						ordering: (params as any).ordering,
-					};
-
-					const responseData = await fetchContractsList(query as any);
+				request={async (params, sort) => {
+					const responseData = await fetchContractsList(
+						toContractListQuery(params as ContractListFormParams, sortToOrdering(sort, CONTRACT_LIST_SORT_ALIASES)),
+					);
 
 					return {
 						...responseData,
@@ -521,6 +571,8 @@ export default function ContractListPage() {
 						total: responseData.count,
 					};
 				}}
+				pagination={{ defaultPageSize: CONTRACT_LIST_DEFAULT_PAGE_SIZE, pageSizeOptions: CONTRACT_LIST_PAGE_SIZE_OPTIONS }}
+				columnsState={{ persistenceKey: "contract-list-columns", persistenceType: "localStorage" }}
 				headerTitle={t("contract.tableTitle.listTitle")}
 				toolBarRender={() => {
 					if (!canCreateContracts) {

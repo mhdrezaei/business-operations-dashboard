@@ -1,6 +1,6 @@
+import type { OpenApiAmountPrefix } from "../../../api/predictions.api";
 import type {
-	OpenApiChannelCode,
-	OpenApiChannelSharesValue,
+	OpenApiAmountField,
 	OpenApiManualSharesValue,
 	OpenApiOperationCode,
 	OpenApiPredictionModel,
@@ -8,6 +8,10 @@ import type {
 	PredictionMetricCode,
 	PredictionShareSectionValue,
 } from "../../model/prediction.form.types";
+
+function capitalize<T extends string>(value: T) {
+	return `${value.charAt(0).toUpperCase()}${value.slice(1)}` as Capitalize<T>;
+}
 
 export const OPENAPI_METRICS = [
 	{ key: "value", titleKey: "prediction.metrics.value" },
@@ -19,53 +23,51 @@ export const OPENAPI_OPERATION_SECTIONS = [
 	{
 		key: "billInquiry",
 		apiKey: "bill_inquiry",
+		shareKey: "BILL_INQUIRY",
 		titleKey: "prediction.operations.billInquiry",
-		models: ["LEGACY", "PACKAGE"],
-		fields: {
-			value: "billInquiryValueYear",
-			income: "billInquiryIncomeYear",
-			expense: "billInquiryExpenseYear",
-		},
+		model: "LEGACY",
 	},
 	{
 		key: "receiptRegister",
 		apiKey: "receipt_register",
+		shareKey: "RECEIPT_REGISTER",
 		titleKey: "prediction.operations.receiptRegister",
-		models: ["LEGACY"],
-		fields: {
-			value: "receiptRegisterValueYear",
-			income: "receiptRegisterIncomeYear",
-			expense: "receiptRegisterExpenseYear",
-		},
+		model: "LEGACY",
 	},
 	{
-		key: "smsTotal",
-		apiKey: "sms_total",
-		titleKey: "prediction.operations.smsTotal",
-		models: ["PACKAGE"],
-		fields: {
-			value: "smsTotalValueYear",
-			income: "smsTotalIncomeYear",
-			expense: "smsTotalExpenseYear",
-		},
+		key: "billInquiryMidterm",
+		apiKey: "bill_inquiry_midterm",
+		shareKey: "BILL_INQUIRY_MIDTERM",
+		titleKey: "prediction.operations.billInquiryMidterm",
+		model: "LEGACY_2",
 	},
 	{
-		key: "trafficTotal",
-		apiKey: "traffic_total",
-		titleKey: "prediction.operations.trafficTotal",
-		models: ["PACKAGE"],
-		fields: {
-			value: "trafficTotalValueYear",
-			income: "trafficTotalIncomeYear",
-			expense: "trafficTotalExpenseYear",
-		},
+		key: "billInquiryEndterm",
+		apiKey: "bill_inquiry_endterm",
+		shareKey: "BILL_INQUIRY_ENDTERM",
+		titleKey: "prediction.operations.billInquiryEndterm",
+		model: "LEGACY_2",
+	},
+	{
+		key: "receiptRegisterConnected",
+		apiKey: "receipt_register_connected",
+		shareKey: "RECEIPT_REGISTER_CONNECTED",
+		titleKey: "prediction.operations.receiptRegisterConnected",
+		model: "LEGACY_2",
+	},
+	{
+		key: "receiptRegisterDisconnected",
+		apiKey: "receipt_register_disconnected",
+		shareKey: "RECEIPT_REGISTER_DISCONNECTED",
+		titleKey: "prediction.operations.receiptRegisterDisconnected",
+		model: "LEGACY_2",
 	},
 ] as const satisfies ReadonlyArray<{
 	key: OpenApiOperationCode
-	apiKey: string
+	apiKey: OpenApiAmountPrefix
+	shareKey: string
 	titleKey: string
-	models: readonly OpenApiPredictionModel[]
-	fields: Record<PredictionMetricCode, keyof OpenApiPredictionServiceFields>
+	model: OpenApiPredictionModel
 }>;
 
 export const OPENAPI_MODEL_OPTIONS = [
@@ -74,37 +76,32 @@ export const OPENAPI_MODEL_OPTIONS = [
 		value: "LEGACY",
 	},
 	{
-		labelKey: "prediction.openapi.models.package",
-		value: "PACKAGE",
+		labelKey: "prediction.openapi.models.legacy2",
+		value: "LEGACY_2",
 	},
 ] as const satisfies ReadonlyArray<{
 	labelKey: string
 	value: OpenApiPredictionModel
 }>;
 
-export const OPENAPI_API_SECTION_KEYS = {
-	billInquiry: "BILL_INQUIRY",
-	receiptRegister: "RECEIPT_REGISTER",
-	smsTotal: "SMS_TOTAL",
-	trafficTotal: "TRAFFIC",
-} as const satisfies Record<OpenApiOperationCode, string>;
+/** The backend no longer accepts PACKAGE on write, so it is only offered while a stored PACKAGE record is open. */
+export const OPENAPI_PACKAGE_MODEL_OPTION = {
+	labelKey: "prediction.openapi.models.package",
+	value: "PACKAGE",
+} as const satisfies { labelKey: string, value: OpenApiPredictionModel };
 
-export const OPENAPI_CHANNEL_OPTIONS = [
-	{ key: "SMS_MCI_FA", titleKey: "prediction.openapi.channels.smsMciFa" },
-	{ key: "SMS_MCI_EN", titleKey: "prediction.openapi.channels.smsMciEn" },
-	{ key: "SMS_IRANCELL_FA", titleKey: "prediction.openapi.channels.smsIrancellFa" },
-	{ key: "SMS_IRANCELL_EN", titleKey: "prediction.openapi.channels.smsIrancellEn" },
-	{ key: "SMS_OTHER_FA", titleKey: "prediction.openapi.channels.smsOtherFa" },
-	{ key: "SMS_OTHER_EN", titleKey: "prediction.openapi.channels.smsOtherEn" },
-] as const satisfies ReadonlyArray<{
-	key: OpenApiChannelCode
-	titleKey: string
-}>;
+export function getOpenApiAmountField(
+	operation: OpenApiOperationCode,
+	metric: PredictionMetricCode,
+) {
+	return `${operation}${capitalize(metric)}Year` as OpenApiAmountField;
+}
 
 export function getOpenApiOperationSections(model: OpenApiPredictionModel) {
-	return OPENAPI_OPERATION_SECTIONS.filter(
-		section => (section.models as readonly OpenApiPredictionModel[]).includes(model),
-	);
+	// PACKAGE shares the bill-inquiry totals with LEGACY; its other totals are backend-owned (see packageExtras)
+	const sectionModel = model === "PACKAGE" ? "LEGACY" : model;
+	return OPENAPI_OPERATION_SECTIONS.filter(section =>
+		section.model === sectionModel && (model !== "PACKAGE" || section.key === "billInquiry"));
 }
 
 function createEmptyShareSection(): PredictionShareSectionValue {
@@ -116,62 +113,30 @@ function createEmptyShareSection(): PredictionShareSectionValue {
 }
 
 export function createEmptyOpenApiManualShares(): OpenApiManualSharesValue {
-	return {
-		billInquiry: {
-			value: createEmptyShareSection(),
-			income: createEmptyShareSection(),
-			expense: createEmptyShareSection(),
-		},
-		receiptRegister: {
-			value: createEmptyShareSection(),
-			income: createEmptyShareSection(),
-			expense: createEmptyShareSection(),
-		},
-		smsTotal: {
-			value: createEmptyShareSection(),
-			income: createEmptyShareSection(),
-			expense: createEmptyShareSection(),
-		},
-		trafficTotal: {
-			value: createEmptyShareSection(),
-			income: createEmptyShareSection(),
-			expense: createEmptyShareSection(),
-		},
-	};
+	return Object.fromEntries(
+		OPENAPI_OPERATION_SECTIONS.map(section => [
+			section.key,
+			{
+				value: createEmptyShareSection(),
+				income: createEmptyShareSection(),
+				expense: createEmptyShareSection(),
+			},
+		]),
+	) as OpenApiManualSharesValue;
 }
 
-export function createEmptyOpenApiChannelShares(): OpenApiChannelSharesValue {
-	return {
-		value: Object.fromEntries(
-			OPENAPI_CHANNEL_OPTIONS.map(channel => [channel.key, null]),
-		) as Record<OpenApiChannelCode, number | null>,
-	};
-}
-
-export function createEmptyOpenApiFields(
-	previous?: Partial<OpenApiPredictionServiceFields> | Record<string, unknown>,
-): OpenApiPredictionServiceFields {
-	void previous;
-
+export function createEmptyOpenApiFields(): OpenApiPredictionServiceFields {
 	return {
 		openapiModel: "LEGACY",
 		q1Percent: null,
 		q2Percent: null,
 		q3Percent: null,
 		q4Percent: null,
-		billInquiryValueYear: null,
-		billInquiryIncomeYear: null,
-		billInquiryExpenseYear: null,
-		receiptRegisterValueYear: null,
-		receiptRegisterIncomeYear: null,
-		receiptRegisterExpenseYear: null,
-		smsTotalValueYear: null,
-		smsTotalIncomeYear: null,
-		smsTotalExpenseYear: null,
-		trafficTotalValueYear: null,
-		trafficTotalIncomeYear: null,
-		trafficTotalExpenseYear: null,
+		...Object.fromEntries(
+			OPENAPI_OPERATION_SECTIONS.flatMap(section =>
+				OPENAPI_METRICS.map(metric => [getOpenApiAmountField(section.key, metric.key), null] as const),
+			),
+		) as Record<OpenApiAmountField, null>,
 		manualShares: createEmptyOpenApiManualShares(),
-		channels: createEmptyOpenApiChannelShares(),
 	};
 }

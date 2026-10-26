@@ -2,7 +2,9 @@ import type { ProColumns } from "@ant-design/pro-components";
 import type { TFunction } from "i18next";
 import type { AuditLogDto } from "../../model/admin-logs.types";
 
+import { fetchAdminUsersList } from "#src/features/audit/admin-users/api/admin-users.api";
 import { Tag, Tooltip, Typography } from "antd";
+import { DatePicker } from "antd-jalali";
 
 import {
 	formatAuditLogActor,
@@ -122,6 +124,14 @@ export function getAdminLogsColumns({
 			render: (_, record) => record.ip_address || "-",
 		},
 		{
+			title: "User Agent",
+			dataIndex: "user_agent",
+			width: 240,
+			ellipsis: true,
+			search: false,
+			render: (_, record) => record.user_agent || "-",
+		},
+		{
 			title: "برنامه",
 			dataIndex: "app_label",
 			width: 130,
@@ -169,6 +179,31 @@ export function getAdminLogsColumns({
 				min: 100,
 				max: 599,
 			},
+		},
+		{
+			title: "کاربر",
+			dataIndex: "actor",
+			hideInTable: true,
+			valueType: "select",
+			request: async () => {
+				const users = await fetchAdminUsersList({ page: 1, page_size: 500 });
+				return users.results.map(user => ({
+					label: `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() || user.username,
+					value: user.id,
+				}));
+			},
+			fieldProps: {
+				allowClear: true,
+				showSearch: true,
+				optionFilterProp: "label",
+				placeholder: "همه",
+			},
+		},
+		{
+			title: "بازه زمانی",
+			dataIndex: "created_at_range",
+			hideInTable: true,
+			renderFormItem: () => <DatePicker.RangePicker showTime allowClear />,
 		},
 		{
 			title: "مرتب‌سازی",

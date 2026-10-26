@@ -7,6 +7,7 @@ import { DashedBorder } from "#src/shared/ui/dashed-border";
 import { DownOutlined, UpOutlined } from "@ant-design/icons";
 import { Switch } from "antd";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import "./report-settings-panel.css";
 
 interface ReportSettingsPanelProps {
@@ -18,6 +19,7 @@ interface ReportSettingsPanelProps {
 	selectedAuditColumns: ReportAuditColumnKey[]
 	disabled?: boolean
 	auditDisabled?: boolean
+	aggregationDisabledKeys?: ReportAggregationKey[]
 	onFinancialColumnsChange: (values: ReportFinancialColumnKey[]) => void
 	onAggregationChange: (values: ReportAggregationKey[]) => void
 	onAuditColumnsChange: (values: ReportAuditColumnKey[]) => void
@@ -31,6 +33,7 @@ interface SettingCardProps<T extends string> {
 	disabled?: boolean
 	showSelectAll?: boolean
 	footerKeys?: string[]
+	disabledKeys?: string[]
 	onChange: (values: T[]) => void
 }
 
@@ -42,8 +45,10 @@ function SettingCard<T extends string>({
 	disabled = false,
 	showSelectAll = false,
 	footerKeys = [],
+	disabledKeys,
 	onChange,
 }: SettingCardProps<T>) {
+	const { t } = useTranslation();
 	const values = useMemo(() => options.map(option => String(option.value) as T), [options]);
 	const selectedSet = useMemo(() => new Set(selectedValues), [selectedValues]);
 	const allSelected = values.length > 0 && values.every(value => selectedSet.has(value));
@@ -69,7 +74,7 @@ function SettingCard<T extends string>({
 					size="small"
 					aria-label={String(option.label)}
 					checked={selectedSet.has(value)}
-					disabled={disabled}
+					disabled={disabled || !!disabledKeys?.includes(value)}
 					onChange={checked => toggleValue(value, checked)}
 				/>
 			</label>
@@ -87,10 +92,10 @@ function SettingCard<T extends string>({
 				<div className="report-settings-panel__rows">
 					{showSelectAll && (
 						<label className="report-settings-panel__row report-settings-panel__row--all">
-							<span>انتخاب همه</span>
+							<span>{t("performance.labels.selectAll")}</span>
 							<Switch
 								size="small"
-								aria-label={`${title} - انتخاب همه`}
+								aria-label={`${title} - ${t("performance.labels.selectAll")}`}
 								checked={allSelected}
 								disabled={disabled || values.length === 0}
 								onChange={checked => onChange(checked ? values : [])}
@@ -118,14 +123,16 @@ export function ReportSettingsPanel({
 	selectedAuditColumns,
 	disabled = false,
 	auditDisabled = false,
+	aggregationDisabledKeys,
 	onFinancialColumnsChange,
 	onAggregationChange,
 	onAuditColumnsChange,
 }: ReportSettingsPanelProps) {
+	const { t } = useTranslation();
 	const [collapsed, setCollapsed] = useState(false);
 
 	return (
-		<section className="report-settings-panel" aria-label="تنظیمات گزارش">
+		<section className="report-settings-panel" aria-label={t("performance.reportPage.settings.title")}>
 			<button
 				type="button"
 				className="report-settings-panel__accordion-header"
@@ -133,7 +140,7 @@ export function ReportSettingsPanel({
 				aria-controls="report-settings-panel-content"
 				onClick={() => setCollapsed(current => !current)}
 			>
-				<span className="report-settings-panel__badge">تنظیمات گزارش</span>
+				<span className="report-settings-panel__badge">{t("performance.reportPage.settings.title")}</span>
 				<span className="report-settings-panel__divider" aria-hidden="true" />
 				<span className="report-settings-panel__toggle" aria-hidden="true">
 					{collapsed ? <DownOutlined /> : <UpOutlined />}
@@ -142,7 +149,7 @@ export function ReportSettingsPanel({
 
 			<div id="report-settings-panel-content" className="report-settings-panel__body" hidden={collapsed}>
 				<SettingCard<ReportFinancialColumnKey>
-					title="نمایش ستون‌های مالی"
+					title={t("performance.reportPage.settings.financialColumns")}
 					icon={<FinanceIcon />}
 					options={financialOptions}
 					selectedValues={selectedFinancialColumns}
@@ -153,16 +160,17 @@ export function ReportSettingsPanel({
 				/>
 				<div className="report-settings-panel__side">
 					<SettingCard<ReportAggregationKey>
-						title="جمع تجمیعی"
+						title={t("performance.reportPage.settings.aggregation")}
 						icon={<SumIcon />}
 						options={aggregationOptions}
 						selectedValues={selectedAggregation}
 						disabled={disabled}
 						showSelectAll
+						disabledKeys={aggregationDisabledKeys}
 						onChange={onAggregationChange}
 					/>
 					<SettingCard<ReportAuditColumnKey>
-						title="نمایش ستون‌های ثبت و ویرایش"
+						title={t("performance.reportPage.settings.auditColumns")}
 						icon={<FilterIcon />}
 						options={auditOptions}
 						selectedValues={auditDisabled ? [] : selectedAuditColumns}

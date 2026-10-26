@@ -1,15 +1,39 @@
 {
 	"kpi": {
-		"signFlows": { "title": "گردش امضا", "hint": "در انتظار امضای شما" },
-		"unregistered": { "title": "عملکردهای ثبت‌نشده", "hint": "نیازمند بررسی" },
-		"activeContracts": { "title": "قراردادهای فعال", "hint": "در حال اجرا" },
-		"expiring": { "title": "قراردادهای رو به انقضا", "hint": "در ۳ ماه آینده" }
+		"signFlows": {
+			"title": "گردش امضا",
+			"hint": "در انتظار امضای شما"
+		},
+		"unregistered": {
+			"title": "عملکردهای ثبت‌نشده",
+			"hint": "نیازمند بررسی"
+		},
+		"activeContracts": {
+			"title": "قراردادهای فعال",
+			"hint": "در حال اجرا"
+		},
+		"expiring": {
+			"title": "قراردادهای رو به انقضا",
+			"hint": "در ۳ ماه آینده"
+		}
 	},
 	"cards": {
-		"contracts": { "title": "مدیریت قراردادها", "description": "تعریف قرارداد جدید یا ویرایش قراردادهای موجود" },
-		"companies": { "title": "مدیریت شرکت‌ها", "description": "مدیریت نام شرکت‌ها و پروفایل شرکت‌ها" },
-		"performance": { "title": "عملکرد شرکت‌ها", "description": "ثبت و گزارش‌گیری عملکرد ماهانه" },
-		"predictions": { "title": "پیش‌بینی عملکرد شرکت‌ها", "description": "ثبت و ویرایش پیش‌بینی سالیانه هر سرویس" }
+		"contracts": {
+			"title": "مدیریت قراردادها",
+			"description": "تعریف قرارداد جدید یا ویرایش قراردادهای موجود"
+		},
+		"companies": {
+			"title": "مدیریت شرکت‌ها",
+			"description": "مدیریت نام شرکت‌ها و پروفایل شرکت‌ها"
+		},
+		"performance": {
+			"title": "عملکرد شرکت‌ها",
+			"description": "ثبت و گزارش‌گیری عملکرد ماهانه"
+		},
+		"predictions": {
+			"title": "پیش‌بینی عملکرد شرکت‌ها",
+			"description": "ثبت و ویرایش پیش‌بینی سالیانه هر سرویس"
+		}
 	},
 	"badges": {
 		"pendingSign": "{{value}} در انتظار امضا",
@@ -44,5 +68,10 @@
 		"predictedIncome": "درآمد پیش‌بینی‌شده",
 		"predictedExpense": "هزینه پیش‌بینی‌شده",
 		"predictedProfit": "سود پیش‌بینی‌شده"
+	},
+	"notifications": {
+		"title": "آخرین اعلان‌ها",
+		"viewAll": "مشاهده همه",
+		"categoryUnread": "{{value}} خوانده‌نشده"
 	}
 }

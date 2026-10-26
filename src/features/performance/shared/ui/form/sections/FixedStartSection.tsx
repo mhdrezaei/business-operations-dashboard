@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { PerformanceFormValues } from "../../../model/performance.form.types";
+import type { CollocationPartnerType } from "../../../services/traffic/traffic-collocation";
 import SelectPerformanceEmptyState from "#src/assets/svg/select-performance.svg?react";
 import { TopRightAlert } from "#src/components";
 import { useAccess } from "#src/hooks";
@@ -13,7 +14,6 @@ import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import {
 	companyTypeMatches,
-	contractHasNewCustomerRate,
 	extractOpenApiContractModel,
 	extractSalesAgentId,
 	isSmsCommissionCode,
@@ -29,6 +29,13 @@ import {
 	servicesQuery,
 	smsCommissionAgentsQuery,
 } from "../../../queries/performance.queries";
+import {
+	COLLOCATION_PARTNER_TYPES,
+	collocationPartnerCompanyType,
+	isCollocationCompanyType,
+} from "../../../services/traffic/traffic-collocation";
+
+const COLLOCATION_PARTNER_OPTIONS = COLLOCATION_PARTNER_TYPES.map(type => ({ label: type, value: type }));
 
 const TRAFFIC_SUBMIT_MODE_OPTIONS = [
 	{ label: i18next.t("performance.traffic.singleEntry"), value: "single" },
@@ -84,6 +91,7 @@ export function FixedStartSection({
 	const month = useWatch({ control, name: "month" });
 	const salesAgentId = useWatch({ control, name: "salesAgentId" });
 	const trafficSubmitMode = useWatch({ control, name: "serviceFields.submitMode" as const }) as "single" | "template" | undefined;
+	const collocationMode = useWatch({ control, name: "serviceFields.collocationMode" as const }) as CollocationPartnerType | null | undefined;
 
 	const servicePath = useMemo(() => resolveContractServicePath(serviceCode, companyType), [serviceCode, companyType]);
 	const isTraffic = serviceCode === "traffic";
@@ -93,13 +101,18 @@ export function FixedStartSection({
 	const isSmsCommission = isSmsCommissionCode(serviceCode);
 	const isTrafficTemplateMode = isTraffic && trafficSubmitMode === "template";
 	const isTrafficSingleMode = isTraffic && trafficSubmitMode === "single";
-	const usesMonthlyStatus = serviceCode === "openapi" || isTrafficSingleMode;
+	const isTrafficCollocation = isTrafficSingleMode && isCollocationCompanyType(companyType);
+	// برای COLLOCATION شرکت‌ها بر اساس نوع شریک (COLO/CP) فیلتر می‌شوند، نه نوع شرکت.
+	const companyTypeFilter = isTrafficCollocation ? collocationPartnerCompanyType(collocationMode) : companyType;
+	const isShahkar = serviceCode === "shahkar";
+	const isCommercial = serviceCode === "commercial";
+	const usesMonthlyStatus = serviceCode === "openapi" || isTrafficSingleMode || isShahkar;
 	const preservedServiceFields = useMemo(() => {
 		if (!isTraffic || !trafficSubmitMode)
 			return {};
 
-		return { submitMode: trafficSubmitMode };
-	}, [isTraffic, trafficSubmitMode]);
+		return { submitMode: trafficSubmitMode, ...(collocationMode ? { collocationMode } : {}) };
+	}, [isTraffic, trafficSubmitMode, collocationMode]);
 
 	const permittedCreateServiceIdList = getPermittedServiceIds("performances", "create");
 
@@ -112,12 +125,12 @@ export function FixedStartSection({
 	const selectedCompany = companies.data?.results.find(company => Number(company.id) === Number(companyId));
 	const selectedServiceCode = services.data?.results.find(service => service.id === serviceId)?.code?.trim().toLowerCase();
 	const isCurrentServiceResolved = !!selectedServiceCode && selectedServiceCode === serviceCode;
-	const hasMatchingCompanyType = !requiresCompanyType || (companyType != null && companyTypeMatches(selectedCompany?.company_type, companyType));
+	const hasMatchingCompanyType = !requiresCompanyType || (companyTypeFilter != null && companyTypeMatches(selectedCompany?.company_type, companyTypeFilter));
 	const currentCompanyId = selectedCompany && isCurrentServiceResolved && hasMatchingCompanyType ? companyId : null;
 	const gaps = useQuery(performanceGapsQuery({
 		serviceId,
 		companyId: isTrafficTemplateMode ? null : currentCompanyId,
-		companyType: isTrafficTemplateMode ? companyType : null,
+		companyType: isTraffic ? companyType : null,
 	}));
 	const monthlyStatus = useQuery(monthlyContractStatusQuery({
 		serviceId: usesMonthlyStatus ? serviceId : null,
@@ -205,6 +218,12 @@ export function FixedStartSection({
 			setValue("companyId", null, { shouldDirty: true, shouldValidate: false });
 		}
 	}, [requiresCompanyType, companyType, setValue]);
+
+	useEffect(() => {
+		if (!isTrafficCollocation && getValues("serviceFields.collocationMode" as const) != null) {
+			setValue("serviceFields.collocationMode" as const, null, { shouldDirty: false, shouldValidate: false });
+		}
+	}, [isTrafficCollocation, setValue, getValues]);
 
 	useEffect(() => {
 		if (!isTraffic) {
@@ -296,15 +315,15 @@ export function FixedStartSection({
 	);
 
 	const companyOptionsByType = useMemo(() => {
-		if (!companyType)
+		if (!companyTypeFilter)
 			return [];
 		return (companies.data?.results ?? [])
-			.filter(company => companyTypeMatches(company.company_type, companyType))
+			.filter(company => companyTypeMatches(company.company_type, companyTypeFilter))
 			.map(company => ({ label: company.name, value: company.id }));
-	}, [companies.data, companyType]);
+	}, [companies.data, companyTypeFilter]);
 
 	const companyOptions = requiresCompanyType ? companyOptionsByType : companyOptionsDefault;
-	const isCompanyDisabled = !serviceId || companies.isLoading || (requiresCompanyType && !companyType) || (isTraffic && !isTrafficSingleMode);
+	const isCompanyDisabled = !serviceId || companies.isLoading || (requiresCompanyType && !companyType) || (isTraffic && !isTrafficSingleMode) || (isTrafficCollocation && !collocationMode);
 
 	const companyPlaceholder
 		= !serviceId
@@ -315,7 +334,9 @@ export function FixedStartSection({
 					? t("performance.placeholders.selectCompanyTypeFirst")
 					: isTraffic && !isTrafficSingleMode
 						? t("performance.traffic.singleEntry")
-						: t("performance.placeholders.selectCompany");
+						: isTrafficCollocation && !collocationMode
+							? t("performance.traffic.collocation.selectPartnerFirst")
+							: t("performance.placeholders.selectCompany");
 
 	const missingMonthsByYear = useMemo(() => {
 		const map = new Map<number, number[]>();
@@ -358,19 +379,23 @@ export function FixedStartSection({
 		() => pickActiveContract(contracts.data?.results ?? [], year, month),
 		[contracts.data, year, month],
 	);
-	const hasNewCustomerRate = serviceCode === "shahkar" && contractHasNewCustomerRate(activeContract, year, month);
+	const hasNewCustomerRate = isShahkar && monthlyStatus.data?.shahkar?.has_new_customer_rate === true;
 	const monthlyStatusContractId = monthlyStatus.data?.has_contract
 		? monthlyStatus.data.base_contract_id ?? null
 		: null;
 	const monthlyStatusOpenApiContractModel = normalizeOpenApiContractModel(monthlyStatus.data?.openapi?.contract_model);
 	const trafficHasCountyContract = monthlyStatus.data?.traffic?.has_county_contract === true;
 
+	// Re-sync when the stored flag differs: company/year resets clear `serviceFields` while the derived value stays the same.
+	const storedHasNewCustomerRate = useWatch({ control, name: "serviceFields.hasNewCustomerRate" as any });
 	useEffect(() => {
+		if ((storedHasNewCustomerRate === true) === hasNewCustomerRate && storedHasNewCustomerRate != null)
+			return;
 		setValue("serviceFields.hasNewCustomerRate" as any, hasNewCustomerRate, {
 			shouldDirty: false,
 			shouldValidate: false,
 		});
-	}, [hasNewCustomerRate, setValue]);
+	}, [hasNewCustomerRate, storedHasNewCustomerRate, setValue]);
 
 	useEffect(() => {
 		if (isTrafficTemplateMode) {
@@ -443,9 +468,21 @@ export function FixedStartSection({
 	useEffect(() => {
 		if (!isTrafficSingleMode)
 			return;
+		if (isTrafficCollocation) {
+			setValue("serviceFields.tehranEnabled" as const, false, { shouldDirty: false, shouldValidate: false });
+			return;
+		}
 		if (!monthlyStatus.isSuccess)
 			return;
 
+		setValue("serviceFields.tehranEnabled" as const, monthlyStatus.data?.has_contract === true, {
+			shouldDirty: false,
+			shouldValidate: false,
+		});
+		setValue("serviceFields.hasCountyContract" as const, trafficHasCountyContract, {
+			shouldDirty: false,
+			shouldValidate: false,
+		});
 		setValue("serviceFields.countyEnabled" as const, trafficHasCountyContract, {
 			shouldDirty: false,
 			shouldValidate: false,
@@ -454,7 +491,7 @@ export function FixedStartSection({
 			shouldDirty: false,
 			shouldValidate: false,
 		});
-	}, [isTrafficSingleMode, monthlyStatus.isSuccess, setValue, trafficHasCountyContract, trafficLocationUnits]);
+	}, [isTrafficSingleMode, isTrafficCollocation, monthlyStatus.isSuccess, monthlyStatus.data?.has_contract, setValue, trafficHasCountyContract, trafficLocationUnits]);
 
 	const smsCommissionAgentOptions = useMemo(() => {
 		if (!currentCompanyId)
@@ -537,6 +574,7 @@ export function FixedStartSection({
 								label={t("performance.labels.serviceName")}
 								loading={services.isLoading}
 								options={serviceOptions}
+								autoSelectSingle
 								selectProps={{
 									allowClear: true,
 									placeholder: t("performance.placeholders.selectService"),
@@ -553,6 +591,7 @@ export function FixedStartSection({
 										name="companyType"
 										label={t("performance.labels.companyType")}
 										options={companyTypeOptions}
+										autoSelectSingle={serviceCode !== "sales_agency"}
 										selectProps={{
 											allowClear: true,
 											placeholder: t("performance.placeholders.select"),
@@ -580,7 +619,24 @@ export function FixedStartSection({
 							)
 							: null}
 
-						{(!isTraffic || isTrafficSingleMode)
+						{isTrafficCollocation
+							? (
+								<Col xs={24} md={12}>
+									<RHFSelect<PerformanceFormValues, "serviceFields.collocationMode", CollocationPartnerType | null>
+										name={"serviceFields.collocationMode" as const}
+										label={t("performance.traffic.collocation.partnerType")}
+										options={COLLOCATION_PARTNER_OPTIONS}
+										onValueChange={() => setValue("companyId", null, { shouldDirty: true, shouldValidate: false })}
+										selectProps={{
+											allowClear: true,
+											placeholder: t("performance.placeholders.select"),
+										}}
+									/>
+								</Col>
+							)
+							: null}
+
+						{(!isTraffic || isTrafficSingleMode) && !isCommercial
 							? (
 								<Col xs={24} md={12}>
 									<RHFSelect<PerformanceFormValues, "companyId", number | null>
@@ -588,6 +644,7 @@ export function FixedStartSection({
 										label={t("performance.labels.companyName")}
 										loading={companies.isLoading}
 										options={companyOptions as any}
+										autoSelectSingle
 										selectProps={{
 											allowClear: true,
 											disabled: isCompanyDisabled,
@@ -618,104 +675,108 @@ export function FixedStartSection({
 				</div>
 			</SectionCard>
 
-			<SectionCard
-				title={t("performance.labels.performanceValue")}
-				className="mt-3 w-full"
-				tone="addenda"
-			>
-				<div className="w-full">
-					{periodActions
-						? <div className="mb-4 flex flex-wrap gap-2">{periodActions}</div>
-						: null}
+			{isCommercial
+				? null
+				: (
+					<SectionCard
+						title={t("performance.labels.performanceValue")}
+						className="mt-3 w-full"
+						tone="addenda"
+					>
+						<div className="w-full">
+							{periodActions
+								? <div className="mb-4 flex flex-wrap gap-2">{periodActions}</div>
+								: null}
 
-					{periodModeToggle ? <div className="mb-4">{periodModeToggle}</div> : null}
+							{periodModeToggle ? <div className="mb-4">{periodModeToggle}</div> : null}
 
-					<TopRightAlert
-						alertKey="performance-missing-period-alert"
-						type="error"
-						open={!hideManualPeriod && shouldShowMissingPeriodError}
-						message={hasNoContractsForCompany
-							? t("performance.messages.noContractForCompany")
-							: t("performance.messages.noYearMonthForCompany")}
-					/>
-					<TopRightAlert
-						alertKey="performance-no-monthly-contract-alert"
-						type="error"
-						open={!hideManualPeriod && shouldShowNoMonthlyContractAlert}
-						message={t("performance.messages.noActiveContractForMonth")}
-					/>
+							<TopRightAlert
+								alertKey="performance-missing-period-alert"
+								type="error"
+								open={!hideManualPeriod && shouldShowMissingPeriodError}
+								message={hasNoContractsForCompany
+									? t("performance.messages.noContractForCompany")
+									: t("performance.messages.noYearMonthForCompany")}
+							/>
+							<TopRightAlert
+								alertKey="performance-no-monthly-contract-alert"
+								type="error"
+								open={!hideManualPeriod && shouldShowNoMonthlyContractAlert}
+								message={t("performance.messages.noActiveContractForMonth")}
+							/>
 
-					{!hideManualPeriod && shouldShowPeriodSelectors
-						? (
-							<Row gutter={16}>
-								<Col xs={24} md={12}>
-									<RHFSelect<PerformanceFormValues, "year", number | null>
-										name="year"
-										label={t("performance.labels.contractYear")}
-										loading={isDateOptionsLoading}
-										options={yearOptions}
-										selectProps={{
-											allowClear: true,
-											placeholder: t("performance.placeholders.year"),
-										}}
-									/>
-								</Col>
-								<Col xs={24} md={12}>
-									<RHFSelect<PerformanceFormValues, "month", number | null>
-										name="month"
-										label={t("performance.labels.contractMonth")}
-										loading={isDateOptionsLoading}
-										options={monthOptions}
-										selectProps={{
-											allowClear: true,
-											placeholder: year == null ? t("performance.placeholders.selectYearFirst") : t("performance.placeholders.month"),
-											disabled: year == null,
-										}}
-									/>
-								</Col>
-								{usesMonthlyStatus && year != null && month != null && monthlyStatus.data
-									? (
-										<Col span={24}>
-											<div className="flex gap-2 flex-wrap">
-												{monthlyStatus.data.used_addendum
-													? <Tag color="gold">{t("performance.badges.usedAddendum")}</Tag>
-													: null}
-												{serviceCode === "openapi" && monthlyStatusOpenApiContractModel
-													? (
-														<Tag color="blue">
-															{t(`performance.contractModel.${monthlyStatusOpenApiContractModel}`)}
-														</Tag>
-													)
-													: null}
-												{isTrafficSingleMode
-													? (
-														<Tag color={trafficHasCountyContract ? "green" : "default"}>
-															{trafficHasCountyContract
-																? t("performance.badges.hasCountyContract")
-																: t("performance.badges.noCountyContract")}
-														</Tag>
-													)
-													: null}
-											</div>
+							{!hideManualPeriod && shouldShowPeriodSelectors
+								? (
+									<Row gutter={16}>
+										<Col xs={24} md={12}>
+											<RHFSelect<PerformanceFormValues, "year", number | null>
+												name="year"
+												label={t("performance.labels.contractYear")}
+												loading={isDateOptionsLoading}
+												options={yearOptions}
+												selectProps={{
+													allowClear: true,
+													placeholder: t("performance.placeholders.year"),
+												}}
+											/>
 										</Col>
-									)
-									: null}
-							</Row>
-						)
-						: null}
+										<Col xs={24} md={12}>
+											<RHFSelect<PerformanceFormValues, "month", number | null>
+												name="month"
+												label={t("performance.labels.contractMonth")}
+												loading={isDateOptionsLoading}
+												options={monthOptions}
+												selectProps={{
+													allowClear: true,
+													placeholder: year == null ? t("performance.placeholders.selectYearFirst") : t("performance.placeholders.month"),
+													disabled: year == null,
+												}}
+											/>
+										</Col>
+										{usesMonthlyStatus && year != null && month != null && monthlyStatus.data
+											? (
+												<Col span={24}>
+													<div className="flex gap-2 flex-wrap">
+														{monthlyStatus.data.used_addendum
+															? <Tag color="gold">{t("performance.badges.usedAddendum")}</Tag>
+															: null}
+														{serviceCode === "openapi" && monthlyStatusOpenApiContractModel
+															? (
+																<Tag color="blue">
+																	{t(`performance.contractModel.${monthlyStatusOpenApiContractModel}`)}
+																</Tag>
+															)
+															: null}
+														{isTrafficSingleMode && !isTrafficCollocation
+															? (
+																<Tag color={trafficHasCountyContract ? "green" : "default"}>
+																	{trafficHasCountyContract
+																		? t("performance.badges.hasCountyContract")
+																		: t("performance.badges.noCountyContract")}
+																</Tag>
+															)
+															: null}
+													</div>
+												</Col>
+											)
+											: null}
+									</Row>
+								)
+								: null}
 
-					{!hideManualPeriod && shouldShowPeriodEmptyState
-						? (
-							<div className="performance-period-empty-state" role="status">
-								<SelectPerformanceEmptyState className="performance-period-empty-state__illustration" aria-hidden="true" />
-								<p>{t("performance.messages.selectYearAndMonth")}</p>
-							</div>
-						)
-						: null}
+							{!hideManualPeriod && shouldShowPeriodEmptyState
+								? (
+									<div className="performance-period-empty-state" role="status">
+										<SelectPerformanceEmptyState className="performance-period-empty-state__illustration" aria-hidden="true" />
+										<p>{t("performance.messages.selectYearAndMonth")}</p>
+									</div>
+								)
+								: null}
 
-					{children ? <div className="mt-4">{children}</div> : null}
-				</div>
-			</SectionCard>
+							{children ? <div className="mt-4">{children}</div> : null}
+						</div>
+					</SectionCard>
+				)}
 		</>
 	);
 }

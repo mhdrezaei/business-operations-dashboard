@@ -1,16 +1,12 @@
 import type { ServiceDto } from "#src/api/common/common.types";
 
 export type PredictionServiceCode = ServiceDto["code"];
+export type PredictionSubmitMode = "create_reset" | "create_another" | "create_and_edit";
 export type PredictionShareMode = "auto" | "manual";
 export type PredictionMetricCode = "value" | "income" | "expense";
-export type OpenApiPredictionModel = "LEGACY" | "PACKAGE";
-export type OpenApiOperationCode = "billInquiry" | "receiptRegister" | "smsTotal" | "trafficTotal";
-export type OpenApiChannelCode	= | "SMS_MCI_FA"
-  | "SMS_MCI_EN"
-  | "SMS_IRANCELL_FA"
-  | "SMS_IRANCELL_EN"
-  | "SMS_OTHER_FA"
-  | "SMS_OTHER_EN";
+export type OpenApiPredictionModel = "LEGACY" | "LEGACY_2" | "PACKAGE";
+export type OpenApiOperationCode = "billInquiry" | "receiptRegister" | "billInquiryMidterm" | "billInquiryEndterm" | "receiptRegisterConnected" | "receiptRegisterDisconnected";
+export type OpenApiAmountField = `${OpenApiOperationCode}${"Value" | "Income" | "Expense"}Year`;
 export type SmsChannelCode
 	= | "MCI_FA"	| "MCI_EN" | "IRANCELL_FA" | "IRANCELL_EN" | "OTHER_FA" | "OTHER_EN";
 export type CompanyType = string;
@@ -36,13 +32,7 @@ export type OpenApiManualSharesValue = Record<
 	Record<PredictionMetricCode, PredictionShareSectionValue>
 >;
 
-export interface OpenApiChannelSharesValue {
-	value: Record<OpenApiChannelCode, number | null>
-}
-
-export interface SmsChannelSharesValue {
-	value: Record<SmsChannelCode, number | null>
-}
+export type SmsChannelSharesValue = Record<PredictionMetricCode, Record<SmsChannelCode, number | null>>;
 
 export type YearlyValueIncomeManualSharesValue = PredictionMetricSharesValue<"value" | "income">;
 export type PspManualSharesValue = YearlyValueIncomeManualSharesValue;
@@ -53,26 +43,15 @@ export type TrafficManualSharesValue = Record<
 	Record<TrafficPredictionMetricCode, PredictionShareSectionValue>
 >;
 
-export interface OpenApiPredictionServiceFields {
+export interface OpenApiPredictionServiceFields extends Record<OpenApiAmountField, number | null> {
 	openapiModel: OpenApiPredictionModel
 	q1Percent: number | null
 	q2Percent: number | null
 	q3Percent: number | null
 	q4Percent: number | null
-	billInquiryValueYear: number | null
-	billInquiryIncomeYear: number | null
-	billInquiryExpenseYear: number | null
-	receiptRegisterValueYear: number | null
-	receiptRegisterIncomeYear: number | null
-	receiptRegisterExpenseYear: number | null
-	smsTotalValueYear: number | null
-	smsTotalIncomeYear: number | null
-	smsTotalExpenseYear: number | null
-	trafficTotalValueYear: number | null
-	trafficTotalIncomeYear: number | null
-	trafficTotalExpenseYear: number | null
 	manualShares: OpenApiManualSharesValue
-	channels: OpenApiChannelSharesValue
+	/** Backend-owned PACKAGE data (SMS/traffic totals, channels) that has no form fields; sent back untouched. */
+	packageExtras?: Record<string, unknown>
 }
 
 export interface PspPredictionServiceFields {

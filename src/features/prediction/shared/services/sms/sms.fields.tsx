@@ -13,6 +13,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { companyTypeMatches } from "../../model/company-type.helpers";
+import { applyManualShareTemplate } from "../../model/manual-share-template";
 import { predictionCompaniesByServiceQuery } from "../../queries/prediction.queries";
 import { QuarterDistributionSection } from "../../ui/form/sections/QuarterDistributionSection";
 import { createEmptySmsManualShares, SMS_CHANNEL_OPTIONS } from "./sms.config";
@@ -60,7 +61,7 @@ function SmsShareEditor({
 	title: string
 }) {
 	const { t } = useTranslation();
-	const { control, formState, getFieldState, register, setValue } = useFormContext<PredictionFormValues>();
+	const { control, formState, getFieldState, getValues, register, setValue } = useFormContext<PredictionFormValues>();
 	const fieldPath = `serviceFields.manualShares.${fieldName}` as const;
 	const shareState = normalizeShareValue(useWatch({ control, name: fieldPath as any }));
 	const shareError = getFieldState(fieldPath as any, formState).error?.message;
@@ -114,12 +115,22 @@ function SmsShareEditor({
 			<div className="prediction-share-editor__controls">
 				<RHFSegmentedSwitch
 					name={`${fieldPath}.mode` as any}
-					label="نحوه تخصیص"
+					label={t("prediction.labels.allocationMode")}
 					options={[
 						{ label: t("prediction.shareModes.auto"), value: "auto" },
 						{ label: t("prediction.shareModes.manual"), value: "manual" },
 					]}
 					formItemProps={{ className: "mb-0" }}
+					onValueChange={(mode) => {
+						if (mode === "manual") {
+							applyManualShareTemplate({
+								getValues: path => getValues(path as any),
+								setValue: (path, value, options) => setValue(path as any, value as any, options),
+								targetPath: fieldPath,
+								extraPathOf: path => path.replace("manualShares", "channels"),
+							});
+						}
+					}}
 				/>
 				{shareState.mode === "manual"
 					? (
@@ -177,9 +188,43 @@ function SmsShareEditor({
 						<Typography.Text type={shareTotal === 100 ? "success" : "danger"}>
 							{t("prediction.messages.manualShareSum", { title, total: shareTotal })}
 						</Typography.Text>
+
+						<SmsChannelShareEditor fieldName={fieldName} />
 					</div>
 				)}
 		</DashedCard>
+	);
+}
+
+function SmsChannelShareEditor({ fieldName }: { fieldName: "value" | "income" | "expense" }) {
+	const { t } = useTranslation();
+	const { control, formState, getFieldState } = useFormContext<PredictionFormValues>();
+	const channelValues = useWatch({ control, name: `serviceFields.channels.${fieldName}` as any }) as Record<string, number | null> | undefined;
+	const channelError = getFieldState(`serviceFields.channels.${fieldName}` as any, formState).error?.message;
+	const channelTotal = SMS_CHANNEL_OPTIONS.reduce((total, channel) => total + Number(channelValues?.[channel.key] ?? 0), 0);
+	const title = t("prediction.sections.channels");
+
+	return (
+		<div className="flex flex-col gap-3">
+			<Typography.Text strong>{title}</Typography.Text>
+			<div className="grid gap-4 xl:grid-cols-3">
+				{SMS_CHANNEL_OPTIONS.map(channel => (
+					<RHFProNumber<PredictionFormValues, any>
+						key={channel.key}
+						name={`serviceFields.channels.${fieldName}.${channel.key}` as any}
+						label={t(channel.titleKey)}
+						inputProps={{
+							placeholder: t("prediction.placeholders.percentExample"),
+							addonAfter: "%",
+						}}
+					/>
+				))}
+			</div>
+			<Typography.Text type={channelTotal === 100 ? "success" : "danger"}>
+				{t("prediction.messages.manualShareSum", { title, total: channelTotal })}
+			</Typography.Text>
+			{channelError ? <Typography.Text type="danger">{channelError}</Typography.Text> : null}
+		</div>
 	);
 }
 
@@ -189,7 +234,6 @@ export function SmsPredictionFields() {
 	const serviceId = useWatch({ control, name: "serviceId" });
 	const companyType = useWatch({ control, name: sf("companyType") as any });
 	const companies = useQuery(predictionCompaniesByServiceQuery(serviceId));
-	const channelValues = useWatch({ control, name: "serviceFields.channels.value" as any }) as Record<string, number | null> | undefined;
 	const previousCompanyTypeRef = useRef(companyType);
 
 	useEffect(() => {
@@ -214,11 +258,6 @@ export function SmsPredictionFields() {
 			})),
 		[companies.data, companyType],
 	);
-	const channelTotal = useMemo(
-		() => SMS_CHANNEL_OPTIONS.reduce((total, channel) => total + Number(channelValues?.[channel.key] ?? 0), 0),
-		[channelValues],
-	);
-
 	return (
 		<div className="flex flex-col gap-4">
 			<QuarterDistributionSection />
@@ -273,7 +312,7 @@ export function SmsPredictionFields() {
 						<SmsShareEditor
 							companyOptions={companyOptions}
 							fieldName="value"
-							title={t("prediction.labels.smsAnnualValue")}
+							title={t("prediction.metrics.smsCount")}
 						/>
 						<SmsShareEditor
 							companyOptions={companyOptions}
@@ -286,29 +325,6 @@ export function SmsPredictionFields() {
 							title={t("prediction.metrics.expense")}
 						/>
 					</div>
-
-					<DashedCard title={t("prediction.sections.channels", { defaultValue: "کانال‌ها" })}>
-						<div className="grid gap-4 xl:grid-cols-3">
-							{SMS_CHANNEL_OPTIONS.map(channel => (
-								<RHFProNumber<PredictionFormValues, any>
-									key={channel.key}
-									name={`serviceFields.channels.value.${channel.key}` as any}
-									label={channel.title}
-									inputProps={{
-										placeholder: t("prediction.placeholders.percentExample"),
-										addonAfter: "%",
-									}}
-								/>
-							))}
-						</div>
-
-						<Typography.Text type={channelTotal === 100 ? "success" : "danger"}>
-							{t("prediction.messages.manualShareSum", {
-								title: t("prediction.sections.channels", { defaultValue: "کانال‌ها" }),
-								total: channelTotal,
-							})}
-						</Typography.Text>
-					</DashedCard>
 				</div>
 			</SectionCard>
 		</div>

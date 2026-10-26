@@ -20,7 +20,7 @@ import {
 	fetchSetAdminUserRoles,
 	fetchUpdateAdminUser,
 } from "../api/admin-users.api";
-import { adminRolesQuery } from "../queries/admin-users.queries";
+import { adminRolesQuery, adminUsersLookupQuery, useServiceLabel } from "../queries/admin-users.queries";
 import { AdminUserRolesModal } from "./components/AdminUserRolesModal";
 import { AdminUserServiceAdminModal } from "./components/AdminUserServiceAdminModal";
 import { AdminUserSummaryModal } from "./components/AdminUserSummaryModal";
@@ -29,7 +29,7 @@ import { getAdminUsersColumns } from "./constants/admin-users.columns";
 
 export default function AdminUsersListPage() {
 	const { t } = useTranslation();
-	const { hasAdminPanelAccess, hasAdminAction } = useAccess();
+	const { hasAdminAction, hasAdminUserCapability } = useAccess();
 
 	const actionRef = useRef<ActionType>(null);
 	const formRef = useRef<ProFormInstance | undefined>(undefined);
@@ -49,9 +49,9 @@ export default function AdminUsersListPage() {
 	const canCreate = hasAdminAction("users", "create");
 	const canUpdate = hasAdminAction("users", "update");
 	const canDelete = hasAdminAction("users", "delete");
-	const canSetRoles = hasAdminAction("users", "update") || hasAdminAction("roles", "update");
+	const canSetRoles = hasAdminUserCapability("assign_roles");
 	const canToggleActive = hasAdminAction("users", "update");
-	const canViewServiceAdmins = hasAdminPanelAccess("service_admins");
+	const canViewServiceAdmins = hasAdminUserCapability("manage_deputies");
 
 	const rolesQuery = useQuery(adminRolesQuery());
 
@@ -61,11 +61,18 @@ export default function AdminUsersListPage() {
 		[rolesList],
 	);
 
+	const usersLookupQuery = useQuery(adminUsersLookupQuery());
+	const userNameById = useMemo(
+		() => new Map<number, string>((usersLookupQuery.data?.results ?? []).map(user => [user.id, `${user.first_name} ${user.last_name}`.trim() || user.username])),
+		[usersLookupQuery.data],
+	);
+	const getServiceLabel = useServiceLabel();
+
 	const refreshTable = () => actionRef.current?.reload?.();
 
 	const baseColumns = useMemo(
-		() => getAdminUsersColumns({ t, roleNameById }),
-		[t, roleNameById],
+		() => getAdminUsersColumns({ t, roleNameById, userNameById, getServiceLabel }),
+		[t, roleNameById, userNameById, getServiceLabel],
 	);
 
 	const handleOpenCreate = () => {

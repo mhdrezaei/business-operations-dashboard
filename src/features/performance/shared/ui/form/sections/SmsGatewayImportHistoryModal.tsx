@@ -1,27 +1,25 @@
 import type { SmsGatewayImportHistoryItem } from "#src/features/performance/api/performances.api";
+import type { ReactNode } from "react";
 import { fetchSmsGatewayImportHistory } from "#src/features/performance/api/performances.api";
 import { notification } from "#src/utils";
-import { CheckCircleOutlined, HistoryOutlined, ReloadOutlined } from "@ant-design/icons";
+import { CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, HistoryOutlined, ReloadOutlined, SyncOutlined } from "@ant-design/icons";
 import { Button, Empty, Modal, Spin, Tag } from "antd";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { SMS_GATEWAY_SUMMARY_KEYS } from "./SmsGatewayImportModal";
 
 interface Props { open: boolean, onClose: () => void }
 
-const rows: Array<[string, string[]]> = [
-	["رکوردهای جدید سرویس پیامک ثبت‌شده", ["imported_count", "sms_created", "created_sms", "sms_service_created"]],
-	["رکوردهای سرویس پیامک به‌روزرسانی‌شده", ["updated_count", "sms_updated", "updated_sms", "sms_service_updated"]],
-	["رکوردهای جدید سرویس پیامک عاملیت ثبت‌شده", ["commission_imported_count", "sms_commission_created", "commission_created", "agent_created"]],
-	["رکوردهای سرویس پیامک عاملیت به‌روزرسانی‌شده", ["commission_updated_count", "sms_commission_updated", "commission_updated", "agent_updated"]],
-	["رکوردهای ردشده", ["skipped_count", "rejected", "rejected_count", "failed"]],
-];
+const POLL_INTERVAL_MS = 2500;
+const JOB_STATUS_META: Record<string, { color: string, icon: ReactNode }> = {
+	PENDING: { color: "default", icon: <ClockCircleOutlined /> },
+	RUNNING: { color: "processing", icon: <SyncOutlined spin /> },
+	SUCCESS: { color: "success", icon: <CheckCircleOutlined /> },
+	FAILED: { color: "error", icon: <CloseCircleOutlined /> },
+};
 
-function count(item: SmsGatewayImportHistoryItem, keys: string[]) {
-	for (const key of keys) {
-		const value = item[key] ?? item.summary?.[key];
-		if (typeof value === "number")
-			return value;
-	}
-	return 0;
+function isBusy(item: SmsGatewayImportHistoryItem) {
+	return item.status === "PENDING" || item.status === "RUNNING";
 }
 
 function user(value: SmsGatewayImportHistoryItem["requested_by"]) {
@@ -33,22 +31,25 @@ function date(value: unknown) {
 }
 
 export function SmsGatewayImportHistoryModal({ open, onClose }: Props) {
+	const { t } = useTranslation();
 	const [items, setItems] = useState<SmsGatewayImportHistoryItem[]>([]);
 	const [loading, setLoading] = useState(false);
-	const load = async () => {
-		setLoading(true);
+	const load = async (silent = false) => {
+		if (!silent)
+			setLoading(true);
 		try {
 			const response = await fetchSmsGatewayImportHistory();
-			const result = response.jobs ?? [];
-			setItems(result.filter(item => item.confirmed !== false && !["pending", "running", "failed"].includes(String(item.status).toLowerCase())));
+			setItems(response.jobs ?? []);
 		}
 		catch {
-			setItems([]);
-			notification.error({
-				message: "خطا در دریافت تاریخچه Gateway پیامک",
-				description: "لطفاً دوباره تلاش کنید.",
-				placement: "topRight",
-			});
+			if (!silent) {
+				setItems([]);
+				notification.error({
+					message: "خطا در دریافت تاریخچه Gateway پیامک",
+					description: "لطفاً دوباره تلاش کنید.",
+					placement: "topRight",
+				});
+			}
 		}
 		finally { setLoading(false); }
 	};
@@ -56,6 +57,12 @@ export function SmsGatewayImportHistoryModal({ open, onClose }: Props) {
 		if (open)
 			void load();
 	}, [open]);
+	useEffect(() => {
+		if (!open || !items.some(isBusy))
+			return;
+		const timer = setTimeout(() => void load(true), POLL_INTERVAL_MS);
+		return () => clearTimeout(timer);
+	}, [open, items]);
 
 	return (
 		<Modal
@@ -75,51 +82,61 @@ export function SmsGatewayImportHistoryModal({ open, onClose }: Props) {
 		>
 			<div className="sms-gateway-history-body min-h-[360px]" dir="rtl">
 				<div className="mb-4 flex items-center justify-between gap-3 text-sm text-slate-500">
-					<span>وضعیت importهای نهایی‌شده</span>
+					<span>وضعیت importهای اخیر</span>
 					<Button type="text" icon={<ReloadOutlined />} loading={loading} onClick={() => void load()}>به‌روزرسانی</Button>
 				</div>
 				{loading
 					? <div className="flex min-h-[280px] items-center justify-center"><Spin /></div>
 					: items.length === 0
-						? <Empty className="mt-20" description="دریافت نهایی‌شده‌ای وجود ندارد" />
+						? <Empty className="mt-20" description="هیچ دریافتی ثبت نشده است." />
 						: (
 							<div className="space-y-3 max-h-[min(560px,calc(100vh-280px))] overflow-y-auto pl-1 sms-gateway-import-scrollbar">
-								{items.map((item, index) => (
-									<div key={String(item.job_id ?? item.id ?? index)} className="sms-gateway-history-card rounded-xl p-4">
-										<div className="mb-3 flex items-start justify-between gap-3">
-											<div>
-												<b>
-													{item.sh_year ?? "-"}
-													/
-													{String(item.sh_month ?? "-").padStart(2, "0")}
-												</b>
-												<div className="mt-1 text-xs text-slate-500">
-													درخواست‌دهنده:
-													{item.requested_by_username ?? user(item.requested_by)}
+								{items.map((item, index) => {
+									const statusMeta = JOB_STATUS_META[String(item.status)] ?? { color: "default", icon: <ClockCircleOutlined /> };
+									return (
+										<div key={String(item.job_id ?? item.id ?? index)} className="sms-gateway-history-card rounded-xl p-4">
+											<div className="mb-3 flex items-start justify-between gap-3">
+												<div>
+													<b>
+														{item.sh_year ?? "-"}
+														/
+														{String(item.sh_month ?? "-").padStart(2, "0")}
+													</b>
+													<div className="mt-1 text-xs text-slate-500">
+														درخواست‌دهنده:
+														{item.requested_by_username ?? user(item.requested_by)}
+													</div>
 												</div>
+												<Tag color={statusMeta.color} icon={statusMeta.icon}>{t(`performance.smsGatewayImport.jobStatus.${item.status}`, { defaultValue: String(item.status) })}</Tag>
 											</div>
-											<Tag color="success" icon={<CheckCircleOutlined />}>موفق</Tag>
+											<div className="mb-3 grid grid-cols-1 gap-2 text-xs text-slate-500 sm:grid-cols-2">
+												<span>
+													شروع:
+													{date(item.started_at ?? item.created_at)}
+												</span>
+												<span>
+													پایان:
+													{date(item.finished_at)}
+												</span>
+											</div>
+											{item.status === "SUCCESS" && item.summary
+												? (
+													<div className="grid grid-cols-1 gap-1 text-sm sm:grid-cols-2">
+														{SMS_GATEWAY_SUMMARY_KEYS.filter(key => item.summary?.[key] != null).map(key => (
+															<div key={key} className="sms-gateway-history-summary-row flex justify-between rounded-lg px-3 py-2 ">
+																<span>{t(`performance.smsGatewayImport.summary.${key}`)}</span>
+																<b>{new Intl.NumberFormat("fa-IR").format(item.summary?.[key] ?? 0)}</b>
+															</div>
+														))}
+													</div>
+												)
+												: null}
+											{item.status === "FAILED" && item.error
+												? <Tag className="whitespace-normal" color="error">{item.error}</Tag>
+												: null}
 										</div>
-										<div className="mb-3 grid grid-cols-1 gap-2 text-xs text-slate-500 sm:grid-cols-2">
-											<span>
-												شروع:
-												{date(item.started_at ?? item.created_at)}
-											</span>
-											<span>
-												پایان:
-												{date(item.finished_at)}
-											</span>
-										</div>
-										<div className="grid grid-cols-1 gap-1 text-sm sm:grid-cols-2">
-											{rows.map(([label, keys]) => (
-												<div key={label} className="sms-gateway-history-summary-row flex justify-between rounded-lg px-3 py-2 ">
-													<span>{label}</span>
-													<b>{new Intl.NumberFormat("fa-IR").format(count(item, keys))}</b>
-												</div>
-											))}
-										</div>
-									</div>
-								))}
+									);
+								})}
 							</div>
 						)}
 			</div>

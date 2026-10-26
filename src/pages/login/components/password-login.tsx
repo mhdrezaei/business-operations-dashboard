@@ -117,19 +117,6 @@ export function PasswordLogin() {
 						{t("authority.login")}
 					</Button>
 				</Form.Item>
-
-				<div className="text-sm text-center">
-					{t("authority.noAccountYet")}
-					<BasicButton
-						type="link"
-						className="px-1"
-						onPointerDown={() => {
-							setFormMode("register");
-						}}
-					>
-						{t("authority.goToRegister")}
-					</BasicButton>
-				</div>
 			</Form>
 		</>
 	);

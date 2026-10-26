@@ -1,7 +1,7 @@
 import type { ContractTypeValue } from "#src/features/contract/components/contract-type/contract-type.types";
 import { defaultContractTypeValue } from "#src/features/contract/components/contract-type/contract-type.types";
 
-export type OpenApiContractModel = "separated" | "legacy";
+export type OpenApiContractModel = "separated" | "legacy" | "package";
 
 export interface OpenApiSeparatedPricing {
 	walletChargeDiscountPercent: number | null

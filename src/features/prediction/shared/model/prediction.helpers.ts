@@ -26,6 +26,7 @@ export function isSupportedPredictionService(code: unknown) {
 	return typeof code === "string" && SUPPORTED_PREDICTION_SERVICE_CODES.has(normalizePredictionServiceCode(code));
 }
 
+// PSP predictions are only registered for IPG companies (as in the old panel)
 export function isAvailablePredictionCompanyType(serviceCode: unknown, companyType: unknown) {
 	const normalizedServiceCode = typeof serviceCode === "string"
 		? normalizePredictionServiceCode(serviceCode)
@@ -34,40 +35,25 @@ export function isAvailablePredictionCompanyType(serviceCode: unknown, companyTy
 		? companyType.trim().toUpperCase()
 		: "";
 
-	return normalizedServiceCode !== "traffic" || normalizedCompanyType !== "COLLOCATION";
+	return normalizedServiceCode !== "psp" || normalizedCompanyType === "IPG";
 }
 
-function normalizePersianDigits(value: string) {
-	// eslint-disable-next-line regexp/no-obscure-range
-	return value.replace(/[۰-۹]/g, digit => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)));
+// the backend only accepts fiscal years from 1404
+export const PREDICTION_FISCAL_YEAR_OPTIONS = [1404, 1405, 1406, 1407, 1408, 1409].map(year => ({
+	label: String(year),
+	value: year,
+})) satisfies PredictionYearOption[];
+
+const QUARTER_FIELD_KEYS = ["q1Percent", "q2Percent", "q3Percent", "q4Percent"] as const;
+
+/** Fields kept when the service changes (the old panel keeps fiscal year, quarters and note). */
+export function pickQuarterFields(fields: Record<string, unknown> | undefined) {
+	return Object.fromEntries(QUARTER_FIELD_KEYS.map(key => [key, fields?.[key] ?? null]));
 }
 
-export function currentJalaliYear() {
-	const formattedYear = new Intl.DateTimeFormat("fa-IR-u-ca-persian", {
-		year: "numeric",
-	}).format(new Date());
-
-	return Number(normalizePersianDigits(formattedYear));
-}
-
-export function buildFiscalYearOptions(existingYears: number[]) {
-	const year = currentJalaliYear();
-	const candidates = new Set<number>([
-		year - 2,
-		year - 1,
-		year,
-		year + 1,
-		year + 2,
-		...existingYears,
-	]);
-
-	return Array.from(candidates)
-		.filter(value => Number.isInteger(value) && value >= 1390)
-		.sort((a, b) => a - b)
-		.map(value => ({
-			label: String(value),
-			value,
-		})) satisfies PredictionYearOption[];
+export function getRecordQuarterPercents(record: unknown) {
+	const raw = (record ?? {}) as Record<string, unknown>;
+	return [raw.q1_percent, raw.q2_percent, raw.q3_percent, raw.q4_percent];
 }
 
 export function toNullableNumber(value: unknown): number | null {
