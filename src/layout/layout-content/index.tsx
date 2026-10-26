@@ -106,8 +106,8 @@ export default function LayoutContent() {
 						<div className="flex-1 overflow-x-clip">
 							<KeepAlive
 								max={20}
-								transition
-								duration={300}
+								transition={transitionEnable}
+								duration={transitionEnable ? 150 : 0}
 								cacheNodeClassName={transitionEnable ? `keepalive-${transitionName}` : undefined}
 								exclude={keepAliveExclude}
 								activeCacheKey={cacheKey}

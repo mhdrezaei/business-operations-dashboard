@@ -4,8 +4,7 @@ import { ContainerLayout } from "#src/layout";
 import { $t } from "#src/locales";
 import UnregisteredPerformancePage from "#src/pages/performances/unregistered.js";
 import { performance } from "#src/router/extra-info";
-import { BarChartOutlined, EditOutlined, FileAddOutlined, FileTextOutlined, FileUnknownOutlined, PieChartOutlined } from "@ant-design/icons";
-import { LineChartOutlined } from "@ant-design/icons/lib";
+import { BarChartOutlined, EditOutlined, FileAddOutlined, FileTextOutlined, FileUnknownOutlined, LineChartOutlined, PieChartOutlined } from "@ant-design/icons";
 import { createElement, lazy } from "react";
 
 const CreatePerformancePage = lazy(() => import("#src/pages/performances/"));
