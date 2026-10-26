@@ -8,10 +8,10 @@ import {
 	fetchTrafficPredictionYears,
 } from "../../api/predictions.api";
 
-export function predictionServicesQuery() {
+export function servicesQuery() {
 	return queryOptions({
-		queryKey: ["common", "services", { domain: "predictions" }],
-		queryFn: () => fetchServices({ domain: "predictions" }),
+		queryKey: ["common", "services"],
+		queryFn: fetchServices,
 		staleTime: 5 * 60 * 1000,
 	});
 }

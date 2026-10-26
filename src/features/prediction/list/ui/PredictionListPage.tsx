@@ -13,7 +13,7 @@ import { useNavigate } from "react-router";
 import { deletePrediction } from "../../api/predictions.api";
 import { getCompanyTypeToken } from "../../shared/model/company-type.helpers";
 import { getRecordQuarterPercents, isAvailablePredictionCompanyType, isSupportedPredictionService, PREDICTION_FISCAL_YEAR_OPTIONS } from "../../shared/model/prediction.helpers";
-import { predictionServicesQuery } from "../../shared/queries/prediction.queries";
+import { servicesQuery } from "../../shared/queries/prediction.queries";
 import { predictionServiceRegistry } from "../../shared/services/registry";
 
 const ORDERING_OPTIONS = [
@@ -54,7 +54,7 @@ export default function PredictionListPage() {
 		[permittedViewServiceIdsList.join(",")],
 	);
 
-	const services = useQuery(predictionServicesQuery());
+	const services = useQuery(servicesQuery());
 
 	const serviceOptions = useMemo(() => {
 		return (services.data?.results ?? [])

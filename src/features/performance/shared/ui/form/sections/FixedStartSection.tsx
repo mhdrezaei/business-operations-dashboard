@@ -81,7 +81,7 @@ export function FixedStartSection({
 	const { control, setValue, getValues } = useFormContext<PerformanceFormValues>();
 	const { getPermittedCompanyTypes, getPermittedServiceIds } = useAccess();
 
-	const services = useQuery(servicesQuery("performances"));
+	const services = useQuery(servicesQuery());
 
 	const serviceId = useWatch({ control, name: "serviceId" });
 	const serviceCode = useWatch({ control, name: "serviceCode" });

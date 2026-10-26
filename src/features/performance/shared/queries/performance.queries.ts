@@ -9,10 +9,10 @@ import {
 } from "#src/features/performance/api/performances.api";
 import { queryOptions } from "@tanstack/react-query";
 
-export function servicesQuery(domain?: string) {
+export function servicesQuery() {
 	return queryOptions({
-		queryKey: ["common", "services", { domain }],
-		queryFn: () => fetchServices({ domain }),
+		queryKey: ["common", "services"],
+		queryFn: fetchServices,
 		staleTime: 5 * 60 * 1000,
 	});
 }

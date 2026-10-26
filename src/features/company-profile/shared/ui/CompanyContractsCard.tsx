@@ -21,7 +21,9 @@ export default function CompanyContractsCard({ serviceId, serviceCode, companyTy
 		companyType,
 		counterpartyType: serviceCode.startsWith("sms") ? "partners" : null,
 	});
-	if (!service || !hasDomainPermissionByServiceId("contracts", "view", serviceId, companyType))
+	// old: برای سرویس‌های دارای نوع شرکت (traffic/sms/psp) بدون نوع شرکت انتخاب‌شده، قراردادها نمایش داده نمی‌شود.
+	const isCompanyTypeScoped = ["traffic", "sms", "psp"].includes(serviceCode.trim().toLowerCase());
+	if (!service || (isCompanyTypeScoped && !companyType) || !hasDomainPermissionByServiceId("contracts", "view", serviceId, companyType))
 		return null;
 
 	const canEdit = hasDomainPermissionByServiceId("contracts", "update", serviceId, companyType);

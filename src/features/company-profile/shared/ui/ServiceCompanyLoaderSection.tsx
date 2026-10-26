@@ -75,7 +75,9 @@ export function ServiceCompanyLoaderSection({ onCompanyDataCopied }: ServiceComp
 	const [copyOpen, setCopyOpen] = useState(false);
 	const [filtersCollapsed, setFiltersCollapsed] = useState(false);
 
-	const copyableSections: CompanyCopySectionKey[] = [
+	const canViewCompany = hasDomainPermissionByServiceId("company_profile", "view", serviceId || null, companyType);
+	// کارت‌ها فقط وقتی قابل کپی‌اند که کاربر مشاهده‌ی پروفایل را دارد (مثل old: بدون view هیچ کارتی مجاز نیست)
+	const copyableSections: CompanyCopySectionKey[] = !canViewCompany ? [] : [
 		...(hasCompanyCardAccess("company_public_profiles") ? ["public" as const] : []),
 		...(hasCompanyCardAccess("company_legal_profiles") ? ["legal" as const] : []),
 		...(hasCompanyCardAccess("company_finance_profiles") ? ["finance" as const] : []),

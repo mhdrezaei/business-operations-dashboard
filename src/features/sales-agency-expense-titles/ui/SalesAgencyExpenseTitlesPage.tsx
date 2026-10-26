@@ -10,9 +10,9 @@ import { createSalesAgencyExpenseTitle, fetchSalesAgencyExpenseTitles, updateSal
 const queryKey = ["sales-agency", "expense-titles"];
 
 export default function SalesAgencyExpenseTitlesPage() {
-	const { hasAdminAction } = useAccess();
-	const canCreate = hasAdminAction("policies", "create") || hasAdminAction("notification_rules", "create");
-	const canUpdate = hasAdminAction("policies", "update") || hasAdminAction("notification_rules", "update");
+	const { hasDomainPermission } = useAccess();
+	const canCreate = hasDomainPermission("contracts", "create", "sales_agency");
+	const canUpdate = hasDomainPermission("contracts", "update", "sales_agency");
 
 	const queryClient = useQueryClient();
 	const [modalOpen, setModalOpen] = useState(false);

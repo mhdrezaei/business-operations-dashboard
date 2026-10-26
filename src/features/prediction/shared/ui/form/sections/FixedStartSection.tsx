@@ -9,7 +9,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { isAvailablePredictionCompanyType, isSupportedPredictionService, pickQuarterFields, PREDICTION_FISCAL_YEAR_OPTIONS } from "../../../model/prediction.helpers";
-import { predictionServicesQuery } from "../../../queries/prediction.queries";
+import { servicesQuery } from "../../../queries/prediction.queries";
 import { predictionServiceRegistry } from "../../../services/registry";
 
 interface Props {
@@ -33,7 +33,7 @@ export function FixedStartSection({
 	const serviceCode = useWatch({ control, name: "serviceCode" });
 	const fiscalYear = useWatch({ control, name: "fiscalYear" });
 	const companyType = useWatch({ control, name: "serviceFields.companyType" as any });
-	const services = useQuery(predictionServicesQuery());
+	const services = useQuery(servicesQuery());
 	const module = serviceCode ? predictionServiceRegistry[serviceCode] : undefined;
 	const requiresCompanyType = serviceCode === "sms" || serviceCode === "psp" || serviceCode === "traffic";
 	const permissionAction = disabled ? "update" : "create";
