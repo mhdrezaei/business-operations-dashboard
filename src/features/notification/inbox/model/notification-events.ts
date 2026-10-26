@@ -22,6 +22,23 @@ export const NOTIFICATION_EVENT_CATEGORIES: ReadonlyArray<{ id: NotificationEven
 	{ id: "sms_gateway_auto_import", ruleCode: "SMS_GATEWAY_AUTO_IMPORT" },
 ];
 
+export interface NotificationCategoryAccess {
+	smsGatewayImport: boolean
+	businessApprovalPending: boolean
+	signPending: boolean
+}
+
+/** Categories that only make sense for users who can act on them are hidden from everyone else (same as old). */
+export function isNotificationCategoryVisible(categoryId: NotificationEventCategoryId, access: NotificationCategoryAccess) {
+	if (categoryId === "sms_gateway_auto_import")
+		return access.smsGatewayImport;
+	if (categoryId === "business_approval_pending")
+		return access.businessApprovalPending;
+	if (categoryId === "sign_pending")
+		return access.signPending;
+	return true;
+}
+
 export function resolveRuleCode(categoryId: NotificationEventCategoryId) {
 	return NOTIFICATION_EVENT_CATEGORIES.find(category => category.id === categoryId)?.ruleCode;
 }

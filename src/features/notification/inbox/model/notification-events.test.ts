@@ -1,6 +1,6 @@
 import type { NotificationItem } from "#src/api/notifications/types";
 import { describe, expect, it } from "vitest";
-import { getCompactNotificationBody, hasNotificationRule, isPendingAggregateRuleCode, resolveNotificationCategoryId, resolveRuleCode } from "./notification-events";
+import { getCompactNotificationBody, hasNotificationRule, isNotificationCategoryVisible, isPendingAggregateRuleCode, resolveNotificationCategoryId, resolveRuleCode } from "./notification-events";
 import { buildNotificationContractEditPath, buildNotificationPerformanceNewTarget, buildNotificationSignFlowPath } from "./notification-targets";
 
 function notification(overrides: Partial<NotificationItem> & { data?: Record<string, unknown> }): NotificationItem {
@@ -57,5 +57,17 @@ describe("notification targets", () => {
 	it("opens the sign flow by id", () => {
 		expect(buildNotificationSignFlowPath({ flow_id: 12 })).toBe("/contracts/sign-flows/12");
 		expect(buildNotificationSignFlowPath({})).toBeNull();
+	});
+});
+
+describe("notification category visibility", () => {
+	const none = { smsGatewayImport: false, businessApprovalPending: false, signPending: false };
+
+	it("hides action-specific categories from users without the matching access", () => {
+		expect(isNotificationCategoryVisible("sms_gateway_auto_import", none)).toBe(false);
+		expect(isNotificationCategoryVisible("business_approval_pending", none)).toBe(false);
+		expect(isNotificationCategoryVisible("sign_pending", none)).toBe(false);
+		expect(isNotificationCategoryVisible("contract_expiry", none)).toBe(true);
+		expect(isNotificationCategoryVisible("sign_pending", { ...none, signPending: true })).toBe(true);
 	});
 });

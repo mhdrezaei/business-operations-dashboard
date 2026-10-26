@@ -6,6 +6,7 @@ import { markNotificationInboxState, toPositiveInt } from "#src/api/notification
 import { BasicContent } from "#src/components";
 import { notificationCategoryUnreadCountQuery, notificationInboxQuery, notificationUnreadCountQuery } from "#src/features/notification/queries/notifications.queries";
 import { emitNotificationSync, subscribeNotificationSync } from "#src/features/notification/shared/notification-sync";
+import { useAccess } from "#src/hooks";
 import { useCardBorderColor } from "#src/shared/lib/use-card-border-color";
 import { useUserStore } from "#src/store";
 import { CheckOutlined, EyeInvisibleOutlined, LinkOutlined, ReloadOutlined } from "@ant-design/icons";
@@ -20,6 +21,7 @@ import {
 	getCompactNotificationBody,
 	getNotificationData,
 	hasNotificationRule,
+	isNotificationCategoryVisible,
 	isPendingAggregateNotification,
 	isPendingAggregateRuleCode,
 	isSmsVendorCompany,
@@ -147,12 +149,22 @@ export default function NotificationInboxPage() {
 	const { token } = theme.useToken();
 	const cardBorderColor = useCardBorderColor();
 	const services = useUserStore(state => state.services) ?? [];
+	const { isFullAdmin, hasDomainPermission, getPermittedCompanyTypes } = useAccess();
+	const smsServiceId = services.find(service => service.code === "sms")?.id;
+	const canSeeSmsGatewayImport = isFullAdmin || (["view", "create", "update"] as const).some(action =>
+		hasDomainPermission("performances", action, "sms") && getPermittedCompanyTypes("performances", action, smsServiceId).length > 0,
+	);
+	const visibleCategories = NOTIFICATION_EVENT_CATEGORIES.filter(category => isNotificationCategoryVisible(category.id, {
+		smsGatewayImport: canSeeSmsGatewayImport,
+		businessApprovalPending: hasDomainPermission("contracts", "business_approve"),
+		signPending: hasDomainPermission("contracts", "sign"),
+	}));
 
 	const [filter, setFilter] = useState<NotificationFilter>("all");
 	const [searchParams] = useSearchParams();
 	const [eventCategory, setEventCategory] = useState<NotificationEventCategoryId>(() => {
 		const requested = searchParams.get("category");
-		return NOTIFICATION_EVENT_CATEGORIES.find(category => category.id === requested)?.id ?? "all";
+		return visibleCategories.find(category => category.id === requested)?.id ?? "all";
 	});
 	const [page, setPage] = useState(1);
 	const [pageSize, setPageSize] = useState(10);
@@ -175,7 +187,7 @@ export default function NotificationInboxPage() {
 	}));
 	const unreadCountQuery = useQuery(notificationUnreadCountQuery());
 	const categoryUnreadCounts = useQueries({
-		queries: NOTIFICATION_EVENT_CATEGORIES.map(category => notificationCategoryUnreadCountQuery(category.ruleCode)),
+		queries: visibleCategories.map(category => notificationCategoryUnreadCountQuery(category.ruleCode)),
 		combine: results => results.map(result => result.data),
 	});
 
@@ -413,7 +425,7 @@ export default function NotificationInboxPage() {
 				</div>
 
 				<div className="flex flex-wrap items-center gap-2">
-					{NOTIFICATION_EVENT_CATEGORIES.map((category, index) => (
+					{visibleCategories.map((category, index) => (
 						<Button
 							key={category.id}
 							type={eventCategory === category.id ? "primary" : "default"}
