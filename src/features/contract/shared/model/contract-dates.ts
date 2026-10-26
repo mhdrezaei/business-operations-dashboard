@@ -1,4 +1,3 @@
-import { dayjs } from "#src/shared/lib/dayjs-jalali";
 import { z } from "zod";
 
 export const REAL_START_MIN_YEAR = 1400;
@@ -25,8 +24,13 @@ export function getRealStartMonths(year: number | null | undefined) {
 	return Array.from({ length: lastMonth }, (_, idx) => idx + 1);
 }
 
+// `dayjs().calendar("jalali")` is shadowed by dayjs's `calendar` plugin once antd-jalali mounts, so read the year from Intl.
+function getCurrentJalaliYear() {
+	return Number(new Intl.DateTimeFormat("en-US-u-ca-persian-nu-latn", { year: "numeric" }).format(new Date()));
+}
+
 /** سال/ماه‌های قابل انتخاب وقتی گپ (gaps) لود نشده است؛ همان رفتار old: ۱۴۰۴ تا ۵ سال بعد، و در ۱۴۰۴ فقط تیر به بعد. */
-export function buildFallbackMonthsByYear(currentJalaliYear = dayjs().calendar("jalali").year()) {
+export function buildFallbackMonthsByYear(currentJalaliYear = getCurrentJalaliYear()) {
 	const output = new Map<number, number[]>();
 	const lastYear = Math.max(currentJalaliYear + FALLBACK_YEARS_AHEAD, FALLBACK_FIRST_YEAR);
 	for (let year = FALLBACK_FIRST_YEAR; year <= lastYear; year++) {
