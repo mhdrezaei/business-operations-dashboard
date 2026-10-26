@@ -3,6 +3,8 @@ import { z } from "zod";
 export const adminRoleScopeValues = ["global", "service_admin"] as const;
 export const adminRoleDomainValues = ["contracts", "performances", "predictions", "company_profile"] as const;
 export const adminRolePermissionActionValues = ["view", "create", "update", "delete"] as const;
+/** Contracts-only approvals, edited next to the CRUD actions. */
+export const adminRoleContractExtraActionValues = ["sign", "business_approve"] as const;
 
 export const adminRoleScopeOptions = [
 	{ label: "سراسری", value: "global" },
@@ -33,8 +35,6 @@ export const companyProfileCardOptions = [
 	{ code: "company_shareholders", label: "سهام‌داران کلیدی" },
 	{ code: "company_bank_accounts", label: "حساب‌های بانکی" },
 ] as const;
-
-export const trafficCompanyTypes = ["CP", "IXP", "TCI", "PREMIUM"] as const;
 
 export function normalizeAdminRoleValue(value: unknown): any {
 	if (value === undefined || value === null)
@@ -86,4 +86,9 @@ export const adminRoleUpsertSchema = z.object({
 
 export type AdminRoleFormValues = z.output<typeof adminRoleUpsertSchema>;
 export type AdminRoleDomainKey = typeof adminRoleDomainValues[number];
+
+export function isAdminRoleDomainKey(value: string): value is AdminRoleDomainKey {
+	return (adminRoleDomainValues as readonly string[]).includes(value);
+}
 export type AdminRolePermissionAction = typeof adminRolePermissionActionValues[number];
+export type AdminRoleContractExtraAction = typeof adminRoleContractExtraActionValues[number];

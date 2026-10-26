@@ -29,7 +29,7 @@ import { getAdminUsersColumns } from "./constants/admin-users.columns";
 
 export default function AdminUsersListPage() {
 	const { t } = useTranslation();
-	const { hasAdminPanelAccess, hasAdminAction } = useAccess();
+	const { hasAdminAction, hasAdminUserCapability } = useAccess();
 
 	const actionRef = useRef<ActionType>(null);
 	const formRef = useRef<ProFormInstance | undefined>(undefined);
@@ -49,9 +49,9 @@ export default function AdminUsersListPage() {
 	const canCreate = hasAdminAction("users", "create");
 	const canUpdate = hasAdminAction("users", "update");
 	const canDelete = hasAdminAction("users", "delete");
-	const canSetRoles = hasAdminAction("users", "update") || hasAdminAction("roles", "update");
+	const canSetRoles = hasAdminUserCapability("assign_roles");
 	const canToggleActive = hasAdminAction("users", "update");
-	const canViewServiceAdmins = hasAdminPanelAccess("service_admins");
+	const canViewServiceAdmins = hasAdminUserCapability("manage_deputies");
 
 	const rolesQuery = useQuery(adminRolesQuery());
 
