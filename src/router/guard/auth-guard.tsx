@@ -6,7 +6,7 @@ import { accessRoutes, whiteRouteNames } from "#src/router/routes";
 import { isSendRoutingRequest } from "#src/router/routes/config";
 import { generateRoutesByFrontend, generateRoutesFromBackend } from "#src/router/utils";
 import { useAccessStore, useAuthStore, usePreferencesStore, useUserStore } from "#src/store";
-import { hasAdminAccess, hasDomainPermissionForServices, normalizeAccessKey } from "#src/utils/access-policy";
+import { hasAdminAccess, hasAnyDomainPermissionForServices, normalizeAccessKey } from "#src/utils/access-policy";
 
 import { useEffect } from "react";
 import { matchRoutes, Navigate, useLocation, useNavigate, useSearchParams } from "react-router";
@@ -319,7 +319,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
 			);
 		}
 
-		if (!hasDomainPermissionForServices(userServices, accessDomain, accessAction, { serviceCode })) {
+		if (!hasAnyDomainPermissionForServices(userServices, accessDomain, accessAction, { serviceCode })) {
 			return (
 				<Navigate
 					to={exception403Path}

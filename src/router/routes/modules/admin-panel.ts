@@ -85,7 +85,9 @@ const routes: AppRouteRecordRaw[] = [
 				handle: {
 					icon: createElement(AuditOutlined),
 					title: "عنوان‌های هزینه‌ی عاملیت فروش",
-					adminAccess: "policies",
+					accessDomain: "contracts",
+					accessAction: ["view", "create", "update"],
+					serviceCode: "sales_agency",
 				},
 			},
 			{

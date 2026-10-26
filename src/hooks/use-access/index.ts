@@ -1,4 +1,5 @@
 import type { CompanyTypeOption, CrudAction, DomainPermissionAction } from "#src/api/user/types";
+import type { AdminCapability } from "#src/utils/access-policy";
 import { useUserStore } from "#src/store";
 import { isString } from "#src/utils";
 import {
@@ -7,8 +8,10 @@ import {
 	getPermittedServiceIdsForDomain,
 	getPermittedTrafficCompanyTypesForDomain,
 	hasAdminAccess,
+	hasAdminCapability,
 	hasAdminSectionAction,
 	hasDomainPermissionForServices,
+	isFullAdmin as isFullAdminUser,
 	normalizeAccessKey,
 } from "#src/utils/access-policy";
 
@@ -180,7 +183,12 @@ export function useAccess() {
 		return normalizedCards.includes(normalizedCardCode);
 	};
 
+	const hasAdminUserCapability = (capability: AdminCapability) => {
+		return hasAdminCapability(userAccessState, capability);
+	};
+
 	const isPortalViewer = Boolean(portalViewer?.assigned);
+	const isFullAdmin = isFullAdminUser(userAccessState);
 
 	/**
 	 * @fa بررسی دسترسی به عمل خاص در بخش مدیریتی
@@ -206,6 +214,8 @@ export function useAccess() {
 		hasCompanyCardAccess,
 		hasAdminPanelAccess,
 		hasAdminAction,
+		hasAdminUserCapability,
 		isPortalViewer,
+		isFullAdmin,
 	};
 }

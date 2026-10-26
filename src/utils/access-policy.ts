@@ -2,6 +2,7 @@ import type {
 	AccessServiceType,
 	CompanyTypeOption,
 	CrudAction,
+	DeputyPermissionsType,
 	DomainPermission,
 	DomainPermissionAction,
 	DomainPermissionResponse,
@@ -229,6 +230,16 @@ export function hasDomainPermissionForServices(
 	});
 }
 
+/** Like {@link hasDomainPermissionForServices}, but any one of the given actions is enough. */
+export function hasAnyDomainPermissionForServices(
+	services: UserInfoType["services"],
+	domain: string | undefined,
+	actions: DomainPermissionAction | DomainPermissionAction[],
+	options: Parameters<typeof hasDomainPermissionForServices>[3] = {},
+): boolean {
+	return [actions].flat().some(action => hasDomainPermissionForServices(services, domain, action, options));
+}
+
 export function getPermittedServiceIdsForDomain(
 	services: UserInfoType["services"],
 	domain: string | undefined,
@@ -305,6 +316,82 @@ export function getPermittedTrafficCompanyTypesForDomain(
 	).map(item => item.key);
 }
 
+type AdminIdentity = Pick<UserInfoType, "role" | "admin_role" | "is_superuser" | "is_staff">;
+
+const ADMIN_SECTION_BY_TARGET: Record<string, string> = {
+	users: "users",
+	roles: "roles",
+	policies: "notification_rules",
+	notification_rules: "notification_rules",
+	audit_logs: "logs",
+	logs: "logs",
+	service_admins: "service_admins",
+};
+
+/** Audit logs and notification/sign-flow rules are for full admins only (old `requireSuperadmin`). */
+const FULL_ADMIN_ONLY_SECTIONS = new Set(["logs", "notification_rules"]);
+
+function resolveAdminSection(target: AdminAccessTarget): string {
+	const normalizedTarget = normalizeAccessKey(target);
+	return ADMIN_SECTION_BY_TARGET[normalizedTarget] ?? normalizedTarget;
+}
+
+const DEPUTY_PERMISSION_ALIASES: Record<string, keyof DeputyPermissionsType> = {
+	create_users: "can_create_users",
+	can_create_users: "can_create_users",
+	create_roles: "can_create_roles",
+	can_create_roles: "can_create_roles",
+	edit_users: "can_edit_users",
+	can_edit_users: "can_edit_users",
+	assign_roles: "can_assign_roles",
+	can_assign_roles: "can_assign_roles",
+	manage_policies: "can_manage_policies",
+	can_manage_policies: "can_manage_policies",
+};
+
+/** `/audit/access/` sends the granted deputy capabilities as a string list; the UI works with boolean flags. */
+export function normalizeDeputyPermissions(raw?: DeputyPermissionsType | string[] | null): DeputyPermissionsType {
+	const normalized: DeputyPermissionsType = {
+		can_create_users: false,
+		can_create_roles: false,
+		can_edit_users: false,
+		can_assign_roles: false,
+		can_manage_policies: false,
+	};
+	const entries: Array<[string, unknown]> = Array.isArray(raw)
+		? raw.map(item => [item, true])
+		: Object.entries(raw ?? {});
+	for (const [key, value] of entries) {
+		const flag = DEPUTY_PERMISSION_ALIASES[normalizeAccessKey(key)];
+		if (flag) {
+			normalized[flag] = Boolean(value);
+		}
+	}
+	return normalized;
+}
+
+/** superuser / staff_admin / Django is_staff: full access to everything (old `isFullAdmin`). */
+export function isFullAdmin(user: AdminIdentity): boolean {
+	const normalizedRole = normalizeAccessKey(user.role ?? user.admin_role);
+	return Boolean(user.is_superuser || user.is_staff || normalizedRole === "superuser" || normalizedRole === "staff_admin");
+}
+
+export type AdminCapability = "assign_roles" | "manage_deputies";
+
+/**
+ * User-management capabilities that are not plain CRUD actions (old `canAssignRoles` / `canManageDeputies`):
+ * full admins and service admins have all of them, a deputy only the granted ones.
+ */
+export function hasAdminCapability(
+	user: AdminIdentity & Pick<UserInfoType, "is_service_admin" | "deputy_permissions">,
+	capability: AdminCapability,
+): boolean {
+	if (isFullAdmin(user) || user.is_service_admin || normalizeAccessKey(user.role ?? user.admin_role) === "service_admin") {
+		return true;
+	}
+	return capability === "assign_roles" && Boolean(user.deputy_permissions?.can_assign_roles);
+}
+
 export function hasAdminAccess(user: Pick<
 	UserInfoType,
 	| "role"
@@ -317,23 +404,15 @@ export function hasAdminAccess(user: Pick<
 	| "can_manage_roles"
 	| "deputy_permissions"
 >, target: AdminAccessTarget): boolean {
-	const normalizedRole = normalizeAccessKey(user.role ?? user.admin_role);
-	const isSuperAdmin = Boolean(user.is_superuser || normalizedRole === "superuser" || normalizedRole === "staff_admin" || user.is_staff);
-	if (isSuperAdmin) {
+	if (isFullAdmin(user)) {
 		return true;
 	}
 
-	const sectionByTarget: Record<string, string> = {
-		users: "users",
-		roles: "roles",
-		policies: "notification_rules",
-		notification_rules: "notification_rules",
-		audit_logs: "logs",
-		logs: "logs",
-		service_admins: "service_admins",
-	};
-	const normalizedTarget = normalizeAccessKey(target);
-	const section = sectionByTarget[normalizedTarget] ?? normalizedTarget;
+	const section = resolveAdminSection(target);
+	if (FULL_ADMIN_ONLY_SECTIONS.has(section)) {
+		return false;
+	}
+
 	const normalizedSections = (user.admin_sections ?? []).map(normalizeAccessKey);
 	const sectionActions = user.admin_section_actions ?? {};
 	for (const [sectionKey, actions] of Object.entries(sectionActions)) {
@@ -348,15 +427,10 @@ export function hasAdminAccess(user: Pick<
 	const deputy = user.deputy_permissions;
 	switch (section) {
 		case "users":
+		case "service_admins":
 			return Boolean(user.can_manage_users || deputy?.can_create_users || deputy?.can_edit_users || deputy?.can_assign_roles);
 		case "roles":
 			return Boolean(user.can_manage_roles || deputy?.can_create_roles);
-		case "notification_rules":
-			return Boolean(deputy?.can_manage_policies);
-		case "logs":
-			return Boolean(user.is_staff || user.can_manage_users || user.can_manage_roles || deputy?.can_manage_policies);
-		case "service_admins":
-			return Boolean(user.is_staff || user.can_manage_users);
 		default:
 			return false;
 	}
@@ -386,23 +460,15 @@ export function hasAdminSectionAction(
 	target: AdminAccessTarget,
 	action: CrudAction,
 ): boolean {
-	const normalizedRole = normalizeAccessKey(user.role ?? user.admin_role);
-	const isSuperAdmin = Boolean(user.is_superuser || normalizedRole === "superuser" || normalizedRole === "staff_admin" || user.is_staff);
-	if (isSuperAdmin) {
+	if (isFullAdmin(user)) {
 		return true;
 	}
 
-	const sectionByTarget: Record<string, string> = {
-		users: "users",
-		roles: "roles",
-		policies: "notification_rules",
-		notification_rules: "notification_rules",
-		audit_logs: "logs",
-		logs: "logs",
-		service_admins: "service_admins",
-	};
-	const normalizedTarget = normalizeAccessKey(target);
-	const section = sectionByTarget[normalizedTarget] ?? normalizedTarget;
+	const section = resolveAdminSection(target);
+	if (FULL_ADMIN_ONLY_SECTIONS.has(section)) {
+		return false;
+	}
+
 	const normalizedAction = normalizeAccessKey(action);
 	const sectionActions = user.admin_section_actions ?? {};
 
@@ -431,17 +497,9 @@ export function hasAdminSectionAction(
 		if (normalizedAction === "view")
 			return Boolean(user.can_manage_roles || deputy?.can_create_roles);
 	}
-	if (section === "notification_rules") {
-		if (normalizedAction === "view")
-			return Boolean(deputy?.can_manage_policies);
-	}
-	if (section === "logs") {
-		if (normalizedAction === "view")
-			return Boolean(user.is_staff || user.can_manage_users || user.can_manage_roles || deputy?.can_manage_policies);
-	}
 	if (section === "service_admins") {
 		if (normalizedAction === "view")
-			return Boolean(user.is_staff || user.can_manage_users);
+			return Boolean(user.can_manage_users);
 	}
 
 	return false;
@@ -471,7 +529,7 @@ export function hasRouteAccess(route: AppRouteRecordRaw, user: UserInfoType): bo
 			return false;
 		}
 
-		return hasDomainPermissionForServices(
+		return hasAnyDomainPermissionForServices(
 			user.services,
 			accessDomain,
 			route.handle?.accessAction ?? "view",

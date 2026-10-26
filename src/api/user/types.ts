@@ -107,7 +107,8 @@ export interface AuditAccessType {
 	admin_sections?: string[]
 	admin_section_actions?: Record<string, CrudAction[]>
 	deputy_service_admin_id?: number | null
-	deputy_permissions?: DeputyPermissionsType
+	/** The backend sends the granted capabilities as a string list (e.g. `["create_users"]`). */
+	deputy_permissions?: DeputyPermissionsType | string[]
 	can_manage_users?: boolean
 	can_manage_roles?: boolean
 	portal_viewer?: PortalViewerType | null
