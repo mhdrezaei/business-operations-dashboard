@@ -2,8 +2,9 @@ import { useAccess } from "#src/hooks";
 import { RHFProText } from "#src/shared/ui/rhf-pro/fields/RHFProText";
 import { RHFSelect } from "#src/shared/ui/rhf-pro/fields/RHFSelect";
 import { theme } from "antd";
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
+import { OPENAPI_VARIANT_OPTIONS, SMS_TEMPLATE_VARIANT } from "../../model/template-variants";
 import { useServicesListQuery } from "../../queries/template-create.queries";
 
 export default function TemplateCreateForm() {
@@ -51,9 +52,14 @@ export default function TemplateCreateForm() {
 		}));
 	}, [selectedServiceId, permissionAction, getPermittedCompanyTypes]);
 
+	// Only a user-driven service change clears the dependent fields; loading a template sets service_id from null.
+	const previousServiceId = useRef(selectedServiceId);
 	useEffect(() => {
-		setValue("company_type", undefined);
-		setValue("variant", undefined);
+		if (previousServiceId.current != null && previousServiceId.current !== selectedServiceId) {
+			setValue("company_type", undefined);
+			setValue("variant", undefined);
+		}
+		previousServiceId.current = selectedServiceId;
 	}, [selectedServiceId, setValue]);
 
 	const documentKindOptions = [
@@ -61,25 +67,14 @@ export default function TemplateCreateForm() {
 		{ label: "الحاقیه", value: "addendum" },
 	];
 
-	const isSmsService = selectedService?.name?.includes("پیامک") || serviceStringValue === "sms";
+	const isSmsService = serviceStringValue === "sms";
 	const isOpenApiService = serviceStringValue === "openapi";
-	const showVariantField = isSmsService || isOpenApiService;
 
-	const variantOptions = useMemo(() => {
-		if (isOpenApiService) {
-			return [
-				{ value: "openapi_legacy", label: "قدیمی" },
-				{ value: "openapi_legacy_2", label: "تفکیکی" },
-			];
-		}
-		if (isSmsService) {
-			return [
-				{ value: "old", label: "قدیمی" },
-				{ value: "new", label: "جدید" },
-			];
-		}
-		return [];
-	}, [isOpenApiService, isSmsService]);
+	// SMS templates only exist for the client variant, so it is fixed instead of chosen (also normalizes legacy old/new values).
+	useEffect(() => {
+		if (isSmsService)
+			setValue("variant", SMS_TEMPLATE_VARIANT);
+	}, [isSmsService, selectedServiceId, setValue]);
 
 	const getPopupContainer = (triggerNode: any) => triggerNode.parentNode;
 
@@ -144,7 +139,7 @@ export default function TemplateCreateForm() {
 					/>
 				</div>
 
-				{showVariantField && (
+				{isOpenApiService && (
 					<div className="flex-1 min-w-[200px]">
 						<RHFSelect
 							name="variant"
@@ -155,7 +150,7 @@ export default function TemplateCreateForm() {
 									<span className="text-red-500">*</span>
 								</span>
 							)}
-							options={variantOptions}
+							options={OPENAPI_VARIANT_OPTIONS}
 							selectProps={{ placeholder: "انتخاب کنید...", size: "large", getPopupContainer }}
 							formItemProps={{ style: { marginBottom: 0 } }}
 						/>

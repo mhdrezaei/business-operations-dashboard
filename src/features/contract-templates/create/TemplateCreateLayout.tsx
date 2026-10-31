@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import React, { useEffect, useRef, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { TemplateCreateApi } from "../api/api";
+import { VARIANT_REQUIRED_SERVICES } from "../model/template-variants";
 import { useServicesListQuery } from "../queries/template-create.queries";
 import { mapTemplateHeader, useTemplateStore } from "../store/useTemplateStore";
 import ProEditor from "./components/editor/ProEditor";
@@ -242,6 +243,16 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 			hasFrontendError = true;
 		}
 
+		const payloadData = (servicesData as any)?.data ?? servicesData;
+		const rawServices = Array.isArray(payloadData?.results) ? payloadData.results : [];
+		const selectedService = rawServices.find((s: any) => s.id === formValues.service_id);
+		const serviceStringValue = selectedService?.code || selectedService?.slug || selectedService?.key || formValues.service_id;
+
+		if (VARIANT_REQUIRED_SERVICES.includes(serviceStringValue) && !formValues.variant) {
+			methods.setError("variant", { type: "manual", message: "انتخاب نوع سرویس الزامی است" });
+			hasFrontendError = true;
+		}
+
 		if (hasFrontendError) {
 			message.warning("لطفاً فیلدهای قرمزرنگ را تکمیل کنید.");
 			return;
@@ -254,12 +265,6 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 
 		setIsSaving(true);
 		try {
-			const payloadData = (servicesData as any)?.data ?? servicesData;
-			const rawServices = Array.isArray(payloadData?.results) ? payloadData.results : [];
-			const selectedService = rawServices.find((s: any) => s.id === formValues.service_id);
-
-			const serviceStringValue = selectedService?.code || selectedService?.slug || selectedService?.key || formValues.service_id;
-
 			const payload = {
 				name: formValues.name,
 				service: serviceStringValue,
