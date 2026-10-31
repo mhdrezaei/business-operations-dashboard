@@ -136,9 +136,6 @@ export default function ContractListPage() {
 	const showCompanyTypeColumn = selectedServiceId
 		? isCompanyTypeService || isTelecomFrameCode(selectedServiceCode)
 		: hasServiceOfKind(code => ["traffic", "sms", "psp", "sales_agency", "sales-agency"].includes(code) || isTelecomFrameCode(code));
-	const showOfficialColumn = selectedServiceId
-		? isTrafficService || isSmsService
-		: hasServiceOfKind(code => code === "traffic" || code === "sms");
 	const permittedTrafficCompanyTypeOptions = useMemo(
 		() => isCompanyTypeService ? getPermittedCompanyTypes("contracts", "view", selectedServiceId) : [],
 		[isCompanyTypeService, selectedServiceId, getPermittedCompanyTypes],
@@ -380,7 +377,6 @@ export default function ContractListPage() {
 					formRef.current?.setFieldsValue({ company_type: undefined, company_id: undefined });
 				},
 				showCompanyTypeColumn,
-				showOfficialColumn,
 				selectedTrafficCompanyType,
 				setSelectedTrafficCompanyType: (v) => {
 					setSelectedTrafficCompanyType(v);
@@ -402,7 +398,6 @@ export default function ContractListPage() {
 			isSmsService,
 			selectedSmsParty,
 			showCompanyTypeColumn,
-			showOfficialColumn,
 			selectedTrafficCompanyType,
 			permittedTrafficCompanyTypeOptions,
 			serviceOptions,

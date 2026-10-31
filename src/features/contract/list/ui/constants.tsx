@@ -24,7 +24,6 @@ export interface GetContractColumnsArgs {
 	setSelectedSmsParty: (v: "vendor" | "client" | null) => void
 	/** Table columns visible even without a selected service (old: any service of that kind exists). */
 	showCompanyTypeColumn: boolean
-	showOfficialColumn: boolean
 
 	selectedTrafficCompanyType: string | null
 	setSelectedTrafficCompanyType: (v: string | null) => void
@@ -62,7 +61,6 @@ export function getContractColumns({
 	selectedSmsParty,
 	setSelectedSmsParty,
 	showCompanyTypeColumn,
-	showOfficialColumn,
 	selectedTrafficCompanyType,
 	setSelectedTrafficCompanyType,
 	permittedTrafficCompanyTypeOptions,
@@ -230,8 +228,6 @@ export function getContractColumns({
 			dataIndex: "is_official",
 			valueType: "select",
 			width: 130,
-			hideInTable: !showOfficialColumn,
-			hideInSearch: !(isTrafficService || (isSmsService && selectedSmsParty === "client")),
 			sorter: multiSort(6),
 			valueEnum: {
 				true: { text: t("contract.list.filter.officialOnly") },
@@ -239,11 +235,7 @@ export function getContractColumns({
 			},
 			formItemProps: { label: t("contract.list.filter.contractKind") },
 			fieldProps: { allowClear: true, placeholder: t("contract.list.filter.allContracts") },
-			render: (_, r) => {
-				if (r.is_official == null)
-					return "-";
-				return <Tag>{r.is_official ? t("common.yes") : t("common.no")}</Tag>;
-			},
+			render: (_, r) => <Tag>{r.is_official === false ? t("contract.createPanel.unofficial") : t("contract.createPanel.official")}</Tag>,
 		},
 
 		{
