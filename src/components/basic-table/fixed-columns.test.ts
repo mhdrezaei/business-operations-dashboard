@@ -13,9 +13,9 @@ describe("normalizeFixedColumns", () => {
 		expect(normalizeFixedColumns(columns, false)).toBe(columns);
 	});
 
-	it("pins by position in RTL: leading → right, trailing → left", () => {
+	it("pins by position in RTL: leading → visual start (left), trailing → visual end (right)", () => {
 		const result = normalizeFixedColumns(columns, true)!;
-		expect(result.map(column => column.fixed)).toEqual(["right", undefined, undefined, "left"]);
+		expect(result.map(column => column.fixed)).toEqual(["left", undefined, undefined, "right"]);
 	});
 
 	it("does not touch tables with only pinned columns", () => {

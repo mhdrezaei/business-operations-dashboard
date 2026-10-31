@@ -4,10 +4,10 @@ interface PinnableColumn {
 }
 
 /**
- * rc-table (7.54) pins columns to the *physical* side in RTL, so a trailing `fixed: "right"` column
- * (the visual end, e.g. the actions column) never sticks. Pin by position instead: pinned columns
- * before the first scrolling column stick to the visual start (physical right), pinned columns after
- * the last scrolling column stick to the visual end (physical left).
+ * antd/rc-table order and swap `fixed` logically in RTL: `left` columns move to the visual start (physical right)
+ * and `right` columns to the visual end (physical left). Pin by position so a trailing actions column
+ * always lands on the visual end, whichever side the page declared: pinned columns before the first
+ * scrolling column → `left` (visual start), pinned columns after the last scrolling column → `right` (visual end).
  */
 export function normalizeFixedColumns<T extends PinnableColumn>(columns: T[] | undefined, isRtl: boolean): T[] | undefined {
 	if (!isRtl || !columns)
@@ -21,6 +21,6 @@ export function normalizeFixedColumns<T extends PinnableColumn>(columns: T[] | u
 	return columns.map((column) => {
 		if (!column.fixed || column.hideInTable)
 			return column;
-		return { ...column, fixed: visible.indexOf(column) < firstScrolling ? "right" : "left" };
+		return { ...column, fixed: visible.indexOf(column) < firstScrolling ? "left" : "right" };
 	});
 }
