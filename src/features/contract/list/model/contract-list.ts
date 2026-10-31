@@ -1,5 +1,5 @@
 import type { ContractServicePath } from "../../api/contracts.api";
-import type { ContractApprovalFilter, ContractListItemType, ContractListUser, ContractsListQuery } from "./contracts.list.types";
+import type { ContractApprovalFilter, ContractListItemType, ContractListUser, ContractOfficeApproval, ContractsListQuery } from "./contracts.list.types";
 import { resolveContractServicePath } from "../../shared/model/contract-service-path";
 import { isSmsVendorCompany, pickCompanyTypeToken } from "../../shared/utils";
 
@@ -10,6 +10,7 @@ export const CONTRACT_LIST_DEFAULT_PAGE_SIZE = 20;
 export const CONTRACT_LIST_PAGE_SIZE_OPTIONS = [20, 50, 100, 200];
 
 const APPROVAL_FILTERS = new Set<string>(["true", "false", "pending"]);
+const OFFICE_APPROVAL_FILTERS = new Set<string>(["waiting_business", "waiting", "approved"]);
 
 /** Values of the search form (`current`/`pageSize` come from ProTable). Select values arrive as strings. */
 export interface ContractListFormParams {
@@ -22,7 +23,7 @@ export interface ContractListFormParams {
 	is_official?: string | boolean
 	sms_party?: string
 	is_business_approved?: string
-	is_signed?: string
+	office_approval?: string
 	real_signed?: string | boolean
 }
 
@@ -36,6 +37,17 @@ function toApprovalFilter(value: unknown) {
 	return typeof value === "string" && APPROVAL_FILTERS.has(value) ? value as ContractApprovalFilter : undefined;
 }
 
+function toOfficeApproval(value: unknown) {
+	return typeof value === "string" && OFFICE_APPROVAL_FILTERS.has(value) ? value as ContractOfficeApproval : undefined;
+}
+
+/** null is never "approved": only an explicit `is_signed === true` counts. */
+export function getOfficeApproval(row: Pick<ContractListItemType, "is_signed" | "is_business_approved">): ContractOfficeApproval {
+	if (row.is_signed === true)
+		return "approved";
+	return row.is_business_approved === true ? "waiting" : "waiting_business";
+}
+
 export function toContractListQuery(params: ContractListFormParams, ordering?: string): ContractsListQuery {
 	return {
 		page: params.current ?? 1,
@@ -47,7 +59,7 @@ export function toContractListQuery(params: ContractListFormParams, ordering?: s
 		is_official: toBoolean(params.is_official),
 		sms_party: params.sms_party === "vendor" || params.sms_party === "client" ? params.sms_party : undefined,
 		is_business_approved: toApprovalFilter(params.is_business_approved),
-		is_signed: toApprovalFilter(params.is_signed),
+		office_approval: toOfficeApproval(params.office_approval),
 		real_signed: toBoolean(params.real_signed),
 		ordering,
 	};

@@ -8,6 +8,7 @@ import { isSmsVendorCompany, pickCompanyTypeToken } from "../../shared/utils";
 import { formatContractMonth, getContractListUserName } from "../model/contract-list";
 import { formatHistoryDate } from "./components/contract-approval-history.utils";
 import { ContractApprovalStatusTag } from "./components/ContractApprovalStatusTag";
+import { ContractOfficeApprovalTag } from "./components/ContractOfficeApprovalTag";
 
 export interface GetContractColumnsArgs {
 	t: TFunction<"translation", undefined>
@@ -86,10 +87,10 @@ export function getContractColumns({
 		{ label: t("contract.list.approval.rejected"), value: "false" },
 		{ label: t("contract.list.approval.pending"), value: "pending" },
 	];
-	const signedOptions = [
-		{ label: t("contract.list.approval.approved"), value: "true" },
-		{ label: t("contract.list.approval.notApproved"), value: "false" },
-		{ label: t("contract.list.approval.pending"), value: "pending" },
+	const officeApprovalOptions = [
+		{ label: t("contract.list.approval.approved"), value: "approved" },
+		{ label: t("contract.list.approval.waiting"), value: "waiting" },
+		{ label: t("contract.list.approval.waitingBusiness"), value: "waiting_business" },
 	];
 
 	return [
@@ -254,27 +255,28 @@ export function getContractColumns({
 			sorter: multiSort(7),
 			valueEnum: toValueEnum(approvalOptions),
 			fieldProps: { allowClear: true, placeholder: t("contract.list.filter.approvalPlaceholder") },
-			render: (_, record) => (
-				<ContractApprovalStatusTag value={record.is_business_approved} pendingLabel={t("contract.list.approval.pending")} />
-			),
+			render: (_, record) => record.is_official === false
+				? "-"
+				: <ContractApprovalStatusTag value={record.is_business_approved} pendingLabel={t("contract.list.approval.pending")} />,
 		},
 
 		{
 			title: t("contract.list.column.isSigned"),
 			dataIndex: "is_signed",
-			valueType: "select",
-			width: 170,
+			width: 190,
 			align: "center",
+			search: false,
 			sorter: multiSort(8),
-			valueEnum: toValueEnum(signedOptions),
+			render: (_, record) => record.is_official === false ? "-" : <ContractOfficeApprovalTag contract={record} />,
+		},
+
+		{
+			title: t("contract.list.filter.officeApproval"),
+			dataIndex: "office_approval",
+			valueType: "select",
+			hideInTable: true,
+			valueEnum: toValueEnum(officeApprovalOptions),
 			fieldProps: { allowClear: true, placeholder: t("contract.list.filter.approvalPlaceholder") },
-			render: (_, record) => (
-				<ContractApprovalStatusTag
-					value={record.is_signed}
-					pendingLabel={t("contract.list.approval.pending")}
-					rejectedLabel={t("contract.list.approval.notApproved")}
-				/>
-			),
 		},
 
 		{
