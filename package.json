@@ -23,7 +23,9 @@
 		"pnpm:install": "pnpm install",
 		"npm-check": "taze major -lrw",
 		"test": "vitest",
-		"test:coverage": "vitest run --coverage"
+		"test:coverage": "vitest run --coverage",
+		"test:e2e": "playwright test",
+		"test:e2e:ui": "playwright test --ui"
 	},
 	"dependencies": {
 		"@ant-design/icons": "^6.0.0",
@@ -101,6 +103,7 @@
 		"@eslint/config-inspector": "^1.0.2",
 		"@iconify-json/ri": "^1.2.5",
 		"@iconify/tools": "^4.1.2",
+		"@playwright/test": "^1.64.1",
 		"@svgr/plugin-jsx": "^8.1.0",
 		"@svgr/plugin-svgo": "^8.1.0",
 		"@tanstack/react-query-devtools": "^5.69.0",

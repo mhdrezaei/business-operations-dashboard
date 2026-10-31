@@ -99,6 +99,7 @@ export default defineConfig(({ mode }) => {
 			globals: true,
 			environment: "happy-dom",
 			setupFiles: ["./src/setupTests.ts"],
+			include: ["src/**/*.{test,spec}.{ts,tsx}", "tests/**/*.{test,spec}.{ts,tsx}"],
 			coverage: {
 				provider: "v8",
 				reporter: ["text", "json", "html"],
