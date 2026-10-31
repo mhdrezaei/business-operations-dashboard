@@ -44,3 +44,6 @@ TODO.md
 /.codex
 # graphify
 graphify-out/
+
+# Parity audit notes (local)
+/docs/parity-audit/

@@ -300,7 +300,6 @@ export function ContractEditForm({ contractId, service, readOnlyHeader, onUpdate
 													detail={contractDetail}
 													serviceId={initialValues.serviceId}
 													companyType={pickCompanyTypeToken(initialValues.companyType)}
-													canDecide={readOnly}
 												/>
 											</>
 										)}

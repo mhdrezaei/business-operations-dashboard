@@ -229,7 +229,7 @@ export function ContractDataCopyButton({ targetPath = MAIN_TARGET_PATH }: Contra
 			<div className="w-full">
 				<Button
 					icon={<CopyOutlined />}
-					className="w-full"
+					className="h-auto min-h-[var(--ant-control-height)] w-full whitespace-normal py-1.5 leading-snug"
 					disabled={(companyId == null && !isCostContext && !companyOptional) || serviceId == null || path == null}
 					onClick={() => setOpen(true)}
 				>

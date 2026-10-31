@@ -1,5 +1,6 @@
 import type { ShPeriodRange } from "#src/features/dashboard/api/dashboard.dto";
 import { i18n } from "#src/locales";
+import { getJalaliParts } from "#src/shared/lib/jalali-intl";
 
 import { formatYear, pad2 } from "./format";
 
@@ -16,21 +17,8 @@ export function monthName(month: number) {
 	return i18n.t(`dashboard.months.${month}`);
 }
 
-/**
- * Jalali parts from the platform's Persian calendar (no dependency on which dayjs plugin owns `.calendar()`).
- * ISO dates are read as UTC midnight and formatted in UTC so the day never shifts with the user's timezone.
- */
-const jalaliFormat = (timeZone?: string) => new Intl.DateTimeFormat("en-US-u-ca-persian-nu-latn", { year: "numeric", month: "numeric", day: "numeric", timeZone });
-const localFormat = jalaliFormat();
-const utcFormat = jalaliFormat("UTC");
-
-function partsOf(format: Intl.DateTimeFormat, date: Date) {
-	const parts = Object.fromEntries(format.formatToParts(date).map(p => [p.type, p.value]));
-	return { year: Number.parseInt(parts.year, 10), month: Number(parts.month), day: Number(parts.day) };
-}
-
 export function getCurrentJalali(): YearMonth {
-	const { year, month } = partsOf(localFormat, new Date());
+	const { year, month } = getJalaliParts(new Date());
 	return { year, month };
 }
 
@@ -41,7 +29,7 @@ function jalaliOf(isoDate: unknown) {
 	if (!match)
 		return null;
 	const date = new Date(`${match[1]}T00:00:00Z`);
-	return Number.isNaN(date.getTime()) ? null : partsOf(utcFormat, date);
+	return Number.isNaN(date.getTime()) ? null : getJalaliParts(date, { utc: true });
 }
 
 /** Gregorian ISO date → Jalali year/month; invalid → null. */

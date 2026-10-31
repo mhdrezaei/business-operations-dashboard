@@ -18,7 +18,7 @@ describe("toContractListQuery", () => {
 			pageSize: 50,
 			service_id: "3",
 			is_business_approved: "pending",
-			is_signed: "false",
+			office_approval: "waiting",
 			real_signed: "true",
 			is_official: "false",
 		}, "-start_date");
@@ -27,7 +27,7 @@ describe("toContractListQuery", () => {
 			page_size: 50,
 			service_id: 3,
 			is_business_approved: "pending",
-			is_signed: "false",
+			office_approval: "waiting",
 			real_signed: true,
 			is_official: false,
 			ordering: "-start_date",

@@ -31,6 +31,18 @@ export const useStyles = createUseStyles(({ token }) => ({
 		"& .ant-menu-item-icon, & .ant-menu-submenu-title .ant-menu-item-icon": {
 			fontSize: 24,
 		},
+		// Long titles wrap onto the next line instead of being cut with an ellipsis.
+		"&.ant-menu-inline:not(.ant-menu-inline-collapsed) .ant-menu-item, &.ant-menu-inline:not(.ant-menu-inline-collapsed) .ant-menu-submenu-title": {
+			height: "auto",
+			minHeight: 40,
+			paddingBlock: 8,
+			lineHeight: 1.6,
+		},
+		"&.ant-menu-inline:not(.ant-menu-inline-collapsed) .ant-menu-title-content": {
+			whiteSpace: "normal",
+			overflow: "visible",
+			textOverflow: "clip",
+		},
 		"&.ant-menu-inline-collapsed .ant-menu-item-icon, &.ant-menu-inline-collapsed .ant-menu-submenu-title .ant-menu-item-icon": {
 			display: "flex !important",
 			alignItems: "center",

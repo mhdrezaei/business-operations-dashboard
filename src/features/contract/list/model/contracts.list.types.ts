@@ -5,6 +5,9 @@ export interface ContractListUser {
 
 export type ContractApprovalFilter = "true" | "false" | "pending";
 
+/** Derived «تأیید قرارداد» state (contracts have no rejection). */
+export type ContractOfficeApproval = "waiting_business" | "waiting" | "approved";
+
 export interface ContractListItemType {
 	id: number
 
@@ -65,7 +68,7 @@ export interface ContractsListQuery {
 	sms_party?: "vendor" | "client"
 
 	is_business_approved?: ContractApprovalFilter
-	is_signed?: ContractApprovalFilter
+	office_approval?: ContractOfficeApproval
 	real_signed?: boolean
 
 	ordering?: string

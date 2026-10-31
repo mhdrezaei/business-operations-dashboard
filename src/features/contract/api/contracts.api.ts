@@ -605,12 +605,29 @@ export function fetchContractTemplates(service: string, companyType?: string | n
 		.json<PaginatedResult<any> | any>();
 }
 
+export interface TemplateTagColumn {
+	key: string
+	label: string
+}
+
+export interface TemplateTagTable {
+	columns: TemplateTagColumn[]
+	rows: Record<string, unknown>[]
+}
+
+/** Display-ready description of one tag value, built by the backend (Persian labels, units, table cells). */
+export interface TemplateTagMeta extends Partial<TemplateTagTable> {
+	render_mode: string
+	display?: string | null
+}
+
 export interface TemplateTagValuesResponse {
 	service: string
 	variant: string | null
 	company_type: string
 	document_kind: string
 	values: Record<string, any>
+	meta: Record<string, TemplateTagMeta>
 	labels: Record<string, string>
 	missing: string[]
 	unknown: string[]

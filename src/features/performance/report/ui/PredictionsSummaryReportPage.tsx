@@ -15,7 +15,7 @@ import { fetchPredictionPerformanceSummary } from "#src/features/performance/api
 import { normalizeServiceCode } from "#src/features/performance/shared/model/performance.helpers";
 import { servicesQuery } from "#src/features/performance/shared/queries/performance.queries";
 import { useAccess } from "#src/hooks";
-import { dayjs } from "#src/shared/lib/dayjs-jalali";
+import { getCurrentJalaliYear } from "#src/shared/lib/jalali-intl";
 import { DownOutlined, FileExcelOutlined, FilePdfOutlined, SearchOutlined, UpOutlined } from "@ant-design/icons";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Alert, Button, Card, Checkbox, ConfigProvider, Empty, Form, InputNumber, Select, Space, Switch, Table, Tag, theme, Typography } from "antd";
@@ -52,7 +52,7 @@ const FUTURE_YEARS = 5;
 const SUMMARY_SERVICE_CODES = ["openapi", "psp", "shahkar", "sms", "sms_commission", "traffic"];
 
 const YEAR_OPTIONS = Array.from(
-	{ length: Math.max(dayjs().calendar("jalali").year() + FUTURE_YEARS - START_YEAR + 1, 1) },
+	{ length: Math.max(getCurrentJalaliYear() + FUTURE_YEARS - START_YEAR + 1, 1) },
 	(_, index) => START_YEAR + index,
 ).map(year => ({
 	label: String(year),

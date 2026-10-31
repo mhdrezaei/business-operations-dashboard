@@ -1,5 +1,5 @@
 import type { ContractServicePath } from "../../api/contracts.api";
-import { dayjs } from "#src/shared/lib/dayjs-jalali";
+import { formatJalaliIsoDate } from "#src/shared/lib/jalali-intl";
 import { RecordListPanel } from "#src/shared/ui/record-list-panel";
 import { DownOutlined, EditOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
@@ -53,7 +53,7 @@ function formatJalaliDate(year?: number | null, month?: number | null) {
 function formatFullActivePeriod(period: CompanyContractDto["full_active_period"]) {
 	if (!Array.isArray(period) || period.length < 2 || !period[0] || !period[1])
 		return null;
-	const [from, to] = period.map(date => dayjs(date).calendar("jalali").format("YYYY/MM/DD"));
+	const [from, to] = period.map(formatJalaliIsoDate);
 	return { start: from, end: to };
 }
 

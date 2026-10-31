@@ -8,6 +8,7 @@ import { isSmsVendorCompany, pickCompanyTypeToken } from "../../shared/utils";
 import { formatContractMonth, getContractListUserName } from "../model/contract-list";
 import { formatHistoryDate } from "./components/contract-approval-history.utils";
 import { ContractApprovalStatusTag } from "./components/ContractApprovalStatusTag";
+import { ContractOfficeApprovalTag } from "./components/ContractOfficeApprovalTag";
 
 export interface GetContractColumnsArgs {
 	t: TFunction<"translation", undefined>
@@ -23,7 +24,6 @@ export interface GetContractColumnsArgs {
 	setSelectedSmsParty: (v: "vendor" | "client" | null) => void
 	/** Table columns visible even without a selected service (old: any service of that kind exists). */
 	showCompanyTypeColumn: boolean
-	showOfficialColumn: boolean
 
 	selectedTrafficCompanyType: string | null
 	setSelectedTrafficCompanyType: (v: string | null) => void
@@ -61,7 +61,6 @@ export function getContractColumns({
 	selectedSmsParty,
 	setSelectedSmsParty,
 	showCompanyTypeColumn,
-	showOfficialColumn,
 	selectedTrafficCompanyType,
 	setSelectedTrafficCompanyType,
 	permittedTrafficCompanyTypeOptions,
@@ -86,10 +85,10 @@ export function getContractColumns({
 		{ label: t("contract.list.approval.rejected"), value: "false" },
 		{ label: t("contract.list.approval.pending"), value: "pending" },
 	];
-	const signedOptions = [
-		{ label: t("contract.list.approval.approved"), value: "true" },
-		{ label: t("contract.list.approval.notApproved"), value: "false" },
-		{ label: t("contract.list.approval.pending"), value: "pending" },
+	const officeApprovalOptions = [
+		{ label: t("contract.list.approval.approved"), value: "approved" },
+		{ label: t("contract.list.approval.waiting"), value: "waiting" },
+		{ label: t("contract.list.approval.waitingBusiness"), value: "waiting_business" },
 	];
 
 	return [
@@ -229,8 +228,6 @@ export function getContractColumns({
 			dataIndex: "is_official",
 			valueType: "select",
 			width: 130,
-			hideInTable: !showOfficialColumn,
-			hideInSearch: !(isTrafficService || (isSmsService && selectedSmsParty === "client")),
 			sorter: multiSort(6),
 			valueEnum: {
 				true: { text: t("contract.list.filter.officialOnly") },
@@ -238,11 +235,7 @@ export function getContractColumns({
 			},
 			formItemProps: { label: t("contract.list.filter.contractKind") },
 			fieldProps: { allowClear: true, placeholder: t("contract.list.filter.allContracts") },
-			render: (_, r) => {
-				if (r.is_official == null)
-					return "-";
-				return <Tag>{r.is_official ? t("common.yes") : t("common.no")}</Tag>;
-			},
+			render: (_, r) => <Tag>{r.is_official === false ? t("contract.createPanel.unofficial") : t("contract.createPanel.official")}</Tag>,
 		},
 
 		{
@@ -254,27 +247,28 @@ export function getContractColumns({
 			sorter: multiSort(7),
 			valueEnum: toValueEnum(approvalOptions),
 			fieldProps: { allowClear: true, placeholder: t("contract.list.filter.approvalPlaceholder") },
-			render: (_, record) => (
-				<ContractApprovalStatusTag value={record.is_business_approved} pendingLabel={t("contract.list.approval.pending")} />
-			),
+			render: (_, record) => record.is_official === false
+				? "-"
+				: <ContractApprovalStatusTag value={record.is_business_approved} pendingLabel={t("contract.list.approval.pending")} />,
 		},
 
 		{
 			title: t("contract.list.column.isSigned"),
 			dataIndex: "is_signed",
-			valueType: "select",
-			width: 170,
+			width: 190,
 			align: "center",
+			search: false,
 			sorter: multiSort(8),
-			valueEnum: toValueEnum(signedOptions),
+			render: (_, record) => record.is_official === false ? "-" : <ContractOfficeApprovalTag contract={record} />,
+		},
+
+		{
+			title: t("contract.list.filter.officeApproval"),
+			dataIndex: "office_approval",
+			valueType: "select",
+			hideInTable: true,
+			valueEnum: toValueEnum(officeApprovalOptions),
 			fieldProps: { allowClear: true, placeholder: t("contract.list.filter.approvalPlaceholder") },
-			render: (_, record) => (
-				<ContractApprovalStatusTag
-					value={record.is_signed}
-					pendingLabel={t("contract.list.approval.pending")}
-					rejectedLabel={t("contract.list.approval.notApproved")}
-				/>
-			),
 		},
 
 		{
