@@ -569,6 +569,22 @@ html.gray-mode {
 	background: var(--basic-table-row-hover, var(--ant-colorFillTertiary)) !important;
 }
 
+/* Pinned columns: the theme colors are translucent, so paint them over a solid base to hide the scrolled cells underneath. */
+.basic-table-shell .ant-table-thead > tr > th.ant-table-cell-fix-left,
+.basic-table-shell .ant-table-thead > tr > th.ant-table-cell-fix-right {
+	background: linear-gradient(var(--basic-table-header-background, var(--ant-colorFillSecondary)), var(--basic-table-header-background, var(--ant-colorFillSecondary))), var(--ant-color-bg-layout) !important;
+}
+
+.basic-table-shell .ant-table-tbody > tr > td.ant-table-cell-fix-left,
+.basic-table-shell .ant-table-tbody > tr > td.ant-table-cell-fix-right {
+	background: linear-gradient(var(--basic-table-row-background, var(--ant-colorBgContainer)), var(--basic-table-row-background, var(--ant-colorBgContainer))), var(--ant-color-bg-layout) !important;
+}
+
+.basic-table-shell .ant-table-tbody > tr:hover > td.ant-table-cell-fix-left,
+.basic-table-shell .ant-table-tbody > tr:hover > td.ant-table-cell-fix-right {
+	background: linear-gradient(var(--basic-table-row-hover, var(--ant-colorFillTertiary)), var(--basic-table-row-hover, var(--ant-colorFillTertiary))), var(--ant-color-bg-layout) !important;
+}
+
 .basic-table-shell .ant-table-cell {
 	padding-inline: var(--basic-table-cell-padding-inline, 16px);
 	padding-block: var(--basic-table-cell-padding-block, 12px);
