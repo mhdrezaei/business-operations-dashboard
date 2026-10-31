@@ -30,8 +30,6 @@ interface ContractApprovalPanelProps {
 	detail: Record<string, unknown> | null
 	serviceId?: number | null
 	companyType?: string | null
-	/** Shows the approve/reject actions; otherwise only statuses and history (old: hidden while editing). */
-	canDecide?: boolean
 }
 
 interface PendingDecision extends ContractApprovalDecision {
@@ -63,7 +61,7 @@ function collectRealSignedIds(addenda: unknown, ids = new Set<number>()) {
 	return ids;
 }
 
-export function ContractApprovalPanel({ contractId, service, detail, serviceId, companyType, canDecide = false }: ContractApprovalPanelProps) {
+export function ContractApprovalPanel({ contractId, service, detail, serviceId, companyType }: ContractApprovalPanelProps) {
 	const { t } = useTranslation();
 	const { hasDomainPermissionByServiceId } = useAccess();
 	const classes = useContractApprovalHistoryStyles();
@@ -71,7 +69,7 @@ export function ContractApprovalPanel({ contractId, service, detail, serviceId, 
 	const approvalQuery = contractApprovalQuery(service, contractId);
 	const { data, isPending, isError } = useQuery(approvalQuery);
 	const canDecideField = (field: ContractApprovalField) =>
-		canDecide && hasDomainPermissionByServiceId("contracts", FIELD_PERMISSIONS[field], serviceId, getContractAccessCompanyType(service, companyType));
+		hasDomainPermissionByServiceId("contracts", FIELD_PERMISSIONS[field], serviceId, getContractAccessCompanyType(service, companyType));
 	const [decision, setDecision] = useState<PendingDecision | null>(null);
 	const [comment, setComment] = useState("");
 	// Accordion: only one subject (main contract or addendum) stays expanded at a time.
