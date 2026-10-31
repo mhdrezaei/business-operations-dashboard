@@ -8,6 +8,7 @@ import { TemplateCreateApi } from "../../../../contract-templates/api/api";
 import { getVariable } from "../../../../contract-templates/create/components/editor/variables/registry";
 import { mapTemplateHeader, useTemplateStore } from "../../../../contract-templates/store/useTemplateStore";
 import { fetchContractTemplates, fetchTemplateTagValues } from "../../../api/contracts.api";
+import { formatTagValueHtml } from "../../model/template-tag-format";
 
 import { ContractTemplateEditorModal } from "./ContractTemplateEditorModal";
 
@@ -31,7 +32,7 @@ function replaceVariablesInHtml(html: string, tagValues: TemplateTagValuesRespon
 		const isUnknown = tagValues.unknown.includes(key);
 
 		if (!isMissing && !isUnknown && value !== undefined && value !== null) {
-			const formattedValue = String(value).replace(/\n/g, "<br/>");
+			const formattedValue = formatTagValueHtml(value, tagValues.meta?.[key]);
 			return `<span${before}${after}>${formattedValue}</span>`;
 		}
 		else {
