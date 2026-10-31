@@ -2,6 +2,7 @@ import { afterAll, afterEach, beforeAll } from "vitest";
 import { server } from "../tests/mocks/server";
 import { setupI18n } from "./locales";
 import "@testing-library/jest-dom/vitest";
+import "../tests/mocks/dom-polyfills";
 
 // Initialize i18n for tests
 setupI18n();

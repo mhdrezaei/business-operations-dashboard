@@ -139,7 +139,8 @@
 		"vite-bundle-visualizer": "^1.2.1",
 		"vite-plugin-checker": "^0.9.1",
 		"vite-plugin-svgr": "^4.3.0",
-		"vitest": "^3.0.9"
+		"vitest": "^3.0.9",
+		"vitest-canvas-mock": "^1.2.0"
 	},
 	"simple-git-hooks": {
 		"pre-commit": "npx lint-staged",
