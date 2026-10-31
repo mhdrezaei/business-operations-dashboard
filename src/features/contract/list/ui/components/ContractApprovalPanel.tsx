@@ -171,7 +171,7 @@ export function ContractApprovalPanel({ contractId, service, detail, serviceId, 
 											: null}
 									</div>
 								))}
-								<ContractApprovalHistory subject={subject} />
+								<ContractApprovalHistory subject={subject} isAddendum={addendumId !== null} />
 							</div>
 						),
 					},
