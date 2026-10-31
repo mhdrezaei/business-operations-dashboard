@@ -1504,9 +1504,10 @@ export function getPerformanceReportColumns({
 			dataIndex: "service_id",
 			hideInTable: true,
 			valueType: "select",
-			valueEnum: createValueEnum(serviceOptions),
+			// Numeric option values: the auto-selected single service is set as a number, which a string-keyed valueEnum would not match (label shown as "3").
 			fieldProps: {
 				allowClear: true,
+				options: serviceOptions.map(({ label, value }) => ({ label, value })),
 				placeholder: t("performance.placeholders.selectService"),
 				onChange: (value: number | null) => {
 					const numericId = value == null ? null : Number(value);
