@@ -2,6 +2,7 @@ import type { Dayjs } from "#src/shared/lib/dayjs-jalali";
 import type { FieldValues, Path } from "react-hook-form";
 import type { CommonFieldProps } from "../types";
 import { dayjs } from "#src/shared/lib/dayjs-jalali";
+import { gregorianIsoToJalaliParts, jalaliPartsToGregorianIso } from "#src/shared/lib/jalali-intl";
 import { ProForm } from "@ant-design/pro-components";
 import { DatePicker } from "antd-jalali";
 
@@ -24,32 +25,6 @@ export type RHFProDateProps<
     "value" | "onChange"
 	>
 };
-
-// تبدیل رشته میلادی "YYYY-MM-DD" به شیء Date در منطقه زمانی محلی
-function parseLocalGregorian(dateStr: string): Date | null {
-	if (!dateStr)
-		return null;
-	const parts = dateStr.split("-");
-	if (parts.length !== 3)
-		return null;
-	const year = Number.parseInt(parts[0], 10);
-	const month = Number.parseInt(parts[1], 10) - 1; // months 0-index
-	const day = Number.parseInt(parts[2], 10);
-	const date = new Date(year, month, day);
-	// اعتبارسنجی
-	if (date.getFullYear() === year && date.getMonth() === month && date.getDate() === day) {
-		return date;
-	}
-	return null;
-}
-
-// تبدیل شیء Date به رشته میلادی "YYYY-MM-DD" در منطقه زمانی محلی
-function formatLocalGregorian(date: Date): string {
-	const year = date.getFullYear();
-	const month = String(date.getMonth() + 1).padStart(2, "0");
-	const day = String(date.getDate()).padStart(2, "0");
-	return `${year}-${month}-${day}`;
-}
 
 export function RHFProDate<TFV extends FieldValues, TName extends Path<TFV>>(
 	props: RHFProDateProps<TFV, TName>,
@@ -74,10 +49,10 @@ export function RHFProDate<TFV extends FieldValues, TName extends Path<TFV>>(
 					pickerValue = fieldValue as Dayjs;
 				}
 				else if (typeof fieldValue === "string" && fieldValue) {
-					// تبدیل رشته میلادی ذخیره‌شده به شیء Date محلی و سپس به Dayjs شمسی
-					const localDate = parseLocalGregorian(fieldValue);
-					if (localDate) {
-						pickerValue = dayjs(localDate);
+					// تبدیل رشته‌ی میلادی ذخیره‌شده به Dayjs شمسی
+					const parts = gregorianIsoToJalaliParts(fieldValue);
+					if (parts) {
+						pickerValue = dayjs(`${parts.year}-${parts.month}-${parts.day}`, { jalali: true } as never);
 					}
 				}
 
@@ -87,15 +62,12 @@ export function RHFProDate<TFV extends FieldValues, TName extends Path<TFV>>(
 						return;
 					}
 
-					// تبدیل Dayjs شمسی به رشته میلادی محلی
-					if (value && typeof value.toDate === "function") {
-						const gregorianDate = value.toDate(); // تبدیل شمسی → میلادی (شیء Date محلی)
-						const gregorianString = formatLocalGregorian(gregorianDate);
-						field.onChange(gregorianString);
-					}
-					else {
-						field.onChange("");
-					}
+					// تبدیل Dayjs شمسی به رشته‌ی میلادی ISO
+					// (year/month/date خود picker خوانده می‌شود؛ toDate() در jalaliday ساعت تهران را نادرست می‌گیرد)
+					const gregorianString = value?.isValid()
+						? jalaliPartsToGregorianIso({ year: value.year(), month: value.month() + 1, day: value.date() })
+						: null;
+					field.onChange(gregorianString ?? "");
 				};
 
 				return (

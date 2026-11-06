@@ -661,6 +661,38 @@ html.gray-mode {
 	}
 }
 
+/* touch targets >= 44px on phones (control heights come from the theme tokens in app.tsx) */
+@media (max-width: 767px) {
+	.basic-table-filter-toggle {
+		min-width: 44px;
+		min-height: 44px;
+	}
+
+	.basic-table-shell .ant-table-pagination .ant-pagination-item,
+	.basic-table-shell .ant-table-pagination .ant-pagination-prev,
+	.basic-table-shell .ant-table-pagination .ant-pagination-next,
+	.basic-table-shell .ant-table-pagination .ant-pagination-jump-prev,
+	.basic-table-shell .ant-table-pagination .ant-pagination-jump-next {
+		min-width: 44px;
+		height: 44px;
+		line-height: 42px;
+	}
+
+	.ant-tabs-nav-more,
+	.ant-tabs-nav .ant-tabs-tab {
+		min-height: 44px;
+	}
+
+	.ant-tabs-nav .ant-tabs-tab-remove {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 44px;
+		min-height: 44px;
+		margin-inline-start: 0;
+	}
+}
+
 .ant-notification .ant-notification-notice-wrapper .ant-notification-notice,
 .ant-notification .ant-notification-notice {
 	padding: 16px 18px;

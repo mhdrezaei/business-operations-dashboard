@@ -5,6 +5,7 @@ import { ContainerLayout } from "#src/layout";
 import { $t } from "#src/locales";
 
 import { contract } from "#src/router/extra-info";
+import { createIndexRedirectRoute } from "#src/router/utils/index-redirect-route";
 import { EditOutlined, EyeOutlined, FileAddOutlined, SnippetsOutlined, UnorderedListOutlined } from "@ant-design/icons";
 import { createElement, lazy } from "react";
 
@@ -25,12 +26,13 @@ const routes: AppRouteRecordRaw[] = [
 			order: contract,
 		},
 		children: [
+			createIndexRedirectRoute(),
 			{
 				path: "/contracts/sign-flows",
 				Component: SignFlowListPage,
 				handle: {
 					icon: createElement(UnorderedListOutlined),
-					title: "گردش‌های امضای قرارداد",
+					title: $t("common.menu.signFlows"),
 					accessDomain: "contracts",
 					accessAction: "view",
 				},
@@ -40,7 +42,7 @@ const routes: AppRouteRecordRaw[] = [
 				Component: SignFlowListPage,
 				handle: {
 					icon: createElement(UnorderedListOutlined),
-					title: "جزئیات گردش امضای قرارداد",
+					title: $t("common.menu.signFlowDetail"),
 					hideInMenu: true,
 					currentActiveMenu: "/contracts/sign-flows",
 					accessDomain: "contracts",
@@ -87,7 +89,7 @@ const routes: AppRouteRecordRaw[] = [
 				Component: ContractPreviewPage,
 				handle: {
 					icon: createElement(EyeOutlined),
-					title: "پیش‌نمایش قرارداد",
+					title: $t("common.menu.contractPreview"),
 					hideInMenu: true,
 					currentActiveMenu: "/contracts/list",
 					accessDomain: "contracts",

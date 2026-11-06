@@ -7,8 +7,8 @@ import { rememberRoute } from "#src/utils";
  * @returns بازگشتي ندارد
  */
 export function goLogin() {
-	// بازنشاني وضعيت ورود
+	// مسير فعلي بايد پيش از بازنشاني وضعيت ورود ذخيره شود، چون guard مسير ممکن است همان لحظه به /login برود
+	const redirect = rememberRoute();
 	useAuthStore.getState().reset();
-	// رفتن به صفحه ورود همراه با مسير ذخيره شده
-	window.location.href = `${import.meta.env.BASE_URL}login${rememberRoute()}`;
+	window.location.href = `${import.meta.env.BASE_URL}login${redirect}`;
 }

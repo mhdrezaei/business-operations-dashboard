@@ -143,13 +143,15 @@ export const NotificationPopup: React.FC<Props> = ({
 		<Popover
 			placement="bottomLeft"
 			overlayClassName="w-80 sm:w-96 ltr:!right-3 rtl:!left-3"
-			overlayInnerStyle={{
-				padding: 0,
-				borderRadius: 20,
-				overflow: "hidden",
-				backgroundColor: token.colorBgElevated,
-				boxShadow: token.boxShadowSecondary,
-				border: `1px solid ${token.colorBorderSecondary}`,
+			styles={{
+				body: {
+					padding: 0,
+					borderRadius: 20,
+					overflow: "hidden",
+					backgroundColor: token.colorBgElevated,
+					boxShadow: token.boxShadowSecondary,
+					border: `1px solid ${token.colorBorderSecondary}`,
+				},
 			}}
 			open={open}
 			arrow={false}

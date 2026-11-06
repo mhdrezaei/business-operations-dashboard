@@ -4,6 +4,7 @@ import { ContainerLayout } from "#src/layout";
 import { $t } from "#src/locales";
 import UnregisteredPerformancePage from "#src/pages/performances/unregistered.js";
 import { performance } from "#src/router/extra-info";
+import { createIndexRedirectRoute } from "#src/router/utils/index-redirect-route";
 import { BarChartOutlined, EditOutlined, FileAddOutlined, FileTextOutlined, FileUnknownOutlined, LineChartOutlined, PieChartOutlined } from "@ant-design/icons";
 import { createElement, lazy } from "react";
 
@@ -26,6 +27,7 @@ const routes: AppRouteRecordRaw[] = [
 			accessAction: "view",
 		},
 		children: [
+			createIndexRedirectRoute(),
 			{
 				path: "/performances/new",
 				Component: CreatePerformancePage,

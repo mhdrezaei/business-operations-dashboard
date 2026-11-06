@@ -87,8 +87,8 @@ export function sanitizeProfileFormValues(
 	return {
 		...values,
 		username: values.username == null ? values.username : values.username.trim(),
-		first_name: values.first_name == null ? values.first_name : sanitizeProfileInputValue("letters", values.first_name),
-		last_name: values.last_name == null ? values.last_name : sanitizeProfileInputValue("letters", values.last_name),
+		first_name: values.first_name == null ? values.first_name : values.first_name.trim(),
+		last_name: values.last_name == null ? values.last_name : values.last_name.trim(),
 		email: values.email == null ? values.email : values.email.trim(),
 		mobile: values.mobile == null ? values.mobile : normalizeIranMobile(values.mobile).slice(0, 11),
 		national_code: values.national_code == null ? values.national_code : sanitizeProfileInputValue("digits", values.national_code, 10),

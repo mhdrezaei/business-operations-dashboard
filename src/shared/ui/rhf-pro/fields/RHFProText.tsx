@@ -87,6 +87,7 @@ export function RHFProText<
 							placement="top"
 						>
 							<Input
+								aria-label={typeof props.label === "string" ? props.label : undefined}
 								{...(props.inputProps as any)}
 								value={displayValue}
 								onChange={(e) => {

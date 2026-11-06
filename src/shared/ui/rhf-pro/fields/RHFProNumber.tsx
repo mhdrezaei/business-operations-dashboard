@@ -51,6 +51,17 @@ function toDecimalOrNull(raw: string): number | null {
 	return Number.isFinite(n) ? n : null;
 }
 
+function isSafeNumber(n: number | null): boolean {
+	return n === null || Math.abs(n) <= Number.MAX_SAFE_INTEGER;
+}
+
+/** Groups only the integer part, keeping a trailing "." / fraction digits as typed. */
+function formatDecimalWithGrouping(raw: string, language: Parameters<typeof formatWithGrouping>[1]) {
+	const [intPart, ...rest] = raw.split(".");
+	const grouped = formatWithGrouping(intPart, language);
+	return rest.length ? `${grouped}.${rest.join("")}` : grouped;
+}
+
 export function RHFProNumber<
 	TFV extends FieldValues,
 	TName extends Path<TFV>,
@@ -72,15 +83,26 @@ export function RHFProNumber<
 				const raw = field.value == null ? "" : String(formatNumeric(field.value));
 				const groupingEnabled = !!props.enableGrouping;
 
+				const decimalRaw = localRaw !== null ? localRaw : (field.value == null ? "" : String(field.value));
 				const displayValue = props.decimal
-					? (localRaw !== null ? localRaw : (field.value == null ? "" : String(field.value)))
-					: (groupingEnabled ? formatWithGrouping(raw, language) : raw);
+					? (groupingEnabled ? formatDecimalWithGrouping(decimalRaw, language) : decimalRaw)
+					: (localRaw === "-" ? "-" : (groupingEnabled ? formatWithGrouping(raw, language) : raw));
 
 				const words = props.enableWordsTooltip
-					? numberToWordsByLanguage(stripGroupingSeparators(raw), language)
+					? numberToWordsByLanguage(stripGroupingSeparators(raw).split(".")[0], language)
 					: "";
 
 				const showTooltip = focused && !!words;
+
+				const commit = (text: string) => {
+					const plain = stripGroupingSeparators(props.decimal ? sanitizeDecimalInput(text) : sanitizeNumericInput(text));
+					const next = props.decimal ? toDecimalOrNull(plain) : toNumberOrNull(plain);
+					if (!isSafeNumber(next))
+						return;
+					// keep an in-progress "-" / "1." visible instead of clearing the value
+					setLocalRaw(props.decimal || plain === "-" ? plain : null);
+					field.onChange(next);
+				};
 
 				return (
 					<Form.Item
@@ -95,30 +117,17 @@ export function RHFProNumber<
 							placement="top"
 						>
 							<Input
+								aria-label={typeof props.label === "string" ? props.label : undefined}
 								{...(props.inputProps as any)}
 								inputMode={props.decimal ? "decimal" : "numeric"}
 								value={displayValue}
 								onFocus={() => setFocused(true)}
 								onBlur={() => {
-									if (props.decimal)
-										setLocalRaw(null);
+									setLocalRaw(null);
 									setFocused(false);
 									field.onBlur();
 								}}
-								onChange={(e) => {
-									if (props.decimal) {
-										const cleaned = sanitizeDecimalInput(e.target.value);
-										setLocalRaw(cleaned);
-										field.onChange(toDecimalOrNull(cleaned));
-									}
-									else {
-										const cleaned = sanitizeNumericInput(e.target.value);
-										const plain = groupingEnabled
-											? stripGroupingSeparators(cleaned)
-											: cleaned;
-										field.onChange(toNumberOrNull(plain));
-									}
-								}}
+								onChange={e => commit(e.target.value)}
 								onBeforeInput={(e) => {
 									const data = (e as any).data as string | undefined;
 									if (!data)
@@ -140,19 +149,7 @@ export function RHFProNumber<
 								}}
 								onPaste={(e) => {
 									e.preventDefault();
-									const text = e.clipboardData.getData("text") ?? "";
-									if (props.decimal) {
-										const cleaned = sanitizeDecimalInput(text);
-										setLocalRaw(cleaned);
-										field.onChange(toDecimalOrNull(cleaned));
-									}
-									else {
-										const cleaned = sanitizeNumericInput(text);
-										const plain = groupingEnabled
-											? stripGroupingSeparators(cleaned)
-											: cleaned;
-										field.onChange(toNumberOrNull(plain));
-									}
+									commit(e.clipboardData.getData("text") ?? "");
 								}}
 								ref={field.ref}
 								status={err ? "error" : undefined}

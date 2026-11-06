@@ -5,6 +5,7 @@ import { ContainerLayout } from "#src/layout";
 import { $t } from "#src/locales";
 
 import { userManagement } from "#src/router/extra-info";
+import { createIndexRedirectRoute } from "#src/router/utils/index-redirect-route";
 import { ApartmentOutlined, AuditOutlined, BellOutlined, HistoryOutlined, SafetyOutlined, UserOutlined } from "@ant-design/icons";
 import { createElement, lazy } from "react";
 
@@ -27,6 +28,7 @@ const routes: AppRouteRecordRaw[] = [
 			order: userManagement,
 		},
 		children: [
+			createIndexRedirectRoute(),
 			{
 				path: "/admin-panel/userManagement",
 				Component: ListUsers,
@@ -75,7 +77,7 @@ const routes: AppRouteRecordRaw[] = [
 				Component: SignFlowRules,
 				handle: {
 					icon: createElement(AuditOutlined),
-					title: "قوانین گردش امضای قرارداد",
+					title: $t("common.menu.signFlowRules"),
 					adminAccess: "policies",
 				},
 			},
@@ -84,7 +86,7 @@ const routes: AppRouteRecordRaw[] = [
 				Component: SalesAgencyExpenseTitles,
 				handle: {
 					icon: createElement(AuditOutlined),
-					title: "عنوان‌های هزینه‌ی عاملیت فروش",
+					title: $t("common.menu.salesAgencyCostTitles"),
 					accessDomain: "contracts",
 					accessAction: ["view", "create", "update"],
 					serviceCode: "sales_agency",
@@ -98,6 +100,7 @@ const routes: AppRouteRecordRaw[] = [
 					title: $t("common.menu.telecomFrameMasterData"),
 					accessDomain: "contracts",
 					accessAction: "view",
+					serviceCode: "telecom_frame",
 				},
 			},
 			// {

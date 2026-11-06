@@ -337,6 +337,7 @@
 		"tehranContractUnit": "واحد موثر تهران در این ماه",
 		"countyContractUnit": "واحد موثر مراکز استان در این ماه",
 		"created": "ایجاد شده",
+		"uploadFailed": "آپلود فایل ناموفق بود.",
 		"stepDownload": "دانلود فایل تمپلیت",
 		"stepUpload": "آپلود فایل عملکرد",
 		"stepImport": "ایمپورت مقادیر",
@@ -468,7 +469,8 @@
 			"companyTypeRequired": "نوع شرکت الزامی است",
 			"trafficCompanyTypeRequired": "نوع شرکت (ترافیک) الزامی است",
 			"salesAgentRequired": "نماینده فروش الزامی است",
-			"openapiContractModelUnknown": "مدل قرارداد OpenAPI مشخص نیست"
+			"openapiContractModelUnknown": "مدل قرارداد OpenAPI مشخص نیست",
+			"negativeValue": "مقدار نمی‌تواند منفی باشد"
 		},
 		"openapi": {
 			"billInquiryValueRequired": "مقدار عملکرد استعلام قبض الزامی است",
@@ -571,7 +573,9 @@
 			"psp": "سرویس PSP",
 			"sms": "سرویس پیامک",
 			"smsCommission": "سرویس پیامک عاملیت",
-			"shahkar": "کلاسه شاهکار"
+			"shahkar": "کلاسه شاهکار",
+			"traffic": "سرویس ترافیک",
+			"commercial": "سرویس تجاری"
 		},
 		"salesAgencyEditTitle": "ویرایش عملکرد عاملیت فروش کشور",
 		"totalSalesRial": "فروش کل ماه (ریال)",

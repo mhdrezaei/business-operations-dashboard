@@ -79,7 +79,8 @@ export function RHFSegmentedSwitch<
 							{...props.segmentedProps}
 							block={props.segmentedProps?.block ?? true}
 							options={props.options}
-							value={(field.value ?? undefined) as TValue | undefined}
+							// undefined باعث می‌شود antd اولین گزینه را هایلایت کند؛ مقدار خالی یعنی هیچ گزینه‌ای انتخاب نشده
+							value={(field.value ?? "") as TValue}
 							onChange={async (value) => {
 								field.onChange(value);
 								await props.onValueChange?.(value);

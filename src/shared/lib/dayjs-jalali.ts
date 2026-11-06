@@ -1,11 +1,10 @@
+import type {} from "jalaliday/dayjs"; // types only: `calendar()` typing; the plugin itself is registered by antd-jalali
 import dayjs from "dayjs";
-import jalaliday from "jalaliday/dayjs";
+// antd-jalali registers its own jalaliday plugin on dayjs. Extending the project's jalaliday copy as well patches
+// dayjs parsing twice and shifts every typed/picked Jalali date by +621 years on top of the conversion.
+import "antd-jalali";
 
-// فعال کردن jalali/gregory multi-calendar
-dayjs.extend(jalaliday);
-
-// اگر می‌خوای همه instanceها پیش‌فرض شمسی باشن:
-dayjs.calendar("jalali"); // optional :contentReference[oaicite:3]{index=3}
+dayjs.calendar("jalali");
 
 export { dayjs };
 export type { Dayjs } from "dayjs";

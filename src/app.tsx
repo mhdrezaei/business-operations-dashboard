@@ -2,7 +2,7 @@ import { AntdApp, JSSThemeProvider } from "#src/components";
 import { useLanguage, usePreferences, useScrollToHash } from "#src/hooks";
 import { AppVersionMonitor } from "#src/layout/widgets/version-monitor";
 import { ANT_DESIGN_LOCALE } from "#src/locales";
-import { theme as antdTheme, ConfigProvider } from "antd";
+import { theme as antdTheme, ConfigProvider, Grid } from "antd";
 
 import { JalaliLocaleListener } from "antd-jalali";
 import dayjs from "dayjs";
@@ -20,6 +20,9 @@ import "#src/shared/lib/dayjs-jalali";
 export default function App() {
 	const { i18n } = useTranslation();
 	const { isRTL } = useLanguage();
+	const screens = Grid.useBreakpoint();
+	// touch targets must be at least 44px on phones; every control derives its height from these tokens
+	const touchControlHeights = screens.md === false ? { controlHeight: 44, controlHeightSM: 44, controlHeightLG: 44 } : {};
 	const {
 		language,
 		isDark,
@@ -141,6 +144,7 @@ export default function App() {
 					...dynamicTheme.token,
 					borderRadius: themeRadius,
 					colorPrimary: themeColorPrimary,
+					...touchControlHeights,
 				},
 				components: {
 					...dynamicTheme.components,

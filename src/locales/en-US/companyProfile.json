@@ -32,6 +32,8 @@
 	"service": "Service",
 	"serviceRequired": "Select a service",
 	"nameRequired": "Company name is required",
+	"nameTooShort": "Company name must be at least 2 characters",
+	"nameTooLong": "Company name must not exceed 200 characters",
 	"companyType": "Company type",
 	"companyTypePlaceholder": "Select the company type",
 	"agentName": "Sales agent name",
@@ -48,5 +50,29 @@
 	},
 	"documents": {
 		"downloadError": "Failed to download the document"
+	},
+	"loader": {
+		"entityDatacenter": "Datacenter",
+		"entityCompany": "Company",
+		"selectServiceFirst": "Select a service first",
+		"loadingCompanies": "Loading companies...",
+		"selectEntity": "Select {{entity}}",
+		"title": "Select company",
+		"subtitle": "To view and manage data, first select the service and company.",
+		"expandFilters": "Expand filters",
+		"collapseFilters": "Collapse filters",
+		"service": "Service",
+		"selectService": "Select a service",
+		"companyType": "Company type",
+		"selectCompanyType": "Select company type",
+		"colocationMode": "Colocation management",
+		"partner": "Business partner",
+		"datacenter": "Datacenter",
+		"select": "Select",
+		"createDatacenter": "Create new datacenter",
+		"createCompany": "Create new company",
+		"renameDatacenter": "Edit datacenter name",
+		"renameCompany": "Edit company name",
+		"copyData": "Copy data"
 	}
 }

@@ -12,12 +12,13 @@ import { cn, isObject, isUndefined } from "#src/utils";
 import { DownOutlined, LoadingOutlined, UpOutlined } from "@ant-design/icons";
 import { ProTable } from "@ant-design/pro-components";
 import { useSize } from "ahooks";
-import { ConfigProvider, theme } from "antd";
+import { ConfigProvider, Grid, theme } from "antd";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { BASIC_TABLE_ROOT_CLASS_NAME } from "./constants";
+import { BASIC_TABLE_ROOT_CLASS_NAME, MIN_ADAPTIVE_BODY_HEIGHT } from "./constants";
 import { normalizeFixedColumns } from "./fixed-columns";
+import { withServerSorting } from "./sort";
 import { useStyles } from "./styles";
 
 export interface BasicTableProps<D, U, V> extends ProTableProps<D, U, V> {
@@ -53,6 +54,7 @@ export function BasicTable<
 ) {
 	const classes = useStyles();
 	const { token } = theme.useToken();
+	const screens = Grid.useBreakpoint();
 	const antdContext = useContext(ConfigProvider.ConfigContext);
 	const configuredCardRadius = antdContext.theme?.components?.Card?.borderRadiusLG;
 	const filterRadius = typeof configuredCardRadius === "number" ? configuredCardRadius : token.borderRadiusLG;
@@ -184,7 +186,8 @@ export function BasicTable<
 
 			const realOffsetBottom = offsetBottom + paginationHeight + footerHeight;
 
-			const bodyHeight = window.innerHeight - tableBodyRect.top - realOffsetBottom;
+			// the layout content scrolls and the filter card sits above the body, so never collapse below a few readable rows
+			const bodyHeight = Math.max(MIN_ADAPTIVE_BODY_HEIGHT, window.innerHeight - tableBodyRect.top - realOffsetBottom);
 			/**
 			 * @fa scroll.y مقدار max-height را تنظيم مي کند، پس بايد height را دستي تنظيم کرد
 			 * @en scroll.y sets the max-height, so we need to set the height manually
@@ -229,6 +232,8 @@ export function BasicTable<
 			layout: "vertical" as const,
 			defaultCollapsed: false,
 			...props.search,
+			// phones stack the filter fields one per row (a fixed span keeps 3 columns at any width)
+			...(screens.md === false && { span: 24 }),
 			collapsed: false,
 			collapseRender: () => null,
 		};
@@ -349,7 +354,7 @@ export function BasicTable<
 				rowKey="id"
 				dateFormatter="string"
 				{...props}
-				columns={normalizeFixedColumns(props.columns, antdContext.direction === "rtl")}
+				columns={withServerSorting(normalizeFixedColumns(props.columns, antdContext.direction === "rtl"), !!props.request)}
 				headerTitle={tableHeader}
 				options={{
 					fullScreen: true,
