@@ -6,7 +6,7 @@ import { useAccess } from "#src/hooks";
 import { FormActionBar } from "#src/shared/ui/form-action-bar";
 import { notification } from "#src/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, ConfigProvider, Empty } from "antd";
+import { Button, ConfigProvider, Empty, Tooltip } from "antd";
 import { AnimatePresence, motion } from "framer-motion";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
@@ -67,6 +67,9 @@ interface Props {
 	) => void | Promise<void>
 	submitText?: string
 	submitting?: boolean
+	/** Blocks the submit button regardless of dirtiness (e.g. a locked contract). */
+	submitDisabled?: boolean
+	submitDisabledReason?: string
 	showExtendedActions?: boolean
 	/** دکمه‌های کنار «ثبت» در نوار عملیات ساده (مثلاً «حذف قرارداد» در ویرایش) */
 	secondaryActions?: ReactNode
@@ -109,6 +112,8 @@ export function ContractForm({
 	onSubmit: onSubmitProp,
 	submitText,
 	submitting,
+	submitDisabled: submitLocked = false,
+	submitDisabledReason,
 	showExtendedActions = false,
 	secondaryActions,
 	showDocuments = true,
@@ -239,7 +244,7 @@ export function ContractForm({
 	const resetForm = () => {
 		form.reset(defaultContractFormValues);
 	};
-	const submitDisabled = !isDirty || submitting;
+	const submitDisabled = !isDirty || submitting || submitLocked;
 
 	return (
 		<FormProvider {...form}>
@@ -299,9 +304,11 @@ export function ContractForm({
 														<FormActionBar
 															secondaryActions={secondaryActions}
 															primaryActions={(
-																<Button type="primary" onClick={() => triggerSubmit("submit")} loading={!!submitting} disabled={submitDisabled}>
-																	{submitText ?? t("contract.create.submit")}
-																</Button>
+																<Tooltip title={submitLocked ? submitDisabledReason : undefined}>
+																	<Button type="primary" onClick={() => triggerSubmit("submit")} loading={!!submitting} disabled={submitDisabled}>
+																		{submitText ?? t("contract.create.submit")}
+																	</Button>
+																</Tooltip>
 															)}
 														/>
 													)}

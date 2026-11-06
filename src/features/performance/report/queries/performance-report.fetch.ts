@@ -13,6 +13,7 @@ import {
 	getReportTotalsRows,
 	normalizeFinanceDepartmentTotals,
 	normalizeOperatorGovernmentRow,
+	summarizeReportTotals,
 	withSequentialIds,
 } from "../model/sms-report-variants";
 
@@ -65,7 +66,7 @@ export async function fetchReportPage(request: ReportRequest): Promise<ReportPag
 	return {
 		rows: response.results,
 		count: response.count,
-		summary: response.totals ?? null,
+		summary: summarizeReportTotals(response.totals),
 		totalsRows: getReportTotalsRows(response.totals),
 	};
 }

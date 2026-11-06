@@ -3,6 +3,7 @@ import type { TFunction } from "i18next";
 import { useAccess } from "#src/hooks";
 import { RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { request } from "#src/utils/request/";
+import { isServerErrorHandled } from "#src/utils/request/error-response";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { App, Button, Form, Modal } from "antd";
@@ -156,7 +157,8 @@ export default function CompanyRenameModal({
 		}
 		catch (e) {
 			console.error(e);
-			window.$message?.error(t("companyProfile.genericError"));
+			if (!isServerErrorHandled(e))
+				window.$message?.error(t("companyProfile.genericError"));
 		}
 		finally {
 			setSaving(false);
@@ -195,7 +197,8 @@ export default function CompanyRenameModal({
 				}
 				catch (e) {
 					console.error(e);
-					window.$message?.error(t("companyProfile.genericError"));
+					if (!isServerErrorHandled(e))
+						window.$message?.error(t("companyProfile.genericError"));
 				}
 				finally {
 					setDeleting(false);

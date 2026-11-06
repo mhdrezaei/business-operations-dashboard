@@ -287,7 +287,7 @@ export default function UnregisteredPerformanceList() {
 						page_size: params.pageSize ?? 10,
 						service_ids: effectiveServiceIds.join(","),
 						company_ids: companyIds.length > 0 ? companyIds.join(",") : undefined,
-						company_type: selectedCompanyType ? (params as any).company_type : undefined,
+						company_type: selectedCompanyType,
 						ordering: sortToOrdering(sort),
 					});
 					setHasCollocationRows(responseData.results.some(row => pickCompanyTypeToken(row.company_type) === "COLLOCATION"));

@@ -70,13 +70,18 @@ export default function ContractPreviewPage() {
 	const latestHistory = [...(approvalHistory.data?.sign_approval_history ?? [])]
 		.sort((a, b) => new Date(b.changed_at).getTime() - new Date(a.changed_at).getTime())[0];
 	const latestField = latestHistory?.field_name ?? (isSigned ? "is_signed" : "is_business_approved");
-	const latestValue = latestHistory?.new_value ?? (latestField === "is_signed" ? isSigned : isBusinessApproved);
+	// without any recorded decision a stored `false`/`null` is just the default, not a rejection
+	const latestValue = latestHistory ? latestHistory.new_value : (latestField === "is_signed" ? isSigned : isBusinessApproved) || null;
 	const latestStatusTitle = latestField === "is_signed" ? t("contract.list.column.isSigned") : t("contract.list.column.isBusinessApproved");
-	const latestStatusText = latestValue === true ? t("contract.list.approval.approved") : latestValue === false ? t("contract.list.approval.rejected") : t("contract.preview.unknown");
+	const latestStatusText = latestValue === true ? t("contract.list.approval.approved") : latestValue === false ? t("contract.list.approval.rejected") : t("contract.list.approval.undecided");
 	const updatedBy = contract.updated_by_user as Record<string, unknown> | undefined;
 	const createdBy = contract.created_by_user as Record<string, unknown> | undefined;
-	const latestActor = latestHistory?.changed_by?.name ?? String(updatedBy?.name ?? createdBy?.name ?? "—");
-	const latestDate = latestHistory?.changed_at ?? String(contract.updated_at ?? contract.created_at ?? "");
+	const latestActor = latestHistory
+		? latestHistory.changed_by?.name ?? "—"
+		: isSigned || isBusinessApproved ? String(updatedBy?.name ?? createdBy?.name ?? "—") : null;
+	const latestDate = latestHistory
+		? latestHistory.changed_at
+		: latestActor ? String(contract.updated_at ?? contract.created_at ?? "") : "";
 
 	if (!contractId || !service || !serviceId)
 		return <Empty description={t("contract.preview.invalidRoute")} />;
@@ -103,10 +108,14 @@ export default function ContractPreviewPage() {
 											<span className="text-base font-semibold">{latestStatusTitle}</span>
 											<Tag bordered={false} color={latestValue === true ? "success" : latestValue === false ? "error" : "default"}>{latestStatusText}</Tag>
 										</div>
-										<div className="flex items-center gap-2 text-sm text-[var(--ant-color-text-secondary)]">
-											<UserOutlined className="text-base" />
-											<span className="text-[var(--ant-color-text)]">{latestActor}</span>
-										</div>
+										{latestActor
+											? (
+												<div className="flex items-center gap-2 text-sm text-[var(--ant-color-text-secondary)]">
+													<UserOutlined className="text-base" />
+													<span className="text-[var(--ant-color-text)]">{latestActor}</span>
+												</div>
+											)
+											: null}
 										{latestDate
 											? (
 												<div className="flex items-center gap-2 text-sm text-[var(--ant-color-text-secondary)]" dir="ltr">

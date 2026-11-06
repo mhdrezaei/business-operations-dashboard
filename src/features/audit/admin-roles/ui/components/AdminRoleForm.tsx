@@ -43,6 +43,11 @@ export function AdminRoleForm({
 }: Props) {
 	const permissionHelpText = "در این بخش می‌توانید سطح دسترسی این نقش را برای هر دامنه و هر سرویس مشخص کنید. ابتدا دامنه موردنظر را انتخاب کنید. سپس برای هر سرویس، مجوزهای مشاهده، ایجاد، ویرایش و حذف را به‌صورت جداگانه فعال یا غیرفعال کنید. اگر سرویسی نیاز به تنظیمات تکمیلی داشته باشد، گزینه‌های مربوط به همان سرویس در ادامه نمایش داده می‌شود. این بخش برای نگهداری و توسعه ساده‌تر، به‌صورت دامنه‌ای و ماژولار طراحی شده است.";
 	const [policiesPayload, setPoliciesPayload] = React.useState<AdminRolePoliciesBulkUpsertPayload>({ items: [] });
+	const [policiesDirty, setPoliciesDirty] = React.useState(false);
+	const handlePoliciesChange = React.useCallback((payload: AdminRolePoliciesBulkUpsertPayload, dirty: boolean) => {
+		setPoliciesPayload(payload);
+		setPoliciesDirty(dirty);
+	}, []);
 
 	const mergedDefaultValues = useMemo(() => defaultValues, [defaultValues]);
 
@@ -119,7 +124,7 @@ export function AdminRoleForm({
 						initialAllowedServiceIds={initialRole?.allowed_service_ids ?? []}
 						initialPolicies={initialPolicies}
 						initialPoliciesLoading={initialPoliciesLoading}
-						onChange={setPoliciesPayload}
+						onChange={handlePoliciesChange}
 					/>
 				</div>
 
@@ -131,7 +136,7 @@ export function AdminRoleForm({
 						htmlType="submit"
 						type="primary"
 						loading={submitting}
-						disabled={!isDirty || submitting}
+						disabled={!(isDirty || policiesDirty) || submitting}
 					>
 						{submitText}
 					</BasicButton>

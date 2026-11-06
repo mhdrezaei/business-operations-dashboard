@@ -74,7 +74,7 @@ export interface AdminUserUpsertPayload {
 	mobile: string | null
 	national_code: string | null
 	is_active: boolean
-	is_staff: boolean
+	is_staff?: boolean
 	password?: string
 }
 

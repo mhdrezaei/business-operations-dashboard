@@ -2,6 +2,7 @@ import type { TFunction } from "i18next";
 
 import { RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { request } from "#src/utils/request/";
+import { isServerErrorHandled } from "#src/utils/request/error-response";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button, Form, Modal } from "antd";
@@ -138,7 +139,8 @@ export default function CompanyCreateModal({
 		}
 		catch (e) {
 			console.error(e);
-			window.$message?.error(t("companyProfile.genericError"));
+			if (!isServerErrorHandled(e))
+				window.$message?.error(t("companyProfile.genericError"));
 		}
 		finally {
 			setSaving(false);

@@ -9,7 +9,7 @@ import { SectionCard } from "#src/shared/ui/section-card";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { Button } from "antd";
 import { useEffect, useMemo, useRef } from "react";
-import { useFormContext, useWatch } from "react-hook-form";
+import { useFormContext, useFormState, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { getDefaultTrafficUnit, hasTrafficUnit } from "./traffic.units";
 import "./traffic.fields.css";
@@ -141,6 +141,8 @@ function TrafficPricingFields({
 export function TrafficFields() {
 	const { t } = useTranslation();
 	const { control, getFieldState, getValues, setValue } = useFormContext<ContractFormValues>();
+	const { errors } = useFormState({ control, name: sf("tehranPricing") as any });
+	const locationError = (errors.serviceFields as any)?.tehranPricing?.message as string | undefined;
 	const hasInitializedTehranPricing = useRef(false);
 	const previousCompanyType = useRef<string | null>(null);
 	const isOfficial = useWatch({ control, name: sf("isOfficial") as any }) as boolean | undefined;
@@ -214,6 +216,14 @@ export function TrafficFields() {
 	function removeLocation(pricingPath: string, enabledPath: string) {
 		setValue((showPricingUi ? pricingPath : enabledPath) as any, showPricingUi ? undefined : false, { shouldDirty: true, shouldValidate: true });
 	}
+
+	// قیمت‌گذاری تهران/استان به‌صورت پیش‌فرض ساخته می‌شود؛ با انتخاب COLLOCATION (که این کارت‌ها را ندارد) نباید مقدار ناقص آن‌ها در فرم بماند
+	useEffect(() => {
+		if (!isCollocation)
+			return;
+		setValue(sf("tehranPricing") as any, undefined, { shouldDirty: false, shouldValidate: false });
+		setValue(sf("provincePricing") as any, undefined, { shouldDirty: false, shouldValidate: false });
+	}, [isCollocation, setValue]);
 
 	useEffect(() => {
 		if (!showPricingUi || isCollocation) {
@@ -343,6 +353,8 @@ export function TrafficFields() {
 				{!isOfficial
 					? <div className="traffic-non-official-notice">{t("contract.traffic.nonOfficialNotice")}</div>
 					: null}
+
+				{locationError ? <div className="traffic-location-error">{locationError}</div> : null}
 
 				<div className="traffic-pricing-list">
 					<SectionCard

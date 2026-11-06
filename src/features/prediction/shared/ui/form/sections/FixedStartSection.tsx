@@ -8,7 +8,7 @@ import { Alert } from "antd";
 import { useEffect, useMemo, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { isAvailablePredictionCompanyType, isSupportedPredictionService, pickQuarterFields, PREDICTION_FISCAL_YEAR_OPTIONS } from "../../../model/prediction.helpers";
+import { getCompanyTypePlaceholderKey, isAvailablePredictionCompanyType, isSupportedPredictionService, pickQuarterFields, PREDICTION_FISCAL_YEAR_OPTIONS } from "../../../model/prediction.helpers";
 import { servicesQuery } from "../../../queries/prediction.queries";
 import { predictionServiceRegistry } from "../../../services/registry";
 
@@ -216,7 +216,7 @@ export function FixedStartSection({
 		keepDraftRef.current = false;
 	}, [autoHydrateBySelection, fiscalYear, getValues, matchedYearRecord, module, setValue, companyType, shouldLoadYears, yearRecordsQuery.isLoading]);
 
-	const companyTypePlaceholder = t("prediction.placeholders.selectTrafficCompanyType");
+	const companyTypePlaceholder = t(getCompanyTypePlaceholderKey(serviceCode));
 	return (
 		<div className="flex flex-col gap-4">
 			<SectionCard title={t(titleKey)} tone="primary" collapsible={false}>

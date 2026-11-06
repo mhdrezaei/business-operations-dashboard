@@ -121,11 +121,12 @@ export function buildCollocationRowsFromPerformances(rows: unknown[]): Collocati
 	globalPerformanceRows(rows).forEach((row) => {
 		const datacenter = pickDatacenter(row);
 		if (datacenter && !byDatacenter.has(datacenter.datacenter)) {
+			// All metrics are mandatory on submit, so a null on a saved row is a stored zero (the backend keeps no item for it).
 			byDatacenter.set(datacenter.datacenter, {
 				...datacenter,
-				ipCount: toNullableNumber(row.ip_count),
-				bandwidthUsed: toNullableNumber(row.bandwidth_used),
-				ampereUsed: toNullableNumber(row.ampere_used),
+				ipCount: toNullableNumber(row.ip_count) ?? 0,
+				bandwidthUsed: toNullableNumber(row.bandwidth_used) ?? 0,
+				ampereUsed: toNullableNumber(row.ampere_used) ?? 0,
 			});
 		}
 	});

@@ -4,7 +4,7 @@ import { RHFSelect } from "#src/shared/ui/rhf-pro/fields/RHFSelect";
 import { theme } from "antd";
 import React, { useEffect, useMemo, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
-import { OPENAPI_VARIANT_OPTIONS, SMS_TEMPLATE_VARIANT } from "../../model/template-variants";
+import { COMPANY_TYPE_REQUIRED_SERVICES, isUnsupportedTemplateCompanyType, OPENAPI_VARIANT_OPTIONS, SMS_TEMPLATE_VARIANT, TEMPLATE_DOCUMENT_KIND_OPTIONS } from "../../model/template-variants";
 import { useServicesListQuery } from "../../queries/template-create.queries";
 
 export default function TemplateCreateForm() {
@@ -42,15 +42,19 @@ export default function TemplateCreateForm() {
 	}, [selectedServiceId, rawServices]);
 
 	const serviceStringValue = selectedService?.code || selectedService?.slug || selectedService?.key || selectedServiceId;
+	const selectedCompanyType = useWatch({ control, name: "company_type" });
 
 	const companyTypeOptions = useMemo(() => {
 		if (!selectedServiceId)
 			return [];
-		return getPermittedCompanyTypes("contract_template", permissionAction, selectedServiceId).map(opt => ({
-			label: opt.value,
-			value: opt.key,
-		}));
-	}, [selectedServiceId, permissionAction, getPermittedCompanyTypes]);
+		return getPermittedCompanyTypes("contract_template", permissionAction, selectedServiceId)
+			// an already-saved unsupported type stays visible so the template can still be opened and corrected
+			.filter(opt => !isUnsupportedTemplateCompanyType(serviceStringValue, opt.key) || opt.key === selectedCompanyType)
+			.map(opt => ({
+				label: opt.value,
+				value: opt.key,
+			}));
+	}, [selectedServiceId, serviceStringValue, selectedCompanyType, permissionAction, getPermittedCompanyTypes]);
 
 	// Only a user-driven service change clears the dependent fields; loading a template sets service_id from null.
 	const previousServiceId = useRef(selectedServiceId);
@@ -62,13 +66,9 @@ export default function TemplateCreateForm() {
 		previousServiceId.current = selectedServiceId;
 	}, [selectedServiceId, setValue]);
 
-	const documentKindOptions = [
-		{ label: "اصل قرارداد", value: "contract" },
-		{ label: "الحاقیه", value: "addendum" },
-	];
-
 	const isSmsService = serviceStringValue === "sms";
 	const isOpenApiService = serviceStringValue === "openapi";
+	const isCompanyTypeRequired = COMPANY_TYPE_REQUIRED_SERVICES.includes(String(serviceStringValue));
 
 	// SMS templates only exist for the client variant, so it is fixed instead of chosen (also normalizes legacy old/new values).
 	useEffect(() => {
@@ -133,7 +133,7 @@ export default function TemplateCreateForm() {
 								<span className="text-red-500">*</span>
 							</span>
 						)}
-						options={documentKindOptions}
+						options={TEMPLATE_DOCUMENT_KIND_OPTIONS}
 						selectProps={{ placeholder: "انتخاب نوع سند...", size: "large", getPopupContainer }}
 						formItemProps={{ style: { marginBottom: 0 } }}
 					/>
@@ -160,7 +160,12 @@ export default function TemplateCreateForm() {
 				<div className="flex-1 min-w-[200px]">
 					<RHFSelect
 						name="company_type"
-						label={<span className="text-xs font-medium" style={{ color: token.colorTextDescription }}>نوع شرکت (اختیاری)</span>}
+						label={(
+							<span className="text-xs font-medium" style={{ color: token.colorTextDescription }}>
+								نوع شرکت
+								{isCompanyTypeRequired ? <span className="text-red-500"> *</span> : " (اختیاری)"}
+							</span>
+						)}
 						options={companyTypeOptions}
 						selectProps={{
 							placeholder: selectedServiceId ? "انتخاب کنید..." : "ابتدا سرویس را انتخاب کنید",

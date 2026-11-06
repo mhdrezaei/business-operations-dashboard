@@ -39,6 +39,21 @@ describe("contract schema", () => {
 		expect(issues(values({ serviceFields: { isOfficial: true, tehranPricing: fixed(1), tehranUnit: "GB/month" } }))).not.toContain("serviceFields.tehranPricing");
 	});
 
+	it("rejects a province-only traffic contract because the backend requires Tehran", () => {
+		expect(issues(values({ serviceFields: { isOfficial: true, provincePricing: fixed(1), provinceUnit: "GB/month" } }))).toContain("serviceFields.tehranPricing");
+		expect(issues(values({ serviceFields: { isOfficial: false, tehranEnabled: false, provinceEnabled: true } }))).toContain("serviceFields.tehranPricing");
+	});
+
+	it("does not reject an SMS vendor contract for carrying its internal company", () => {
+		expect(issues(values({ serviceCode: "sms", counterpartyType: "gov_ops", companyId: 9, companyType: "SMS_VENDOR" }))).not.toContain("companyId");
+	});
+
+	it("requires a positive rack count and units per rack on a telecom collocation contract", () => {
+		const telecom = values({ companyType: "COLLOCATION", companyId: null, counterpartyType: "gov_ops", serviceFields: { isOfficial: true, telecomRackCount: 0, telecomUnitsPerRack: 0, telecomMonthlyRackRent: 5 } });
+		expect(issues(telecom)).toEqual(expect.arrayContaining(["serviceFields.telecomRackCount", "serviceFields.telecomUnitsPerRack"]));
+		expect(issues({ ...telecom, serviceFields: { ...telecom.serviceFields, telecomRackCount: 2, telecomUnitsPerRack: 42 } })).not.toEqual(expect.arrayContaining(["serviceFields.telecomRackCount"]));
+	});
+
 	it("validates the real start only when it is entered", () => {
 		const trigger = { startYear: 1404, startMonth: 4, serviceFields: { isOfficial: false } };
 		expect(issues(values({ ...trigger }))).not.toContain("serviceFields.realStartYear");

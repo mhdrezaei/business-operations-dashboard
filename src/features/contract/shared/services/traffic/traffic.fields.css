@@ -20,6 +20,11 @@
 	margin-bottom: 0;
 }
 
+.traffic-location-error {
+	margin-bottom: var(--contract-section-body-padding);
+	color: var(--ant-colorError);
+}
+
 .traffic-non-official-notice {
 	margin-top: var(--contract-section-body-padding);
 	color: var(--ant-colorWarning);

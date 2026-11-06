@@ -14,9 +14,10 @@ export interface SignFlowStep {
 	recipients: SignFlowRecipient[]
 }
 
+/** `company_type` empty = the rule covers the whole service. */
 export interface SignFlowBinding {
 	service: string
-	company_type: string
+	company_type: string | null
 }
 
 export interface SignFlowRule {
@@ -35,6 +36,8 @@ export interface SignFlowRulePayload {
 	description: string
 	is_enabled: boolean
 	steps: SignFlowStep[]
+	/** Replaces all bindings of the rule (backend `apply_bindings(replace=True)`). */
+	bindings: SignFlowBinding[]
 }
 
 export interface SignFlowRulesResponse {

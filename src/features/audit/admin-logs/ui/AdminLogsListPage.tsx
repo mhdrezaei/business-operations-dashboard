@@ -81,6 +81,8 @@ export default function AdminLogsListPage() {
 		<BasicContent className="h-full">
 			<BasicTable<AuditLogDto>
 				adaptive
+				// keep the range as dayjs: the default "string" formatter hands formatAuditLogDateParam a (Jalali) string it cannot parse
+				dateFormatter={false}
 				rowKey="id"
 				columns={columns}
 				actionRef={actionRef}

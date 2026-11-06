@@ -47,6 +47,22 @@ export const TemplateCreateApi = {
 		}).json();
 	},
 
+	/** Creates a new template from an existing one (same content, header, fonts and scope) under `name`. */
+	duplicateTemplate: async (id: number, name: string) => {
+		const source = await TemplateCreateApi.getTemplate(id);
+		return TemplateCreateApi.createTemplate({
+			name,
+			service: source.service,
+			service_name: source.service_name,
+			document_kind: source.document_kind,
+			variant: source.variant || null,
+			company_type: source.company_type || null,
+			content_html: source.content_html,
+			header: source.header,
+			font_ids: source.font_ids,
+		});
+	},
+
 	getVariableCatalog: (params: Record<string, any>) => {
 		const cleanParams = Object.fromEntries(
 			Object.entries(params).filter(([_, v]) => v != null && v !== ""),

@@ -181,6 +181,7 @@ export function ContractTypeSection({ title, name, topAside, bottomAside, tone =
 				name={`${name}.fixedAmount` as any}
 				label={showRatePercentage ? t("contract.type.fixedAmountRial") : t("contract.type.unitAmount")}
 				enableGrouping
+				decimal
 				enableWordsTooltip
 				inputProps={{ placeholder: t("contract.type.amountPlaceholder"), inputMode: "numeric", addonAfter: t("contract.unit.rial") } as any}
 				formItemProps={{ className: "contract-type-currency-field contract-type-unit-amount-field mb-0" }}

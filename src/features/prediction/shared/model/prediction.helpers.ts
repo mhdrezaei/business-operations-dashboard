@@ -38,6 +38,12 @@ export function isAvailablePredictionCompanyType(serviceCode: unknown, companyTy
 	return normalizedServiceCode !== "psp" || normalizedCompanyType === "IPG";
 }
 
+export function getCompanyTypePlaceholderKey(serviceCode: unknown) {
+	return serviceCode === "traffic"
+		? "prediction.placeholders.selectTrafficCompanyType"
+		: "prediction.placeholders.selectCompanyType";
+}
+
 // the backend only accepts fiscal years from 1404
 export const PREDICTION_FISCAL_YEAR_OPTIONS = [1404, 1405, 1406, 1407, 1408, 1409].map(year => ({
 	label: String(year),

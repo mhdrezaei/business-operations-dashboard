@@ -1,5 +1,6 @@
 import { addendumSchema } from "#src/features/contract/components/addenda/addenda.schema.js";
 import { contractTypeSchema } from "#src/features/contract/components/contract-type/contract-type.schema";
+import { zNullableNumberFa } from "#src/features/contract/components/contract-type/zod-fa-helpers";
 import { z } from "zod";
 
 const isOfficialSchema = z.preprocess(
@@ -21,7 +22,7 @@ export const smsServiceFieldsSchema = z.object({
 	governmentRevenue: contractTypeSchema.optional(),
 	profit: z.object({
 		pricing: contractTypeSchema,
-		minProfit: z.number().nullable(),
+		minProfit: zNullableNumberFa(),
 	}).optional(),
 
 	governmentRate: contractTypeSchema.optional(),

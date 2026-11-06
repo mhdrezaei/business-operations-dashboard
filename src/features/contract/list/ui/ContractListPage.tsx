@@ -4,12 +4,13 @@ import type { ContractServicePath } from "../../api/contracts.api";
 import type { ContractCreateRouteState } from "../../shared/utils/contract-routes";
 import type { ContractListFormParams } from "../model/contract-list";
 import type { ContractListItemType } from "../model/contracts.list.types";
-
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
+
 import { sortToOrdering } from "#src/components/basic-table/sort";
 import { companiesByServiceQuery, servicesQuery } from "#src/features/contract/shared/queries/contract.queries";
 import { useAccess } from "#src/hooks";
 import { TableActionDownloadIcon, TableActionEditIcon, TableActionEyeIcon, TableActionTrashIcon } from "#src/icons";
+import { isServerErrorHandled } from "#src/utils/request/error-response";
 import { ExclamationCircleOutlined, PlusCircleOutlined, PrinterOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 
@@ -26,12 +27,14 @@ import {
 	CONTRACT_LIST_DEFAULT_PAGE_SIZE,
 	CONTRACT_LIST_PAGE_SIZE_OPTIONS,
 	CONTRACT_LIST_SORT_ALIASES,
+	getContractDeleteWarnings,
 	getContractPdfBlockReason,
 	resolveListServicePath,
 	toContractListQuery,
 } from "../model/contract-list";
 import { useContractAddendaTableStyles } from "./components/contract-addenda-table.styles";
 import { ContractAddendaExpandedRow } from "./components/ContractAddendaExpandedRow";
+import { ContractDeleteConfirmTitle } from "./components/ContractDeleteConfirmTitle";
 import { ContractTemplatePrintModal } from "./components/ContractTemplatePrintModal";
 import { SignFlowPreviewModal } from "./components/SignFlowPreviewModal";
 import { getContractColumns } from "./constants";
@@ -119,6 +122,12 @@ export default function ContractListPage() {
 
 	const resolveServicePath = (row: ContractListItemType): ContractServicePath =>
 		resolveListServicePath(row, serviceCodeById.get(Number(row.service_id)));
+
+	// the list rows carry no service name, but the contract PDF prints it
+	const withServiceName = (row: ContractListItemType): ContractListItemType => ({
+		...row,
+		service_name: (services.data?.results ?? []).find((service: any) => Number(service?.id) === Number(row.service_id))?.name ?? row.service_name,
+	});
 
 	const selectedService = useMemo(() => {
 		if (!selectedServiceId)
@@ -259,7 +268,7 @@ export default function ContractListPage() {
 		setDownloadingPdfId(row.id);
 		try {
 			const detail = await fetchContractDetail(resolveServicePath(row), row.id);
-			openContractPdfPrint({ record: row, detail });
+			openContractPdfPrint({ record: withServiceName(row), detail });
 		}
 		catch (error: any) {
 			if (error?.message === "POPUP_BLOCKED") {
@@ -348,7 +357,8 @@ export default function ContractListPage() {
 		}
 		catch (err) {
 			console.error(err);
-			window.$message?.error(t("contract.list.message.signFlowFailed"));
+			if (!isServerErrorHandled(err))
+				window.$message?.error(t("contract.list.message.signFlowFailed"));
 			setSignFlowModalOpen(false);
 		}
 		finally {
@@ -504,7 +514,7 @@ export default function ContractListPage() {
 						actions.push(
 							<Popconfirm
 								key="delete"
-								title={t("common.confirmDelete")}
+								title={<ContractDeleteConfirmTitle title={t("common.confirmDelete")} warnings={getContractDeleteWarnings(record)} />}
 								okText={t("common.confirm")}
 								cancelText={t("common.cancel")}
 								onConfirm={() => handleDeleteRow(record, action)}
@@ -535,7 +545,7 @@ export default function ContractListPage() {
 					rowExpandable: record => Number(record.addenda_count) > 0,
 					expandedRowRender: record => (
 						<ContractAddendaExpandedRow
-							contract={record}
+							contract={withServiceName(record)}
 							service={resolveServicePath(record)}
 							onPrint={canSignRow(record) ? addendumGroupId => handleSignFlowClick(record, addendumGroupId) : undefined}
 						/>

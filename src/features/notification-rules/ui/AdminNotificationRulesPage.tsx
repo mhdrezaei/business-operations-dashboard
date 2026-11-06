@@ -185,12 +185,12 @@ export default function AdminNotificationRulesPage() {
 
 	const recentRuns = recentRunsQuery.data ?? [];
 	const manualJobs: Array<{ key: NotificationManualJob, label: string }> = [
-		{ key: "IN_APP", label: "Run Contract Expiry IN_APP Now" },
-		{ key: "SMS", label: "Run Contract Expiry SMS Now" },
-		{ key: "MISSING_PREV_MONTH_IN_APP", label: "Run Missing Prev Month IN_APP Now" },
-		{ key: "MISSING_PREV_MONTH_SMS", label: "Run Missing Prev Month SMS Now" },
-		{ key: "BUSINESS_APPROVAL_PENDING", label: "Run Business Approval Pending Now" },
-		{ key: "SIGN_PENDING", label: "Run Sign Pending Now" },
+		{ key: "IN_APP", label: "اجرای هشدار پایان قرارداد (داخل سامانه)" },
+		{ key: "SMS", label: "اجرای هشدار پایان قرارداد (پیامک)" },
+		{ key: "MISSING_PREV_MONTH_IN_APP", label: "اجرای یادآوری عملکرد ماه قبل (داخل سامانه)" },
+		{ key: "MISSING_PREV_MONTH_SMS", label: "اجرای یادآوری عملکرد ماه قبل (پیامک)" },
+		{ key: "BUSINESS_APPROVAL_PENDING", label: "اجرای یادآوری تأیید کسب‌وکار" },
+		{ key: "SIGN_PENDING", label: "اجرای یادآوری امضای در انتظار" },
 	];
 
 	return (
@@ -244,7 +244,7 @@ export default function AdminNotificationRulesPage() {
 				<section className="rounded-lg border border-[var(--ant-color-border-secondary)] bg-[var(--ant-color-bg-container)] p-4">
 					<div className="mb-4 flex flex-wrap items-center gap-3">
 						<Typography.Title level={4} className="!mb-0">
-							اجرای دستی Job
+							اجرای دستی وظیفه
 						</Typography.Title>
 						<Space wrap className="mr-auto">
 							{canUpdate && manualJobs.map(job => (

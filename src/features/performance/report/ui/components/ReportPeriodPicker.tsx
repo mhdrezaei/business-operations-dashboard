@@ -86,20 +86,12 @@ export function ReportPeriodPicker<TPeriodType extends string = PeriodType>({
 			return labels;
 		}, {});
 	}, [periodOptions]);
-	const monthLabels = useMemo(() => {
-		return periodOptions.reduce<Record<number, string>>((labels, option) => {
-			const parsed = parsePeriod(option.value);
-			if (parsed && labels[parsed.month] == null)
-				labels[parsed.month] = option.label.split(" (")[0];
-			return labels;
-		}, {});
-	}, [periodOptions]);
 	const displayedValueOptions = useMemo(
 		() => valueOptions ?? Array.from({ length: 12 }, (_, index) => ({
-			label: monthLabels[index + 1] ?? t(`performance.months.${index + 1}`),
+			label: t(`performance.months.${index + 1}`),
 			value: index + 1,
 		})),
-		[valueOptions, monthLabels, t],
+		[valueOptions, t],
 	);
 	const sectionLabel = copy?.sectionLabel ?? t("performance.reportPage.periodPicker.section");
 	const valueLabel = copy?.valueLabel ?? t("performance.reportPage.periodPicker.selectMonth");

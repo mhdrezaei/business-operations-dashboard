@@ -1,7 +1,7 @@
 import type { SmsGatewayJobStatus, SmsGatewayTrafficReportFilters, SmsGatewayTrafficReportResult } from "#src/features/performance/api/performances.api";
 import { createSmsGatewayTrafficReport, fetchSmsGatewayTrafficReport, fetchSmsGatewayTrafficReportStatus } from "#src/features/performance/api/performances.api";
 import { canSubmitTrafficJob, initialTrafficJobState, isTrafficJobLocked, trafficJobReducer } from "#src/features/performance/report/model/sms-gateway-traffic-job";
-import { getRequestErrorMessage } from "#src/features/performance/report/queries/sms-gateway-request-error";
+import { getRequestErrorMessage } from "#src/utils/request/error-response";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 

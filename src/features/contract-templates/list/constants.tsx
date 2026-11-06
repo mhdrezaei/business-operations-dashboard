@@ -1,6 +1,7 @@
 import type { ProColumns } from "@ant-design/pro-components";
 import type { TFunction } from "i18next";
 import type { TemplateListItemType } from "../model/templates.list.types";
+import { TEMPLATE_DOCUMENT_KIND_OPTIONS, TEMPLATE_VARIANT_LABELS } from "../model/template-variants";
 
 export interface GetTemplateColumnsArgs {
 	t: TFunction<"translation", undefined>
@@ -26,12 +27,14 @@ export function getTemplateColumns({ t }: GetTemplateColumnsArgs): ProColumns<Te
 			dataIndex: "document_kind",
 			width: 120,
 			search: false,
+			render: (_, record) => TEMPLATE_DOCUMENT_KIND_OPTIONS.find(option => option.value === record.document_kind)?.label ?? record.document_kind ?? "-",
 		},
 		{
-			title: "Variant",
+			title: "نوع سرویس",
 			dataIndex: "variant",
 			width: 120,
 			search: false,
+			render: (_, record) => record.variant ? (TEMPLATE_VARIANT_LABELS[record.variant] ?? record.variant) : "-",
 		},
 		{
 			title: "نوع شرکت",

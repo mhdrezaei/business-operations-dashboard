@@ -220,7 +220,7 @@ export const ContractTemplateEditorModal: React.FC<Props> = ({ open, onClose, on
 			rootClassName={isDark ? "dark" : ""}
 			style={{ top: 0, padding: 0, margin: 0, height: "100vh", maxWidth: "100vw" }}
 			styles={{ body: { height: "calc(100vh - 110px)", padding: 0, overflow: "hidden" } }}
-			destroyOnClose
+			destroyOnHidden
 			footer={(
 				<div className="flex justify-between items-center w-full px-4">
 					<div className="flex gap-2">

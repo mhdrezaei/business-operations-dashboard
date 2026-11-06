@@ -110,7 +110,8 @@ function getColumns(
 							size="small"
 							title="چاپ الحاقیه"
 							icon={<PrinterOutlined />}
-							onClick={() => row.addendumGroupId ? onPrint(row.addendumGroupId) : undefined}
+							disabled={!row.addendumGroupId}
+							onClick={() => row.addendumGroupId && onPrint(row.addendumGroupId)}
 						/>
 					)}
 				</Space>

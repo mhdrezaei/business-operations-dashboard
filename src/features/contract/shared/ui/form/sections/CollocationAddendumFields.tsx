@@ -44,6 +44,7 @@ export function TelecomRackCostFields({ basePath }: TelecomRackCostFieldsProps) 
 				label={t("contract.collocation.telecom.monthlyRent")}
 				formItemProps={compactFormItemStyle}
 				enableGrouping
+				decimal
 				enableWordsTooltip
 			/>
 		</div>

@@ -340,19 +340,22 @@ export function FixedStartSection({
 
 	const missingMonthsByYear = useMemo(() => {
 		const map = new Map<number, number[]>();
-		const raw = gaps.data?.missing_months_by_year;
-		if (!raw)
-			return map;
-
-		Object.entries(raw).forEach(([yearKey, months]) => {
+		Object.entries(gaps.data?.missing_months_by_year ?? {}).forEach(([yearKey, months]) => {
 			const numericYear = Number(yearKey);
-			if (!Number.isInteger(numericYear))
-				return;
-			map.set(numericYear, normalizeMonthList(months));
+			if (Number.isInteger(numericYear))
+				map.set(numericYear, normalizeMonthList(months));
 		});
 
+		// A month opened from the unregistered list must stay selectable even if the gaps endpoint does not report it;
+		// the monthly-status check below still tells the user when it has no contract.
+		if (lockPrerequisites && gaps.isSuccess && year != null && month != null) {
+			const months = map.get(year) ?? [];
+			if (!months.includes(month))
+				map.set(year, normalizeMonthList([...months, month]));
+		}
+
 		return map;
-	}, [gaps.data]);
+	}, [gaps.data, gaps.isSuccess, lockPrerequisites, year, month]);
 
 	const baseYearOptions = useMemo(() => {
 		return Array.from(missingMonthsByYear.keys())

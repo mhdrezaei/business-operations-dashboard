@@ -30,7 +30,7 @@ export function AdminUserRolesModal({ open, user, roles, loading, onClose, onSub
 
 	const initialSelected = useMemo(
 		() => (user ? parseRoleIdsFromUserRoles(user.roles) : []),
-		[user?.id],
+		[user?.id, JSON.stringify(user?.roles)],
 	);
 
 	const [selectedRoleIds, setSelectedRoleIds] = useState<number[]>(initialSelected);

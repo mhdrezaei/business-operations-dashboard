@@ -1,5 +1,4 @@
 import type { AdminRolePermissionFlags } from "./admin-roles.payload";
-import type { AdminRolePolicyDto } from "./admin-roles.types";
 import { buildAdminRolePoliciesPayload } from "./admin-roles.payload";
 
 function flags(view: boolean, create = false, update = false, remove = false, sign = false, businessApprove = false): AdminRolePermissionFlags {
@@ -13,36 +12,15 @@ function flags(view: boolean, create = false, update = false, remove = false, si
 	};
 }
 
-function policy(overrides: Partial<AdminRolePolicyDto>): AdminRolePolicyDto {
-	return {
-		id: 1,
-		role: 1,
-		service: 1,
-		service_code: "sms",
-		service_name: "پیامک",
-		domain: "contracts",
-		can_view: true,
-		can_create: false,
-		can_update: false,
-		can_delete: false,
-		can_sign: false,
-		can_business_approve: false,
-		company_visible_cards: [],
-		company_types: [],
-		actor_company_type_permissions: null,
-		updated_at: "",
-		...overrides,
-	};
-}
-
 const servicesByDomain = {
 	contracts: [{ id: 1, code: "sms" }, { id: 2, code: "others" }],
 	performances: [],
 	predictions: [],
 	company_profile: [],
+	contract_template: [],
 };
 
-const emptyMatrix = { performances: {}, predictions: {}, company_profile: {} };
+const emptyMatrix = { performances: {}, predictions: {}, company_profile: {}, contract_template: {} };
 
 describe("buildAdminRolePoliciesPayload", () => {
 	it("sends the picked company types only for company-type scoped services", () => {
@@ -50,7 +28,6 @@ describe("buildAdminRolePoliciesPayload", () => {
 			servicesByDomain,
 			permissionMatrix: { ...emptyMatrix, contracts: { 1: flags(true, true), 2: flags(true) } },
 			selectedCompanyCards: [],
-			initialPolicies: [],
 			getSelectedCompanyTypes: () => ["CP", "TELECOM"],
 		});
 
@@ -65,7 +42,6 @@ describe("buildAdminRolePoliciesPayload", () => {
 			servicesByDomain: { ...servicesByDomain, performances: [{ id: 3, code: "others" }] },
 			permissionMatrix: { ...emptyMatrix, contracts: { 2: flags(true, false, false, false, true, true) }, performances: { 3: flags(true, false, false, false, true, true) } },
 			selectedCompanyCards: [],
-			initialPolicies: [],
 			getSelectedCompanyTypes: () => [],
 		});
 
@@ -73,12 +49,11 @@ describe("buildAdminRolePoliciesPayload", () => {
 		expect(items[1]).toMatchObject({ domain: "performances", can_sign: false, can_business_approve: false });
 	});
 
-	it("keeps a row that only carries an approval and the contract_template policies", () => {
+	it("keeps a row that only carries an approval and sends contract_template like any other domain", () => {
 		const { items } = buildAdminRolePoliciesPayload({
-			servicesByDomain,
-			permissionMatrix: { ...emptyMatrix, contracts: { 2: flags(false, false, false, false, true) } },
+			servicesByDomain: { ...servicesByDomain, contract_template: [{ id: 2, code: "others" }] },
+			permissionMatrix: { ...emptyMatrix, contracts: { 2: flags(false, false, false, false, true) }, contract_template: { 2: flags(true, false, true, false) } },
 			selectedCompanyCards: [],
-			initialPolicies: [policy({ id: 2, service: 2, service_code: "others", domain: "contract_template", can_update: true })],
 			getSelectedCompanyTypes: () => [],
 		});
 

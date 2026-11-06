@@ -1,5 +1,6 @@
 import type { PredictionFormValues, PredictionSubmitMode } from "../../shared/model/prediction.form.types";
 import type { PredictionListRow } from "../../shared/model/prediction.list.types";
+import { useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router";
@@ -25,6 +26,7 @@ const SUBMIT_SUCCESS_MESSAGE_KEYS: Record<PredictionSubmitMode, string> = {
 function CreatePrediction() {
 	const { t } = useTranslation();
 	const navigate = useNavigate();
+	const queryClient = useQueryClient();
 	const location = useLocation();
 	const [submitting, setSubmitting] = useState(false);
 	const editRow = (location.state as { editPrediction?: PredictionListRow } | null)?.editPrediction ?? null;
@@ -54,6 +56,8 @@ function CreatePrediction() {
 				try {
 					const wasUpdate = Boolean(values.recordId);
 					const saved = await submitPrediction(values) as { id: number };
+					// the year lists drive auto-hydration and the registered panel; stale data would make the next submit a duplicate POST
+					void queryClient.invalidateQueries({ queryKey: ["predictions"] });
 					window.$message?.success(t(
 						wasUpdate
 							? "prediction.messages.updateSuccess"

@@ -7,6 +7,7 @@ import { SectionCard } from "#src/shared/ui/section-card";
 import { notification } from "#src/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AnimatePresence, motion } from "framer-motion";
+import { isTimeoutError } from "ky";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -131,6 +132,9 @@ export function PredictionForm({
 	const { hasDomainPermissionByServiceId } = useAccess();
 
 	const resolveSubmitErrorMessage = useCallback(async (error: any) => {
+		if (isTimeoutError(error))
+			return t("prediction.messages.requestTimeout");
+
 		if (error?.response) {
 			try {
 				const data = await error.response.clone().json();
@@ -376,7 +380,7 @@ export function PredictionForm({
 										? (
 											<ActionSection
 												submitting={submitting}
-												disabled={!hasMeaningfulChange}
+												disabled={!!recordId && !hasMeaningfulChange}
 												onSubmit={triggerSubmit}
 												onClear={clearForm}
 											/>

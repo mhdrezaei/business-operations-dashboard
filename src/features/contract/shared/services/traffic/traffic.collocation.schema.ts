@@ -79,6 +79,8 @@ interface CollocationAddendaContext {
 	partnerType: unknown
 	isTelecom: boolean
 	baseDatacenterIds: Set<string>
+	/** دیتاسنترهای الحاقیه‌ی پدر؛ دیتاسنتر زیرالحاقیه باید زیرمجموعه‌ی آن باشد */
+	parentDatacenterIds?: Set<string>
 }
 
 /** الحاقیه‌های کولوکیشن: هزینه رک مخابرات یا دیتاسنترها + SLA (مثل old؛ دیتاسنتر جدید باید هر ۵ دسته را کامل داشته باشد). */
@@ -110,11 +112,16 @@ export function validateCollocationAddenda(
 				addIssue(ctx, [...addendumPath, "sla"], "addendumSla");
 
 			datacenters.forEach((datacenter, datacenterIndex) => {
+				if (options.parentDatacenterIds && !options.parentDatacenterIds.has(String(datacenter.datacenter)))
+					addIssue(ctx, [...addendumPath, "datacenter"], "childDatacenterNotInParent");
 				if (!options.baseDatacenterIds.has(String(datacenter.datacenter)))
 					validateCollocationDatacenter(datacenter, [...addendumPath, "datacenters", datacenterIndex], ctx, options.partnerType);
 			});
 		}
 
-		validateCollocationAddenda(addendum.children, [...addendumPath, "children"], ctx, options);
+		validateCollocationAddenda(addendum.children, [...addendumPath, "children"], ctx, {
+			...options,
+			parentDatacenterIds: new Set(asRows(addendum.datacenters).map(datacenter => String(datacenter.datacenter))),
+		});
 	});
 }

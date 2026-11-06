@@ -342,6 +342,7 @@ export function CollocationDatacentersField({ name, selectName, partnerType }: C
 										label={t("contract.collocation.bandwidthRate")}
 										formItemProps={compactFormItemStyle}
 										enableGrouping
+										decimal
 										enableWordsTooltip
 									/>
 									<RHFProNumber<ContractFormValues, any>
@@ -349,6 +350,7 @@ export function CollocationDatacentersField({ name, selectName, partnerType }: C
 										label={t("contract.collocation.ipRate")}
 										formItemProps={compactFormItemStyle}
 										enableGrouping
+										decimal
 										enableWordsTooltip
 									/>
 								</div>
@@ -374,6 +376,7 @@ export function CollocationDatacentersField({ name, selectName, partnerType }: C
 														label={t("contract.collocation.unitPrice")}
 														formItemProps={compactFormItemStyle}
 														enableGrouping
+														decimal
 														enableWordsTooltip
 													/>
 													<RHFProNumber<ContractFormValues, any>
@@ -418,6 +421,7 @@ export function CollocationDatacentersField({ name, selectName, partnerType }: C
 														label={t("contract.collocation.unitPrice")}
 														formItemProps={compactFormItemStyle}
 														enableGrouping
+														decimal
 														enableWordsTooltip
 													/>
 													<RHFProNumber<ContractFormValues, any>
@@ -448,6 +452,7 @@ export function CollocationDatacentersField({ name, selectName, partnerType }: C
 										label={t("contract.collocation.ampRate")}
 										formItemProps={compactFormItemStyle}
 										enableGrouping
+										decimal
 										enableWordsTooltip
 									/>
 									<RHFProNumber<ContractFormValues, any>
@@ -455,6 +460,7 @@ export function CollocationDatacentersField({ name, selectName, partnerType }: C
 										label={t("contract.collocation.ampThreshold")}
 										formItemProps={compactFormItemStyle}
 										enableGrouping
+										decimal
 									/>
 								</div>
 

@@ -1,11 +1,13 @@
 import type { ContractServicePath, TemplateTagValuesResponse } from "../../../api/contracts.api";
 import type { ContractListItemType } from "../../model/contracts.list.types";
 import { PrinterOutlined } from "@ant-design/icons";
-import { App, Card, Empty, List, message, Modal, Spin, theme, Typography } from "antd";
+import { Alert, App, Card, Empty, List, message, Modal, Spin, theme, Typography } from "antd";
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { usePreferencesStore } from "../../../../../store/preferences";
 import { TemplateCreateApi } from "../../../../contract-templates/api/api";
 import { getVariable } from "../../../../contract-templates/create/components/editor/variables/registry";
+import { getExpectedTemplateVariant, isUnsupportedTemplateCompanyType } from "../../../../contract-templates/model/template-variants";
 import { mapTemplateHeader, useTemplateStore } from "../../../../contract-templates/store/useTemplateStore";
 import { fetchContractTemplates, fetchTemplateTagValues } from "../../../api/contracts.api";
 import { formatTagValueHtml } from "../../model/template-tag-format";
@@ -55,21 +57,28 @@ export const ContractTemplatePrintModal: React.FC<Props> = ({ open, onClose, onS
 	const [currentTemplateId, setCurrentTemplateId] = useState<number | null>(null);
 	const [processedHtml, setProcessedHtml] = useState<string>("");
 
+	const { t } = useTranslation();
 	const { modal } = App.useApp();
 	const { token } = theme.useToken();
 	const prefTheme = usePreferencesStore(state => state.theme);
 	const isDark = prefTheme === "dark" || (prefTheme === "auto" && window.matchMedia("(prefers-color-scheme: dark)").matches);
 
+	const serviceCode = service?.split("/")[0] ?? null;
+	// the backend variable catalog rejects COLLOCATION traffic contracts, so no template can be filled for them
+	const isUnsupportedContract = isUnsupportedTemplateCompanyType(serviceCode, companyType);
+
 	useEffect(() => {
-		if (open && service) {
+		if (open && service && !isUnsupportedContract) {
 			// eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
 			setLoading(true);
 			const serviceStr = service.split("/")[0]; // e.g. sms/client -> sms
+			const expectedVariant = getExpectedTemplateVariant(service, (record as { contract_model?: unknown } | null)?.contract_model, Boolean(addendumGroupId));
 			fetchContractTemplates(serviceStr, companyType, addendumGroupId ? "addendum" : "contract")
 				.then((res) => {
 					// Handle paginated response or array
 					const data = res?.results ?? res ?? [];
-					setTemplates(Array.isArray(data) ? data : []);
+					const list: any[] = Array.isArray(data) ? data : [];
+					setTemplates(expectedVariant ? list.filter(template => !template.variant || template.variant === expectedVariant) : list);
 				})
 				.catch((_err) => {
 					console.error(_err);
@@ -83,7 +92,7 @@ export const ContractTemplatePrintModal: React.FC<Props> = ({ open, onClose, onS
 			// eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
 			setTemplates([]);
 		}
-	}, [open, service, companyType, addendumGroupId]);
+	}, [open, service, companyType, addendumGroupId, isUnsupportedContract, record]);
 
 	const handleSelectTemplate = async (template: any) => {
 		if (!record || !service)
@@ -180,8 +189,11 @@ export const ContractTemplatePrintModal: React.FC<Props> = ({ open, onClose, onS
 			footer={null}
 			width={700}
 			rootClassName={isDark ? "dark" : ""}
-			destroyOnClose
+			destroyOnHidden
 		>
+			{isUnsupportedContract && (
+				<Alert type="warning" showIcon message={t("contract.template.unsupportedCompanyType")} />
+			)}
 			<Spin spinning={loading}>
 				{templates.length === 0 && !loading
 					? (

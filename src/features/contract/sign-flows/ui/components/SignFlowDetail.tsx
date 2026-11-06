@@ -1,15 +1,16 @@
 import { Scrollbar } from "#src/components";
-import { cancelSignFlow, decideSignFlow, fetchSignFlowDetail, fetchSignFlowHistory, fetchSignFlowOfficialPdf } from "#src/features/contract/api/contracts.api";
+import { cancelSignFlow, decideSignFlow, fetchSignFlowDetail, fetchSignFlowHistory, fetchSignFlowOfficialPdf, revokeSignFlow } from "#src/features/contract/api/contracts.api";
 import { useAccess } from "#src/hooks";
 import { dayjs } from "#src/shared/lib/dayjs-jalali";
 import { useUserStore } from "#src/store";
-import { ArrowRightOutlined, CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, EyeOutlined, FilePdfOutlined, StopOutlined } from "@ant-design/icons";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { isServerErrorHandled } from "#src/utils/request/error-response";
+import { ArrowRightOutlined, CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, EyeOutlined, FilePdfOutlined, RollbackOutlined, StopOutlined } from "@ant-design/icons";
 
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Card, Col, Descriptions, Divider, Empty, Input, message, Modal, Row, Space, Spin, Steps, Tag, Typography } from "antd";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { SIGN_FLOW_STATE_MAP } from "../constants";
+import { SIGN_FLOW_STATE_MAP, SIGN_FLOW_STEP_STATE_KEYS } from "../constants";
 
 const { Title, Text } = Typography;
 
@@ -27,14 +28,15 @@ export interface SignFlowDetailProps {
 export function SignFlowDetail({ id, onBack }: SignFlowDetailProps) {
 	const { t } = useTranslation();
 	const user = useUserStore();
-	const { isFullAdmin, hasDomainPermission } = useAccess();
+	const { isFullAdmin } = useAccess();
 	const queryClient = useQueryClient();
 	const [historyId, setHistoryId] = useState<number | null>(null);
 	const [prevPropId, setPrevPropId] = useState(id);
 	const [isPdfLoading, setIsPdfLoading] = useState(false);
-	const [cancelModalOpen, setCancelModalOpen] = useState(false);
-	const [cancelReason, setCancelReason] = useState("");
-	const [isCancelling, setIsCancelling] = useState(false);
+	// cancel (in-progress flow) and revoke (approved flow) share one reason dialog
+	const [reasonModalKind, setReasonModalKind] = useState<"cancel" | "revoke" | null>(null);
+	const [reasonText, setReasonText] = useState("");
+	const [isSubmittingReason, setIsSubmittingReason] = useState(false);
 	const [decisionModal, setDecisionModal] = useState<{
 		open: boolean
 		action: "approve" | "reject"
@@ -64,16 +66,9 @@ export function SignFlowDetail({ id, onBack }: SignFlowDetailProps) {
 		enabled: !!detail?.contract_id,
 	});
 
-	// قالب قرارداد همان سرویس گردش؛ بدون دسترسی مشاهده، PDF رسمی باز نمی‌شود (مثل old)
-	const canViewTemplate = hasDomainPermission("contract_template", "view", detail?.service);
-
 	const handleViewOfficialPdf = async () => {
 		if (!detail?.id)
 			return;
-		if (!canViewTemplate) {
-			Modal.warning({ title: t("contract.signFlow.templateAccessDenied") });
-			return;
-		}
 
 		const newTab = window.open("about:blank", "_blank");
 		try {
@@ -126,6 +121,8 @@ export function SignFlowDetail({ id, onBack }: SignFlowDetailProps) {
 	);
 
 	const canCancel = (isFullAdmin || isCreator) && detail?.state === "in_progress";
+	// backend: only superuser/staff may revoke, and only an approved flow
+	const canRevoke = isFullAdmin && detail?.state === "approved";
 
 	const currentActiveStep = detail?.steps.find(s => s.order === detail?.current_step_order);
 	const isStepApprover = Boolean(
@@ -141,10 +138,8 @@ export function SignFlowDetail({ id, onBack }: SignFlowDetailProps) {
 			return;
 
 		const trimmedComment = decisionComment.trim();
-		if (decisionModal.action === "reject" && !trimmedComment) {
-			message.warning("لطفاً دلیل رد را وارد کنید");
+		if (decisionModal.action === "reject" && !trimmedComment)
 			return;
-		}
 
 		try {
 			setIsSubmittingDecision(true);
@@ -166,44 +161,51 @@ export function SignFlowDetail({ id, onBack }: SignFlowDetailProps) {
 		}
 		catch (err: any) {
 			console.error("Error submitting decision:", err);
-			message.error(
-				decisionModal.action === "approve"
-					? "خطا در تایید مرحله"
-					: "خطا در رد مرحله",
-			);
+			if (!isServerErrorHandled(err)) {
+				message.error(
+					decisionModal.action === "approve"
+						? "خطا در تایید مرحله"
+						: "خطا در رد مرحله",
+				);
+			}
 		}
 		finally {
 			setIsSubmittingDecision(false);
 		}
 	};
 
-	const handleCancelSignFlow = async () => {
-		if (!detail?.id)
+	const closeReasonModal = () => {
+		setReasonModalKind(null);
+		setReasonText("");
+	};
+
+	const handleReasonSubmit = async () => {
+		if (!detail?.id || !reasonModalKind)
 			return;
 
-		const trimmedReason = cancelReason.trim();
+		const trimmedReason = reasonText.trim();
 		if (!trimmedReason) {
-			message.warning("لطفاً دلیل لغو را وارد کنید");
+			message.warning(t(`contract.signFlow.${reasonModalKind}.required`));
 			return;
 		}
 
 		try {
-			setIsCancelling(true);
-			await cancelSignFlow(detail.id, trimmedReason);
-			message.success("گردش امضا با موفقیت لغو شد");
-			setCancelModalOpen(false);
-			setCancelReason("");
+			setIsSubmittingReason(true);
+			await (reasonModalKind === "cancel" ? cancelSignFlow : revokeSignFlow)(detail.id, trimmedReason);
+			message.success(t(`contract.signFlow.${reasonModalKind}.success`));
+			closeReasonModal();
 			await queryClient.invalidateQueries({ queryKey: ["signFlowDetail", activeId] });
 			if (detail.contract_id) {
 				await queryClient.invalidateQueries({ queryKey: ["signFlowHistory", detail.contract_id] });
 			}
 		}
 		catch (err: any) {
-			console.error("Error cancelling sign flow:", err);
-			message.error("خطا در لغو گردش امضا");
+			console.error(`Error submitting sign flow ${reasonModalKind}:`, err);
+			if (!isServerErrorHandled(err))
+				message.error(t(`contract.signFlow.${reasonModalKind}.failed`));
 		}
 		finally {
-			setIsCancelling(false);
+			setIsSubmittingReason(false);
 		}
 	};
 
@@ -251,7 +253,7 @@ export function SignFlowDetail({ id, onBack }: SignFlowDetailProps) {
 
 		return {
 			title: step.name,
-			description: status === "process" ? "در حال بررسی" : (status === "finish" ? "انجام شد" : "در انتظار نوبت"),
+			description: t(SIGN_FLOW_STEP_STATE_KEYS[step.state] ?? SIGN_FLOW_STEP_STATE_KEYS.pending),
 			status,
 			icon,
 		};
@@ -312,6 +314,17 @@ export function SignFlowDetail({ id, onBack }: SignFlowDetailProps) {
 								{detail.cancel_reason}
 							</div>
 						)}
+						{detail.revoke_reason && (
+							<div className="mt-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 p-4 text-sm font-medium text-slate-700 dark:text-slate-300">
+								<span className="font-bold">
+									{t("contract.signFlow.history.revokeReason")}
+									:
+									{" "}
+								</span>
+								{detail.revoke_reason}
+								{detail.revoked_by_username && ` (${detail.revoked_by_username})`}
+							</div>
+						)}
 						<div className="mt-4 flex justify-end gap-2">
 							<Button
 								type="primary"
@@ -352,9 +365,19 @@ export function SignFlowDetail({ id, onBack }: SignFlowDetailProps) {
 									danger
 									type="default"
 									icon={<StopOutlined />}
-									onClick={() => setCancelModalOpen(true)}
+									onClick={() => setReasonModalKind("cancel")}
 								>
-									لغو گردش امضا
+									{t("contract.signFlow.cancel.action")}
+								</Button>
+							)}
+							{canRevoke && (
+								<Button
+									danger
+									type="default"
+									icon={<RollbackOutlined />}
+									onClick={() => setReasonModalKind("revoke")}
+								>
+									{t("contract.signFlow.revoke.action")}
 								</Button>
 							)}
 						</div>
@@ -384,8 +407,25 @@ export function SignFlowDetail({ id, onBack }: SignFlowDetailProps) {
 												{step.name}
 											</Text>
 											<div className="mt-2 text-gray-500">
-												{step.state === "active" ? "در حال بررسی" : step.state === "pending" ? "در انتظار نوبت" : step.state}
+												{t(SIGN_FLOW_STEP_STATE_KEYS[step.state] ?? SIGN_FLOW_STEP_STATE_KEYS.pending)}
 											</div>
+											{step.decision && (
+												<div className="mt-2 text-sm">
+													<div>
+														{t(`contract.signFlow.decision.${step.decision.action}`)}
+														{step.decision.decided_by_username && ` — ${t("contract.signFlow.decision.by", { user: step.decision.decided_by_username })}`}
+														{step.decision.decided_at && ` — ${formatDate(step.decision.decided_at)}`}
+													</div>
+													{step.decision.comment && (
+														<div className="text-gray-500">
+															{t("contract.signFlow.decision.comment")}
+															:
+															{" "}
+															{step.decision.comment}
+														</div>
+													)}
+												</div>
+											)}
 										</div>
 										<div className="text-right">
 											{step.recipients.map(r => (
@@ -445,8 +485,30 @@ export function SignFlowDetail({ id, onBack }: SignFlowDetailProps) {
 														)}
 														{h.revoked_at && (
 															<div>
-																<Text type="secondary">تاریخ لغو: </Text>
+																<Text type="secondary">
+																	{t("contract.signFlow.history.revokedAt")}
+																	:
+																	{" "}
+																</Text>
 																{formatDate(h.revoked_at)}
+															</div>
+														)}
+														{h.revoked_by_username && (
+															<div>
+																<Text type="secondary">
+																	{t("contract.signFlow.history.revokedBy")}
+																	:
+																	{" "}
+																</Text>
+																{h.revoked_by_username}
+															</div>
+														)}
+														{h.revoke_reason && (
+															<div className="mt-2 text-red-400">
+																{t("contract.signFlow.history.revokeReason")}
+																:
+																{" "}
+																{h.revoke_reason}
 															</div>
 														)}
 														{h.cancel_or_reject_reason && <div className="mt-2 text-red-400">{h.cancel_or_reject_reason}</div>}
@@ -463,56 +525,53 @@ export function SignFlowDetail({ id, onBack }: SignFlowDetailProps) {
 			</Row>
 
 			<Modal
-				open={cancelModalOpen}
+				open={reasonModalKind !== null}
 				onCancel={() => {
-					if (!isCancelling) {
-						setCancelModalOpen(false);
-						setCancelReason("");
-					}
+					if (!isSubmittingReason)
+						closeReasonModal();
 				}}
 				footer={null}
 				centered
 				width={480}
-				destroyOnClose
+				destroyOnHidden
 			>
-				<div className="py-2" dir="rtl">
-					<Title level={4} className="!mb-2 text-center">
-						لغو گردش امضا
-					</Title>
-					<div className="mb-4 text-center text-sm text-gray-500 dark:text-gray-400">
-						دلیل لغو
+				{reasonModalKind && (
+					<div className="py-2" dir="rtl">
+						<Title level={4} className="!mb-2 text-center">
+							{t(`contract.signFlow.${reasonModalKind}.title`)}
+						</Title>
+						<div className="mb-4 text-center text-sm text-gray-500 dark:text-gray-400">
+							{t(`contract.signFlow.${reasonModalKind}.label`)}
+						</div>
+						<Input.TextArea
+							rows={5}
+							value={reasonText}
+							onChange={e => setReasonText(e.target.value)}
+							placeholder={t(`contract.signFlow.${reasonModalKind}.placeholder`)}
+							className="mb-6 rounded-lg"
+							disabled={isSubmittingReason}
+						/>
+						<div className="flex items-center justify-center gap-3">
+							<Button
+								type="primary"
+								size="large"
+								className="min-w-28 rounded-lg"
+								loading={isSubmittingReason}
+								onClick={handleReasonSubmit}
+							>
+								{t(`contract.signFlow.${reasonModalKind}.confirm`)}
+							</Button>
+							<Button
+								size="large"
+								className="min-w-28 rounded-lg"
+								disabled={isSubmittingReason}
+								onClick={closeReasonModal}
+							>
+								{t("common.cancel")}
+							</Button>
+						</div>
 					</div>
-					<Input.TextArea
-						rows={5}
-						value={cancelReason}
-						onChange={e => setCancelReason(e.target.value)}
-						placeholder="دلیل لغو را وارد کنید..."
-						className="mb-6 rounded-lg"
-						disabled={isCancelling}
-					/>
-					<div className="flex items-center justify-center gap-3">
-						<Button
-							type="primary"
-							size="large"
-							className="min-w-28 rounded-lg"
-							loading={isCancelling}
-							onClick={handleCancelSignFlow}
-						>
-							لغو کن
-						</Button>
-						<Button
-							size="large"
-							className="min-w-28 rounded-lg"
-							disabled={isCancelling}
-							onClick={() => {
-								setCancelModalOpen(false);
-								setCancelReason("");
-							}}
-						>
-							انصراف
-						</Button>
-					</div>
-				</div>
+				)}
 			</Modal>
 
 			<Modal
@@ -526,7 +585,7 @@ export function SignFlowDetail({ id, onBack }: SignFlowDetailProps) {
 				footer={null}
 				centered
 				width={480}
-				destroyOnClose
+				destroyOnHidden
 			>
 				<div className="py-2" dir="rtl">
 					<Title level={4} className="!mb-2 text-center">
@@ -550,6 +609,7 @@ export function SignFlowDetail({ id, onBack }: SignFlowDetailProps) {
 							className={decisionModal.action === "approve" ? "min-w-28 rounded-lg !bg-emerald-600 hover:!bg-emerald-500" : "min-w-28 rounded-lg"}
 							danger={decisionModal.action === "reject"}
 							loading={isSubmittingDecision}
+							disabled={decisionModal.action === "reject" && !decisionComment.trim()}
 							onClick={handleDecisionSubmit}
 						>
 							{decisionModal.action === "approve" ? "تایید کن" : "رد کن"}

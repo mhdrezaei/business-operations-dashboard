@@ -38,7 +38,24 @@ function validateModelAddenda(addenda: unknown, path: IssuePath, ctx: z.Refineme
 	});
 }
 
-export const openApiServiceFieldsSchema = z
+/** قیمت‌گذاریِ مدل‌های غیرفعال (مثلاً legacyPricing خالی بعد از کپی از قرارداد «بسته‌ای») نباید اعتبارسنجی شود یا ارسال شود. */
+function dropInactiveModelPricing(value: unknown): unknown {
+	if (value == null || typeof value !== "object" || Array.isArray(value))
+		return value;
+	const next = { ...(value as Record<string, unknown>) };
+	const model = typeof next.contractModel === "string" ? next.contractModel.trim().toLowerCase() : null;
+	if (model === "package" || model === "separated")
+		delete next.legacyPricing;
+	if (model === "package" || model === "legacy")
+		delete next.separatedPricing;
+	for (const key of ["addenda", "children"] as const) {
+		if (Array.isArray(next[key]))
+			next[key] = (next[key] as unknown[]).map(dropInactiveModelPricing);
+	}
+	return next;
+}
+
+const openApiFieldsObjectSchema = z
 	.object({
 		contractModel: contractModelSchema,
 		addenda: z.array(addendumSchema).default([]).optional(),
@@ -78,3 +95,5 @@ export const openApiServiceFieldsSchema = z
 			}
 		}
 	});
+
+export const openApiServiceFieldsSchema = z.preprocess(dropInactiveModelPricing, openApiFieldsObjectSchema);

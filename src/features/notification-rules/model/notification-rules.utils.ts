@@ -9,6 +9,7 @@ import type {
 	NotificationRuleRecipientDto,
 	NotificationRunDto,
 } from "./notification-rules.types";
+import { normalizeDigitsToLatin } from "#src/utils/formated";
 
 export const notificationRuleCodeOptions: Array<{ label: string, value: NotificationRuleCode }> = [
 	{ label: "هشدار پایان قرارداد (نوتیفیکیشن داخل سامانه)", value: "CONTRACT_EXPIRY" },
@@ -147,10 +148,19 @@ export function getRuleStatusLabel(isActive: boolean): string {
 	return isActive ? "فعال" : "غیرفعال";
 }
 
+function splitDaysBeforeEnd(rawValue: string): string[] {
+	return normalizeDigitsToLatin(rawValue).split(/[,\s،]+/).map(value => value.trim()).filter(Boolean);
+}
+
+/** The backend accepts whole days 1..365 only; anything else typed in the field is reported instead of silently dropped. */
+export function getDaysBeforeEndInputError(rawValue: string): string | null {
+	const hasInvalidToken = splitDaysBeforeEnd(rawValue).some(value => !/^\d+$/.test(value) || Number(value) < 1 || Number(value) > 365);
+	return hasInvalidToken ? "روزها باید عدد صحیح بین 1 تا 365 باشند (با کاما جدا شوند)." : null;
+}
+
 export function parseDaysBeforeEnd(rawValue: string): number[] {
-	const days = rawValue
-		.split(/[,\s،]+/)
-		.map(value => Number(value.trim()))
+	const days = splitDaysBeforeEnd(rawValue)
+		.map(Number)
 		.filter(value => Number.isInteger(value) && value >= 0);
 
 	return Array.from(new Set(days));

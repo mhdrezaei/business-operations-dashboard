@@ -78,7 +78,7 @@ export function SmsGatewayImportHistoryModal({ open, onClose }: Props) {
 					تاریخچه دریافت‌های Gateway پیامک
 				</span>
 			)}
-			destroyOnClose
+			destroyOnHidden
 		>
 			<div className="sms-gateway-history-body min-h-[360px]" dir="rtl">
 				<div className="mb-4 flex items-center justify-between gap-3 text-sm text-slate-500">

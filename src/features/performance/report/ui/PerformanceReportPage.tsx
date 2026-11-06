@@ -31,7 +31,7 @@ import {
 	parsePeriod,
 	prunePeriodsToAvailability,
 } from "../model/performance-report.params";
-import { buildOperatorGovernmentParams, DEFAULT_OPERATOR_GOVERNMENT_FILTERS, resolveSmsCommissionScope } from "../model/sms-report-variants";
+import { buildOperatorGovernmentParams, DEFAULT_OPERATOR_GOVERNMENT_FILTERS, getReportTotalsRowLabel, resolveSmsCommissionScope } from "../model/sms-report-variants";
 import { fetchReportPage } from "../queries/performance-report.fetch";
 import { ALL_COMPANY_TYPES, getReportCompanyTypeLabel, hasCompanyTypeSelection, isOnlyCompanyType, isUnitConversionCompanyType } from "./company-type";
 import { ReportCompanyPicker } from "./components/ReportCompanyPicker";
@@ -41,6 +41,7 @@ import { ReportSettingsPanel } from "./components/ReportSettingsPanel";
 import { ReportSummaryCards } from "./components/ReportSummaryCards";
 import { ReportTotalsSummary } from "./components/ReportTotalsSummary";
 import {
+	createOperationTypeLabels,
 	filterAggregationKeys,
 	getAllowedAggregationKeys,
 	getPerformanceReportColumns,
@@ -213,6 +214,15 @@ export function PerformanceReportPage() {
 			return acc;
 		}, []);
 	}, [availablePeriods, selectedPeriodType, t]);
+
+	// Grid buttons carry the period month as value, so their names must use the same (fiscal-shifted) mapping as the chips.
+	const periodValueOptions = useMemo<ReportSelectOption[]>(
+		() => Array.from({ length: 12 }, (_, index) => ({
+			label: t(`performance.months.${getReportDisplayMonth(index + 1, selectedPeriodType)}`),
+			value: index + 1,
+		})),
+		[selectedPeriodType, t],
+	);
 
 	const availableCompanyIds = useMemo(() => {
 		if (selectedPeriods.length > 0) {
@@ -418,7 +428,15 @@ export function PerformanceReportPage() {
 
 		const showRial = selectedFinancialColumns.includes("rial");
 		const items: Array<{ key: string, label: string, value: string }> = [];
-		if (selectedFinancialColumnTitles.total) {
+		const valueByUnit = Array.isArray(summary.value_by_unit) ? summary.value_by_unit as PerformanceReportRow[] : [];
+		if (selectedFinancialColumnTitles.total && valueByUnit.length > 0) {
+			valueByUnit.forEach(row => items.push({
+				key: `total-${row.contract_unit}`,
+				label: getReportTotalsRowLabel(selectedFinancialColumnTitles.total!, row),
+				value: formatReportNumber(row.value),
+			}));
+		}
+		else if (selectedFinancialColumnTitles.total) {
 			items.push(isSalesAgencyService
 				? {
 					key: "total",
@@ -466,6 +484,21 @@ export function PerformanceReportPage() {
 			{ key: "regionIncome", title: selectedFinancialColumnTitles.regionIncome, keys: REPORT_FIELD_KEYS.regionIncome },
 			{ key: "salesAgentIncome", title: selectedFinancialColumnTitles.salesAgentIncome, keys: REPORT_FIELD_KEYS.salesAgentIncome },
 		];
+		if (isTrafficService && valueByUnit.length === 0) {
+			const receivedTraffic = pickSummaryValue(summary, [...REPORT_FIELD_KEYS.receivedTraffic]);
+			if (receivedTraffic != null)
+				items.push({ key: "receivedTraffic", label: t("performance.fields.traffic.receivedTraffic"), value: formatReportNumber(receivedTraffic) });
+		}
+		if (isFinanceDepartment) {
+			[
+				{ key: "governmentIncome", label: t("performance.rowType.government"), keys: ["total_income_government"] },
+				{ key: "karashabShare", label: t("performance.rowType.profit"), keys: ["total_profit"] },
+			].forEach((field) => {
+				const value = pickSummaryValue(summary, field.keys);
+				if (value != null)
+					items.push({ key: field.key, label: field.label, value: formatReportMoney(value, showRial) });
+			});
+		}
 		extendedFields.forEach((field) => {
 			if (!field.title || !selectedFinancialColumns.includes(field.key))
 				return;
@@ -476,7 +509,7 @@ export function PerformanceReportPage() {
 		});
 
 		return items;
-	}, [selectedFinancialColumnTitles, selectedFinancialColumns, summary, isSalesAgencyService, isSalesAgencyOutbound, t]);
+	}, [selectedFinancialColumnTitles, selectedFinancialColumns, summary, isSalesAgencyService, isSalesAgencyOutbound, isTrafficService, isFinanceDepartment, t]);
 
 	const setSelectedService = (serviceId: number | null, serviceCode: string | null) => {
 		const normalizedServiceCode = serviceCode ? normalizeServiceCode(serviceCode) : null;
@@ -522,7 +555,8 @@ export function PerformanceReportPage() {
 	};
 
 	useEffect(() => {
-		if (!availabilityBase.data)
+		// An empty availability (e.g. «غیررسمی» with no such data) must not wipe the selection; it comes back with the next filter.
+		if (!availabilityBase.data?.periods?.length)
 			return;
 
 		const pruned = prunePeriodsToAvailability(selectedPeriods, availabilityBase.data.periods ?? []);
@@ -686,11 +720,7 @@ export function PerformanceReportPage() {
 
 	const getOperationTypeLabel = useCallback((operationType: unknown) => {
 		const value = String(operationType ?? "").trim().toUpperCase();
-		if (value === "BILL_INQUIRY")
-			return t("performance.operationType.billInquiry");
-		if (value === "RECEIPT_REGISTER")
-			return t("performance.operationType.receiptRegister");
-		return String(operationType ?? "-");
+		return createOperationTypeLabels(t)[value] ?? String(operationType ?? "-");
 	}, [t]);
 
 	const buildReportRequest = useCallback((page: number, pageSize: number, options?: { total?: boolean, ratio?: number | null }): ReportRequest | null => {
@@ -995,7 +1025,7 @@ export function PerformanceReportPage() {
 			: t("performance.columns.toman");
 
 		downloadPerformanceReportExcel({
-			filename: `performance-report-${new Date().toISOString().slice(0, 10)}.xls`,
+			filename: `${[t("performance.titles.performanceReport"), selectedServiceName].filter(Boolean).join(" - ")}.xls`,
 			title: t("performance.titles.performanceReport"),
 			labels: exportLabels,
 			serviceName: selectedServiceName,
@@ -1105,6 +1135,7 @@ export function PerformanceReportPage() {
 							key={`${selectedServiceId ?? "no-service"}-${selectedPeriodType}`}
 							yearOptions={yearOptions}
 							periodOptions={periodOptions}
+							valueOptions={periodValueOptions}
 							periodTypeOptions={periodTypeOptions}
 							selectedPeriodType={selectedPeriodType}
 							selectedPeriods={selectedPeriods}

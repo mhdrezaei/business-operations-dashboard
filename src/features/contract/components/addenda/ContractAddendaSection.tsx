@@ -5,7 +5,7 @@ import { SectionCard, SectionToneContext } from "#src/shared/ui/section-card";
 
 import { message, toPersianDigits } from "#src/utils";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import { Button, Collapse } from "antd";
+import { Button, Collapse, Popconfirm } from "antd";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
@@ -369,18 +369,28 @@ export function ContractAddendaSection<TFV extends FieldValues>({
 								{headerHint ? <span className="opacity-75 font-medium">{headerHint}</span> : null}
 							</div>
 
-							<Button
-								danger
-								size="small"
-								className="contract-dashed-action"
-								icon={<DeleteOutlined />}
-								onClick={(e) => {
-									e.stopPropagation();
-									removeAddendum(idx);
-								}}
+							<Popconfirm
+								// only addenda already stored in the BE need a warning; a new draft row is removed silently
+								disabled={addendum.id == null}
+								title={[t("contract.addenda.removeConfirm"), Array.isArray(addendum.children) && addendum.children.length > 0 ? t("contract.addenda.removeConfirmChildren") : null].filter(Boolean).join(" ")}
+								okText={t("common.confirm")}
+								cancelText={t("common.cancel")}
+								onConfirm={() => removeAddendum(idx)}
 							>
-								{t("contract.addenda.removeAddendum")}
-							</Button>
+								<Button
+									danger
+									size="small"
+									className="contract-dashed-action"
+									icon={<DeleteOutlined />}
+									onClick={(e) => {
+										e.stopPropagation();
+										if (addendum.id == null)
+											removeAddendum(idx);
+									}}
+								>
+									{t("contract.addenda.removeAddendum")}
+								</Button>
+							</Popconfirm>
 						</div>
 					),
 					children: (

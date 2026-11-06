@@ -15,6 +15,7 @@ import {
 	formatAdminRoleName,
 	formatAdminUserName,
 	getDaysBeforeEndError,
+	getDaysBeforeEndInputError,
 	isMissingPerformanceRule,
 	isPendingSinceCreationRule,
 	notificationRuleCodeOptions,
@@ -237,6 +238,7 @@ export function NotificationRuleUpsertModal({
 					>
 						<Select
 							options={notificationRuleCodeOptions}
+							disabled={Boolean(initial)}
 							onChange={handleCodeChange}
 						/>
 					</Form.Item>
@@ -249,7 +251,10 @@ export function NotificationRuleUpsertModal({
 						name="days_before_end"
 						label="روزهای قبل از پایان"
 						tooltip={isMissingPerformanceRule(selectedCode) ? "مقادیر را با کاما جدا کنید (فقط 1 تا 30)." : recipientsIgnored ? "تعداد روزهای گذشته از تاریخ ایجاد قرارداد/متمم (اعداد مثبت)." : "مقادیر را با کاما جدا کنید. مثال: 30,15,7,3,2,1"}
-						rules={[{ required: true, message: "روزهای هشدار را وارد کنید." }]}
+						rules={[
+							{ required: true, message: "روزهای هشدار را وارد کنید." },
+							{ validator: (_, value: string) => (getDaysBeforeEndInputError(value ?? "") ? Promise.reject(new Error(getDaysBeforeEndInputError(value ?? "")!)) : Promise.resolve()) },
+						]}
 					>
 						<Input dir="ltr" placeholder="30,15,7,3,2,1" />
 					</Form.Item>
@@ -278,7 +283,7 @@ export function NotificationRuleUpsertModal({
 					<section className="mt-4 rounded-lg border border-[var(--ant-color-border-secondary)] p-4">
 						<Form.Item
 							name="excluded_user_ids"
-							label="کاربران مستثنا (excluded_user_ids)"
+							label="کاربران مستثنا"
 							extra="کاربرانی را انتخاب کنید که نباید این نوتیفیکیشن را دریافت کنند."
 							className="!mb-0"
 						>
@@ -300,7 +305,7 @@ export function NotificationRuleUpsertModal({
 				<section className="mt-2 rounded-lg border border-[var(--ant-color-border-secondary)] p-4">
 					<Form.Item
 						name="service_names"
-						label="service_names"
+						label="سرویس‌ها"
 						extra="اگر خالی باشد، همه سرویس‌ها در نظر گرفته می‌شوند."
 						className="!mb-0"
 					>

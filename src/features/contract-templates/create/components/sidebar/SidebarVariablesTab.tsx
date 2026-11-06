@@ -45,13 +45,22 @@ function buildDisplayBlocks(variables: any[]) {
 	return blocks;
 }
 
+/** Catalog examples may be arrays of row objects (tiers); a template string would print them as [object Object]. */
+function formatVariableExample(example: unknown): string {
+	if (Array.isArray(example))
+		return example.map(formatVariableExample).join(" | ");
+	if (example && typeof example === "object")
+		return Object.entries(example).map(([key, value]) => `${key}: ${formatVariableExample(value)}`).join("، ");
+	return String(example);
+}
+
 function VariableButton({ variable, onInsert }: { variable: any, onInsert: (key: string) => void }) {
 	const { token } = theme.useToken();
 	return (
 		<Button
 			size="small"
 			shape="round"
-			title={variable.example ? `مثال: ${variable.example}` : `{$${variable.key}}`}
+			title={variable.example ? `مثال: ${formatVariableExample(variable.example)}` : `{$${variable.key}}`}
 			onClick={() => onInsert(variable.key)}
 			style={{ fontSize: "11px", borderColor: token.colorPrimaryBorder, color: token.colorText, backgroundColor: token.colorPrimaryBg, padding: "0 10px" }}
 			className="hover:opacity-80 transition-opacity"

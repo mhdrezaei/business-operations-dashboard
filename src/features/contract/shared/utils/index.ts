@@ -7,7 +7,6 @@ export function findFirstError(errs: any, path: string[] = []): { message: strin
 	for (const key of Object.keys(errs)) {
 		const child = errs[key];
 		const res = findFirstError(child, [...path, key]);
-		console.warn(res, "aaaaaaaaaa");
 		if (res)
 			return res;
 	}

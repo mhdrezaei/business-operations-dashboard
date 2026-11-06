@@ -264,6 +264,10 @@ function resolveServiceDisplayName(service: PerformanceServicePath | null, value
 		return i18next.t("performance.detail.services.smsCommission");
 	if (service === "shahkar")
 		return i18next.t("performance.detail.services.shahkar");
+	if (service === "traffic")
+		return i18next.t("performance.detail.services.traffic");
+	if (service === "commercial")
+		return i18next.t("performance.detail.services.commercial");
 	return text || "-";
 }
 
@@ -438,6 +442,16 @@ function getOpenApiOperationRowValue(
 	return getFirstDefinedValue(matchedRow as Record<string, unknown>, keys);
 }
 
+/** Sum of a metric over several operation rows; null when none of them carries a value. */
+function sumOpenApiOperationRowValues(rows: PerformanceListItem[], operationTypes: string[], keys: string[]) {
+	const values = operationTypes
+		.map(operationType => getOpenApiOperationRowValue(rows, operationType, keys))
+		.filter(value => value != null)
+		.map(Number)
+		.filter(Number.isFinite);
+	return values.length > 0 ? values.reduce((total, value) => total + value, 0) : null;
+}
+
 function resolveOpenApiContractModel(
 	detail: Record<string, unknown> | null,
 	record: PerformanceListRow | null,
@@ -538,7 +552,9 @@ function buildTrafficPayloadFields(values: EditFormValues, locations: Set<"TEHRA
 		if (value != null || valueReceive != null) {
 			payload[`${prefix}_value`] = value;
 			payload[`${prefix}_value_receive`] = valueReceive;
-			payload[`${prefix}_conversion_ratio`] = isCp ? toPayloadValue(values[`${prefix}ConversionRatio`]) : null;
+			// Like the create flow, the ratio is only sent for CP; an explicit null would overwrite the stored value.
+			if (isCp)
+				payload[`${prefix}_conversion_ratio`] = toPayloadValue(values[`${prefix}ConversionRatio`]);
 		}
 	});
 
@@ -1020,6 +1036,16 @@ export function PerformanceDetailModal({
 	const openApiSummaryFields = useMemo(() => {
 		if (service !== "openapi")
 			return [];
+
+		if (openApiContractModel === "legacy_2") {
+			const billTypes = ["BILL_INQUIRY_MIDTERM", "BILL_INQUIRY_ENDTERM"];
+			const receiptTypes = ["RECEIPT_REGISTER_CONNECTED", "RECEIPT_REGISTER_DISCONNECTED"];
+			return [
+				{ key: "income", label: t("performance.detail.billInquiryIncome"), value: formatNumberLike(sumOpenApiOperationRowValues(openApiPerformances, billTypes, ["income"])) },
+				{ key: "expense", label: t("performance.detail.billInquiryExpense"), value: formatNumberLike(sumOpenApiOperationRowValues(openApiPerformances, billTypes, ["expense"])) },
+				{ key: "profit", label: t("performance.detail.receiptRegisterIncome"), value: formatNumberLike(sumOpenApiOperationRowValues(openApiPerformances, receiptTypes, ["income"])) },
+			];
+		}
 
 		const billInquiryIncome = getOpenApiOperationRowValue(openApiPerformances, "BILL_INQUIRY", ["income"]) ?? mergedDetail.income;
 		const billInquiryExpense = getOpenApiOperationRowValue(openApiPerformances, "BILL_INQUIRY", ["expense"]) ?? mergedDetail.expense;
@@ -1654,6 +1680,16 @@ export function PerformanceDetailModal({
 				message: i18next.t("performance.validation.requiredField"),
 			});
 		});
+		visibleEditableFields.forEach((field) => {
+			const numeric = toNullableNumber(values[field.key]);
+			if (numeric == null || numeric >= 0)
+				return;
+			hasError = true;
+			form.setError(field.key as any, {
+				type: "validation",
+				message: i18next.t("performance.validation.base.negativeValue"),
+			});
+		});
 		if (hasError)
 			return;
 
@@ -1708,6 +1744,10 @@ export function PerformanceDetailModal({
 			const rows = collocationForm.getValues("rows") ?? [];
 			if (!collocationMode || rows.length < 1 || rows.some(row => [row.ipCount, row.bandwidthUsed, row.ampereUsed].some(metric => metric == null))) {
 				window.$message?.error(i18next.t("performance.validation.traffic.collocationFieldRequired"));
+				return;
+			}
+			if (rows.some(row => [row.ipCount, row.bandwidthUsed, row.ampereUsed].some(metric => Number(metric) < 0))) {
+				window.$message?.error(i18next.t("performance.validation.base.negativeValue"));
 				return;
 			}
 			payload.company_type = "COLLOCATION";
@@ -2002,6 +2042,7 @@ export function PerformanceDetailModal({
 																	formItemProps={{ className: "mb-0" }}
 																	inputProps={{ placeholder: t("performance.modal.placeholders.enterNumber"), inputMode: "numeric" } as any}
 																	enableGrouping
+																	decimal
 																	enableWordsTooltip
 																/>
 															</AlignedFormField>
@@ -2013,6 +2054,7 @@ export function PerformanceDetailModal({
 																	formItemProps={{ className: "contract-type-currency-field mb-0" }}
 																	inputProps={{ placeholder: t("performance.modal.placeholders.enterNumber"), inputMode: "numeric", addonAfter: t("performance.columns.rial") } as any}
 																	enableGrouping
+																	decimal
 																	enableWordsTooltip
 																/>
 															</AlignedFormField>

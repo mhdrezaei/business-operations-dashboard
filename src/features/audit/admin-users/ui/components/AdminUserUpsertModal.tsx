@@ -4,6 +4,7 @@ import type { AdminUserDto, AdminUserUpsertPayload } from "../../model/admin-use
 import { BasicButton } from "#src/components";
 import { normalizeIranMobile, toBackendMobile } from "#src/shared/lib/iran-mobile";
 import { RHFProText } from "#src/shared/ui/rhf-pro"; // اگر کامپوننت‌های RHF شما متفاوت است جایگزین کن
+import { useUserStore } from "#src/store";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Card, Modal } from "antd";
@@ -24,6 +25,8 @@ interface Props {
 
 export function AdminUserUpsertModal({ open, mode, loading, initial, onClose, onSubmit }: Props) {
 	const [saving, setSaving] = useState(false);
+	// فقط superuser اجازه‌ی تغییر staff دارد؛ برای staff ارسال is_staff باعث ۴۰۰ می‌شود
+	const canEditStaff = useUserStore(state => state.is_superuser);
 
 	const defaultValues = useMemo<AdminUserFormValues>(() => {
 		if (!initial) {
@@ -90,11 +93,12 @@ export function AdminUserUpsertModal({ open, mode, loading, initial, onClose, on
 									setSaving(true);
 									try {
 										// در حالت edit اگر پسورد خالی بود، ارسالش نکن
-										const { confirmPassword: _confirmPassword, ...rest } = values;
+										const { confirmPassword: _confirmPassword, is_staff, ...rest } = values;
 										const payload: AdminUserUpsertPayload = {
 											...rest,
 											mobile: toBackendMobile(values.mobile),
 											national_code: values.national_code || null,
+											...(canEditStaff ? { is_staff } : {}),
 										};
 										if (!payload.password) {
 											delete payload.password;
@@ -138,10 +142,12 @@ export function AdminUserUpsertModal({ open, mode, loading, initial, onClose, on
 												<input type="checkbox" {...form.register("is_active")} />
 												فعال
 											</label>
-											<label className="flex items-center gap-2">
-												<input type="checkbox" {...form.register("is_staff")} />
-												Staff
-											</label>
+											{canEditStaff && (
+												<label className="flex items-center gap-2">
+													<input type="checkbox" {...form.register("is_staff")} />
+													Staff
+												</label>
+											)}
 										</div>
 									</div>
 								</Card>

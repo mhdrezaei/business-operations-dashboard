@@ -269,6 +269,7 @@ export function SmsPredictionFields() {
 						label={t("prediction.labels.smsAnnualValue")}
 						inputProps={{ placeholder: t("prediction.placeholders.amountExample") }}
 						enableGrouping
+						decimal
 						enableWordsTooltip
 					/>
 					<RHFProNumber<PredictionFormValues, any>
@@ -276,6 +277,7 @@ export function SmsPredictionFields() {
 						label={t("prediction.labels.smsPriceBuy")}
 						inputProps={{ placeholder: t("prediction.placeholders.smsPriceBuy") }}
 						enableGrouping
+						decimal
 						enableWordsTooltip
 					/>
 					<RHFProNumber<PredictionFormValues, any>
@@ -283,6 +285,7 @@ export function SmsPredictionFields() {
 						label={t("prediction.labels.smsPriceSell")}
 						inputProps={{ placeholder: t("prediction.placeholders.smsPriceSell") }}
 						enableGrouping
+						decimal
 						enableWordsTooltip
 					/>
 					<RHFProNumber<PredictionFormValues, any>
@@ -290,6 +293,7 @@ export function SmsPredictionFields() {
 						label={t("prediction.labels.annualIncome")}
 						inputProps={{ placeholder: t("prediction.placeholders.amountExample") }}
 						enableGrouping
+						decimal
 						enableWordsTooltip
 					/>
 					<RHFProNumber<PredictionFormValues, any>
@@ -297,6 +301,7 @@ export function SmsPredictionFields() {
 						label={t("prediction.labels.annualExpense")}
 						inputProps={{ placeholder: t("prediction.placeholders.amountExample") }}
 						enableGrouping
+						decimal
 						enableWordsTooltip
 					/>
 				</div>

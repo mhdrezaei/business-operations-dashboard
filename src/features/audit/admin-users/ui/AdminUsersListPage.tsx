@@ -5,7 +5,7 @@ import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import { useAccess } from "#src/hooks";
 import { TableActionEditIcon, TableActionEyeIcon, TableActionTrashIcon } from "#src/icons";
 import { CrownOutlined, PlusCircleOutlined, SafetyOutlined, StopOutlined, TeamOutlined } from "@ant-design/icons";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Popconfirm } from "antd";
 import React, { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -53,6 +53,7 @@ export default function AdminUsersListPage() {
 	const canToggleActive = hasAdminAction("users", "update");
 	const canViewServiceAdmins = hasAdminUserCapability("manage_deputies");
 
+	const queryClient = useQueryClient();
 	const rolesQuery = useQuery(adminRolesQuery());
 
 	const rolesList: AdminRoleDto[] = useMemo(() => rolesQuery.data?.results ?? [], [rolesQuery.data]);
@@ -282,6 +283,7 @@ export default function AdminUsersListPage() {
 						page: params.current ?? 1,
 						page_size: params.pageSize ?? 20,
 						search: (params as any).search,
+						username: (params as any).username?.trim() || undefined,
 						ordering: (params as any).ordering,
 					};
 
@@ -365,6 +367,7 @@ export default function AdminUsersListPage() {
 				user={selectedUser}
 				loading={loadingServiceAdminDetail}
 				onUpdated={() => {
+					queryClient.invalidateQueries({ queryKey: adminUsersLookupQuery().queryKey });
 					setOpenServiceAdmin(false);
 					setSelectedUser(null);
 					refreshTable();
