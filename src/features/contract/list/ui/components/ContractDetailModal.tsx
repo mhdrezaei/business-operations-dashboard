@@ -2,6 +2,7 @@ import type { ContractFormValues } from "#src/features/contract/shared/model/con
 import type { ContractFormSelectionContext } from "#src/features/contract/shared/ui/form/ContractForm";
 import type { UploadFile } from "antd";
 import type { ContractServicePath } from "../../../api/contracts.api";
+import { ContractAdditionalInfoPanel } from "#src/features/contract/additional-info";
 import { contractDetailToFormValues } from "#src/features/contract/api/contract-detail.mappers";
 import { listContractDocuments } from "#src/features/contract/api/contract-documents.api";
 import { ContractReadOnlyDetails } from "#src/features/contract/preview/ui/ContractReadOnlyDetails";
@@ -300,6 +301,14 @@ export function ContractEditForm({ contractId, service, readOnlyHeader, onUpdate
 													detail={contractDetail}
 													serviceId={initialValues.serviceId}
 													companyType={pickCompanyTypeToken(initialValues.companyType)}
+												/>
+												<ContractAdditionalInfoPanel
+													contractId={loadedContractId}
+													serviceId={initialValues.serviceId}
+													service={resolvedService}
+													companyType={pickCompanyTypeToken(initialValues.companyType)}
+													contractNumber={initialValues.contractNumber}
+													readOnly={readOnly}
 												/>
 											</>
 										)}

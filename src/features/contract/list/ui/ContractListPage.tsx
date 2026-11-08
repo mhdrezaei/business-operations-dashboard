@@ -7,10 +7,11 @@ import type { ContractListItemType } from "../model/contracts.list.types";
 
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import { sortToOrdering } from "#src/components/basic-table/sort";
+import { ContractAdditionalInfoModal } from "#src/features/contract/additional-info";
 import { companiesByServiceQuery, servicesQuery } from "#src/features/contract/shared/queries/contract.queries";
 import { useAccess } from "#src/hooks";
 import { TableActionDownloadIcon, TableActionEditIcon, TableActionEyeIcon, TableActionTrashIcon } from "#src/icons";
-import { ExclamationCircleOutlined, PlusCircleOutlined, PrinterOutlined } from "@ant-design/icons";
+import { ExclamationCircleOutlined, FileProtectOutlined, PlusCircleOutlined, PrinterOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 
 import { App, Button, Modal, Popconfirm, theme } from "antd";
@@ -77,6 +78,7 @@ export default function ContractListPage() {
 	const [signFlowModalOpen, setSignFlowModalOpen] = useState(false);
 	const [signFlowLoading, setSignFlowLoading] = useState(false);
 	const [signFlowData, setSignFlowData] = useState<any>(null);
+	const [additionalInfoRecord, setAdditionalInfoRecord] = useState<ContractListItemType | null>(null);
 
 	const canCreateContracts = hasDomainPermission("contracts", "create");
 	const permittedViewServiceIdList = getPermittedServiceIds("contracts", "view");
@@ -475,6 +477,17 @@ export default function ContractListPage() {
 
 						actions.push(
 							<BasicButton
+								key="additional-info"
+								type="link"
+								size="large"
+								title={t("contract.additionalInfo.panelTitle", "اطلاعات تکمیلی و تضمین‌ها")}
+								icon={<FileProtectOutlined />}
+								onClick={() => setAdditionalInfoRecord(record)}
+							/>,
+						);
+
+						actions.push(
+							<BasicButton
 								key="pdf"
 								type="link"
 								size="large"
@@ -619,6 +632,17 @@ export default function ContractListPage() {
 				service={printRecord ? resolveServicePath(printRecord) : null}
 				companyType={printRecord ? getRowCompanyType(printRecord) : null}
 			/>
+			{additionalInfoRecord && (
+				<ContractAdditionalInfoModal
+					open={Boolean(additionalInfoRecord)}
+					onClose={() => setAdditionalInfoRecord(null)}
+					contractId={additionalInfoRecord.id}
+					serviceId={additionalInfoRecord.service_id}
+					servicePath={resolveServicePath(additionalInfoRecord)}
+					companyType={getRowCompanyType(additionalInfoRecord)}
+					contractNumber={additionalInfoRecord.contract_number}
+				/>
+			)}
 		</BasicContent>
 	);
 }
