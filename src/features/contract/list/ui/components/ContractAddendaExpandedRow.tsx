@@ -3,10 +3,12 @@ import type { ContractApprovalHistorySubjectDto, ContractServicePath } from "../
 import type { ContractAddendumTreeNode } from "../../model/contract-addenda-tree";
 import type { ContractListItemType } from "../../model/contracts.list.types";
 
+import { ContractAdditionalInfoModal } from "#src/features/contract/additional-info";
 import { TableActionDownloadIcon } from "#src/icons";
-import { PrinterOutlined } from "@ant-design/icons";
+import { FileProtectOutlined, PrinterOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Alert, Button, Empty, Space, Spin, Table, Tag } from "antd";
+import { useState } from "react";
 import { fetchContractDetail } from "../../../api/contracts.api";
 import { contractApprovalQuery } from "../../../shared/queries/contract.queries";
 import { buildContractAddendaTree } from "../../model/contract-addenda-tree";
@@ -41,6 +43,7 @@ function getColumns(
 	findApproval: (row: ContractAddendumTableRow) => ContractApprovalHistorySubjectDto | undefined,
 	onDownload: (row: ContractAddendumTableRow) => void,
 	onPrint?: (addendumGroupId: string) => void,
+	onManageGuarantees?: (row: ContractAddendumTableRow) => void,
 ): ColumnsType<ContractAddendumTableRow> {
 	return [
 		{
@@ -93,9 +96,19 @@ function getColumns(
 		{
 			title: "عملیات",
 			align: "center",
-			width: 120,
+			width: 150,
 			render: (_, row) => (
 				<Space size="small">
+					{onManageGuarantees && row.addendumGroupId && (
+						<Button
+							type="link"
+							size="small"
+							title="تضمین‌های الحاقیه"
+							aria-label={`تضمین‌های الحاقیه ${row.displayNumber}`}
+							icon={<FileProtectOutlined />}
+							onClick={() => onManageGuarantees(row)}
+						/>
+					)}
 					<Button
 						type="link"
 						size="small"
@@ -146,6 +159,8 @@ function toTableData(rows: ContractAddendumTreeNode[]): ContractAddendumTableRow
 
 export function ContractAddendaExpandedRow({ contract, service, onPrint }: ContractAddendaExpandedRowProps) {
 	const classes = useContractAddendaTableStyles();
+	const [selectedAddendumForGuarantees, setSelectedAddendumForGuarantees] = useState<ContractAddendumTableRow | null>(null);
+
 	const detail = useQuery({
 		queryKey: ["contracts", "detail", service, contract.id],
 		queryFn: () => fetchContractDetail(service, contract.id),
@@ -205,7 +220,7 @@ export function ContractAddendaExpandedRow({ contract, service, onPrint }: Contr
 			<Table<ContractAddendumTableRow>
 				className={classes.addendaTable}
 				rowKey="key"
-				columns={getColumns(findApproval, handleDownload, onPrint)}
+				columns={getColumns(findApproval, handleDownload, onPrint, row => setSelectedAddendumForGuarantees(row))}
 				dataSource={tableData}
 				pagination={false}
 				scroll={{ x: 1300 }}
@@ -215,6 +230,19 @@ export function ContractAddendaExpandedRow({ contract, service, onPrint }: Contr
 					rowExpandable: row => (row.children?.length ?? 0) > 0,
 				}}
 			/>
+
+			{selectedAddendumForGuarantees && (
+				<ContractAdditionalInfoModal
+					open={Boolean(selectedAddendumForGuarantees)}
+					onClose={() => setSelectedAddendumForGuarantees(null)}
+					contractId={contract.id}
+					serviceId={contract.service_id}
+					servicePath={service}
+					contractNumber={`${contract.contract_number} (الحاقیه ${selectedAddendumForGuarantees.displayNumber})`}
+					addendumGroupId={selectedAddendumForGuarantees.addendumGroupId}
+					addendumService={service}
+				/>
+			)}
 		</div>
 	);
 }
