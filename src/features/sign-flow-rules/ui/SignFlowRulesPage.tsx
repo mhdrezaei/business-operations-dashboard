@@ -1,6 +1,7 @@
 import type { AdminRoleDto } from "#src/features/audit/admin-roles/model/admin-roles.types";
 import type { AdminUserDto } from "#src/features/audit/admin-users/model/admin-users.types";
 import type { SignFlowRule } from "../model/sign-flow-rules.types";
+import { fetchServices } from "#src/api/common/common.api";
 import { BasicContent } from "#src/components";
 import { fetchAdminRolesList } from "#src/features/audit/admin-roles/api/admin-roles.api";
 import { fetchAdminUsersList } from "#src/features/audit/admin-users/api/admin-users.api";
@@ -41,7 +42,14 @@ export default function SignFlowRulesPage() {
 		enabled: open,
 		staleTime: 5 * 60 * 1000,
 	});
+	const servicesQuery = useQuery({
+		queryKey: ["common", "services"],
+		queryFn: () => fetchServices(),
+		staleTime: 5 * 60 * 1000,
+	});
 	const rules = rulesQuery.data?.results ?? [];
+	const serviceOptions = (servicesQuery.data?.results ?? []).map(service => ({ value: service.code, label: service.name }));
+	const serviceNameByCode = new Map(serviceOptions.map(option => [option.value, option.label]));
 
 	return (
 		<BasicContent className="h-full !overflow-y-auto">
@@ -74,6 +82,16 @@ export default function SignFlowRulesPage() {
 											<Tag color={rule.is_enabled ? "success" : "default"}>{rule.is_enabled ? "فعال" : "غیرفعال"}</Tag>
 										</Space>
 										{rule.description && <Typography.Paragraph type="secondary" className="!mb-2 !mt-2">{rule.description}</Typography.Paragraph>}
+										<div className="mb-2 flex flex-wrap gap-2">
+											{rule.bindings.length === 0
+												? <Tag color="warning">به هیچ سرویسی متصل نیست</Tag>
+												: rule.bindings.map(binding => (
+													<Tag color="processing" key={`${binding.service}:${binding.company_type ?? ""}`}>
+														{serviceNameByCode.get(binding.service) ?? binding.service}
+														{binding.company_type ? ` — ${binding.company_type}` : ""}
+													</Tag>
+												))}
+										</div>
 										<div className="flex flex-wrap gap-2">
 											{rule.steps.map(step => (
 												<Tag key={step.order}>
@@ -126,7 +144,8 @@ export default function SignFlowRulesPage() {
 				initial={selected}
 				users={(usersQuery.data?.results ?? []) as AdminUserDto[]}
 				roles={(rolesQuery.data?.results ?? []) as AdminRoleDto[]}
-				loadingOptions={usersQuery.isLoading || rolesQuery.isLoading}
+				loadingOptions={usersQuery.isLoading || rolesQuery.isLoading || servicesQuery.isLoading}
+				serviceOptions={serviceOptions}
 				onClose={() => setOpen(false)}
 				onSaved={() => {
 					setOpen(false);

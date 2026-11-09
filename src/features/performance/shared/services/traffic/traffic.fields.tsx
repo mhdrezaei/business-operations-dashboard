@@ -5,6 +5,7 @@ import { downloadPerformanceTemplate, uploadTrafficExcelImport } from "#src/feat
 import { TrafficExcelResult, UploadStatCard } from "#src/features/performance/shared/ui/traffic-excel-result";
 import { FieldCard } from "#src/shared/ui/dashed-card";
 import { downloadBlob } from "#src/utils/download-blob";
+import { getRequestErrorMessage } from "#src/utils/request/error-response";
 import { CloudUploadOutlined, DeleteOutlined, DownloadOutlined, InboxOutlined, PlusOutlined } from "@ant-design/icons";
 import { Button, Form, Modal, Upload } from "antd";
 import { useEffect, useState } from "react";
@@ -137,6 +138,9 @@ export function TrafficPerformanceFields() {
 				suppressErrorNotification: true,
 			});
 			setUploadResult(result);
+		}
+		catch (error) {
+			window.$message?.error(await getRequestErrorMessage(error, t("performance.traffic.uploadFailed")));
 		}
 		finally {
 			setUploading(false);

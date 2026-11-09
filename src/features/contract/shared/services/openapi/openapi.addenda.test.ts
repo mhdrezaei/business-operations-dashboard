@@ -33,4 +33,18 @@ describe("openAPI addenda pricing", () => {
 
 		expect(result.success).toBe(true);
 	});
+
+	it("ignores the empty legacy pricing left on a package contract and its addenda", () => {
+		const emptyLegacy = { paymentRegistration: { type: null, rows: [], sections: [] }, billInquiry: { type: null, rows: [], sections: [] } };
+		const result = openApiServiceFieldsSchema.safeParse({
+			contractModel: "package",
+			packageMode: "OR",
+			plans: [],
+			legacyPricing: emptyLegacy,
+			addenda: [{ startYear: 1404, startMonth: 1, endYear: 1404, endMonth: 2, contractModel: "package", packageMode: "OR", plans: [], legacyPricing: emptyLegacy }],
+		});
+		expect(result.success).toBe(true);
+		if (result.success)
+			expect(result.data).not.toHaveProperty("legacyPricing");
+	});
 });

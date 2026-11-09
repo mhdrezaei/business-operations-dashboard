@@ -5,7 +5,7 @@ import { z } from "zod";
 export function companyNameFields(t: TFunction) {
 	return {
 		company_type: z.string().nullable(),
-		name: z.string().trim().min(2, t("companyProfile.nameRequired")),
+		name: z.string().trim().min(1, t("companyProfile.nameRequired")).min(2, t("companyProfile.nameTooShort")).max(200, t("companyProfile.nameTooLong")),
 		agent_name: z.string().trim(),
 	};
 }

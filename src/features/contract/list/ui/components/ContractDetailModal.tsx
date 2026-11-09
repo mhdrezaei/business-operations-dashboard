@@ -12,13 +12,15 @@ import { resolveContractCompanyId } from "#src/features/contract/shared/queries/
 import { ContractForm } from "#src/features/contract/shared/ui/form/ContractForm";
 import { pickCompanyTypeToken } from "#src/features/contract/shared/utils";
 import { useAccess } from "#src/hooks";
-import { Alert, Button, Empty, Popconfirm, Spin } from "antd";
+import { Alert, Button, Empty, Popconfirm, Spin, Tooltip } from "antd";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { fetchContractDetail, fetchDeleteContract, fetchUpdateContract, resolveSalesAgencyExpenseTitleNames } from "../../../api/contracts.api";
 import { isCollocationCostContext, resolveContractServicePath } from "../../../shared/model/contract-service-path";
 import { ScopedCompanyContractsPanel } from "../../../shared/ui/ScopedCompanyContractsPanel";
+import { getContractDeleteWarnings } from "../../model/contract-list";
 import { ContractApprovalPanel } from "./ContractApprovalPanel";
+import { ContractDeleteConfirmTitle } from "./ContractDeleteConfirmTitle";
 import { ContractDocumentsPanel } from "./ContractDocumentsPanel";
 
 function contractDocumentToUploadFile(doc: { id: number, original_filename: string, size: number, mime_type: string }): UploadFile {
@@ -178,6 +180,14 @@ export function ContractEditForm({ contractId, service, readOnlyHeader, onUpdate
 
 	const canDelete = hasDomainPermissionByServiceId("contracts", "delete", initialValues?.serviceId, getContractAccessCompanyType(resolvedService, pickCompanyTypeToken(initialValues?.companyType)));
 
+	// a real-signed contract is locked by the BE (403 on save/delete), so the form says so up front
+	const isRealSigned = Boolean(contractDetail?.real_signed_at);
+	const deleteWarnings = getContractDeleteWarnings({
+		is_business_approved: contractDetail?.is_business_approved as boolean | null | undefined,
+		is_signed: contractDetail?.is_signed as boolean | null | undefined,
+		addenda_count: Array.isArray(contractDetail?.addenda) ? contractDetail.addenda.length : 0,
+	});
+
 	async function handleDelete() {
 		if (resolvedService == null || loadedContractId == null)
 			return;
@@ -230,15 +240,20 @@ export function ContractEditForm({ contractId, service, readOnlyHeader, onUpdate
 													awaitingContractSelection={awaitingContractSelection}
 													submitText={t("contract.edit.save")}
 													submitting={saving || loading}
+													submitDisabled={isRealSigned}
+													submitDisabledReason={isRealSigned ? t("contract.edit.realSignedLocked") : undefined}
 													secondaryActions={canDelete
 														? (
 															<Popconfirm
-																title={t("contract.edit.deleteConfirm")}
+																title={<ContractDeleteConfirmTitle title={t("contract.edit.deleteConfirm")} warnings={deleteWarnings} />}
 																okText={t("common.confirm")}
 																cancelText={t("common.cancel")}
+																disabled={isRealSigned}
 																onConfirm={handleDelete}
 															>
-																<Button danger loading={deleting}>{t("contract.edit.delete")}</Button>
+																<Tooltip title={isRealSigned ? t("contract.edit.realSignedLocked") : undefined}>
+																	<Button danger loading={deleting} disabled={isRealSigned}>{t("contract.edit.delete")}</Button>
+																</Tooltip>
 															</Popconfirm>
 														)
 														: undefined}

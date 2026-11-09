@@ -371,7 +371,7 @@ export function SmsGatewayImportModal({ open, onClose, inline = false }: Props) 
 						width="min(1040px, calc(100vw - 32px))"
 						className="sms-gateway-import-modal"
 						styles={{ body: { maxHeight: "calc(100vh - 150px)", overflowY: "auto", overflowX: "hidden" } }}
-						destroyOnClose
+						destroyOnHidden
 						title={(
 							<span>
 								<UploadOutlined />

@@ -12,6 +12,7 @@ import ContractFilterSearchIcon from "#src/assets/svg/header/contract-filter-sea
 import ReportResultsIcon from "#src/assets/svg/performance/report-results.svg?react";
 import { BasicContent } from "#src/components";
 import { fetchPredictionPerformanceSummary } from "#src/features/performance/api/performances.api";
+import { isValidDefaultConversionRatio } from "#src/features/performance/report/model/performance-report.params";
 import { normalizeServiceCode } from "#src/features/performance/shared/model/performance.helpers";
 import { servicesQuery } from "#src/features/performance/shared/queries/performance.queries";
 import { useAccess } from "#src/hooks";
@@ -324,9 +325,7 @@ function getTrafficTypeLabel(parts: string[], t: TFunction) {
 	if (first === "COLLOCATION")
 		return "COLLOCATION";
 	const regionKey = TRAFFIC_REGION_LABEL_KEYS[second];
-	const isCpCounty = first === "CP" && second === "COUNTY";
-	const isTehranType = second === "TEHRAN" && ["CP", "IXP", "TCI", "PREMIUM"].includes(first);
-	if (!regionKey || !(isCpCounty || isTehranType))
+	if (!regionKey || !["CP", "IXP", "TCI", "PREMIUM"].includes(first))
 		return null;
 	return t("performance.predictionsSummary.trafficType", { type: first === "PREMIUM" ? "Premium" : first, region: t(regionKey) });
 }
@@ -358,14 +357,6 @@ function formatTypeLabel(serviceCode: string, typeLabel: string, t: TFunction) {
 	return typeLabel;
 }
 
-function shouldIncludeMetricType(serviceCode: string, typeLabel: string) {
-	if (normalizeApiServiceCode(serviceCode) !== "openapi")
-		return true;
-
-	const rootType = normalizeTypeToken(typeLabel.split("/")[0] ?? typeLabel);
-	return rootType !== "SMS" && rootType !== "TRAFFIC";
-}
-
 function renderMultiline(text: string) {
 	const lines = text.split("\n");
 	if (lines.length === 1)
@@ -392,8 +383,7 @@ function normalizeSummaryRows(response: PredictionSummaryResponse | null | undef
 			const isFiscal = periodMode.startsWith("fiscal");
 
 			return (["performance", "predictions"] as PredictionSummarySection[]).flatMap((section) => {
-				const sectionRows = flattenMetricRecords(period[section])
-					.filter(item => shouldIncludeMetricType(serviceCode, item.typeLabel));
+				const sectionRows = flattenMetricRecords(period[section]);
 				return sectionRows.map((item, rowIndex): PredictionSummaryDisplayRow => {
 					const sentTraffic = pickTrafficMetric(item.record, [
 						{ key: "value_gb_month", unit: "GB/month" },
@@ -515,7 +505,7 @@ function buildSummaryQuery({
 		period_mode: periodMode,
 		periods: JSON.stringify(periods),
 		total: reportMode === "total",
-		default_conversion_ratio: hasTrafficService && defaultConversionRatio != null && defaultConversionRatio > 0 ? defaultConversionRatio : undefined,
+		default_conversion_ratio: hasTrafficService && defaultConversionRatio && isValidDefaultConversionRatio(defaultConversionRatio) ? defaultConversionRatio : undefined,
 	};
 }
 
@@ -607,7 +597,7 @@ export function PredictionsSummaryReportPage() {
 			return;
 		try {
 			downloadPredictionSummaryExcel({
-				filename: `predictions-performance-summary-${new Date().toISOString().slice(0, 10)}.xls`,
+				filename: `predictions-performance-summary-${new Date().toLocaleDateString("fa-IR-u-nu-latn").replaceAll("/", "-")}.xls`,
 				rows,
 				meta: exportMeta,
 				mode: outputMode,
@@ -734,7 +724,6 @@ export function PredictionsSummaryReportPage() {
 						<Card
 							key={serviceKey}
 							title={serviceNameByCode.get(code) ?? service.service_code ?? "-"}
-							extra={<Typography.Text type="secondary">{`service_id: ${service.service_id ?? "-"}`}</Typography.Text>}
 						>
 							{(service.periods ?? []).length === 0
 								? <Empty description={t("performance.predictionsSummary.noPeriods")} />
@@ -846,7 +835,7 @@ export function PredictionsSummaryReportPage() {
 										<Select
 											mode="multiple"
 											allowClear
-											maxTagCount="responsive"
+											maxTagCount={2}
 											loading={services.isLoading}
 											value={serviceCodes}
 											options={serviceOptions}
@@ -926,6 +915,7 @@ export function PredictionsSummaryReportPage() {
 											<Typography.Text strong>{t("performance.predictionsSummary.conversionRatio.label")}</Typography.Text>
 											<InputNumber
 												min={0}
+												max={10}
 												step={0.01}
 												precision={4}
 												value={defaultConversionRatio ?? undefined}

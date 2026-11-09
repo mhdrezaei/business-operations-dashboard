@@ -9,6 +9,7 @@ import { SectionCard, SectionToneContext } from "#src/shared/ui/section-card";
 
 import { useQuery } from "@tanstack/react-query";
 import { Collapse, Tag } from "antd";
+import { useTranslation } from "react-i18next";
 import "#src/features/contract/shared/ui/form/contract-form.css";
 
 const HIDDEN_KEYS = new Set(["rowKey", "datacenterSystemTag"]);
@@ -60,6 +61,9 @@ const LABELS: Record<string, string> = {
 	portItems: "پورت‌ها",
 	price: "قیمت",
 	profit: "تعیین کارمزد و سهم",
+	provinceBasedTire: "محاسبه پله بر اساس پله بالاتر (مراکز استان‌ها)",
+	provinceContractModel: "مدل قرارداد مراکز استان‌ها",
+	provinceEnabled: "قرارداد ترافیک مراکز استان‌ها",
 	provincePricing: "قرارداد ترافیک مراکز استان‌ها",
 	provinceRevenuePercent: "درصد سهم درآمد مراکز استان‌ها",
 	provinceUnit: "واحد مراکز استان‌ها",
@@ -77,6 +81,9 @@ const LABELS: Record<string, string> = {
 	smsMax: "حد بالای پیامک",
 	smsMin: "حد پایین پیامک",
 	speed: "سرعت",
+	tehranBasedTire: "محاسبه پله بر اساس پله بالاتر (تهران)",
+	tehranContractModel: "مدل قرارداد تهران",
+	tehranEnabled: "قرارداد ترافیک تهران",
 	tehranPricing: "قرارداد ترافیک تهران",
 	tehranRevenuePercent: "درصد سهم درآمد تهران",
 	tehranUnit: "واحد تهران",
@@ -140,6 +147,9 @@ function formatValue(value: unknown) {
 		tier_blended: "پلکانی ترکیبی",
 		legacy: "قدیمی",
 		package: "پکیج",
+		separated: "تفکیکی",
+		LEGACY: "قدیمی",
+		VARIABLE_TABLE: "جدول متغیر",
 	};
 	return known[normalized] ?? normalized;
 }
@@ -449,6 +459,52 @@ function SmsOperatorRevenueDetails({ data }: { data: Record<string, unknown> }) 
 	);
 }
 
+function PercentRow({ label, value }: { label: string, value: unknown }) {
+	if (isEmpty(value))
+		return null;
+
+	return (
+		<div className="flex min-h-10 w-full items-center justify-between gap-4 px-3 text-sm">
+			<span className="text-[var(--ant-color-text-secondary)]">
+				{label}
+				:
+			</span>
+			<span className="font-medium">
+				{formatValue(value)}
+				%
+			</span>
+		</div>
+	);
+}
+
+/** Pricing of the openapi "separated" model, shared by the main contract and its addenda. */
+function OpenApiSeparatedDetails({ pricing }: { pricing: Record<string, unknown> }) {
+	const { t } = useTranslation();
+	const shares = (prefix: "connected" | "disconnected") => (
+		<>
+			<PercentRow label={t("contract.openapi.separated.karashabShare")} value={pricing[`${prefix}KarashabSharePercent`]} />
+			<PercentRow label={t("contract.openapi.separated.partnerShare")} value={pricing[`${prefix}PartnerSharePercent`]} />
+		</>
+	);
+	const sections: Array<{ key: string, title: string, aside?: ReactNode }> = [
+		{ key: "midPeriodBillInquiry", title: t("contract.openapi.separated.midterm"), aside: <PercentRow label={t("contract.openapi.separated.walletLabel")} value={pricing.walletChargeDiscountPercent} /> },
+		{ key: "endPeriodBillInquiry", title: t("contract.openapi.separated.endterm") },
+		{ key: "connectedReceiptRegister", title: t("contract.openapi.separated.connected"), aside: shares("connected") },
+		{ key: "disconnectedReceiptRegister", title: t("contract.openapi.separated.disconnected"), aside: shares("disconnected") },
+	];
+
+	return (
+		<>
+			{sections.map(({ key, title, aside }) => {
+				const value = pricing[key];
+				return isPricingValue(value) && !isEmpty(value)
+					? <SectionCard key={key} title={title} tone="purple" defaultExpanded><PricingDetails value={value} aside={aside} /></SectionCard>
+					: null;
+			})}
+		</>
+	);
+}
+
 function ServiceDetails({ data, service, tone }: { data: Record<string, unknown>, service: ContractServicePath, tone: SectionTone }) {
 	if (service === "openapi") {
 		const legacyPricing = data.legacyPricing as Record<string, unknown> | undefined;
@@ -460,6 +516,10 @@ function ServiceDetails({ data, service, tone }: { data: Record<string, unknown>
 				</>
 			);
 		}
+
+		const separatedPricing = data.separatedPricing as Record<string, unknown> | undefined;
+		if (data.contractModel === "separated" && separatedPricing)
+			return <OpenApiSeparatedDetails pricing={separatedPricing} />;
 
 		const plans = Array.isArray(data.plans) ? data.plans as Array<Record<string, unknown>> : [];
 		return plans.length === 0
@@ -567,6 +627,10 @@ function AddendumServiceDetails({ data, service, tone }: { data: Record<string, 
 
 	if (service === "openapi") {
 		const legacyPricing = data.legacyPricing as Record<string, unknown> | undefined;
+		const separatedPricing = data.separatedPricing as Record<string, unknown> | undefined;
+		if (separatedPricing)
+			return <OpenApiSeparatedDetails pricing={separatedPricing} />;
+
 		return legacyPricing
 			? (
 				<>

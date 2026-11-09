@@ -17,20 +17,18 @@ function validateRequired(ctx: z.RefinementCtx, row: Row, path: IssuePath, field
 	});
 }
 
-/** هر دیتاسنتر حداقل یک آیتم پورت و یک آیتم رک معتبر لازم دارد (مثل old). */
+/** پورت اختیاری است (بدون آیتم ⇒ درآمد پورت صفر)؛ هر دیتاسنتر حداقل یک آیتم رک لازم دارد. */
 function validateDatacenterItems(ctx: z.RefinementCtx, datacenter: Row, path: IssuePath) {
 	const portItems = asRows(datacenter.portItems);
 	const rackItems = asRows(datacenter.rackItems);
-	if (portItems.length === 0)
-		addIssue(ctx, [...path, "portItems"], "portItemsRequired");
 	if (rackItems.length === 0)
 		addIssue(ctx, [...path, "rackItems"], "rackItemsRequired");
 
 	portItems.forEach((item, index) => {
 		validateRequired(ctx, item, [...path, "portItems", index], { count: "count", speed: "speed", unitPrice: "unitPrice" });
 		const count = toNumberOrNull(item.count);
-		if (count != null && (!Number.isInteger(count) || count <= 0))
-			addIssue(ctx, [...path, "portItems", index, "count"], "countPositive");
+		if (count != null && (!Number.isInteger(count) || count < 0))
+			addIssue(ctx, [...path, "portItems", index, "count"], "portCountNonNegative");
 		const speed = toNumberOrNull(item.speed);
 		if (speed != null && speed <= 0)
 			addIssue(ctx, [...path, "portItems", index, "speed"], "speedPositive");
@@ -79,6 +77,8 @@ interface CollocationAddendaContext {
 	partnerType: unknown
 	isTelecom: boolean
 	baseDatacenterIds: Set<string>
+	/** دیتاسنترهای الحاقیه‌ی پدر؛ دیتاسنتر زیرالحاقیه باید زیرمجموعه‌ی آن باشد */
+	parentDatacenterIds?: Set<string>
 }
 
 /** الحاقیه‌های کولوکیشن: هزینه رک مخابرات یا دیتاسنترها + SLA (مثل old؛ دیتاسنتر جدید باید هر ۵ دسته را کامل داشته باشد). */
@@ -110,11 +110,16 @@ export function validateCollocationAddenda(
 				addIssue(ctx, [...addendumPath, "sla"], "addendumSla");
 
 			datacenters.forEach((datacenter, datacenterIndex) => {
+				if (options.parentDatacenterIds && !options.parentDatacenterIds.has(String(datacenter.datacenter)))
+					addIssue(ctx, [...addendumPath, "datacenter"], "childDatacenterNotInParent");
 				if (!options.baseDatacenterIds.has(String(datacenter.datacenter)))
 					validateCollocationDatacenter(datacenter, [...addendumPath, "datacenters", datacenterIndex], ctx, options.partnerType);
 			});
 		}
 
-		validateCollocationAddenda(addendum.children, [...addendumPath, "children"], ctx, options);
+		validateCollocationAddenda(addendum.children, [...addendumPath, "children"], ctx, {
+			...options,
+			parentDatacenterIds: new Set(asRows(addendum.datacenters).map(datacenter => String(datacenter.datacenter))),
+		});
 	});
 }

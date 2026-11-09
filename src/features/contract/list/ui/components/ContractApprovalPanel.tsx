@@ -34,11 +34,17 @@ interface ContractApprovalPanelProps {
 
 interface PendingDecision extends ContractApprovalDecision {
 	title: string
+	fieldLabel: string
 }
 
 const FIELD_LABEL_KEYS: Record<ContractApprovalField, string> = {
 	is_business_approved: "contract.list.column.isBusinessApproved",
 	is_signed: "contract.list.column.isSigned",
+};
+
+const ADDENDUM_FIELD_LABEL_KEYS: Record<ContractApprovalField, string> = {
+	is_business_approved: "contract.list.column.businessApprovedAddenda",
+	is_signed: "contract.list.column.addendumApproval",
 };
 
 /** Each approval field needs its own contracts permission (old: `canBusinessApprove` / `canSign`). */
@@ -113,6 +119,7 @@ export function ContractApprovalPanel({ contractId, service, detail, serviceId, 
 
 	function renderSubject(subject: ContractApprovalHistorySubjectDto, title: string, addendumId: number | null) {
 		const subjectKey = addendumId === null ? "main" : `addendum-${addendumId}`;
+		const fieldLabel = (field: ContractApprovalField) => t((addendumId === null ? FIELD_LABEL_KEYS : ADDENDUM_FIELD_LABEL_KEYS)[field]);
 		const isRealSigned = addendumId === null ? isContractRealSigned : realSignedAddendumIds.has(addendumId);
 
 		return (
@@ -141,7 +148,7 @@ export function ContractApprovalPanel({ contractId, service, detail, serviceId, 
 								{APPROVAL_FIELDS.map(field => (
 									<div key={field} className="flex flex-col gap-2">
 										<div className="flex items-center justify-between gap-2">
-											<span>{t(FIELD_LABEL_KEYS[field])}</span>
+											<span>{fieldLabel(field)}</span>
 											<ContractApprovalStatusTag value={subject[field]} />
 										</div>
 										{canDecideField(field)
@@ -157,7 +164,7 @@ export function ContractApprovalPanel({ contractId, service, detail, serviceId, 
 																	danger={!value}
 																	type={value ? "primary" : "default"}
 																	disabled={state.disabled}
-																	onClick={() => setDecision({ addendumId, field, value, title })}
+																	onClick={() => setDecision({ addendumId, field, value, title, fieldLabel: fieldLabel(field) })}
 																>
 																	{value ? t("common.confirm") : t("contract.list.approval.reject")}
 																</Button>
@@ -204,7 +211,7 @@ export function ContractApprovalPanel({ contractId, service, detail, serviceId, 
 			</div>
 			<Modal
 				open={decision !== null}
-				title={decision ? `${decision.value ? t("common.confirm") : t("contract.list.approval.reject")} ${t(FIELD_LABEL_KEYS[decision.field])} - ${decision.title}` : undefined}
+				title={decision ? `${decision.value ? "" : `${t("contract.list.approval.reject")} `}${decision.fieldLabel} - ${decision.title}` : undefined}
 				okText={t("contract.list.approval.submit")}
 				cancelText={t("common.cancel")}
 				okButtonProps={{ danger: decision?.value === false }}

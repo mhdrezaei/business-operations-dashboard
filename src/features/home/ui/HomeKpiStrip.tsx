@@ -1,7 +1,9 @@
+import type { DomainPermissionAction } from "#src/api/user/types";
 import type { ReactNode } from "react";
 import { formatCount } from "#src/features/dashboard/model/format";
 import { homeDashboardQuery } from "#src/features/dashboard/queries/dashboard.queries";
 import { pendingSignFlowsQuery } from "#src/features/home/queries/home.queries";
+import { useAccess } from "#src/hooks";
 import {
 	AuditOutlined,
 	ClockCircleOutlined,
@@ -17,6 +19,9 @@ import { useHomeTones } from "./home-tones";
 
 interface KpiCardProps {
 	to: string
+	/** The card links to a guarded route, so it is hidden without the same permission. */
+	domain: string
+	action?: DomainPermissionAction
 	icon: ReactNode
 	title: string
 	hint: string
@@ -24,8 +29,11 @@ interface KpiCardProps {
 	loading: boolean
 }
 
-function KpiCard({ to, icon, title, hint, value, loading }: KpiCardProps) {
+function KpiCard({ to, domain, action = "view", icon, title, hint, value, loading }: KpiCardProps) {
 	const { primary } = useHomeTones();
+	const { hasDomainPermission } = useAccess();
+	if (!hasDomainPermission(domain, action))
+		return null;
 	return (
 		<Link to={to} className="block min-w-0 text-colorText">
 			<Card hoverable className="h-full" classNames={{ body: "flex items-center gap-4" }}>
@@ -58,6 +66,7 @@ export function HomeKpiStrip() {
 		<div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
 			<KpiCard
 				to="/contracts/sign-flows"
+				domain="contracts"
 				icon={<AuditOutlined />}
 				title={t("home.kpi.signFlows.title")}
 				hint={t("home.kpi.signFlows.hint")}
@@ -66,6 +75,7 @@ export function HomeKpiStrip() {
 			/>
 			<KpiCard
 				to="/performances/unregistered"
+				domain="performances"
 				icon={<FileUnknownOutlined />}
 				title={t("home.kpi.unregistered.title")}
 				hint={t("home.kpi.unregistered.hint")}
@@ -74,6 +84,7 @@ export function HomeKpiStrip() {
 			/>
 			<KpiCard
 				to="/contracts/list"
+				domain="contracts"
 				icon={<FileTextOutlined />}
 				title={t("home.kpi.activeContracts.title")}
 				hint={t("home.kpi.activeContracts.hint")}
@@ -82,6 +93,7 @@ export function HomeKpiStrip() {
 			/>
 			<KpiCard
 				to="/contracts/list"
+				domain="contracts"
 				icon={<ClockCircleOutlined />}
 				title={t("home.kpi.expiring.title")}
 				hint={t("home.kpi.expiring.hint")}

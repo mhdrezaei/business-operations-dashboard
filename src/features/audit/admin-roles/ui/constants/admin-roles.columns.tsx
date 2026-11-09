@@ -17,8 +17,6 @@ const ORDERING_OPTIONS: Array<{ label: string, value: string }> = [
 	{ label: "نام نقش (نزولی)", value: "-name" },
 	{ label: "دامنه (صعودی)", value: "scope" },
 	{ label: "دامنه (نزولی)", value: "-scope" },
-	{ label: "تعداد کاربران (صعودی)", value: "assigned_user_count" },
-	{ label: "تعداد کاربران (نزولی)", value: "-assigned_user_count" },
 	{ label: "زمان ایجاد (صعودی)", value: "created_at" },
 	{ label: "زمان ایجاد (نزولی)", value: "-created_at" },
 ];

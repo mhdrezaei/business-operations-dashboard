@@ -708,6 +708,15 @@ export function FixedStartSection({ mode = "create", awaitingContractSelection =
 					? 1
 					: 0;
 	const activeCollocationStep = Math.min(collocationStep, collocationMaxStep);
+	const openedEditAtLastStepRef = useRef(false);
+
+	// در ویرایش، طرف/شرکت/دیتاسنترها از قبل مشخص‌اند؛ صفحه باید مستقیم روی آخرین مرحله باز شود
+	useEffect(() => {
+		if (mode !== "edit" || openedEditAtLastStepRef.current || collocationMaxStep < collocationSteps.length - 1)
+			return;
+		openedEditAtLastStepRef.current = true;
+		setCollocationStep(collocationMaxStep);
+	}, [mode, collocationMaxStep, collocationSteps.length]);
 	const canGoNextInCollocationStep = isTelecomCollocation
 		? counterpartyType != null
 		: activeCollocationStep === 0
@@ -733,6 +742,10 @@ export function FixedStartSection({ mode = "create", awaitingContractSelection =
 		setCollocationStep(normalizedStep);
 	}
 
+	const revalidateRealStart = async () => {
+		await trigger(["serviceFields.realStartYear", "serviceFields.realStartMonth"] as any);
+	};
+
 	function renderRealStartFields(idSuffix: string) {
 		return (
 			<CollocationStepPane active={shouldShowRealStartFields}>
@@ -740,6 +753,7 @@ export function FixedStartSection({ mode = "create", awaitingContractSelection =
 					<AlignedFormField label={t("contract.field.realStartYear")} labelId={`contract-form-label-real-start-year-${idSuffix}`}>
 						<RHFSelect<ContractFormValues, any, number | null>
 							name={"serviceFields.realStartYear" as any}
+							onValueChange={revalidateRealStart}
 							formItemProps={compactFormItemStyle}
 							options={realStartYearOptions}
 							selectProps={{
@@ -753,6 +767,7 @@ export function FixedStartSection({ mode = "create", awaitingContractSelection =
 					<AlignedFormField label={t("contract.field.realStartMonth")} labelId={`contract-form-label-real-start-month-${idSuffix}`}>
 						<RHFSelect<ContractFormValues, any, number | null>
 							name={"serviceFields.realStartMonth" as any}
+							onValueChange={revalidateRealStart}
 							formItemProps={compactFormItemStyle}
 							options={realStartMonthOptions}
 							selectProps={{
@@ -893,7 +908,7 @@ export function FixedStartSection({ mode = "create", awaitingContractSelection =
 								items={collocationSteps}
 								onChange={goToCollocationStep}
 								responsive
-								className="mb-8"
+								className="contract-collocation-steps mb-8"
 							/>
 
 							<CollocationStepPane active={activeCollocationStep === 0}>

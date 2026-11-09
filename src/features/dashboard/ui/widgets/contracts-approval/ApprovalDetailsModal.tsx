@@ -1,6 +1,6 @@
 import type { ContractListRow } from "#src/features/dashboard/api/dashboard.dto";
 import type { ApprovalKind, ApprovalState } from "./approval-segments";
-import { companyTypeLabel } from "#src/features/dashboard/model/company-type";
+import { companyTypeLabel, rowCompanyType } from "#src/features/dashboard/model/company-type";
 import { formatCount } from "#src/features/dashboard/model/format";
 import { dateText } from "#src/features/dashboard/model/jalali";
 import { scopedWidgetQuery } from "#src/features/dashboard/queries/dashboard.queries";
@@ -152,7 +152,7 @@ export function ApprovalDetailsModal({ target, onClose }: ApprovalDetailsModalPr
 										<div className="[overflow-wrap:anywhere]">{r.company_name || "—"}</div>
 										<div className="text-[11.5px] text-colorTextSecondary">{r.service_name}</div>
 									</td>
-									<td className={`${TD} whitespace-nowrap`}>{r.company_type ? companyTypeLabel(r.service_code, r.company_type) : "—"}</td>
+									<td className={`${TD} whitespace-nowrap`}>{rowCompanyType(r) ? companyTypeLabel(r.service_code, rowCompanyType(r)) : "—"}</td>
 									<td className={`${TD} whitespace-nowrap`}>{dateText(r.start_date, r.start_sh_year, r.start_sh_month)}</td>
 									<td className={`${TD} whitespace-nowrap`}>{dateText(r.end_date, r.end_sh_year, r.end_sh_month)}</td>
 									<td className={TD}>

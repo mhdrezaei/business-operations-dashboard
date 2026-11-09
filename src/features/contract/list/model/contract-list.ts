@@ -102,3 +102,15 @@ export function formatContractMonth(year: number | null | undefined, month: numb
 export function getContractListUserName(user: ContractListUser | null | undefined) {
 	return [user?.first_name, user?.last_name].map(part => String(part ?? "").trim()).filter(Boolean).join(" ") || null;
 }
+
+export type ContractDeleteWarning = "approved" | "addenda";
+
+/** Things that a contract delete silently drops (approvals/signature state and its addenda). */
+export function getContractDeleteWarnings(contract: { is_business_approved?: boolean | null, is_signed?: boolean | null, addenda_count?: number | null }): ContractDeleteWarning[] {
+	const warnings: ContractDeleteWarning[] = [];
+	if (contract.is_business_approved === true || contract.is_signed === true)
+		warnings.push("approved");
+	if (Number(contract.addenda_count) > 0)
+		warnings.push("addenda");
+	return warnings;
+}

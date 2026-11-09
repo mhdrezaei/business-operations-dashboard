@@ -22,6 +22,11 @@ const MONTH_LABELS: Record<number, string> = {
 	12: "اسفند",
 };
 
+const TRAFFIC_LOCATION_TITLES: Record<string, string> = {
+	TEHRAN: "ترافیک تهران",
+	COUNTY: "ترافیک مراکز استان‌ها",
+};
+
 function escapeHtml(value: unknown) {
 	return String(value ?? "-")
 		.replaceAll("&", "&amp;")
@@ -144,6 +149,12 @@ function renderPackagePricing(title: string, tiers: any[], selector: (tier: any)
 }
 
 function resolvePricingSections(detail: ContractDetailDto) {
+	if (Array.isArray(detail?.locations)) {
+		return detail.locations
+			.map((location: any) => renderPricingBox(TRAFFIC_LOCATION_TITLES[String(location?.location).toUpperCase()] ?? "ترافیک", location))
+			.join("");
+	}
+
 	const contractDetails = detail?.contract_openapi_details ?? detail?.contractOpenapiDetails ?? null;
 	const contractModel = String(
 		contractDetails?.contract_model
@@ -164,6 +175,9 @@ function resolvePricingSections(detail: ContractDetailDto) {
 
 	const billInquiry = contractDetails?.bill_inquiry ?? detail?.bill_inquiry ?? null;
 	const receiptRegister = contractDetails?.receipt_register ?? detail?.receipt_register ?? null;
+	// the openapi price tables only make sense for contracts that carry openapi pricing
+	if (!contractDetails && !billInquiry && !receiptRegister)
+		return "";
 
 	return [
 		renderPricingBox("استعلام قبض", billInquiry),
@@ -193,6 +207,7 @@ function buildContractHtml({ record, detail }: BuildContractPdfArgs) {
 	const companyName = detail?.company?.name ?? record.company_name ?? "-";
 	const serviceName = detail?.service?.name ?? record.service_name ?? "-";
 	const description = detail?.note ?? "-";
+	const pricingSections = resolvePricingSections(detail);
 	const today = new Date().toLocaleDateString("fa-IR");
 
 	return `<!doctype html>
@@ -339,8 +354,7 @@ function buildContractHtml({ record, detail }: BuildContractPdfArgs) {
 				</div>
 			</section>
 
-			<h2 class="h2">جزئیات اصلی قرارداد</h2>
-			${resolvePricingSections(detail)}
+			${pricingSections ? `<h2 class="h2">جزئیات اصلی قرارداد</h2>${pricingSections}` : ""}
 
 			<h2 class="h2">الحاقیه‌ها</h2>
 			${renderAddenda(detail)}

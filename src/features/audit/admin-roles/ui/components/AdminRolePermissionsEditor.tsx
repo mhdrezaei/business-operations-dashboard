@@ -58,7 +58,8 @@ interface Props {
 	initialAllowedServiceIds?: number[]
 	initialPolicies?: AdminRolePolicyDto[]
 	initialPoliciesLoading?: boolean
-	onChange?: (payload: AdminRolePoliciesBulkUpsertPayload) => void
+	/** `isDirty` is true when the matrix differs from the one the role was loaded with. */
+	onChange?: (payload: AdminRolePoliciesBulkUpsertPayload, isDirty: boolean) => void
 }
 
 interface ServicePermissionCardProps {
@@ -84,6 +85,7 @@ const emptyServicesByDomain: Record<AdminRoleDomainKey, ServiceDto[]> = {
 	performances: [],
 	predictions: [],
 	company_profile: [],
+	contract_template: [],
 };
 
 const defaultPermissionFlags: PermissionFlags = {
@@ -542,19 +544,22 @@ export function AdminRolePermissionsEditor({
 	}, [initialEditorState]);
 
 	useEffect(() => {
-		const currentPayload = buildAdminRolePoliciesPayload({
+		const buildPayload = (matrix: PermissionMatrix, cards: string[], companyTypes: Record<string, string[]>) => buildAdminRolePoliciesPayload({
 			servicesByDomain,
-			permissionMatrix,
-			selectedCompanyCards,
-			initialPolicies,
+			permissionMatrix: matrix,
+			selectedCompanyCards: cards,
 			getSelectedCompanyTypes: (domain, serviceId, flags) => pickSelectedCompanyTypes(
 				getSelectableCompanyTypes(getPermittedCompanyTypesRef.current, domain, serviceId, flags),
-				companyTypesByKey[companyTypesKey(domain, serviceId)],
+				companyTypes[companyTypesKey(domain, serviceId)],
 			),
 		});
 
-		onChange?.(currentPayload);
-	}, [onChange, permissionMatrix, selectedCompanyCards, companyTypesByKey, servicesByDomain, initialPolicies]);
+		const currentPayload = buildPayload(permissionMatrix, selectedCompanyCards, companyTypesByKey);
+		const { permissionMatrix: baseMatrix, selectedCompanyCards: baseCards, companyTypesByKey: baseCompanyTypes } = initialEditorState;
+		const isDirty = JSON.stringify(currentPayload) !== JSON.stringify(buildPayload(baseMatrix, baseCards, baseCompanyTypes));
+
+		onChange?.(currentPayload, isDirty);
+	}, [onChange, permissionMatrix, selectedCompanyCards, companyTypesByKey, servicesByDomain, initialEditorState]);
 
 	function getCompanyTypes(domain: AdminRoleDomainKey, service: ServiceDto): CompanyTypesProps | undefined {
 		const flags = permissionMatrix[domain]?.[service.id];

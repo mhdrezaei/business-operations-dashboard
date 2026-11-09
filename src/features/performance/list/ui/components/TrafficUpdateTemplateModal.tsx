@@ -10,6 +10,7 @@ import { MONTH_OPTIONS } from "#src/features/performance/shared/ui/form/constant
 import { TrafficExcelResult, UploadStatCard } from "#src/features/performance/shared/ui/traffic-excel-result";
 import { SectionCard } from "#src/shared/ui/section-card";
 import { downloadBlob } from "#src/utils/download-blob";
+import { getRequestErrorMessage } from "#src/utils/request/error-response";
 import { CloudUploadOutlined, DownloadOutlined, InboxOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Modal, Select, Upload } from "antd";
@@ -164,6 +165,9 @@ export function TrafficUpdateTemplateModal({
 			});
 			setUploadResult(result);
 			onUploaded?.();
+		}
+		catch (error) {
+			window.$message?.error(await getRequestErrorMessage(error, t("performance.traffic.uploadFailed")));
 		}
 		finally {
 			setUploading(false);

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const adminRoleScopeValues = ["global", "service_admin"] as const;
-export const adminRoleDomainValues = ["contracts", "performances", "predictions", "company_profile"] as const;
+export const adminRoleDomainValues = ["contracts", "performances", "predictions", "company_profile", "contract_template"] as const;
 export const adminRolePermissionActionValues = ["view", "create", "update", "delete"] as const;
 /** Contracts-only approvals, edited next to the CRUD actions. */
 export const adminRoleContractExtraActionValues = ["sign", "business_approve"] as const;
@@ -16,6 +16,7 @@ export const adminRolePermissionTabs = [
 	{ label: "عملکردها", value: "performances" },
 	{ label: "پیش‌بینی‌ها", value: "predictions" },
 	{ label: "پروفایل شرکت", value: "company_profile" },
+	{ label: "قالب‌های قرارداد", value: "contract_template" },
 ] as const;
 
 export const adminRolePermissionActions = [

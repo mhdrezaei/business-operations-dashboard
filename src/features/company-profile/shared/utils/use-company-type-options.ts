@@ -3,7 +3,7 @@ import { filterSelectableCompanyTypes } from "#src/features/contract/shared/mode
 import { useAccess } from "#src/hooks";
 import { useMemo } from "react";
 
-const FALLBACK_COMPANY_TYPES: Record<string, CompanyTypeOption[]> = {
+export const FALLBACK_COMPANY_TYPES: Record<string, CompanyTypeOption[]> = {
 	traffic: ["CP", "IXP", "TCI", "PREMIUM", "COLLOCATION"].map(key => ({ key, value: key })),
 	sms: [
 		{ key: "CP", value: "شرکت های cp" },

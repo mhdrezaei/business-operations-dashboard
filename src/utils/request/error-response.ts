@@ -32,6 +32,24 @@ export function extractFirstErrorMessage(value: unknown): string | null {
 	return null;
 }
 
+/** True when the interceptor already showed the server's message for this failed request. */
+export function isServerErrorHandled(error: unknown) {
+	return Boolean((error as { response?: Response })?.response);
+}
+
+/** Server message of a failed `ky` request (body stays readable: the interceptor only clones it), else `fallback`. */
+export async function getRequestErrorMessage(error: unknown, fallback: string) {
+	const response = (error as { response?: Response })?.response;
+	if (!response)
+		return error instanceof Error && error.message.trim() ? error.message : fallback;
+	try {
+		return extractFirstErrorMessage(await response.clone().json()) ?? fallback;
+	}
+	catch {
+		return fallback;
+	}
+}
+
 /**
  * Handle error responses and display the most relevant server message.
  */
@@ -40,7 +58,7 @@ export async function handleErrorResponse(response: Response, suppressErrorNotif
 		return response;
 
 	try {
-		const data = await response.json();
+		const data = await response.clone().json();
 		const extracted = extractFirstErrorMessage(data);
 		message.error(extracted || response.statusText);
 	}

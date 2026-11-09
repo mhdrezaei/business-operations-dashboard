@@ -1,10 +1,11 @@
+import { isServerErrorHandled } from "#src/utils/request/error-response";
 import { CheckCircleFilled, ExclamationCircleFilled } from "@ant-design/icons";
 import { Button, Card, message, Spin, theme } from "antd";
 import { AnimatePresence, motion } from "framer-motion";
 import React, { useEffect, useRef, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { TemplateCreateApi } from "../api/api";
-import { VARIANT_REQUIRED_SERVICES } from "../model/template-variants";
+import { COMPANY_TYPE_REQUIRED_SERVICES, VARIANT_REQUIRED_SERVICES } from "../model/template-variants";
 import { useServicesListQuery } from "../queries/template-create.queries";
 import { mapTemplateHeader, useTemplateStore } from "../store/useTemplateStore";
 import ProEditor from "./components/editor/ProEditor";
@@ -253,6 +254,11 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 			hasFrontendError = true;
 		}
 
+		if (COMPANY_TYPE_REQUIRED_SERVICES.includes(serviceStringValue) && !formValues.company_type) {
+			methods.setError("company_type", { type: "manual", message: "انتخاب نوع شرکت الزامی است" });
+			hasFrontendError = true;
+		}
+
 		if (hasFrontendError) {
 			message.warning("لطفاً فیلدهای قرمزرنگ را تکمیل کنید.");
 			return;
@@ -316,16 +322,17 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 				setTimeout(() => onClose(), 1500);
 			}
 		}
-		catch (error: any) {
-			const serverErrors = error?.response?.data || error?.data || error?.json;
+		catch (error: unknown) {
+			// the interceptor already toasted the server message; only map field errors inline
+			const serverErrors = await (error as { response?: Response })?.response?.clone().json().catch(() => null);
 			if (serverErrors && typeof serverErrors === "object") {
-				Object.keys(serverErrors).forEach((key) => {
-					const msg = Array.isArray(serverErrors[key]) ? serverErrors[key][0] : serverErrors[key];
-					methods.setError(key as any, { type: "server", message: msg });
+				Object.entries(serverErrors as Record<string, unknown>).forEach(([key, value]) => {
+					const msg = Array.isArray(value) ? value[0] : value;
+					if (typeof msg === "string")
+						methods.setError(key as keyof TemplateFormValues, { type: "server", message: msg });
 				});
-				message.error("برخی اطلاعات نامعتبر است، لطفاً ارورهای قرمز رنگ را چک کنید.");
 			}
-			else {
+			else if (!isServerErrorHandled(error)) {
 				message.error("خطا در ارتباط با سرور!");
 			}
 		}

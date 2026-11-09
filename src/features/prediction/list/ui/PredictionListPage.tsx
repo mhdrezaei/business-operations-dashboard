@@ -5,14 +5,15 @@ import { useAccess } from "#src/hooks";
 import { TableActionEditIcon, TableActionTrashIcon } from "#src/icons";
 import { SingleOptionSync } from "#src/shared/ui/rhf-pro";
 import { PlusCircleOutlined } from "@ant-design/icons";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Popconfirm } from "antd";
+import { isTimeoutError } from "ky";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { deletePrediction } from "../../api/predictions.api";
 import { getCompanyTypeToken } from "../../shared/model/company-type.helpers";
-import { getRecordQuarterPercents, isAvailablePredictionCompanyType, isSupportedPredictionService, PREDICTION_FISCAL_YEAR_OPTIONS } from "../../shared/model/prediction.helpers";
+import { getCompanyTypePlaceholderKey, getRecordQuarterPercents, isAvailablePredictionCompanyType, isSupportedPredictionService, PREDICTION_FISCAL_YEAR_OPTIONS } from "../../shared/model/prediction.helpers";
 import { servicesQuery } from "../../shared/queries/prediction.queries";
 import { predictionServiceRegistry } from "../../shared/services/registry";
 
@@ -39,6 +40,7 @@ function formatDateTime(value: string | null) {
 export default function PredictionListPage() {
 	const { t } = useTranslation();
 	const navigate = useNavigate();
+	const queryClient = useQueryClient();
 	const { getPermittedCompanyTypes, getPermittedServiceIds, hasDomainPermissionByServiceId } = useAccess();
 
 	const actionRef = useRef<ActionType>(null);
@@ -122,9 +124,19 @@ export default function PredictionListPage() {
 		if (!DELETABLE_PREDICTION_SERVICES.includes(row.serviceCode as typeof DELETABLE_PREDICTION_SERVICES[number]))
 			return;
 
-		await deletePrediction(row.serviceCode as typeof DELETABLE_PREDICTION_SERVICES[number], row.id);
-		window.$message?.success(t("common.deleteSuccess"));
-		refreshTable();
+		try {
+			await deletePrediction(row.serviceCode as typeof DELETABLE_PREDICTION_SERVICES[number], row.id);
+			window.$message?.success(t("common.deleteSuccess"));
+		}
+		catch (error) {
+			// HTTP errors are already toasted by the request interceptor; a timeout leaves the outcome unknown
+			if (isTimeoutError(error))
+				window.$message?.error(t("prediction.messages.requestTimeout"));
+		}
+		finally {
+			void queryClient.invalidateQueries({ queryKey: ["predictions"] });
+			refreshTable();
+		}
 	}
 
 	const columns: ProColumns<PredictionListRow>[] = useMemo(() => {
@@ -163,7 +175,7 @@ export default function PredictionListPage() {
 					optionFilterProp: "label",
 					placeholder: !selectedServiceId
 						? t("prediction.placeholders.selectService")
-						: t("prediction.placeholders.selectTrafficCompanyType"),
+						: t(getCompanyTypePlaceholderKey(selectedServiceCode)),
 				},
 			},
 			{

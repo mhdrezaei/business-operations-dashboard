@@ -20,7 +20,7 @@ export default function LightLogo({
 			xmlns="http://www.w3.org/2000/svg"
 			className={className}
 		>
-			<g clip-path="url(#clip0_10189_2325)">
+			<g clipPath="url(#clip0_10189_2325)">
 				<path
 					d="M18.6 110.48C12.86 107.15 8.33 102.61 5 96.8802C1.67 91.1402 0 84.9402 0 78.2802C0 71.6202 1.66 65.4402 5 59.7602C8.33 54.0802 12.87 49.5702 18.6 46.2402C24.34 42.9102 30.54 41.2402 37.2 41.2402H74.25V78.2902C74.25 85.0702 72.58 91.3002 69.25 96.9802C65.92 102.66 61.41 107.17 55.73 110.5C50.05 113.83 43.87 115.5 37.21 115.5C30.55 115.5 24.34 113.84 18.61 110.5L18.6 110.48ZM45.57 86.7902C47.86 84.5002 49.01 81.6502 49.01 78.2702V66.3002H37.21C33.82 66.3002 30.98 67.4802 28.69 69.8202C26.4 72.1702 25.25 74.9802 25.25 78.2602C25.25 81.5402 26.4 84.4902 28.69 86.7802C30.98 89.0702 33.83 90.2202 37.21 90.2202C40.59 90.2202 43.27 89.0702 45.57 86.7802V86.7902Z"
 					fill="#0E1935"
@@ -76,8 +76,8 @@ export default function LightLogo({
 					y2="51.6801"
 					gradientUnits="userSpaceOnUse"
 				>
-					<stop stop-color="#96ADFF" />
-					<stop offset="1" stop-color="#0037FF" />
+					<stop stopColor="#96ADFF" />
+					<stop offset="1" stopColor="#0037FF" />
 				</linearGradient>
 				<linearGradient
 					id="paint1_linear_10189_2325"
@@ -87,8 +87,8 @@ export default function LightLogo({
 					y2="57.77"
 					gradientUnits="userSpaceOnUse"
 				>
-					<stop stop-color="#96D0FF" />
-					<stop offset="1" stop-color="#008CFF" />
+					<stop stopColor="#96D0FF" />
+					<stop offset="1" stopColor="#008CFF" />
 				</linearGradient>
 				<linearGradient
 					id="paint2_linear_10189_2325"
@@ -98,8 +98,8 @@ export default function LightLogo({
 					y2="57.7402"
 					gradientUnits="userSpaceOnUse"
 				>
-					<stop stop-color="#96ADFF" />
-					<stop offset="1" stop-color="#0037FF" />
+					<stop stopColor="#96ADFF" />
+					<stop offset="1" stopColor="#0037FF" />
 				</linearGradient>
 				<linearGradient
 					id="paint3_linear_10189_2325"
@@ -109,8 +109,8 @@ export default function LightLogo({
 					y2="57.7201"
 					gradientUnits="userSpaceOnUse"
 				>
-					<stop stop-color="#CCFBFF" />
-					<stop offset="1" stop-color="#00EAFF" />
+					<stop stopColor="#CCFBFF" />
+					<stop offset="1" stopColor="#00EAFF" />
 				</linearGradient>
 				<clipPath id="clip0_10189_2325">
 					<rect width="490.07" height="115.48" fill="white" />

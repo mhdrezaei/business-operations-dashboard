@@ -188,7 +188,7 @@ export function getAdminLogsColumns({
 			request: async () => {
 				const users = await fetchAdminUsersList({ page: 1, page_size: 500 });
 				return users.results.map(user => ({
-					label: `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() || user.username,
+					label: [`${user.first_name ?? ""} ${user.last_name ?? ""}`.trim(), user.username].filter(Boolean).join(" - "),
 					value: user.id,
 				}));
 			},

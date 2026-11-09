@@ -207,6 +207,7 @@ export function ContractDocumentsPanel({ contractId, initialDocuments, loading =
 														icon={<DownloadOutlined />}
 														loading={downloadingId === documentId}
 														className="!text-primary"
+														aria-label={t("contract.documents.download")}
 														onClick={() => handleDownload(file)}
 													/>
 													<Popconfirm
@@ -222,6 +223,7 @@ export function ContractDocumentsPanel({ contractId, initialDocuments, loading =
 															type="text"
 															size="small"
 															icon={<DeleteOutlined />}
+															aria-label={t("contract.documents.deleteTitle")}
 															loading={deletingId === documentId}
 														/>
 													</Popconfirm>

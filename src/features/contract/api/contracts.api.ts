@@ -201,7 +201,7 @@ function toSearchParams(params: ContractsListQuery) {
 
 export function fetchContractsList(params: ContractsListQuery) {
 	return request
-		.get("contracts/list", { searchParams: toSearchParams(params) })
+		.get("contracts/list/", { searchParams: toSearchParams(params) })
 		.json<PaginatedResult<ContractListItemType>>();
 }
 
@@ -262,7 +262,7 @@ export function fetchCompanyContracts(
 			searchParams.service_id = String(serviceId);
 
 		return request
-			.get("contracts/list", { searchParams })
+			.get("contracts/list/", { searchParams })
 			.json<PaginatedResult<any>>();
 	}
 
@@ -492,6 +492,14 @@ export function fetchSignFlowsList(params: {
 		.json<PaginatedResult<SignFlowListItem>>();
 }
 
+export interface SignFlowStepDecision {
+	action: "approve" | "reject"
+	decided_by: number | null
+	decided_by_username: string | null
+	comment: string
+	decided_at: string | null
+}
+
 export interface SignFlowStep {
 	order: number
 	name: string
@@ -511,7 +519,7 @@ export interface SignFlowStep {
 		source_target_type: string
 		source_role_id: number | null
 	}>
-	decision: string | null
+	decision: SignFlowStepDecision | null
 }
 
 export interface SignFlowDetail {
@@ -556,6 +564,7 @@ export interface SignFlowHistoryItem {
 	finished_at: string | null
 	cancel_or_reject_reason: string
 	revoked_at: string | null
+	revoked_by_username: string | null
 	revoke_reason: string
 }
 
@@ -575,6 +584,12 @@ export function fetchSignFlowOfficialPdf(id: number | string) {
 
 export async function cancelSignFlow(id: number | string, reason: string): Promise<SignFlowDetail> {
 	return request.post(`contracts/sign-flows/${id}/cancel/`, {
+		json: { reason },
+	}).json<SignFlowDetail>();
+}
+
+export async function revokeSignFlow(id: number | string, reason: string): Promise<SignFlowDetail> {
+	return request.post(`contracts/sign-flows/${id}/revoke/`, {
 		json: { reason },
 	}).json<SignFlowDetail>();
 }

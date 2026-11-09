@@ -309,6 +309,7 @@ export function TrafficPredictionFields() {
 										label={t("prediction.labels.annualValue")}
 										inputProps={{ placeholder: t("prediction.placeholders.amountExample") }}
 										enableGrouping
+										decimal
 										enableWordsTooltip
 									/>
 									<RHFProNumber<PredictionFormValues, any>
@@ -316,6 +317,7 @@ export function TrafficPredictionFields() {
 										label={t("prediction.labels.trafficAnnualValueReceive")}
 										inputProps={{ placeholder: t("prediction.placeholders.amountExample") }}
 										enableGrouping
+										decimal
 										enableWordsTooltip
 									/>
 									<RHFProNumber<PredictionFormValues, any>
@@ -323,6 +325,7 @@ export function TrafficPredictionFields() {
 										label={t("prediction.labels.annualIncome")}
 										inputProps={{ placeholder: t("prediction.placeholders.amountExample") }}
 										enableGrouping
+										decimal
 										enableWordsTooltip
 									/>
 									<RHFProNumber<PredictionFormValues, any>
@@ -330,6 +333,7 @@ export function TrafficPredictionFields() {
 										label={t("prediction.labels.annualExpense")}
 										inputProps={{ placeholder: t("prediction.placeholders.amountExample") }}
 										enableGrouping
+										decimal
 										enableWordsTooltip
 									/>
 								</div>

@@ -6,11 +6,12 @@ import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import { useAccess } from "#src/hooks";
 import { TableActionEditIcon, TableActionTrashIcon } from "#src/icons";
 import { useUserStore } from "#src/store";
-import { PlusCircleOutlined } from "@ant-design/icons";
+import { CopyOutlined, PlusCircleOutlined } from "@ant-design/icons";
 import { Button, Popconfirm } from "antd";
 import React, { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { TemplateCreateApi } from "../api/api";
 import { fetchDeleteTemplate, fetchTemplatesList } from "../api/templates.api";
 import TemplateCreateModal from "../create/TemplateCreateModal";
 import { getTemplateColumns } from "./constants";
@@ -30,6 +31,7 @@ export default function TemplateListPage() {
 		  && hasDomainPermission("contract_template", "create", row.service, row.company_type));
 	const canUpdateRow = (row: TemplateListItemType) => canManageRow(row, "update");
 	const canDeleteRow = (row: TemplateListItemType) => canManageRow(row, "delete");
+	const canCopyRow = (row: TemplateListItemType) => hasDomainPermission("contract_template", "create", row.service, row.company_type);
 
 	const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 	const [editingTemplateId, setEditingTemplateId] = useState<number | null>(null);
@@ -68,6 +70,18 @@ export default function TemplateListPage() {
 		}
 	};
 
+	const handleCopyRow = async (row: TemplateListItemType) => {
+		try {
+			await TemplateCreateApi.duplicateTemplate(row.id, `${row.name} (کپی)`);
+			window.$message?.success("کپی قالب ایجاد شد.");
+			actionRef.current?.reload?.();
+		}
+		catch (error) {
+			// the request interceptor already shows the server message
+			console.error("Error duplicating template:", error);
+		}
+	};
+
 	const baseColumns = useMemo(
 		() => getTemplateColumns({ t }),
 		[t],
@@ -80,7 +94,7 @@ export default function TemplateListPage() {
 				title: "عملیات",
 				valueType: "option",
 				key: "option",
-				width: 120,
+				width: 160,
 				fixed: "right",
 				align: "center",
 				render: (_, record) => {
@@ -96,6 +110,18 @@ export default function TemplateListPage() {
 								onClick={(e) => {
 									handleOpenEditModal(e, record.id);
 								}}
+							/>,
+						);
+					}
+					if (canCopyRow(record)) {
+						actions.push(
+							<BasicButton
+								key="copy"
+								type="link"
+								size="large"
+								title="کپی قالب"
+								icon={<CopyOutlined />}
+								onClick={() => handleCopyRow(record)}
 							/>,
 						);
 					}
@@ -121,7 +147,7 @@ export default function TemplateListPage() {
 				},
 			},
 		];
-	}, [baseColumns, canUpdateRow, canDeleteRow, t]);
+	}, [baseColumns, canUpdateRow, canDeleteRow, canCopyRow, t]);
 
 	return (
 		<BasicContent className="h-full">

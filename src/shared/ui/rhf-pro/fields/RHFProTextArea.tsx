@@ -45,6 +45,7 @@ export function RHFProTextArea<TFV extends FieldValues, TName extends Path<TFV>>
 						{...props.formItemProps}
 					>
 						<Input.TextArea
+							aria-label={typeof props.label === "string" ? props.label : undefined}
 							{...(mergedTextAreaProps as any)}
 							value={(field.value ?? "") as any}
 							onChange={e => field.onChange(e.target.value)}

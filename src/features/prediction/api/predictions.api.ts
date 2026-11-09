@@ -148,6 +148,9 @@ export interface TrafficPredictionPayload {
 	note: string
 }
 
+// create/update/delete are slow on the backend (far beyond the global 10s timeout); retrying would repeat a write whose outcome is unknown
+const PREDICTION_WRITE_OPTIONS = { timeout: 120_000, retry: 0 };
+
 // backend max page size: one fiscal year per service/company type, so a single page holds every record
 const PREDICTION_YEARS_PAGE_SIZE = 100;
 
@@ -157,6 +160,8 @@ function buildPredictionListSearchParams(params: PredictionListParams) {
 	);
 }
 
+// Backend problem (SMS only): DELETE predictions/sms/years/<id>/ answers 400 "failed to write the delete audit log", so SMS records can never be removed.
+// The fault is in the backend delete audit-log step (app/apps/prediction sms service), not in this request.
 export function deletePrediction(service: "openapi" | "psp" | "shahkar" | "sms" | "traffic", id: number) {
 	const paths = {
 		openapi: `predictions/openapi/years/${id}/`,
@@ -166,7 +171,7 @@ export function deletePrediction(service: "openapi" | "psp" | "shahkar" | "sms" 
 		traffic: `predictions/traffic/years/${id}/`,
 	};
 
-	return request.delete(paths[service]).json<unknown>();
+	return request.delete(paths[service], PREDICTION_WRITE_OPTIONS).json<unknown>();
 }
 
 export function fetchOpenApiPredictionYears(serviceId: number) {
@@ -189,6 +194,7 @@ export function createOpenApiPrediction(payload: OpenApiPredictionPayload) {
 	return request
 		.post("predictions/openapi/years/", {
 			json: payload,
+			...PREDICTION_WRITE_OPTIONS,
 		})
 		.json<OpenApiPredictionYearDto>();
 }
@@ -197,6 +203,7 @@ export function updateOpenApiPrediction(id: number, payload: OpenApiPredictionPa
 	return request
 		.put(`predictions/openapi/years/${id}/`, {
 			json: payload,
+			...PREDICTION_WRITE_OPTIONS,
 		})
 		.json<OpenApiPredictionYearDto>();
 }
@@ -225,6 +232,7 @@ export function createPspPrediction(payload: PspPredictionPayload) {
 	return request
 		.post("predictions/psp/years/", {
 			json: payload,
+			...PREDICTION_WRITE_OPTIONS,
 		})
 		.json<PspPredictionYearDto>();
 }
@@ -233,6 +241,7 @@ export function updatePspPrediction(id: number, payload: PspPredictionPayload) {
 	return request
 		.put(`predictions/psp/years/${id}/`, {
 			json: payload,
+			...PREDICTION_WRITE_OPTIONS,
 		})
 		.json<PspPredictionYearDto>();
 }
@@ -257,6 +266,7 @@ export function createShahkarPrediction(payload: ShahkarPredictionPayload) {
 	return request
 		.post("predictions/shahkar/years/", {
 			json: payload,
+			...PREDICTION_WRITE_OPTIONS,
 		})
 		.json<ShahkarPredictionYearDto>();
 }
@@ -265,6 +275,7 @@ export function updateShahkarPrediction(id: number, payload: ShahkarPredictionPa
 	return request
 		.put(`predictions/shahkar/years/${id}/`, {
 			json: payload,
+			...PREDICTION_WRITE_OPTIONS,
 		})
 		.json<ShahkarPredictionYearDto>();
 }
@@ -293,6 +304,7 @@ export function createSmsPrediction(payload: SmsPredictionPayload) {
 	return request
 		.post("predictions/sms/years/", {
 			json: payload,
+			...PREDICTION_WRITE_OPTIONS,
 		})
 		.json<SmsPredictionYearDto>();
 }
@@ -301,6 +313,7 @@ export function updateSmsPrediction(id: number, payload: SmsPredictionPayload) {
 	return request
 		.put(`predictions/sms/years/${id}/`, {
 			json: payload,
+			...PREDICTION_WRITE_OPTIONS,
 		})
 		.json<SmsPredictionYearDto>();
 }
@@ -329,6 +342,7 @@ export function createTrafficPrediction(payload: TrafficPredictionPayload) {
 	return request
 		.post("predictions/traffic/years/", {
 			json: payload,
+			...PREDICTION_WRITE_OPTIONS,
 		})
 		.json<TrafficPredictionYearDto>();
 }
@@ -337,6 +351,7 @@ export function updateTrafficPrediction(id: number, payload: TrafficPredictionPa
 	return request
 		.put(`predictions/traffic/years/${id}/`, {
 			json: payload,
+			...PREDICTION_WRITE_OPTIONS,
 		})
 		.json<TrafficPredictionYearDto>();
 }

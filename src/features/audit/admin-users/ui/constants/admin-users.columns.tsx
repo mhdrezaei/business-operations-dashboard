@@ -1,6 +1,7 @@
 import type { ProColumns } from "@ant-design/pro-components";
 import type { TFunction } from "i18next";
 import type { AdminUserDto } from "../../model/admin-users.types";
+import { normalizeIranMobile } from "#src/shared/lib/iran-mobile";
 
 import { Tag, Tooltip } from "antd";
 
@@ -154,7 +155,7 @@ export function getAdminUsersColumns({
 			ellipsis: true,
 			width: 150,
 			search: false,
-			render: (_, r) => r.mobile || "-",
+			render: (_, r) => (r.mobile ? normalizeIranMobile(r.mobile) : "-"),
 		},
 		{
 			title: "نقش‌ها",
@@ -210,7 +211,11 @@ export function getAdminUsersColumns({
 			ellipsis: true,
 			width: 180,
 			search: false,
-			render: (_, r) => (r.deputy_service_admin_id != null ? userNameById.get(r.deputy_service_admin_id) ?? `#${r.deputy_service_admin_id}` : "-"),
+			render: (_, r) => {
+				// معاون: ادمین والد؛ کاربر عادی متصل‌شده: ادمین(های) سرویسی که مدیریتش می‌کنند
+				const parentIds = r.deputy_service_admin_id != null ? [r.deputy_service_admin_id] : (r.managed_by_admin_ids ?? []);
+				return parentIds.length ? parentIds.map(id => userNameById.get(id) ?? `#${id}`).join("، ") : "-";
+			},
 		},
 		{
 			title: "وضعیت",

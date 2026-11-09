@@ -29,6 +29,7 @@
 	"traffic": {
 		"nonOfficialLocation": "Unofficial contract — calculation fields are disabled",
 		"minLocation": "Enable at least one location",
+		"tehranRequired": "A province contract cannot be saved without a Tehran contract; add the Tehran contract too",
 		"validation": {
 			"tehranModelRequired": "Tehran contract type is required in the addendum",
 			"provinceModelRequired": "Provincial centers contract type is required in the addendum"
@@ -67,6 +68,7 @@
 		"updated": "The contract was updated successfully.",
 		"delete": "Delete contract",
 		"deleteConfirm": "Are you sure you want to delete this contract? This cannot be undone.",
+		"realSignedLocked": "This contract is officially signed and cannot be edited or deleted.",
 		"deleted": "The contract was deleted successfully.",
 		"notFound": "Contract information not found",
 		"loadFailed": "Failed to load contract information",
@@ -86,6 +88,7 @@
 		"type": "File \"{{name}}\" is not allowed; only PDF, PNG and JPG are accepted.",
 		"size": "File \"{{name}}\" is larger than 50 MB.",
 		"preview": "Preview file",
+		"download": "Download file",
 		"previewFailed": "Could not preview the file",
 		"uploadSuccess": "File added successfully",
 		"uploadFailed": "Failed to add the file",
@@ -185,13 +188,13 @@
 			"ipRate": "The IP rate is required",
 			"ampRate": "The ampere rate is required",
 			"ampThreshold": "The free ampere threshold is required",
-			"portItemsRequired": "At least one port item is required.",
 			"rackItemsRequired": "At least one rack item is required.",
 			"count": "Count is required",
 			"speed": "Speed is required",
 			"unitPrice": "Unit price is required",
 			"rackType": "Rack type is required",
 			"countPositive": "Count must be a positive integer",
+			"portCountNonNegative": "Each port item count must be an integer of zero or more.",
 			"speedPositive": "Speed must be a positive number",
 			"tierFrom": "From is required",
 			"tierTo": "To is required",
@@ -201,7 +204,8 @@
 			"addendumUnitsPerRack": "The addendum units per rack must be a positive number.",
 			"addendumMonthlyRent": "The addendum monthly rack cost must be zero or a positive number.",
 			"addendumDatacenters": "Add at least one data center to the collocation addendum.",
-			"addendumSla": "Select an SLA for the collocation addendum."
+			"addendumSla": "Select an SLA for the collocation addendum.",
+			"childDatacenterNotInParent": "A child addendum datacenter must be one of its parent addendum's datacenters"
 		},
 		"rackTypes": {
 			"full": "Full rack",
@@ -358,6 +362,8 @@
 			"endMonth": "Addendum end month is required"
 		},
 		"removeAddendum": "Remove addendum",
+		"removeConfirm": "This addendum is already saved and is removed when you save the form. Continue?",
+		"removeConfirmChildren": "Its child addenda are removed too.",
 		"startYear": "Addendum start year",
 		"endYear": "Addendum end year",
 		"startMonth": "Start month",
@@ -407,6 +413,10 @@
 		"empty": "Select a service and a company first."
 	},
 	"list": {
+		"deleteWarning": {
+			"approved": "This contract is approved or signed; deleting it also discards its approval state.",
+			"addenda": "Its addenda are deleted together with it."
+		},
 		"approval": {
 			"approved": "Approved",
 			"rejected": "Rejected",
@@ -503,8 +513,6 @@
 		"counterparty": "Counterparty is required",
 		"smsCompanyType": "Company type (SMS) is required",
 		"company": "Company is required",
-		"companyNotNeeded": "No company selection is needed in this case",
-		"companyTypeNotNeeded": "No company type selection is needed in this case",
 		"salesAgencyCompanyType": "Cooperation type (sales agency) is required",
 		"trafficCompanyType": "Company type (traffic) is required",
 		"companyType": "Company type is required",
@@ -513,6 +521,8 @@
 		"costTitles": "Complete the cost titles",
 		"partnerType": "Partner type is required",
 		"rackCount": "Rack count is required",
+		"rackCountPositive": "Rack count must be greater than zero",
+		"unitsPerRackPositive": "Units per rack must be greater than zero",
 		"unitsPerRack": "Units per rack is required",
 		"monthlyRent": "Monthly rent of all racks is required",
 		"datacenters": "At least one datacenter must be selected",
@@ -634,7 +644,47 @@
 		"empty": "No other contract found",
 		"selectFirst": "Select the service and company first"
 	},
+	"template": {
+		"unsupportedCompanyType": "Print and sign-flow templates are not supported for colocation contracts yet, so an official PDF cannot be created from here."
+	},
 	"signFlow": {
-		"templateAccessDenied": "You need the contract template view permission to open this sign flow document. Please contact your system administrator."
+		"stepState": {
+			"pending": "Waiting for turn",
+			"active": "In review",
+			"approved": "Approved",
+			"rejected": "Rejected",
+			"cancelled": "Cancelled"
+		},
+		"decision": {
+			"approve": "Decision: approved",
+			"reject": "Decision: rejected",
+			"by": "by {{user}}",
+			"comment": "Comment"
+		},
+		"cancel": {
+			"action": "Cancel sign flow",
+			"title": "Cancel sign flow",
+			"label": "Cancellation reason",
+			"placeholder": "Enter the cancellation reason...",
+			"required": "Please enter the cancellation reason",
+			"confirm": "Cancel flow",
+			"success": "Sign flow cancelled",
+			"failed": "Failed to cancel the sign flow"
+		},
+		"revoke": {
+			"action": "Revoke signature",
+			"title": "Revoke contract signature",
+			"label": "Revocation reason",
+			"placeholder": "Enter the revocation reason...",
+			"required": "Please enter the revocation reason",
+			"confirm": "Revoke",
+			"success": "Contract signature revoked",
+			"failed": "Failed to revoke the signature"
+		},
+		"history": {
+			"revokedAt": "Revoked at",
+			"revokedBy": "Revoked by",
+			"revokeReason": "Revocation reason"
+		}
 	}
 }

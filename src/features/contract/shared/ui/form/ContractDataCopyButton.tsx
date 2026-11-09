@@ -70,9 +70,9 @@ function findAddendum(addenda: unknown, id: number): Record<string, any> | null 
 	return null;
 }
 
-const OMIT_FIELDS = new Set(["addenda", "agent", "isSigned", "isOfficial", "id", "children", "startYear", "startMonth", "endYear", "endMonth", "contractNumber", "description"]);
+const OMIT_FIELDS = new Set(["addenda", "agent", "isSigned", "isOfficial", "id", "children", "startYear", "startMonth", "endYear", "endMonth", "contractNumber", "description", "realStartYear", "realStartMonth"]);
 // فیلدهای مخصوص قرارداد اصلی که روی الحاقیه مقصد معنا ندارند
-const ADDENDUM_TARGET_OMIT_FIELDS = new Set(["collocationPartnerType", "realStartYear", "realStartMonth", "displayAddendumNumber", "parentAddendumId", "fieldArrayId"]);
+const ADDENDUM_TARGET_OMIT_FIELDS = new Set(["collocationPartnerType", "displayAddendumNumber", "parentAddendumId", "fieldArrayId"]);
 const MAIN_TARGET_PATH = "serviceFields";
 
 function hasValue(value: unknown) {

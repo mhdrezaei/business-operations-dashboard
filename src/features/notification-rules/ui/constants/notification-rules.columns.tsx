@@ -45,7 +45,7 @@ export function getNotificationRulesColumns({ userNameById, roleNameById }: {
 }): ProColumns<NotificationRuleDto>[] {
 	return [
 		{ title: "نام", dataIndex: "name", width: 220, ellipsis: true },
-		{ title: "کد", dataIndex: "code", width: 210, render: (_, record) => <Tooltip title={getRuleCodeLabel(record.code)}><Tag>{record.code}</Tag></Tooltip> },
+		{ title: "کد", key: "codeColumn", dataIndex: "code", width: 210, search: false, render: (_, record) => <Tooltip title={getRuleCodeLabel(record.code)}><Tag>{record.code}</Tag></Tooltip> },
 		{ title: "فعال", dataIndex: "is_active", width: 100, valueType: "select", valueEnum: { true: "فعال", false: "غیرفعال" }, render: (_, record) => <Tag color={record.is_active ? "success" : "default"}>{getRuleStatusLabel(record.is_active)}</Tag> },
 		{ title: "گلوبال", dataIndex: "apply_to_all_users", width: 100, search: false, render: (_, record) => record.apply_to_all_users ? "بله" : "خیر" },
 		{ title: "حذف‌شده‌ها", dataIndex: "is_deleted", width: 120, search: false, render: (_, record) => record.is_deleted ? "بله" : "خیر" },

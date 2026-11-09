@@ -20,6 +20,7 @@ export function PspPerformanceFields() {
 					}}
 					formItemProps={{ className: "mb-0" }}
 					enableGrouping
+					decimal
 					enableWordsTooltip
 				/>
 			</FieldCard>
@@ -35,6 +36,7 @@ export function PspPerformanceFields() {
 					}}
 					formItemProps={{ className: "contract-type-currency-field mb-0" }}
 					enableGrouping
+					decimal
 					enableWordsTooltip
 				/>
 			</FieldCard>

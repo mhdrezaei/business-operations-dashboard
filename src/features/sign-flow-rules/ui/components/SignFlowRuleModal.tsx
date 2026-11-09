@@ -1,6 +1,8 @@
 import type { AdminRoleDto } from "#src/features/audit/admin-roles/model/admin-roles.types";
 import type { AdminUserDto } from "#src/features/audit/admin-users/model/admin-users.types";
 import type { RecipientTargetType, SignFlowRule, SignFlowRulePayload } from "../../model/sign-flow-rules.types";
+import { FALLBACK_COMPANY_TYPES } from "#src/features/company-profile/shared/utils/use-company-type-options";
+import { filterSelectableCompanyTypes } from "#src/features/contract/shared/model/company-type-options";
 import { DeleteOutlined, DownOutlined, PlusOutlined, UpOutlined } from "@ant-design/icons";
 import { Button, Form, Input, Modal, Select, Space, Switch, Typography } from "antd";
 import { useEffect, useMemo, useState } from "react";
@@ -8,7 +10,11 @@ import { createSignFlowRule, updateSignFlowRule } from "../../api/sign-flow-rule
 
 interface RecipientValue { target_type: RecipientTargetType, target_id?: number }
 interface StepValue { name: string, recipients: RecipientValue[] }
-interface FormValues { name: string, description: string, is_enabled: boolean, steps: StepValue[] }
+interface BindingValue { service?: string, company_type?: string }
+interface FormValues { name: string, description: string, is_enabled: boolean, steps: StepValue[], bindings: BindingValue[] }
+
+/** Services whose rules can be scoped to one company type (backend `service_requires_company_type_scope`). */
+const COMPANY_TYPE_SCOPED_SERVICES = ["traffic", "sms", "psp"];
 
 interface Props {
 	open: boolean
@@ -16,6 +22,7 @@ interface Props {
 	users: AdminUserDto[]
 	roles: AdminRoleDto[]
 	loadingOptions: boolean
+	serviceOptions: Array<{ value: string, label: string }>
 	onClose: () => void
 	onSaved: () => Promise<void> | void
 }
@@ -25,11 +32,12 @@ function initialValues(rule: SignFlowRule | null): FormValues {
 		name: rule?.name ?? "",
 		description: rule?.description ?? "",
 		is_enabled: rule?.is_enabled ?? true,
+		bindings: rule?.bindings.map(binding => ({ service: binding.service, company_type: binding.company_type ?? undefined })) ?? [],
 		steps: rule?.steps.map(step => ({ name: step.name, recipients: step.recipients.map(recipient => ({ target_type: recipient.target_type, target_id: recipient.target_type === "USER" ? recipient.user_id ?? undefined : recipient.role_id ?? undefined })) })) ?? [{ name: "", recipients: [{ target_type: "USER" }] }],
 	};
 }
 
-export function SignFlowRuleModal({ open, initial, users, roles, loadingOptions, onClose, onSaved }: Props) {
+export function SignFlowRuleModal({ open, initial, users, roles, loadingOptions, serviceOptions, onClose, onSaved }: Props) {
 	const [form] = Form.useForm<FormValues>();
 	const [saving, setSaving] = useState(false);
 	const defaults = useMemo(() => initialValues(initial), [initial]);
@@ -46,6 +54,7 @@ export function SignFlowRuleModal({ open, initial, users, roles, loadingOptions,
 			name: values.name.trim(),
 			description: values.description?.trim() ?? "",
 			is_enabled: values.is_enabled,
+			bindings: (values.bindings ?? []).map(binding => ({ service: binding.service as string, company_type: binding.company_type || null })),
 			steps: values.steps.map((step, index) => ({ order: index + 1, name: step.name.trim(), recipients: step.recipients.map(recipient => ({ target_type: recipient.target_type, user_id: recipient.target_type === "USER" ? recipient.target_id ?? null : null, role_id: recipient.target_type === "ROLE" ? recipient.target_id ?? null : null })) })),
 		};
 		setSaving(true);
@@ -69,6 +78,38 @@ export function SignFlowRuleModal({ open, initial, users, roles, loadingOptions,
 						<Form.Item name="is_enabled" label="وضعیت" valuePropName="checked"><Switch checkedChildren="فعال" unCheckedChildren="غیرفعال" /></Form.Item>
 						<Form.Item name="description" label="توضیح" className="md:col-span-2"><Input.TextArea rows={2} placeholder="توضیح اختیاری برای این قانون" /></Form.Item>
 					</div>
+					<div className="mb-3 flex items-center justify-between">
+						<div>
+							<Typography.Title level={5} className="!mb-0">اتصال به سرویس</Typography.Title>
+							<Typography.Text type="secondary">قانونی که به هیچ سرویسی متصل نباشد روی هیچ قراردادی اعمال نمی‌شود.</Typography.Text>
+						</div>
+						<Form.List name="bindings">{(_, { add }) => <Button icon={<PlusOutlined />} onClick={() => add({})}>افزودن اتصال</Button>}</Form.List>
+					</div>
+					<Form.List name="bindings">
+						{(bindingFields, { remove }) => (
+							<div className="mb-5 flex flex-col gap-2">
+								{bindingFields.map(binding => (
+									<div className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_1fr_90px]" key={binding.key}>
+										<Form.Item name={[binding.name, "service"]} className="!mb-0" rules={[{ required: true, message: "سرویس را انتخاب کنید." }]}>
+											<Select showSearch optionFilterProp="label" loading={loadingOptions} options={serviceOptions} placeholder="انتخاب سرویس" onChange={() => form.setFieldValue(["bindings", binding.name, "company_type"], undefined)} />
+										</Form.Item>
+										<Form.Item shouldUpdate noStyle>
+											{({ getFieldValue }) => {
+												const service = getFieldValue(["bindings", binding.name, "service"]) as string | undefined;
+												const typeOptions = filterSelectableCompanyTypes(service, FALLBACK_COMPANY_TYPES[service ?? ""] ?? []).map(item => ({ label: item.value, value: item.key }));
+												return (
+													<Form.Item name={[binding.name, "company_type"]} className="!mb-0">
+														<Select allowClear options={typeOptions} disabled={!service || !COMPANY_TYPE_SCOPED_SERVICES.includes(service)} placeholder="همه نوع شرکت‌ها" />
+													</Form.Item>
+												);
+											}}
+										</Form.Item>
+										<Button danger onClick={() => remove(binding.name)}>حذف</Button>
+									</div>
+								))}
+							</div>
+						)}
+					</Form.List>
 					<div className="mb-3 flex items-center justify-between">
 						<Typography.Title level={5} className="!mb-0">مراحل تأیید</Typography.Title>
 						<Form.List name="steps">{(_, { add }) => <Button icon={<PlusOutlined />} onClick={() => add({ name: "", recipients: [{ target_type: "USER" }] })}>افزودن مرحله</Button>}</Form.List>

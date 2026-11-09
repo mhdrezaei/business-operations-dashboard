@@ -175,6 +175,28 @@ describe("collocation items", () => {
 	});
 });
 
+describe("collocation port count zero", () => {
+	it("keeps a port item with count 0 in the payload", () => {
+		const payload = build(values({
+			serviceCode: "traffic",
+			companyType: "COLLOCATION",
+			counterpartyType: "partners",
+			serviceFields: { sla: "GOLD", collocationPartnerType: "COLLOCATION", datacenters: [{ datacenter: "3", portItems: [{ count: 0, speed: 10, unitPrice: 5 }], rackItems: [] }] },
+		}), 7);
+		expect(payload.locations.find((location: any) => location.location === "GLOBAL_PORT").port_items).toEqual([{ count: 0, speed: 10, price: "5" }]);
+	});
+
+	it("still sends GLOBAL_PORT with empty port_items when no port item exists", () => {
+		const payload = build(values({
+			serviceCode: "traffic",
+			companyType: "COLLOCATION",
+			counterpartyType: "partners",
+			serviceFields: { sla: "GOLD", collocationPartnerType: "COLLOCATION", datacenters: [{ datacenter: "3", portItems: [], rackItems: [] }] },
+		}), 7);
+		expect(payload.locations.find((location: any) => location.location === "GLOBAL_PORT").port_items).toEqual([]);
+	});
+});
+
 describe("openapi payloads", () => {
 	const separated = {
 		walletChargeDiscountPercent: 10,

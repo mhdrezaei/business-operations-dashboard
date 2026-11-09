@@ -240,6 +240,7 @@ export function YearlyValueIncomePredictionFields({ operationTitleKey, requiresC
 						label={t("prediction.labels.annualValue")}
 						inputProps={{ placeholder: t("prediction.placeholders.amountExample") }}
 						enableGrouping
+						decimal
 						enableWordsTooltip
 					/>
 					<RHFProNumber<PredictionFormValues, any>
@@ -247,6 +248,7 @@ export function YearlyValueIncomePredictionFields({ operationTitleKey, requiresC
 						label={t("prediction.labels.annualIncome")}
 						inputProps={{ placeholder: t("prediction.placeholders.amountExample") }}
 						enableGrouping
+						decimal
 						enableWordsTooltip
 					/>
 				</div>

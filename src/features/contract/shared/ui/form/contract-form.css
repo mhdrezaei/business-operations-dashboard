@@ -260,3 +260,11 @@
 		flex-basis: 100%;
 	}
 }
+
+.contract-collocation-steps .ant-steps-item {
+	min-width: 0;
+}
+
+.contract-collocation-steps .ant-steps-item-title {
+	white-space: normal;
+}

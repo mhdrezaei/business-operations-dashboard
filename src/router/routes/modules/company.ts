@@ -5,6 +5,7 @@ import { ContainerLayout } from "#src/layout";
 import { $t } from "#src/locales";
 
 import { company } from "#src/router/extra-info";
+import { createIndexRedirectRoute } from "#src/router/utils/index-redirect-route";
 import { TeamOutlined } from "@ant-design/icons";
 import { createElement, lazy } from "react";
 
@@ -22,6 +23,7 @@ const routes: AppRouteRecordRaw[] = [
 			accessAction: "view",
 		},
 		children: [
+			createIndexRedirectRoute(),
 			{
 				path: "/company/management",
 				Component: CompaniesPage,

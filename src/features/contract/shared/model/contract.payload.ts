@@ -79,7 +79,7 @@ function mapPortItems(items: unknown) {
 			speed: toNumberOrNull(item.speed),
 			price: toStringOrNull(item.unitPrice),
 		}))
-		.filter(item => Number.isInteger(item.count) && item.count! > 0 && item.speed != null && item.speed > 0 && item.price != null);
+		.filter(item => Number.isInteger(item.count) && item.count! >= 0 && item.speed != null && item.speed > 0 && item.price != null);
 }
 
 /** هر آیتم رک همیشه free_ampere_threshold دارد؛ در فرم این آستانه برای کل دیتاسنتر وارد می‌شود. */

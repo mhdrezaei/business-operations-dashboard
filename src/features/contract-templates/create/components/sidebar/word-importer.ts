@@ -302,6 +302,54 @@ function htmlToPmDoc(html: string): any {
 	return { type: "doc", content };
 }
 
+function decodeQuotedPrintable(text: string): string {
+	const bytes: number[] = [];
+	const encoder = new TextEncoder();
+	const input = text.replace(/=\r?\n/g, "");
+	for (let i = 0; i < input.length; i++) {
+		if (input[i] === "=" && /^[0-9A-F]{2}$/i.test(input.slice(i + 1, i + 3))) {
+			bytes.push(Number.parseInt(input.slice(i + 1, i + 3), 16));
+			i += 2;
+		}
+		else {
+			bytes.push(...encoder.encode(input[i]));
+		}
+	}
+	return new TextDecoder("utf-8").decode(new Uint8Array(bytes));
+}
+
+/**
+ * Word files written by this panel's own "Word export" (html-docx-js) hold the whole document as an HTML/MHT
+ * `altChunk` instead of real OOXML paragraphs, so mammoth finds no text. Returns that HTML, or null for a real docx.
+ */
+async function readAltChunkHtml(zip: { file: (name: string) => { async: (type: "string") => Promise<string> } | null }): Promise<string | null> {
+	const documentXml = await zip.file("word/document.xml")?.async("string");
+	if (!documentXml?.includes("<w:altChunk"))
+		return null;
+
+	const rels = (await zip.file("word/_rels/document.xml.rels")?.async("string")) ?? "";
+	const target = rels.match(/<Relationship\s[^>]*aFChunk[^>]*>/i)?.[0].match(/Target="([^"]+)"/)?.[1];
+	if (!target)
+		return null;
+	const chunk = await zip.file(target.startsWith("/") ? target.slice(1) : `word/${target}`)?.async("string");
+	if (!chunk)
+		return null;
+
+	const boundary = chunk.match(/boundary="?([^"\r\n;]+)"?/i)?.[1];
+	if (!boundary)
+		return chunk;
+	const htmlPart = chunk.split(`--${boundary}`).find(part => /Content-Type:\s*text\/html/i.test(part));
+	if (!htmlPart)
+		return null;
+	const [head, ...bodyLines] = htmlPart.replace(/\r\n/g, "\n").split("\n\n");
+	const body = bodyLines.join("\n\n").trim();
+	if (/Content-Transfer-Encoding:\s*quoted-printable/i.test(head))
+		return decodeQuotedPrintable(body);
+	if (/Content-Transfer-Encoding:\s*base64/i.test(head))
+		return new TextDecoder("utf-8").decode(Uint8Array.from(atob(body.replace(/\s/g, "")), char => char.charCodeAt(0)));
+	return body;
+}
+
 export async function importWordToEditor(
 	file: File,
 	editor: Editor,
@@ -585,20 +633,23 @@ export async function importWordToEditor(
 			return el;
 		}
 
-		const result = await mammoth.convertToHtml(
-			{ arrayBuffer: arrayBuffer.slice(0) },
-			{
-				styleMap,
-				ignoreEmptyParagraphs: false,
-				transformDocument: transformElement,
-				convertImage: mammoth.images.imgElement((image) => {
-					return Promise.race([
-						image.read("base64").then((buf: any) => ({ src: `data:${image.contentType};base64,${buf}` })),
-						new Promise(resolve => setTimeout(() => resolve({ src: "" }), 5000)),
-					]) as Promise<any>;
-				}),
-			},
-		);
+		const altChunkHtml = await readAltChunkHtml(zip);
+		const result = altChunkHtml !== null
+			? { value: new DOMParser().parseFromString(altChunkHtml, "text/html").body.innerHTML }
+			: await mammoth.convertToHtml(
+				{ arrayBuffer: arrayBuffer.slice(0) },
+				{
+					styleMap,
+					ignoreEmptyParagraphs: false,
+					transformDocument: transformElement,
+					convertImage: mammoth.images.imgElement((image) => {
+						return Promise.race([
+							image.read("base64").then((buf: any) => ({ src: `data:${image.contentType};base64,${buf}` })),
+							new Promise(resolve => setTimeout(() => resolve({ src: "" }), 5000)),
+						]) as Promise<any>;
+					}),
+				},
+			);
 
 		if (!result?.value)
 			throw new Error("EMPTY_FILE");

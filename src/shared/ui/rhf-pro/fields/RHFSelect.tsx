@@ -101,6 +101,8 @@ export function RHFSelect<
 							{...props.formItemProps}
 						>
 							<Select<TValue>
+								showSearch
+								optionFilterProp="label"
 								{...(props.selectProps as any)}
 								options={options as any}
 								loading={props.loading ?? (props.selectProps as any)?.loading}

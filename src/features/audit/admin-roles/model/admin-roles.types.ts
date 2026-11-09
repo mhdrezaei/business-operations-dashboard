@@ -4,9 +4,6 @@ import type {
 	AdminRolePermissionAction,
 } from "./admin-roles.schema";
 
-/** Domains a policy row can belong to; the editor only exposes {@link AdminRoleDomainKey}, `contract_template` is carried through. */
-export type AdminRolePolicyDomain = AdminRoleDomainKey | "contract_template";
-
 export type AdminRoleScope = "global" | "service_admin" | (string & {});
 
 export interface AdminRoleUserRef {
@@ -43,7 +40,7 @@ export interface AdminRoleUpsertPayload {
 
 export interface AdminRolePolicyUpsertItem {
 	service: number
-	domain: AdminRolePolicyDomain
+	domain: AdminRoleDomainKey
 	can_view: boolean
 	can_create: boolean
 	can_update: boolean
@@ -65,7 +62,7 @@ export interface AdminRolePolicyDto {
 	service: number
 	service_code: string
 	service_name: string
-	domain: AdminRolePolicyDomain
+	domain: AdminRoleDomainKey
 	can_view: boolean
 	can_create: boolean
 	can_update: boolean

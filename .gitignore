@@ -49,3 +49,7 @@ graphify-out/
 
 # Parity audit notes (local)
 /docs/parity-audit/
+
+# QA findings, helper scripts and outputs (local only)
+/docs/qa-findings/
+tok.json

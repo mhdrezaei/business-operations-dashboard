@@ -30,6 +30,28 @@ export function normalizeContractValue(value: unknown): any {
 	return String(value).trim();
 }
 
+/**
+ * True when any array in `current` has a different length from the same array in `initial`.
+ * react-hook-form's `dirtyFields` misses a removal that leaves an empty array (setValue recurses into
+ * the new value's keys, and an empty array has none), so e.g. deleting the last port item never marked
+ * the form dirty and the save button stayed disabled.
+ */
+export function hasArrayLengthChange(current: unknown, initial: unknown): boolean {
+	if (Array.isArray(current) || Array.isArray(initial)) {
+		if (!Array.isArray(current) || !Array.isArray(initial))
+			return false;
+		if (current.length !== initial.length)
+			return true;
+		return current.some((item, index) => hasArrayLengthChange(item, initial[index]));
+	}
+	if (current != null && initial != null && typeof current === "object" && typeof initial === "object") {
+		return Object.keys(initial as Record<string, unknown>).some(key =>
+			hasArrayLengthChange((current as Record<string, unknown>)[key], (initial as Record<string, unknown>)[key]),
+		);
+	}
+	return false;
+}
+
 export function mergeContractValues(
 	initial: ContractFormValues,
 	current: Partial<ContractFormValues> | undefined,
@@ -207,15 +229,6 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 						ctx.addIssue({ code: "custom", path: ["companyId"], message: i18n.t("contract.schema.company") });
 					}
 				}
-
-				// If state/operators => company and company type are not needed
-				if (val.counterpartyType === "gov_ops") {
-					if (val.companyId != null) {
-						ctx.addIssue({ code: "custom", path: ["companyId"], message: i18n.t("contract.schema.companyNotNeeded") });
-						if (val.companyType != null)
-							ctx.addIssue({ code: "custom", path: ["companyType"], message: i18n.t("contract.schema.companyTypeNotNeeded") });
-					}
-				}
 			}
 			else if (
 				val.serviceCode === "traffic"
@@ -317,11 +330,25 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 									message: i18n.t("contract.schema.rackCount"),
 								});
 							}
+							else if ((toNumberOrNull((val.serviceFields as any)?.telecomRackCount) ?? 0) <= 0) {
+								ctx.addIssue({
+									code: "custom",
+									path: ["serviceFields", "telecomRackCount"],
+									message: i18n.t("contract.schema.rackCountPositive"),
+								});
+							}
 							if (isBlankValue((val.serviceFields as any)?.telecomUnitsPerRack)) {
 								ctx.addIssue({
 									code: "custom",
 									path: ["serviceFields", "telecomUnitsPerRack"],
 									message: i18n.t("contract.schema.unitsPerRack"),
+								});
+							}
+							else if ((toNumberOrNull((val.serviceFields as any)?.telecomUnitsPerRack) ?? 0) <= 0) {
+								ctx.addIssue({
+									code: "custom",
+									path: ["serviceFields", "telecomUnitsPerRack"],
+									message: i18n.t("contract.schema.unitsPerRackPositive"),
 								});
 							}
 							if (isBlankValue((val.serviceFields as any)?.telecomMonthlyRackRent)) {
@@ -366,14 +393,15 @@ export function buildContractSchema(serviceCode: ContractServiceCode | null) {
 					}
 					else {
 						const trafficFields = (val.serviceFields ?? {}) as Record<string, any>;
-						const hasLocation = trafficFields.isOfficial === false
-							? trafficFields.tehranEnabled !== false || trafficFields.provinceEnabled === true
-							: trafficFields.tehranPricing != null || trafficFields.provincePricing != null;
-						if (!hasLocation) {
+						const isInformal = trafficFields.isOfficial === false;
+						const hasTehran = isInformal ? trafficFields.tehranEnabled !== false : trafficFields.tehranPricing != null;
+						const hasProvince = isInformal ? trafficFields.provinceEnabled === true : trafficFields.provincePricing != null;
+						// بک‌اند تعریف تهران را برای قرارداد ترافیک اجباری می‌داند
+						if (!hasTehran) {
 							ctx.addIssue({
 								code: "custom",
 								path: ["serviceFields", "tehranPricing"],
-								message: i18n.t("contract.traffic.minLocation"),
+								message: i18n.t(hasProvince ? "contract.traffic.tehranRequired" : "contract.traffic.minLocation"),
 							});
 						}
 					}

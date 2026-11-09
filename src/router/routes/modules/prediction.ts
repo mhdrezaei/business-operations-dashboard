@@ -1,7 +1,9 @@
 import type { AppRouteRecordRaw } from "#src/router/types";
 import { SidebarPredictIcon } from "#src/icons/local-icons";
 import { ContainerLayout } from "#src/layout";
+import { $t } from "#src/locales";
 import { prediction } from "#src/router/extra-info";
+import { createIndexRedirectRoute } from "#src/router/utils/index-redirect-route";
 import {
 	FileAddOutlined,
 	TableOutlined,
@@ -17,19 +19,20 @@ const routes: AppRouteRecordRaw[] = [
 		Component: ContainerLayout,
 		handle: {
 			icon: createElement(SidebarPredictIcon),
-			title: "\u067E\u06CC\u0634 \u0628\u06CC\u0646\u06CC \u0639\u0645\u0644\u06A9\u0631\u062F",
+			title: $t("common.menu.predictionManagement"),
 			order: prediction,
 			accessDomain: "predictions",
 			accessAction: "view",
 		},
 		children: [
+			createIndexRedirectRoute(),
 
 			{
 				path: "/predictions/new",
 				Component: CreatePredictionPage,
 				handle: {
 					icon: createElement(FileAddOutlined),
-					title: "\u062B\u0628\u062A \u067E\u06CC\u0634 \u0628\u06CC\u0646\u06CC",
+					title: $t("common.menu.newPrediction"),
 					accessDomain: "predictions",
 					accessAction: "create",
 				},
@@ -39,9 +42,9 @@ const routes: AppRouteRecordRaw[] = [
 				Component: PredictionListPage,
 				handle: {
 					icon: createElement(TableOutlined),
-					title: "\u0648\u06CC\u0631\u0627\u06CC\u0634 \u067E\u06CC\u0634 \u0628\u06CC\u0646\u06CC\u200C\u0647\u0627",
+					title: $t("common.menu.editPredictions"),
 					accessDomain: "predictions",
-					accessAction: "update",
+					accessAction: "view",
 				},
 			},
 		],

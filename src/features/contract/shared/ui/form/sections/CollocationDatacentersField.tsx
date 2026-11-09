@@ -305,7 +305,9 @@ export function CollocationDatacentersField({ name, selectName, partnerType }: C
 					const selectedDatacenterOption = trafficDatacenterOptions.find(option => option.value === datacenterValue);
 					const datacenterLabel = selectedDatacenterOption?.label ?? t("contract.collocation.selectedDatacenter");
 					const shouldShowRackDiscountTiers = partnerType === "CP" && selectedDatacenterOption?.systemTag === BEHESHTI_DATACENTER_TAG;
-					const portItems = Array.isArray(datacenterItem?.portItems) && datacenterItem.portItems.length > 0
+					// Port is optional: an empty array is a valid state (no port income), so only fall back to a
+					// placeholder row when the field is missing — otherwise deleting the last item re-creates a row.
+					const portItems = Array.isArray(datacenterItem?.portItems)
 						? datacenterItem.portItems
 						: [{ rowKey: "initial-port", count: null, speed: null, unitPrice: null }];
 					const rackItems = Array.isArray(datacenterItem?.rackItems) && datacenterItem.rackItems.length > 0
@@ -342,6 +344,7 @@ export function CollocationDatacentersField({ name, selectName, partnerType }: C
 										label={t("contract.collocation.bandwidthRate")}
 										formItemProps={compactFormItemStyle}
 										enableGrouping
+										decimal
 										enableWordsTooltip
 									/>
 									<RHFProNumber<ContractFormValues, any>
@@ -349,6 +352,7 @@ export function CollocationDatacentersField({ name, selectName, partnerType }: C
 										label={t("contract.collocation.ipRate")}
 										formItemProps={compactFormItemStyle}
 										enableGrouping
+										decimal
 										enableWordsTooltip
 									/>
 								</div>
@@ -364,7 +368,7 @@ export function CollocationDatacentersField({ name, selectName, partnerType }: C
 														{" "}
 														{idx + 1}
 													</div>
-													<Button danger disabled={portItems.length <= 1} onClick={() => removeDatacenterPortItem(datacenterIndex, idx)}>
+													<Button danger onClick={() => removeDatacenterPortItem(datacenterIndex, idx)}>
 														{t("common.delete")}
 													</Button>
 												</div>
@@ -374,6 +378,7 @@ export function CollocationDatacentersField({ name, selectName, partnerType }: C
 														label={t("contract.collocation.unitPrice")}
 														formItemProps={compactFormItemStyle}
 														enableGrouping
+														decimal
 														enableWordsTooltip
 													/>
 													<RHFProNumber<ContractFormValues, any>
@@ -418,6 +423,7 @@ export function CollocationDatacentersField({ name, selectName, partnerType }: C
 														label={t("contract.collocation.unitPrice")}
 														formItemProps={compactFormItemStyle}
 														enableGrouping
+														decimal
 														enableWordsTooltip
 													/>
 													<RHFProNumber<ContractFormValues, any>
@@ -448,6 +454,7 @@ export function CollocationDatacentersField({ name, selectName, partnerType }: C
 										label={t("contract.collocation.ampRate")}
 										formItemProps={compactFormItemStyle}
 										enableGrouping
+										decimal
 										enableWordsTooltip
 									/>
 									<RHFProNumber<ContractFormValues, any>
@@ -455,6 +462,7 @@ export function CollocationDatacentersField({ name, selectName, partnerType }: C
 										label={t("contract.collocation.ampThreshold")}
 										formItemProps={compactFormItemStyle}
 										enableGrouping
+										decimal
 									/>
 								</div>
 

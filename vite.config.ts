@@ -99,6 +99,9 @@ export default defineConfig(({ mode }) => {
 			globals: true,
 			environment: "happy-dom",
 			setupFiles: ["./src/setupTests.ts"],
+			// antd-jalali's CJS entry require()s antd/es (extension-less ESM) which Node cannot load; use its ESM build via vite
+			alias: [{ find: /^antd-jalali$/, replacement: `${process.cwd()}/node_modules/antd-jalali/lib/esm/index.js` }],
+			server: { deps: { inline: [/antd-jalali/] } },
 			include: ["src/**/*.{test,spec}.{ts,tsx}", "tests/**/*.{test,spec}.{ts,tsx}"],
 			coverage: {
 				provider: "v8",

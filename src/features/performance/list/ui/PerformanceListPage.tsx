@@ -13,6 +13,7 @@ import {
 	aggregatePerformanceRows,
 	companyTypeMatches,
 	normalizePerformanceRecord,
+	pickCompanyTypeToken,
 	resolvePerformanceServicePath,
 	shouldAggregatePerformanceRows,
 } from "#src/features/performance/shared/model/performance.helpers";
@@ -154,8 +155,14 @@ function buildPerformanceSummary(service: PerformanceServicePath | null, row: Pe
 
 	if (service === "traffic") {
 		const trafficRows = Array.isArray(row.traffic_locations) ? row.traffic_locations as PerformanceListRow[] : [row];
+		const isCollocation = pickCompanyTypeToken(row.company_type) === "COLLOCATION";
 		trafficRows.forEach((item, index) => {
-			const location = trafficLocationLabel(item.location);
+			const location = isCollocation ? String(item.datacenter_name ?? trafficLocationLabel(item.location)) : trafficLocationLabel(item.location);
+			if (isCollocation) {
+				add(items, `traffic-income-${index}`, `${location} · ${i18next.t("performance.columns.income")}`, item.income, true);
+				add(items, `traffic-expense-${index}`, `${location} · ${i18next.t("performance.columns.expense")}`, item.expense, true);
+				return;
+			}
 			add(items, `traffic-sent-${index}`, `${location} · ${i18next.t("performance.fields.traffic.sentTraffic")}`, item.value);
 			add(items, `traffic-received-${index}`, `${location} · ${i18next.t("performance.fields.traffic.receivedTraffic")}`, item.value_receive);
 			add(items, `traffic-income-${index}`, `${location} · ${i18next.t("performance.columns.income")}`, item.income, true);

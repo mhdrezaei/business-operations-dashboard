@@ -80,7 +80,7 @@ export default function EditContractFormPage() {
 			service={selection.service}
 			readOnly={canApproveOnly}
 			onContractSelect={handleContractSelect}
-			onDeleted={() => setSelection({ contractId: null, serviceId: null, companyType: undefined, service: null })}
+			onDeleted={() => navigate("/contracts/edit", { replace: true })}
 		/>
 	);
 }

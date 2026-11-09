@@ -196,6 +196,36 @@ export function getReportTotalsRows(totals: unknown): PerformanceReportRow[] {
 	return [totals as PerformanceReportRow];
 }
 
+/**
+ * Summary cards need one totals object. Per-unit totals (`{"GB/month": {...}}`) sum their money fields; traffic values of
+ * different units are not additive, so they stay per unit in `value_by_unit` (one card each).
+ */
+export function summarizeReportTotals(totals: PerformanceReportTotals | null | undefined): PerformanceReportTotals | null {
+	if (!isByUnitTotals(totals))
+		return totals ?? null;
+
+	const rows = getReportTotalsRows(totals);
+	if (rows.length === 1)
+		return rows[0] as PerformanceReportTotals;
+	const summary: Record<string, unknown> = {};
+	rows.forEach((row) => {
+		Object.entries(row).forEach(([key, raw]) => {
+			const numeric = toNullableNumber(raw);
+			if (numeric == null || key.startsWith("value"))
+				return;
+			summary[key] = Number(summary[key] ?? 0) + numeric;
+		});
+	});
+	return {
+		...summary,
+		value: 0,
+		income_financial: Number(summary.income_financial ?? 0),
+		expense_financial: Number(summary.expense_financial ?? 0),
+		profit_financial: Number(summary.profit_financial ?? 0),
+		value_by_unit: rows,
+	};
+}
+
 export function getReportTotalsRowLabel(label: string, row: PerformanceReportRow) {
 	const unit = String(row.contract_unit ?? "").trim();
 	return unit ? `${label} (${unit})` : label;

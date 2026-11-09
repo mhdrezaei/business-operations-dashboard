@@ -9,8 +9,9 @@ import { CopyOutlined, DownOutlined, EditOutlined, PlusOutlined, UpOutlined } fr
 import { useQuery } from "@tanstack/react-query";
 import { Button, ConfigProvider, Form, theme } from "antd";
 
-import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 import { companiesByServiceQuery, servicesQuery, trafficDatacentersQuery } from "../../queries/company-profile.queries";
 import CompanyDataCopyModal from "../../sections/company-data-copy/ui/CompanyDataCopyModal";
@@ -26,6 +27,7 @@ interface ServiceCompanyLoaderSectionProps {
 }
 
 export function ServiceCompanyLoaderSection({ onCompanyDataCopied }: ServiceCompanyLoaderSectionProps) {
+	const { t } = useTranslation();
 	const antdContext = useContext(ConfigProvider.ConfigContext);
 	const { token } = theme.useToken();
 	const configuredCardRadius = antdContext.theme?.components?.Card?.borderRadiusLG;
@@ -92,7 +94,8 @@ export function ServiceCompanyLoaderSection({ onCompanyDataCopied }: ServiceComp
 	const prevCompanyIdRef = useRef<typeof companyId>(undefined);
 	const prevColocationModeRef = useRef<typeof colocationMode>(undefined);
 
-	useEffect(() => {
+	// layout effect: the reset must run before the type select's passive auto-select of a single option
+	useLayoutEffect(() => {
 		const prev = prevServiceIdRef.current;
 		prevServiceIdRef.current = serviceId;
 
@@ -214,12 +217,12 @@ export function ServiceCompanyLoaderSection({ onCompanyDataCopied }: ServiceComp
 
 	const isCompanyDisabled = !serviceId || isCompaniesLoading || (requiresCompanyType && !companyType);
 
-	const entityLabel = isDatacenterMode ? "دیتاسنتر" : "شرکت";
+	const entityLabel = isDatacenterMode ? t("companyProfile.loader.entityDatacenter") : t("companyProfile.loader.entityCompany");
 	const companyPlaceholder = !serviceId
-		? "ابتدا سرویس را انتخاب کنید"
+		? t("companyProfile.loader.selectServiceFirst")
 		: isCompaniesLoading
-			? "در حال دریافت لیست شرکت‌ها..."
-			: `${entityLabel} را انتخاب کنید`;
+			? t("companyProfile.loader.loadingCompanies")
+			: t("companyProfile.loader.selectEntity", { entity: entityLabel });
 
 	return (
 		<div
@@ -269,15 +272,15 @@ export function ServiceCompanyLoaderSection({ onCompanyDataCopied }: ServiceComp
 					<ContractFilterSearchIcon />
 				</span>
 				<div className="basic-table-filter-heading__copy">
-					<div className="basic-table-filter-heading__title">انتخاب شرکت</div>
+					<div className="basic-table-filter-heading__title">{t("companyProfile.loader.title")}</div>
 					<div className="basic-table-filter-heading__subtitle">
-						برای مشاهده و مدیریت اطلاعات، ابتدا سرویس و شرکت موردنظر را انتخاب کنید.
+						{t("companyProfile.loader.subtitle")}
 					</div>
 				</div>
 				<button
 					type="button"
 					className="basic-table-filter-toggle"
-					aria-label={filtersCollapsed ? "باز کردن فیلترها" : "بستن فیلترها"}
+					aria-label={filtersCollapsed ? t("companyProfile.loader.expandFilters") : t("companyProfile.loader.collapseFilters")}
 					aria-expanded={!filtersCollapsed}
 					onClick={(event) => {
 						event.stopPropagation();
@@ -295,11 +298,11 @@ export function ServiceCompanyLoaderSection({ onCompanyDataCopied }: ServiceComp
 							<div>
 								<RHFSelect<CompanyProfileFormValues, "serviceId", number | null>
 									name="serviceId"
-									label="سرویس"
+									label={t("companyProfile.loader.service")}
 									loading={services.isLoading}
 									options={serviceOptions}
 									autoSelectSingle
-									selectProps={{ allowClear: true, placeholder: "سرویس را انتخاب کنید" }}
+									selectProps={{ allowClear: true, placeholder: t("companyProfile.loader.selectService") }}
 								/>
 							</div>
 
@@ -308,14 +311,14 @@ export function ServiceCompanyLoaderSection({ onCompanyDataCopied }: ServiceComp
 									<div>
 										<RHFSelect<CompanyProfileFormValues, "companyType", string | null>
 											name="companyType"
-											label="نوع شرکت"
+											label={t("companyProfile.loader.companyType")}
 											loading={false}
 											options={companyTypeOptions}
 											autoSelectSingle
 											selectProps={{
 												allowClear: true,
 												disabled: !serviceId,
-												placeholder: "نوع شرکت را انتخاب کنید",
+												placeholder: t("companyProfile.loader.selectCompanyType"),
 											}}
 										/>
 									</div>
@@ -327,12 +330,12 @@ export function ServiceCompanyLoaderSection({ onCompanyDataCopied }: ServiceComp
 									<div>
 										<RHFSelect<CompanyProfileFormValues, "colocationMode", ColocationMode>
 											name="colocationMode"
-											label="مدیریت کولوکیشن"
+											label={t("companyProfile.loader.colocationMode")}
 											options={[
-												{ label: "شریک تجاری", value: "PARTNER" },
-												{ label: "دیتاسنتر", value: "DATACENTER" },
+												{ label: t("companyProfile.loader.partner"), value: "PARTNER" },
+												{ label: t("companyProfile.loader.datacenter"), value: "DATACENTER" },
 											]}
-											selectProps={{ placeholder: "انتخاب کنید" }}
+											selectProps={{ placeholder: t("companyProfile.loader.select") }}
 										/>
 									</div>
 								)
@@ -347,6 +350,8 @@ export function ServiceCompanyLoaderSection({ onCompanyDataCopied }: ServiceComp
 									autoSelectSingle
 									selectProps={{
 										allowClear: true,
+										showSearch: true,
+										optionFilterProp: "label",
 										disabled: isCompanyDisabled,
 										placeholder: companyPlaceholder,
 										style: isCompanyDisabled ? { cursor: "not-allowed" } : undefined,
@@ -364,7 +369,7 @@ export function ServiceCompanyLoaderSection({ onCompanyDataCopied }: ServiceComp
 									disabled={!serviceId || (requiresCompanyType && !companyType)}
 									onClick={() => setCreateOpen(true)}
 								>
-									{isDatacenterMode ? "ایجاد دیتاسنتر جدید" : "ایجاد شرکت جدید"}
+									{isDatacenterMode ? t("companyProfile.loader.createDatacenter") : t("companyProfile.loader.createCompany")}
 								</Button>
 							) : null}
 
@@ -375,7 +380,7 @@ export function ServiceCompanyLoaderSection({ onCompanyDataCopied }: ServiceComp
 									disabled={!companyId || (requiresCompanyType && !companyType)}
 									onClick={() => setRenameOpen(true)}
 								>
-									{isDatacenterMode ? "ویرایش نام دیتاسنتر" : "ویرایش نام شرکت"}
+									{isDatacenterMode ? t("companyProfile.loader.renameDatacenter") : t("companyProfile.loader.renameCompany")}
 								</Button>
 							) : null}
 
@@ -386,7 +391,7 @@ export function ServiceCompanyLoaderSection({ onCompanyDataCopied }: ServiceComp
 									disabled={!companyId || (requiresCompanyType && !companyType)}
 									onClick={() => setCopyOpen(true)}
 								>
-									کپی اطلاعات
+									{t("companyProfile.loader.copyData")}
 								</Button>
 							) : null}
 						</div>

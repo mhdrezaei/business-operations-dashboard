@@ -323,6 +323,7 @@
 		"tehranContractUnit": "Tehran effective unit this month",
 		"countyContractUnit": "County centers effective unit this month",
 		"created": "Created",
+		"uploadFailed": "File upload failed.",
 		"stepDownload": "Download template file",
 		"stepUpload": "Upload performance file",
 		"stepImport": "Import values",
@@ -468,7 +469,8 @@
 			"companyTypeRequired": "Company type is required",
 			"trafficCompanyTypeRequired": "Traffic company type is required",
 			"salesAgentRequired": "Sales agent is required",
-			"openapiContractModelUnknown": "OpenAPI contract model is not specified"
+			"openapiContractModelUnknown": "OpenAPI contract model is not specified",
+			"negativeValue": "The value cannot be negative"
 		},
 		"openapi": {
 			"billInquiryValueRequired": "Bill inquiry performance value is required",
@@ -571,7 +573,9 @@
 			"psp": "PSP Service",
 			"sms": "SMS Service",
 			"smsCommission": "SMS Agency Service",
-			"shahkar": "Shahkar Service"
+			"shahkar": "Shahkar Service",
+			"traffic": "Traffic service",
+			"commercial": "Commercial service"
 		},
 		"salesAgencyEditTitle": "Edit country sales agency performance",
 		"totalSalesRial": "Total monthly sales (IRR)",

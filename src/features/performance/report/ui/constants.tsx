@@ -208,10 +208,14 @@ export interface GetPerformanceReportColumnsArgs {
 	renderRowActions: (row: PerformanceReportRow) => ReactNode
 }
 
-function createOperationTypeLabels(t: TFunction<"translation", undefined>) {
+export function createOperationTypeLabels(t: TFunction<"translation", undefined>) {
 	return {
 		BILL_INQUIRY: t("performance.operationType.billInquiry"),
 		RECEIPT_REGISTER: t("performance.operationType.receiptRegister"),
+		BILL_INQUIRY_MIDTERM: t("performance.predictionsSummary.types.BILL_INQUIRY_MIDTERM"),
+		BILL_INQUIRY_ENDTERM: t("performance.predictionsSummary.types.BILL_INQUIRY_ENDTERM"),
+		RECEIPT_REGISTER_CONNECTED: t("performance.predictionsSummary.types.RECEIPT_REGISTER_CONNECTED"),
+		RECEIPT_REGISTER_DISCONNECTED: t("performance.predictionsSummary.types.RECEIPT_REGISTER_DISCONNECTED"),
 	} as Record<string, string>;
 }
 
@@ -1126,9 +1130,7 @@ function buildPspReportTableColumns(
 		createReportIndexColumn(ctx.t),
 		createReportIdColumn(ctx.t),
 	];
-	if (ctx.showCompanyType)
-		tableColumns.push(createReportCompanyTypeColumn(ctx.t, ctx.companyTypeOptions));
-	appendFiscalYearColumns(tableColumns, ctx);
+	appendSharedDimensionColumns(tableColumns, ctx, false, ctx.showCompanyType);
 	tableColumns.push(createReportCountColumn(ctx.t));
 
 	if (financialColumns.has("income"))

@@ -1,3 +1,4 @@
+import i18next from "i18next";
 import { z } from "zod";
 
 export function emptyToNull(v: unknown) {
@@ -16,6 +17,6 @@ export function zNullableNumber(message: string) {
 export function zNullableNonNegative(message: string) {
 	return zNullableNumber(message).refine(
 		v => v == null || v >= 0,
-		{ message },
+		{ message: i18next.t("performance.validation.base.negativeValue") },
 	);
 }

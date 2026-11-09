@@ -166,6 +166,7 @@ export function ContractTierTable({ name, currencyAddon, variant = "card", showR
 									name={`${name}.${index}.fee` as any}
 									label=""
 									enableGrouping
+									decimal
 									enableWordsTooltip
 									inputProps={{
 										placeholder: "برای مثال ۱۲۰",

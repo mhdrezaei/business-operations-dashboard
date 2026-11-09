@@ -126,7 +126,7 @@ export default function AdminRolesListPage() {
 						actions.push(
 							<Popconfirm
 								key="delete"
-								title={t("common.confirmDelete")}
+								title={record.assigned_user_count > 0 ? `این نقش به ${record.assigned_user_count} کاربر اختصاص دارد و با حذف آن، دسترسی آن‌ها از بین می‌رود. حذف شود؟` : t("common.confirmDelete")}
 								okText={t("common.confirm")}
 								cancelText={t("common.cancel")}
 								onConfirm={() => handleDeleteRole(record, action)}
@@ -196,7 +196,14 @@ export default function AdminRolesListPage() {
 				onSubmit={async ({ role, policies }) => {
 					if (upsertMode === "create") {
 						const createdRole = await fetchCreateAdminRole(role);
-						await fetchBulkUpsertAdminRolePolicies(createdRole.id, policies);
+						try {
+							await fetchBulkUpsertAdminRolePolicies(createdRole.id, policies);
+						}
+						catch (error) {
+							// don't leave an orphan role without policies behind
+							await fetchDeleteAdminRole(createdRole.id).catch(() => undefined);
+							throw error;
+						}
 						window.$message?.success("نقش با موفقیت ایجاد شد.");
 					}
 					else {

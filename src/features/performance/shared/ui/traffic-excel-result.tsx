@@ -24,6 +24,12 @@ export function UploadStatCard({
 	);
 }
 
+function formatRejectionDetails(details: Record<string, unknown> | null | undefined) {
+	return Object.entries(details ?? {})
+		.map(([key, value]) => `${key}: ${typeof value === "object" ? JSON.stringify(value) : String(value)}`)
+		.join("، ");
+}
+
 function UploadRejectedRow({
 	item,
 	index,
@@ -32,6 +38,7 @@ function UploadRejectedRow({
 	index: number
 }) {
 	const { token } = theme.useToken();
+	const detailsText = formatRejectionDetails(item.details);
 	return (
 		<div
 			className={index === 0 ? REJECTION_GRID_CLASS : `${REJECTION_GRID_CLASS} border-t border-solid`}
@@ -39,7 +46,10 @@ function UploadRejectedRow({
 		>
 			<div>{item.row_no}</div>
 			<div>{item.company_name || "-"}</div>
-			<div style={{ color: token.colorError }}>{item.reason}</div>
+			<div style={{ color: token.colorError }}>
+				{item.reason}
+				{detailsText ? <div className="text-xs opacity-80" dir="auto">{detailsText}</div> : null}
+			</div>
 		</div>
 	);
 }

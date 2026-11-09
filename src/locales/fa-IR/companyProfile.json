@@ -32,6 +32,8 @@
 	"service": "سرویس",
 	"serviceRequired": "سرویس را انتخاب کنید",
 	"nameRequired": "نام شرکت الزامی است",
+	"nameTooShort": "نام شرکت باید حداقل ۲ کاراکتر باشد",
+	"nameTooLong": "نام شرکت نباید بیشتر از ۲۰۰ کاراکتر باشد",
 	"companyType": "نوع شرکت",
 	"companyTypePlaceholder": "نوع شرکت را انتخاب کنید",
 	"agentName": "نام نماینده فروش",
@@ -48,5 +50,29 @@
 	},
 	"documents": {
 		"downloadError": "خطا در دانلود مدرک"
+	},
+	"loader": {
+		"entityDatacenter": "دیتاسنتر",
+		"entityCompany": "شرکت",
+		"selectServiceFirst": "ابتدا سرویس را انتخاب کنید",
+		"loadingCompanies": "در حال دریافت لیست شرکت‌ها...",
+		"selectEntity": "{{entity}} را انتخاب کنید",
+		"title": "انتخاب شرکت",
+		"subtitle": "برای مشاهده و مدیریت اطلاعات، ابتدا سرویس و شرکت موردنظر را انتخاب کنید.",
+		"expandFilters": "باز کردن فیلترها",
+		"collapseFilters": "بستن فیلترها",
+		"service": "سرویس",
+		"selectService": "سرویس را انتخاب کنید",
+		"companyType": "نوع شرکت",
+		"selectCompanyType": "نوع شرکت را انتخاب کنید",
+		"colocationMode": "مدیریت کولوکیشن",
+		"partner": "شریک تجاری",
+		"datacenter": "دیتاسنتر",
+		"select": "انتخاب کنید",
+		"createDatacenter": "ایجاد دیتاسنتر جدید",
+		"createCompany": "ایجاد شرکت جدید",
+		"renameDatacenter": "ویرایش نام دیتاسنتر",
+		"renameCompany": "ویرایش نام شرکت",
+		"copyData": "کپی اطلاعات"
 	}
 }

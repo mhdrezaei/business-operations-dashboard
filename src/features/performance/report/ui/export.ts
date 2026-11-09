@@ -103,7 +103,11 @@ function buildSummaryEntries(summary: PerformanceReportTotals | null | undefined
 		entries.push([key, label, formatReportMoney(value, showRial)]);
 	};
 
-	entries.push(["total", financialColumnTitles.total, formatReportNumber(summary.value)]);
+	const valueByUnit = Array.isArray(summary.value_by_unit) ? summary.value_by_unit as PerformanceReportListItem[] : [];
+	if (valueByUnit.length > 0)
+		valueByUnit.forEach(row => entries.push(["total", getReportTotalsRowLabel(financialColumnTitles.total!, row), formatReportNumber(row.value)]));
+	else
+		entries.push(["total", financialColumnTitles.total, formatReportNumber(summary.value)]);
 	appendMoneyEntry("income", REPORT_FIELD_KEYS.income);
 	appendMoneyEntry("expense", REPORT_FIELD_KEYS.expense);
 	appendMoneyEntry("profit", REPORT_FIELD_KEYS.profit);
@@ -1112,6 +1116,12 @@ function buildLayoutExportColumns(args: {
 	}
 
 	if (args.layout === "psp") {
+		if (!args.hideCompanyColumn) {
+			columns.push({
+				title: args.companyNameTitle,
+				getValue: row => String(row.company_name ?? "-"),
+			});
+		}
 		if (args.financialColumnTitles.companyType) {
 			columns.push({
 				title: args.companyTypeTitle,
@@ -1123,6 +1133,12 @@ function buildLayoutExportColumns(args: {
 			yearTitle: args.yearTitle,
 			shYearTitle: args.shYearTitle,
 		});
+		if (!args.hideMonthColumn) {
+			columns.push({
+				title: args.monthTitle,
+				getValue: row => String(getReportMonthLabel(row, periodType)),
+			});
+		}
 		columns.push({
 			title: args.countTitle,
 			getValue: row => formatReportNumber(row.value),

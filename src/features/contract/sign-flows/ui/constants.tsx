@@ -13,6 +13,15 @@ export const SIGN_FLOW_STATE_MAP: Record<string, { label: string, color: string 
 	revoked: { label: "ابطال شده", color: "warning" },
 };
 
+/** i18n keys of the per-step states returned by the backend (pending/active/approved/rejected/cancelled). */
+export const SIGN_FLOW_STEP_STATE_KEYS: Record<string, string> = {
+	pending: "contract.signFlow.stepState.pending",
+	active: "contract.signFlow.stepState.active",
+	approved: "contract.signFlow.stepState.approved",
+	rejected: "contract.signFlow.stepState.rejected",
+	cancelled: "contract.signFlow.stepState.cancelled",
+};
+
 export const RECORD_TYPE_MAP: Record<string, string> = {
 	contract: "قرارداد پایه",
 	addendum: "الحاقیه",
