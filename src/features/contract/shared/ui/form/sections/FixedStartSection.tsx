@@ -742,6 +742,10 @@ export function FixedStartSection({ mode = "create", awaitingContractSelection =
 		setCollocationStep(normalizedStep);
 	}
 
+	const revalidateRealStart = async () => {
+		await trigger(["serviceFields.realStartYear", "serviceFields.realStartMonth"] as any);
+	};
+
 	function renderRealStartFields(idSuffix: string) {
 		return (
 			<CollocationStepPane active={shouldShowRealStartFields}>
@@ -749,6 +753,7 @@ export function FixedStartSection({ mode = "create", awaitingContractSelection =
 					<AlignedFormField label={t("contract.field.realStartYear")} labelId={`contract-form-label-real-start-year-${idSuffix}`}>
 						<RHFSelect<ContractFormValues, any, number | null>
 							name={"serviceFields.realStartYear" as any}
+							onValueChange={revalidateRealStart}
 							formItemProps={compactFormItemStyle}
 							options={realStartYearOptions}
 							selectProps={{
@@ -762,6 +767,7 @@ export function FixedStartSection({ mode = "create", awaitingContractSelection =
 					<AlignedFormField label={t("contract.field.realStartMonth")} labelId={`contract-form-label-real-start-month-${idSuffix}`}>
 						<RHFSelect<ContractFormValues, any, number | null>
 							name={"serviceFields.realStartMonth" as any}
+							onValueChange={revalidateRealStart}
 							formItemProps={compactFormItemStyle}
 							options={realStartMonthOptions}
 							selectProps={{
