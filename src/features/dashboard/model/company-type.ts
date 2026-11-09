@@ -17,3 +17,8 @@ export function serviceTypeLabel(row: { service_code: string, service_name: stri
 	const name = row.service_name || row.service_code;
 	return companyType ? `${name} (${companyTypeLabel(row.service_code, companyType)})` : name;
 }
+
+/** Type shown for a list row: the contract's own type when known, else the company type. */
+export function rowCompanyType(row: { company_type: string | null, contract_company_type?: string | null }) {
+	return row.contract_company_type ?? row.company_type;
+}

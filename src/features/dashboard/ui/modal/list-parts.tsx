@@ -1,6 +1,6 @@
 import type { ApprovalStage, RealSignState, SortOrder } from "#src/features/dashboard/api/dashboard.dto";
 import type { ReactNode, RefObject } from "react";
-import { companyTypeLabel } from "#src/features/dashboard/model/company-type";
+import { companyTypeLabel, rowCompanyType } from "#src/features/dashboard/model/company-type";
 import { formatCount } from "#src/features/dashboard/model/format";
 import { RiArrowDownLine, RiArrowLeftSLine, RiArrowRightSLine, RiArrowUpDownLine, RiArrowUpLine } from "#src/features/dashboard/ui/icons";
 import { AutoHeight } from "#src/features/dashboard/ui/shell/AutoHeight";
@@ -38,8 +38,9 @@ export function StatusTag({ color, children }: { color: string, children: ReactN
 }
 
 /** Service name with the company type below it. */
-export function ServiceCell({ row }: { row: { service_name?: string | null, service_code: string, company_type: string | null } }) {
-	const type = row.company_type ? companyTypeLabel(row.service_code, row.company_type) : null;
+export function ServiceCell({ row }: { row: { service_name?: string | null, service_code: string, company_type: string | null, contract_company_type?: string | null } }) {
+	const companyType = rowCompanyType(row);
+	const type = companyType ? companyTypeLabel(row.service_code, companyType) : null;
 	return (
 		<>
 			<div>{row.service_name || "—"}</div>

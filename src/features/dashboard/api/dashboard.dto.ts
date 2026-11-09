@@ -352,6 +352,8 @@ export interface ContractListRow {
 	company_id: number
 	company_name: string
 	company_type: string | null
+	/** Real traffic contract/addendum type (e.g. COLLOCATION); null for non-traffic or ambiguous. */
+	contract_company_type: string | null
 	start_date: IsoDate
 	start_sh_year: number
 	start_sh_month: number
