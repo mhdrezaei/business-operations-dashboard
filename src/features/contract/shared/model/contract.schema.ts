@@ -30,6 +30,28 @@ export function normalizeContractValue(value: unknown): any {
 	return String(value).trim();
 }
 
+/**
+ * True when any array in `current` has a different length from the same array in `initial`.
+ * react-hook-form's `dirtyFields` misses a removal that leaves an empty array (setValue recurses into
+ * the new value's keys, and an empty array has none), so e.g. deleting the last port item never marked
+ * the form dirty and the save button stayed disabled.
+ */
+export function hasArrayLengthChange(current: unknown, initial: unknown): boolean {
+	if (Array.isArray(current) || Array.isArray(initial)) {
+		if (!Array.isArray(current) || !Array.isArray(initial))
+			return false;
+		if (current.length !== initial.length)
+			return true;
+		return current.some((item, index) => hasArrayLengthChange(item, initial[index]));
+	}
+	if (current != null && initial != null && typeof current === "object" && typeof initial === "object") {
+		return Object.keys(initial as Record<string, unknown>).some(key =>
+			hasArrayLengthChange((current as Record<string, unknown>)[key], (initial as Record<string, unknown>)[key]),
+		);
+	}
+	return false;
+}
+
 export function mergeContractValues(
 	initial: ContractFormValues,
 	current: Partial<ContractFormValues> | undefined,

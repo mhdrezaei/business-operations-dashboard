@@ -1,6 +1,6 @@
 import type { ContractFormValues } from "./contract.form.types";
 import { describe, expect, it, vi } from "vitest";
-import { buildContractSchema } from "./contract.schema";
+import { buildContractSchema, hasArrayLengthChange } from "./contract.schema";
 
 // registry شامل کامپوننت‌های UI است؛ این تست فقط قواعد سطح قرارداد را می‌سنجد
 vi.mock("../services/registry", () => ({ serviceRegistry: {} }));
@@ -72,7 +72,7 @@ describe("contract schema", () => {
 		expect(issues({ ...collocation, serviceFields: { ...collocation.serviceFields, sla: "GOLD" } })).not.toContain("serviceFields.sla");
 	});
 
-	it("requires at least one port item and one rack item per collocation datacenter", () => {
+	it("makes the port optional but still requires one rack item per collocation datacenter", () => {
 		const input = values({
 			companyType: "COLLOCATION",
 			counterpartyType: "partners",
@@ -83,7 +83,26 @@ describe("contract schema", () => {
 				datacenters: [{ datacenter: "3", bandwidthUnitRate: 1, ipRate: 1, electricityAmpRate: 1, electricityExemptionThreshold: 1, portItems: [], rackItems: [] }],
 			},
 		});
-		expect(issues(input)).toEqual(expect.arrayContaining(["serviceFields.datacenters.0.portItems", "serviceFields.datacenters.0.rackItems"]));
+		const found = issues(input);
+		expect(found).toContain("serviceFields.datacenters.0.rackItems");
+		expect(found).not.toContain("serviceFields.datacenters.0.portItems");
+	});
+
+	it("allows port count 0 but rejects negative or fractional port counts", () => {
+		const withPort = (count: number) => values({
+			companyType: "COLLOCATION",
+			counterpartyType: "partners",
+			serviceFields: {
+				isOfficial: true,
+				sla: "GOLD",
+				collocationPartnerType: "COLLOCATION",
+				datacenters: [{ datacenter: "3", bandwidthUnitRate: 1, ipRate: 1, electricityAmpRate: 1, electricityExemptionThreshold: 1, portItems: [{ count, speed: 1, unitPrice: 0 }], rackItems: [{ rackType: "full", count: 1, unitPrice: 1 }] }],
+			},
+		});
+		const key = "serviceFields.datacenters.0.portItems.0.count";
+		expect(issues(withPort(0))).not.toContain(key);
+		expect(issues(withPort(-1))).toContain(key);
+		expect(issues(withPort(1.5))).toContain(key);
 	});
 
 	it("keeps the real start fields for services whose schema is not passthrough", () => {
@@ -100,5 +119,20 @@ describe("contract schema", () => {
 			},
 		});
 		expect(issues(input)).toContain("serviceFields.addenda.0.startYear");
+	});
+});
+
+describe("hasArrayLengthChange", () => {
+	const initial = { serviceFields: { datacenters: [{ portItems: [{ count: 1 }], rackItems: [{ count: 1 }] }] } };
+
+	it("detects removing every item of a nested array (react-hook-form misses this)", () => {
+		const current = { serviceFields: { datacenters: [{ portItems: [], rackItems: [{ count: 1 }] }] } };
+		expect(hasArrayLengthChange(current, initial)).toBe(true);
+	});
+
+	it("is false when only scalar values differ or nothing changed", () => {
+		expect(hasArrayLengthChange(initial, initial)).toBe(false);
+		const edited = { serviceFields: { datacenters: [{ portItems: [{ count: 9 }], rackItems: [{ count: 1 }] }] } };
+		expect(hasArrayLengthChange(edited, initial)).toBe(false);
 	});
 });

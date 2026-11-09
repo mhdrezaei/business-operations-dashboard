@@ -17,20 +17,18 @@ function validateRequired(ctx: z.RefinementCtx, row: Row, path: IssuePath, field
 	});
 }
 
-/** هر دیتاسنتر حداقل یک آیتم پورت و یک آیتم رک معتبر لازم دارد (مثل old). */
+/** پورت اختیاری است (بدون آیتم ⇒ درآمد پورت صفر)؛ هر دیتاسنتر حداقل یک آیتم رک لازم دارد. */
 function validateDatacenterItems(ctx: z.RefinementCtx, datacenter: Row, path: IssuePath) {
 	const portItems = asRows(datacenter.portItems);
 	const rackItems = asRows(datacenter.rackItems);
-	if (portItems.length === 0)
-		addIssue(ctx, [...path, "portItems"], "portItemsRequired");
 	if (rackItems.length === 0)
 		addIssue(ctx, [...path, "rackItems"], "rackItemsRequired");
 
 	portItems.forEach((item, index) => {
 		validateRequired(ctx, item, [...path, "portItems", index], { count: "count", speed: "speed", unitPrice: "unitPrice" });
 		const count = toNumberOrNull(item.count);
-		if (count != null && (!Number.isInteger(count) || count <= 0))
-			addIssue(ctx, [...path, "portItems", index, "count"], "countPositive");
+		if (count != null && (!Number.isInteger(count) || count < 0))
+			addIssue(ctx, [...path, "portItems", index, "count"], "portCountNonNegative");
 		const speed = toNumberOrNull(item.speed);
 		if (speed != null && speed <= 0)
 			addIssue(ctx, [...path, "portItems", index, "speed"], "speedPositive");

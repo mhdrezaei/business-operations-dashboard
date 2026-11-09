@@ -14,7 +14,7 @@ import { useTranslation } from "react-i18next";
 
 import { getContractAccessCompanyType } from "../../model/company-type-options";
 import { resolveContractServicePath } from "../../model/contract-service-path";
-import { buildContractSchema, mergeContractValues, normalizeContractValue } from "../../model/contract.schema";
+import { buildContractSchema, hasArrayLengthChange, mergeContractValues, normalizeContractValue } from "../../model/contract.schema";
 import { serviceRegistry } from "../../services/registry";
 import { findFirstError } from "../../utils";
 import { ActionSection } from "./sections/ActionSection";
@@ -151,7 +151,8 @@ export function ContractForm({
 	const canUpdateSelectedService = watchedValues.serviceId != null && hasDomainPermissionByServiceId("contracts", "update", watchedValues.serviceId, getContractAccessCompanyType(resolveContractServicePath({ serviceCode: watchedValues.serviceCode, companyType: watchedValues.companyType, counterpartyType: watchedValues.counterpartyType }), watchedValues.companyType));
 	const { dirtyFields } = form.formState;
 	const isDirty = useMemo(() => {
-		return hasMeaningfulDirtyField(dirtyFields, watchedValues, mergedInitialValues);
+		return hasMeaningfulDirtyField(dirtyFields, watchedValues, mergedInitialValues)
+		  || hasArrayLengthChange(watchedValues, mergedInitialValues);
 	}, [dirtyFields, mergedInitialValues, watchedValues]);
 	const mainPricing = watchedValues.serviceFields?.contractPricing as ContractTypeValue | undefined;
 	useEffect(() => {
