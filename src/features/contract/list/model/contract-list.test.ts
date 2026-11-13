@@ -2,8 +2,10 @@ import type { ContractListItemType } from "./contracts.list.types";
 import { describe, expect, it } from "vitest";
 import {
 	formatContractMonth,
+	getContractDeleteWarnings,
 	getContractListUserName,
 	getContractPdfBlockReason,
+	getOfficeApproval,
 	resolveListServicePath,
 	resolveSmsParty,
 	toContractListQuery,
@@ -42,6 +44,23 @@ describe("toContractListQuery", () => {
 		expect(query.sms_party).toBeUndefined();
 		expect(query.search).toBeUndefined();
 	});
+
+	it("parses numeric company_id, string company_type, and boolean real_signed correctly", () => {
+		const query = toContractListQuery({
+			company_id: "42",
+			company_type: "IXP",
+			real_signed: false,
+			is_official: true,
+			sms_party: "vendor",
+		});
+		expect(query).toMatchObject({
+			company_id: 42,
+			company_type: "IXP",
+			real_signed: false,
+			is_official: true,
+			sms_party: "vendor",
+		});
+	});
 });
 
 describe("resolveListServicePath", () => {
@@ -75,5 +94,48 @@ describe("row helpers", () => {
 		expect(formatContractMonth(null, 5)).toBeNull();
 		expect(getContractListUserName({ first_name: "Ali", last_name: " Reza " })).toBe("Ali Reza");
 		expect(getContractListUserName(null)).toBeNull();
+	});
+});
+
+describe("getOfficeApproval", () => {
+	it("returns 'approved' when is_signed is explicitly true", () => {
+		expect(getOfficeApproval({ is_signed: true, is_business_approved: true })).toBe("approved");
+		expect(getOfficeApproval({ is_signed: true, is_business_approved: false })).toBe("approved");
+		expect(getOfficeApproval({ is_signed: true, is_business_approved: null })).toBe("approved");
+	});
+
+	it("returns 'waiting' when is_signed is false/null but business is approved", () => {
+		expect(getOfficeApproval({ is_signed: false, is_business_approved: true })).toBe("waiting");
+		expect(getOfficeApproval({ is_signed: null, is_business_approved: true })).toBe("waiting");
+	});
+
+	it("returns 'waiting_business' when neither or only business approval is not true", () => {
+		expect(getOfficeApproval({ is_signed: false, is_business_approved: false })).toBe("waiting_business");
+		expect(getOfficeApproval({ is_signed: null, is_business_approved: null })).toBe("waiting_business");
+		expect(getOfficeApproval({ is_signed: false, is_business_approved: null })).toBe("waiting_business");
+	});
+});
+
+describe("getContractDeleteWarnings", () => {
+	it("returns empty array when contract has no approvals and zero addenda", () => {
+		expect(getContractDeleteWarnings({})).toEqual([]);
+		expect(getContractDeleteWarnings({ is_business_approved: false, is_signed: false, addenda_count: 0 })).toEqual([]);
+		expect(getContractDeleteWarnings({ is_business_approved: null, is_signed: null, addenda_count: null })).toEqual([]);
+	});
+
+	it("includes 'approved' when business approval or signature is true", () => {
+		expect(getContractDeleteWarnings({ is_business_approved: true })).toEqual(["approved"]);
+		expect(getContractDeleteWarnings({ is_signed: true })).toEqual(["approved"]);
+		expect(getContractDeleteWarnings({ is_business_approved: true, is_signed: true })).toEqual(["approved"]);
+	});
+
+	it("includes 'addenda' when addenda_count is greater than 0", () => {
+		expect(getContractDeleteWarnings({ addenda_count: 1 })).toEqual(["addenda"]);
+		expect(getContractDeleteWarnings({ addenda_count: 5 })).toEqual(["addenda"]);
+	});
+
+	it("includes both 'approved' and 'addenda' when both conditions are met", () => {
+		expect(getContractDeleteWarnings({ is_business_approved: true, addenda_count: 3 })).toEqual(["approved", "addenda"]);
+		expect(getContractDeleteWarnings({ is_signed: true, addenda_count: 1 })).toEqual(["approved", "addenda"]);
 	});
 });
