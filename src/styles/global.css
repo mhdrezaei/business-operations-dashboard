@@ -233,8 +233,9 @@ html.gray-mode {
 .ant-message .ant-message-notice-content {
 	padding: 14px 18px;
 	border-radius: 14px;
-	background: var(--ant-colorBgElevated) !important;
-	color: var(--ant-colorText) !important;
+	/* Static message.* renders outside the ConfigProvider, so only the :root --oo-* tokens exist here. */
+	background: var(--oo-colorBgElevated) !important;
+	color: var(--oo-colorText) !important;
 	box-shadow: var(--ant-boxShadowSecondary);
 }
 

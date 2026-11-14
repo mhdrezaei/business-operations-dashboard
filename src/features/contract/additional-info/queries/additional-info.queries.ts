@@ -32,6 +32,7 @@ export function guaranteesListQuery(params: GuaranteesListQuery) {
 			params.type,
 			params.base_contract ?? null,
 			params.addendum_group_id ?? null,
+			params.scope ?? null,
 		],
 		queryFn: () => fetchGuarantees(params),
 		enabled: Boolean(params.type),
@@ -82,6 +83,7 @@ export function invalidateContractAdditionalInfo(
 export function useContractAllGuarantees(
 	baseContractId: number | null | undefined,
 	addendumGroupId?: string | null,
+	scope?: GuaranteesListQuery["scope"],
 ) {
 	const results = useQueries({
 		queries: GUARANTEE_TYPES.map(type => ({
@@ -89,6 +91,7 @@ export function useContractAllGuarantees(
 				type,
 				base_contract: baseContractId ?? undefined,
 				addendum_group_id: addendumGroupId ?? undefined,
+				scope,
 			}),
 			enabled: baseContractId != null && baseContractId > 0,
 		})),

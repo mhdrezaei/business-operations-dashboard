@@ -5,8 +5,8 @@ import type { ContractCreateRouteState } from "../../shared/utils/contract-route
 import type { ContractListFormParams } from "../model/contract-list";
 import type { ContractListItemType } from "../model/contracts.list.types";
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
-
 import { sortToOrdering } from "#src/components/basic-table/sort";
+
 import { ContractAdditionalInfoModal } from "#src/features/contract/additional-info";
 import { companiesByServiceQuery, servicesQuery } from "#src/features/contract/shared/queries/contract.queries";
 import { useAccess } from "#src/hooks";
@@ -14,8 +14,8 @@ import { TableActionDownloadIcon, TableActionEditIcon, TableActionEyeIcon, Table
 import { isServerErrorHandled } from "#src/utils/request/error-response";
 import { ExclamationCircleOutlined, FileProtectOutlined, PlusCircleOutlined, PrinterOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
-
 import { App, Button, Modal, Popconfirm, theme } from "antd";
+
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
@@ -24,6 +24,7 @@ import { getContractAccessCompanyType } from "../../shared/model/company-type-op
 import { isTelecomFrameCode } from "../../shared/services/telecom-frame/telecom-frame.types";
 import { companyTypeMatches, pickCompanyTypeToken } from "../../shared/utils";
 import { buildContractEditPath } from "../../shared/utils/contract-routes";
+import { buildGuaranteeAddendumOptions } from "../model/contract-addenda-tree";
 import {
 	CONTRACT_LIST_DEFAULT_PAGE_SIZE,
 	CONTRACT_LIST_PAGE_SIZE_OPTIONS,
@@ -125,6 +126,17 @@ export default function ContractListPage() {
 	const resolveServicePath = (row: ContractListItemType): ContractServicePath =>
 		resolveListServicePath(row, serviceCodeById.get(Number(row.service_id)));
 
+	const additionalInfoService = additionalInfoRecord ? resolveServicePath(additionalInfoRecord) : null;
+	const additionalInfoDetail = useQuery({
+		queryKey: ["contracts", "detail", additionalInfoService, additionalInfoRecord?.id],
+		queryFn: () => fetchContractDetail(additionalInfoService!, additionalInfoRecord!.id),
+		enabled: additionalInfoService != null,
+		staleTime: 30_000,
+	});
+	const guaranteeAddendumOptions = useMemo(
+		() => additionalInfoService ? buildGuaranteeAddendumOptions(additionalInfoDetail.data?.addenda, additionalInfoService) : [],
+		[additionalInfoDetail.data, additionalInfoService],
+	);
 	// the list rows carry no service name, but the contract PDF prints it
 	const withServiceName = (row: ContractListItemType): ContractListItemType => ({
 		...row,
@@ -651,6 +663,8 @@ export default function ContractListPage() {
 					servicePath={resolveServicePath(additionalInfoRecord)}
 					companyType={getRowCompanyType(additionalInfoRecord)}
 					contractNumber={additionalInfoRecord.contract_number}
+					scope="contract"
+					addendumOptions={guaranteeAddendumOptions}
 				/>
 			)}
 		</BasicContent>

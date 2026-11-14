@@ -1,4 +1,5 @@
 import type { ContractServicePath } from "../../api/contracts.api";
+import type { GuaranteeAddendumOption } from "../model/additional-info.types";
 import { toPersianDigits } from "#src/utils/formated";
 import {
 	CalendarOutlined,
@@ -18,6 +19,7 @@ interface Props {
 	companyType?: string | null
 	contractNumber?: string | null
 	readOnly?: boolean
+	addendumOptions?: GuaranteeAddendumOption[]
 }
 
 export function ContractAdditionalInfoPanel({
@@ -27,6 +29,7 @@ export function ContractAdditionalInfoPanel({
 	companyType,
 	contractNumber,
 	readOnly = false,
+	addendumOptions,
 }: Props) {
 	const { t } = useTranslation();
 	const { token } = theme.useToken();
@@ -165,6 +168,7 @@ export function ContractAdditionalInfoPanel({
 					companyType={companyType}
 					contractNumber={contractNumber}
 					readOnly={readOnly}
+					addendumOptions={addendumOptions}
 				/>
 			)}
 		</>

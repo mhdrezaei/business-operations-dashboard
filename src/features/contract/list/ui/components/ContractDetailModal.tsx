@@ -13,11 +13,12 @@ import { ContractForm } from "#src/features/contract/shared/ui/form/ContractForm
 import { pickCompanyTypeToken } from "#src/features/contract/shared/utils";
 import { useAccess } from "#src/hooks";
 import { Alert, Button, Empty, Popconfirm, Spin, Tooltip } from "antd";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { fetchContractDetail, fetchDeleteContract, fetchUpdateContract, resolveSalesAgencyExpenseTitleNames } from "../../../api/contracts.api";
 import { isCollocationCostContext, resolveContractServicePath } from "../../../shared/model/contract-service-path";
 import { ScopedCompanyContractsPanel } from "../../../shared/ui/ScopedCompanyContractsPanel";
+import { buildGuaranteeAddendumOptions } from "../../model/contract-addenda-tree";
 import { getContractDeleteWarnings } from "../../model/contract-list";
 import { ContractApprovalPanel } from "./ContractApprovalPanel";
 import { ContractDeleteConfirmTitle } from "./ContractDeleteConfirmTitle";
@@ -78,6 +79,10 @@ export function ContractEditForm({ contractId, service, readOnlyHeader, onUpdate
 	const [contractDetail, setContractDetail] = useState<Record<string, unknown> | null>(null);
 	const [resolvedService, setResolvedService] = useState<ContractServicePath | null>(null);
 	const [loadedContractId, setLoadedContractId] = useState<number | null>(null);
+	const guaranteeAddendumOptions = useMemo(
+		() => resolvedService ? buildGuaranteeAddendumOptions(contractDetail?.addenda, resolvedService) : [],
+		[contractDetail, resolvedService],
+	);
 	const [loadError, setLoadError] = useState(false);
 	const [contractListScope, setContractListScope] = useState<ContractListScope | null>(null);
 	const contractListScopeRef = useRef<ContractListScope | null>(null);
@@ -324,6 +329,7 @@ export function ContractEditForm({ contractId, service, readOnlyHeader, onUpdate
 													companyType={pickCompanyTypeToken(initialValues.companyType)}
 													contractNumber={initialValues.contractNumber}
 													readOnly={readOnly}
+													addendumOptions={guaranteeAddendumOptions}
 												/>
 											</>
 										)}

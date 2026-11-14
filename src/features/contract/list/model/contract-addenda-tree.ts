@@ -1,3 +1,5 @@
+import type { GuaranteeAddendumOption } from "../../additional-info/model/additional-info.types";
+import { toPersianDigits } from "#src/utils/formated";
 import { toNumberOrNull } from "../../shared/utils/value-coercion";
 
 export interface ContractAddendumTreeNode {
@@ -147,4 +149,13 @@ export function buildContractAddendaTree(addenda: unknown): ContractAddendumTree
 	});
 
 	return mapNodes(roots);
+}
+
+/** گزینه‌های «تضمین برای» در فرم تضمین؛ هر الحاقیه‌ی دارای addendum_group_id یک گزینه است. */
+export function buildGuaranteeAddendumOptions(addenda: unknown, service: string): GuaranteeAddendumOption[] {
+	const collect = (nodes: ContractAddendumTreeNode[]): GuaranteeAddendumOption[] => nodes.flatMap(node => [
+		...(node.addendumGroupId ? [{ addendumGroupId: node.addendumGroupId, addendumService: service, label: `الحاقیه ${toPersianDigits(node.displayNumber)}` }] : []),
+		...collect(node.children),
+	]);
+	return collect(buildContractAddendaTree(addenda));
 }

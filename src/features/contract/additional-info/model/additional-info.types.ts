@@ -47,6 +47,8 @@ export interface GuaranteeRecord {
 	service?: number
 	addendum_group_id?: string | null
 	addendum_service?: string | null
+	/** شماره‌ی نمایشی الحاقیه (مثل «1» یا «1.1»)؛ برای تضمین خودِ قرارداد null است. */
+	addendum_number?: string | null
 	issue_jy: number
 	issue_jm: number
 	issue_jd: number
@@ -91,10 +93,20 @@ export interface GuaranteeRecord {
 	[key: string]: unknown
 }
 
+/** الحاقیه‌ای که می‌توان تضمین جدید را به آن وصل کرد. */
+export interface GuaranteeAddendumOption {
+	addendumGroupId: string
+	/** کد سرویس الحاقیه؛ بک‌اند همراه addendum_group_id لازم دارد. */
+	addendumService: string
+	label: string
+}
+
 export interface GuaranteesListQuery {
 	type: GuaranteeType
 	base_contract?: number
 	addendum_group_id?: string
+	/** contract: فقط تضمین‌های خودِ قرارداد؛ addendum: فقط تضمین‌های الحاقیه‌ها؛ بدون مقدار: هر دو. */
+	scope?: "contract" | "addendum"
 }
 
 export interface GuaranteePayload {
