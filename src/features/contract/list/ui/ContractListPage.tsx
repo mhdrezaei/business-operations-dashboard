@@ -33,6 +33,7 @@ import {
 	getContractPdfBlockReason,
 	resolveListServicePath,
 	toContractListQuery,
+	toFilterFormValues,
 } from "../model/contract-list";
 import { useContractAddendaTableStyles } from "./components/contract-addenda-table.styles";
 import { ContractAddendaExpandedRow } from "./components/ContractAddendaExpandedRow";
@@ -228,9 +229,8 @@ export default function ContractListPage() {
 	const getRowCompanyType = (row: ContractListItemType) => pickCompanyTypeToken(row.company_type);
 
 	// Single-option filters are picked automatically (old behaviour); the form is re-submitted to apply them.
-	// valueEnum option keys are strings, so numeric ids must be stringified or the raw id shows instead of the label.
 	const autoSelectFilter = (values: Record<string, string | number>) => {
-		formRef.current?.setFieldsValue(Object.fromEntries(Object.entries(values).map(([key, value]) => [key, String(value)])));
+		formRef.current?.setFieldsValue(toFilterFormValues(values));
 		formRef.current?.submit();
 	};
 

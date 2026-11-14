@@ -46,11 +46,12 @@ import { SectionCard } from "#src/shared/ui/section-card";
 import { DeleteOutlined, EditOutlined, ReloadOutlined } from "@ant-design/icons";
 
 import { useQuery } from "@tanstack/react-query";
-import { Button, Card, Modal, Popconfirm, Spin, Tag, theme } from "antd";
+import { Button, Card, Modal, Popconfirm, Spin, Table, Tag, theme } from "antd";
 import i18next from "i18next";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { buildSeparatedBreakdown, getFirstDefinedValue, getOpenApiOperationRowValue, toUpperText } from "../../model/openapi-operation-rows";
 import { isTrafficLocationRequired, TRAFFIC_LOCATIONS } from "../../model/traffic-locations";
 import "#src/shared/ui/form-layout/styles.css";
 
@@ -275,10 +276,6 @@ function serviceRequiresCompanyType(service: PerformanceServicePath | null | und
 	return service === "sms" || service === "psp" || service === "traffic" || service === "sales-agency/outbound" || service === "sales-agency/rep-management";
 }
 
-function toUpperText(value: unknown) {
-	return String(value ?? "").trim().toUpperCase();
-}
-
 function getTierRate(record: any) {
 	const first = Array.isArray(record?.tiers) ? record.tiers[0] : null;
 	return first?.rate_per_unit ?? null;
@@ -355,15 +352,6 @@ function buildInitialValues(
 	return values;
 }
 
-function getFirstDefinedValue(source: Record<string, unknown>, keys: string[]) {
-	for (const key of keys) {
-		const value = source[key];
-		if (value != null && value !== "")
-			return value;
-	}
-	return null;
-}
-
 function applyOpenApiInitialValues(
 	initialValues: EditFormValues,
 	detail: Record<string, unknown>,
@@ -428,28 +416,6 @@ function applyOpenApiInitialValues(
 	assignValue("sms_mci_en", ["sms_mci_en"], "SMS_MCI_EN", ["value"]);
 	assignValue("sms_other_fa", ["sms_other_fa"], "SMS_OTHER_FA", ["value"]);
 	assignValue("sms_other_en", ["sms_other_en"], "SMS_OTHER_EN", ["value"]);
-}
-
-function getOpenApiOperationRowValue(
-	rows: PerformanceListItem[],
-	operationType: string,
-	keys: string[],
-) {
-	const matchedRow = rows.find(row => toUpperText((row as Record<string, unknown>).operation_type) === operationType);
-	if (!matchedRow)
-		return null;
-
-	return getFirstDefinedValue(matchedRow as Record<string, unknown>, keys);
-}
-
-/** Sum of a metric over several operation rows; null when none of them carries a value. */
-function sumOpenApiOperationRowValues(rows: PerformanceListItem[], operationTypes: string[], keys: string[]) {
-	const values = operationTypes
-		.map(operationType => getOpenApiOperationRowValue(rows, operationType, keys))
-		.filter(value => value != null)
-		.map(Number)
-		.filter(Number.isFinite);
-	return values.length > 0 ? values.reduce((total, value) => total + value, 0) : null;
 }
 
 function resolveOpenApiContractModel(
@@ -1033,18 +999,25 @@ export function PerformanceDetailModal({
 			return !location || visibleTrafficLocations.has(location);
 		});
 	}, [config, service, visibleTrafficLocations]);
+	const separatedBreakdownRows = useMemo(() => {
+		if (service !== "openapi" || openApiContractModel !== "legacy_2")
+			return [];
+
+		return buildSeparatedBreakdown(openApiPerformances).map(row => ({
+			key: row.operationType,
+			operation: t(`performance.predictionsSummary.types.${row.operationType}`),
+			income: formatNumberLike(row.income),
+			expense: formatNumberLike(row.expense),
+			profit: formatNumberLike(row.profit),
+		}));
+	}, [service, openApiContractModel, openApiPerformances, t]);
 	const openApiSummaryFields = useMemo(() => {
 		if (service !== "openapi")
 			return [];
 
 		if (openApiContractModel === "legacy_2") {
-			const billTypes = ["BILL_INQUIRY_MIDTERM", "BILL_INQUIRY_ENDTERM"];
-			const receiptTypes = ["RECEIPT_REGISTER_CONNECTED", "RECEIPT_REGISTER_DISCONNECTED"];
-			return [
-				{ key: "income", label: t("performance.detail.billInquiryIncome"), value: formatNumberLike(sumOpenApiOperationRowValues(openApiPerformances, billTypes, ["income"])) },
-				{ key: "expense", label: t("performance.detail.billInquiryExpense"), value: formatNumberLike(sumOpenApiOperationRowValues(openApiPerformances, billTypes, ["expense"])) },
-				{ key: "profit", label: t("performance.detail.receiptRegisterIncome"), value: formatNumberLike(sumOpenApiOperationRowValues(openApiPerformances, receiptTypes, ["income"])) },
-			];
+			// Shown as the operations table instead (see separatedBreakdownRows).
+			return [];
 		}
 
 		const billInquiryIncome = getOpenApiOperationRowValue(openApiPerformances, "BILL_INQUIRY", ["income"]) ?? mergedDetail.income;
@@ -1884,6 +1857,23 @@ export function PerformanceDetailModal({
 
 								{plainBreakdownFields.length > 0
 									? <DetailValueRows fields={plainBreakdownFields} />
+									: null}
+
+								{separatedBreakdownRows.length > 0
+									? (
+										<Table
+											size="small"
+											pagination={false}
+											rowKey="key"
+											dataSource={separatedBreakdownRows}
+											columns={[
+												{ title: t("performance.columns.operationType"), dataIndex: "operation" },
+												{ title: t("performance.columns.income"), dataIndex: "income", align: "center" },
+												{ title: t("performance.columns.expense"), dataIndex: "expense", align: "center" },
+												{ title: t("performance.columns.profit"), dataIndex: "profit", align: "center" },
+											]}
+										/>
+									)
 									: null}
 
 								{service === "traffic" && trafficSummaryCards.length > 0
