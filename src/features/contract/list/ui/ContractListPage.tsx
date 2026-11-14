@@ -228,8 +228,9 @@ export default function ContractListPage() {
 	const getRowCompanyType = (row: ContractListItemType) => pickCompanyTypeToken(row.company_type);
 
 	// Single-option filters are picked automatically (old behaviour); the form is re-submitted to apply them.
-	const autoSelectFilter = (values: Record<string, unknown>) => {
-		formRef.current?.setFieldsValue(values);
+	// valueEnum option keys are strings, so numeric ids must be stringified or the raw id shows instead of the label.
+	const autoSelectFilter = (values: Record<string, string | number>) => {
+		formRef.current?.setFieldsValue(Object.fromEntries(Object.entries(values).map(([key, value]) => [key, String(value)])));
 		formRef.current?.submit();
 	};
 
