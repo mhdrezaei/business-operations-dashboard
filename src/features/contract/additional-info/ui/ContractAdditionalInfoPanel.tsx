@@ -54,35 +54,21 @@ export function ContractAdditionalInfoPanel({
 		<>
 			<Card
 				size="small"
-				style={{
-					borderRadius: token.borderRadiusLG,
-					borderColor: token.colorBorderSecondary,
-					backgroundColor: token.colorBgContainer,
-				}}
-				title={(
-					<div className="flex items-center gap-2">
-						<SafetyCertificateOutlined style={{ color: token.colorPrimary }} />
-						<span className="font-semibold text-[var(--ant-color-text)]">
-							{t("contract.additionalInfo.panelTitle", "تضمین‌ها و تاریخ پایان واقعی")}
-						</span>
-					</div>
-				)}
-				extra={
-					serviceId
-						? (
-							<Button
-								type="link"
-								size="small"
-								onClick={() => setModalOpen(true)}
-								className="p-0 font-medium"
-							>
-								{t("contract.additionalInfo.manage", "مدیریت")}
-							</Button>
-						)
-						: null
-				}
+				className="w-full !rounded-2xl !bg-bgContainer [&_.ant-card-body]:p-4"
 			>
 				<Spin spinning={loading}>
+					<div className="mb-3 flex items-center justify-between gap-3 px-1">
+						<span className="font-semibold text-text">
+							{t("contract.additionalInfo.panelTitle", "تضمین‌ها و تاریخ پایان واقعی")}
+						</span>
+						{serviceId
+							? (
+								<Button className="!rounded-xl" onClick={() => setModalOpen(true)}>
+									{t("contract.additionalInfo.manage", "مدیریت")}
+								</Button>
+							)
+							: null}
+					</div>
 					<div className="flex flex-col gap-3 py-1 text-xs">
 						{/* Real End Date Summary */}
 						<div className="flex items-center justify-between">

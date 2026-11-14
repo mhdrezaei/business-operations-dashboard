@@ -4,6 +4,7 @@ import { ContractAddendaSection } from "#src/features/contract/components/addend
 import { CONTRACT_TYPE_OPTIONS } from "#src/features/contract/components/contract-type/contract-type.options";
 import { defaultContractTypeValue } from "#src/features/contract/components/contract-type/contract-type.types";
 import { ContractTypeSection } from "#src/features/contract/components/contract-type/ContractTypeSection";
+import { Reveal } from "#src/shared/ui/reveal";
 import { RHFProCheckbox, RHFProNumber, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { SectionCard } from "#src/shared/ui/section-card";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
@@ -429,63 +430,61 @@ export function TrafficFields() {
 				</div>
 			</SectionCard>
 
-			{showPricingUi && showAddenda
-				? (
-					<ContractAddendaSection<ContractFormValues>
-						title={t("contract.addenda.title")}
-						name={sf("addenda") as ArrayPath<ContractFormValues>}
-						contractTypeTitle=""
-						contractTypeFieldKey="contractPricing"
-						renderAddendumFields={base => (
-							<div className="traffic-pricing-list">
-								{tehranPricing
-									? (
-										<SectionCard title={t("contract.traffic.tehranContract")} tone={TRAFFIC_SECTION_TONE}>
-											<TrafficPricingFields
-												pricingName={`${base}.tehranPricing`}
-												unitName={`${base}.tehranUnit`}
-												defaultUnit={defaultTrafficUnit}
-												revenuePercentName={`${base}.tehranRevenuePercent`}
-												revenuePercentLabel={t("contract.traffic.tehranRevenueShare")}
-												showUnitSelector={showUnitSelector}
-												showPremiumRevenuePercent={showPremiumRevenuePercent}
-												basedTireName={`${base}.tehranBasedTire`}
-												showBasedTire={isIxp}
-												contractModelName={`${base}.tehranContractModel`}
-												showContractModel={isIxp}
-											/>
-										</SectionCard>
-									)
-									: null}
+			<Reveal show={showPricingUi && showAddenda}>
+				<ContractAddendaSection<ContractFormValues>
+					title={t("contract.addenda.title")}
+					name={sf("addenda") as ArrayPath<ContractFormValues>}
+					contractTypeTitle=""
+					contractTypeFieldKey="contractPricing"
+					renderAddendumFields={base => (
+						<div className="traffic-pricing-list">
+							{tehranPricing
+								? (
+									<SectionCard title={t("contract.traffic.tehranContract")} tone={TRAFFIC_SECTION_TONE}>
+										<TrafficPricingFields
+											pricingName={`${base}.tehranPricing`}
+											unitName={`${base}.tehranUnit`}
+											defaultUnit={defaultTrafficUnit}
+											revenuePercentName={`${base}.tehranRevenuePercent`}
+											revenuePercentLabel={t("contract.traffic.tehranRevenueShare")}
+											showUnitSelector={showUnitSelector}
+											showPremiumRevenuePercent={showPremiumRevenuePercent}
+											basedTireName={`${base}.tehranBasedTire`}
+											showBasedTire={isIxp}
+											contractModelName={`${base}.tehranContractModel`}
+											showContractModel={isIxp}
+										/>
+									</SectionCard>
+								)
+								: null}
 
-								{provincePricing
-									? (
-										<SectionCard title={t("contract.traffic.provinceContract")} tone={TRAFFIC_SECTION_TONE}>
-											<TrafficPricingFields
-												pricingName={`${base}.provincePricing`}
-												unitName={`${base}.provinceUnit`}
-												defaultUnit={defaultTrafficUnit}
-												revenuePercentName={`${base}.provinceRevenuePercent`}
-												revenuePercentLabel={t("contract.traffic.provinceRevenueShare")}
-												showUnitSelector={showUnitSelector}
-												showPremiumRevenuePercent={showPremiumRevenuePercent}
-												basedTireName={`${base}.provinceBasedTire`}
-												showBasedTire={isIxp}
-												contractModelName={`${base}.provinceContractModel`}
-												showContractModel={isIxp}
-											/>
-										</SectionCard>
-									)
-									: null}
-							</div>
-						)}
-						contractStartYearPath={"startYear" as Path<ContractFormValues>}
-						contractStartMonthPath={"startMonth" as Path<ContractFormValues>}
-						contractEndYearPath={"endYear" as Path<ContractFormValues>}
-						contractEndMonthPath={"endMonth" as Path<ContractFormValues>}
-					/>
-				)
-				: null}
+							{provincePricing
+								? (
+									<SectionCard title={t("contract.traffic.provinceContract")} tone={TRAFFIC_SECTION_TONE}>
+										<TrafficPricingFields
+											pricingName={`${base}.provincePricing`}
+											unitName={`${base}.provinceUnit`}
+											defaultUnit={defaultTrafficUnit}
+											revenuePercentName={`${base}.provinceRevenuePercent`}
+											revenuePercentLabel={t("contract.traffic.provinceRevenueShare")}
+											showUnitSelector={showUnitSelector}
+											showPremiumRevenuePercent={showPremiumRevenuePercent}
+											basedTireName={`${base}.provinceBasedTire`}
+											showBasedTire={isIxp}
+											contractModelName={`${base}.provinceContractModel`}
+											showContractModel={isIxp}
+										/>
+									</SectionCard>
+								)
+								: null}
+						</div>
+					)}
+					contractStartYearPath={"startYear" as Path<ContractFormValues>}
+					contractStartMonthPath={"startMonth" as Path<ContractFormValues>}
+					contractEndYearPath={"endYear" as Path<ContractFormValues>}
+					contractEndMonthPath={"endMonth" as Path<ContractFormValues>}
+				/>
+			</Reveal>
 		</>
 	);
 }

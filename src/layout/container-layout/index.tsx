@@ -135,7 +135,8 @@ export default function ContainerLayout() {
 					...(isRTL ? { paddingRight: computedSidebarWidth } : { paddingLeft: computedSidebarWidth }),
 				}}
 				className={cn(
-					"transition-all flex flex-col gap-3 flex-1 min-h-0",
+					// no padding transition: animating it re-lays out the whole page every frame while the sidebar collapses
+					"flex flex-col gap-3 flex-1 min-h-0",
 				)}
 			>
 

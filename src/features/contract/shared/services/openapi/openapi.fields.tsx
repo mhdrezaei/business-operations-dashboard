@@ -2,6 +2,7 @@ import type { ArrayPath, Path } from "react-hook-form";
 import type { ContractFormValues } from "../../../shared/model/contract.form.types";
 import type { OpenApiContractModel } from "./openapi.types";
 import { ContractAddendaSection } from "#src/features/contract/components/addenda/ContractAddendaSection.js";
+import { Reveal } from "#src/shared/ui/reveal";
 import { RHFProNumber, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { SectionCard } from "#src/shared/ui/section-card";
 import React, { useMemo } from "react";
@@ -50,6 +51,7 @@ function SeparatedPricingFields({ basePath }: { basePath: string }) {
 						name={field("walletChargeDiscountPercent") as any}
 						label={t("contract.openapi.separated.walletLabel")}
 						inputProps={{ addonAfter: "%", placeholder: t("contract.salesAgency.percentPlaceholder") } as any}
+						formItemProps={{ className: "mb-0" }}
 					/>
 				)}
 			/>
@@ -122,18 +124,16 @@ function OpenApiAddendumFields({ base }: { base: string }) {
 
 	return (
 		<div className="flex w-full flex-col">
-			{isPackage
-				? null
-				: (
-					<div className="mb-3 w-full max-w-[420px]">
-						<RHFSelect
-							name={modelPath as any}
-							label={t("contract.openapi.modelLabel")}
-							options={modelOptions}
-							selectProps={{ allowClear: false }}
-						/>
-					</div>
-				)}
+			<Reveal show={!isPackage}>
+				<div className="mb-3 w-full max-w-[420px]">
+					<RHFSelect
+						name={modelPath as any}
+						label={t("contract.openapi.modelLabel")}
+						options={modelOptions}
+						selectProps={{ allowClear: false }}
+					/>
+				</div>
+			</Reveal>
 			{isPackage
 				? <OpenApiPackagePlansFields basePath={base} />
 				: addendumModel === "separated"
@@ -211,25 +211,23 @@ export function OpenApiFields({ mode = "create" }: { mode?: "create" | "edit" })
 					? <SeparatedPricingFields basePath={sf("separatedPricing")} />
 					: <LegacyPricingFields basePath={sf("legacyPricing")} />}
 
-			{showAddenda
-				? (
-					<div className="mt-3">
-						<ContractAddendaSection<ContractFormValues>
-							title={t("contract.addenda.title")}
-							name={sf("addenda") as ArrayPath<ContractFormValues>}
-							contractTypeTitle=""
-							contractTypeFieldKey="contractPricing"
-							canAddAddendum={!!contractModel}
-							addendumAddBlockedMessage={t("contract.openapi.selectModelFirst")}
-							renderAddendumFields={base => <OpenApiAddendumFields base={base} />}
-							contractStartYearPath={"startYear" as Path<ContractFormValues>}
-							contractStartMonthPath={"startMonth" as Path<ContractFormValues>}
-							contractEndYearPath={"endYear" as Path<ContractFormValues>}
-							contractEndMonthPath={"endMonth" as Path<ContractFormValues>}
-						/>
-					</div>
-				)
-				: null}
+			<Reveal show={showAddenda}>
+				<div className="mt-3">
+					<ContractAddendaSection<ContractFormValues>
+						title={t("contract.addenda.title")}
+						name={sf("addenda") as ArrayPath<ContractFormValues>}
+						contractTypeTitle=""
+						contractTypeFieldKey="contractPricing"
+						canAddAddendum={!!contractModel}
+						addendumAddBlockedMessage={t("contract.openapi.selectModelFirst")}
+						renderAddendumFields={base => <OpenApiAddendumFields base={base} />}
+						contractStartYearPath={"startYear" as Path<ContractFormValues>}
+						contractStartMonthPath={"startMonth" as Path<ContractFormValues>}
+						contractEndYearPath={"endYear" as Path<ContractFormValues>}
+						contractEndMonthPath={"endMonth" as Path<ContractFormValues>}
+					/>
+				</div>
+			</Reveal>
 		</div>
 	);
 }

@@ -5,6 +5,7 @@ import {
 	deleteContractDocument,
 	downloadContractDocument,
 } from "#src/features/contract/api/contract-documents.api";
+import { Reveal } from "#src/shared/ui/reveal";
 import { RHFProTextArea, RHFProUploadButton } from "#src/shared/ui/rhf-pro";
 import { SectionCard } from "#src/shared/ui/section-card";
 import { Upload } from "antd";
@@ -85,22 +86,20 @@ export function FixedEndSection({ contractId = null, showDocuments = true }: Fix
 					/>
 				</div>
 
-				{showDocuments
-					? (
-						<div className="contract-supplementary-control contract-supplementary-upload-control">
-							<div className="contract-supplementary-control__label">{t("contract.supplementary.attachments")}</div>
-							<RHFProUploadButton<ContractFormValues, "documents">
-								name="documents"
-								label=""
-								variant="dragger"
-								draggerTitle={t("contract.supplementary.draggerTitle")}
-								draggerHint={t("contract.supplementary.draggerHint")}
-								itemProps={{ className: "contract-supplementary-field mb-0" }}
-								uploadProps={uploadProps}
-							/>
-						</div>
-					)
-					: null}
+				<Reveal show={showDocuments}>
+					<div className="contract-supplementary-control contract-supplementary-upload-control">
+						<div className="contract-supplementary-control__label">{t("contract.supplementary.attachments")}</div>
+						<RHFProUploadButton<ContractFormValues, "documents">
+							name="documents"
+							label=""
+							variant="dragger"
+							draggerTitle={t("contract.supplementary.draggerTitle")}
+							draggerHint={t("contract.supplementary.draggerHint")}
+							itemProps={{ className: "contract-supplementary-field mb-0" }}
+							uploadProps={uploadProps}
+						/>
+					</div>
+				</Reveal>
 			</div>
 		</SectionCard>
 	);

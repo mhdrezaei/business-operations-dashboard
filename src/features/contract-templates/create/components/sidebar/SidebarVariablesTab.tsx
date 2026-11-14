@@ -7,11 +7,10 @@ import { Button, Card, Collapse, Input, Spin, theme, Typography } from "antd";
 import React, { useMemo, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { TemplateCreateApi } from "../../../api/api";
-import { dynamicVariableCache } from "../editor/variables/registry";
+import { dynamicVariableCache, GROUP_LABELS } from "../editor/variables/registry";
 import { useVariableRegistry } from "../editor/variables/VariableRegistryContext";
 
 const toFaDigits = (value: any) => String(value ?? "").replace(/\d/g, d => "۰۱۲۳۴۵۶۷۸۹"[Number(d)] || d);
-const SLOT_KEY_PATTERN = /^(.+?)_(\d{1,2})_.+$/;
 const { Text } = Typography;
 
 function buildDisplayBlocks(variables: any[]) {
@@ -20,8 +19,8 @@ function buildDisplayBlocks(variables: any[]) {
 	let currentSingles: any = null;
 
 	for (const variable of variables) {
-		const match = SLOT_KEY_PATTERN.exec(variable.key);
-		if (!match) {
+		// Slot families come from the backend (`constraints.slot`); a number inside a key (e.g. `openapi_legacy_2_...`) is not a slot.
+		if (variable.slot == null) {
 			if (!currentSingles) {
 				currentSingles = { type: "singles", variables: [] };
 				blocks.push(currentSingles);
@@ -30,8 +29,8 @@ function buildDisplayBlocks(variables: any[]) {
 			continue;
 		}
 		currentSingles = null;
-		const [, prefix, indexStr] = match;
-		const index = Number(indexStr);
+		const index = Number(variable.slot);
+		const prefix = variable.key.replace(new RegExp(`_${index}_.+$`), "");
 		if (!familyBlockIndex.has(prefix)) {
 			familyBlockIndex.set(prefix, blocks.length);
 			blocks.push({ type: "family", prefix, maxIndex: 0, variablesByIndex: new Map() });
@@ -147,35 +146,46 @@ export default function SidebarVariablesTab({ editor }: { editor: Editor | null 
 
 		dynamicVariableCache.clear();
 
-		return catalogData.variables
-			.filter((root: any) => root.key !== "service")
-			.map((root: any) => {
-				const vars = Array.isArray(root.children) && root.children.length > 0 ? root.children : [root];
+		const toVariable = (rootKey: string, node: any) => {
+			let finalKey = node.key;
 
-				return {
-					group: root.key,
-					label: root.label,
-					variables: vars.map((v: any) => {
-						let finalKey = v.key;
+			// Guarantee tags are named exactly as the backend catalog key; prefixing them makes the backend report them as unknown.
+			const isPrefixed = (rootKey === "contract" || rootKey === "addendum") && !node.constraints?.guarantee_tag;
+			if (isPrefixed && !finalKey.startsWith(rootKey)) {
+				finalKey = `${rootKey}_${finalKey}`;
+			}
 
-						if (root.key === "contract" || root.key === "addendum") {
-							if (!finalKey.startsWith(root.key)) {
-								finalKey = `${root.key}_${finalKey}`;
-							}
-						}
+			const formattedVariable = {
+				key: finalKey,
+				label: node.label,
+				example: node.example,
+				slot: node.constraints?.slot,
+			};
 
-						const formattedVariable = {
-							key: finalKey,
-							label: v.label,
-							example: v.example,
-						};
+			dynamicVariableCache.set(finalKey, formattedVariable);
 
-						dynamicVariableCache.set(finalKey, formattedVariable);
+			return formattedVariable;
+		};
 
-						return formattedVariable;
-					}),
-				};
-			});
+		const groups: any[] = [];
+		// Childless roots (the financial tags) would each become their own one-chip collapse: gather them per category.
+		const flatGroups = new Map<string, any>();
+
+		for (const root of catalogData.variables.filter((node: any) => node.key !== "service")) {
+			if (Array.isArray(root.children) && root.children.length > 0) {
+				groups.push({ group: root.key, label: root.label, variables: root.children.map((child: any) => toVariable(root.key, child)) });
+				continue;
+			}
+			let flatGroup = flatGroups.get(root.category);
+			if (!flatGroup) {
+				flatGroup = { group: `flat_${root.category}`, label: GROUP_LABELS[root.category as keyof typeof GROUP_LABELS] ?? root.label, variables: [] };
+				flatGroups.set(root.category, flatGroup);
+				groups.push(flatGroup);
+			}
+			flatGroup.variables.push(toVariable(root.key, root));
+		}
+
+		return groups;
 	}, [catalogData]);
 
 	const effectiveGroups = dynamicGroups || fallbackStaticGroups;

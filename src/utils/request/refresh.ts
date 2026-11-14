@@ -8,27 +8,54 @@ import { goLogin } from "./go-login";
 
 let isRefreshing = false;
 
+const REFRESH_LOCK_NAME = "negah-token-refresh";
+
+/** Backend rotates + blacklists refresh tokens (single use), so only one tab at a time may call refresh. */
+async function runExclusive<T>(task: () => Promise<T>): Promise<T> {
+	return navigator.locks ? await navigator.locks.request(REFRESH_LOCK_NAME, task) : await task();
+}
+
+function bearerToken(request: Request) {
+	return request.headers.get(AUTH_HEADER)?.replace(/^Bearer /, "");
+}
+
+/** A refresh token the backend actually rejected (as opposed to a network blip or a 5xx) ends the session. */
+function isRefreshRejected(error: unknown) {
+	const status = (error as { response?: Response })?.response?.status;
+	return status === 400 || status === 401;
+}
+
+/**
+ * Returns a valid access token: the one another request/tab already obtained, or a fresh one.
+ * The stored tokens are re-read inside the lock so a refresh token rotated by another tab is never reused.
+ */
+async function obtainAccessToken(staleAccess: string | undefined) {
+	return runExclusive(async () => {
+		await useAuthStore.persist.rehydrate();
+		const { access, refresh } = useAuthStore.getState();
+		if (access && access !== staleAccess)
+			return access;
+
+		// fetchRefreshToken برای دريافت access و refresh جديد
+		const freshResponse = await fetchRefreshToken({ refresh });
+		useAuthStore.setState({ access: freshResponse.access, refresh: freshResponse.refresh });
+		return freshResponse.access;
+	});
+}
+
 /**
  * تازه سازي توکن و ارسال مجدد درخواست
  *
  * @param request شيء درخواست
  * @param options گزينه هاي درخواست
- * @param refreshToken توکن نوسازي
  * @returns شيء پاسخ
  * @throws در صورت شکست نوسازي توکن خطا پرتاب مي شود
  */
-export async function refreshTokenAndRetry(request: Request, options: Options, refreshToken: string) {
+export async function refreshTokenAndRetry(request: Request, options: Options) {
 	if (!isRefreshing) {
 		isRefreshing = true;
 		try {
-			// فراخواني fetchRefreshToken با refresh براي دريافت access و refresh جديد
-			const freshResponse = await fetchRefreshToken({ refresh: refreshToken });
-			// استخراج access جديد از پاسخ
-			const newToken = freshResponse.access;
-			// استخراج refresh جديد از پاسخ
-			const newRefreshToken = freshResponse.refresh;
-			// ذخيره token و refreshToken جديد در userStore
-			useAuthStore.setState({ access: newToken, refresh: newRefreshToken });
+			const newToken = await obtainAccessToken(bearerToken(request));
 			// فراخواني onRefreshed با token جديد
 			onRefreshed(newToken);
 
@@ -42,8 +69,9 @@ export async function refreshTokenAndRetry(request: Request, options: Options, r
 			// فراخواني onRefreshFailed با خطا
 			// عدم تاييد refreshToken، رد کردن تمام درخواست هاي در انتظار
 			onRefreshFailed(error);
-			// رفتن به صفحه ورود
-			goLogin();
+			// رفتن به صفحه ورود، فقط وقتی سرور refresh را رد کرده؛ قطعی شبکه/خطای سرور نباید کاربر را بیرون بیندازد
+			if (isRefreshRejected(error))
+				goLogin();
 			// پرتاب خطا
 			throw error;
 		}

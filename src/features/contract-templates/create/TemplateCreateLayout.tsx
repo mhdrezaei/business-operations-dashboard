@@ -1,6 +1,6 @@
 import { isServerErrorHandled } from "#src/utils/request/error-response";
-import { CheckCircleFilled, ExclamationCircleFilled } from "@ant-design/icons";
-import { Button, Card, message, Spin, theme } from "antd";
+import { CheckCircleFilled, ExclamationCircleFilled, RocketOutlined } from "@ant-design/icons";
+import { Button, Card, FloatButton, message, Spin, theme } from "antd";
 import { AnimatePresence, motion } from "framer-motion";
 import React, { useEffect, useRef, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
@@ -141,6 +141,7 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 		};
 	}, []);
 
+	const scrollContainerRef = useRef<HTMLDivElement>(null);
 	const saveTemplateRef = useRef<(closeAfterSave?: boolean) => void>(() => { });
 
 	useEffect(() => {
@@ -381,6 +382,7 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 				wrapperClassName="template-spin-wrapper"
 			>
 				<Card
+					ref={scrollContainerRef}
 					className="flex flex-col h-full w-full rounded-xl overflow-y-auto custom-modal-scroll"
 					style={{
 						backgroundColor: token.colorBgLayout,
@@ -420,6 +422,13 @@ export default function TemplateCreateLayout({ onClose, onSuccess, templateId }:
 					</div>
 				</Card>
 			</Spin>
+
+			{/* The editor scrolls inside this full-screen modal, so the header toolbar is only reachable by scrolling back up. */}
+			<FloatButton.BackTop
+				icon={<RocketOutlined />}
+				target={() => scrollContainerRef.current ?? window}
+				style={{ zIndex: 100000 }}
+			/>
 
 			<TemplatePrintPreviewModal
 				isOpen={isPreviewOpen}

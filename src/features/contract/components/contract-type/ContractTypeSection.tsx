@@ -1,6 +1,7 @@
 import type { SectionTone } from "#src/shared/ui/section-card";
 import type { ContractType } from "./contract-type.types";
 import { DashedBorder } from "#src/shared/ui/dashed-border";
+import { Reveal } from "#src/shared/ui/reveal";
 import { RHFProNumber, RHFSegmentedSwitch, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { getSectionToneColors, SectionCard, SectionToneContext } from "#src/shared/ui/section-card";
 import { DeleteOutlined, PlusOutlined, QuestionCircleOutlined } from "@ant-design/icons";
@@ -225,12 +226,8 @@ export function ContractTypeSection({ title, name, topAside, bottomAside, tone =
 				<div className="contract-type-standard-fields__switch min-w-0">
 					{typeSwitch}
 				</div>
-				{type === "fixed"
-					? <div className="contract-type-standard-fields__amount min-w-0">{fixedAmount}</div>
-					: null}
-				{type === "fixed" && showRatePercentage
-					? <div className="contract-type-standard-fields__amount min-w-0">{ratePercentage}</div>
-					: null}
+				<Reveal fade show={type === "fixed"} className="contract-type-standard-fields__amount min-w-0">{fixedAmount}</Reveal>
+				<Reveal fade show={type === "fixed" && showRatePercentage} className="contract-type-standard-fields__amount min-w-0">{ratePercentage}</Reveal>
 				{topAside
 					? <div className="contract-type-standard-fields__aside min-w-0">{topAside}</div>
 					: null}
@@ -250,78 +247,74 @@ export function ContractTypeSection({ title, name, topAside, bottomAside, tone =
 
 			{renderTopRow()}
 
-			{type === "tier_fixed" || type === "tier_variable"
-				? (
-					<div className={isSmsOperator ? "sms-operator-pricing-details" : "mt-3"}>
+			<Reveal fade show={type === "tier_fixed" || type === "tier_variable"}>
+				<div className={isSmsOperator ? "sms-operator-pricing-details" : "mt-3"}>
+					<Card
+						bordered
+						style={{ "--contract-blended-radius": `${smsBlendedRadius}px` } as React.CSSProperties}
+						className="contract-tier-card w-full [&_.ant-pro-card-body]:p-4"
+					>
+						{renderDashedBorder(smsBlendedRadius)}
+						<ContractTierTable
+							name={`${name}.rows`}
+							variant="embedded"
+							currencyAddon={t("contract.unit.rial")}
+							showRatePercentage={showRatePercentage}
+							ratePercentageHelpText={ratePercentageHelpText}
+						/>
+					</Card>
+				</div>
+			</Reveal>
+
+			<Reveal fade show={type === "tier_blended"}>
+				<div className={isSmsOperator ? "sms-operator-pricing-details" : "mt-3"}>
+					{sectionsFa.fields.map((sectionField, sectionIndex) => (
 						<Card
+							key={sectionField.id}
 							bordered
-							style={{ "--contract-blended-radius": `${smsBlendedRadius}px` } as React.CSSProperties}
-							className="contract-tier-card w-full [&_.ant-pro-card-body]:p-4"
+							style={{ "--contract-blended-radius": `${blendedCardRadius}px` } as React.CSSProperties}
+							className={`contract-blended-card ${compactCalculationModel ? "contract-blended-card--openapi" : ""} mb-3 w-full [&_.ant-pro-card-body]:p-4`}
 						>
-							{renderDashedBorder(smsBlendedRadius)}
-							<ContractTierTable
-								name={`${name}.rows`}
-								variant="embedded"
-								currencyAddon={t("contract.unit.rial")}
-								showRatePercentage={showRatePercentage}
-								ratePercentageHelpText={ratePercentageHelpText}
-							/>
-						</Card>
-					</div>
-				)
-				: null}
-
-			{type === "tier_blended"
-				? (
-					<div className={isSmsOperator ? "sms-operator-pricing-details" : "mt-3"}>
-						{sectionsFa.fields.map((sectionField, sectionIndex) => (
-							<Card
-								key={sectionField.id}
-								bordered
-								style={{ "--contract-blended-radius": `${blendedCardRadius}px` } as React.CSSProperties}
-								className={`contract-blended-card ${compactCalculationModel ? "contract-blended-card--openapi" : ""} mb-3 w-full [&_.ant-pro-card-body]:p-4`}
-							>
-								{renderDashedBorder(blendedCardRadius, blendedDashLength, blendedDashGap)}
-								<div className="contract-blended-card__toolbar">
-									<span className="contract-blended-index-badge">{sectionIndex + 1}</span>
-									<div className="min-w-0 flex-1">
-										<RHFSelect
-											name={`${name}.sections.${sectionIndex}.mode` as any}
-											label=""
-											options={BLENDED_MODE_OPTIONS}
-											selectProps={{ placeholder: blendedModePlaceholder ?? t("contract.type.blendedModePlaceholder"), allowClear: true }}
-											formItemProps={{ className: "mb-0" }}
-										/>
-									</div>
-									<Button
-										danger
-										className="contract-dashed-action"
-										icon={<DeleteOutlined />}
-										disabled={sectionsFa.fields.length <= 1}
-										onClick={() => handleRemoveSection(sectionIndex)}
-									>
-										{t("contract.type.removeSection")}
-									</Button>
-								</div>
-
-								<div className="contract-blended-card__tiers">
-									<ContractTierTable
-										name={`${name}.sections.${sectionIndex}.rows`}
-										variant="embedded"
-										currencyAddon={t("contract.unit.rial")}
-										showRatePercentage={showRatePercentage}
-										ratePercentageHelpText={ratePercentageHelpText}
+							{renderDashedBorder(blendedCardRadius, blendedDashLength, blendedDashGap)}
+							<div className="contract-blended-card__toolbar">
+								<span className="contract-blended-index-badge">{sectionIndex + 1}</span>
+								<div className="min-w-0 flex-1">
+									<RHFSelect
+										name={`${name}.sections.${sectionIndex}.mode` as any}
+										label=""
+										options={BLENDED_MODE_OPTIONS}
+										selectProps={{ placeholder: blendedModePlaceholder ?? t("contract.type.blendedModePlaceholder"), allowClear: true }}
+										formItemProps={{ className: "mb-0" }}
 									/>
 								</div>
-							</Card>
-						))}
+								<Button
+									danger
+									className="contract-dashed-action"
+									icon={<DeleteOutlined />}
+									disabled={sectionsFa.fields.length <= 1}
+									onClick={() => handleRemoveSection(sectionIndex)}
+								>
+									{t("contract.type.removeSection")}
+								</Button>
+							</div>
 
-						<Button className="contract-dashed-action" icon={<PlusOutlined />} onClick={addSection}>
-							{t("contract.type.addCalculationModel")}
-						</Button>
-					</div>
-				)
-				: null}
+							<div className="contract-blended-card__tiers">
+								<ContractTierTable
+									name={`${name}.sections.${sectionIndex}.rows`}
+									variant="embedded"
+									currencyAddon={t("contract.unit.rial")}
+									showRatePercentage={showRatePercentage}
+									ratePercentageHelpText={ratePercentageHelpText}
+								/>
+							</div>
+						</Card>
+					))}
+
+					<Button className="contract-dashed-action" icon={<PlusOutlined />} onClick={addSection}>
+						{t("contract.type.addCalculationModel")}
+					</Button>
+				</div>
+			</Reveal>
 
 			{bottomAside ? <div className="mt-4">{bottomAside}</div> : null}
 		</>

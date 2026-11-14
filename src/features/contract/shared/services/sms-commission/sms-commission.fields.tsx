@@ -5,6 +5,7 @@ import {
 	AlignedFormField,
 	useAlignedLabelWidth,
 } from "#src/shared/ui/aligned-form-field";
+import { Reveal } from "#src/shared/ui/reveal";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
 import { SectionCard } from "#src/shared/ui/section-card";
 import { useEffect, useMemo, useRef } from "react";
@@ -392,21 +393,19 @@ export function SmsCommissionFields() {
 				{renderCommissionGrid()}
 			</SectionCard>
 
-			{showAddenda
-				? (
-					<div className="mt-3">
-						<ContractAddendaSection<ContractFormValues>
-							title="الحاقیه‌های قرارداد (اختیاری)"
-							name={sf("addenda") as ArrayPath<ContractFormValues>}
-							renderAddendumFields={base => renderCommissionGrid(base)}
-							contractStartYearPath={"startYear" as Path<ContractFormValues>}
-							contractStartMonthPath={"startMonth" as Path<ContractFormValues>}
-							contractEndYearPath={"endYear" as Path<ContractFormValues>}
-							contractEndMonthPath={"endMonth" as Path<ContractFormValues>}
-						/>
-					</div>
-				)
-				: null}
+			<Reveal show={showAddenda}>
+				<div className="mt-3">
+					<ContractAddendaSection<ContractFormValues>
+						title="الحاقیه‌های قرارداد (اختیاری)"
+						name={sf("addenda") as ArrayPath<ContractFormValues>}
+						renderAddendumFields={base => renderCommissionGrid(base)}
+						contractStartYearPath={"startYear" as Path<ContractFormValues>}
+						contractStartMonthPath={"startMonth" as Path<ContractFormValues>}
+						contractEndYearPath={"endYear" as Path<ContractFormValues>}
+						contractEndMonthPath={"endMonth" as Path<ContractFormValues>}
+					/>
+				</div>
+			</Reveal>
 		</>
 	);
 }

@@ -18,6 +18,7 @@ import { useTranslation } from "react-i18next";
 
 import { BASIC_TABLE_ROOT_CLASS_NAME, MIN_ADAPTIVE_BODY_HEIGHT } from "./constants";
 import { normalizeFixedColumns } from "./fixed-columns";
+import { withSearchableSelects } from "./searchable-selects";
 import { withServerSorting } from "./sort";
 import { useStyles } from "./styles";
 
@@ -354,7 +355,7 @@ export function BasicTable<
 				rowKey="id"
 				dateFormatter="string"
 				{...props}
-				columns={withServerSorting(normalizeFixedColumns(props.columns, antdContext.direction === "rtl"), !!props.request)}
+				columns={withServerSorting(withSearchableSelects(normalizeFixedColumns(props.columns, antdContext.direction === "rtl")), !!props.request)}
 				headerTitle={tableHeader}
 				options={{
 					fullScreen: true,
