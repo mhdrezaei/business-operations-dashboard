@@ -1,6 +1,7 @@
 import type { SmsGatewayImportHistoryItem } from "#src/features/performance/api/performances.api";
 import type { ReactNode } from "react";
 import { fetchSmsGatewayImportHistory } from "#src/features/performance/api/performances.api";
+import { formatJalaliDateTime } from "#src/shared/lib/jalali-intl";
 import { notification } from "#src/utils";
 import { CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, HistoryOutlined, ReloadOutlined, SyncOutlined } from "@ant-design/icons";
 import { Button, Empty, Modal, Spin, Tag } from "antd";
@@ -24,10 +25,6 @@ function isBusy(item: SmsGatewayImportHistoryItem) {
 
 function user(value: SmsGatewayImportHistoryItem["requested_by"]) {
 	return typeof value === "string" ? value : value?.full_name ?? value?.name ?? value?.username ?? "-";
-}
-
-function date(value: unknown) {
-	return typeof value === "string" ? value.replace("T", " ").replace(/\.\d+(Z|[+-]\d\d:\d\d)?$/, "") : "-";
 }
 
 export function SmsGatewayImportHistoryModal({ open, onClose }: Props) {
@@ -98,9 +95,9 @@ export function SmsGatewayImportHistoryModal({ open, onClose }: Props) {
 											<div className="mb-3 flex items-start justify-between gap-3">
 												<div>
 													<b>
+														{item.sh_month ? t(`performance.months.${Number(item.sh_month)}`) : "-"}
+														{" "}
 														{item.sh_year ?? "-"}
-														/
-														{String(item.sh_month ?? "-").padStart(2, "0")}
 													</b>
 													<div className="mt-1 text-xs text-slate-500">
 														درخواست‌دهنده:
@@ -112,11 +109,11 @@ export function SmsGatewayImportHistoryModal({ open, onClose }: Props) {
 											<div className="mb-3 grid grid-cols-1 gap-2 text-xs text-slate-500 sm:grid-cols-2">
 												<span>
 													شروع:
-													{date(item.started_at ?? item.created_at)}
+													{formatJalaliDateTime(item.started_at ?? item.created_at)}
 												</span>
 												<span>
 													پایان:
-													{date(item.finished_at)}
+													{formatJalaliDateTime(item.finished_at)}
 												</span>
 											</div>
 											{item.status === "SUCCESS" && item.summary

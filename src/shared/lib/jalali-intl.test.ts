@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { gregorianIsoToJalaliParts, jalaliPartsToGregorianIso } from "./jalali-intl";
+import { formatJalaliDateTime, gregorianIsoToJalaliParts, jalaliPartsToGregorianIso } from "./jalali-intl";
 
 // 1403 is a leap year (Esfand has 30 days), 1404 is not
 const daysInMonth = (year: number, month: number) => (month <= 6 ? 31 : month < 12 || year === 1403 ? 30 : 29);
@@ -24,5 +24,21 @@ describe("jalali ↔ gregorian ISO", () => {
 	it("rejects invalid input", () => {
 		expect(gregorianIsoToJalaliParts("2025-02-31")).toBeNull();
 		expect(jalaliPartsToGregorianIso({ year: 1404, month: 7, day: 31 })).toBeNull();
+	});
+});
+
+describe("formatJalaliDateTime", () => {
+	it("converts a UTC timestamp to Jalali date and Tehran time", () => {
+		// 2026-11-14 14:54:09 UTC → 1405/08/23, Tehran is UTC+03:30 → 18:24:09
+		expect(formatJalaliDateTime("2026-11-14T14:54:09Z")).toBe("۱۴۰۵/۰۸/۲۳ ۱۸:۲۴:۰۹");
+	});
+
+	it("treats offset-less values as UTC and ignores fractional seconds", () => {
+		expect(formatJalaliDateTime("2026-11-14 14:54:09.123456")).toBe("۱۴۰۵/۰۸/۲۳ ۱۸:۲۴:۰۹");
+	});
+
+	it("returns a dash for empty or invalid values", () => {
+		expect(formatJalaliDateTime(null)).toBe("-");
+		expect(formatJalaliDateTime("nope")).toBe("-");
 	});
 });

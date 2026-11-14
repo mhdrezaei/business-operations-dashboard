@@ -162,7 +162,7 @@
 }
 
 .sms-gateway-import-inline .sms-gateway-import-scrollbar {
-	max-height: 520px;
+	max-height: max(520px, calc(100vh - 260px));
 }
 
 .sms-gateway-item {

@@ -40,6 +40,25 @@ export function formatJalaliIsoDate(value: string) {
 	return toPersianDigits(`${parts.year}/${String(parts.month).padStart(2, "0")}/${String(parts.day).padStart(2, "0")}`);
 }
 
+const tehranDateTimeFormat = new Intl.DateTimeFormat("fa-IR-u-ca-persian", {
+	year: "numeric",
+	month: "2-digit",
+	day: "2-digit",
+	hour: "2-digit",
+	minute: "2-digit",
+	second: "2-digit",
+	hourCycle: "h23",
+	timeZone: "Asia/Tehran",
+});
+
+/** Backend timestamp (UTC; an offset-less value is treated as UTC) → Jalali date and Tehran time with Persian digits; "-" when empty or invalid. */
+export function formatJalaliDateTime(value: unknown) {
+	if (typeof value !== "string" || !value)
+		return "-";
+	const date = new Date(/(?:Z|[+-]\d\d:?\d\d)$/.test(value) ? value : `${value.replace(" ", "T")}Z`);
+	return Number.isNaN(date.getTime()) ? "-" : tehranDateTimeFormat.format(date).replace(/[,،]/, "");
+}
+
 const DAY_MS = 86_400_000;
 const GREGORIAN_ISO_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 
