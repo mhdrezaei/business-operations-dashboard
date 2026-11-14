@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildContractAddendaTree } from "./contract-addenda-tree";
+import { buildContractAddendaTree, buildGuaranteeAddendumOptions } from "./contract-addenda-tree";
 
 describe("buildContractAddendaTree", () => {
 	it("preserves recursive children returned by the API", () => {
@@ -59,5 +59,28 @@ describe("buildContractAddendaTree", () => {
 
 		expect(tree).toHaveLength(1);
 		expect(tree[0]).toMatchObject({ displayNumber: "1", contractNumber: "SMS-1" });
+	});
+});
+
+describe("buildGuaranteeAddendumOptions", () => {
+	it("lists every addendum that has a group id, including nested ones, with Persian numbers", () => {
+		const options = buildGuaranteeAddendumOptions([
+			{
+				id: 1,
+				addendum_group_id: "g-1",
+				display_addendum_number: "1",
+				children: [{ id: 2, addendum_group_id: "g-2", display_addendum_number: "1.1" }],
+			},
+		], "openapi");
+
+		expect(options).toEqual([
+			{ addendumGroupId: "g-1", addendumService: "openapi", label: "الحاقیه ۱" },
+			{ addendumGroupId: "g-2", addendumService: "openapi", label: "الحاقیه ۱.۱" },
+		]);
+	});
+
+	it("skips addenda without a group id and handles missing data", () => {
+		expect(buildGuaranteeAddendumOptions([{ id: 1, display_addendum_number: "1" }], "sms")).toEqual([]);
+		expect(buildGuaranteeAddendumOptions(undefined, "sms")).toEqual([]);
 	});
 });
