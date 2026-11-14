@@ -137,3 +137,36 @@ export function collocationModeFromPerformances(rows: unknown[]): CollocationPar
 	const modes = globalPerformanceRows(rows).map(row => String(row.collocation_mode ?? "").trim().toUpperCase());
 	return COLLOCATION_PARTNER_TYPES.find(partner => modes.includes(partner)) ?? null;
 }
+
+export interface CollocationBreakdownItem {
+	itemType: string
+	itemCount: unknown
+	income: unknown
+	speed: unknown
+}
+
+export interface CollocationBreakdown extends CollocationDatacenter {
+	income: unknown
+	expense: unknown
+	profit: unknown
+	items: CollocationBreakdownItem[]
+}
+
+/** ریز درآمد/هزینه/سود و آیتم‌های هر دیتاسنتر از رکوردهای GLOBAL عملکرد COLLOCATION. */
+export function buildCollocationBreakdown(rows: unknown[]): CollocationBreakdown[] {
+	const byDatacenter = new Map<number, CollocationBreakdown>();
+	globalPerformanceRows(rows).forEach((row) => {
+		const datacenter = pickDatacenter(row);
+		if (!datacenter || byDatacenter.has(datacenter.datacenter))
+			return;
+		const items = Array.isArray(row.collocation_items) ? row.collocation_items.map(asRecord).filter((item): item is UnknownRecord => item != null) : [];
+		byDatacenter.set(datacenter.datacenter, {
+			...datacenter,
+			income: row.income,
+			expense: row.expense_display ?? row.expense,
+			profit: row.profit_display ?? row.profit,
+			items: items.map(item => ({ itemType: String(item.item_type ?? ""), itemCount: item.item_count, income: item.income, speed: item.speed })),
+		});
+	});
+	return Array.from(byDatacenter.values());
+}

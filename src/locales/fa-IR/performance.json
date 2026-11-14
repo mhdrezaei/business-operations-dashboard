@@ -378,6 +378,16 @@
 			"addDatacenterPlaceholder": "دیتاسنترهای موجود در قرارداد را انتخاب کنید",
 			"noMoreDatacenters": "دیتاسنتر دیگری طبق قرارداد موجود نیست",
 			"datacenterFallback": "دیتاسنتر {{id}}",
+			"items": {
+				"ampere": "آمپر",
+				"bandwidth": "پهنای‌باند",
+				"ip": "IP",
+				"port": "پورت",
+				"rack_full": "رک کامل",
+				"rack_half": "نیم‌رک",
+				"rack_quarter": "ربع‌رک",
+				"rack_unit": "رک یونیت"
+			},
 			"metrics": {
 				"ipCount": "تعداد IP",
 				"bandwidthUsed": "پهنای‌باند مصرفی",

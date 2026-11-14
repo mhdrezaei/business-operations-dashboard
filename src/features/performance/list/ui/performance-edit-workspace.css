@@ -222,7 +222,7 @@
 
 .traffic-update-template-period {
 	display: grid;
-	grid-template-columns: repeat(3, minmax(0, 1fr));
+	grid-template-columns: repeat(2, minmax(0, 1fr));
 	gap: var(--ant-margin);
 }
 
@@ -337,6 +337,12 @@
 	display: flex;
 	flex-direction: column;
 	align-items: stretch;
+}
+
+/* In a column flex row Ant's `flex: 0 0 100%` on the label/control columns resolves against an
+   auto height and collapses the control to 1px, so the card clips the input. */
+.performance-detail-inline .ant-form-item-row > .ant-col {
+	flex: 0 0 auto;
 }
 
 .performance-detail-inline .ant-form-item-label {

@@ -3,6 +3,7 @@ import type { PerformanceFormValues } from "../../../model/performance.form.type
 import type { CollocationPartnerType } from "../../../services/traffic/traffic-collocation";
 import SelectPerformanceEmptyState from "#src/assets/svg/select-performance.svg?react";
 import { TopRightAlert } from "#src/components";
+import { isCountyOptionalCompanyType } from "#src/features/performance/shared/services/traffic/traffic-locations";
 import { useAccess } from "#src/hooks";
 import { RHFProRadioGroup, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { SectionCard } from "#src/shared/ui/section-card";
@@ -486,7 +487,8 @@ export function FixedStartSection({
 			shouldDirty: false,
 			shouldValidate: false,
 		});
-		setValue("serviceFields.countyEnabled" as const, trafficHasCountyContract, {
+		// County stays off by default for types where it is optional; the user adds it explicitly.
+		setValue("serviceFields.countyEnabled" as const, trafficHasCountyContract && !isCountyOptionalCompanyType(companyType), {
 			shouldDirty: false,
 			shouldValidate: false,
 		});
@@ -494,7 +496,7 @@ export function FixedStartSection({
 			shouldDirty: false,
 			shouldValidate: false,
 		});
-	}, [isTrafficSingleMode, isTrafficCollocation, monthlyStatus.isSuccess, monthlyStatus.data?.has_contract, setValue, trafficHasCountyContract, trafficLocationUnits]);
+	}, [isTrafficSingleMode, isTrafficCollocation, monthlyStatus.isSuccess, monthlyStatus.data?.has_contract, setValue, trafficHasCountyContract, trafficLocationUnits, companyType]);
 
 	const smsCommissionAgentOptions = useMemo(() => {
 		if (!currentCompanyId)

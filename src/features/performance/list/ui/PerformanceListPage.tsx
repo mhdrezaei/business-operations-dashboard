@@ -699,7 +699,8 @@ export default function PerformanceListPage() {
 								embedded
 								open
 								serviceId={selectedServiceId}
-								companyTypeOptions={permittedCompanyTypeOptions.map(option => ({ label: option.value, value: option.key }))}
+								companyType={selectedCompanyType}
+								key={selectedCompanyType ?? ""}
 								onUploaded={() => void performances.refetch()}
 							/>
 						)

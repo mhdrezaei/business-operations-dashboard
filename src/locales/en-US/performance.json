@@ -378,6 +378,16 @@
 			"addDatacenterPlaceholder": "Select a datacenter from the contract",
 			"noMoreDatacenters": "No other datacenter is available in the contract",
 			"datacenterFallback": "Datacenter {{id}}",
+			"items": {
+				"ampere": "Ampere",
+				"bandwidth": "Bandwidth",
+				"ip": "IP",
+				"port": "Port",
+				"rack_full": "Full rack",
+				"rack_half": "Half rack",
+				"rack_quarter": "Quarter rack",
+				"rack_unit": "Rack unit"
+			},
 			"metrics": {
 				"ipCount": "IP count",
 				"bandwidthUsed": "Bandwidth used",
