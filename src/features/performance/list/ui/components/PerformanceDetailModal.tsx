@@ -1150,8 +1150,9 @@ export function PerformanceDetailModal({
 			"company_name",
 			"sh_year",
 			"sh_month",
-			...config.editableFields.map(field => field.key),
-			...config.payloadKeys,
+			// The monthly sales figure is editable below but also belongs in the breakdown next to income/expense.
+			...config.editableFields.map(field => field.key).filter(key => !(service === "sales-agency/outbound" && key === "total_sales")),
+			...config.payloadKeys.filter(key => !(service === "sales-agency/outbound" && key === "total_sales")),
 			...(service === "traffic" ? ["value", "value_receive", "income", "expense", "profit", "location", "traffic_locations"] : []),
 		]);
 		const seenKeys = new Set<string>();

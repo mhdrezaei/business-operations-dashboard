@@ -22,7 +22,7 @@ import { MONTH_OPTIONS } from "#src/features/performance/shared/ui/form/constant
 import { useAccess } from "#src/hooks";
 import { SingleOptionSync } from "#src/shared/ui/rhf-pro";
 import { SectionCard } from "#src/shared/ui/section-card";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Empty, Select, Skeleton, Tag, theme, Typography } from "antd";
 import i18next from "i18next";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -250,7 +250,9 @@ export default function PerformanceListPage() {
 	const { token } = theme.useToken();
 	const navigate = useNavigate();
 	const location = useLocation();
-	const initializedDirectEdit = useRef(false);
+	const queryClient = useQueryClient();
+	// The page stays mounted (keep-alive), so every new navigation with a directEdit must be applied, not just the first.
+	const handledDirectEditKey = useRef<string | null>(null);
 	const { hasDomainPermissionByServiceId, getPermittedCompanyTypes, getPermittedServiceIds } = useAccess();
 
 	// A refresh restores the workspace from the URL (see the replaceState sync below); a direct edit from another page overrides it.
@@ -308,9 +310,12 @@ export default function PerformanceListPage() {
 		.map(company => ({ label: company.name, value: Number(company.id) })), [companies.data, requiresCompanyType, selectedCompanyType, selectedServiceCode]);
 
 	useEffect(() => {
-		if (!directEdit || initializedDirectEdit.current)
+		if (!directEdit || handledDirectEditKey.current === location.key)
 			return;
-		initializedDirectEdit.current = true;
+		handledDirectEditKey.current = location.key;
+		pendingRestoredMonth.current = null;
+		// A just-created performance is not in the cached list yet.
+		void queryClient.invalidateQueries({ queryKey: ["performance-edit-workspace"] });
 		const normalized = normalizePerformanceRecord(directEdit.record);
 		setSelectedServiceId(directEdit.serviceId ?? normalized.serviceId);
 		setSelectedServiceCode(directEdit.serviceCode ?? directEdit.service);
@@ -319,7 +324,7 @@ export default function PerformanceListPage() {
 		setSelectedYear(normalized.year);
 		setSelectedRow(directEdit.record);
 		navigate("/performances/edit", { replace: true, state: null });
-	}, [directEdit, navigate]);
+	}, [directEdit, location.key, navigate, queryClient]);
 
 	const performances = useQuery({
 		queryKey: ["performance-edit-workspace", selectedServicePath, selectedServiceId, selectedCompanyId, selectedCompanyType],
