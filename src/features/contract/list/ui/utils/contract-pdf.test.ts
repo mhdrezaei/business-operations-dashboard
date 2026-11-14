@@ -30,7 +30,7 @@ describe("contract-pdf - openContractPdfPrint", () => {
 		is_official: true,
 		is_business_approved: true,
 		is_signed: true,
-		real_signed: false,
+		real_signed_at: null,
 		addenda_count: 2,
 	};
 
