@@ -260,7 +260,9 @@ export default function CompanyPeoplePanel() {
 	const [optimisticPeople, setOptimisticPeople] = useState<CompanyPersonDto[] | null>(null);
 	const [role, setRole] = useState<CompanyPersonRole | undefined>();
 	const [search, setSearch] = useState("");
-	const [onlySignatories, setOnlySignatories] = useState(false);
+	// The signatory filter belongs to one company: it starts off again whenever another company is opened.
+	const [signatoryFilter, setSignatoryFilter] = useState<{ companyId: typeof companyId, enabled: boolean }>({ companyId, enabled: false });
+	const onlySignatories = signatoryFilter.companyId === companyId && signatoryFilter.enabled;
 	const [viewedPerson, setViewedPerson] = useState<CompanyPersonDto | null>(null);
 	const [openModal, setOpenModal] = useState(false);
 	const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -433,7 +435,7 @@ export default function CompanyPeoplePanel() {
 						<Input allowClear placeholder="جستجو بر اساس نام و نام خانوادگی" value={search} onChange={event => setSearch(event.target.value)} />
 						<Select allowClear placeholder="همه نقش‌ها" options={COMPANY_PERSON_ROLE_OPTIONS} value={role} onChange={setRole} />
 						<label className="company-people-filters__switch">
-							<Switch size="small" checked={onlySignatories} onChange={setOnlySignatories} />
+							<Switch size="small" checked={onlySignatories} onChange={enabled => setSignatoryFilter({ companyId, enabled })} />
 							<span>فقط صاحبان امضا</span>
 						</label>
 					</div>
