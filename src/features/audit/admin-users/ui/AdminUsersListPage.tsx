@@ -273,7 +273,6 @@ export default function AdminUsersListPage() {
 	return (
 		<BasicContent className="h-full">
 			<BasicTable<AdminUserDto>
-				adaptive
 				rowKey="id"
 				columns={columns}
 				actionRef={actionRef}
