@@ -133,10 +133,15 @@ export function supportsOperatorLanguageAggregation(serviceCode: string | null |
 	return normalized === "openapi" || normalized === "sms" || normalized === "sms-commission" || normalized === "sms_commission";
 }
 
+/** OpenAPI rows still show operator/language columns, but its totals are only aggregated by company and month. */
+export function hasOperatorLanguageAggregationOptions(serviceCode: string | null | undefined) {
+	return supportsOperatorLanguageAggregation(serviceCode) && String(serviceCode ?? "").trim().toLowerCase() !== "openapi";
+}
+
 export function getAllowedAggregationKeys(serviceCode: string | null | undefined, isCollocation = false): ReportAggregationKey[] {
 	return [
 		...BASE_AGGREGATION_KEYS,
-		...(supportsOperatorLanguageAggregation(serviceCode) ? OPERATOR_LANGUAGE_AGGREGATION_KEYS : []),
+		...(hasOperatorLanguageAggregationOptions(serviceCode) ? OPERATOR_LANGUAGE_AGGREGATION_KEYS : []),
 		...(isCollocation ? ["by_data_center" as const] : []),
 	];
 }

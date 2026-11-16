@@ -49,6 +49,7 @@ import {
 	getReportDisplayMonth,
 	getReportServiceLayout,
 	getTrafficReportLayout,
+	hasOperatorLanguageAggregationOptions,
 	REPORT_FIELD_KEYS,
 	supportsOperatorLanguageAggregation,
 } from "./constants";
@@ -347,7 +348,7 @@ export function PerformanceReportPage() {
 			...(isOperatorGovernment ? [] : [{ label: t("performance.aggregation.byCompany"), value: "by_company" }]),
 			{ label: t("performance.aggregation.byMonth"), value: "by_month" },
 		];
-		if (supportsOperatorLanguageAggregationFilter) {
+		if (hasOperatorLanguageAggregationOptions(selectedServiceCode)) {
 			options.push(
 				{ label: t("performance.aggregation.byOperator"), value: "by_operator" },
 				{ label: t("performance.aggregation.byLanguage"), value: "by_language" },
@@ -356,7 +357,7 @@ export function PerformanceReportPage() {
 		if (isCollocation)
 			options.push({ label: t("performance.aggregation.byDataCenter"), value: "by_data_center" });
 		return options;
-	}, [supportsOperatorLanguageAggregationFilter, isCollocation, isOperatorGovernment, t]);
+	}, [selectedServiceCode, isCollocation, isOperatorGovernment, t]);
 
 	const allowedAggregationKeys = useMemo(
 		() => getAllowedAggregationKeys(selectedServiceCode, isCollocation).filter(key => !(isOperatorGovernment && key === "by_company")),
