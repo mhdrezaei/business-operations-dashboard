@@ -231,10 +231,6 @@
 	cursor: not-allowed;
 }
 
-.report-period-picker__add.ant-btn {
-	align-self: flex-end;
-}
-
 .report-period-picker__selection {
 	position: relative;
 	display: flex;

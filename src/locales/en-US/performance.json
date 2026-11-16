@@ -702,14 +702,14 @@
 				"value": "Select quarter",
 				"selected": "Selected quarters",
 				"unit": "quarter",
-				"empty": "Select a year and quarter, then click \"Add date\"."
+				"empty": "Select a year and quarter, then click the months you want."
 			},
 			"month": {
 				"section": "Report years and months",
 				"value": "Select month",
 				"selected": "Selected months",
 				"unit": "month",
-				"empty": "Select a year and month, then click \"Add date\"."
+				"empty": "Select a year and month, then click the months you want."
 			}
 		},
 		"conversionRatio": {
@@ -858,8 +858,7 @@
 			"selectMonth": "Select month",
 			"selected": "Selected periods",
 			"unit": "period",
-			"empty": "Select a year and month, then click \"Add date\".",
-			"add": "Add date",
+			"empty": "Select a year and month, then click the months you want.",
 			"selectYear": "Select year",
 			"yearPlaceholder": "Select a year",
 			"noneAdded": "No {{unit}} added yet",
