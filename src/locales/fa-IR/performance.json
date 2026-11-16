@@ -1,4 +1,8 @@
 {
+	"fileName": {
+		"monthsOfYear": "{{count}} ماه از {{year}}",
+		"quartersOfYear": "{{count}} کوارتر از {{year}}"
+	},
 	"titles": {
 		"performanceList": "لیست عملکردها",
 		"performanceReport": "گزارش عملکردها",

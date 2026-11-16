@@ -297,6 +297,7 @@ const WIDE_PDF_COLUMN_COUNT = 16;
 
 function buildBaseHtml(args: {
 	title: string
+	documentTitle?: string
 	serviceName?: string | null
 	labels: ReportExportLabels
 	currencyValue?: string
@@ -306,7 +307,7 @@ function buildBaseHtml(args: {
 	totals?: ReportExportTotals
 	financialColumnTitles: Partial<Record<ReportFinancialColumnKey, string>>
 }) {
-	const { title, labels, serviceName, currencyValue, rows, columns, summary, totals, financialColumnTitles } = args;
+	const { title, documentTitle, labels, serviceName, currencyValue, rows, columns, summary, totals, financialColumnTitles } = args;
 	const today = new Date().toLocaleDateString("fa-IR");
 	const origin = window.location.origin;
 	const logoUrl = `${origin}/negah-logo.svg`;
@@ -318,7 +319,7 @@ function buildBaseHtml(args: {
 <head>
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<title>${escapeHtml(title)}</title>
+	<title>${escapeHtml(documentTitle ?? title)}</title>
 	<style>
 		@font-face {
 			font-family: "IranYekan";
@@ -637,6 +638,7 @@ export function downloadPerformanceReportExcel(args: {
 
 export function openPerformanceReportPdfPrint(args: {
 	title: string
+	documentTitle?: string
 	serviceName?: string | null
 	labels: ReportExportLabels
 	currencyValue?: string

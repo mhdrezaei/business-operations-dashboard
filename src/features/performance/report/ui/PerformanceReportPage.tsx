@@ -56,6 +56,7 @@ import {
 	downloadPerformanceReportExcel,
 	openPerformanceReportPdfPrint,
 } from "./export";
+import { buildReportFileName, buildReportPrintTitle, createFileNamePeriodFormat, formatPeriodsForFileName, parseReportPeriodKey } from "./report-file-name";
 import { formatReportMoney, formatReportNumber } from "./report-number-format";
 import { addSmsVariantExportColumns } from "./sms-variant-export-columns";
 
@@ -1015,6 +1016,15 @@ export function PerformanceReportPage() {
 		currencyUnit: t("performance.labels.currencyUnit"),
 	}), [t]);
 
+	const fileNameParts = useMemo(() => {
+		const format = createFileNamePeriodFormat("month", value => t(`performance.months.${getReportDisplayMonth(value, selectedPeriodType)}`), t);
+		const periods = selectedPeriods.flatMap((key) => {
+			const parsed = parseReportPeriodKey(key);
+			return parsed ? [parsed] : [];
+		});
+		return { title: t("performance.titles.performanceReport"), service: selectedServiceName, period: formatPeriodsForFileName(periods, format) };
+	}, [selectedPeriodType, selectedPeriods, selectedServiceName, t]);
+
 	const handleDownloadExcel = useCallback(async () => {
 		const exportData = await fetchAllRowsForExport();
 		if (!exportData)
@@ -1025,7 +1035,7 @@ export function PerformanceReportPage() {
 			: t("performance.columns.toman");
 
 		downloadPerformanceReportExcel({
-			filename: `${[t("performance.titles.performanceReport"), selectedServiceName].filter(Boolean).join(" - ")}.xls`,
+			filename: buildReportFileName(fileNameParts, "xls"),
 			title: t("performance.titles.performanceReport"),
 			labels: exportLabels,
 			serviceName: selectedServiceName,
@@ -1036,7 +1046,7 @@ export function PerformanceReportPage() {
 			totals: exportData.totals,
 			financialColumnTitles: selectedFinancialColumnTitles,
 		});
-	}, [exportColumns, exportLabels, fetchAllRowsForExport, selectedFinancialColumnTitles, selectedFinancialColumns, selectedServiceName, t]);
+	}, [exportColumns, exportLabels, fetchAllRowsForExport, fileNameParts, selectedFinancialColumnTitles, selectedFinancialColumns, selectedServiceName, t]);
 
 	const handleDownloadPdf = useCallback(async () => {
 		const exportData = await fetchAllRowsForExport();
@@ -1050,6 +1060,7 @@ export function PerformanceReportPage() {
 		try {
 			openPerformanceReportPdfPrint({
 				title: t("performance.titles.performanceReport"),
+				documentTitle: buildReportPrintTitle(fileNameParts),
 				labels: exportLabels,
 				serviceName: selectedServiceName,
 				currencyValue,
@@ -1063,7 +1074,7 @@ export function PerformanceReportPage() {
 		catch {
 			window.$message?.warning(t("performance.messages.popupBlocked"));
 		}
-	}, [exportColumns, exportLabels, fetchAllRowsForExport, selectedFinancialColumnTitles, selectedFinancialColumns, selectedServiceName, t]);
+	}, [exportColumns, exportLabels, fetchAllRowsForExport, fileNameParts, selectedFinancialColumnTitles, selectedFinancialColumns, selectedServiceName, t]);
 
 	const canExport = !!selectedServiceId && !!selectedServiceCode && selectedPeriods.length > 0 && !isDefaultConversionRatioInvalid;
 	const reportReloadFinancialColumnsKey = selectedFinancialColumns

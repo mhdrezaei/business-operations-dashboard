@@ -1,4 +1,8 @@
 {
+	"fileName": {
+		"monthsOfYear": "{{count}} months of {{year}}",
+		"quartersOfYear": "{{count}} quarters of {{year}}"
+	},
 	"titles": {
 		"performanceList": "Performance List",
 		"performanceReport": "Performance Report",

@@ -41,6 +41,8 @@ interface PredictionSummaryExportMeta {
 	periodsLabel: string
 	periodMode: PredictionSummaryPeriodMode
 	showRial: boolean
+	/** Print-dialog title, which browsers suggest as the PDF file name. */
+	documentTitle?: string
 	t: TFunction
 }
 
@@ -263,7 +265,7 @@ export function downloadPredictionSummaryExcel(args: {
 function buildPrintHtml(rows: PredictionSummaryDisplayRow[], meta: PredictionSummaryExportMeta) {
 	const { table } = buildClassicTable(rows, meta, true);
 	const origin = typeof window === "undefined" ? "" : window.location.origin;
-	return `<!doctype html><html lang="fa" dir="rtl"><head><meta charset="UTF-8" /><title>${escapeHtml(meta.t("common.menu.predictionsSummaryReport"))}</title><style>
+	return `<!doctype html><html lang="fa" dir="rtl"><head><meta charset="UTF-8" /><title>${escapeHtml(meta.documentTitle ?? meta.t("common.menu.predictionsSummaryReport"))}</title><style>
 	@font-face{font-family:IranYekan;src:url("${origin}/fonts/woff/iranyekanwebregularfanum.woff") format("woff")}@page{size:A4 landscape;margin:11mm}*{box-sizing:border-box}body{direction:rtl;font-family:IranYekan,Tahoma,Arial,sans-serif;margin:0;color:#0f172a}.header{align-items:center;display:grid;grid-template-columns:120px 1fr 120px;margin-bottom:10px}.header img{justify-self:start;width:95px}h1{font-size:18px;margin:0 0 4px;text-align:center}.meta{color:#64748b;font-size:9px;text-align:center}table{border:1px solid #dbe4f0;border-collapse:collapse;table-layout:fixed;width:100%}thead{display:table-header-group}tr{break-inside:avoid}th,td{border:1px solid #dbe4f0;font-size:7.5px;line-height:1.55;overflow-wrap:anywhere;padding:4px 3px;text-align:center;vertical-align:middle}th{font-weight:700}
 	</style></head><body><div class="header"><img src="${escapeHtml(getLogoUrl())}" alt="${escapeHtml(meta.t("performance.predictionsSummary.brand"))}" /><div><h1>${escapeHtml(meta.t("common.menu.predictionsSummaryReport"))}</h1><div class="meta">${escapeHtml(getMetadata(meta))}</div></div><div></div></div>${table}</body></html>`;
 }
