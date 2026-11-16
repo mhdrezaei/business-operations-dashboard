@@ -301,7 +301,7 @@ function getLanguageLabel(language: string, t: (key: string) => string) {
 	return language || "-";
 }
 
-function toPayloadValue(value: unknown) {
+export function toPayloadValue(value: unknown) {
 	if (value == null)
 		return null;
 	if (typeof value === "number")
@@ -540,7 +540,7 @@ export function applyTrafficInitialValues(
 	initialValues.countyConversionRatio = toNullableNumber((county as Record<string, unknown>)?.conversion_ratio) ?? null;
 }
 
-function buildTrafficPayloadFields(values: EditFormValues, locations: Set<"TEHRAN" | "COUNTY">, isCp: boolean) {
+export function buildTrafficPayloadFields(values: EditFormValues, locations: Set<"TEHRAN" | "COUNTY">, isCp: boolean) {
 	const payload: Record<string, unknown> = {};
 
 	TRAFFIC_LOCATIONS.forEach(({ location, prefix }) => {

@@ -3,8 +3,9 @@ import type { CollocationPartnerType, CollocationRow } from "#src/features/perfo
 import type { PerformanceListRow } from "../../model/performance.list.types";
 import type { TrafficLocation } from "../../model/traffic-locations";
 import type { EditableFieldConfig, EditFormValues, ServiceEditConfig } from "./PerformanceDetailModal";
-import { toNullableNumber } from "#src/features/performance/shared/model/performance.helpers";
+import { pickCompanyTypeToken, toNullableNumber } from "#src/features/performance/shared/model/performance.helpers";
 import { salesAgencyFieldsSchema } from "#src/features/performance/shared/services/sales-agency/sales-agency.schema";
+import { buildCollocationRowsPayload } from "#src/features/performance/shared/services/traffic/traffic-collocation";
 import i18next from "i18next";
 import { describe, expect, it } from "vitest";
 import { isTrafficLocationRequired } from "../../model/traffic-locations";
@@ -12,10 +13,12 @@ import {
 	applyOpenApiInitialValues,
 	applyTrafficInitialValues,
 	buildInitialValues,
+	buildTrafficPayloadFields,
 	getTrafficFieldLocation,
 	isEmptyValue,
 	LEGACY_2_OPERATIONS,
 	resolveOpenApiContractModel,
+	toPayloadValue,
 } from "./PerformanceDetailModal";
 
 interface FormValidationError {
@@ -146,6 +149,114 @@ function validateBasePerformanceIdentifiers({
 	month: number | null
 }): boolean {
 	return companyId != null && serviceId != null && year != null && month != null;
+}
+
+function serviceRequiresCompanyType(service: PerformanceServicePath | null | undefined) {
+	return service === "sms" || service === "psp" || service === "traffic" || service === "sales-agency/outbound" || service === "sales-agency/rep-management";
+}
+
+function buildPerformanceEditPayload({
+	values,
+	config,
+	service,
+	companyId,
+	serviceId,
+	year,
+	month,
+	selectedCompanyType,
+	visibleTrafficLocations,
+	isCollocationRecord,
+	collocationRows,
+	collocationMode,
+}: {
+	values: EditFormValues
+	config: ServiceEditConfig
+	service: PerformanceServicePath
+	companyId: number
+	serviceId: number
+	year: number
+	month: number
+	selectedCompanyType?: string | null
+	visibleTrafficLocations?: Set<"TEHRAN" | "COUNTY">
+	isCollocationRecord?: boolean
+	collocationRows?: CollocationRow[]
+	collocationMode?: CollocationPartnerType | null
+}): Record<string, unknown> {
+	const payload: Record<string, unknown> = {
+		company: companyId,
+		service: serviceId,
+		sh_year: year,
+		sh_month: month,
+	};
+	config.payloadKeys.forEach((key) => {
+		payload[key] = toPayloadValue(values[key]);
+	});
+	if (payload.new_customer_count == null)
+		delete payload.new_customer_count;
+
+	if (service === "sms" || service === "sms-commission") {
+		payload.items = [
+			{ operator: "IRANCELL", language: "FA", value: String(values.irancellFa ?? "") },
+			{ operator: "IRANCELL", language: "EN", value: String(values.irancellEn ?? "") },
+			{ operator: "MCI", language: "FA", value: String(values.mciFa ?? "") },
+			{ operator: "MCI", language: "EN", value: String(values.mciEn ?? "") },
+			{ operator: "OTHER", language: "FA", value: String(values.otherFa ?? "") },
+			{ operator: "OTHER", language: "EN", value: String(values.otherEn ?? "") },
+		];
+		delete payload.irancellFa;
+		delete payload.irancellEn;
+		delete payload.mciFa;
+		delete payload.mciEn;
+		delete payload.otherFa;
+		delete payload.otherEn;
+		delete payload.operator;
+		delete payload.language;
+	}
+
+	if (serviceRequiresCompanyType(service)) {
+		payload.company_type = pickCompanyTypeToken(payload.company_type) ?? selectedCompanyType;
+	}
+
+	if (isCollocationRecord) {
+		payload.company_type = "COLLOCATION";
+		payload.collocation_rows = buildCollocationRowsPayload(collocationRows ?? [], collocationMode!);
+	}
+	else if (service === "traffic") {
+		const isCpEdit = typeof selectedCompanyType === "string" && selectedCompanyType.toUpperCase() === "CP";
+		Object.assign(payload, buildTrafficPayloadFields(values, visibleTrafficLocations ?? new Set(["TEHRAN", "COUNTY"]), isCpEdit));
+		delete payload.tehranValue;
+		delete payload.tehranValueReceive;
+		delete payload.tehranConversionRatio;
+		delete payload.countyValue;
+		delete payload.countyValueReceive;
+		delete payload.countyConversionRatio;
+	}
+
+	return payload;
+}
+
+function checkMeaningfulChanges({
+	isCollocationRecord,
+	collocationRows,
+	initialCollocationRows,
+	visibleEditableFields,
+	watchedEditValues,
+	initialFormValues,
+}: {
+	isCollocationRecord: boolean
+	collocationRows?: CollocationRow[]
+	initialCollocationRows?: CollocationRow[]
+	visibleEditableFields: EditableFieldConfig[]
+	watchedEditValues: EditFormValues
+	initialFormValues: EditFormValues
+}): boolean {
+	if (isCollocationRecord)
+		return JSON.stringify(collocationRows ?? []) !== JSON.stringify(initialCollocationRows ?? []);
+	return visibleEditableFields.some((field) => {
+		const currentValue = toPayloadValue(watchedEditValues?.[field.key]);
+		const initialValue = toPayloadValue(initialFormValues?.[field.key]);
+		return !Object.is(currentValue, initialValue);
+	});
 }
 
 describe("resolveOpenApiContractModel", () => {
@@ -886,6 +997,408 @@ describe("form validation helpers", () => {
 			expect(validateBasePerformanceIdentifiers({ companyId: 10, serviceId: null, year: 1404, month: 5 })).toBe(false);
 			expect(validateBasePerformanceIdentifiers({ companyId: 10, serviceId: 2, year: null, month: 5 })).toBe(false);
 			expect(validateBasePerformanceIdentifiers({ companyId: 10, serviceId: 2, year: 1404, month: null })).toBe(false);
+		});
+	});
+});
+
+describe("payload builders", () => {
+	describe("toPayloadValue", () => {
+		it("converts null and undefined to null", () => {
+			expect(toPayloadValue(null)).toBeNull();
+			expect(toPayloadValue(undefined)).toBeNull();
+		});
+
+		it("returns numeric values as-is", () => {
+			expect(toPayloadValue(0)).toBe(0);
+			expect(toPayloadValue(123)).toBe(123);
+			expect(toPayloadValue(-45.6)).toBe(-45.6);
+		});
+
+		it("converts numeric strings into numbers", () => {
+			expect(toPayloadValue("100")).toBe(100);
+			expect(toPayloadValue("  250.75  ")).toBe(250.75);
+			expect(toPayloadValue("0")).toBe(0);
+		});
+
+		it("converts empty and whitespace-only strings to null", () => {
+			expect(toPayloadValue("")).toBeNull();
+			expect(toPayloadValue("   ")).toBeNull();
+			expect(toPayloadValue("\t\n")).toBeNull();
+		});
+
+		it("preserves non-numeric strings trimmed", () => {
+			expect(toPayloadValue("CP")).toBe("CP");
+			expect(toPayloadValue("  telecom  ")).toBe("telecom");
+		});
+
+		it("preserves boolean values", () => {
+			expect(toPayloadValue(true)).toBe(true);
+			expect(toPayloadValue(false)).toBe(false);
+		});
+	});
+
+	describe("buildTrafficPayloadFields", () => {
+		it("maps tehran and county values to prefixed underscore payload fields", () => {
+			const values = {
+				tehranValue: 100,
+				tehranValueReceive: 80,
+				countyValue: 200,
+				countyValueReceive: 160,
+			};
+			const result = buildTrafficPayloadFields(values, new Set(["TEHRAN", "COUNTY"]), false);
+
+			expect(result).toEqual({
+				tehran_value: 100,
+				tehran_value_receive: 80,
+				county_value: 200,
+				county_value_receive: 160,
+			});
+		});
+
+		it("filters out county fields when locations set only contains TEHRAN", () => {
+			const values = {
+				tehranValue: 100,
+				tehranValueReceive: 80,
+				countyValue: 200,
+				countyValueReceive: 160,
+			};
+			const result = buildTrafficPayloadFields(values, new Set(["TEHRAN"]), false);
+
+			expect(result).toEqual({
+				tehran_value: 100,
+				tehran_value_receive: 80,
+			});
+			expect(result.county_value).toBeUndefined();
+			expect(result.county_value_receive).toBeUndefined();
+		});
+
+		it("includes conversion ratio fields only when isCp is true", () => {
+			const values = {
+				tehranValue: 100,
+				tehranValueReceive: 80,
+				tehranConversionRatio: 1.25,
+				countyValue: 200,
+				countyValueReceive: 160,
+				countyConversionRatio: "0.75",
+			};
+
+			const cpResult = buildTrafficPayloadFields(values, new Set(["TEHRAN", "COUNTY"]), true);
+			expect(cpResult.tehran_conversion_ratio).toBe(1.25);
+			expect(cpResult.county_conversion_ratio).toBe(0.75);
+
+			const nonCpResult = buildTrafficPayloadFields(values, new Set(["TEHRAN", "COUNTY"]), false);
+			expect(nonCpResult.tehran_conversion_ratio).toBeUndefined();
+			expect(nonCpResult.county_conversion_ratio).toBeUndefined();
+		});
+
+		it("omits a location if both value and valueReceive are null", () => {
+			const values = {
+				tehranValue: null,
+				tehranValueReceive: null,
+				countyValue: 50,
+				countyValueReceive: null,
+			};
+			const result = buildTrafficPayloadFields(values, new Set(["TEHRAN", "COUNTY"]), false);
+
+			expect(result.tehran_value).toBeUndefined();
+			expect(result.tehran_value_receive).toBeUndefined();
+			expect(result.county_value).toBe(50);
+			expect(result.county_value_receive).toBeNull();
+		});
+	});
+
+	describe("buildPerformanceEditPayload", () => {
+		const baseParams = {
+			companyId: 10,
+			serviceId: 5,
+			year: 1404,
+			month: 3,
+		};
+
+		it("constructs base payload for generic service", () => {
+			const config: ServiceEditConfig = {
+				title: "PSP",
+				readonlyKeys: [],
+				editableFields: [],
+				payloadKeys: ["value", "income"],
+			};
+			const values = { value: "500", income: 300 };
+
+			const payload = buildPerformanceEditPayload({
+				...baseParams,
+				config,
+				service: "psp",
+				values,
+			});
+
+			expect(payload).toEqual({
+				company: 10,
+				service: 5,
+				sh_year: 1404,
+				sh_month: 3,
+				value: 500,
+				income: 300,
+			});
+		});
+
+		it("removes new_customer_count from payload if it is null or empty", () => {
+			const config: ServiceEditConfig = {
+				title: "Shahkar",
+				readonlyKeys: [],
+				editableFields: [],
+				payloadKeys: ["value", "new_customer_count"],
+			};
+			const valuesWithNull = { value: 100, new_customer_count: "" };
+
+			const payload = buildPerformanceEditPayload({
+				...baseParams,
+				config,
+				service: "shahkar",
+				values: valuesWithNull,
+			});
+
+			expect(payload.value).toBe(100);
+			expect("new_customer_count" in payload).toBe(false);
+		});
+
+		it("preserves new_customer_count in payload if it has a valid number", () => {
+			const config: ServiceEditConfig = {
+				title: "Shahkar",
+				readonlyKeys: [],
+				editableFields: [],
+				payloadKeys: ["value", "new_customer_count"],
+			};
+			const valuesWithNumber = { value: 100, new_customer_count: 25 };
+
+			const payload = buildPerformanceEditPayload({
+				...baseParams,
+				config,
+				service: "shahkar",
+				values: valuesWithNumber,
+			});
+
+			expect(payload.new_customer_count).toBe(25);
+		});
+
+		it("formats SMS payload items and cleans up flat keys", () => {
+			const config: ServiceEditConfig = {
+				title: "SMS",
+				readonlyKeys: [],
+				editableFields: [],
+				payloadKeys: ["irancellFa", "irancellEn", "mciFa", "mciEn", "otherFa", "otherEn"],
+			};
+			const values = {
+				irancellFa: 10,
+				irancellEn: 20,
+				mciFa: 30,
+				mciEn: 40,
+				otherFa: 50,
+				otherEn: 60,
+			};
+
+			const payload = buildPerformanceEditPayload({
+				...baseParams,
+				config,
+				service: "sms",
+				values,
+			});
+
+			expect(payload.items).toEqual([
+				{ operator: "IRANCELL", language: "FA", value: "10" },
+				{ operator: "IRANCELL", language: "EN", value: "20" },
+				{ operator: "MCI", language: "FA", value: "30" },
+				{ operator: "MCI", language: "EN", value: "40" },
+				{ operator: "OTHER", language: "FA", value: "50" },
+				{ operator: "OTHER", language: "EN", value: "60" },
+			]);
+			expect(payload.irancellFa).toBeUndefined();
+			expect(payload.mciFa).toBeUndefined();
+			expect(payload.otherFa).toBeUndefined();
+		});
+
+		it("formats traffic collocation payload with COLLOCATION company_type", () => {
+			const config: ServiceEditConfig = {
+				title: "Traffic",
+				readonlyKeys: ["company_type"],
+				editableFields: [],
+				payloadKeys: ["company_type"],
+			};
+			const collocationRows: CollocationRow[] = [
+				{ datacenter: 1, datacenterName: "Datacenter 1", ipCount: 10, bandwidthUsed: 20, ampereUsed: 5 },
+			];
+
+			const payload = buildPerformanceEditPayload({
+				...baseParams,
+				config,
+				service: "traffic",
+				values: { company_type: "COLLOCATION" },
+				isCollocationRecord: true,
+				collocationRows,
+				collocationMode: "CP",
+			});
+
+			expect(payload.company_type).toBe("COLLOCATION");
+			expect(payload.collocation_rows).toBeDefined();
+			expect(Array.isArray(payload.collocation_rows)).toBe(true);
+		});
+
+		it("formats regular traffic payload and strips form temporary keys", () => {
+			const config: ServiceEditConfig = {
+				title: "Traffic",
+				readonlyKeys: ["company_type"],
+				editableFields: [],
+				payloadKeys: ["company_type", "tehranValue", "tehranValueReceive", "countyValue", "countyValueReceive"],
+			};
+			const values = {
+				company_type: "CP",
+				tehranValue: 100,
+				tehranValueReceive: 80,
+				countyValue: 200,
+				countyValueReceive: 160,
+			};
+
+			const payload = buildPerformanceEditPayload({
+				...baseParams,
+				config,
+				service: "traffic",
+				values,
+				selectedCompanyType: "CP",
+			});
+
+			expect(payload.company_type).toBe("CP");
+			expect(payload.tehran_value).toBe(100);
+			expect(payload.tehran_value_receive).toBe(80);
+			expect(payload.county_value).toBe(200);
+			expect(payload.county_value_receive).toBe(160);
+			expect(payload.tehranValue).toBeUndefined();
+			expect(payload.countyValue).toBeUndefined();
+		});
+	});
+});
+
+describe("hasMeaningfulChanges (dirty state checking)", () => {
+	const sampleFields: EditableFieldConfig[] = [
+		{ key: "value", label: "Value", type: "number" },
+		{ key: "income", label: "Income", type: "number" },
+	];
+
+	describe("standard form fields", () => {
+		it("returns false when current values match initial values", () => {
+			const initial = { value: 100, income: 200 };
+			const current = { value: 100, income: 200 };
+
+			const changed = checkMeaningfulChanges({
+				isCollocationRecord: false,
+				visibleEditableFields: sampleFields,
+				initialFormValues: initial,
+				watchedEditValues: current,
+			});
+
+			expect(changed).toBe(false);
+		});
+
+		it("returns true when a visible field is modified", () => {
+			const initial = { value: 100, income: 200 };
+			const current = { value: 150, income: 200 };
+
+			const changed = checkMeaningfulChanges({
+				isCollocationRecord: false,
+				visibleEditableFields: sampleFields,
+				initialFormValues: initial,
+				watchedEditValues: current,
+			});
+
+			expect(changed).toBe(true);
+		});
+
+		it("returns false when change is format-only (number vs numeric string)", () => {
+			const initial = { value: 100, income: 200 };
+			const current = { value: "100", income: "200" };
+
+			const changed = checkMeaningfulChanges({
+				isCollocationRecord: false,
+				visibleEditableFields: sampleFields,
+				initialFormValues: initial,
+				watchedEditValues: current,
+			});
+
+			expect(changed).toBe(false);
+		});
+
+		it("returns false when whitespace string replaces null initial value", () => {
+			const initial = { value: null, income: 200 };
+			const current = { value: "   ", income: 200 };
+
+			const changed = checkMeaningfulChanges({
+				isCollocationRecord: false,
+				visibleEditableFields: sampleFields,
+				initialFormValues: initial,
+				watchedEditValues: current,
+			});
+
+			expect(changed).toBe(false);
+		});
+
+		it("ignores changes to fields not present in visibleEditableFields", () => {
+			const initial = { value: 100, income: 200, unmanagedKey: "old" };
+			const current = { value: 100, income: 200, unmanagedKey: "new" };
+
+			const changed = checkMeaningfulChanges({
+				isCollocationRecord: false,
+				visibleEditableFields: sampleFields,
+				initialFormValues: initial,
+				watchedEditValues: current,
+			});
+
+			expect(changed).toBe(false);
+		});
+	});
+
+	describe("collocation records", () => {
+		const initialRows: CollocationRow[] = [
+			{ datacenter: 1, datacenterName: "Datacenter 1", ipCount: 10, bandwidthUsed: 50, ampereUsed: 12 },
+		];
+
+		it("returns false when collocation rows are identical", () => {
+			const changed = checkMeaningfulChanges({
+				isCollocationRecord: true,
+				visibleEditableFields: [],
+				initialCollocationRows: initialRows,
+				collocationRows: [{ datacenter: 1, datacenterName: "Datacenter 1", ipCount: 10, bandwidthUsed: 50, ampereUsed: 12 }],
+				initialFormValues: {},
+				watchedEditValues: {},
+			});
+
+			expect(changed).toBe(false);
+		});
+
+		it("returns true when any metric in a collocation row is modified", () => {
+			const changed = checkMeaningfulChanges({
+				isCollocationRecord: true,
+				visibleEditableFields: [],
+				initialCollocationRows: initialRows,
+				collocationRows: [{ datacenter: 1, datacenterName: "Datacenter 1", ipCount: 12, bandwidthUsed: 50, ampereUsed: 12 }],
+				initialFormValues: {},
+				watchedEditValues: {},
+			});
+
+			expect(changed).toBe(true);
+		});
+
+		it("returns true when a collocation row is added", () => {
+			const changed = checkMeaningfulChanges({
+				isCollocationRecord: true,
+				visibleEditableFields: [],
+				initialCollocationRows: initialRows,
+				collocationRows: [
+					...initialRows,
+					{ datacenter: 2, datacenterName: "Datacenter 2", ipCount: 5, bandwidthUsed: 20, ampereUsed: 4 },
+				],
+				initialFormValues: {},
+				watchedEditValues: {},
+			});
+
+			expect(changed).toBe(true);
 		});
 	});
 });
