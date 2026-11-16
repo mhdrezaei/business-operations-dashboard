@@ -7,7 +7,7 @@ import { pickCompanyTypeToken, toNullableNumber } from "#src/features/performanc
 import { salesAgencyFieldsSchema } from "#src/features/performance/shared/services/sales-agency/sales-agency.schema";
 import { buildCollocationRowsPayload } from "#src/features/performance/shared/services/traffic/traffic-collocation";
 import i18next from "i18next";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { isTrafficLocationRequired } from "../../model/traffic-locations";
 import {
 	applyOpenApiInitialValues,
@@ -1399,6 +1399,701 @@ describe("hasMeaningfulChanges (dirty state checking)", () => {
 			});
 
 			expect(changed).toBe(true);
+		});
+	});
+});
+
+// =========================================================================
+// فاز ۲: تست‌های هدایت و فراخوانی API (API Dispatch Routing)
+// =========================================================================
+
+export interface PerformanceDispatchContext {
+	isUnregisteredMode: boolean
+	service: PerformanceServicePath
+	companyId: number
+	year: number
+	month: number
+	salesAgentId?: number | null
+	recordId?: number | string | null
+	payload: Record<string, unknown>
+	selectedCompanyType?: string | null
+	embedded?: boolean
+	api: {
+		upsertPerformance: (params: {
+			service: string
+			companyId: number
+			year: number
+			month: number
+			payload: Record<string, unknown>
+		}) => Promise<unknown>
+		updateSmsCommissionPerformanceByComposite: (
+			companyId: number,
+			salesAgentId: number,
+			year: number,
+			month: number,
+			payload: Record<string, unknown>,
+		) => Promise<unknown>
+		updatePerformanceByComposite: (
+			service: string,
+			companyId: number,
+			year: number,
+			month: number,
+			payload: Record<string, unknown>,
+			companyType: string | null,
+		) => Promise<unknown>
+		updatePerformanceById: (
+			service: string,
+			id: number | string,
+			payload: Record<string, unknown>,
+		) => Promise<unknown>
+	}
+	message?: {
+		error: (msg: string) => void
+		success: (msg: string) => void
+	}
+	onUpdated?: () => void
+	onClose?: () => void
+}
+
+export async function dispatchPerformanceUpdate(ctx: PerformanceDispatchContext) {
+	const {
+		isUnregisteredMode,
+		service,
+		companyId,
+		year,
+		month,
+		salesAgentId,
+		recordId,
+		payload,
+		selectedCompanyType,
+		embedded = false,
+		api,
+		message,
+		onUpdated,
+		onClose,
+	} = ctx;
+
+	if (isUnregisteredMode) {
+		await api.upsertPerformance({
+			service,
+			companyId,
+			year,
+			month,
+			payload,
+		});
+	}
+	else if (service === "sms-commission") {
+		if (salesAgentId == null) {
+			message?.error("performance.errors.invalidSalesAgentId");
+			return { success: false, aborted: true };
+		}
+		await api.updateSmsCommissionPerformanceByComposite(companyId, salesAgentId, year, month, payload);
+	}
+	else if (service === "sms" || service === "traffic" || service === "openapi") {
+		await api.updatePerformanceByComposite(
+			service,
+			companyId,
+			year,
+			month,
+			payload,
+			service === "traffic" ? (selectedCompanyType ?? null) : null,
+		);
+	}
+	else if (recordId != null) {
+		await api.updatePerformanceById(service, recordId, payload);
+	}
+	else {
+		await api.upsertPerformance({
+			service,
+			companyId,
+			year,
+			month,
+			payload,
+		});
+	}
+
+	message?.success(
+		isUnregisteredMode ? "performance.messages.registerSuccess" : "performance.messages.updateSuccess",
+	);
+	onUpdated?.();
+	if (!embedded)
+		onClose?.();
+
+	return { success: true, aborted: false };
+}
+
+describe("phase 2: API Dispatch Routing", () => {
+	const createMockApi = () => ({
+		upsertPerformance: vi.fn().mockResolvedValue({ success: true }),
+		updateSmsCommissionPerformanceByComposite: vi.fn().mockResolvedValue({ success: true }),
+		updatePerformanceByComposite: vi.fn().mockResolvedValue({ success: true }),
+		updatePerformanceById: vi.fn().mockResolvedValue({ success: true }),
+	});
+
+	const createMockMessage = () => ({
+		error: vi.fn(),
+		success: vi.fn(),
+	});
+
+	const basePayload: Record<string, unknown> = {
+		company: 10,
+		service: 1,
+		sh_year: 1403,
+		sh_month: 6,
+		some_metric: 500,
+	};
+
+	describe("composite services routing (updatePerformanceByComposite)", () => {
+		it("dispatches 'sms' to updatePerformanceByComposite with companyType null", async () => {
+			const api = createMockApi();
+			const message = createMockMessage();
+			const onUpdated = vi.fn();
+			const onClose = vi.fn();
+
+			const result = await dispatchPerformanceUpdate({
+				isUnregisteredMode: false,
+				service: "sms",
+				companyId: 10,
+				year: 1403,
+				month: 6,
+				recordId: 999,
+				payload: basePayload,
+				selectedCompanyType: "CP", // SMS ignores selectedCompanyType in composite call and passes null
+				api,
+				message,
+				onUpdated,
+				onClose,
+			});
+
+			expect(result).toEqual({ success: true, aborted: false });
+			expect(api.updatePerformanceByComposite).toHaveBeenCalledTimes(1);
+			expect(api.updatePerformanceByComposite).toHaveBeenCalledWith("sms", 10, 1403, 6, basePayload, null);
+
+			expect(api.updatePerformanceById).not.toHaveBeenCalled();
+			expect(api.updateSmsCommissionPerformanceByComposite).not.toHaveBeenCalled();
+			expect(api.upsertPerformance).not.toHaveBeenCalled();
+
+			expect(message.success).toHaveBeenCalledWith("performance.messages.updateSuccess");
+			expect(onUpdated).toHaveBeenCalledTimes(1);
+			expect(onClose).toHaveBeenCalledTimes(1);
+		});
+
+		it("dispatches 'openapi' to updatePerformanceByComposite with companyType null", async () => {
+			const api = createMockApi();
+			const message = createMockMessage();
+
+			await dispatchPerformanceUpdate({
+				isUnregisteredMode: false,
+				service: "openapi",
+				companyId: 12,
+				year: 1403,
+				month: 7,
+				payload: basePayload,
+				api,
+				message,
+			});
+
+			expect(api.updatePerformanceByComposite).toHaveBeenCalledTimes(1);
+			expect(api.updatePerformanceByComposite).toHaveBeenCalledWith("openapi", 12, 1403, 7, basePayload, null);
+			expect(api.updatePerformanceById).not.toHaveBeenCalled();
+			expect(api.upsertPerformance).not.toHaveBeenCalled();
+		});
+
+		it("dispatches 'traffic' with selectedCompanyType 'CP' to updatePerformanceByComposite", async () => {
+			const api = createMockApi();
+			const message = createMockMessage();
+
+			await dispatchPerformanceUpdate({
+				isUnregisteredMode: false,
+				service: "traffic",
+				companyId: 15,
+				year: 1402,
+				month: 12,
+				selectedCompanyType: "CP",
+				payload: basePayload,
+				api,
+				message,
+			});
+
+			expect(api.updatePerformanceByComposite).toHaveBeenCalledTimes(1);
+			expect(api.updatePerformanceByComposite).toHaveBeenCalledWith("traffic", 15, 1402, 12, basePayload, "CP");
+			expect(api.updatePerformanceById).not.toHaveBeenCalled();
+		});
+
+		it("dispatches 'traffic' with selectedCompanyType 'COLLOCATION' to updatePerformanceByComposite", async () => {
+			const api = createMockApi();
+			const message = createMockMessage();
+
+			await dispatchPerformanceUpdate({
+				isUnregisteredMode: false,
+				service: "traffic",
+				companyId: 15,
+				year: 1402,
+				month: 12,
+				selectedCompanyType: "COLLOCATION",
+				payload: basePayload,
+				api,
+				message,
+			});
+
+			expect(api.updatePerformanceByComposite).toHaveBeenCalledTimes(1);
+			expect(api.updatePerformanceByComposite).toHaveBeenCalledWith(
+				"traffic",
+				15,
+				1402,
+				12,
+				basePayload,
+				"COLLOCATION",
+			);
+		});
+
+		it("dispatches 'traffic' with null selectedCompanyType to updatePerformanceByComposite", async () => {
+			const api = createMockApi();
+			const message = createMockMessage();
+
+			await dispatchPerformanceUpdate({
+				isUnregisteredMode: false,
+				service: "traffic",
+				companyId: 15,
+				year: 1402,
+				month: 12,
+				selectedCompanyType: null,
+				payload: basePayload,
+				api,
+				message,
+			});
+
+			expect(api.updatePerformanceByComposite).toHaveBeenCalledTimes(1);
+			expect(api.updatePerformanceByComposite).toHaveBeenCalledWith("traffic", 15, 1402, 12, basePayload, null);
+		});
+	});
+
+	describe("sMS Commission routing (updateSmsCommissionPerformanceByComposite)", () => {
+		it("dispatches to updateSmsCommissionPerformanceByComposite when salesAgentId is present", async () => {
+			const api = createMockApi();
+			const message = createMockMessage();
+			const onUpdated = vi.fn();
+			const onClose = vi.fn();
+
+			const result = await dispatchPerformanceUpdate({
+				isUnregisteredMode: false,
+				service: "sms-commission",
+				companyId: 20,
+				year: 1403,
+				month: 3,
+				salesAgentId: 77,
+				payload: basePayload,
+				api,
+				message,
+				onUpdated,
+				onClose,
+			});
+
+			expect(result).toEqual({ success: true, aborted: false });
+			expect(api.updateSmsCommissionPerformanceByComposite).toHaveBeenCalledTimes(1);
+			expect(api.updateSmsCommissionPerformanceByComposite).toHaveBeenCalledWith(
+				20,
+				77,
+				1403,
+				3,
+				basePayload,
+			);
+			expect(api.updatePerformanceByComposite).not.toHaveBeenCalled();
+			expect(api.updatePerformanceById).not.toHaveBeenCalled();
+			expect(api.upsertPerformance).not.toHaveBeenCalled();
+			expect(message.error).not.toHaveBeenCalled();
+			expect(message.success).toHaveBeenCalledWith("performance.messages.updateSuccess");
+			expect(onUpdated).toHaveBeenCalledTimes(1);
+			expect(onClose).toHaveBeenCalledTimes(1);
+		});
+
+		it("aborts and shows error notification when salesAgentId is null", async () => {
+			const api = createMockApi();
+			const message = createMockMessage();
+			const onUpdated = vi.fn();
+			const onClose = vi.fn();
+
+			const result = await dispatchPerformanceUpdate({
+				isUnregisteredMode: false,
+				service: "sms-commission",
+				companyId: 20,
+				year: 1403,
+				month: 3,
+				salesAgentId: null,
+				payload: basePayload,
+				api,
+				message,
+				onUpdated,
+				onClose,
+			});
+
+			expect(result).toEqual({ success: false, aborted: true });
+			expect(message.error).toHaveBeenCalledWith("performance.errors.invalidSalesAgentId");
+			expect(api.updateSmsCommissionPerformanceByComposite).not.toHaveBeenCalled();
+			expect(api.updatePerformanceByComposite).not.toHaveBeenCalled();
+			expect(api.updatePerformanceById).not.toHaveBeenCalled();
+			expect(api.upsertPerformance).not.toHaveBeenCalled();
+			expect(message.success).not.toHaveBeenCalled();
+			expect(onUpdated).not.toHaveBeenCalled();
+			expect(onClose).not.toHaveBeenCalled();
+		});
+
+		it("aborts and shows error notification when salesAgentId is undefined", async () => {
+			const api = createMockApi();
+			const message = createMockMessage();
+
+			const result = await dispatchPerformanceUpdate({
+				isUnregisteredMode: false,
+				service: "sms-commission",
+				companyId: 20,
+				year: 1403,
+				month: 3,
+				salesAgentId: undefined,
+				payload: basePayload,
+				api,
+				message,
+			});
+
+			expect(result).toEqual({ success: false, aborted: true });
+			expect(message.error).toHaveBeenCalledWith("performance.errors.invalidSalesAgentId");
+			expect(api.updateSmsCommissionPerformanceByComposite).not.toHaveBeenCalled();
+		});
+	});
+
+	describe("iD-based services routing (updatePerformanceById)", () => {
+		it("dispatches 'shahkar' to updatePerformanceById using recordId", async () => {
+			const api = createMockApi();
+			const message = createMockMessage();
+
+			await dispatchPerformanceUpdate({
+				isUnregisteredMode: false,
+				service: "shahkar",
+				companyId: 10,
+				year: 1403,
+				month: 1,
+				recordId: 501,
+				payload: basePayload,
+				api,
+				message,
+			});
+
+			expect(api.updatePerformanceById).toHaveBeenCalledTimes(1);
+			expect(api.updatePerformanceById).toHaveBeenCalledWith("shahkar", 501, basePayload);
+			expect(api.updatePerformanceByComposite).not.toHaveBeenCalled();
+			expect(api.upsertPerformance).not.toHaveBeenCalled();
+		});
+
+		it("dispatches 'psp' to updatePerformanceById using recordId", async () => {
+			const api = createMockApi();
+			const message = createMockMessage();
+
+			await dispatchPerformanceUpdate({
+				isUnregisteredMode: false,
+				service: "psp",
+				companyId: 10,
+				year: 1403,
+				month: 1,
+				recordId: 602,
+				payload: basePayload,
+				api,
+				message,
+			});
+
+			expect(api.updatePerformanceById).toHaveBeenCalledTimes(1);
+			expect(api.updatePerformanceById).toHaveBeenCalledWith("psp", 602, basePayload);
+		});
+
+		it("dispatches 'commercial' to updatePerformanceById using recordId", async () => {
+			const api = createMockApi();
+			const message = createMockMessage();
+
+			await dispatchPerformanceUpdate({
+				isUnregisteredMode: false,
+				service: "commercial",
+				companyId: 10,
+				year: 1403,
+				month: 1,
+				recordId: 703,
+				payload: basePayload,
+				api,
+				message,
+			});
+
+			expect(api.updatePerformanceById).toHaveBeenCalledTimes(1);
+			expect(api.updatePerformanceById).toHaveBeenCalledWith("commercial", 703, basePayload);
+		});
+
+		it("dispatches 'sales-agency/outbound' to updatePerformanceById using recordId", async () => {
+			const api = createMockApi();
+			const message = createMockMessage();
+
+			await dispatchPerformanceUpdate({
+				isUnregisteredMode: false,
+				service: "sales-agency/outbound",
+				companyId: 10,
+				year: 1403,
+				month: 1,
+				recordId: 804,
+				payload: basePayload,
+				api,
+				message,
+			});
+
+			expect(api.updatePerformanceById).toHaveBeenCalledTimes(1);
+			expect(api.updatePerformanceById).toHaveBeenCalledWith("sales-agency/outbound", 804, basePayload);
+		});
+
+		it("dispatches 'sales-agency/rep-management' to updatePerformanceById using recordId", async () => {
+			const api = createMockApi();
+			const message = createMockMessage();
+
+			await dispatchPerformanceUpdate({
+				isUnregisteredMode: false,
+				service: "sales-agency/rep-management",
+				companyId: 10,
+				year: 1403,
+				month: 1,
+				recordId: 905,
+				payload: basePayload,
+				api,
+				message,
+			});
+
+			expect(api.updatePerformanceById).toHaveBeenCalledTimes(1);
+			expect(api.updatePerformanceById).toHaveBeenCalledWith("sales-agency/rep-management", 905, basePayload);
+		});
+
+		it("supports string record IDs (e.g. UUID) for updatePerformanceById", async () => {
+			const api = createMockApi();
+			const message = createMockMessage();
+
+			await dispatchPerformanceUpdate({
+				isUnregisteredMode: false,
+				service: "psp",
+				companyId: 10,
+				year: 1403,
+				month: 1,
+				recordId: "psp-uuid-8888",
+				payload: basePayload,
+				api,
+				message,
+			});
+
+			expect(api.updatePerformanceById).toHaveBeenCalledWith("psp", "psp-uuid-8888", basePayload);
+		});
+	});
+
+	describe("unregistered mode routing (upsertPerformance)", () => {
+		it("dispatches to upsertPerformance when mode is unregistered even for composite service 'sms'", async () => {
+			const api = createMockApi();
+			const message = createMockMessage();
+			const onUpdated = vi.fn();
+			const onClose = vi.fn();
+
+			const result = await dispatchPerformanceUpdate({
+				isUnregisteredMode: true,
+				service: "sms",
+				companyId: 10,
+				year: 1403,
+				month: 6,
+				recordId: 999,
+				payload: basePayload,
+				api,
+				message,
+				onUpdated,
+				onClose,
+			});
+
+			expect(result).toEqual({ success: true, aborted: false });
+			expect(api.upsertPerformance).toHaveBeenCalledTimes(1);
+			expect(api.upsertPerformance).toHaveBeenCalledWith({
+				service: "sms",
+				companyId: 10,
+				year: 1403,
+				month: 6,
+				payload: basePayload,
+			});
+			expect(api.updatePerformanceByComposite).not.toHaveBeenCalled();
+			expect(api.updatePerformanceById).not.toHaveBeenCalled();
+			expect(message.success).toHaveBeenCalledWith("performance.messages.registerSuccess");
+			expect(onUpdated).toHaveBeenCalledTimes(1);
+			expect(onClose).toHaveBeenCalledTimes(1);
+		});
+
+		it("dispatches to upsertPerformance when mode is unregistered for 'traffic'", async () => {
+			const api = createMockApi();
+			const message = createMockMessage();
+
+			await dispatchPerformanceUpdate({
+				isUnregisteredMode: true,
+				service: "traffic",
+				companyId: 10,
+				year: 1403,
+				month: 6,
+				selectedCompanyType: "CP",
+				payload: basePayload,
+				api,
+				message,
+			});
+
+			expect(api.upsertPerformance).toHaveBeenCalledTimes(1);
+			expect(api.upsertPerformance).toHaveBeenCalledWith({
+				service: "traffic",
+				companyId: 10,
+				year: 1403,
+				month: 6,
+				payload: basePayload,
+			});
+			expect(api.updatePerformanceByComposite).not.toHaveBeenCalled();
+		});
+
+		it("dispatches to upsertPerformance when mode is unregistered for 'openapi'", async () => {
+			const api = createMockApi();
+			const message = createMockMessage();
+
+			await dispatchPerformanceUpdate({
+				isUnregisteredMode: true,
+				service: "openapi",
+				companyId: 10,
+				year: 1403,
+				month: 6,
+				payload: basePayload,
+				api,
+				message,
+			});
+
+			expect(api.upsertPerformance).toHaveBeenCalledTimes(1);
+			expect(api.updatePerformanceByComposite).not.toHaveBeenCalled();
+		});
+
+		it("dispatches to upsertPerformance when mode is unregistered for 'sms-commission' without requiring salesAgentId", async () => {
+			const api = createMockApi();
+			const message = createMockMessage();
+
+			await dispatchPerformanceUpdate({
+				isUnregisteredMode: true,
+				service: "sms-commission",
+				companyId: 10,
+				year: 1403,
+				month: 6,
+				salesAgentId: null, // Should not block because unregistered mode takes precedence
+				payload: basePayload,
+				api,
+				message,
+			});
+
+			expect(api.upsertPerformance).toHaveBeenCalledTimes(1);
+			expect(api.upsertPerformance).toHaveBeenCalledWith({
+				service: "sms-commission",
+				companyId: 10,
+				year: 1403,
+				month: 6,
+				payload: basePayload,
+			});
+			expect(api.updateSmsCommissionPerformanceByComposite).not.toHaveBeenCalled();
+			expect(message.error).not.toHaveBeenCalled();
+			expect(message.success).toHaveBeenCalledWith("performance.messages.registerSuccess");
+		});
+
+		it("dispatches to upsertPerformance when mode is unregistered even if recordId is provided", async () => {
+			const api = createMockApi();
+			const message = createMockMessage();
+
+			await dispatchPerformanceUpdate({
+				isUnregisteredMode: true,
+				service: "shahkar",
+				companyId: 10,
+				year: 1403,
+				month: 6,
+				recordId: 777,
+				payload: basePayload,
+				api,
+				message,
+			});
+
+			expect(api.upsertPerformance).toHaveBeenCalledTimes(1);
+			expect(api.updatePerformanceById).not.toHaveBeenCalled();
+		});
+	});
+
+	describe("fallback and Lifecycle callbacks", () => {
+		it("falls back to upsertPerformance when recordId is null for non-composite service", async () => {
+			const api = createMockApi();
+			const message = createMockMessage();
+
+			await dispatchPerformanceUpdate({
+				isUnregisteredMode: false,
+				service: "shahkar",
+				companyId: 10,
+				year: 1403,
+				month: 6,
+				recordId: null,
+				payload: basePayload,
+				api,
+				message,
+			});
+
+			expect(api.upsertPerformance).toHaveBeenCalledTimes(1);
+			expect(api.upsertPerformance).toHaveBeenCalledWith({
+				service: "shahkar",
+				companyId: 10,
+				year: 1403,
+				month: 6,
+				payload: basePayload,
+			});
+			expect(api.updatePerformanceById).not.toHaveBeenCalled();
+			expect(message.success).toHaveBeenCalledWith("performance.messages.updateSuccess");
+		});
+
+		it("does not call onClose when embedded is true", async () => {
+			const api = createMockApi();
+			const message = createMockMessage();
+			const onUpdated = vi.fn();
+			const onClose = vi.fn();
+
+			await dispatchPerformanceUpdate({
+				isUnregisteredMode: false,
+				service: "sms",
+				companyId: 10,
+				year: 1403,
+				month: 6,
+				payload: basePayload,
+				embedded: true,
+				api,
+				message,
+				onUpdated,
+				onClose,
+			});
+
+			expect(onUpdated).toHaveBeenCalledTimes(1);
+			expect(onClose).not.toHaveBeenCalled();
+		});
+
+		it("propagates API rejection and does not trigger success callbacks", async () => {
+			const api = createMockApi();
+			api.updatePerformanceByComposite.mockRejectedValue(new Error("Network Error"));
+			const message = createMockMessage();
+			const onUpdated = vi.fn();
+			const onClose = vi.fn();
+
+			await expect(
+				dispatchPerformanceUpdate({
+					isUnregisteredMode: false,
+					service: "sms",
+					companyId: 10,
+					year: 1403,
+					month: 6,
+					payload: basePayload,
+					api,
+					message,
+					onUpdated,
+					onClose,
+				}),
+			).rejects.toThrow("Network Error");
+
+			expect(message.success).not.toHaveBeenCalled();
+			expect(onUpdated).not.toHaveBeenCalled();
+			expect(onClose).not.toHaveBeenCalled();
 		});
 	});
 });
