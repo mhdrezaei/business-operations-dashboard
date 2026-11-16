@@ -15,6 +15,7 @@ import {
 } from "#src/features/performance/shared/queries/performance.queries";
 import { MONTH_OPTIONS } from "#src/features/performance/shared/ui/form/constants/jalali-date-options";
 import { useAccess } from "#src/hooks";
+import { getMainScrollContainer } from "#src/layout/constants";
 import { SingleOptionSync } from "#src/shared/ui/rhf-pro";
 import { FileExcelOutlined, FilePdfOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
@@ -1116,6 +1117,7 @@ export function PerformanceReportPage() {
 		<BasicContent className="h-full">
 			<BasicTable<PerformanceReportRow>
 				className="performance-report-table"
+				sticky={{ getContainer: getMainScrollContainer }}
 				rowKey={record => String(record.id)}
 				columns={columns}
 				actionRef={actionRef}

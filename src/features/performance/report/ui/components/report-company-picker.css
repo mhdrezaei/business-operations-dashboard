@@ -224,3 +224,10 @@
 		transition: none;
 	}
 }
+
+/* A sticky table header only works when no ancestor is a scroll container; `clip` keeps the rounded corners without becoming one. */
+#basic-content:has(.performance-report-table),
+.basic-table-shell > .performance-report-table.ant-pro-table > .ant-pro-card:not(.ant-pro-table-search),
+.basic-table-shell:has(> .performance-report-table) .basic-table-grid > .ant-spin-nested-loading > .ant-spin-container > .ant-table > .ant-table-container {
+	overflow: clip;
+}

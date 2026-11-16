@@ -6,7 +6,7 @@ import { RocketOutlined } from "@ant-design/icons";
 import { FloatButton, Grid, Watermark } from "antd";
 import { useEffect, useMemo } from "react";
 
-import { ELEMENT_ID_MAIN_CONTENT, footerHeight, headerHeight, tabbarHeight } from "../constants";
+import { footerHeight, getMainScrollContainer, headerHeight, tabbarHeight } from "../constants";
 import { useLayout } from "../hooks";
 import LayoutContent from "../layout-content";
 import LayoutFooter from "../layout-footer";
@@ -183,7 +183,7 @@ export default function ContainerLayout() {
 					? (
 						<FloatButton.BackTop
 							icon={<RocketOutlined />}
-							target={() => document.querySelector(`#${ELEMENT_ID_MAIN_CONTENT} .simplebar-content-wrapper`) as HTMLElement || document}
+							target={getMainScrollContainer}
 						/>
 					)
 					: null}
