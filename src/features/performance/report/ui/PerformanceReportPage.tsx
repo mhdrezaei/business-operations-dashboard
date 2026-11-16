@@ -1078,8 +1078,9 @@ export function PerformanceReportPage() {
 	}, [exportColumns, exportLabels, fetchAllRowsForExport, fileNameParts, selectedFinancialColumnTitles, selectedFinancialColumns, selectedServiceName, t]);
 
 	const canExport = !!selectedServiceId && !!selectedServiceCode && selectedPeriods.length > 0 && !isDefaultConversionRatioInvalid;
-	const reportReloadFinancialColumnsKey = selectedFinancialColumns
-		.filter(column => column !== "rial")
+	// Only these two columns change the request; the others just show or hide data that is already loaded.
+	const reportReloadFinancialColumnsKey = (["total", "showBaseUnit"] as const)
+		.filter(column => selectedFinancialColumns.includes(column))
 		.join(",");
 
 	const reportFilterKey = [
