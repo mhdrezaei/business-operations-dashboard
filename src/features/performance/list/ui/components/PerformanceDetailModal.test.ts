@@ -1,21 +1,152 @@
-import type { PerformanceListItem } from "#src/features/performance/api/performances.api";
-import type { CollocationRow } from "#src/features/performance/shared/services/traffic/traffic-collocation";
+import type { PerformanceListItem, PerformanceServicePath } from "#src/features/performance/api/performances.api";
+import type { CollocationPartnerType, CollocationRow } from "#src/features/performance/shared/services/traffic/traffic-collocation";
 import type { PerformanceListRow } from "../../model/performance.list.types";
+import type { TrafficLocation } from "../../model/traffic-locations";
 import type { EditableFieldConfig, EditFormValues, ServiceEditConfig } from "./PerformanceDetailModal";
+import { toNullableNumber } from "#src/features/performance/shared/model/performance.helpers";
+import { salesAgencyFieldsSchema } from "#src/features/performance/shared/services/sales-agency/sales-agency.schema";
+import i18next from "i18next";
 import { describe, expect, it } from "vitest";
+import { isTrafficLocationRequired } from "../../model/traffic-locations";
 import {
 	applyOpenApiInitialValues,
-	applySmsInitialValues,
 	applyTrafficInitialValues,
 	buildInitialValues,
 	getTrafficFieldLocation,
 	isEmptyValue,
 	LEGACY_2_OPERATIONS,
 	resolveOpenApiContractModel,
-	validateBasePerformanceIdentifiers,
-	validateCollocationRows,
-	validatePerformanceEditValues,
 } from "./PerformanceDetailModal";
+
+interface FormValidationError {
+	field: string
+	type: "required" | "validation"
+	message: string
+}
+
+function applySmsInitialValues(
+	initialValues: EditFormValues,
+	smsBreakdownCards: Array<{ key: string, value: unknown }>,
+	record?: Record<string, unknown> | null,
+	isUnregisteredMode = false,
+) {
+	const lookup = new Map<string, unknown>();
+	smsBreakdownCards.forEach((card) => {
+		lookup.set(card.key, card.value);
+	});
+	initialValues.irancellFa = lookup.get("IRANCELL_FA") ?? null;
+	initialValues.irancellEn = lookup.get("IRANCELL_EN") ?? null;
+	initialValues.mciFa = lookup.get("MCI_FA") ?? null;
+	initialValues.mciEn = lookup.get("MCI_EN") ?? null;
+	initialValues.otherFa = lookup.get("OTHER_FA") ?? null;
+	initialValues.otherEn = lookup.get("OTHER_EN") ?? null;
+
+	if (isUnregisteredMode && record) {
+		const operator = String((record as any)?.operator ?? "").trim().toUpperCase();
+		const language = String((record as any)?.language ?? "").trim().toUpperCase();
+		const value = (record as any)?.value;
+		if (operator === "IRANCELL" && language === "FA")
+			initialValues.irancellFa = value ?? initialValues.irancellFa;
+		if (operator === "IRANCELL" && language === "EN")
+			initialValues.irancellEn = value ?? initialValues.irancellEn;
+		if (operator === "MCI" && language === "FA")
+			initialValues.mciFa = value ?? initialValues.mciFa;
+		if (operator === "MCI" && language === "EN")
+			initialValues.mciEn = value ?? initialValues.mciEn;
+		if (operator === "OTHER" && language === "FA")
+			initialValues.otherFa = value ?? initialValues.otherFa;
+		if (operator === "OTHER" && language === "EN")
+			initialValues.otherEn = value ?? initialValues.otherEn;
+	}
+}
+
+function validatePerformanceEditValues({
+	values,
+	visibleEditableFields,
+	service,
+	existingTrafficLocations,
+	selectedCompanyType,
+}: {
+	values: Record<string, unknown>
+	visibleEditableFields: EditableFieldConfig[]
+	service: PerformanceServicePath | null
+	existingTrafficLocations?: Set<TrafficLocation>
+	selectedCompanyType?: string | null
+}): { isValid: boolean, errors: FormValidationError[] } {
+	const errors: FormValidationError[] = [];
+
+	if (service === "sales-agency/outbound" || service === "sales-agency/rep-management") {
+		const result = salesAgencyFieldsSchema(selectedCompanyType).safeParse(values);
+		if (!result.success) {
+			result.error.issues.forEach((issue) => {
+				const fieldName = issue.path.join(".");
+				if (fieldName) {
+					errors.push({
+						field: fieldName,
+						type: "validation",
+						message: issue.message,
+					});
+				}
+			});
+			return { isValid: false, errors };
+		}
+	}
+
+	visibleEditableFields.forEach((field) => {
+		if (!field.required)
+			return;
+		const trafficLocation = service === "traffic" ? getTrafficFieldLocation(field.key) : null;
+		if (trafficLocation && existingTrafficLocations && !isTrafficLocationRequired(trafficLocation, existingTrafficLocations))
+			return;
+		if (!isEmptyValue(values[field.key]))
+			return;
+		errors.push({
+			field: field.key,
+			type: "required",
+			message: i18next.t("performance.validation.requiredField"),
+		});
+	});
+
+	visibleEditableFields.forEach((field) => {
+		const numeric = toNullableNumber(values[field.key]);
+		if (numeric == null || numeric >= 0)
+			return;
+		errors.push({
+			field: field.key,
+			type: "validation",
+			message: i18next.t("performance.validation.base.negativeValue"),
+		});
+	});
+
+	return { isValid: errors.length === 0, errors };
+}
+
+function validateCollocationRows(
+	rows: CollocationRow[],
+	collocationMode: CollocationPartnerType | null | undefined,
+): { isValid: boolean, errorKey?: string } {
+	if (!collocationMode || rows.length < 1 || rows.some(row => [row.ipCount, row.bandwidthUsed, row.ampereUsed].some(metric => metric == null))) {
+		return { isValid: false, errorKey: "performance.validation.traffic.collocationFieldRequired" };
+	}
+	if (rows.some(row => [row.ipCount, row.bandwidthUsed, row.ampereUsed].some(metric => Number(metric) < 0))) {
+		return { isValid: false, errorKey: "performance.validation.base.negativeValue" };
+	}
+	return { isValid: true };
+}
+
+function validateBasePerformanceIdentifiers({
+	companyId,
+	serviceId,
+	year,
+	month,
+}: {
+	companyId: number | null
+	serviceId: number | null
+	year: number | null
+	month: number | null
+}): boolean {
+	return companyId != null && serviceId != null && year != null && month != null;
+}
 
 describe("resolveOpenApiContractModel", () => {
 	describe("priority 1: direct contract_model on detail or record", () => {
@@ -580,7 +711,7 @@ describe("form validation helpers", () => {
 				service: "psp",
 			});
 			expect(result.isValid).toBe(false);
-			const negativeError = result.errors.find(e => e.field === "value" && e.type === "validation");
+			const negativeError = result.errors.find((e: FormValidationError) => e.field === "value" && e.type === "validation");
 			expect(negativeError).toBeDefined();
 		});
 
@@ -621,8 +752,8 @@ describe("form validation helpers", () => {
 					existingTrafficLocations: new Set(["TEHRAN", "COUNTY"]),
 				});
 				expect(result.isValid).toBe(false);
-				expect(result.errors.some(e => e.field === "countyValue")).toBe(true);
-				expect(result.errors.some(e => e.field === "countyValueReceive")).toBe(true);
+				expect(result.errors.some((e: FormValidationError) => e.field === "countyValue")).toBe(true);
+				expect(result.errors.some((e: FormValidationError) => e.field === "countyValueReceive")).toBe(true);
 			});
 
 			it("requires Tehran fields even when existingTrafficLocations is empty", () => {
@@ -638,10 +769,10 @@ describe("form validation helpers", () => {
 					existingTrafficLocations: new Set(),
 				});
 				expect(result.isValid).toBe(false);
-				expect(result.errors.some(e => e.field === "tehranValue")).toBe(true);
-				expect(result.errors.some(e => e.field === "tehranValueReceive")).toBe(true);
+				expect(result.errors.some((e: FormValidationError) => e.field === "tehranValue")).toBe(true);
+				expect(result.errors.some((e: FormValidationError) => e.field === "tehranValueReceive")).toBe(true);
 				// County should not be required when existing is empty
-				expect(result.errors.some(e => e.field === "countyValue")).toBe(false);
+				expect(result.errors.some((e: FormValidationError) => e.field === "countyValue")).toBe(false);
 			});
 		});
 
@@ -664,7 +795,7 @@ describe("form validation helpers", () => {
 					selectedCompanyType: "OUTBOUND",
 				});
 				expect(result.isValid).toBe(false);
-				expect(result.errors.some(e => e.field === "total_sales")).toBe(true);
+				expect(result.errors.some((e: FormValidationError) => e.field === "total_sales")).toBe(true);
 			});
 
 			it("validates rep-management service with valid credit_total, income, and cost_items", () => {
@@ -696,7 +827,7 @@ describe("form validation helpers", () => {
 					selectedCompanyType: "SALES_REP_MANAGEMENT",
 				});
 				expect(result.isValid).toBe(false);
-				expect(result.errors.some(e => e.field === "cost_items")).toBe(true);
+				expect(result.errors.some((e: FormValidationError) => e.field === "cost_items")).toBe(true);
 			});
 		});
 	});

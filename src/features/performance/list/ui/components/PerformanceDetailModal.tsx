@@ -1,7 +1,7 @@
 import type { CompanyDto } from "#src/api/common/common.types.js";
 import type { PerformanceListItem, PerformanceServicePath } from "#src/features/performance/api/performances.api";
 import type { OpenApiContractModel } from "#src/features/performance/shared/model/performance.form.types";
-import type { CollocationPartnerType, CollocationRow } from "#src/features/performance/shared/services/traffic/traffic-collocation";
+import type { CollocationRow } from "#src/features/performance/shared/services/traffic/traffic-collocation";
 import type { SectionTone } from "#src/shared/ui/section-card";
 import type { CSSProperties, ReactNode } from "react";
 import type { PerformanceListRow } from "../../model/performance.list.types";
@@ -64,12 +64,6 @@ export interface EditableFieldConfig {
 	label: string
 	type: "number" | "text" | "checkbox"
 	required?: boolean
-}
-
-export interface FormValidationError {
-	field: string
-	type: "required" | "validation"
-	message: string
 }
 
 export interface ServiceEditConfig {
@@ -546,42 +540,6 @@ export function applyTrafficInitialValues(
 	initialValues.countyConversionRatio = toNullableNumber((county as Record<string, unknown>)?.conversion_ratio) ?? null;
 }
 
-export function applySmsInitialValues(
-	initialValues: EditFormValues,
-	smsBreakdownCards: Array<{ key: string, value: unknown }>,
-	record?: Record<string, unknown> | null,
-	isUnregisteredMode = false,
-) {
-	const lookup = new Map<string, unknown>();
-	smsBreakdownCards.forEach((card) => {
-		lookup.set(card.key, card.value);
-	});
-	initialValues.irancellFa = lookup.get("IRANCELL_FA") ?? null;
-	initialValues.irancellEn = lookup.get("IRANCELL_EN") ?? null;
-	initialValues.mciFa = lookup.get("MCI_FA") ?? null;
-	initialValues.mciEn = lookup.get("MCI_EN") ?? null;
-	initialValues.otherFa = lookup.get("OTHER_FA") ?? null;
-	initialValues.otherEn = lookup.get("OTHER_EN") ?? null;
-
-	if (isUnregisteredMode && record) {
-		const operator = toUpperText((record as any)?.operator);
-		const language = toUpperText((record as any)?.language);
-		const value = (record as any)?.value;
-		if (operator === "IRANCELL" && language === "FA")
-			initialValues.irancellFa = value ?? initialValues.irancellFa;
-		if (operator === "IRANCELL" && language === "EN")
-			initialValues.irancellEn = value ?? initialValues.irancellEn;
-		if (operator === "MCI" && language === "FA")
-			initialValues.mciFa = value ?? initialValues.mciFa;
-		if (operator === "MCI" && language === "EN")
-			initialValues.mciEn = value ?? initialValues.mciEn;
-		if (operator === "OTHER" && language === "FA")
-			initialValues.otherFa = value ?? initialValues.otherFa;
-		if (operator === "OTHER" && language === "EN")
-			initialValues.otherEn = value ?? initialValues.otherEn;
-	}
-}
-
 function buildTrafficPayloadFields(values: EditFormValues, locations: Set<"TEHRAN" | "COUNTY">, isCp: boolean) {
 	const payload: Record<string, unknown> = {};
 
@@ -626,94 +584,6 @@ function getTrafficHasCountyContract(
 	}
 
 	return null;
-}
-
-export function validatePerformanceEditValues({
-	values,
-	visibleEditableFields,
-	service,
-	existingTrafficLocations,
-	selectedCompanyType,
-}: {
-	values: Record<string, unknown>
-	visibleEditableFields: EditableFieldConfig[]
-	service: PerformanceServicePath | null
-	existingTrafficLocations?: Set<TrafficLocation>
-	selectedCompanyType?: string | null
-}): { isValid: boolean, errors: FormValidationError[] } {
-	const errors: FormValidationError[] = [];
-
-	if (service === "sales-agency/outbound" || service === "sales-agency/rep-management") {
-		const result = salesAgencyFieldsSchema(selectedCompanyType).safeParse(values);
-		if (!result.success) {
-			result.error.issues.forEach((issue) => {
-				const fieldName = issue.path.join(".");
-				if (fieldName) {
-					errors.push({
-						field: fieldName,
-						type: "validation",
-						message: issue.message,
-					});
-				}
-			});
-			return { isValid: false, errors };
-		}
-	}
-
-	visibleEditableFields.forEach((field) => {
-		if (!field.required)
-			return;
-		const trafficLocation = service === "traffic" ? getTrafficFieldLocation(field.key) : null;
-		if (trafficLocation && existingTrafficLocations && !isTrafficLocationRequired(trafficLocation, existingTrafficLocations))
-			return;
-		if (!isEmptyValue(values[field.key]))
-			return;
-		errors.push({
-			field: field.key,
-			type: "required",
-			message: i18next.t("performance.validation.requiredField"),
-		});
-	});
-
-	visibleEditableFields.forEach((field) => {
-		const numeric = toNullableNumber(values[field.key]);
-		if (numeric == null || numeric >= 0)
-			return;
-		errors.push({
-			field: field.key,
-			type: "validation",
-			message: i18next.t("performance.validation.base.negativeValue"),
-		});
-	});
-
-	return { isValid: errors.length === 0, errors };
-}
-
-export function validateCollocationRows(
-	rows: CollocationRow[],
-	collocationMode: CollocationPartnerType | null | undefined,
-): { isValid: boolean, errorKey?: string } {
-	if (!collocationMode || rows.length < 1 || rows.some(row => [row.ipCount, row.bandwidthUsed, row.ampereUsed].some(metric => metric == null))) {
-		return { isValid: false, errorKey: "performance.validation.traffic.collocationFieldRequired" };
-	}
-	if (rows.some(row => [row.ipCount, row.bandwidthUsed, row.ampereUsed].some(metric => Number(metric) < 0))) {
-		return { isValid: false, errorKey: "performance.validation.base.negativeValue" };
-	}
-	return { isValid: true };
-}
-
-export function validateBasePerformanceIdentifiers({
-	companyId,
-	serviceId,
-	year,
-	month,
-}: {
-	companyId: number | null
-	serviceId: number | null
-	year: number | null
-	month: number | null
-}): boolean {
-	return companyId != null && serviceId != null && year != null && month != null;
 }
 
 function ReadOnlyBlock({ label, value }: { label: string, value: unknown }) {
@@ -1154,7 +1024,7 @@ export function PerformanceDetailModal({
 		return locations.size > 0 ? locations : new Set<"TEHRAN" | "COUNTY">(["TEHRAN", "COUNTY"]);
 	}, [service, isUnregisteredMode, isCollocationRecord, mergedDetail, record, existingTrafficLocations, trafficStatus.data]);
 	const canRemoveCounty = service === "traffic" && !isUnregisteredMode && !isCollocationRecord
-	  && isCountyOptionalCompanyType(selectedCompanyType) && availableTrafficLocations.has("COUNTY");
+		&& isCountyOptionalCompanyType(selectedCompanyType) && availableTrafficLocations.has("COUNTY");
 	// A removed county is omitted from the payload, so the backend deletes that location.
 	const countyRemoved = canRemoveCounty && (countyChoice ?? !existingTrafficLocations.has("COUNTY"));
 	const visibleTrafficLocations = useMemo(() => {
@@ -1204,7 +1074,7 @@ export function PerformanceDetailModal({
 			openApiContractModel === "package" ? "TRAFFIC" : "RECEIPT_REGISTER",
 			openApiContractModel === "package" ? ["traffic_income", "income", "profit"] : ["profit", "income"],
 		)
-		?? mergedDetail.profit;
+			?? mergedDetail.profit;
 
 		return [
 			{ key: "income", label: t("performance.detail.billInquiryIncome"), value: formatNumberLike(billInquiryIncome) },
@@ -1766,8 +1636,36 @@ export function PerformanceDetailModal({
 			applyOpenApiInitialValues(initialValues, detail, record as Record<string, unknown>, openApiPerformances);
 		if (service === "traffic")
 			applyTrafficInitialValues(initialValues, detail, record as Record<string, unknown>, trafficPerformances);
-		if (service === "sms" || service === "sms-commission")
-			applySmsInitialValues(initialValues, smsBreakdownCards, record as Record<string, unknown>, isUnregisteredMode);
+		if (service === "sms" || service === "sms-commission") {
+			const lookup = new Map<string, unknown>();
+			smsBreakdownCards.forEach((card) => {
+				lookup.set(card.key, card.value);
+			});
+			initialValues.irancellFa = lookup.get("IRANCELL_FA") ?? null;
+			initialValues.irancellEn = lookup.get("IRANCELL_EN") ?? null;
+			initialValues.mciFa = lookup.get("MCI_FA") ?? null;
+			initialValues.mciEn = lookup.get("MCI_EN") ?? null;
+			initialValues.otherFa = lookup.get("OTHER_FA") ?? null;
+			initialValues.otherEn = lookup.get("OTHER_EN") ?? null;
+
+			if (isUnregisteredMode) {
+				const operator = toUpperText((record as any)?.operator);
+				const language = toUpperText((record as any)?.language);
+				const value = (record as any)?.value;
+				if (operator === "IRANCELL" && language === "FA")
+					initialValues.irancellFa = value ?? initialValues.irancellFa;
+				if (operator === "IRANCELL" && language === "EN")
+					initialValues.irancellEn = value ?? initialValues.irancellEn;
+				if (operator === "MCI" && language === "FA")
+					initialValues.mciFa = value ?? initialValues.mciFa;
+				if (operator === "MCI" && language === "EN")
+					initialValues.mciEn = value ?? initialValues.mciEn;
+				if (operator === "OTHER" && language === "FA")
+					initialValues.otherFa = value ?? initialValues.otherFa;
+				if (operator === "OTHER" && language === "EN")
+					initialValues.otherEn = value ?? initialValues.otherEn;
+			}
+		}
 		initialFormValuesRef.current = initialValues;
 		form.reset(initialValues);
 		if (isCollocationRecord) {
@@ -1781,17 +1679,45 @@ export function PerformanceDetailModal({
 			return;
 
 		form.clearErrors();
-		const validation = validatePerformanceEditValues({
-			values,
-			visibleEditableFields,
-			service,
-			existingTrafficLocations,
-			selectedCompanyType,
-		});
-		if (!validation.isValid) {
-			validation.errors.forEach(issue => form.setError(issue.field as any, { type: issue.type as any, message: issue.message }));
-			return;
+		if (service === "sales-agency/outbound" || service === "sales-agency/rep-management") {
+			const result = salesAgencyFieldsSchema(selectedCompanyType).safeParse(values);
+			if (!result.success) {
+				result.error.issues.forEach((issue) => {
+					const fieldName = issue.path.join(".");
+					if (fieldName)
+						form.setError(fieldName as any, { type: "validation", message: issue.message });
+				});
+				return;
+			}
 		}
+
+		let hasError = false;
+		visibleEditableFields.forEach((field) => {
+			if (!field.required)
+				return;
+			const trafficLocation = service === "traffic" ? getTrafficFieldLocation(field.key) : null;
+			if (trafficLocation && !isTrafficLocationRequired(trafficLocation, existingTrafficLocations))
+				return;
+			if (!isEmptyValue(values[field.key]))
+				return;
+			hasError = true;
+			form.setError(field.key as any, {
+				type: "required",
+				message: i18next.t("performance.validation.requiredField"),
+			});
+		});
+		visibleEditableFields.forEach((field) => {
+			const numeric = toNullableNumber(values[field.key]);
+			if (numeric == null || numeric >= 0)
+				return;
+			hasError = true;
+			form.setError(field.key as any, {
+				type: "validation",
+				message: i18next.t("performance.validation.base.negativeValue"),
+			});
+		});
+		if (hasError)
+			return;
 
 		const companyId = toNullableNumber(values.company ?? mergedDetail.company ?? mergedDetail.company_id);
 		const serviceId = toNullableNumber(values.service ?? mergedDetail.service ?? mergedDetail.service_id);
@@ -1799,7 +1725,7 @@ export function PerformanceDetailModal({
 		const month = toNullableNumber(values.sh_month ?? mergedDetail.sh_month);
 		const salesAgentId = toNullableNumber(values.sales_agent ?? mergedDetail.sales_agent ?? mergedDetail.sales_agent_id);
 
-		if (!validateBasePerformanceIdentifiers({ companyId, serviceId, year, month }) || companyId == null || serviceId == null || year == null || month == null) {
+		if (companyId == null || serviceId == null || year == null || month == null) {
 			window.$message?.error(i18next.t("performance.errors.baseFormIncomplete"));
 			return;
 		}
@@ -1842,13 +1768,16 @@ export function PerformanceDetailModal({
 
 		if (isCollocationRecord) {
 			const rows = collocationForm.getValues("rows") ?? [];
-			const collocationValidation = validateCollocationRows(rows, collocationMode);
-			if (!collocationValidation.isValid) {
-				window.$message?.error(i18next.t(collocationValidation.errorKey!));
+			if (!collocationMode || rows.length < 1 || rows.some(row => [row.ipCount, row.bandwidthUsed, row.ampereUsed].some(metric => metric == null))) {
+				window.$message?.error(i18next.t("performance.validation.traffic.collocationFieldRequired"));
+				return;
+			}
+			if (rows.some(row => [row.ipCount, row.bandwidthUsed, row.ampereUsed].some(metric => Number(metric) < 0))) {
+				window.$message?.error(i18next.t("performance.validation.base.negativeValue"));
 				return;
 			}
 			payload.company_type = "COLLOCATION";
-			payload.collocation_rows = buildCollocationRowsPayload(rows, collocationMode!);
+			payload.collocation_rows = buildCollocationRowsPayload(rows, collocationMode);
 		}
 		else if (service === "traffic") {
 			const isCpEdit = typeof selectedCompanyType === "string" && selectedCompanyType.toUpperCase() === "CP";
