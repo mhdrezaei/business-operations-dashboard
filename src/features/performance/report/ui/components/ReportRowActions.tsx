@@ -6,6 +6,7 @@ import { BasicButton } from "#src/components";
 import { pickCompanyTypeToken, resolvePerformanceServicePath } from "#src/features/performance/shared/model/performance.helpers";
 import { useAccess } from "#src/hooks";
 import { EditOutlined, PlusCircleOutlined } from "@ant-design/icons";
+import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { isEditableReportPeriod } from "../../model/performance-report.params";
@@ -19,7 +20,7 @@ interface ReportRowActionsProps {
 	isAggregated: boolean
 }
 
-export function ReportRowActions({ row, serviceId, serviceCode, selectedCompanyType, isAggregated }: ReportRowActionsProps) {
+function ReportRowActionsImpl({ row, serviceId, serviceCode, selectedCompanyType, isAggregated }: ReportRowActionsProps) {
 	const { t } = useTranslation();
 	const navigate = useNavigate();
 	const { hasDomainPermissionByServiceId } = useAccess();
@@ -94,3 +95,5 @@ export function ReportRowActions({ row, serviceId, serviceCode, selectedCompanyT
 		</>
 	);
 }
+
+export const ReportRowActions = memo(ReportRowActionsImpl);
