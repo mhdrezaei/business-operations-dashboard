@@ -615,6 +615,13 @@ export function PerformanceReportPage() {
 		}
 	};
 
+	// Typing a ratio replaces the base-unit view, so the switch turns itself off.
+	const handleDefaultConversionRatioChange = (value: number | null) => {
+		setDefaultConversionRatio(value);
+		if (value != null)
+			setSelectedFinancialColumns(prev => prev.includes("showBaseUnit") ? prev.filter(key => key !== "showBaseUnit") : prev);
+	};
+
 	const handleOperatorGovernmentFiltersChange = (filters: Partial<OperatorGovernmentFilters>) => {
 		setOperatorGovernmentFilters(prev => ({ ...prev, ...filters }));
 		setSummary(null);
@@ -666,7 +673,7 @@ export function PerformanceReportPage() {
 			operatorGovernmentFilters,
 			canFilterSmsCommission: canViewSmsCommission,
 			onOperatorGovernmentFiltersChange: handleOperatorGovernmentFiltersChange,
-			onDefaultConversionRatioChange: setDefaultConversionRatio,
+			onDefaultConversionRatioChange: handleDefaultConversionRatioChange,
 			renderRowActions: row => (
 				<ReportRowActions
 					row={row}

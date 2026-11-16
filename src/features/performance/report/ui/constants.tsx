@@ -1465,7 +1465,6 @@ export function getPerformanceReportColumns({
 		? getTrafficReportLayout(selectedCompanyType)
 		: getTrafficReportLayout(null);
 	const isUnitConversion = isTrafficService && isUnitConversionCompanyType(selectedCompanyType);
-	const isBaseUnitVisible = financialColumns.has("showBaseUnit");
 	const tableColumnContext: ReportTableColumnContext = {
 		t,
 		operationTypeLabels,
@@ -1595,9 +1594,8 @@ export function getPerformanceReportColumns({
 			renderFormItem: (_, config) => (
 				<div>
 					<InputNumber
-						step={0.1}
-						precision={4}
-						disabled={isBaseUnitVisible}
+						step={0.01}
+						precision={2}
 						status={isDefaultConversionRatioInvalid ? "error" : undefined}
 						value={defaultConversionRatio ?? undefined}
 						placeholder={t("performance.placeholders.enterConversionRatio")}
