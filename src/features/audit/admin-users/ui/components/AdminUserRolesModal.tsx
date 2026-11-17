@@ -71,6 +71,7 @@ export function AdminUserRolesModal({ open, user, roles, loading, onClose, onSub
 							className="w-full"
 							placeholder="نقش‌ها را انتخاب کنید"
 							options={options}
+							optionFilterProp="label"
 							value={selectedRoleIds}
 							onChange={v => setSelectedRoleIds((v ?? []) as number[])}
 						/>
