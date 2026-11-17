@@ -1,5 +1,6 @@
 import type { Dayjs } from "#src/shared/lib/dayjs-jalali";
 import type {
+	GuaranteeAddendumOption,
 	GuaranteeCatalogItem,
 	GuaranteePayload,
 	GuaranteeRecord,
@@ -46,6 +47,8 @@ interface Props {
 	initialRecord?: GuaranteeRecord | null
 	addendumGroupId?: string | null
 	addendumService?: string | null
+	/** اگر مودال از ردیف خودِ قرارداد باز شده باشد، کاربر می‌تواند تضمین را به یکی از این الحاقیه‌ها وصل کند. */
+	addendumOptions?: GuaranteeAddendumOption[]
 	onSuccess?: () => void
 }
 
@@ -58,6 +61,7 @@ export function GuaranteeFormModal({
 	initialRecord,
 	addendumGroupId,
 	addendumService,
+	addendumOptions,
 	onSuccess,
 }: Props) {
 	const { t } = useTranslation();
@@ -71,6 +75,10 @@ export function GuaranteeFormModal({
 	const [selectedType, setSelectedType] = useState<GuaranteeType>(() => {
 		return initialRecord?.guarantee_type ?? initialType;
 	});
+
+	// حالت state (نه فیلد فرم) چون با تغییر نوع تضمین، form.resetFields() اجرا می‌شود و انتخاب را پاک می‌کرد.
+	const [selectedAddendumId, setSelectedAddendumId] = useState<string | null>(null);
+	const canPickAddendum = !addendumGroupId && (addendumOptions?.length ?? 0) > 0;
 
 	const catalogQuery = useQuery(guaranteeCatalogQuery());
 	const catalogItems: GuaranteeCatalogItem[] = catalogQuery.data ?? [];
@@ -90,6 +98,7 @@ export function GuaranteeFormModal({
 
 	useEffect(() => {
 		if (open) {
+			setSelectedAddendumId(initialRecord?.addendum_group_id ?? null);
 			if (initialRecord) {
 				let issueDayjs: Dayjs | null = null;
 				if (initialRecord.issue_date) {
@@ -165,8 +174,11 @@ export function GuaranteeFormModal({
 			};
 
 			// Handle addendum connection if provided
-			const resolvedAddendumGroupId = values.addendum_group_id || addendumGroupId || null;
-			const resolvedAddendumService = values.addendum_service || addendumService || null;
+			const pickedAddendum = canPickAddendum
+				? addendumOptions?.find(option => option.addendumGroupId === selectedAddendumId)
+				: undefined;
+			const resolvedAddendumGroupId = addendumGroupId || pickedAddendum?.addendumGroupId || (canPickAddendum ? null : initialRecord?.addendum_group_id) || null;
+			const resolvedAddendumService = addendumService || pickedAddendum?.addendumService || (canPickAddendum ? null : initialRecord?.addendum_service) || null;
 			if (resolvedAddendumGroupId && resolvedAddendumService) {
 				payload.addendum_group_id = resolvedAddendumGroupId;
 				payload.addendum_service = resolvedAddendumService;
@@ -354,6 +366,23 @@ export function GuaranteeFormModal({
 							</Form.Item>
 						</Col>
 					</Row>
+
+					{canPickAddendum && (
+						<Row gutter={16}>
+							<Col span={24}>
+								<Form.Item label={t("contract.additionalInfo.guaranteeAppliesTo")} required>
+									<Select
+										value={selectedAddendumId ?? "__contract__"}
+										onChange={value => setSelectedAddendumId(value === "__contract__" ? null : value)}
+										options={[
+											{ value: "__contract__", label: t("contract.additionalInfo.guaranteeScopeContract") },
+											...(addendumOptions ?? []).map(option => ({ value: option.addendumGroupId, label: option.label })),
+										]}
+									/>
+								</Form.Item>
+							</Col>
+						</Row>
+					)}
 
 					{/* مشخصات اختصاصی بر اساس نوع تضمین */}
 					<DashedCard

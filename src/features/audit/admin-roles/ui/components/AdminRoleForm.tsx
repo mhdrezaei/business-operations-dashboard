@@ -74,61 +74,55 @@ export function AdminRoleForm({
 
 	return (
 		<FormProvider {...form}>
-			<form onSubmit={form.handleSubmit(handleSubmit)}>
-				<div className="space-y-5">
-					<section className="grid grid-cols-1 gap-5">
-						<article className="relative rounded-[28px] border border-[var(--ant-color-border-secondary)] bg-[var(--ant-color-bg-container)] p-6">
-							<div className="absolute left-4 top-4">
-								<Tooltip
-									placement="bottomLeft"
-									title={<div className="max-w-[420px] text-right leading-8">{permissionHelpText}</div>}
-								>
-									<Button
-										type="default"
-										shape="circle"
-										aria-label="راهنمای تعریف سطح دسترسی سرویس‌ها"
-									>
-										?
-									</Button>
-								</Tooltip>
-							</div>
+			<form className="flex h-full min-h-0 flex-col gap-4" onSubmit={form.handleSubmit(handleSubmit)}>
+				<section className="shrink-0 rounded-3xl border border-[var(--ant-color-border-secondary)] bg-[var(--ant-color-bg-container)] p-4">
+					<header className="mb-3 flex items-center justify-between gap-3">
+						<h2 className="m-0 text-base font-bold">مشخصات نقش</h2>
+						<Tooltip
+							placement="bottomRight"
+							title={<div className="max-w-[420px] text-right leading-8">{permissionHelpText}</div>}
+						>
+							<Button
+								type="default"
+								shape="circle"
+								size="small"
+								aria-label="راهنمای تعریف سطح دسترسی سرویس‌ها"
+							>
+								?
+							</Button>
+						</Tooltip>
+					</header>
 
-							<header className="mb-4 text-right">
-								<h2 className="text-lg font-bold">مشخصات نقش</h2>
-							</header>
+					<div className="grid grid-cols-1 gap-x-4 md:grid-cols-2">
+						<RHFProText<AdminRoleFormValues, "name">
+							name="name"
+							label="نام نقش"
+							inputProps={{
+								placeholder: "نام نقش را وارد کنید",
+								disabled: submitting,
+							}}
+						/>
 
-							<div className="space-y-4">
-								<RHFProText<AdminRoleFormValues, "name">
-									name="name"
-									label="نام نقش"
-									inputProps={{
-										placeholder: "نام نقش را وارد کنید",
-										disabled: submitting,
-									}}
-								/>
+						<RHFProTextArea<AdminRoleFormValues, "description">
+							name="description"
+							label="توضیحات"
+							textAreaProps={{
+								rows: 2,
+								placeholder: "در صورت نیاز توضیح نقش را وارد کنید",
+								disabled: submitting,
+							}}
+						/>
+					</div>
+				</section>
 
-								<RHFProTextArea<AdminRoleFormValues, "description">
-									name="description"
-									label="توضیحات"
-									textAreaProps={{
-										rows: 5,
-										placeholder: "در صورت نیاز توضیح نقش را وارد کنید",
-										disabled: submitting,
-									}}
-								/>
-							</div>
-						</article>
-					</section>
+				<AdminRolePermissionsEditor
+					initialAllowedServiceIds={initialRole?.allowed_service_ids ?? []}
+					initialPolicies={initialPolicies}
+					initialPoliciesLoading={initialPoliciesLoading}
+					onChange={handlePoliciesChange}
+				/>
 
-					<AdminRolePermissionsEditor
-						initialAllowedServiceIds={initialRole?.allowed_service_ids ?? []}
-						initialPolicies={initialPolicies}
-						initialPoliciesLoading={initialPoliciesLoading}
-						onChange={handlePoliciesChange}
-					/>
-				</div>
-
-				<div className="mt-6 flex justify-end gap-2">
+				<div className="flex shrink-0 justify-end gap-2 border-t border-[var(--ant-color-border-secondary)] pt-4">
 					<BasicButton onClick={onClose} disabled={submitting}>
 						انصراف
 					</BasicButton>

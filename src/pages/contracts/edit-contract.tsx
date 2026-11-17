@@ -4,6 +4,7 @@ import type { ComponentProps } from "react";
 import { ContractEditForm } from "#src/features/contract/list/ui/components/ContractDetailModal";
 import { ContractEditSelector } from "#src/features/contract/list/ui/components/ContractEditSelector";
 import { getContractAccessCompanyType } from "#src/features/contract/shared/model/company-type-options";
+import { buildContractEditPath } from "#src/features/contract/shared/utils/contract-routes";
 import { useAccess } from "#src/hooks";
 import { Button, Result } from "antd";
 import { useEffect, useState } from "react";
@@ -59,6 +60,15 @@ export default function EditContractFormPage() {
 			companyType: selectedCompanyType ?? undefined,
 			service: selectedService,
 		});
+		// Keep the address in step with the selection so a refresh reopens the same contract. Writing to
+		// window.history instead of navigating keeps the router location (and its KeepAlive cache key)
+		// unchanged, so only the contract panel reloads, not the whole page.
+		window.history.replaceState(window.history.state, "", buildContractEditPath({
+			contractId: selectedContractId,
+			service: selectedService,
+			serviceId: selectedServiceId,
+			companyType: selectedCompanyType,
+		}));
 	};
 
 	if (!selection.contractId || !selection.service || !selection.serviceId)

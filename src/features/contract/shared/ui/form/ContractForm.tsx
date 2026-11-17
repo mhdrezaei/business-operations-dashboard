@@ -2,22 +2,18 @@ import type { ReactNode } from "react";
 import type { Resolver, UseFormReturn } from "react-hook-form";
 import type { ContractFormValues, ContractServiceCode, ContractTypeValue } from "../../model/contract.form.types";
 import { BasicContent } from "#src/components/index.js";
-import { useAccess } from "#src/hooks";
-import { FormActionBar } from "#src/shared/ui/form-action-bar";
 import { notification } from "#src/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, ConfigProvider, Empty, Tooltip } from "antd";
+import { ConfigProvider, Empty } from "antd";
 import { AnimatePresence, motion } from "framer-motion";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { getContractAccessCompanyType } from "../../model/company-type-options";
-import { resolveContractServicePath } from "../../model/contract-service-path";
-import { buildContractSchema, hasArrayLengthChange, mergeContractValues, normalizeContractValue } from "../../model/contract.schema";
+import { buildContractSchema, mergeContractValues } from "../../model/contract.schema";
 import { serviceRegistry } from "../../services/registry";
 import { findFirstError } from "../../utils";
-import { ActionSection } from "./sections/ActionSection";
+import { ContractFormFooter } from "./ContractFormFooter";
 import { FixedEndSection } from "./sections/FixedEndSection";
 import { FixedStartSection } from "./sections/FixedStartSection";
 import "./contract-form.css";
@@ -79,32 +75,6 @@ interface Props {
 	readOnly?: boolean
 }
 
-function hasMeaningfulDirtyField(
-	dirtyFields: unknown,
-	currentValue: unknown,
-	initialValue: unknown,
-): boolean {
-	if (dirtyFields === true) {
-		const normalizedCurrent = JSON.stringify(normalizeContractValue(currentValue));
-		const normalizedInitial = JSON.stringify(normalizeContractValue(initialValue));
-		return normalizedCurrent !== normalizedInitial;
-	}
-
-	if (!dirtyFields || typeof dirtyFields !== "object")
-		return false;
-
-	return Object.entries(dirtyFields as Record<string, unknown>).some(([key, dirtyValue]) => {
-		const currentChild = currentValue != null && typeof currentValue === "object"
-			? (currentValue as Record<string, unknown>)[key]
-			: undefined;
-		const initialChild = initialValue != null && typeof initialValue === "object"
-			? (initialValue as Record<string, unknown>)[key]
-			: undefined;
-
-		return hasMeaningfulDirtyField(dirtyValue, currentChild, initialChild);
-	});
-}
-
 export function ContractForm({
 	mode = "create",
 	contractId = null,
@@ -146,35 +116,6 @@ export function ContractForm({
 		shouldUnregister: false,
 		resolver: dynamicResolver,
 	});
-	const watchedValues = useWatch({ control: form.control, defaultValue: mergedInitialValues as any });
-	const { hasDomainPermissionByServiceId } = useAccess();
-	const canUpdateSelectedService = watchedValues.serviceId != null && hasDomainPermissionByServiceId("contracts", "update", watchedValues.serviceId, getContractAccessCompanyType(resolveContractServicePath({ serviceCode: watchedValues.serviceCode, companyType: watchedValues.companyType, counterpartyType: watchedValues.counterpartyType }), watchedValues.companyType));
-	const { dirtyFields } = form.formState;
-	const isDirty = useMemo(() => {
-		return hasMeaningfulDirtyField(dirtyFields, watchedValues, mergedInitialValues)
-		  || hasArrayLengthChange(watchedValues, mergedInitialValues);
-	}, [dirtyFields, mergedInitialValues, watchedValues]);
-	const mainPricing = watchedValues.serviceFields?.contractPricing as ContractTypeValue | undefined;
-	useEffect(() => {
-		onSelectionContextChange?.({
-			serviceId: watchedValues.serviceId ?? null,
-			serviceCode: watchedValues.serviceCode ?? null,
-			companyId: watchedValues.companyId ?? null,
-			companyType: watchedValues.companyType ?? null,
-			counterpartyType: watchedValues.counterpartyType ?? null,
-			contractPricingType: mainPricing?.type ?? null,
-			fixedAmount: mainPricing?.fixedAmount ?? null,
-		});
-	}, [
-		watchedValues.serviceId,
-		watchedValues.serviceCode,
-		watchedValues.companyId,
-		watchedValues.companyType,
-		watchedValues.counterpartyType,
-		mainPricing?.type,
-		mainPricing?.fixedAmount,
-		onSelectionContextChange,
-	]);
 	useEffect(() => {
 		// serviceCode has no direct input; keep it registered so submit/validate cycles do not drop it.
 		form.register("serviceCode");
@@ -198,6 +139,22 @@ export function ContractForm({
 		control: form.control,
 		name: "companyType",
 	}) as string | null | undefined;
+	// Narrow watches only: watching every value here would re-render the whole form on each keystroke.
+	const [serviceId, companyId, counterpartyType, contractPricingType, fixedAmount] = useWatch({
+		control: form.control,
+		name: ["serviceId", "companyId", "counterpartyType", "serviceFields.contractPricing.type", "serviceFields.contractPricing.fixedAmount"] as any,
+	}) as [ContractFormValues["serviceId"], ContractFormValues["companyId"], ContractFormValues["counterpartyType"], ContractTypeValue["type"] | undefined, number | null | undefined];
+	useEffect(() => {
+		onSelectionContextChange?.({
+			serviceId: serviceId ?? null,
+			serviceCode: serviceCode ?? null,
+			companyId: companyId ?? null,
+			companyType: companyType ?? null,
+			counterpartyType: counterpartyType ?? null,
+			contractPricingType: contractPricingType ?? null,
+			fixedAmount: fixedAmount ?? null,
+		});
+	}, [serviceId, serviceCode, companyId, companyType, counterpartyType, contractPricingType, fixedAmount, onSelectionContextChange]);
 	const isCollocationFlow = serviceCode === "traffic" && String(companyType ?? "").trim().toUpperCase() === "COLLOCATION";
 	const module = serviceCode ? serviceRegistry[serviceCode] : undefined;
 	const submitIntentRef = useRef<ContractSubmitIntent>("submit");
@@ -245,8 +202,6 @@ export function ContractForm({
 	const resetForm = () => {
 		form.reset(defaultContractFormValues);
 	};
-	const submitDisabled = !isDirty || submitting || submitLocked;
-
 	return (
 		<FormProvider {...form}>
 			<ConfigProvider componentDisabled={readOnly}>
@@ -287,33 +242,17 @@ export function ContractForm({
 									{readOnly
 										? null
 										: (
-											<div className="mt-4 w-full">
-												{showExtendedActions
-													? (
-														<ActionSection
-															submitting={submitting}
-															disabled={submitDisabled}
-															submitText={submitText ?? t("contract.create.submit")}
-															onSubmit={() => triggerSubmit("submit")}
-															onSubmitAndCreateAnother={() => triggerSubmit("submit_and_create_another")}
-															onSubmitAndEdit={() => triggerSubmit("submit_and_edit")}
-															canSubmitAndEdit={canUpdateSelectedService}
-															onReset={resetForm}
-														/>
-													)
-													: (
-														<FormActionBar
-															secondaryActions={secondaryActions}
-															primaryActions={(
-																<Tooltip title={submitLocked ? submitDisabledReason : undefined}>
-																	<Button type="primary" onClick={() => triggerSubmit("submit")} loading={!!submitting} disabled={submitDisabled}>
-																		{submitText ?? t("contract.create.submit")}
-																	</Button>
-																</Tooltip>
-															)}
-														/>
-													)}
-											</div>
+											<ContractFormFooter
+												initialValues={mergedInitialValues}
+												showExtendedActions={showExtendedActions}
+												secondaryActions={secondaryActions}
+												submitting={submitting}
+												submitLocked={submitLocked}
+												submitDisabledReason={submitDisabledReason}
+												submitText={submitText}
+												onSubmit={triggerSubmit}
+												onReset={resetForm}
+											/>
 										)}
 								</>
 							)}

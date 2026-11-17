@@ -27,7 +27,8 @@ function getMonthLabel(month: number) {
 export interface TrafficUpdateTemplateModalProps {
 	open: boolean
 	serviceId: number | null
-	companyTypeOptions: Array<{ label: string, value: string }>
+	/** Company type chosen in the page's service/company selector. */
+	companyType: string | null
 	onClose?: () => void
 	onUploaded?: () => void
 	embedded?: boolean
@@ -36,14 +37,13 @@ export interface TrafficUpdateTemplateModalProps {
 export function TrafficUpdateTemplateModal({
 	open,
 	serviceId,
-	companyTypeOptions,
+	companyType,
 	onClose,
 	onUploaded,
 	embedded = false,
 }: TrafficUpdateTemplateModalProps) {
 	const { t } = useTranslation();
 
-	const [companyType, setCompanyType] = useState<string | null>(null);
 	const [year, setYear] = useState<number | null>(null);
 	const [month, setMonth] = useState<number | null>(null);
 	const [fileList, setFileList] = useState<UploadProps["fileList"]>([]);
@@ -78,13 +78,6 @@ export function TrafficUpdateTemplateModal({
 
 	const isDateOptionsLoading = !!companyType && (gaps.isLoading || gaps.isFetching);
 
-	function handleCompanyTypeChange(value: string | null) {
-		setCompanyType(value ?? null);
-		// Reset the period selection because valid periods differ per company type.
-		setYear(null);
-		setMonth(null);
-	}
-
 	function handleYearChange(value: number | null) {
 		setYear(value ?? null);
 		setMonth(null);
@@ -110,7 +103,6 @@ export function TrafficUpdateTemplateModal({
 	};
 
 	function resetState() {
-		setCompanyType(null);
 		setYear(null);
 		setMonth(null);
 		setFileList([]);
@@ -195,16 +187,6 @@ export function TrafficUpdateTemplateModal({
 			<div className="traffic-update-template-editor">
 				<div className="traffic-update-template-hint">{t("performance.traffic.editTemplate.hint")}</div>
 				<div className="traffic-update-template-period">
-					<label className="performance-edit-filter">
-						<span>{t("performance.columns.companyType")}</span>
-						<Select
-							allowClear
-							placeholder={t("performance.placeholders.selectCompanyType")}
-							value={companyType ?? undefined}
-							onChange={value => handleCompanyTypeChange(value ?? null)}
-							options={companyTypeOptions}
-						/>
-					</label>
 					<label className="performance-edit-filter">
 						<span>{t("performance.columns.year")}</span>
 						<Select

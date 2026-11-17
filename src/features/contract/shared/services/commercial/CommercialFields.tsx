@@ -2,6 +2,7 @@ import type { ArrayPath, Path } from "react-hook-form";
 import type { ContractFormValues } from "../../../shared/model/contract.form.types";
 import { ContractAddendaSection } from "#src/features/contract/components/addenda/ContractAddendaSection";
 import { ContractTypeSection } from "#src/features/contract/components/contract-type/ContractTypeSection";
+import { Reveal } from "#src/shared/ui/reveal";
 import { Card } from "antd";
 import { useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
@@ -33,22 +34,20 @@ export function CommercialFields() {
 				/>
 			</Card>
 
-			{showAddenda
-				? (
-					<div className="mt-3">
-						<ContractAddendaSection<ContractFormValues>
-							title="الحاقیه‌های قرارداد (اختیاری)"
-							name={sf("addenda") as ArrayPath<ContractFormValues>}
-							contractTypeTitle=""
-							contractTypeFieldKey="contractPricing"
-							contractStartYearPath={"startYear" as Path<ContractFormValues>}
-							contractStartMonthPath={"startMonth" as Path<ContractFormValues>}
-							contractEndYearPath={"endYear" as Path<ContractFormValues>}
-							contractEndMonthPath={"endMonth" as Path<ContractFormValues>}
-						/>
-					</div>
-				)
-				: null}
+			<Reveal show={showAddenda}>
+				<div className="mt-3">
+					<ContractAddendaSection<ContractFormValues>
+						title="الحاقیه‌های قرارداد (اختیاری)"
+						name={sf("addenda") as ArrayPath<ContractFormValues>}
+						contractTypeTitle=""
+						contractTypeFieldKey="contractPricing"
+						contractStartYearPath={"startYear" as Path<ContractFormValues>}
+						contractStartMonthPath={"startMonth" as Path<ContractFormValues>}
+						contractEndYearPath={"endYear" as Path<ContractFormValues>}
+						contractEndMonthPath={"endMonth" as Path<ContractFormValues>}
+					/>
+				</div>
+			</Reveal>
 		</>
 	);
 }

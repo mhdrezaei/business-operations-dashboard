@@ -1,4 +1,8 @@
 {
+	"fileName": {
+		"monthsOfYear": "{{count}} months of {{year}}",
+		"quartersOfYear": "{{count}} quarters of {{year}}"
+	},
 	"titles": {
 		"performanceList": "Performance List",
 		"performanceReport": "Performance Report",
@@ -378,6 +382,16 @@
 			"addDatacenterPlaceholder": "Select a datacenter from the contract",
 			"noMoreDatacenters": "No other datacenter is available in the contract",
 			"datacenterFallback": "Datacenter {{id}}",
+			"items": {
+				"ampere": "Ampere",
+				"bandwidth": "Bandwidth",
+				"ip": "IP",
+				"port": "Port",
+				"rack_full": "Full rack",
+				"rack_half": "Half rack",
+				"rack_quarter": "Quarter rack",
+				"rack_unit": "Rack unit"
+			},
 			"metrics": {
 				"ipCount": "IP count",
 				"bandwidthUsed": "Bandwidth used",
@@ -688,14 +702,14 @@
 				"value": "Select quarter",
 				"selected": "Selected quarters",
 				"unit": "quarter",
-				"empty": "Select a year and quarter, then click \"Add date\"."
+				"empty": "Select a year and quarter, then click the months you want."
 			},
 			"month": {
 				"section": "Report years and months",
 				"value": "Select month",
 				"selected": "Selected months",
 				"unit": "month",
-				"empty": "Select a year and month, then click \"Add date\"."
+				"empty": "Select a year and month, then click the months you want."
 			}
 		},
 		"conversionRatio": {
@@ -844,8 +858,7 @@
 			"selectMonth": "Select month",
 			"selected": "Selected periods",
 			"unit": "period",
-			"empty": "Select a year and month, then click \"Add date\".",
-			"add": "Add date",
+			"empty": "Select a year and month, then click the months you want.",
 			"selectYear": "Select year",
 			"yearPlaceholder": "Select a year",
 			"noneAdded": "No {{unit}} added yet",

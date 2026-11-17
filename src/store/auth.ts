@@ -8,6 +8,8 @@ import { getAppNamespace } from "#src/utils";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+const AUTH_STORAGE_KEY = getAppNamespace("access-token");
+
 const initialState = {
 	access: "",
 	refresh: "",
@@ -64,6 +66,12 @@ export const useAuthStore = create<AuthState & AuthAction>()(
 				useTabsStore.getState().resetTabs();
 			},
 		}),
-		{ name: getAppNamespace("access-token") },
+		{ name: AUTH_STORAGE_KEY },
 	),
 );
+
+// Tokens rotate on every refresh: pick up another tab's rotated (or cleared) tokens instead of reusing stale ones.
+window.addEventListener("storage", (event) => {
+	if (event.key === AUTH_STORAGE_KEY)
+		useAuthStore.persist.rehydrate();
+});

@@ -32,7 +32,10 @@ export type RHFSelectProps<
 	onValueChange?: (value: TValue, option: unknown) => void | Promise<void>
 
 	/**
-	 * وقتی دقیقاً یک گزینه وجود دارد آن را خودکار انتخاب می‌کند (و مقدار نامعتبر را با آن جایگزین می‌کند)
+	 * وقتی دقیقاً یک گزینه وجود دارد آن را خودکار انتخاب می‌کند.
+	 * - true: مقدار نامعتبر را هم با آن جایگزین می‌کند.
+	 * - false: غیرفعال.
+	 * - پیش‌فرض (تعریف‌نشده): فقط وقتی مقدار خالی است و فیلد اجباری است (بدون allowClear و بدون حالت multiple/tags)، تا فیلدهای اختیاری خودبه‌خود پر نشوند.
 	 */
 	autoSelectSingle?: boolean
 
@@ -49,16 +52,21 @@ interface SingleOptionSyncProps {
 	options: Option[] | undefined
 	value: unknown
 	onSelect: (value: string | number) => void
+	/** فقط مقدار خالی را پر می‌کند و مقدار موجود (حتی نامعتبر) را دست نمی‌زند. */
+	onlyWhenEmpty?: boolean
 }
 
-export function SingleOptionSync({ options, value, onSelect }: SingleOptionSyncProps) {
+const isEmptyValue = (value: unknown) => value == null || value === "";
+
+export function SingleOptionSync({ options, value, onSelect, onlyWhenEmpty = false }: SingleOptionSyncProps) {
 	const only = options?.length === 1 ? options[0] : null;
 	const isSelected = only != null && String(value ?? "") === String(only.value);
+	const blocked = onlyWhenEmpty && !isEmptyValue(value);
 
 	useEffect(() => {
-		if (only != null && !isSelected)
+		if (only != null && !isSelected && !blocked)
 			onSelect(only.value);
-	}, [only?.value, isSelected]);
+	}, [only?.value, isSelected, blocked]);
 
 	return null;
 }
@@ -79,14 +87,18 @@ export function RHFSelect<
 				const err = (props.hideError || !shouldShowError) ? undefined : fieldState.error?.message;
 
 				const options = (props.options ?? (props.selectProps as any)?.options) as Option[] | undefined;
+				const selectProps = props.selectProps as { disabled?: boolean, allowClear?: unknown, mode?: string } | undefined;
+				const implicitAutoSelect = props.autoSelectSingle === undefined && !selectProps?.allowClear && !selectProps?.mode;
+				const autoSelect = (props.autoSelectSingle === true || implicitAutoSelect) && !selectProps?.disabled;
 
 				return (
 					<>
-						{props.autoSelectSingle && !(props.selectProps as { disabled?: boolean } | undefined)?.disabled
+						{autoSelect
 							? (
 								<SingleOptionSync
 									options={options}
 									value={field.value}
+									onlyWhenEmpty={implicitAutoSelect}
 									onSelect={(v) => {
 										field.onChange(v);
 										void props.onValueChange?.(v as TValue, options?.[0]);

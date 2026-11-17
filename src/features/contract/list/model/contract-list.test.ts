@@ -12,6 +12,7 @@ import {
 	resolveListServicePath,
 	resolveSmsParty,
 	toContractListQuery,
+	toFilterFormValues,
 } from "./contract-list";
 
 const row = (patch: Partial<ContractListItemType>) => ({ id: 1, company_name: "ACME", ...patch }) as ContractListItemType;
@@ -97,6 +98,20 @@ describe("row helpers", () => {
 		expect(formatContractMonth(null, 5)).toBeNull();
 		expect(getContractListUserName({ first_name: "Ali", last_name: " Reza " })).toBe("Ali Reza");
 		expect(getContractListUserName(null)).toBeNull();
+	});
+});
+
+describe("toFilterFormValues", () => {
+	it("stringifies numeric ids so they match valueEnum option keys", () => {
+		expect(toFilterFormValues({ service_id: 2, company_id: 1487, company_type: "OUTBOUND" })).toEqual({
+			service_id: "2",
+			company_id: "1487",
+			company_type: "OUTBOUND",
+		});
+	});
+
+	it("returns an empty object for no values", () => {
+		expect(toFilterFormValues({})).toEqual({});
 	});
 });
 

@@ -2,6 +2,7 @@ import type { ArrayPath, Path } from "react-hook-form";
 import type { ContractFormValues } from "../../../shared/model/contract.form.types";
 import { fetchSalesAgencyExpenseTitles } from "#src/features/contract/api/contracts.api";
 import { ContractAddendaSection } from "#src/features/contract/components/addenda/ContractAddendaSection";
+import { Reveal } from "#src/shared/ui/reveal";
 import { RHFProNumber, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { SectionCard as ContractFormSection } from "#src/shared/ui/section-card";
 import { PlusOutlined } from "@ant-design/icons";
@@ -137,23 +138,21 @@ export function SalesAgencyContractFields() {
 					: <CostTitlesSelect name={sf("costTitles")} />}
 			</ContractFormSection>
 
-			{showAddenda
-				? (
-					<div className="mt-3 w-full">
-						<ContractAddendaSection<ContractFormValues>
-							title={t("contract.addenda.title")}
-							name={sf("addenda") as ArrayPath<ContractFormValues>}
-							renderAddendumFields={base => isOutbound
-								? <OutboundPercentFields incomeName={`${base}.incomePercentage`} expenseName={`${base}.expensePercentage`} />
-								: <CostTitlesSelect name={`${base}.costTitles`} />}
-							contractStartYearPath={"startYear" as Path<ContractFormValues>}
-							contractStartMonthPath={"startMonth" as Path<ContractFormValues>}
-							contractEndYearPath={"endYear" as Path<ContractFormValues>}
-							contractEndMonthPath={"endMonth" as Path<ContractFormValues>}
-						/>
-					</div>
-				)
-				: null}
+			<Reveal show={showAddenda}>
+				<div className="mt-3 w-full">
+					<ContractAddendaSection<ContractFormValues>
+						title={t("contract.addenda.title")}
+						name={sf("addenda") as ArrayPath<ContractFormValues>}
+						renderAddendumFields={base => isOutbound
+							? <OutboundPercentFields incomeName={`${base}.incomePercentage`} expenseName={`${base}.expensePercentage`} />
+							: <CostTitlesSelect name={`${base}.costTitles`} />}
+						contractStartYearPath={"startYear" as Path<ContractFormValues>}
+						contractStartMonthPath={"startMonth" as Path<ContractFormValues>}
+						contractEndYearPath={"endYear" as Path<ContractFormValues>}
+						contractEndMonthPath={"endMonth" as Path<ContractFormValues>}
+					/>
+				</div>
+			</Reveal>
 		</>
 	);
 }

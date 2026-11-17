@@ -1,11 +1,12 @@
 import type { ContractFormValues } from "../../../model/contract.form.types";
 import { AlignedFormField } from "#src/shared/ui/aligned-form-field";
+import { Reveal } from "#src/shared/ui/reveal";
 import { RHFProNumber, RHFSelect } from "#src/shared/ui/rhf-pro";
-import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
+import { DeleteOutlined, LeftOutlined, PlusOutlined, RightOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
-import { Button, Card, Tooltip } from "antd";
+import { Button, Card, ConfigProvider, Tooltip } from "antd";
 import { AnimatePresence, motion } from "framer-motion";
-import React, { useEffect, useMemo } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { trafficDatacentersQuery } from "../../../queries/contract.queries";
@@ -13,43 +14,9 @@ import { BEHESHTI_DATACENTER_TAG, COLLOCATION_RACK_TYPES } from "../../../servic
 
 const compactFormItemStyle = { className: "mb-0" };
 
-interface CollocationStepPaneProps {
-	active: boolean
-	children: React.ReactNode
-}
-
 interface CollocationRackDiscountTierTableProps {
 	name: string
 	active: boolean
-}
-
-export function CollocationStepPane({ active, children }: CollocationStepPaneProps) {
-	return (
-		<motion.div
-			initial={false}
-			animate={active
-				? {
-					opacity: 1,
-					y: 0,
-					height: "auto",
-					visibility: "visible",
-				}
-				: {
-					opacity: 0,
-					y: 10,
-					height: 0,
-					transitionEnd: { visibility: "hidden" },
-				}}
-			transition={{ duration: 0.22, ease: "easeOut" }}
-			style={{
-				overflow: "hidden",
-				pointerEvents: active ? "auto" : "none",
-			}}
-			aria-hidden={!active}
-		>
-			{children}
-		</motion.div>
-	);
 }
 
 function CollocationRackDiscountTierTable({ name, active }: CollocationRackDiscountTierTableProps) {
@@ -175,6 +142,8 @@ export function CollocationDatacentersField({ name, selectName, partnerType }: C
 	const { control, setValue, setFocus } = useFormContext<ContractFormValues>();
 	const { t } = useTranslation();
 	const datacentersQuery = useQuery(trafficDatacentersQuery(true));
+	const isRtl = useContext(ConfigProvider.ConfigContext).direction === "rtl";
+	const [collapsedRowKeys, setCollapsedRowKeys] = useState<ReadonlySet<string>>(() => new Set());
 	const rackTypeOptions = useMemo(() => COLLOCATION_RACK_TYPES.map(type => ({ label: t(`contract.collocation.rackTypes.${type}`), value: type })), [t]);
 	const datacenters = useWatch({ control, name: name as any }) as Array<Record<string, any>> | undefined;
 
@@ -204,6 +173,15 @@ export function CollocationDatacentersField({ name, selectName, partnerType }: C
 		() => trafficDatacenterOptions.filter(option => !selectedDatacenterValues.has(String(option.value))),
 		[trafficDatacenterOptions, selectedDatacenterValues],
 	);
+
+	function toggleDatacenter(rowKey: string) {
+		setCollapsedRowKeys((current) => {
+			const next = new Set(current);
+			if (!next.delete(rowKey))
+				next.add(rowKey);
+			return next;
+		});
+	}
 
 	function addDatacenter(value: string | null) {
 		if (!value)
@@ -314,9 +292,13 @@ export function CollocationDatacentersField({ name, selectName, partnerType }: C
 						? datacenterItem.rackItems
 						: [{ rowKey: "initial-rack", rackType: null, count: null, unitPrice: null }];
 
+					const rowKey = String(datacenterItem?.rowKey ?? datacenterValue);
+					const isCollapsed = collapsedRowKeys.has(rowKey);
+					const ChevronIcon = isRtl ? LeftOutlined : RightOutlined;
+
 					return (
 						<motion.div
-							key={String(datacenterItem?.rowKey ?? datacenterValue)}
+							key={rowKey}
 							initial={{ opacity: 0, y: 12, scale: 0.99 }}
 							animate={{ opacity: 1, y: 0, scale: 1 }}
 							exit={{ opacity: 0, y: -8, scale: 0.99 }}
@@ -324,12 +306,17 @@ export function CollocationDatacentersField({ name, selectName, partnerType }: C
 						>
 							<Card bordered className="rounded-xl">
 								<div className="mb-4 flex items-center justify-between gap-3">
-									<div className="text-right">
-										<div className="text-base font-semibold">
-											{datacenterLabel}
-										</div>
-										<div className="text-sm text-[var(--ant-color-text-secondary)]">{t("contract.collocation.closeDetails")}</div>
-									</div>
+									<button
+										type="button"
+										className="flex min-w-0 cursor-pointer items-center gap-3 border-0 bg-transparent p-0 text-right text-[var(--ant-color-text)]"
+										aria-expanded={!isCollapsed}
+										onClick={() => toggleDatacenter(rowKey)}
+									>
+										<span className="text-xs text-[var(--ant-color-text-secondary)]">
+											<ChevronIcon rotate={isCollapsed ? 0 : (isRtl ? -90 : 90)} />
+										</span>
+										<span className="text-base font-semibold">{datacenterLabel}</span>
+									</button>
 									<Button
 										danger
 										onClick={() => removeDatacenter(datacenterIndex)}
@@ -338,140 +325,142 @@ export function CollocationDatacentersField({ name, selectName, partnerType }: C
 									</Button>
 								</div>
 
-								<div className="grid gap-4 md:grid-cols-2">
-									<RHFProNumber<ContractFormValues, any>
-										name={`${name}.${datacenterIndex}.bandwidthUnitRate` as any}
-										label={t("contract.collocation.bandwidthRate")}
-										formItemProps={compactFormItemStyle}
-										enableGrouping
-										decimal
-										enableWordsTooltip
-									/>
-									<RHFProNumber<ContractFormValues, any>
-										name={`${name}.${datacenterIndex}.ipRate` as any}
-										label={t("contract.collocation.ipRate")}
-										formItemProps={compactFormItemStyle}
-										enableGrouping
-										decimal
-										enableWordsTooltip
-									/>
-								</div>
+								<Reveal keepMounted show={!isCollapsed}>
+									<div className="grid gap-4 md:grid-cols-2">
+										<RHFProNumber<ContractFormValues, any>
+											name={`${name}.${datacenterIndex}.bandwidthUnitRate` as any}
+											label={t("contract.collocation.bandwidthRate")}
+											formItemProps={compactFormItemStyle}
+											enableGrouping
+											decimal
+											enableWordsTooltip
+										/>
+										<RHFProNumber<ContractFormValues, any>
+											name={`${name}.${datacenterIndex}.ipRate` as any}
+											label={t("contract.collocation.ipRate")}
+											formItemProps={compactFormItemStyle}
+											enableGrouping
+											decimal
+											enableWordsTooltip
+										/>
+									</div>
 
-								<div className="mt-5">
-									<div className="mb-3 text-right text-base font-semibold">{t("contract.collocation.portItems")}</div>
-									<div className="flex flex-col gap-3">
-										{portItems.map((item: any, idx: number) => (
-											<Card key={String(item?.rowKey ?? `port-${item?.count ?? "empty"}-${item?.speed ?? "empty"}-${item?.unitPrice ?? "empty"}`)} bordered className="rounded-xl">
-												<div className="mb-3 flex items-center justify-between gap-3">
-													<div className="text-right">
-														{t("contract.collocation.item")}
-														{" "}
-														{idx + 1}
+									<div className="mt-5">
+										<div className="mb-3 text-right text-base font-semibold">{t("contract.collocation.portItems")}</div>
+										<div className="flex flex-col gap-3">
+											{portItems.map((item: any, idx: number) => (
+												<Card key={String(item?.rowKey ?? `port-${item?.count ?? "empty"}-${item?.speed ?? "empty"}-${item?.unitPrice ?? "empty"}`)} bordered className="rounded-xl">
+													<div className="mb-3 flex items-center justify-between gap-3">
+														<div className="text-right">
+															{t("contract.collocation.item")}
+															{" "}
+															{idx + 1}
+														</div>
+														<Button danger onClick={() => removeDatacenterPortItem(datacenterIndex, idx)}>
+															{t("common.delete")}
+														</Button>
 													</div>
-													<Button danger onClick={() => removeDatacenterPortItem(datacenterIndex, idx)}>
-														{t("common.delete")}
-													</Button>
-												</div>
-												<div className="grid gap-4 md:grid-cols-3">
-													<RHFProNumber<ContractFormValues, any>
-														name={`${name}.${datacenterIndex}.portItems.${idx}.unitPrice` as any}
-														label={t("contract.collocation.unitPrice")}
-														formItemProps={compactFormItemStyle}
-														enableGrouping
-														decimal
-														enableWordsTooltip
-													/>
-													<RHFProNumber<ContractFormValues, any>
-														name={`${name}.${datacenterIndex}.portItems.${idx}.speed` as any}
-														label={t("contract.collocation.speed")}
-														formItemProps={compactFormItemStyle}
-														enableGrouping
-													/>
-													<RHFProNumber<ContractFormValues, any>
-														name={`${name}.${datacenterIndex}.portItems.${idx}.count` as any}
-														label={t("contract.collocation.count")}
-														formItemProps={compactFormItemStyle}
-														enableGrouping
-													/>
-												</div>
-											</Card>
-										))}
-									</div>
-									<div className="mt-3 flex justify-end">
-										<Button onClick={() => addDatacenterPortItem(datacenterIndex)}>{t("contract.collocation.addItem")}</Button>
-									</div>
-								</div>
-
-								<div className="mt-5">
-									<div className="mb-3 text-right text-base font-semibold">{t("contract.collocation.rackItems")}</div>
-									<div className="flex flex-col gap-3">
-										{rackItems.map((item: any, idx: number) => (
-											<Card key={String(item?.rowKey ?? `rack-${item?.rackType ?? "empty"}-${item?.count ?? "empty"}-${item?.unitPrice ?? "empty"}`)} bordered className="rounded-xl">
-												<div className="mb-3 flex items-center justify-between gap-3">
-													<div className="text-right">
-														{t("contract.collocation.item")}
-														{" "}
-														{idx + 1}
+													<div className="grid gap-4 md:grid-cols-3">
+														<RHFProNumber<ContractFormValues, any>
+															name={`${name}.${datacenterIndex}.portItems.${idx}.unitPrice` as any}
+															label={t("contract.collocation.unitPrice")}
+															formItemProps={compactFormItemStyle}
+															enableGrouping
+															decimal
+															enableWordsTooltip
+														/>
+														<RHFProNumber<ContractFormValues, any>
+															name={`${name}.${datacenterIndex}.portItems.${idx}.speed` as any}
+															label={t("contract.collocation.speed")}
+															formItemProps={compactFormItemStyle}
+															enableGrouping
+														/>
+														<RHFProNumber<ContractFormValues, any>
+															name={`${name}.${datacenterIndex}.portItems.${idx}.count` as any}
+															label={t("contract.collocation.count")}
+															formItemProps={compactFormItemStyle}
+															enableGrouping
+														/>
 													</div>
-													<Button danger disabled={rackItems.length <= 1} onClick={() => removeDatacenterRackItem(datacenterIndex, idx)}>
-														{t("common.delete")}
-													</Button>
-												</div>
-												<div className="grid gap-4 md:grid-cols-3">
-													<RHFProNumber<ContractFormValues, any>
-														name={`${name}.${datacenterIndex}.rackItems.${idx}.unitPrice` as any}
-														label={t("contract.collocation.unitPrice")}
-														formItemProps={compactFormItemStyle}
-														enableGrouping
-														decimal
-														enableWordsTooltip
-													/>
-													<RHFProNumber<ContractFormValues, any>
-														name={`${name}.${datacenterIndex}.rackItems.${idx}.count` as any}
-														label={t("contract.collocation.count")}
-														formItemProps={compactFormItemStyle}
-														enableGrouping
-													/>
-													<RHFSelect<ContractFormValues, any, string | null>
-														name={`${name}.${datacenterIndex}.rackItems.${idx}.rackType` as any}
-														label={t("contract.collocation.rackType")}
-														formItemProps={compactFormItemStyle}
-														options={rackTypeOptions}
-														selectProps={{ allowClear: true, placeholder: t("contract.placeholder.select") }}
-													/>
-												</div>
-											</Card>
-										))}
+												</Card>
+											))}
+										</div>
+										<div className="mt-3 flex justify-end">
+											<Button onClick={() => addDatacenterPortItem(datacenterIndex)}>{t("contract.collocation.addItem")}</Button>
+										</div>
 									</div>
-									<div className="mt-3 flex justify-end">
-										<Button onClick={() => addDatacenterRackItem(datacenterIndex)}>{t("contract.collocation.addItem")}</Button>
+
+									<div className="mt-5">
+										<div className="mb-3 text-right text-base font-semibold">{t("contract.collocation.rackItems")}</div>
+										<div className="flex flex-col gap-3">
+											{rackItems.map((item: any, idx: number) => (
+												<Card key={String(item?.rowKey ?? `rack-${item?.rackType ?? "empty"}-${item?.count ?? "empty"}-${item?.unitPrice ?? "empty"}`)} bordered className="rounded-xl">
+													<div className="mb-3 flex items-center justify-between gap-3">
+														<div className="text-right">
+															{t("contract.collocation.item")}
+															{" "}
+															{idx + 1}
+														</div>
+														<Button danger disabled={rackItems.length <= 1} onClick={() => removeDatacenterRackItem(datacenterIndex, idx)}>
+															{t("common.delete")}
+														</Button>
+													</div>
+													<div className="grid gap-4 md:grid-cols-3">
+														<RHFSelect<ContractFormValues, any, string | null>
+															name={`${name}.${datacenterIndex}.rackItems.${idx}.rackType` as any}
+															label={t("contract.collocation.rackType")}
+															formItemProps={compactFormItemStyle}
+															options={rackTypeOptions}
+															selectProps={{ allowClear: true, placeholder: t("contract.placeholder.select") }}
+														/>
+														<RHFProNumber<ContractFormValues, any>
+															name={`${name}.${datacenterIndex}.rackItems.${idx}.count` as any}
+															label={t("contract.collocation.count")}
+															formItemProps={compactFormItemStyle}
+															enableGrouping
+														/>
+														<RHFProNumber<ContractFormValues, any>
+															name={`${name}.${datacenterIndex}.rackItems.${idx}.unitPrice` as any}
+															label={t("contract.collocation.unitPrice")}
+															formItemProps={compactFormItemStyle}
+															enableGrouping
+															decimal
+															enableWordsTooltip
+														/>
+													</div>
+												</Card>
+											))}
+										</div>
+										<div className="mt-3 flex justify-end">
+											<Button onClick={() => addDatacenterRackItem(datacenterIndex)}>{t("contract.collocation.addItem")}</Button>
+										</div>
 									</div>
-								</div>
 
-								<div className="mt-5 grid gap-4 md:grid-cols-2">
-									<RHFProNumber<ContractFormValues, any>
-										name={`${name}.${datacenterIndex}.electricityAmpRate` as any}
-										label={t("contract.collocation.ampRate")}
-										formItemProps={compactFormItemStyle}
-										enableGrouping
-										decimal
-										enableWordsTooltip
-									/>
-									<RHFProNumber<ContractFormValues, any>
-										name={`${name}.${datacenterIndex}.electricityExemptionThreshold` as any}
-										label={t("contract.collocation.ampThreshold")}
-										formItemProps={compactFormItemStyle}
-										enableGrouping
-										decimal
-									/>
-								</div>
+									<div className="mt-5 grid gap-4 md:grid-cols-2">
+										<RHFProNumber<ContractFormValues, any>
+											name={`${name}.${datacenterIndex}.electricityAmpRate` as any}
+											label={t("contract.collocation.ampRate")}
+											formItemProps={compactFormItemStyle}
+											enableGrouping
+											decimal
+											enableWordsTooltip
+										/>
+										<RHFProNumber<ContractFormValues, any>
+											name={`${name}.${datacenterIndex}.electricityExemptionThreshold` as any}
+											label={t("contract.collocation.ampThreshold")}
+											formItemProps={compactFormItemStyle}
+											enableGrouping
+											decimal
+										/>
+									</div>
 
-								<CollocationStepPane active={shouldShowRackDiscountTiers}>
-									<CollocationRackDiscountTierTable
-										name={`${name}.${datacenterIndex}.rackDiscountTiers`}
-										active={shouldShowRackDiscountTiers}
-									/>
-								</CollocationStepPane>
+									<Reveal keepMounted show={shouldShowRackDiscountTiers}>
+										<CollocationRackDiscountTierTable
+											name={`${name}.${datacenterIndex}.rackDiscountTiers`}
+											active={shouldShowRackDiscountTiers}
+										/>
+									</Reveal>
+								</Reveal>
 							</Card>
 						</motion.div>
 					);

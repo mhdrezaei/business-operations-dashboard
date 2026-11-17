@@ -6,7 +6,7 @@ import { RocketOutlined } from "@ant-design/icons";
 import { FloatButton, Grid, Watermark } from "antd";
 import { useEffect, useMemo } from "react";
 
-import { ELEMENT_ID_MAIN_CONTENT, footerHeight, headerHeight, tabbarHeight } from "../constants";
+import { footerHeight, getMainScrollContainer, headerHeight, tabbarHeight } from "../constants";
 import { useLayout } from "../hooks";
 import LayoutContent from "../layout-content";
 import LayoutFooter from "../layout-footer";
@@ -135,7 +135,8 @@ export default function ContainerLayout() {
 					...(isRTL ? { paddingRight: computedSidebarWidth } : { paddingLeft: computedSidebarWidth }),
 				}}
 				className={cn(
-					"transition-all flex flex-col gap-3 flex-1 min-h-0",
+					// no padding transition: animating it re-lays out the whole page every frame while the sidebar collapses
+					"flex flex-col gap-3 flex-1 min-h-0",
 				)}
 			>
 
@@ -182,7 +183,7 @@ export default function ContainerLayout() {
 					? (
 						<FloatButton.BackTop
 							icon={<RocketOutlined />}
-							target={() => document.querySelector(`#${ELEMENT_ID_MAIN_CONTENT} .simplebar-content-wrapper`) as HTMLElement || document}
+							target={getMainScrollContainer}
 						/>
 					)
 					: null}

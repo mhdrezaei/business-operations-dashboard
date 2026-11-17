@@ -1,6 +1,7 @@
 import type { PerformanceContractListItem } from "#src/features/performance/api/performances.api";
 import { describe, expect, it } from "vitest";
 import {
+	buildCollocationBreakdown,
 	buildCollocationRowsFromPerformances,
 	buildCollocationRowsPayload,
 	collocationModeFromPerformances,
@@ -92,5 +93,29 @@ describe("registered collocation performance", () => {
 	it("reads the partner type from the saved rows", () => {
 		expect(collocationModeFromPerformances(rows)).toBe("CP");
 		expect(collocationModeFromPerformances([{ location: "TEHRAN" }])).toBeNull();
+	});
+});
+
+describe("buildCollocationBreakdown", () => {
+	it("maps each GLOBAL datacenter row to its totals and items", () => {
+		const result = buildCollocationBreakdown([
+			{
+				location: "GLOBAL",
+				datacenter: { id: 1, name: "بهشتی" },
+				income: "168000000.00",
+				expense: "10.00",
+				profit: "5.00",
+				collocation_items: [{ item_type: "rack_full", item_count: "3.00", income: "150000000.00", speed: null }],
+			},
+			{ location: "TEHRAN", datacenter: { id: 2, name: "x" } },
+		]);
+
+		expect(result).toHaveLength(1);
+		expect(result[0]).toMatchObject({ datacenter: 1, datacenterName: "بهشتی", income: "168000000.00", expense: "10.00", profit: "5.00" });
+		expect(result[0].items).toEqual([{ itemType: "rack_full", itemCount: "3.00", income: "150000000.00", speed: null }]);
+	});
+
+	it("tolerates rows without items", () => {
+		expect(buildCollocationBreakdown([{ location: "GLOBAL", datacenter: 3 }])[0].items).toEqual([]);
 	});
 });

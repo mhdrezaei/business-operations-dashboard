@@ -116,16 +116,22 @@
 	position: relative;
 	z-index: 2;
 	border: 0;
+	border-radius: inherit;
 	background: transparent;
+	/* the global glass layer would blur a rectangular box over the rounded dashed card */
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
 }
 
 .contract-addenda-collapse.ant-collapse > .ant-collapse-item {
 	border: 0;
+	border-radius: inherit;
 }
 
 .contract-addenda-collapse.ant-collapse > .ant-collapse-item > .ant-collapse-header {
 	align-items: center;
 	padding: var(--contract-section-control-padding-inline) var(--contract-section-body-padding);
+	border-radius: inherit;
 	background: transparent;
 }
 

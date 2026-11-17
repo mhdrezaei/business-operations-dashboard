@@ -30,6 +30,8 @@ export interface AdminRolesListQuery {
 	page?: number
 	page_size?: number
 	search?: string
+	/** Case-insensitive "contains" filter on the role name. */
+	name__icontains?: string
 	ordering?: string
 }
 

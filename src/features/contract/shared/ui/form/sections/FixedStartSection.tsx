@@ -5,6 +5,7 @@ import { ContractAddendaSection } from "#src/features/contract/components/addend
 import { ContractDataCopyButton } from "#src/features/contract/shared/ui/form/ContractDataCopyButton";
 import { useAccess } from "#src/hooks";
 import { AlignedFormField, useAlignedLabelWidth } from "#src/shared/ui/aligned-form-field";
+import { Reveal } from "#src/shared/ui/reveal";
 import { RHFProCheckbox, RHFProText, RHFSelect } from "#src/shared/ui/rhf-pro";
 import { SectionCard } from "#src/shared/ui/section-card";
 import { toPersianDigits } from "#src/utils";
@@ -25,7 +26,7 @@ import { useCollocationSlaOptions } from "../../../services/traffic/use-collocat
 import { companyTypeMatches, isSmsVendorCompany } from "../../../utils";
 import { MONTH_OPTIONS } from "../constants/jalali-date-options";
 import { CollocationAddendumFields, TelecomRackCostFields } from "./CollocationAddendumFields";
-import { CollocationDatacentersField, CollocationStepPane } from "./CollocationDatacentersField";
+import { CollocationDatacentersField } from "./CollocationDatacentersField";
 import { FixedEndSection } from "./FixedEndSection";
 
 const COUNTERPARTY_OPTIONS = [
@@ -733,6 +734,11 @@ export function FixedStartSection({ mode = "create", awaitingContractSelection =
 		setCollocationStep(current => Math.min(current + 1, collocationSteps.length - 1));
 	}
 
+	// Single-choice steps: picking an option moves on, the user no longer has to press "next".
+	function advanceAfterCollocationChoice() {
+		setCollocationStep(activeCollocationStep + 1);
+	}
+
 	function goToPreviousCollocationStep() {
 		setCollocationStep(current => Math.max(current - 1, 0));
 	}
@@ -748,7 +754,7 @@ export function FixedStartSection({ mode = "create", awaitingContractSelection =
 
 	function renderRealStartFields(idSuffix: string) {
 		return (
-			<CollocationStepPane active={shouldShowRealStartFields}>
+			<Reveal keepMounted show={shouldShowRealStartFields}>
 				<div className="mt-4 aligned-form-grid aligned-form-grid--two aligned-form-date-grid" style={alignedLabelStyle}>
 					<AlignedFormField label={t("contract.field.realStartYear")} labelId={`contract-form-label-real-start-year-${idSuffix}`}>
 						<RHFSelect<ContractFormValues, any, number | null>
@@ -778,7 +784,7 @@ export function FixedStartSection({ mode = "create", awaitingContractSelection =
 						/>
 					</AlignedFormField>
 				</div>
-			</CollocationStepPane>
+			</Reveal>
 		);
 	}
 
@@ -805,96 +811,88 @@ export function FixedStartSection({ mode = "create", awaitingContractSelection =
 						/>
 					</AlignedFormField>
 
-					{isSms
-						? (
-							<AlignedFormField label={t("contract.field.counterparty")} labelId="contract-form-label-counterparty">
-								<RHFSelect<ContractFormValues, "counterpartyType", "partners" | "gov_ops" | null>
-									name="counterpartyType"
-									formItemProps={compactFormItemStyle}
-									options={smsPartyOptions}
-									autoSelectSingle={autoSelectSingle}
-									selectProps={{
-										"allowClear": true,
-										"placeholder": t("contract.placeholder.select"),
-										"aria-labelledby": "contract-form-label-counterparty",
-									} as any}
-								/>
-							</AlignedFormField>
-						)
-						: null}
+					<Reveal show={isSms}>
+						<AlignedFormField label={t("contract.field.counterparty")} labelId="contract-form-label-counterparty">
+							<RHFSelect<ContractFormValues, "counterpartyType", "partners" | "gov_ops" | null>
+								name="counterpartyType"
+								formItemProps={compactFormItemStyle}
+								options={smsPartyOptions}
+								autoSelectSingle={autoSelectSingle}
+								selectProps={{
+									"allowClear": true,
+									"placeholder": t("contract.placeholder.select"),
+									"aria-labelledby": "contract-form-label-counterparty",
+								} as any}
+							/>
+						</AlignedFormField>
+					</Reveal>
 
-					{showCompanyTypeSelect
-						? (
-							<AlignedFormField label={companyTypeLabel} labelId="contract-form-label-company-type">
-								<RHFSelect<ContractFormValues, "companyType", any>
-									name="companyType"
-									formItemProps={compactFormItemStyle}
-									options={companyTypeOptions}
-									autoSelectSingle={autoSelectSingle}
-									onValueChange={() => {
-										setCollocationStep(0);
-										setValue("serviceFields.collocationPartnerType" as any, null, {
-											shouldDirty: true,
-											shouldValidate: false,
-										});
-										setValue("companyId", null, { shouldDirty: true, shouldValidate: false });
-									}}
-									selectProps={{
-										"allowClear": true,
-										"placeholder": t("contract.placeholder.select"),
-										"aria-labelledby": "contract-form-label-company-type",
-									} as any}
-								/>
-							</AlignedFormField>
-						)
-						: null}
+					<Reveal show={showCompanyTypeSelect}>
+						<AlignedFormField label={companyTypeLabel} labelId="contract-form-label-company-type">
+							<RHFSelect<ContractFormValues, "companyType", any>
+								name="companyType"
+								formItemProps={compactFormItemStyle}
+								options={companyTypeOptions}
+								autoSelectSingle={autoSelectSingle}
+								onValueChange={() => {
+									setCollocationStep(0);
+									setValue("serviceFields.collocationPartnerType" as any, null, {
+										shouldDirty: true,
+										shouldValidate: false,
+									});
+									setValue("companyId", null, { shouldDirty: true, shouldValidate: false });
+								}}
+								selectProps={{
+									"allowClear": true,
+									"placeholder": t("contract.placeholder.select"),
+									"aria-labelledby": "contract-form-label-company-type",
+								} as any}
+							/>
+						</AlignedFormField>
+					</Reveal>
 
-					{showCompanySelect
-						? (
-							<AlignedFormField label={companyLabel} labelId="contract-form-label-company">
-								<div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-									<div className="min-w-0 flex-1 basis-48">
-										<RHFSelect<ContractFormValues, "companyId", number | null>
-											name="companyId"
-											formItemProps={compactFormItemStyle}
-											loading={companies.isLoading}
-											options={companyOptions as any}
-											autoSelectSingle={autoSelectSingle}
-											selectProps={{
-												"allowClear": true,
-												"disabled": isCompanyDisabled,
-												"placeholder": companyPlaceholder,
-												"style": isCompanyDisabled ? { cursor: "not-allowed" } : undefined,
-												"open": isCompanyDisabled ? false : undefined,
-												"aria-labelledby": "contract-form-label-company",
-											}}
-										/>
-									</div>
-									{mode === "edit" ? null : <AddCompanyLink />}
+					<Reveal show={showCompanySelect}>
+						<AlignedFormField label={companyLabel} labelId="contract-form-label-company">
+							<div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+								<div className="min-w-0 flex-1 basis-48">
+									<RHFSelect<ContractFormValues, "companyId", number | null>
+										name="companyId"
+										formItemProps={compactFormItemStyle}
+										loading={companies.isLoading}
+										options={companyOptions as any}
+										autoSelectSingle={autoSelectSingle}
+										selectProps={{
+											"allowClear": true,
+											"disabled": isCompanyDisabled,
+											"placeholder": companyPlaceholder,
+											"style": isCompanyDisabled ? { cursor: "not-allowed" } : undefined,
+											"open": isCompanyDisabled ? false : undefined,
+											"aria-labelledby": "contract-form-label-company",
+										}}
+									/>
 								</div>
-							</AlignedFormField>
-						)
-						: null}
+								{mode === "edit" ? null : <AddCompanyLink />}
+							</div>
+						</AlignedFormField>
+					</Reveal>
 
-					{isSmsCommission
-						? (
-							<AlignedFormField label={t("contract.field.salesAgent")} labelId="contract-form-label-agent">
-								<RHFSelect<ContractFormValues, any, number | null>
-									name={"serviceFields.agent" as any}
-									formItemProps={compactFormItemStyle}
-									loading={smsCommissionAgents.isLoading || smsCommissionAgents.isFetching}
-									options={smsCommissionAgentOptions as any}
-									selectProps={{
-										"allowClear": false,
-										"disabled": true,
-										"placeholder": smsCommissionAgentPlaceholder,
-										"open": false,
-										"aria-labelledby": "contract-form-label-agent",
-									}}
-								/>
-							</AlignedFormField>
-						)
-						: null}
+					<Reveal show={isSmsCommission}>
+						<AlignedFormField label={t("contract.field.salesAgent")} labelId="contract-form-label-agent">
+							<RHFSelect<ContractFormValues, any, number | null>
+								name={"serviceFields.agent" as any}
+								formItemProps={compactFormItemStyle}
+								loading={smsCommissionAgents.isLoading || smsCommissionAgents.isFetching}
+								options={smsCommissionAgentOptions as any}
+								selectProps={{
+									"allowClear": false,
+									"disabled": true,
+									"placeholder": smsCommissionAgentPlaceholder,
+									"open": false,
+									"aria-labelledby": "contract-form-label-agent",
+								}}
+							/>
+						</AlignedFormField>
+					</Reveal>
 				</div>
 
 				{isCollocation
@@ -911,7 +909,7 @@ export function FixedStartSection({ mode = "create", awaitingContractSelection =
 								className="contract-collocation-steps mb-8"
 							/>
 
-							<CollocationStepPane active={activeCollocationStep === 0}>
+							<Reveal keepMounted show={activeCollocationStep === 0}>
 								<div className="grid gap-3 md:grid-cols-2">
 									{COLLOCATION_COUNTERPARTY_OPTIONS.map(option => (
 										<CollocationChoiceButton
@@ -923,13 +921,14 @@ export function FixedStartSection({ mode = "create", awaitingContractSelection =
 												setValue("counterpartyType", option.value, { shouldDirty: true, shouldValidate: true });
 												setValue("serviceFields.collocationPartnerType" as any, null, { shouldDirty: true, shouldValidate: false });
 												setValue("companyId", null, { shouldDirty: true, shouldValidate: false });
+												advanceAfterCollocationChoice();
 											}}
 										/>
 									))}
 								</div>
-							</CollocationStepPane>
+							</Reveal>
 
-							<CollocationStepPane active={!isTelecomCollocation && activeCollocationStep === 1}>
+							<Reveal keepMounted show={!isTelecomCollocation && activeCollocationStep === 1}>
 								<div className="grid gap-3 md:grid-cols-2">
 									{collocationCompanyTypeOptions.map(option => (
 										<CollocationChoiceButton
@@ -940,13 +939,14 @@ export function FixedStartSection({ mode = "create", awaitingContractSelection =
 											onClick={() => {
 												setValue("serviceFields.collocationPartnerType" as any, option.value, { shouldDirty: true, shouldValidate: true });
 												setValue("companyId", null, { shouldDirty: true, shouldValidate: false });
+												advanceAfterCollocationChoice();
 											}}
 										/>
 									))}
 								</div>
-							</CollocationStepPane>
+							</Reveal>
 
-							<CollocationStepPane active={!isTelecomCollocation && activeCollocationStep === 2}>
+							<Reveal keepMounted show={!isTelecomCollocation && activeCollocationStep === 2}>
 								<div className="aligned-form-grid aligned-form-grid--two" style={alignedLabelStyle}>
 									<AlignedFormField label={t("contract.formLabel.companyName")} labelId="contract-form-label-company">
 										<RHFSelect<ContractFormValues, "companyId", number | null>
@@ -955,6 +955,10 @@ export function FixedStartSection({ mode = "create", awaitingContractSelection =
 											loading={companies.isLoading}
 											options={collocationCompanyOptions}
 											autoSelectSingle={autoSelectSingle && !isTelecomCollocation && activeCollocationStep === 2}
+											onValueChange={(value) => {
+												if (value != null)
+													advanceAfterCollocationChoice();
+											}}
 											selectProps={{
 												"allowClear": true,
 												"disabled": !collocationPartnerType || companies.isLoading,
@@ -966,9 +970,9 @@ export function FixedStartSection({ mode = "create", awaitingContractSelection =
 										/>
 									</AlignedFormField>
 								</div>
-							</CollocationStepPane>
+							</Reveal>
 
-							<CollocationStepPane active={isTelecomCollocation && activeCollocationStep === 1}>
+							<Reveal keepMounted show={isTelecomCollocation && activeCollocationStep === 1}>
 								<div className="flex flex-col gap-5">
 									<Card bordered className="rounded-xl">
 										<div className="text-right text-sm font-semibold text-[var(--ant-color-text)]">
@@ -1089,9 +1093,9 @@ export function FixedStartSection({ mode = "create", awaitingContractSelection =
 										</div>
 									</div>
 								</div>
-							</CollocationStepPane>
+							</Reveal>
 
-							<CollocationStepPane active={!isTelecomCollocation && activeCollocationStep === 3}>
+							<Reveal keepMounted show={!isTelecomCollocation && activeCollocationStep === 3}>
 								<div className="flex flex-col gap-5">
 									<Card bordered className="rounded-xl">
 										<div className="flex items-center justify-between gap-3 text-sm">
@@ -1257,7 +1261,7 @@ export function FixedStartSection({ mode = "create", awaitingContractSelection =
 										</Card>
 									</div>
 								</div>
-							</CollocationStepPane>
+							</Reveal>
 
 							<div className="mt-4 flex items-center justify-between border-t border-[var(--ant-color-border)] pt-4">
 								{activeCollocationStep > 0
@@ -1403,18 +1407,16 @@ export function FixedStartSection({ mode = "create", awaitingContractSelection =
 					</div>
 				</div>
 
-				{isSmsPartnersFlow
-					? (
-						<div className="contract-form-official-row">
-							<RHFProCheckbox<ContractFormValues, any>
-								name={"serviceFields.isOfficial" as any}
-								label=""
-								checkboxLabel={t("contract.field.officialContract")}
-								checkboxProps={{}}
-							/>
-						</div>
-					)
-					: null}
+				<Reveal show={isSmsPartnersFlow}>
+					<div className="contract-form-official-row">
+						<RHFProCheckbox<ContractFormValues, any>
+							name={"serviceFields.isOfficial" as any}
+							label=""
+							checkboxLabel={t("contract.field.officialContract")}
+							checkboxProps={{}}
+						/>
+					</div>
+				</Reveal>
 			</BasicContent>
 		</SectionCard>
 	);

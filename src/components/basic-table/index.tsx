@@ -18,6 +18,7 @@ import { useTranslation } from "react-i18next";
 
 import { BASIC_TABLE_ROOT_CLASS_NAME, MIN_ADAPTIVE_BODY_HEIGHT } from "./constants";
 import { normalizeFixedColumns } from "./fixed-columns";
+import { withSearchableSelects } from "./searchable-selects";
 import { withServerSorting } from "./sort";
 import { useStyles } from "./styles";
 
@@ -66,6 +67,13 @@ export function BasicTable<
 	const tableTitle = props.tableTitle ?? props.headerTitle ?? "لیست موارد";
 	const tableSubtitle = props.tableSubtitle ?? "موارد ثبت‌شده را مشاهده و مدیریت کنید.";
 	const tableIcon = props.tableIcon ?? <TableHeaderIcon />;
+	// A stable columns reference lets rc-table skip re-rendering every row when the page re-renders for unrelated reasons.
+	const isRtl = antdContext.direction === "rtl";
+	const hasRequest = !!props.request;
+	const tableColumns = useMemo(
+		() => withServerSorting(withSearchableSelects(normalizeFixedColumns(props.columns, isRtl)), hasRequest),
+		[props.columns, isRtl, hasRequest],
+	);
 	const tableHeader = (
 		<div className="basic-table-toolbar-heading">
 			<span className="basic-table-toolbar-heading__icon" aria-hidden="true">{tableIcon}</span>
@@ -354,7 +362,7 @@ export function BasicTable<
 				rowKey="id"
 				dateFormatter="string"
 				{...props}
-				columns={withServerSorting(normalizeFixedColumns(props.columns, antdContext.direction === "rtl"), !!props.request)}
+				columns={tableColumns}
 				headerTitle={tableHeader}
 				options={{
 					fullScreen: true,

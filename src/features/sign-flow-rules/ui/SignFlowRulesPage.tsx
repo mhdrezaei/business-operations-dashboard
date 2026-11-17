@@ -2,6 +2,7 @@ import type { AdminRoleDto } from "#src/features/audit/admin-roles/model/admin-r
 import type { AdminUserDto } from "#src/features/audit/admin-users/model/admin-users.types";
 import type { SignFlowRule } from "../model/sign-flow-rules.types";
 import { fetchServices } from "#src/api/common/common.api";
+import { fetchAllPages } from "#src/api/fetch-all-pages";
 import { BasicContent } from "#src/components";
 import { fetchAdminRolesList } from "#src/features/audit/admin-roles/api/admin-roles.api";
 import { fetchAdminUsersList } from "#src/features/audit/admin-users/api/admin-users.api";
@@ -27,18 +28,18 @@ export default function SignFlowRulesPage() {
 	const [selected, setSelected] = useState<SignFlowRule | null>(null);
 	const rulesQuery = useQuery({
 		queryKey: ["contracts", "sign-flow-rules"],
-		queryFn: () => fetchSignFlowRules({ page: 1, page_size: 100 }),
+		queryFn: () => fetchAllPages(page => fetchSignFlowRules({ page, page_size: 200 })),
 		staleTime: 30 * 1000,
 	});
 	const usersQuery = useQuery({
 		queryKey: ["audit", "users", "sign-flow-options"],
-		queryFn: () => fetchAdminUsersList({ page: 1, page_size: 500 }),
+		queryFn: () => fetchAllPages(page => fetchAdminUsersList({ page, page_size: 200 })),
 		enabled: open,
 		staleTime: 5 * 60 * 1000,
 	});
 	const rolesQuery = useQuery({
 		queryKey: ["audit", "roles", "sign-flow-options"],
-		queryFn: () => fetchAdminRolesList({ page: 1, page_size: 500 }),
+		queryFn: () => fetchAllPages(page => fetchAdminRolesList({ page, page_size: 200 })),
 		enabled: open,
 		staleTime: 5 * 60 * 1000,
 	});

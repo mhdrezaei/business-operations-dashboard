@@ -22,12 +22,13 @@ import { MONTH_OPTIONS } from "#src/features/performance/shared/ui/form/constant
 import { useAccess } from "#src/hooks";
 import { SingleOptionSync } from "#src/shared/ui/rhf-pro";
 import { SectionCard } from "#src/shared/ui/section-card";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Empty, Select, Skeleton, Tag, theme, Typography } from "antd";
 import i18next from "i18next";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router";
+import { buildPerformanceEditSearch, parsePerformanceEditSelection } from "../model/performance-edit-selection";
 import { PerformanceDetailModal } from "./components/PerformanceDetailModal";
 import { TrafficUpdateTemplateModal } from "./components/TrafficUpdateTemplateModal";
 import "./performance-edit-workspace.css";
@@ -249,14 +250,19 @@ export default function PerformanceListPage() {
 	const { token } = theme.useToken();
 	const navigate = useNavigate();
 	const location = useLocation();
-	const initializedDirectEdit = useRef(false);
+	const queryClient = useQueryClient();
+	// The page stays mounted (keep-alive), so every new navigation with a directEdit must be applied, not just the first.
+	const handledDirectEditKey = useRef<string | null>(null);
 	const { hasDomainPermissionByServiceId, getPermittedCompanyTypes, getPermittedServiceIds } = useAccess();
 
-	const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
-	const [selectedServiceCode, setSelectedServiceCode] = useState<string | null>(null);
-	const [selectedCompanyType, setSelectedCompanyType] = useState<string | null>(null);
-	const [selectedCompanyId, setSelectedCompanyId] = useState<number | null>(null);
-	const [selectedYear, setSelectedYear] = useState<number | null>(null);
+	// A refresh restores the workspace from the URL (see the replaceState sync below); a direct edit from another page overrides it.
+	const [restored] = useState(() => parsePerformanceEditSelection(window.location.search));
+	const pendingRestoredMonth = useRef(restored.month);
+	const [selectedServiceId, setSelectedServiceId] = useState<number | null>(restored.serviceId);
+	const [selectedServiceCode, setSelectedServiceCode] = useState<string | null>(restored.serviceCode);
+	const [selectedCompanyType, setSelectedCompanyType] = useState<string | null>(restored.companyType);
+	const [selectedCompanyId, setSelectedCompanyId] = useState<number | null>(restored.companyId);
+	const [selectedYear, setSelectedYear] = useState<number | null>(restored.year);
 	const [selectedRow, setSelectedRow] = useState<PerformanceListRow | null>(null);
 	const [detailRevision, setDetailRevision] = useState(0);
 	const [deleting, setDeleting] = useState(false);
@@ -304,9 +310,12 @@ export default function PerformanceListPage() {
 		.map(company => ({ label: company.name, value: Number(company.id) })), [companies.data, requiresCompanyType, selectedCompanyType, selectedServiceCode]);
 
 	useEffect(() => {
-		if (!directEdit || initializedDirectEdit.current)
+		if (!directEdit || handledDirectEditKey.current === location.key)
 			return;
-		initializedDirectEdit.current = true;
+		handledDirectEditKey.current = location.key;
+		pendingRestoredMonth.current = null;
+		// A just-created performance is not in the cached list yet.
+		void queryClient.invalidateQueries({ queryKey: ["performance-edit-workspace"] });
 		const normalized = normalizePerformanceRecord(directEdit.record);
 		setSelectedServiceId(directEdit.serviceId ?? normalized.serviceId);
 		setSelectedServiceCode(directEdit.serviceCode ?? directEdit.service);
@@ -315,7 +324,7 @@ export default function PerformanceListPage() {
 		setSelectedYear(normalized.year);
 		setSelectedRow(directEdit.record);
 		navigate("/performances/edit", { replace: true, state: null });
-	}, [directEdit, navigate]);
+	}, [directEdit, location.key, navigate, queryClient]);
 
 	const performances = useQuery({
 		queryKey: ["performance-edit-workspace", selectedServicePath, selectedServiceId, selectedCompanyId, selectedCompanyType],
@@ -385,6 +394,14 @@ export default function PerformanceListPage() {
 			setSelectedRow(null);
 			return;
 		}
+		if (pendingRestoredMonth.current != null && selectedRow == null) {
+			const restoredRow = editableRows.find(row => normalizePerformanceRecord(row).month === pendingRestoredMonth.current);
+			pendingRestoredMonth.current = null;
+			if (restoredRow) {
+				setSelectedRow(restoredRow);
+				return;
+			}
+		}
 		const currentKey = selectedRow ? rowKey(selectedRow) : null;
 		const selectedPeriod = selectedRow ? normalizePerformanceRecord(selectedRow) : null;
 		const isSamePeriod = (row: PerformanceListRow) => {
@@ -403,6 +420,24 @@ export default function PerformanceListPage() {
 		}
 		setSelectedRow(editableRows[0] ?? null);
 	}, [editableRows, selectedRow, deleting, performances.isSuccess, performances.isFetching]);
+
+	const selectedMonth = selectedRow ? normalizePerformanceRecord(selectedRow).month : null;
+	useEffect(() => {
+		// The page stays mounted (keep-alive) while hidden: never write into another page's URL.
+		if (!window.location.pathname.endsWith(location.pathname))
+			return;
+		// replaceState (not navigate): changing the router location would remount the keep-alive page and drop the form state.
+		const search = buildPerformanceEditSearch({
+			serviceId: selectedServiceId,
+			serviceCode: selectedServiceCode,
+			companyType: selectedCompanyType,
+			companyId: selectedCompanyId,
+			year: selectedYear,
+			month: selectedMonth ?? pendingRestoredMonth.current,
+		});
+		if (window.location.search !== search)
+			window.history.replaceState(window.history.state, "", `${window.location.pathname}${search}`);
+	}, [location.pathname, selectedServiceId, selectedServiceCode, selectedCompanyType, selectedCompanyId, selectedYear, selectedMonth]);
 
 	const resetAfterService = () => {
 		setSelectedCompanyType(null);
@@ -664,7 +699,8 @@ export default function PerformanceListPage() {
 								embedded
 								open
 								serviceId={selectedServiceId}
-								companyTypeOptions={permittedCompanyTypeOptions.map(option => ({ label: option.value, value: option.key }))}
+								companyType={selectedCompanyType}
+								key={selectedCompanyType ?? ""}
 								onUploaded={() => void performances.refetch()}
 							/>
 						)

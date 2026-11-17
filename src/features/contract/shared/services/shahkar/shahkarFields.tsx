@@ -3,6 +3,7 @@ import type { ContractFormValues } from "../../../shared/model/contract.form.typ
 import { ContractAddendaSection } from "#src/features/contract/components/addenda/ContractAddendaSection";
 import { defaultContractTypeValue } from "#src/features/contract/components/contract-type/contract-type.types";
 import { ContractTypeSection } from "#src/features/contract/components/contract-type/ContractTypeSection";
+import { Reveal } from "#src/shared/ui/reveal";
 import { RHFProCheckbox } from "#src/shared/ui/rhf-pro";
 import React, { useEffect, useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
@@ -42,14 +43,12 @@ function ShahkarAddendumFields({ basePath }: { basePath: string }) {
 				checkboxLabel={t("contract.shahkar.addendumHasNewCustomerRate")}
 				itemProps={{ className: "mt-3 mb-0" }}
 			/>
-			{hasNewCustomerRate
-				? (
-					<ContractTypeSection
-						title={t("contract.shahkar.newCustomerRate")}
-						name={`${basePath}.newCustomerPricing`}
-					/>
-				)
-				: null}
+			<Reveal show={!!hasNewCustomerRate}>
+				<ContractTypeSection
+					title={t("contract.shahkar.newCustomerRate")}
+					name={`${basePath}.newCustomerPricing`}
+				/>
+			</Reveal>
 		</>
 	);
 }
@@ -100,34 +99,30 @@ export function ShahkarFields() {
 				itemProps={{ className: "mt-3 mb-0" }}
 			/>
 
-			{hasNewCustomerRate
-				? (
-					<ContractTypeSection
-						title={t("contract.shahkar.newCustomerRate")}
-						name={sf("newCustomerPricing") as any}
+			<Reveal show={!!hasNewCustomerRate}>
+				<ContractTypeSection
+					title={t("contract.shahkar.newCustomerRate")}
+					name={sf("newCustomerPricing") as any}
+				/>
+			</Reveal>
+
+			<Reveal show={showAddenda}>
+				<div className="mt-3">
+					<ContractAddendaSection<ContractFormValues>
+						title={t("contract.addenda.title")}
+						name={sf("addenda") as ArrayPath<ContractFormValues>}
+						contractTypeTitle=""
+						contractTypeFieldKey="contractPricing"
+						renderAddendumFields={basePath => <ShahkarAddendumFields basePath={basePath} />}
+
+						// ✅ Root contract dates path - mandatory in your Props
+						contractStartYearPath={"startYear" as Path<ContractFormValues>}
+						contractStartMonthPath={"startMonth" as Path<ContractFormValues>}
+						contractEndYearPath={"endYear" as Path<ContractFormValues>}
+						contractEndMonthPath={"endMonth" as Path<ContractFormValues>}
 					/>
-				)
-				: null}
-
-			{showAddenda
-
-				? (
-					<div className="mt-3">
-						<ContractAddendaSection<ContractFormValues>
-							title={t("contract.addenda.title")}
-							name={sf("addenda") as ArrayPath<ContractFormValues>}
-							contractTypeTitle=""
-							contractTypeFieldKey="contractPricing"
-							renderAddendumFields={basePath => <ShahkarAddendumFields basePath={basePath} />}
-
-							// ✅ Root contract dates path - mandatory in your Props
-							contractStartYearPath={"startYear" as Path<ContractFormValues>}
-							contractStartMonthPath={"startMonth" as Path<ContractFormValues>}
-							contractEndYearPath={"endYear" as Path<ContractFormValues>}
-							contractEndMonthPath={"endMonth" as Path<ContractFormValues>}
-						/>
-					</div>
-				) : null}
+				</div>
+			</Reveal>
 		</>
 	);
 }

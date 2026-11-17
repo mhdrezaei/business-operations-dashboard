@@ -78,7 +78,7 @@ describe("contractEditSelector", () => {
 				serviceId: 10,
 				companyId: 101,
 				companyType: "PRIVATE",
-				counterpartyType: "client",
+				counterpartyType: "partners",
 			};
 
 			act(() => {
@@ -144,7 +144,7 @@ describe("contractEditSelector", () => {
 					serviceId: 10,
 					companyId: 101,
 					companyType: "PRIVATE",
-					counterpartyType: "client",
+					counterpartyType: "partners",
 				});
 			});
 
@@ -168,7 +168,7 @@ describe("contractEditSelector", () => {
 					serviceId: 10,
 					companyId: 101,
 					companyType: "PRIVATE",
-					counterpartyType: "client",
+					counterpartyType: "partners",
 				});
 			});
 
@@ -192,7 +192,7 @@ describe("contractEditSelector", () => {
 					serviceId: 15,
 					companyId: 105,
 					companyType: "FCP",
-					counterpartyType: "client",
+					counterpartyType: "partners",
 				});
 			});
 
@@ -228,7 +228,7 @@ describe("contractEditSelector", () => {
 					serviceId: 10,
 					companyId: 101,
 					companyType: "PRIVATE",
-					counterpartyType: "client",
+					counterpartyType: "partners",
 				});
 			});
 

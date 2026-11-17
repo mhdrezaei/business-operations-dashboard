@@ -229,7 +229,6 @@
 		"nextRangeAuto": "The start value of the new range is set automatically.",
 		"addRow": "Add row",
 		"selectedDatacenter": "Selected datacenter",
-		"closeDetails": "Close details",
 		"bandwidthRate": "Rate per bandwidth unit (Rial)",
 		"ipRate": "Rate per IP (Rial)",
 		"portItems": "Port items",

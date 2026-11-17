@@ -1,5 +1,6 @@
 import type { ColumnsType } from "antd/es/table";
 import type {
+	GuaranteeAddendumOption,
 	GuaranteeRecord,
 	GuaranteeType,
 } from "../../model/additional-info.types";
@@ -50,6 +51,7 @@ interface Props {
 	readOnly?: boolean
 	addendumGroupId?: string | null
 	addendumService?: string | null
+	addendumOptions?: GuaranteeAddendumOption[]
 }
 
 export function GuaranteesTable({
@@ -62,6 +64,7 @@ export function GuaranteesTable({
 	readOnly = false,
 	addendumGroupId,
 	addendumService,
+	addendumOptions,
 }: Props) {
 	const { t } = useTranslation();
 	const { token } = theme.useToken();
@@ -130,9 +133,16 @@ export function GuaranteesTable({
 				}
 
 				return (
-					<Tag color={color} icon={icon} className="px-2 py-0.5 font-medium">
-						{record.guarantee_type_label || GUARANTEE_TYPE_LABELS[type] || type}
-					</Tag>
+					<div className="flex flex-col items-start gap-1">
+						<Tag color={color} icon={icon} className="m-0 px-2 py-0.5 font-medium">
+							{record.guarantee_type_label || GUARANTEE_TYPE_LABELS[type] || type}
+						</Tag>
+						<span className="text-xs text-[var(--ant-color-text-tertiary)]">
+							{record.addendum_group_id
+								? t("contract.additionalInfo.guaranteeScopeAddendum", { number: toPersianDigits(record.addendum_number ?? "") }).trim()
+								: t("contract.additionalInfo.guaranteeScopeContract")}
+						</span>
+					</div>
 				);
 			},
 		},
@@ -458,6 +468,7 @@ export function GuaranteesTable({
 				initialRecord={editingRecord}
 				addendumGroupId={addendumGroupId}
 				addendumService={addendumService}
+				addendumOptions={addendumOptions}
 			/>
 
 			{/* Modal for viewing rendered legal text */}

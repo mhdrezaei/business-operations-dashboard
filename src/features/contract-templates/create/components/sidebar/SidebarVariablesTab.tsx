@@ -9,41 +9,10 @@ import { useFormContext, useWatch } from "react-hook-form";
 import { TemplateCreateApi } from "../../../api/api";
 import { dynamicVariableCache } from "../editor/variables/registry";
 import { useVariableRegistry } from "../editor/variables/VariableRegistryContext";
+import { buildCatalogGroups, buildDisplayBlocks } from "./sidebar-variable-groups";
 
 const toFaDigits = (value: any) => String(value ?? "").replace(/\d/g, d => "۰۱۲۳۴۵۶۷۸۹"[Number(d)] || d);
-const SLOT_KEY_PATTERN = /^(.+?)_(\d{1,2})_.+$/;
 const { Text } = Typography;
-
-function buildDisplayBlocks(variables: any[]) {
-	const blocks: any[] = [];
-	const familyBlockIndex = new Map();
-	let currentSingles: any = null;
-
-	for (const variable of variables) {
-		const match = SLOT_KEY_PATTERN.exec(variable.key);
-		if (!match) {
-			if (!currentSingles) {
-				currentSingles = { type: "singles", variables: [] };
-				blocks.push(currentSingles);
-			}
-			currentSingles.variables.push(variable);
-			continue;
-		}
-		currentSingles = null;
-		const [, prefix, indexStr] = match;
-		const index = Number(indexStr);
-		if (!familyBlockIndex.has(prefix)) {
-			familyBlockIndex.set(prefix, blocks.length);
-			blocks.push({ type: "family", prefix, maxIndex: 0, variablesByIndex: new Map() });
-		}
-		const block = blocks[familyBlockIndex.get(prefix)];
-		if (!block.variablesByIndex.has(index))
-			block.variablesByIndex.set(index, []);
-		block.variablesByIndex.get(index).push(variable);
-		block.maxIndex = Math.max(block.maxIndex, index);
-	}
-	return blocks;
-}
 
 /** Catalog examples may be arrays of row objects (tiers); a template string would print them as [object Object]. */
 function formatVariableExample(example: unknown): string {
@@ -145,37 +114,10 @@ export default function SidebarVariablesTab({ editor }: { editor: Editor | null 
 		if (!catalogData?.variables)
 			return null;
 
+		const groups = buildCatalogGroups(catalogData.variables);
 		dynamicVariableCache.clear();
-
-		return catalogData.variables
-			.filter((root: any) => root.key !== "service")
-			.map((root: any) => {
-				const vars = Array.isArray(root.children) && root.children.length > 0 ? root.children : [root];
-
-				return {
-					group: root.key,
-					label: root.label,
-					variables: vars.map((v: any) => {
-						let finalKey = v.key;
-
-						if (root.key === "contract" || root.key === "addendum") {
-							if (!finalKey.startsWith(root.key)) {
-								finalKey = `${root.key}_${finalKey}`;
-							}
-						}
-
-						const formattedVariable = {
-							key: finalKey,
-							label: v.label,
-							example: v.example,
-						};
-
-						dynamicVariableCache.set(finalKey, formattedVariable);
-
-						return formattedVariable;
-					}),
-				};
-			});
+		groups.forEach(group => group.variables.forEach((variable: any) => dynamicVariableCache.set(variable.key, variable)));
+		return groups;
 	}, [catalogData]);
 
 	const effectiveGroups = dynamicGroups || fallbackStaticGroups;

@@ -34,6 +34,7 @@ import {
 	openPredictionSummaryPdfPrint,
 } from "./predictions-summary-export";
 import { formatCollocationUsage } from "./predictions-summary-format";
+import { buildReportFileName, buildReportPrintTitle, createFileNamePeriodFormat, formatPeriodsForFileName } from "./report-file-name";
 import "./predictions-summary-report.css";
 
 type ReportMode = "separated" | "total";
@@ -485,6 +486,13 @@ function getExportPeriodsLabel(periodsJson: string | undefined, periodMode: Pred
 	return `${formatPersianInteger(year)} / ${valueLabel}`;
 }
 
+function getExportFileNameParts(args: { serviceLabel: string, periodsJson: string | undefined, periodMode: PredictionSummaryPeriodMode, t: TFunction }) {
+	const { serviceLabel, periodsJson, periodMode, t } = args;
+	const unitLabels = new Map(getPeriodValueOptions(periodMode, t).map(option => [option.value, String(option.label)]));
+	const format = createFileNamePeriodFormat(isQuarterMode(periodMode) ? "quarter" : "month", value => unitLabels.get(value) ?? String(value), t);
+	return { title: t("common.menu.predictionsSummaryReport"), service: serviceLabel, period: formatPeriodsForFileName(getQueryPeriodEntries(periodsJson), format) };
+}
+
 function buildSummaryQuery({
 	serviceCodes,
 	periodMode,
@@ -590,6 +598,12 @@ export function PredictionsSummaryReportPage() {
 		showRial,
 		t,
 	}), [serviceNameByCode, t, mutation.variables?.period_mode, mutation.variables?.periods, mutation.variables?.service_codes, periodMode, showRial]);
+	const fileNameParts = useMemo(() => getExportFileNameParts({
+		serviceLabel: exportMeta.servicesLabel,
+		periodsJson: mutation.variables?.periods,
+		periodMode: exportMeta.periodMode,
+		t,
+	}), [exportMeta.periodMode, exportMeta.servicesLabel, mutation.variables?.periods, t]);
 	const canExport = rows.length > 0 && !mutation.isPending;
 
 	const handleDownloadExcel = () => {
@@ -597,7 +611,7 @@ export function PredictionsSummaryReportPage() {
 			return;
 		try {
 			downloadPredictionSummaryExcel({
-				filename: `predictions-performance-summary-${new Date().toLocaleDateString("fa-IR-u-nu-latn").replaceAll("/", "-")}.xls`,
+				filename: buildReportFileName(fileNameParts, "xls"),
 				rows,
 				meta: exportMeta,
 				mode: outputMode,
@@ -612,7 +626,7 @@ export function PredictionsSummaryReportPage() {
 		if (!canExport || outputMode !== "classic")
 			return;
 		try {
-			openPredictionSummaryPdfPrint(rows, exportMeta);
+			openPredictionSummaryPdfPrint(rows, { ...exportMeta, documentTitle: buildReportPrintTitle(fileNameParts) });
 		}
 		catch {
 			window.$message?.warning(t("performance.predictionsSummary.messages.popupBlocked"));

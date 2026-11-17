@@ -3,7 +3,7 @@ import type { PeriodType, ReportAuditColumnKey, ReportServiceLayout, TrafficRepo
 import { downloadBlob } from "#src/utils/download-blob";
 import { getReportTotalsRowLabel } from "../model/sms-report-variants";
 import { formatReportDatacenterName, formatReportUserRef, formatSalesAgencyCostItems, getReportMonthLabel, getReportYearValue, getSalesAgencyTotalCost, REPORT_FIELD_KEYS } from "./constants";
-import { formatReportMoney, formatReportNumber } from "./report-number-format";
+import { formatReportMoney, formatReportNumber, toExcelHtml } from "./report-number-format";
 
 export type ReportFinancialColumnKey
 	= | "income" | "expense" | "profit" | "total" | "contractType" | "showBaseUnit" | "rial" | "unitPrice" | "karashabIncome" | "karashabExpense" | "karashabProfit" | "telecomIncome" | "firstPartyIncome" | "regionIncome" | "salesAgentIncome" | "companyType";
@@ -56,7 +56,7 @@ function escapeHtml(value: unknown) {
 
 /** Excel opens an HTML table saved with the .xls extension. */
 export function downloadExcelHtml(html: string, filename: string) {
-	downloadBlob(new Blob([`\uFEFF${html}`], { type: "application/vnd.ms-excel;charset=utf-8" }), filename);
+	downloadBlob(new Blob([`\uFEFF${toExcelHtml(html)}`], { type: "application/vnd.ms-excel;charset=utf-8" }), filename);
 }
 
 function pickReportValue(row: Record<string, unknown>, keys: readonly string[]) {
@@ -297,6 +297,7 @@ const WIDE_PDF_COLUMN_COUNT = 16;
 
 function buildBaseHtml(args: {
 	title: string
+	documentTitle?: string
 	serviceName?: string | null
 	labels: ReportExportLabels
 	currencyValue?: string
@@ -306,7 +307,7 @@ function buildBaseHtml(args: {
 	totals?: ReportExportTotals
 	financialColumnTitles: Partial<Record<ReportFinancialColumnKey, string>>
 }) {
-	const { title, labels, serviceName, currencyValue, rows, columns, summary, totals, financialColumnTitles } = args;
+	const { title, documentTitle, labels, serviceName, currencyValue, rows, columns, summary, totals, financialColumnTitles } = args;
 	const today = new Date().toLocaleDateString("fa-IR");
 	const origin = window.location.origin;
 	const logoUrl = `${origin}/negah-logo.svg`;
@@ -318,7 +319,7 @@ function buildBaseHtml(args: {
 <head>
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<title>${escapeHtml(title)}</title>
+	<title>${escapeHtml(documentTitle ?? title)}</title>
 	<style>
 		@font-face {
 			font-family: "IranYekan";
@@ -637,6 +638,7 @@ export function downloadPerformanceReportExcel(args: {
 
 export function openPerformanceReportPdfPrint(args: {
 	title: string
+	documentTitle?: string
 	serviceName?: string | null
 	labels: ReportExportLabels
 	currencyValue?: string

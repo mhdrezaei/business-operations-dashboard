@@ -1,5 +1,5 @@
 import type { AdminRolePermissionFlags } from "./admin-roles.payload";
-import { buildAdminRolePoliciesPayload } from "./admin-roles.payload";
+import { buildAdminRolePoliciesPayload, setGrantableFlags, withoutCompanyTypeSelections } from "./admin-roles.payload";
 
 function flags(view: boolean, create = false, update = false, remove = false, sign = false, businessApprove = false): AdminRolePermissionFlags {
 	return {
@@ -61,5 +61,37 @@ describe("buildAdminRolePoliciesPayload", () => {
 			expect.objectContaining({ domain: "contracts", service: 2, can_view: false, can_sign: true }),
 			expect.objectContaining({ domain: "contract_template", service: 2, can_view: true, can_update: true }),
 		]);
+	});
+});
+
+describe("withoutCompanyTypeSelections", () => {
+	it("drops only the picks of the given services in that domain", () => {
+		const selections = {
+			"predictions:1": ["a", "b"],
+			"predictions:2": ["c"],
+			"performances:1": ["d"],
+		};
+
+		expect(withoutCompanyTypeSelections(selections, "predictions", [1])).toEqual({
+			"predictions:2": ["c"],
+			"performances:1": ["d"],
+		});
+	});
+});
+
+describe("setGrantableFlags", () => {
+	it("only touches the actions the admin may grant", () => {
+		const current = flags(false, false, false, true);
+		const canGrant = (action: string) => action === "view" || action === "update";
+
+		expect(setGrantableFlags(current, true, "predictions", canGrant)).toEqual(flags(true, false, true, true));
+		expect(setGrantableFlags(flags(true, true, true, true), false, "predictions", canGrant)).toEqual(flags(false, true, false, true));
+	});
+
+	it("covers the contract approvals only for the contracts domain", () => {
+		const everything = () => true;
+
+		expect(setGrantableFlags(flags(false), true, "contracts", everything)).toEqual(flags(true, true, true, true, true, true));
+		expect(setGrantableFlags(flags(false), true, "performances", everything)).toEqual(flags(true, true, true, true));
 	});
 });

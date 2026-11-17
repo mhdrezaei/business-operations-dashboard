@@ -15,6 +15,7 @@ import {
 } from "#src/features/performance/shared/queries/performance.queries";
 import { MONTH_OPTIONS } from "#src/features/performance/shared/ui/form/constants/jalali-date-options";
 import { useAccess } from "#src/hooks";
+import { getMainScrollContainer } from "#src/layout/constants";
 import { SingleOptionSync } from "#src/shared/ui/rhf-pro";
 import { FileExcelOutlined, FilePdfOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
@@ -48,6 +49,7 @@ import {
 	getReportDisplayMonth,
 	getReportServiceLayout,
 	getTrafficReportLayout,
+	hasOperatorLanguageAggregationOptions,
 	REPORT_FIELD_KEYS,
 	supportsOperatorLanguageAggregation,
 } from "./constants";
@@ -56,6 +58,7 @@ import {
 	downloadPerformanceReportExcel,
 	openPerformanceReportPdfPrint,
 } from "./export";
+import { buildReportFileName, buildReportPrintTitle, createFileNamePeriodFormat, formatPeriodsForFileName, parseReportPeriodKey } from "./report-file-name";
 import { formatReportMoney, formatReportNumber } from "./report-number-format";
 import { addSmsVariantExportColumns } from "./sms-variant-export-columns";
 
@@ -345,7 +348,7 @@ export function PerformanceReportPage() {
 			...(isOperatorGovernment ? [] : [{ label: t("performance.aggregation.byCompany"), value: "by_company" }]),
 			{ label: t("performance.aggregation.byMonth"), value: "by_month" },
 		];
-		if (supportsOperatorLanguageAggregationFilter) {
+		if (hasOperatorLanguageAggregationOptions(selectedServiceCode)) {
 			options.push(
 				{ label: t("performance.aggregation.byOperator"), value: "by_operator" },
 				{ label: t("performance.aggregation.byLanguage"), value: "by_language" },
@@ -354,7 +357,7 @@ export function PerformanceReportPage() {
 		if (isCollocation)
 			options.push({ label: t("performance.aggregation.byDataCenter"), value: "by_data_center" });
 		return options;
-	}, [supportsOperatorLanguageAggregationFilter, isCollocation, isOperatorGovernment, t]);
+	}, [selectedServiceCode, isCollocation, isOperatorGovernment, t]);
 
 	const allowedAggregationKeys = useMemo(
 		() => getAllowedAggregationKeys(selectedServiceCode, isCollocation).filter(key => !(isOperatorGovernment && key === "by_company")),
@@ -612,6 +615,13 @@ export function PerformanceReportPage() {
 		}
 	};
 
+	// Typing a ratio replaces the base-unit view, so the switch turns itself off.
+	const handleDefaultConversionRatioChange = (value: number | null) => {
+		setDefaultConversionRatio(value);
+		if (value != null)
+			setSelectedFinancialColumns(prev => prev.includes("showBaseUnit") ? prev.filter(key => key !== "showBaseUnit") : prev);
+	};
+
 	const handleOperatorGovernmentFiltersChange = (filters: Partial<OperatorGovernmentFilters>) => {
 		setOperatorGovernmentFilters(prev => ({ ...prev, ...filters }));
 		setSummary(null);
@@ -663,7 +673,7 @@ export function PerformanceReportPage() {
 			operatorGovernmentFilters,
 			canFilterSmsCommission: canViewSmsCommission,
 			onOperatorGovernmentFiltersChange: handleOperatorGovernmentFiltersChange,
-			onDefaultConversionRatioChange: setDefaultConversionRatio,
+			onDefaultConversionRatioChange: handleDefaultConversionRatioChange,
 			renderRowActions: row => (
 				<ReportRowActions
 					row={row}
@@ -1015,6 +1025,15 @@ export function PerformanceReportPage() {
 		currencyUnit: t("performance.labels.currencyUnit"),
 	}), [t]);
 
+	const fileNameParts = useMemo(() => {
+		const format = createFileNamePeriodFormat("month", value => t(`performance.months.${getReportDisplayMonth(value, selectedPeriodType)}`), t);
+		const periods = selectedPeriods.flatMap((key) => {
+			const parsed = parseReportPeriodKey(key);
+			return parsed ? [parsed] : [];
+		});
+		return { title: t("performance.titles.performanceReport"), service: selectedServiceName, period: formatPeriodsForFileName(periods, format) };
+	}, [selectedPeriodType, selectedPeriods, selectedServiceName, t]);
+
 	const handleDownloadExcel = useCallback(async () => {
 		const exportData = await fetchAllRowsForExport();
 		if (!exportData)
@@ -1025,7 +1044,7 @@ export function PerformanceReportPage() {
 			: t("performance.columns.toman");
 
 		downloadPerformanceReportExcel({
-			filename: `${[t("performance.titles.performanceReport"), selectedServiceName].filter(Boolean).join(" - ")}.xls`,
+			filename: buildReportFileName(fileNameParts, "xls"),
 			title: t("performance.titles.performanceReport"),
 			labels: exportLabels,
 			serviceName: selectedServiceName,
@@ -1036,7 +1055,7 @@ export function PerformanceReportPage() {
 			totals: exportData.totals,
 			financialColumnTitles: selectedFinancialColumnTitles,
 		});
-	}, [exportColumns, exportLabels, fetchAllRowsForExport, selectedFinancialColumnTitles, selectedFinancialColumns, selectedServiceName, t]);
+	}, [exportColumns, exportLabels, fetchAllRowsForExport, fileNameParts, selectedFinancialColumnTitles, selectedFinancialColumns, selectedServiceName, t]);
 
 	const handleDownloadPdf = useCallback(async () => {
 		const exportData = await fetchAllRowsForExport();
@@ -1050,6 +1069,7 @@ export function PerformanceReportPage() {
 		try {
 			openPerformanceReportPdfPrint({
 				title: t("performance.titles.performanceReport"),
+				documentTitle: buildReportPrintTitle(fileNameParts),
 				labels: exportLabels,
 				serviceName: selectedServiceName,
 				currencyValue,
@@ -1063,11 +1083,12 @@ export function PerformanceReportPage() {
 		catch {
 			window.$message?.warning(t("performance.messages.popupBlocked"));
 		}
-	}, [exportColumns, exportLabels, fetchAllRowsForExport, selectedFinancialColumnTitles, selectedFinancialColumns, selectedServiceName, t]);
+	}, [exportColumns, exportLabels, fetchAllRowsForExport, fileNameParts, selectedFinancialColumnTitles, selectedFinancialColumns, selectedServiceName, t]);
 
 	const canExport = !!selectedServiceId && !!selectedServiceCode && selectedPeriods.length > 0 && !isDefaultConversionRatioInvalid;
-	const reportReloadFinancialColumnsKey = selectedFinancialColumns
-		.filter(column => column !== "rial")
+	// Only these two columns change the request; the others just show or hide data that is already loaded.
+	const reportReloadFinancialColumnsKey = (["total", "showBaseUnit"] as const)
+		.filter(column => selectedFinancialColumns.includes(column))
 		.join(",");
 
 	const reportFilterKey = [
@@ -1105,6 +1126,7 @@ export function PerformanceReportPage() {
 		<BasicContent className="h-full">
 			<BasicTable<PerformanceReportRow>
 				className="performance-report-table"
+				sticky={{ getContainer: getMainScrollContainer }}
 				rowKey={record => String(record.id)}
 				columns={columns}
 				actionRef={actionRef}

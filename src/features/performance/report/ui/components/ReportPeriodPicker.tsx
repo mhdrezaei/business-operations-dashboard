@@ -1,7 +1,7 @@
 import type { PeriodType, ReportSelectOption } from "../constants";
 import SelectedMonthIcon from "#src/assets/svg/performance/selected-month.svg?react";
 import { DashedBorder } from "#src/shared/ui/dashed-border";
-import { CalendarOutlined, CloseOutlined, DeleteOutlined, DownOutlined, PlusOutlined, UpOutlined } from "@ant-design/icons";
+import { CalendarOutlined, CloseOutlined, DeleteOutlined, DownOutlined, UpOutlined } from "@ant-design/icons";
 import { Button, Select, Typography } from "antd";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -19,7 +19,6 @@ interface ReportPeriodPickerCopy {
 	selectedLabel?: string
 	selectedUnit?: string
 	emptyText?: string
-	addLabel?: string
 }
 
 interface ReportPeriodPickerProps<TPeriodType extends string = PeriodType> {
@@ -73,7 +72,6 @@ export function ReportPeriodPicker<TPeriodType extends string = PeriodType>({
 	const { t } = useTranslation();
 	const [collapsed, setCollapsed] = useState(false);
 	const [draftYear, setDraftYear] = useState<number | null>(defaultDraftYear ?? null);
-	const [draftMonths, setDraftMonths] = useState<number[]>([]);
 
 	const parsedOptions = useMemo(
 		() => periodOptions.map(option => parsePeriod(option.value)).filter((item): item is ParsedPeriod => item !== null),
@@ -98,16 +96,11 @@ export function ReportPeriodPicker<TPeriodType extends string = PeriodType>({
 	const selectedLabel = copy?.selectedLabel ?? t("performance.reportPage.periodPicker.selected");
 	const selectedUnit = copy?.selectedUnit ?? t("performance.reportPage.periodPicker.unit");
 	const emptyText = copy?.emptyText ?? t("performance.reportPage.periodPicker.empty");
-	const addLabel = copy?.addLabel ?? t("performance.reportPage.periodPicker.add");
 
 	const validDraftYear = useMemo(() => {
 		const allowedYears = new Set(yearOptions.map(option => Number(option.value)));
 		return draftYear != null && allowedYears.has(draftYear) ? draftYear : null;
 	}, [draftYear, yearOptions]);
-	const validDraftMonths = useMemo(
-		() => draftMonths.filter(month => parsedOptions.some(period => period.year === validDraftYear && period.month === month)),
-		[draftMonths, parsedOptions, validDraftYear],
-	);
 	const availableMonths = useMemo(() => {
 		if (validDraftYear == null)
 			return [];
@@ -117,32 +110,19 @@ export function ReportPeriodPicker<TPeriodType extends string = PeriodType>({
 				.map(period => period.month),
 		)).sort((first, second) => first - second);
 	}, [parsedOptions, validDraftYear]);
-	const allMonthsSelected = availableMonths.length > 0 && availableMonths.every(month => validDraftMonths.includes(month));
+	const periodKey = (month: number) => `${validDraftYear}-${month}`;
+	const allMonthsSelected = availableMonths.length > 0 && availableMonths.every(month => selectedPeriodSet.has(periodKey(month)));
 
-	const addablePeriods = useMemo(() => {
-		const values = parsedOptions
-			.filter(period => period.year === validDraftYear && validDraftMonths.includes(period.month))
-			.map(period => period.value)
-			.filter(value => !selectedPeriodSet.has(value));
-		return sortPeriods(values);
-	}, [validDraftYear, validDraftMonths, parsedOptions, selectedPeriodSet]);
-
+	// A month click adds or removes that period right away.
 	const toggleMonth = (month: number) => {
-		setDraftMonths(current => validDraftMonths.includes(month)
-			? current.filter(value => value !== month)
-			: [...validDraftMonths, month]);
+		const key = periodKey(month);
+		onPeriodsChange(selectedPeriodSet.has(key)
+			? selectedPeriods.filter(value => value !== key)
+			: sortPeriods([...selectedPeriods, key]));
 	};
 
 	const selectAllMonths = () => {
-		setDraftMonths(availableMonths);
-	};
-
-	const addPeriods = () => {
-		if (addablePeriods.length === 0)
-			return;
-		onPeriodsChange(sortPeriods([...selectedPeriods, ...addablePeriods]));
-		setDraftYear(null);
-		setDraftMonths([]);
+		onPeriodsChange(sortPeriods([...new Set([...selectedPeriods, ...availableMonths.map(periodKey)])]));
 	};
 
 	const removePeriod = (period: string) => {
@@ -189,7 +169,6 @@ export function ReportPeriodPicker<TPeriodType extends string = PeriodType>({
 								placeholder={disabled ? t("performance.placeholders.selectServiceFirst") : t("performance.reportPage.periodPicker.yearPlaceholder")}
 								onChange={(value) => {
 									setDraftYear(value == null ? null : Number(value));
-									setDraftMonths([]);
 								}}
 							/>
 						</label>
@@ -213,7 +192,7 @@ export function ReportPeriodPicker<TPeriodType extends string = PeriodType>({
 								const month = Number(option.value);
 								const name = option.label;
 								const monthAvailable = validDraftYear != null && parsedOptions.some(period => period.year === validDraftYear && period.month === month);
-								const selected = validDraftMonths.includes(month);
+								const selected = monthAvailable && selectedPeriodSet.has(periodKey(month));
 								return (
 									<button
 										key={String(option.value)}
@@ -230,9 +209,6 @@ export function ReportPeriodPicker<TPeriodType extends string = PeriodType>({
 						</div>
 					</div>
 
-					<Button className="report-period-picker__add" type="primary" icon={<PlusOutlined />} disabled={addablePeriods.length === 0} onClick={addPeriods}>
-						{addLabel}
-					</Button>
 				</div>
 
 				<div className="report-period-picker__selection" aria-live="polite">

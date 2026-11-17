@@ -28,12 +28,14 @@ import { monthlyContractStatusQuery, performanceContractsQuery } from "#src/feat
 import { SalesAgencyPerformanceFields } from "#src/features/performance/shared/services/sales-agency/sales-agency.fields";
 import { salesAgencyFieldsSchema } from "#src/features/performance/shared/services/sales-agency/sales-agency.schema";
 import {
+	buildCollocationBreakdown,
 	buildCollocationRowsFromPerformances,
 	buildCollocationRowsPayload,
 	collocationModeFromPerformances,
 	extractContractDatacenters,
 	isCollocationCompanyType,
 } from "#src/features/performance/shared/services/traffic/traffic-collocation";
+import { isCountyOptionalCompanyType } from "#src/features/performance/shared/services/traffic/traffic-locations";
 import { TrafficCollocationRows } from "#src/features/performance/shared/services/traffic/TrafficCollocationRows";
 import {
 	AlignedFormField,
@@ -43,14 +45,15 @@ import { DashedBorder } from "#src/shared/ui/dashed-border";
 import { DashedCard } from "#src/shared/ui/dashed-card";
 import { RHFProCheckbox, RHFProNumber, RHFProText } from "#src/shared/ui/rhf-pro";
 import { SectionCard } from "#src/shared/ui/section-card";
-import { DeleteOutlined, EditOutlined, ReloadOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined } from "@ant-design/icons";
 
 import { useQuery } from "@tanstack/react-query";
-import { Button, Card, Modal, Popconfirm, Spin, Tag, theme } from "antd";
+import { Button, Card, Modal, Popconfirm, Spin, Table, Tag, theme } from "antd";
 import i18next from "i18next";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { buildSeparatedBreakdown, getFirstDefinedValue, getOpenApiOperationRowValue, toUpperText } from "../../model/openapi-operation-rows";
 import { isTrafficLocationRequired, TRAFFIC_LOCATIONS } from "../../model/traffic-locations";
 import "#src/shared/ui/form-layout/styles.css";
 
@@ -275,10 +278,6 @@ function serviceRequiresCompanyType(service: PerformanceServicePath | null | und
 	return service === "sms" || service === "psp" || service === "traffic" || service === "sales-agency/outbound" || service === "sales-agency/rep-management";
 }
 
-function toUpperText(value: unknown) {
-	return String(value ?? "").trim().toUpperCase();
-}
-
 function getTierRate(record: any) {
 	const first = Array.isArray(record?.tiers) ? record.tiers[0] : null;
 	return first?.rate_per_unit ?? null;
@@ -355,15 +354,6 @@ function buildInitialValues(
 	return values;
 }
 
-function getFirstDefinedValue(source: Record<string, unknown>, keys: string[]) {
-	for (const key of keys) {
-		const value = source[key];
-		if (value != null && value !== "")
-			return value;
-	}
-	return null;
-}
-
 function applyOpenApiInitialValues(
 	initialValues: EditFormValues,
 	detail: Record<string, unknown>,
@@ -428,28 +418,6 @@ function applyOpenApiInitialValues(
 	assignValue("sms_mci_en", ["sms_mci_en"], "SMS_MCI_EN", ["value"]);
 	assignValue("sms_other_fa", ["sms_other_fa"], "SMS_OTHER_FA", ["value"]);
 	assignValue("sms_other_en", ["sms_other_en"], "SMS_OTHER_EN", ["value"]);
-}
-
-function getOpenApiOperationRowValue(
-	rows: PerformanceListItem[],
-	operationType: string,
-	keys: string[],
-) {
-	const matchedRow = rows.find(row => toUpperText((row as Record<string, unknown>).operation_type) === operationType);
-	if (!matchedRow)
-		return null;
-
-	return getFirstDefinedValue(matchedRow as Record<string, unknown>, keys);
-}
-
-/** Sum of a metric over several operation rows; null when none of them carries a value. */
-function sumOpenApiOperationRowValues(rows: PerformanceListItem[], operationTypes: string[], keys: string[]) {
-	const values = operationTypes
-		.map(operationType => getOpenApiOperationRowValue(rows, operationType, keys))
-		.filter(value => value != null)
-		.map(Number)
-		.filter(Number.isFinite);
-	return values.length > 0 ? values.reduce((total, value) => total + value, 0) : null;
 }
 
 function resolveOpenApiContractModel(
@@ -670,6 +638,8 @@ export function PerformanceDetailModal({
 	const isUnregisteredMode = mode === "unregistered";
 	const [loading, setLoading] = useState(false);
 	const [saving, setSaving] = useState(false);
+	// null = default (county card hidden when no county record exists); the user's add/remove click overrides it.
+	const [countyChoice, setCountyChoice] = useState<boolean | null>(null);
 	const [detail, setDetail] = useState<Record<string, unknown> | null>(null);
 	const [smsContract, setSmsContract] = useState<Record<string, unknown> | null>(null);
 	const [shahkarHasNewCustomerRate, setShahkarHasNewCustomerRate] = useState(false);
@@ -998,7 +968,7 @@ export function PerformanceDetailModal({
 		});
 		return locations;
 	}, [mergedDetail, record, trafficPerformances]);
-	const visibleTrafficLocations = useMemo(() => {
+	const availableTrafficLocations = useMemo(() => {
 		if (service !== "traffic")
 			return new Set<"TEHRAN" | "COUNTY">();
 		if (isUnregisteredMode) {
@@ -1022,6 +992,17 @@ export function PerformanceDetailModal({
 
 		return locations.size > 0 ? locations : new Set<"TEHRAN" | "COUNTY">(["TEHRAN", "COUNTY"]);
 	}, [service, isUnregisteredMode, isCollocationRecord, mergedDetail, record, existingTrafficLocations, trafficStatus.data]);
+	const canRemoveCounty = service === "traffic" && !isUnregisteredMode && !isCollocationRecord
+	  && isCountyOptionalCompanyType(selectedCompanyType) && availableTrafficLocations.has("COUNTY");
+	// A removed county is omitted from the payload, so the backend deletes that location.
+	const countyRemoved = canRemoveCounty && (countyChoice ?? !existingTrafficLocations.has("COUNTY"));
+	const visibleTrafficLocations = useMemo(() => {
+		if (!countyRemoved || !availableTrafficLocations.has("COUNTY"))
+			return availableTrafficLocations;
+		const locations = new Set(availableTrafficLocations);
+		locations.delete("COUNTY");
+		return locations;
+	}, [availableTrafficLocations, countyRemoved]);
 	const visibleEditableFields = useMemo(() => {
 		if (!config)
 			return [];
@@ -1033,18 +1014,25 @@ export function PerformanceDetailModal({
 			return !location || visibleTrafficLocations.has(location);
 		});
 	}, [config, service, visibleTrafficLocations]);
+	const separatedBreakdownRows = useMemo(() => {
+		if (service !== "openapi" || openApiContractModel !== "legacy_2")
+			return [];
+
+		return buildSeparatedBreakdown(openApiPerformances).map(row => ({
+			key: row.operationType,
+			operation: t(`performance.predictionsSummary.types.${row.operationType}`),
+			income: formatNumberLike(row.income),
+			expense: formatNumberLike(row.expense),
+			profit: formatNumberLike(row.profit),
+		}));
+	}, [service, openApiContractModel, openApiPerformances, t]);
 	const openApiSummaryFields = useMemo(() => {
 		if (service !== "openapi")
 			return [];
 
 		if (openApiContractModel === "legacy_2") {
-			const billTypes = ["BILL_INQUIRY_MIDTERM", "BILL_INQUIRY_ENDTERM"];
-			const receiptTypes = ["RECEIPT_REGISTER_CONNECTED", "RECEIPT_REGISTER_DISCONNECTED"];
-			return [
-				{ key: "income", label: t("performance.detail.billInquiryIncome"), value: formatNumberLike(sumOpenApiOperationRowValues(openApiPerformances, billTypes, ["income"])) },
-				{ key: "expense", label: t("performance.detail.billInquiryExpense"), value: formatNumberLike(sumOpenApiOperationRowValues(openApiPerformances, billTypes, ["expense"])) },
-				{ key: "profit", label: t("performance.detail.receiptRegisterIncome"), value: formatNumberLike(sumOpenApiOperationRowValues(openApiPerformances, receiptTypes, ["income"])) },
-			];
+			// Shown as the operations table instead (see separatedBreakdownRows).
+			return [];
 		}
 
 		const billInquiryIncome = getOpenApiOperationRowValue(openApiPerformances, "BILL_INQUIRY", ["income"]) ?? mergedDetail.income;
@@ -1140,6 +1128,10 @@ export function PerformanceDetailModal({
 				};
 			});
 	}, [service, mergedDetail, record, trafficPerformances, visibleTrafficLocations, t]);
+	const collocationBreakdown = useMemo(
+		() => isCollocationRecord ? buildCollocationBreakdown(getTrafficRowsFromSources(mergedDetail, record as Record<string, unknown> ?? {}, trafficPerformances)) : [],
+		[isCollocationRecord, mergedDetail, record, trafficPerformances],
+	);
 	const readonlyDetailFields = useMemo<DetailField[]>(() => {
 		if (!service || !config)
 			return [];
@@ -1177,8 +1169,9 @@ export function PerformanceDetailModal({
 			"company_name",
 			"sh_year",
 			"sh_month",
-			...config.editableFields.map(field => field.key),
-			...config.payloadKeys,
+			// The monthly sales figure is editable below but also belongs in the breakdown next to income/expense.
+			...config.editableFields.map(field => field.key).filter(key => !(service === "sales-agency/outbound" && key === "total_sales")),
+			...config.payloadKeys.filter(key => !(service === "sales-agency/outbound" && key === "total_sales")),
 			...(service === "traffic" ? ["value", "value_receive", "income", "expense", "profit", "location", "traffic_locations"] : []),
 		]);
 		const seenKeys = new Set<string>();
@@ -1342,12 +1335,14 @@ export function PerformanceDetailModal({
 	const hasMeaningfulChanges = useMemo(() => {
 		if (isCollocationRecord)
 			return JSON.stringify(collocationRows) !== JSON.stringify(initialCollocationRowsRef.current);
+		if (countyRemoved && existingTrafficLocations.has("COUNTY"))
+			return true;
 		return visibleEditableFields.some((field) => {
 			const currentValue = toPayloadValue(watchedEditValues?.[field.key]);
 			const initialValue = toPayloadValue(initialFormValuesRef.current[field.key]);
 			return !Object.is(currentValue, initialValue);
 		});
-	}, [isCollocationRecord, collocationRows, visibleEditableFields, watchedEditValues]);
+	}, [isCollocationRecord, collocationRows, countyRemoved, existingTrafficLocations, visibleEditableFields, watchedEditValues]);
 	const canEdit = visibleEditableFields.length > 0 || isCollocationRecord;
 
 	useEffect(() => {
@@ -1756,6 +1751,10 @@ export function PerformanceDetailModal({
 		else if (service === "traffic") {
 			const isCpEdit = typeof selectedCompanyType === "string" && selectedCompanyType.toUpperCase() === "CP";
 			Object.assign(payload, buildTrafficPayloadFields(values, visibleTrafficLocations, isCpEdit));
+			if (countyRemoved && payload.tehran_value == null && payload.tehran_value_receive == null) {
+				window.$message?.error(i18next.t("performance.errors.trafficAtLeastOneLocation"));
+				return;
+			}
 			delete payload.tehranValue;
 			delete payload.tehranValueReceive;
 			delete payload.tehranConversionRatio;
@@ -1810,6 +1809,7 @@ export function PerformanceDetailModal({
 	const resetChanges = () => {
 		form.reset(initialFormValuesRef.current);
 		collocationForm.reset({ rows: initialCollocationRowsRef.current });
+		setCountyChoice(null);
 	};
 	const sectionActions = (
 		<div className="performance-detail-section__edit-actions">
@@ -1886,6 +1886,23 @@ export function PerformanceDetailModal({
 									? <DetailValueRows fields={plainBreakdownFields} />
 									: null}
 
+								{separatedBreakdownRows.length > 0
+									? (
+										<Table
+											size="small"
+											pagination={false}
+											rowKey="key"
+											dataSource={separatedBreakdownRows}
+											columns={[
+												{ title: t("performance.columns.operationType"), dataIndex: "operation" },
+												{ title: t("performance.columns.income"), dataIndex: "income", align: "center" },
+												{ title: t("performance.columns.expense"), dataIndex: "expense", align: "center" },
+												{ title: t("performance.columns.profit"), dataIndex: "profit", align: "center" },
+											]}
+										/>
+									)
+									: null}
+
 								{service === "traffic" && trafficSummaryCards.length > 0
 									? (
 										<div
@@ -1898,6 +1915,27 @@ export function PerformanceDetailModal({
 													<ReadOnlyBlock label={`${t("performance.columns.income")}:`} value={card.income} />
 													<ReadOnlyBlock label={`${t("performance.columns.expense")}:`} value={card.expense} />
 													<ReadOnlyBlock label={`${t("performance.columns.profit")}:`} value={card.profit} />
+												</DetailMetricCard>
+											))}
+										</div>
+									)
+									: null}
+
+								{collocationBreakdown.length > 0
+									? (
+										<div className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3">
+											{collocationBreakdown.map(card => (
+												<DetailMetricCard key={card.datacenter} cardKey={String(card.datacenter)} title={card.datacenterName}>
+													<ReadOnlyBlock label={`${t("performance.columns.income")}:`} value={formatNumberLike(card.income)} />
+													<ReadOnlyBlock label={`${t("performance.columns.expense")}:`} value={formatNumberLike(card.expense)} />
+													<ReadOnlyBlock label={`${t("performance.columns.profit")}:`} value={formatNumberLike(card.profit)} />
+													{card.items.map(item => (
+														<ReadOnlyBlock
+															key={item.itemType}
+															label={`${t(`performance.traffic.collocation.items.${item.itemType}`, { defaultValue: item.itemType })}${item.speed ? ` (${formatNumberLike(item.speed)})` : ""} × ${formatNumberLike(item.itemCount)}:`}
+															value={formatNumberLike(item.income)}
+														/>
+													))}
 												</DetailMetricCard>
 											))}
 										</div>
@@ -1997,11 +2035,21 @@ export function PerformanceDetailModal({
 															</div>
 														</div>
 													)}
+													{canRemoveCounty && countyRemoved && (
+														<Button type="dashed" block icon={<PlusOutlined />} onClick={() => setCountyChoice(false)}>
+															{t("performance.traffic.countyAdd")}
+														</Button>
+													)}
 													{visibleTrafficLocations.has("COUNTY") && (
 														<div className="performance-traffic-edit-location">
 															<DashedBorder />
 															<div className="performance-traffic-edit-location__header">
 																<Tag bordered={false}>{t("performance.traffic.countyPerformance")}</Tag>
+																{canRemoveCounty && (
+																	<Button size="small" danger icon={<DeleteOutlined />} onClick={() => setCountyChoice(true)}>
+																		{t("common.delete")}
+																	</Button>
+																)}
 															</div>
 															{trafficContractUnits.county && (
 																<div className="performance-traffic-edit-location__unit mb-3 px-4 py-2 text-right text-sm">

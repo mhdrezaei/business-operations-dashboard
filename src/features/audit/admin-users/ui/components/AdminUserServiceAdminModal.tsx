@@ -6,6 +6,7 @@ import type {
 	AdminUserDto,
 } from "../../model/admin-users.types";
 
+import { fetchAllPages } from "#src/api/fetch-all-pages";
 import { BasicButton } from "#src/components";
 import { CloseOutlined, CrownOutlined, DisconnectOutlined, LinkOutlined, SafetyCertificateOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
@@ -590,7 +591,7 @@ function ServiceAdminModalFlow({
 
 	const usersDirectoryQuery = useQuery({
 		queryKey: ["audit", "admin", "users", "directory"],
-		queryFn: () => fetchAdminUsersList({ page: 1, page_size: 200 }),
+		queryFn: () => fetchAllPages(page => fetchAdminUsersList({ page, page_size: 200 })),
 		staleTime: 60_000,
 	});
 

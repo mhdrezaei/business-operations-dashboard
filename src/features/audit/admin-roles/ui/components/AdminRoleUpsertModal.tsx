@@ -48,7 +48,7 @@ export function AdminRoleUpsertModal({ open, mode, initial, onClose, onSubmit }:
 	const submitText = mode === "create" ? "ثبت نقش" : "اعمال تغییرات";
 	const defaultValues = useMemo(() => buildDefaultValues(initial), [initial]);
 	const initialPolicies = useMemo<AdminRolePolicyDto[]>(
-		() => policiesQuery.data?.results ?? [],
+		() => policiesQuery.data ?? [],
 		[policiesQuery.data],
 	);
 
@@ -73,6 +73,8 @@ export function AdminRoleUpsertModal({ open, mode, initial, onClose, onSubmit }:
 			title={title}
 			footer={null}
 			width={1180}
+			centered
+			classNames={{ body: "flex h-[calc(100dvh-190px)] max-h-[820px] min-h-0 flex-col" }}
 			destroyOnHidden
 		>
 			<AdminRoleForm

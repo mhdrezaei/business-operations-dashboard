@@ -6,6 +6,7 @@ import type { ArrayPath, Path } from "react-hook-form";
 import { ContractAddendaSection } from "#src/features/contract/components/addenda/ContractAddendaSection";
 import { ContractTypeSection } from "#src/features/contract/components/contract-type/ContractTypeSection";
 import { i18n } from "#src/locales";
+import { Reveal } from "#src/shared/ui/reveal";
 import { RHFProNumber } from "#src/shared/ui/rhf-pro";
 import { getSectionToneColors, SectionCard, SectionToneContext } from "#src/shared/ui/section-card";
 
@@ -123,65 +124,55 @@ export function SmsFields() {
 		<>
 			<SmsOperatorRevenueCard base={sf("operatorRevenue")} />
 
-			{isPartners
-				? (
-					<>
-						<ContractTypeSection title={t("contract.sms.governmentShare")} name={sf("governmentRevenue")} />
-						<ContractTypeSection
-							title={t("contract.sms.feeAndShare")}
-							name={sf("profit.pricing")}
-							topAside={renderMinProfitField(sf("profit.minProfit"))}
-						/>
-					</>
-				)
-				: null}
-
-			{isGovOps
-				? (
-					<ContractTypeSection title={t("contract.sms.governmentShare")} name={sf("governmentRate")} />
-				)
-				: null}
-
-			{showAddenda
-				? (
-					<ContractAddendaSection<ContractFormValues>
-						title={t("contract.addenda.title")}
-						name={sf("addenda") as ArrayPath<ContractFormValues>}
-						contractTypeTitle=""
-						contractTypeFieldKey="contractPricing"
-						canAddAddendum={isGovOps || isPartners}
-						addendumAddBlockedMessage={t("contract.addenda.selectCounterparty")}
-						renderAddendumFields={base => (
-							<>
-								<SmsOperatorRevenueCard base={`${base}.operatorRevenue`} />
-
-								{isPartners
-									? (
-										<>
-											<ContractTypeSection title={t("contract.sms.governmentShare")} name={`${base}.governmentRevenue` as any} />
-											<ContractTypeSection
-												title={t("contract.sms.feeAndShare")}
-												name={`${base}.profit.pricing` as any}
-												topAside={renderMinProfitField(`${base}.profit.minProfit`)}
-											/>
-										</>
-									)
-									: null}
-
-								{isGovOps
-									? (
-										<ContractTypeSection title={t("contract.sms.governmentShare")} name={`${base}.governmentRate` as any} />
-									)
-									: null}
-							</>
-						)}
-						contractStartYearPath={"startYear" as Path<ContractFormValues>}
-						contractStartMonthPath={"startMonth" as Path<ContractFormValues>}
-						contractEndYearPath={"endYear" as Path<ContractFormValues>}
-						contractEndMonthPath={"endMonth" as Path<ContractFormValues>}
+			<Reveal show={isPartners}>
+				<>
+					<ContractTypeSection title={t("contract.sms.governmentShare")} name={sf("governmentRevenue")} />
+					<ContractTypeSection
+						title={t("contract.sms.feeAndShare")}
+						name={sf("profit.pricing")}
+						topAside={renderMinProfitField(sf("profit.minProfit"))}
 					/>
-				)
-				: null}
+				</>
+			</Reveal>
+
+			<Reveal show={isGovOps}>
+				<ContractTypeSection title={t("contract.sms.governmentShare")} name={sf("governmentRate")} />
+			</Reveal>
+
+			<Reveal show={showAddenda}>
+				<ContractAddendaSection<ContractFormValues>
+					title={t("contract.addenda.title")}
+					name={sf("addenda") as ArrayPath<ContractFormValues>}
+					contractTypeTitle=""
+					contractTypeFieldKey="contractPricing"
+					canAddAddendum={isGovOps || isPartners}
+					addendumAddBlockedMessage={t("contract.addenda.selectCounterparty")}
+					renderAddendumFields={base => (
+						<>
+							<SmsOperatorRevenueCard base={`${base}.operatorRevenue`} />
+
+							<Reveal show={isPartners}>
+								<>
+									<ContractTypeSection title={t("contract.sms.governmentShare")} name={`${base}.governmentRevenue` as any} />
+									<ContractTypeSection
+										title={t("contract.sms.feeAndShare")}
+										name={`${base}.profit.pricing` as any}
+										topAside={renderMinProfitField(`${base}.profit.minProfit`)}
+									/>
+								</>
+							</Reveal>
+
+							<Reveal show={isGovOps}>
+								<ContractTypeSection title={t("contract.sms.governmentShare")} name={`${base}.governmentRate` as any} />
+							</Reveal>
+						</>
+					)}
+					contractStartYearPath={"startYear" as Path<ContractFormValues>}
+					contractStartMonthPath={"startMonth" as Path<ContractFormValues>}
+					contractEndYearPath={"endYear" as Path<ContractFormValues>}
+					contractEndMonthPath={"endMonth" as Path<ContractFormValues>}
+				/>
+			</Reveal>
 		</>
 	);
 }

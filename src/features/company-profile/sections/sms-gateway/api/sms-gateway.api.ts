@@ -1,22 +1,20 @@
+import type { Paginated } from "#src/api/types";
 import type {
 	SmsGatewayCustomerDto,
 	SmsGatewayMappingDto,
 	SmsGatewayMappingPayload,
 } from "../model/sms-gateway.types";
+import { fetchAllPages } from "#src/api/fetch-all-pages";
 import { request } from "#src/utils/request";
 
-interface PaginatedResponse<T> {
-	results: T[]
-}
-
-function toItems<T>(data: T[] | PaginatedResponse<T>): T[] {
+function toItems<T>(data: T[] | Paginated<T>): T[] {
 	return Array.isArray(data) ? data : data.results;
 }
 
 export async function listSmsGatewayCustomers() {
 	const data = await request
 		.get("sms-gateway/customers/")
-		.json<SmsGatewayCustomerDto[] | PaginatedResponse<SmsGatewayCustomerDto>>();
+		.json<SmsGatewayCustomerDto[] | Paginated<SmsGatewayCustomerDto>>();
 
 	return toItems(data);
 }
@@ -31,11 +29,11 @@ export async function listSmsGatewayMappings(params?: {
 	if (params?.gateway_customer_id)
 		searchParams.gateway_customer_id = String(params.gateway_customer_id);
 
-	const data = await request
-		.get("sms-gateway/mappings/", { searchParams })
-		.json<SmsGatewayMappingDto[] | PaginatedResponse<SmsGatewayMappingDto>>();
+	const { results } = await fetchAllPages(page => request
+		.get("sms-gateway/mappings/", { searchParams: { ...searchParams, page: String(page) } })
+		.json<SmsGatewayMappingDto[] | Paginated<SmsGatewayMappingDto>>());
 
-	return toItems(data);
+	return results;
 }
 
 export async function createSmsGatewayMapping(payload: SmsGatewayMappingPayload) {

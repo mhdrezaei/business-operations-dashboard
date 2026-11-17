@@ -185,6 +185,11 @@ describe("traffic layout and aggregation keys", () => {
 		expect(getAllowedAggregationKeys("traffic", true)).toContain("by_data_center");
 		expect(getAllowedAggregationKeys("traffic")).not.toContain("by_data_center");
 	});
+
+	it("limits OpenAPI aggregation to company and month while SMS keeps operator and language", () => {
+		expect(getAllowedAggregationKeys("openapi")).toEqual(["by_company", "by_month"]);
+		expect(getAllowedAggregationKeys("sms")).toEqual(["by_company", "by_month", "by_operator", "by_language"]);
+	});
 });
 
 describe("isEditableReportPeriod", () => {

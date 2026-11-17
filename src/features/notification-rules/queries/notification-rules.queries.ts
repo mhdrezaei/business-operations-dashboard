@@ -1,4 +1,5 @@
 import { fetchServices } from "#src/api/common/common.api";
+import { fetchAllPages } from "#src/api/fetch-all-pages";
 import { fetchAdminRolesList } from "#src/features/audit/admin-roles/api/admin-roles.api";
 import { fetchAdminUsersList } from "#src/features/audit/admin-users/api/admin-users.api";
 import { queryOptions } from "@tanstack/react-query";
@@ -15,7 +16,7 @@ export function notificationRuleServicesQuery() {
 export function notificationRuleUsersQuery() {
 	return queryOptions({
 		queryKey: ["audit", "admin-users", "notification-rules-options"],
-		queryFn: () => fetchAdminUsersList({ page: 1, page_size: 500 }),
+		queryFn: () => fetchAllPages(page => fetchAdminUsersList({ page, page_size: 200 })),
 		staleTime: 5 * 60 * 1000,
 	});
 }
@@ -23,7 +24,7 @@ export function notificationRuleUsersQuery() {
 export function notificationRuleRolesQuery() {
 	return queryOptions({
 		queryKey: ["audit", "admin-roles", "notification-rules-options"],
-		queryFn: () => fetchAdminRolesList({ page: 1, page_size: 500 }),
+		queryFn: () => fetchAllPages(page => fetchAdminRolesList({ page, page_size: 200 })),
 		staleTime: 5 * 60 * 1000,
 	});
 }

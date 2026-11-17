@@ -66,6 +66,7 @@ src/
 - Server state in TanStack Query (no `useEffect` fetching); client state in Zustand only when it is genuinely global.
 - Permissions go through `src/components/access-control` / `use-access` — do not hand-roll role checks.
 - Run `pnpm typecheck` and `pnpm lint` before calling work done (`vite dev` does not type-check). Run `pnpm test` when touching `model/` logic that has tests.
+- **Tests move with the code.** When a change affects behavior covered by an existing test (or changes a helper/component/mapper that has one), update those tests in the same change — never leave a stale or failing test behind. New pure logic (`model/`, mappers, shared hooks/components) gets a test next to it. Run `pnpm test` (at least the affected folders) before calling work done, and say in the report which tests were updated or added.
 
 ## 4. Contract-template editor ⟷ signing PDF (do not break)
 

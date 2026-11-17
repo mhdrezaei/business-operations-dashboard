@@ -39,11 +39,6 @@ export async function fetchUpdateAdminUser(id: number, payload: AdminUserUpsertP
 		.json<AdminUserDto>();
 }
 
-export async function fetchDeleteAdminUser(id: number) {
-	// اگر بک‌اند body برنمی‌گردونه، همون Response رو برگردون
-	return request.delete(`${BASE}/users/${id}/`);
-}
-
 export async function fetchEnableAdminUser(id: number) {
 	return request.post(`${BASE}/users/${id}/enable/`);
 }

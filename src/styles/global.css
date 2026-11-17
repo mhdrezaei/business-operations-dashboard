@@ -33,6 +33,11 @@ body {
 	font-family: var(--font-family-persian);
 }
 
+/* antd measures tooltips/popups at a far negative `left`; in RTL that overflows the page and makes a scrollbar flash (shifting the layout) on every hover. */
+html {
+	overflow-x: clip;
+}
+
 /* Persian language specific styling */
 html[lang="fa-IR"] *,
 html[lang="fa"] * {
@@ -228,8 +233,9 @@ html.gray-mode {
 .ant-message .ant-message-notice-content {
 	padding: 14px 18px;
 	border-radius: 14px;
-	background: var(--ant-colorBgElevated) !important;
-	color: var(--ant-colorText) !important;
+	/* Static message.* renders outside the ConfigProvider, so only the :root --oo-* tokens exist here. */
+	background: var(--oo-colorBgElevated) !important;
+	color: var(--oo-colorText) !important;
 	box-shadow: var(--ant-boxShadowSecondary);
 }
 
@@ -747,7 +753,7 @@ html.gray-mode {
 	white-space: pre-wrap;
 }
 
-/* Negah glass layer for transparent dark-theme surfaces. */
+/* Negah glass layer for transparent dark-theme surfaces. Popups (menus, dropdowns, pickers) are nearly opaque and skip the blur: it is costly when they open over many blurred surfaces. */
 :root {
 	--negah-glass-blur: blur(20px);
 }
@@ -755,13 +761,6 @@ html.gray-mode {
 .ant-layout-header,
 .ant-layout-sider,
 .ant-layout-sider-trigger,
-.ant-menu-submenu-popup,
-.ant-dropdown,
-.ant-select-dropdown,
-.ant-picker-dropdown,
-.ant-cascader-dropdown,
-.ant-tree-select-dropdown,
-.ant-mentions-dropdown,
 .ant-table,
 .ant-table-footer,
 .ant-table-filter-dropdown,

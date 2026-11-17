@@ -1,4 +1,5 @@
 import type { ContractServicePath } from "../../api/contracts.api";
+import type { GuaranteeAddendumOption, GuaranteesListQuery } from "../model/additional-info.types";
 import { getContractAccessCompanyType } from "#src/features/contract/shared/model/company-type-options";
 import { useAccess } from "#src/hooks";
 import { SectionCard } from "#src/shared/ui/section-card";
@@ -22,6 +23,9 @@ interface Props {
 	addendumGroupId?: string | null
 	addendumService?: string | null
 	readOnly?: boolean
+	addendumOptions?: GuaranteeAddendumOption[]
+	/** contract: فقط تضمین‌های خودِ قرارداد (وقتی از ردیف قرارداد در لیست باز شده)؛ بدون مقدار: همه‌ی تضمین‌ها. */
+	scope?: GuaranteesListQuery["scope"]
 }
 
 export function ContractAdditionalInfoModal({
@@ -35,6 +39,8 @@ export function ContractAdditionalInfoModal({
 	addendumGroupId,
 	addendumService,
 	readOnly = false,
+	addendumOptions,
+	scope,
 }: Props) {
 	const { t } = useTranslation();
 	const { hasDomainPermissionByServiceId } = useAccess();
@@ -51,7 +57,7 @@ export function ContractAdditionalInfoModal({
 		guarantees,
 		isLoading: guaranteesLoading,
 		isFetching: guaranteesFetching,
-	} = useContractAllGuarantees(open ? contractId : null, addendumGroupId);
+	} = useContractAllGuarantees(open ? contractId : null, addendumGroupId, addendumGroupId ? undefined : scope);
 
 	const {
 		realEnd,
@@ -120,6 +126,7 @@ export function ContractAdditionalInfoModal({
 						readOnly={effectiveReadOnly}
 						addendumGroupId={addendumGroupId}
 						addendumService={addendumService}
+						addendumOptions={addendumOptions}
 					/>
 				</SectionCard>
 			</div>

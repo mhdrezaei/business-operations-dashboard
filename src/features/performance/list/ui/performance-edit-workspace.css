@@ -222,7 +222,7 @@
 
 .traffic-update-template-period {
 	display: grid;
-	grid-template-columns: repeat(3, minmax(0, 1fr));
+	grid-template-columns: repeat(2, minmax(0, 1fr));
 	gap: var(--ant-margin);
 }
 
@@ -339,6 +339,12 @@
 	align-items: stretch;
 }
 
+/* In a column flex row Ant's `flex: 0 0 100%` on the label/control columns resolves against an
+   auto height and collapses the control to 1px, so the card clips the input. */
+.performance-detail-inline .ant-form-item-row > .ant-col {
+	flex: 0 0 auto;
+}
+
 .performance-detail-inline .ant-form-item-label {
 	padding-block-end: var(--ant-margin-xs);
 	text-align: start;
@@ -348,8 +354,9 @@
 	display: none;
 }
 
+/* A field's label sits above its input, so the row gap must clear the previous input. */
 .performance-detail-inline .aligned-form-grid {
-	row-gap: var(--ant-margin-sm);
+	row-gap: var(--ant-margin-lg);
 }
 
 /* Ant form items expose their label and control as a stacked pair. Keep enough
@@ -542,7 +549,7 @@
 
 .performance-detail-inline__card .grid.grid-cols-\[repeat\(2\,minmax\(0\,1fr\)\)\] {
 	column-gap: var(--ant-margin-lg);
-	row-gap: var(--ant-margin-sm);
+	row-gap: var(--ant-margin-lg);
 }
 
 @media (max-width: 1200px) {

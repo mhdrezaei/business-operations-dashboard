@@ -45,6 +45,9 @@ export async function fetchGuarantees(
 	if (params.addendum_group_id) {
 		searchParams.addendum_group_id = params.addendum_group_id;
 	}
+	if (params.scope) {
+		searchParams.scope = params.scope;
+	}
 
 	return request
 		.get(GUARANTEES_PATH, { searchParams })

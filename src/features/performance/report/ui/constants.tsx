@@ -133,10 +133,15 @@ export function supportsOperatorLanguageAggregation(serviceCode: string | null |
 	return normalized === "openapi" || normalized === "sms" || normalized === "sms-commission" || normalized === "sms_commission";
 }
 
+/** OpenAPI rows still show operator/language columns, but its totals are only aggregated by company and month. */
+export function hasOperatorLanguageAggregationOptions(serviceCode: string | null | undefined) {
+	return supportsOperatorLanguageAggregation(serviceCode) && String(serviceCode ?? "").trim().toLowerCase() !== "openapi";
+}
+
 export function getAllowedAggregationKeys(serviceCode: string | null | undefined, isCollocation = false): ReportAggregationKey[] {
 	return [
 		...BASE_AGGREGATION_KEYS,
-		...(supportsOperatorLanguageAggregation(serviceCode) ? OPERATOR_LANGUAGE_AGGREGATION_KEYS : []),
+		...(hasOperatorLanguageAggregationOptions(serviceCode) ? OPERATOR_LANGUAGE_AGGREGATION_KEYS : []),
 		...(isCollocation ? ["by_data_center" as const] : []),
 	];
 }
@@ -1460,7 +1465,6 @@ export function getPerformanceReportColumns({
 		? getTrafficReportLayout(selectedCompanyType)
 		: getTrafficReportLayout(null);
 	const isUnitConversion = isTrafficService && isUnitConversionCompanyType(selectedCompanyType);
-	const isBaseUnitVisible = financialColumns.has("showBaseUnit");
 	const tableColumnContext: ReportTableColumnContext = {
 		t,
 		operationTypeLabels,
@@ -1590,9 +1594,8 @@ export function getPerformanceReportColumns({
 			renderFormItem: (_, config) => (
 				<div>
 					<InputNumber
-						step={0.1}
-						precision={4}
-						disabled={isBaseUnitVisible}
+						step={0.01}
+						precision={2}
 						status={isDefaultConversionRatioInvalid ? "error" : undefined}
 						value={defaultConversionRatio ?? undefined}
 						placeholder={t("performance.placeholders.enterConversionRatio")}

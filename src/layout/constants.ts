@@ -36,6 +36,14 @@ export const DEFAULT_NAMESPACE = "react-antd-admin";
 export const ELEMENT_ID_MAIN_CONTENT = `__${DEFAULT_NAMESPACE}_main_content`;
 
 /**
+ * @fa عنصری که ناحیه محتوا داخل آن اسکرول می‌شود (برای sticky و دکمه بازگشت به بالا)
+ * @en The element the main content scrolls in (used by sticky headers and the back-to-top button)
+ */
+export function getMainScrollContainer() {
+	return document.querySelector<HTMLElement>(`#${ELEMENT_ID_MAIN_CONTENT} .simplebar-content-wrapper`) ?? document.body;
+}
+
+/**
  * @fa ارتفاع کامپوننت layout content
  * @en Height of the layout content component
  */

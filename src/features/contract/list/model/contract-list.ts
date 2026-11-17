@@ -114,3 +114,8 @@ export function getContractDeleteWarnings(contract: { is_business_approved?: boo
 		warnings.push("addenda");
 	return warnings;
 }
+
+/** ProTable `valueEnum` option keys are strings, so ids set programmatically must be stringified or the raw id shows instead of the label. */
+export function toFilterFormValues(values: Record<string, string | number>): Record<string, string> {
+	return Object.fromEntries(Object.entries(values).map(([key, value]) => [key, String(value)]));
+}

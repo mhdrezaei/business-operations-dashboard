@@ -1,4 +1,5 @@
 import { fetchServices } from "#src/api/common/common.api";
+import { fetchAllPages } from "#src/api/fetch-all-pages";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 import { fetchAdminRolesList, fetchAdminUsersList } from "../api/admin-users.api";
@@ -6,16 +7,16 @@ import { fetchAdminRolesList, fetchAdminUsersList } from "../api/admin-users.api
 export function adminRolesQuery() {
 	return {
 		queryKey: ["audit", "admin", "roles"],
-		queryFn: () => fetchAdminRolesList({ page: 1, page_size: 100 }),
+		queryFn: () => fetchAllPages(page => fetchAdminRolesList({ page, page_size: 200 })),
 		staleTime: 60_000,
 	};
 }
 
-/** نام کاربران برای نمایش «ادمین والد» (BE حداکثر ۲۰۰ ردیف در هر صفحه می‌دهد). */
+/** نام کاربران برای نمایش «ادمین والد» (BE حداکثر ۲۰۰ ردیف در هر صفحه می‌دهد؛ همه صفحه‌ها خوانده می‌شود). */
 export function adminUsersLookupQuery() {
 	return {
 		queryKey: ["audit", "admin", "users-lookup"],
-		queryFn: () => fetchAdminUsersList({ page: 1, page_size: 200 }),
+		queryFn: () => fetchAllPages(page => fetchAdminUsersList({ page, page_size: 200 })),
 		staleTime: 60_000,
 	};
 }

@@ -2,6 +2,7 @@ import type { ProColumns } from "@ant-design/pro-components";
 import type { TFunction } from "i18next";
 import type { AuditLogDto } from "../../model/admin-logs.types";
 
+import { fetchAllPages } from "#src/api/fetch-all-pages";
 import { fetchAdminUsersList } from "#src/features/audit/admin-users/api/admin-users.api";
 import { Tag, Tooltip, Typography } from "antd";
 import { DatePicker } from "antd-jalali";
@@ -186,7 +187,7 @@ export function getAdminLogsColumns({
 			hideInTable: true,
 			valueType: "select",
 			request: async () => {
-				const users = await fetchAdminUsersList({ page: 1, page_size: 500 });
+				const users = await fetchAllPages(page => fetchAdminUsersList({ page, page_size: 200 }));
 				return users.results.map(user => ({
 					label: [`${user.first_name ?? ""} ${user.last_name ?? ""}`.trim(), user.username].filter(Boolean).join(" - "),
 					value: user.id,
