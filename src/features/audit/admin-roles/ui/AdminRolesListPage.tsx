@@ -6,7 +6,7 @@ import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import { useAccess } from "#src/hooks";
 import { TableActionEditIcon, TableActionEyeIcon, TableActionTrashIcon } from "#src/icons";
 import { PlusCircleOutlined } from "@ant-design/icons";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Popconfirm } from "antd";
 import React, { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -19,7 +19,7 @@ import {
 	fetchUpdateAdminRole,
 	fetchUpdateAdminRolePolicies,
 } from "../api/admin-roles.api";
-import { adminRoleServicesQuery } from "../queries/admin-roles.queries";
+import { adminRolePoliciesQuery, adminRoleServicesQuery } from "../queries/admin-roles.queries";
 import { AdminRoleDetailsModal } from "./components/AdminRoleDetailsModal";
 import { AdminRoleUpsertModal } from "./components/AdminRoleUpsertModal";
 import { getAdminRolesColumns } from "./constants/admin-roles.columns";
@@ -27,6 +27,7 @@ import { getAdminRolesColumns } from "./constants/admin-roles.columns";
 export default function AdminRolesListPage() {
 	const { t } = useTranslation();
 	const { hasAdminAction } = useAccess();
+	const queryClient = useQueryClient();
 
 	const actionRef = useRef<ActionType>(null);
 	const formRef = useRef<ProFormInstance | undefined>(undefined);
@@ -151,11 +152,13 @@ export default function AdminRolesListPage() {
 				actionRef={actionRef}
 				formRef={formRef}
 				request={async (params) => {
+					const { search, name, ordering } = params as Record<string, string | undefined>;
 					const query = {
 						page: params.current ?? 1,
 						page_size: params.pageSize ?? 10,
-						search: (params as Record<string, unknown>).search as string | undefined,
-						ordering: (params as Record<string, unknown>).ordering as string | undefined,
+						search: search?.trim() || undefined,
+						name__icontains: name?.trim() || undefined,
+						ordering,
 					};
 
 					const responseData = await fetchAdminRolesList(query);
@@ -213,6 +216,7 @@ export default function AdminRolesListPage() {
 
 						await fetchUpdateAdminRole(selectedRole.id, role);
 						await fetchUpdateAdminRolePolicies(selectedRole.id, policies);
+						await queryClient.invalidateQueries({ queryKey: adminRolePoliciesQuery(selectedRole.id).queryKey });
 						window.$message?.success("نقش با موفقیت به‌روزرسانی شد.");
 					}
 
