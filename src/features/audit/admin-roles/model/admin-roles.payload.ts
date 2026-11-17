@@ -23,6 +23,40 @@ interface BuildAdminRolePoliciesPayloadOptions {
 	getSelectedCompanyTypes: (domain: AdminRoleDomainKey, serviceId: number, flags: AdminRolePermissionFlags) => string[]
 }
 
+/**
+ * Sets (or clears) every action the signed-in admin may grant and leaves the rest as they are,
+ * so "select all" never turns on a permission the admin does not hold themselves.
+ */
+export function setGrantableFlags(
+	current: AdminRolePermissionFlags,
+	enabled: boolean,
+	domain: AdminRoleDomainKey,
+	canGrant: (action: AdminRolePermissionAction | AdminRoleContractExtraAction) => boolean,
+): AdminRolePermissionFlags {
+	const actions = domain === "contracts"
+		? [...adminRolePermissionActionValues, ...adminRoleContractExtraActionValues]
+		: adminRolePermissionActionValues;
+
+	return actions.reduce<AdminRolePermissionFlags>(
+		(flags, action) => (canGrant(action) ? { ...flags, [action]: enabled } : flags),
+		{ ...current },
+	);
+}
+
+export function companyTypesKey(domain: string, serviceId: number) {
+	return `${domain}:${serviceId}`;
+}
+
+/** Drops the picked company types of the given services, so they fall back to "everything selectable". */
+export function withoutCompanyTypeSelections(
+	selections: Record<string, string[]>,
+	domain: AdminRoleDomainKey,
+	serviceIds: number[],
+): Record<string, string[]> {
+	const dropped = new Set(serviceIds.map(serviceId => companyTypesKey(domain, serviceId)));
+	return Object.fromEntries(Object.entries(selections).filter(([key]) => !dropped.has(key)));
+}
+
 export function isCompanyTypeScoped(serviceCode: string) {
 	return COMPANY_TYPE_SCOPED_SERVICE_CODES.has(serviceCode.trim().toLowerCase());
 }

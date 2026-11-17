@@ -8,13 +8,15 @@ import { useTranslation } from "react-i18next";
 interface Props {
 	options: CompanyTypeOption[]
 	selected: string[]
+	/** Types the role already has but the signed-in admin cannot grant: shown checked and disabled. */
+	lockedTypes: string[]
 	/** Whether any CRUD action is enabled: then at least one company type is mandatory (backend rule). */
 	isRequired: boolean
 	onChange: (nextKeys: string[]) => void
 }
 
 /** Company types a role may work with on a company-type scoped service (traffic, sms, psp, ...). */
-export function AdminRoleCompanyTypesPanel({ options, selected, isRequired, onChange }: Props) {
+export function AdminRoleCompanyTypesPanel({ options, selected, lockedTypes, isRequired, onChange }: Props) {
 	const { t } = useTranslation();
 
 	function toggle(key: string) {
@@ -22,7 +24,7 @@ export function AdminRoleCompanyTypesPanel({ options, selected, isRequired, onCh
 	}
 
 	return (
-		<section className="mt-4 rounded-2xl border border-[var(--ant-color-border-secondary)] p-4">
+		<section className="mt-4 rounded-2xl border border-dashed border-[var(--ant-color-border)] bg-[var(--ant-color-fill-quaternary)] p-4">
 			<header className="mb-3 flex flex-wrap items-center justify-between gap-2">
 				<div>
 					<Typography.Text strong>{t("system.role.permissions.companyTypes")}</Typography.Text>
@@ -40,12 +42,18 @@ export function AdminRoleCompanyTypesPanel({ options, selected, isRequired, onCh
 				</div>
 			</header>
 
-			{options.length === 0
+			{options.length === 0 && lockedTypes.length === 0
 				? <Typography.Text type="warning">{t("system.role.permissions.noGrantableTypes")}</Typography.Text>
 				: (
-					<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+					<div className="flex flex-wrap gap-2">
+						{lockedTypes.map(key => (
+							<label key={key} className="flex cursor-not-allowed items-center gap-2 rounded-full border border-[var(--ant-color-border-secondary)] bg-[var(--ant-color-bg-container)] px-3 py-1.5 opacity-60">
+								<span className="text-xs font-medium">{key}</span>
+								<Checkbox checked disabled aria-label={key} />
+							</label>
+						))}
 						{options.map(option => (
-							<label key={option.key} className="flex cursor-pointer items-center justify-between rounded-xl border border-[var(--ant-color-border-secondary)] px-3 py-2">
+							<label key={option.key} className="flex cursor-pointer items-center gap-2 rounded-full border border-[var(--ant-color-border-secondary)] bg-[var(--ant-color-bg-container)] px-3 py-1.5">
 								<span className="text-xs font-medium">{option.value}</span>
 								<Checkbox checked={selected.includes(option.key)} onChange={() => toggle(option.key)} aria-label={option.value} />
 							</label>

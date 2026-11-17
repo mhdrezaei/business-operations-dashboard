@@ -18,7 +18,7 @@ import { Button, Checkbox, Empty, Spin, Tabs, Typography } from "antd";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { buildAdminRolePoliciesPayload, isCompanyTypeScoped } from "../../model/admin-roles.payload";
+import { buildAdminRolePoliciesPayload, companyTypesKey, isCompanyTypeScoped, setGrantableFlags, withoutCompanyTypeSelections } from "../../model/admin-roles.payload";
 import {
 	adminRoleContractExtraActionValues,
 	adminRolePermissionActions,
@@ -45,11 +45,14 @@ interface InitialEditorState {
 	companyTypesByKey: Record<string, string[]>
 }
 
+type CanGrantAction = (domain: AdminRoleDomainKey, serviceId: number, action: AdminRolePermissionAction | AdminRoleContractExtraAction) => boolean;
+
 type GetPermittedCompanyTypes = (domain: string, action: AdminRolePermissionAction, serviceId: number) => CompanyTypeOption[];
 
 interface CompanyTypesProps {
 	options: CompanyTypeOption[]
 	selected: string[]
+	lockedTypes: string[]
 	isRequired: boolean
 	onChange: (nextKeys: string[]) => void
 }
@@ -68,7 +71,7 @@ interface ServicePermissionCardProps {
 	permissions: PermissionFlags
 	/** Present for company-type scoped services once a CRUD action is enabled. */
 	companyTypes?: CompanyTypesProps
-	canGrantApproval: (serviceId: number, action: AdminRoleContractExtraAction) => boolean
+	canGrantAction: CanGrantAction
 	onToggleService: (domain: AdminRoleDomainKey, serviceId: number, checked: boolean) => void
 	onToggleAction: (
 		domain: AdminRoleDomainKey,
@@ -104,10 +107,6 @@ function getDomainActionValues(domain: AdminRoleDomainKey): Array<AdminRolePermi
 		: [...adminRolePermissionActionValues];
 }
 
-function companyTypesKey(domain: string, serviceId: number) {
-	return `${domain}:${serviceId}`;
-}
-
 /** Types the signed-in admin may hand out for every enabled CRUD action (the backend rejects anything beyond that). */
 function getSelectableCompanyTypes(
 	getPermitted: GetPermittedCompanyTypes,
@@ -119,6 +118,11 @@ function getSelectableCompanyTypes(
 		.filter(action => flags?.[action])
 		.map(action => getPermitted(domain, action, serviceId));
 	return head.filter(type => tail.every(list => list.some(item => item.key === type.key)));
+}
+
+/** Types the role already holds that the signed-in admin cannot grant: shown disabled and kept on save. */
+function getLockedCompanyTypes(selectable: CompanyTypeOption[], saved: string[] | undefined): string[] {
+	return (saved ?? []).filter(key => !selectable.some(type => type.key === key));
 }
 
 function pickSelectedCompanyTypes(selectable: CompanyTypeOption[], picked: string[] | undefined): string[] {
@@ -149,14 +153,6 @@ function createPermissionFlags(enabled: boolean, domain: AdminRoleDomainKey): Pe
 		sign: enabled && domain === "contracts",
 		business_approve: enabled && domain === "contracts",
 	};
-}
-
-function isAllActionsEnabled(permissions: PermissionFlags, domain: AdminRoleDomainKey): boolean {
-	return getDomainActionValues(domain).every(action => permissions[action]);
-}
-
-function isSomeActionsEnabled(permissions: PermissionFlags, domain: AdminRoleDomainKey): boolean {
-	return getDomainActionValues(domain).some(action => permissions[action]);
 }
 
 function buildPermissionMatrix(
@@ -269,13 +265,14 @@ function ServicePermissionCard({
 	service,
 	permissions,
 	companyTypes,
-	canGrantApproval,
+	canGrantAction,
 	onToggleService,
 	onToggleAction,
 }: ServicePermissionCardProps) {
 	const { t } = useTranslation();
-	const allChecked = isAllActionsEnabled(permissions, domain);
-	const someChecked = isSomeActionsEnabled(permissions, domain);
+	const grantableActions = getDomainActionValues(domain).filter(action => canGrantAction(domain, service.id, action));
+	const allChecked = grantableActions.length > 0 && grantableActions.every(action => permissions[action]);
+	const someChecked = grantableActions.some(action => permissions[action]);
 	const approvalActions = [
 		{ label: t("system.role.permissions.sign"), value: "sign" },
 		{ label: t("system.role.permissions.businessApprove"), value: "business_approve" },
@@ -298,6 +295,7 @@ function ServicePermissionCard({
 					<Checkbox
 						checked={allChecked}
 						indeterminate={!allChecked && someChecked}
+						disabled={grantableActions.length === 0}
 						onChange={handleToggleAll}
 					>
 						<span className="text-sm font-medium">همه</span>
@@ -319,6 +317,7 @@ function ServicePermissionCard({
 						key={`${service.id}-${action.value}`}
 						action={action}
 						checked={permissions[action.value]}
+						disabled={!canGrantAction(domain, service.id, action.value)}
 						serviceName={service.name}
 						onChange={handleToggleAction(action.value)}
 					/>
@@ -329,7 +328,7 @@ function ServicePermissionCard({
 							key={`${service.id}-${action.value}`}
 							action={action}
 							checked={permissions[action.value]}
-							disabled={!canGrantApproval(service.id, action.value)}
+							disabled={!canGrantAction(domain, service.id, action.value)}
 							serviceName={service.name}
 							onChange={handleToggleAction(action.value)}
 						/>
@@ -347,7 +346,7 @@ function PermissionDomainPanel({
 	services,
 	permissions,
 	getCompanyTypes,
-	canGrantApproval,
+	canGrantAction,
 	onToggleService,
 	onToggleAction,
 }: {
@@ -355,7 +354,7 @@ function PermissionDomainPanel({
 	services: ServiceDto[]
 	permissions: DomainPermissionMap
 	getCompanyTypes: (domain: AdminRoleDomainKey, service: ServiceDto) => CompanyTypesProps | undefined
-	canGrantApproval: (serviceId: number, action: AdminRoleContractExtraAction) => boolean
+	canGrantAction: CanGrantAction
 	onToggleService: (domain: AdminRoleDomainKey, serviceId: number, checked: boolean) => void
 	onToggleAction: (
 		domain: AdminRoleDomainKey,
@@ -369,7 +368,7 @@ function PermissionDomainPanel({
 	}
 
 	return (
-		<div className="max-h-[420px] overflow-y-auto pl-1">
+		<div>
 			<div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
 				{services.map(service => (
 					<ServicePermissionCard
@@ -378,7 +377,7 @@ function PermissionDomainPanel({
 						service={service}
 						permissions={permissions[service.id] ?? defaultPermissionFlags}
 						companyTypes={getCompanyTypes(domain, service)}
-						canGrantApproval={canGrantApproval}
+						canGrantAction={canGrantAction}
 						onToggleService={onToggleService}
 						onToggleAction={onToggleAction}
 					/>
@@ -494,7 +493,7 @@ export function AdminRolePermissionsEditor({
 
 	const [companyTypesByKey, setCompanyTypesByKey] = useState<Record<string, string[]>>({});
 
-	const { getPermittedCompanyTypes, hasDomainPermissionByServiceId } = useAccess();
+	const { getPermittedCompanyTypes, hasDomainPermissionByServiceId, isFullAdmin } = useAccess();
 	// kept in a ref: the access helpers are recreated on every render and must not retrigger the payload effect
 	const getPermittedCompanyTypesRef = useRef(getPermittedCompanyTypes);
 	getPermittedCompanyTypesRef.current = getPermittedCompanyTypes;
@@ -512,7 +511,7 @@ export function AdminRolePermissionsEditor({
 			return leftKey.localeCompare(rightKey);
 		})
 		.map(policy => (
-			`${policy.domain}:${policy.service}:${Number(policy.can_view)}:${Number(policy.can_create)}:${Number(policy.can_update)}:${Number(policy.can_delete)}:${policy.company_visible_cards.join(",")}`
+			`${policy.domain}:${policy.service}:${Number(policy.can_view)}:${Number(policy.can_create)}:${Number(policy.can_update)}:${Number(policy.can_delete)}:${Number(policy.can_sign)}:${Number(policy.can_business_approve)}:${policy.company_visible_cards.join(",")}:${policy.company_types.join(",")}`
 		))
 		.join("|");
 	const serviceQuerySignature = serviceQueries
@@ -548,10 +547,11 @@ export function AdminRolePermissionsEditor({
 			servicesByDomain,
 			permissionMatrix: matrix,
 			selectedCompanyCards: cards,
-			getSelectedCompanyTypes: (domain, serviceId, flags) => pickSelectedCompanyTypes(
-				getSelectableCompanyTypes(getPermittedCompanyTypesRef.current, domain, serviceId, flags),
-				companyTypes[companyTypesKey(domain, serviceId)],
-			),
+			getSelectedCompanyTypes: (domain, serviceId, flags) => {
+				const selectable = getSelectableCompanyTypes(getPermittedCompanyTypesRef.current, domain, serviceId, flags);
+				const saved = companyTypes[companyTypesKey(domain, serviceId)];
+				return [...pickSelectedCompanyTypes(selectable, saved), ...getLockedCompanyTypes(selectable, saved)];
+			},
 		});
 
 		const currentPayload = buildPayload(permissionMatrix, selectedCompanyCards, companyTypesByKey);
@@ -573,15 +573,15 @@ export function AdminRolePermissionsEditor({
 		return {
 			options,
 			selected: pickSelectedCompanyTypes(options, companyTypesByKey[key]),
+			lockedTypes: getLockedCompanyTypes(options, companyTypesByKey[key]),
 			isRequired,
 			onChange: nextKeys => setCompanyTypesByKey(current => ({ ...current, [key]: nextKeys })),
 		};
 	}
 
-	// non-full admins can only hand out the approvals they hold themselves
-	function canGrantApproval(serviceId: number, action: AdminRoleContractExtraAction) {
-		return hasDomainPermissionByServiceId("contracts", action, serviceId);
-	}
+	// non-full admins can only hand out the permissions they hold themselves
+	const canGrantAction: CanGrantAction = (domain, serviceId, action) =>
+		isFullAdmin || hasDomainPermissionByServiceId(domain, action, serviceId);
 
 	function handleTabChange(key: string) {
 		const nextDomain = adminRolePermissionTabs.find(tab => tab.value === key)?.value;
@@ -610,7 +610,8 @@ export function AdminRolePermissionsEditor({
 	}
 
 	function handleToggleService(domain: AdminRoleDomainKey, serviceId: number, checked: boolean) {
-		updateServicePermissions(domain, serviceId, () => createPermissionFlags(checked, domain));
+		setCompanyTypesByKey(current => withoutCompanyTypeSelections(current, domain, [serviceId]));
+		updateServicePermissions(domain, serviceId, current => setGrantableFlags(current, checked, domain, action => canGrantAction(domain, serviceId, action)));
 	}
 
 	function handleToggleAction(
@@ -628,10 +629,16 @@ export function AdminRolePermissionsEditor({
 	function setWholeDomainPermissions(checked: boolean) {
 		const domainServices = servicesByDomain[activeDomain] ?? [];
 
+		setCompanyTypesByKey(current => withoutCompanyTypeSelections(current, activeDomain, domainServices.map(service => service.id)));
 		setPermissionMatrix(current => ({
 			...current,
 			[activeDomain]: domainServices.reduce<DomainPermissionMap>((result, service) => {
-				result[service.id] = createPermissionFlags(checked, activeDomain);
+				result[service.id] = setGrantableFlags(
+					current[activeDomain]?.[service.id] ?? defaultPermissionFlags,
+					checked,
+					activeDomain,
+					action => canGrantAction(activeDomain, service.id, action),
+				);
 				return result;
 			}, {}),
 		}));
@@ -651,16 +658,17 @@ export function AdminRolePermissionsEditor({
 	}));
 
 	return (
-		<section className="rounded-[28px] border border-[var(--ant-color-border-secondary)] bg-[var(--ant-color-bg-container)] p-5">
-			<Spin spinning={isLoadingServices || initialPoliciesLoading}>
+		<section className="flex min-h-0 flex-1 flex-col rounded-3xl border border-[var(--ant-color-border-secondary)] bg-[var(--ant-color-bg-container)] p-4">
+			<div className="shrink-0">
 				<Tabs
 					activeKey={activeDomain}
 					onChange={handleTabChange}
 					items={tabItems}
 					tabBarGutter={12}
+					className="[&_.ant-tabs-nav]:!mb-3"
 				/>
 
-				<div className="mb-4 flex flex-wrap gap-2">
+				<div className="mb-3 flex flex-wrap gap-2">
 					<Button
 						type="default"
 						size="middle"
@@ -678,28 +686,32 @@ export function AdminRolePermissionsEditor({
 						پاک‌سازی همه سرویس‌های این بخش
 					</Button>
 				</div>
+			</div>
 
-				<PermissionDomainPanel
-					domain={activeDomain}
-					services={servicesByDomain[activeDomain] ?? []}
-					permissions={permissionMatrix[activeDomain] ?? {}}
-					getCompanyTypes={getCompanyTypes}
-					canGrantApproval={canGrantApproval}
-					onToggleService={handleToggleService}
-					onToggleAction={handleToggleAction}
-				/>
+			{isLoadingServices || initialPoliciesLoading
+				? <div className="flex flex-1 items-center justify-center"><Spin /></div>
+				: (
+					<div className="min-h-0 flex-1 space-y-4 overflow-y-auto pe-1">
+						<PermissionDomainPanel
+							domain={activeDomain}
+							services={servicesByDomain[activeDomain] ?? []}
+							permissions={permissionMatrix[activeDomain] ?? {}}
+							getCompanyTypes={getCompanyTypes}
+							canGrantAction={canGrantAction}
+							onToggleService={handleToggleService}
+							onToggleAction={handleToggleAction}
+						/>
 
-				{activeDomain === "company_profile"
-					? (
-						<div className="mt-5">
-							<CompanyProfileCardsPanel
-								selectedCards={selectedCompanyCards}
-								onChange={setSelectedCompanyCards}
-							/>
-						</div>
-					)
-					: null}
-			</Spin>
+						{activeDomain === "company_profile"
+							? (
+								<CompanyProfileCardsPanel
+									selectedCards={selectedCompanyCards}
+									onChange={setSelectedCompanyCards}
+								/>
+							)
+							: null}
+					</div>
+				)}
 		</section>
 	);
 }
