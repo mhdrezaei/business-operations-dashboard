@@ -3,7 +3,7 @@ import type { AdminRoleDto, AdminUserDto } from "../model/admin-users.types";
 
 import { BasicButton, BasicContent, BasicTable } from "#src/components";
 import { useAccess } from "#src/hooks";
-import { TableActionEditIcon, TableActionEyeIcon, TableActionTrashIcon } from "#src/icons";
+import { TableActionEditIcon, TableActionEyeIcon } from "#src/icons";
 import { CrownOutlined, PlusCircleOutlined, SafetyOutlined, StopOutlined, TeamOutlined } from "@ant-design/icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Popconfirm } from "antd";
@@ -14,7 +14,6 @@ import {
 	fetchAdminUserDetail,
 	fetchAdminUsersList,
 	fetchCreateAdminUser,
-	fetchDeleteAdminUser,
 	fetchDisableAdminUser,
 	fetchEnableAdminUser,
 	fetchSetAdminUserRoles,
@@ -48,7 +47,6 @@ export default function AdminUsersListPage() {
 	// permissions
 	const canCreate = hasAdminAction("users", "create");
 	const canUpdate = hasAdminAction("users", "update");
-	const canDelete = hasAdminAction("users", "delete");
 	const canSetRoles = hasAdminUserCapability("assign_roles");
 	const canToggleActive = hasAdminAction("users", "update");
 	const canViewServiceAdmins = hasAdminUserCapability("manage_deputies");
@@ -97,16 +95,6 @@ export default function AdminUsersListPage() {
 		finally {
 			setLoadingUserDetail(false);
 		}
-	};
-
-	const handleDeleteRow = async (row: AdminUserDto, action?: ProCoreActionType<object>) => {
-		if (!canDelete) {
-			window.$message?.warning("دسترسی حذف کاربر ندارید.");
-			return;
-		}
-		await fetchDeleteAdminUser(row.id);
-		await action?.reload?.();
-		window.$message?.success(t("common.deleteSuccess"));
 	};
 
 	const handleToggleActive = async (row: AdminUserDto, action?: ProCoreActionType<object>) => {
@@ -250,25 +238,11 @@ export default function AdminUsersListPage() {
 						);
 					}
 
-					if (canDelete) {
-						actions.push(
-							<Popconfirm
-								key="delete"
-								title={t("common.confirmDelete")}
-								okText={t("common.confirm")}
-								cancelText={t("common.cancel")}
-								onConfirm={() => handleDeleteRow(record, action)}
-							>
-								<BasicButton type="link" size="large" title="حذف" icon={<TableActionTrashIcon />} />
-							</Popconfirm>,
-						);
-					}
-
 					return actions;
 				},
 			},
 		];
-	}, [baseColumns, canDelete, canSetRoles, canToggleActive, canUpdate, canViewServiceAdmins, t]);
+	}, [baseColumns, canSetRoles, canToggleActive, canUpdate, canViewServiceAdmins, t]);
 
 	return (
 		<BasicContent className="h-full">
