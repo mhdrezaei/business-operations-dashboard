@@ -3,6 +3,7 @@ import type { UnregisteredPerformancePreset } from "../../shared/model/performan
 import type { PerformanceFormValues } from "../../shared/model/performance.form.types";
 import type { resolvePerformanceServicePath } from "../../shared/model/performance.helpers";
 import type { PerformanceSubmitIntent } from "../../shared/ui/form/PerformanceForm";
+import { fetchAllPages } from "#src/api/fetch-all-pages";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router";
@@ -76,14 +77,14 @@ async function loadCreatedPerformanceRecord(
 		return buildCreatedPerformanceRecord(values, responseRecord);
 
 	try {
-		const response = await fetchPerformanceList(servicePath, {
-			page: 1,
+		const response = await fetchAllPages(page => fetchPerformanceList(servicePath, {
+			page,
 			page_size: 250,
-			service: values.serviceId,
-			company: values.companyId,
-			sh_year: values.year,
-			sh_month: values.month,
-		});
+			service: values.serviceId!,
+			company: values.companyId!,
+			sh_year: values.year!,
+			sh_month: values.month!,
+		}));
 		const rows = response?.results ?? [];
 		const responseId = typeof responseRecord?.id === "number" ? responseRecord.id : null;
 		const responseOperationType = typeof responseRecord?.operation_type === "string"

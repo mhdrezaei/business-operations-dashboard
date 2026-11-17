@@ -5,6 +5,7 @@ import type {
 	PaginatedResult,
 } from "../list/model/contracts.list.types";
 // import type { ContractServicePath } from "./contract-service.types";
+import { fetchAllPages } from "#src/api/fetch-all-pages";
 import { i18n } from "#src/locales";
 import { request } from "#src/utils/request";
 
@@ -251,7 +252,7 @@ export function fetchCompanyContracts(
 ) {
 	if (service === "sms/client" || service === "sms/vendor") {
 		const searchParams: Record<string, string> = {
-			page_size: "1000",
+			page_size: "200",
 			sms_party: service === "sms/client" ? "client" : "vendor",
 		};
 
@@ -261,9 +262,9 @@ export function fetchCompanyContracts(
 		if (serviceId != null)
 			searchParams.service_id = String(serviceId);
 
-		return request
-			.get("contracts/list/", { searchParams })
-			.json<PaginatedResult<any>>();
+		return fetchAllPages(page => request
+			.get("contracts/list/", { searchParams: { ...searchParams, page: String(page) } })
+			.json<PaginatedResult<any>>());
 	}
 
 	const searchParams: Record<string, string> = {

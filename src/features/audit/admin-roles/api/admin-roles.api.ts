@@ -7,6 +7,7 @@ import type {
 	AdminRoleUpsertPayload,
 } from "../model/admin-roles.types";
 
+import { fetchAllPages } from "#src/api/fetch-all-pages";
 import { request } from "#src/utils/request";
 
 const BASE = "audit/admin/roles";
@@ -34,15 +35,12 @@ export function fetchDeleteAdminRole(id: number) {
 	return request.delete(`${BASE}/${id}/`);
 }
 
-export function fetchAdminRolePolicies(roleId: number) {
-	return request
-		.get(`${POLICIES_BASE}/`, {
-			searchParams: {
-				role: roleId,
-				page_size: 500,
-			},
-		})
-		.json<AdminRolePoliciesPaginatedResponse>();
+/** Every policy of the role (the backend ignores `page_size` and returns 20 per page). */
+export async function fetchAdminRolePolicies(roleId: number) {
+	const { results } = await fetchAllPages(page => request
+		.get(`${POLICIES_BASE}/`, { searchParams: { role: roleId, page } })
+		.json<AdminRolePoliciesPaginatedResponse>());
+	return results;
 }
 
 export function fetchBulkUpsertAdminRolePolicies(roleId: number, payload: AdminRolePoliciesBulkUpsertPayload) {

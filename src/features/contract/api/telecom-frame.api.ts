@@ -1,4 +1,5 @@
 import type { Paginated } from "#src/api/types";
+import { fetchAllPages } from "#src/api/fetch-all-pages";
 import { request } from "#src/utils/request";
 
 const TELECOM_FRAME_PATH = "contracts/telecom-frame";
@@ -32,15 +33,8 @@ export async function fetchTelecomFrameDirectory(
 			searchParams[key] = String(value);
 	});
 
-	const entries: TelecomFrameDirectoryEntryDto[] = [];
-	for (let page = 1; ; page++) {
-		const response = await request
-			.get(`${TELECOM_FRAME_PATH}/${resource}/`, { searchParams: { ...searchParams, page: String(page) } })
-			.json<Paginated<TelecomFrameDirectoryEntryDto> | TelecomFrameDirectoryEntryDto[]>();
-		if (Array.isArray(response))
-			return response;
-		entries.push(...response.results);
-		if (!response.next)
-			return entries;
-	}
+	const { results } = await fetchAllPages(page => request
+		.get(`${TELECOM_FRAME_PATH}/${resource}/`, { searchParams: { ...searchParams, page: String(page) } })
+		.json<Paginated<TelecomFrameDirectoryEntryDto> | TelecomFrameDirectoryEntryDto[]>());
+	return results;
 }
