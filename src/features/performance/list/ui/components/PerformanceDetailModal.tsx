@@ -1,7 +1,7 @@
 import type { CompanyDto } from "#src/api/common/common.types.js";
 import type { PerformanceListItem, PerformanceServicePath } from "#src/features/performance/api/performances.api";
 import type { OpenApiContractModel } from "#src/features/performance/shared/model/performance.form.types";
-import type { CollocationRow } from "#src/features/performance/shared/services/traffic/traffic-collocation";
+import type { CollocationPartnerType, CollocationRow } from "#src/features/performance/shared/services/traffic/traffic-collocation";
 import type { SectionTone } from "#src/shared/ui/section-card";
 import type { CSSProperties, ReactNode } from "react";
 import type { PerformanceListRow } from "../../model/performance.list.types";
@@ -53,20 +53,26 @@ import i18next from "i18next";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { buildSeparatedBreakdown, getFirstDefinedValue, getOpenApiOperationRowValue, toUpperText } from "../../model/openapi-operation-rows";
+import { buildSeparatedBreakdown, toUpperText } from "../../model/openapi-operation-rows";
 import { isTrafficLocationRequired, TRAFFIC_LOCATIONS } from "../../model/traffic-locations";
 import "#src/shared/ui/form-layout/styles.css";
 
-type EditFormValues = Record<string, unknown>;
+export type EditFormValues = Record<string, unknown>;
 
-interface EditableFieldConfig {
+export interface EditableFieldConfig {
 	key: string
 	label: string
 	type: "number" | "text" | "checkbox"
 	required?: boolean
 }
 
-interface ServiceEditConfig {
+export interface FormValidationError {
+	field: string
+	type: "required" | "validation"
+	message: string
+}
+
+export interface ServiceEditConfig {
 	title: string
 	readonlyKeys: string[]
 	editableFields: EditableFieldConfig[]
@@ -131,7 +137,7 @@ const HIDDEN_DETAIL_KEYS = new Set([
 	"traffic_has_county_contract",
 ]);
 
-const LEGACY_2_OPERATIONS = [
+export const LEGACY_2_OPERATIONS = [
 	{ type: "BILL_INQUIRY_MIDTERM", field: "bill_inquiry_midterm_value", labelKey: "billInquiryMidtermValue" },
 	{ type: "BILL_INQUIRY_ENDTERM", field: "bill_inquiry_endterm_value", labelKey: "billInquiryEndtermValue" },
 	{ type: "RECEIPT_REGISTER_CONNECTED", field: "receipt_register_connected_value", labelKey: "receiptRegisterConnectedValue" },
@@ -172,7 +178,7 @@ interface Props {
 	embedded?: boolean
 }
 
-function isEmptyValue(value: unknown) {
+export function isEmptyValue(value: unknown) {
 	if (value == null)
 		return true;
 	if (typeof value === "string")
@@ -318,7 +324,7 @@ function toPayloadValue(value: unknown) {
 	return value;
 }
 
-function buildInitialValues(
+export function buildInitialValues(
 	config: ServiceEditConfig,
 	service: PerformanceServicePath,
 	detail: Record<string, unknown>,
@@ -354,7 +360,16 @@ function buildInitialValues(
 	return values;
 }
 
-function applyOpenApiInitialValues(
+function getFirstDefinedValue(source: Record<string, unknown>, keys: string[]) {
+	for (const key of keys) {
+		const value = source[key];
+		if (value != null && value !== "")
+			return value;
+	}
+	return null;
+}
+
+export function applyOpenApiInitialValues(
 	initialValues: EditFormValues,
 	detail: Record<string, unknown>,
 	recordFallback: Record<string, unknown>,
@@ -420,7 +435,29 @@ function applyOpenApiInitialValues(
 	assignValue("sms_other_en", ["sms_other_en"], "SMS_OTHER_EN", ["value"]);
 }
 
-function resolveOpenApiContractModel(
+function getOpenApiOperationRowValue(
+	rows: PerformanceListItem[],
+	operationType: string,
+	keys: string[],
+) {
+	const matchedRow = rows.find(row => toUpperText((row as Record<string, unknown>).operation_type) === operationType);
+	if (!matchedRow)
+		return null;
+
+	return getFirstDefinedValue(matchedRow as Record<string, unknown>, keys);
+}
+
+/** Sum of a metric over several operation rows; null when none of them carries a value. */
+export function sumOpenApiOperationRowValues(rows: PerformanceListItem[], operationTypes: string[], keys: string[]) {
+	const values = operationTypes
+		.map(operationType => getOpenApiOperationRowValue(rows, operationType, keys))
+		.filter(value => value != null)
+		.map(Number)
+		.filter(Number.isFinite);
+	return values.length > 0 ? values.reduce((total, value) => total + value, 0) : null;
+}
+
+export function resolveOpenApiContractModel(
 	detail: Record<string, unknown> | null,
 	record: PerformanceListRow | null,
 	rows: PerformanceListItem[],
@@ -491,7 +528,7 @@ function getTrafficRowsFromSources(
 	return [...rows, ...fromDetail, ...fromRecord, ...directRows];
 }
 
-function applyTrafficInitialValues(
+export function applyTrafficInitialValues(
 	initialValues: EditFormValues,
 	detail: Record<string, unknown>,
 	recordFallback: Record<string, unknown>,
@@ -507,6 +544,42 @@ function applyTrafficInitialValues(
 	initialValues.countyValue = county?.value ?? null;
 	initialValues.countyValueReceive = county?.value_receive ?? null;
 	initialValues.countyConversionRatio = toNullableNumber((county as Record<string, unknown>)?.conversion_ratio) ?? null;
+}
+
+export function applySmsInitialValues(
+	initialValues: EditFormValues,
+	smsBreakdownCards: Array<{ key: string, value: unknown }>,
+	record?: Record<string, unknown> | null,
+	isUnregisteredMode = false,
+) {
+	const lookup = new Map<string, unknown>();
+	smsBreakdownCards.forEach((card) => {
+		lookup.set(card.key, card.value);
+	});
+	initialValues.irancellFa = lookup.get("IRANCELL_FA") ?? null;
+	initialValues.irancellEn = lookup.get("IRANCELL_EN") ?? null;
+	initialValues.mciFa = lookup.get("MCI_FA") ?? null;
+	initialValues.mciEn = lookup.get("MCI_EN") ?? null;
+	initialValues.otherFa = lookup.get("OTHER_FA") ?? null;
+	initialValues.otherEn = lookup.get("OTHER_EN") ?? null;
+
+	if (isUnregisteredMode && record) {
+		const operator = toUpperText((record as any)?.operator);
+		const language = toUpperText((record as any)?.language);
+		const value = (record as any)?.value;
+		if (operator === "IRANCELL" && language === "FA")
+			initialValues.irancellFa = value ?? initialValues.irancellFa;
+		if (operator === "IRANCELL" && language === "EN")
+			initialValues.irancellEn = value ?? initialValues.irancellEn;
+		if (operator === "MCI" && language === "FA")
+			initialValues.mciFa = value ?? initialValues.mciFa;
+		if (operator === "MCI" && language === "EN")
+			initialValues.mciEn = value ?? initialValues.mciEn;
+		if (operator === "OTHER" && language === "FA")
+			initialValues.otherFa = value ?? initialValues.otherFa;
+		if (operator === "OTHER" && language === "EN")
+			initialValues.otherEn = value ?? initialValues.otherEn;
+	}
 }
 
 function buildTrafficPayloadFields(values: EditFormValues, locations: Set<"TEHRAN" | "COUNTY">, isCp: boolean) {
@@ -529,7 +602,7 @@ function buildTrafficPayloadFields(values: EditFormValues, locations: Set<"TEHRA
 	return payload;
 }
 
-function getTrafficFieldLocation(fieldKey: string): "TEHRAN" | "COUNTY" | null {
+export function getTrafficFieldLocation(fieldKey: string): "TEHRAN" | "COUNTY" | null {
 	if (fieldKey === "tehranValue" || fieldKey === "tehranValueReceive" || fieldKey === "tehranConversionRatio")
 		return "TEHRAN";
 	if (fieldKey === "countyValue" || fieldKey === "countyValueReceive" || fieldKey === "countyConversionRatio")
@@ -553,6 +626,94 @@ function getTrafficHasCountyContract(
 	}
 
 	return null;
+}
+
+export function validatePerformanceEditValues({
+	values,
+	visibleEditableFields,
+	service,
+	existingTrafficLocations,
+	selectedCompanyType,
+}: {
+	values: Record<string, unknown>
+	visibleEditableFields: EditableFieldConfig[]
+	service: PerformanceServicePath | null
+	existingTrafficLocations?: Set<TrafficLocation>
+	selectedCompanyType?: string | null
+}): { isValid: boolean, errors: FormValidationError[] } {
+	const errors: FormValidationError[] = [];
+
+	if (service === "sales-agency/outbound" || service === "sales-agency/rep-management") {
+		const result = salesAgencyFieldsSchema(selectedCompanyType).safeParse(values);
+		if (!result.success) {
+			result.error.issues.forEach((issue) => {
+				const fieldName = issue.path.join(".");
+				if (fieldName) {
+					errors.push({
+						field: fieldName,
+						type: "validation",
+						message: issue.message,
+					});
+				}
+			});
+			return { isValid: false, errors };
+		}
+	}
+
+	visibleEditableFields.forEach((field) => {
+		if (!field.required)
+			return;
+		const trafficLocation = service === "traffic" ? getTrafficFieldLocation(field.key) : null;
+		if (trafficLocation && existingTrafficLocations && !isTrafficLocationRequired(trafficLocation, existingTrafficLocations))
+			return;
+		if (!isEmptyValue(values[field.key]))
+			return;
+		errors.push({
+			field: field.key,
+			type: "required",
+			message: i18next.t("performance.validation.requiredField"),
+		});
+	});
+
+	visibleEditableFields.forEach((field) => {
+		const numeric = toNullableNumber(values[field.key]);
+		if (numeric == null || numeric >= 0)
+			return;
+		errors.push({
+			field: field.key,
+			type: "validation",
+			message: i18next.t("performance.validation.base.negativeValue"),
+		});
+	});
+
+	return { isValid: errors.length === 0, errors };
+}
+
+export function validateCollocationRows(
+	rows: CollocationRow[],
+	collocationMode: CollocationPartnerType | null | undefined,
+): { isValid: boolean, errorKey?: string } {
+	if (!collocationMode || rows.length < 1 || rows.some(row => [row.ipCount, row.bandwidthUsed, row.ampereUsed].some(metric => metric == null))) {
+		return { isValid: false, errorKey: "performance.validation.traffic.collocationFieldRequired" };
+	}
+	if (rows.some(row => [row.ipCount, row.bandwidthUsed, row.ampereUsed].some(metric => Number(metric) < 0))) {
+		return { isValid: false, errorKey: "performance.validation.base.negativeValue" };
+	}
+	return { isValid: true };
+}
+
+export function validateBasePerformanceIdentifiers({
+	companyId,
+	serviceId,
+	year,
+	month,
+}: {
+	companyId: number | null
+	serviceId: number | null
+	year: number | null
+	month: number | null
+}): boolean {
+	return companyId != null && serviceId != null && year != null && month != null;
 }
 
 function ReadOnlyBlock({ label, value }: { label: string, value: unknown }) {
@@ -1605,36 +1766,8 @@ export function PerformanceDetailModal({
 			applyOpenApiInitialValues(initialValues, detail, record as Record<string, unknown>, openApiPerformances);
 		if (service === "traffic")
 			applyTrafficInitialValues(initialValues, detail, record as Record<string, unknown>, trafficPerformances);
-		if (service === "sms" || service === "sms-commission") {
-			const lookup = new Map<string, unknown>();
-			smsBreakdownCards.forEach((card) => {
-				lookup.set(card.key, card.value);
-			});
-			initialValues.irancellFa = lookup.get("IRANCELL_FA") ?? null;
-			initialValues.irancellEn = lookup.get("IRANCELL_EN") ?? null;
-			initialValues.mciFa = lookup.get("MCI_FA") ?? null;
-			initialValues.mciEn = lookup.get("MCI_EN") ?? null;
-			initialValues.otherFa = lookup.get("OTHER_FA") ?? null;
-			initialValues.otherEn = lookup.get("OTHER_EN") ?? null;
-
-			if (isUnregisteredMode) {
-				const operator = toUpperText((record as any)?.operator);
-				const language = toUpperText((record as any)?.language);
-				const value = (record as any)?.value;
-				if (operator === "IRANCELL" && language === "FA")
-					initialValues.irancellFa = value ?? initialValues.irancellFa;
-				if (operator === "IRANCELL" && language === "EN")
-					initialValues.irancellEn = value ?? initialValues.irancellEn;
-				if (operator === "MCI" && language === "FA")
-					initialValues.mciFa = value ?? initialValues.mciFa;
-				if (operator === "MCI" && language === "EN")
-					initialValues.mciEn = value ?? initialValues.mciEn;
-				if (operator === "OTHER" && language === "FA")
-					initialValues.otherFa = value ?? initialValues.otherFa;
-				if (operator === "OTHER" && language === "EN")
-					initialValues.otherEn = value ?? initialValues.otherEn;
-			}
-		}
+		if (service === "sms" || service === "sms-commission")
+			applySmsInitialValues(initialValues, smsBreakdownCards, record as Record<string, unknown>, isUnregisteredMode);
 		initialFormValuesRef.current = initialValues;
 		form.reset(initialValues);
 		if (isCollocationRecord) {
@@ -1648,45 +1781,17 @@ export function PerformanceDetailModal({
 			return;
 
 		form.clearErrors();
-		if (service === "sales-agency/outbound" || service === "sales-agency/rep-management") {
-			const result = salesAgencyFieldsSchema(selectedCompanyType).safeParse(values);
-			if (!result.success) {
-				result.error.issues.forEach((issue) => {
-					const fieldName = issue.path.join(".");
-					if (fieldName)
-						form.setError(fieldName as any, { type: "validation", message: issue.message });
-				});
-				return;
-			}
-		}
-
-		let hasError = false;
-		visibleEditableFields.forEach((field) => {
-			if (!field.required)
-				return;
-			const trafficLocation = service === "traffic" ? getTrafficFieldLocation(field.key) : null;
-			if (trafficLocation && !isTrafficLocationRequired(trafficLocation, existingTrafficLocations))
-				return;
-			if (!isEmptyValue(values[field.key]))
-				return;
-			hasError = true;
-			form.setError(field.key as any, {
-				type: "required",
-				message: i18next.t("performance.validation.requiredField"),
-			});
+		const validation = validatePerformanceEditValues({
+			values,
+			visibleEditableFields,
+			service,
+			existingTrafficLocations,
+			selectedCompanyType,
 		});
-		visibleEditableFields.forEach((field) => {
-			const numeric = toNullableNumber(values[field.key]);
-			if (numeric == null || numeric >= 0)
-				return;
-			hasError = true;
-			form.setError(field.key as any, {
-				type: "validation",
-				message: i18next.t("performance.validation.base.negativeValue"),
-			});
-		});
-		if (hasError)
+		if (!validation.isValid) {
+			validation.errors.forEach(issue => form.setError(issue.field as any, { type: issue.type as any, message: issue.message }));
 			return;
+		}
 
 		const companyId = toNullableNumber(values.company ?? mergedDetail.company ?? mergedDetail.company_id);
 		const serviceId = toNullableNumber(values.service ?? mergedDetail.service ?? mergedDetail.service_id);
@@ -1694,7 +1799,7 @@ export function PerformanceDetailModal({
 		const month = toNullableNumber(values.sh_month ?? mergedDetail.sh_month);
 		const salesAgentId = toNullableNumber(values.sales_agent ?? mergedDetail.sales_agent ?? mergedDetail.sales_agent_id);
 
-		if (companyId == null || serviceId == null || year == null || month == null) {
+		if (!validateBasePerformanceIdentifiers({ companyId, serviceId, year, month }) || companyId == null || serviceId == null || year == null || month == null) {
 			window.$message?.error(i18next.t("performance.errors.baseFormIncomplete"));
 			return;
 		}
@@ -1737,16 +1842,13 @@ export function PerformanceDetailModal({
 
 		if (isCollocationRecord) {
 			const rows = collocationForm.getValues("rows") ?? [];
-			if (!collocationMode || rows.length < 1 || rows.some(row => [row.ipCount, row.bandwidthUsed, row.ampereUsed].some(metric => metric == null))) {
-				window.$message?.error(i18next.t("performance.validation.traffic.collocationFieldRequired"));
-				return;
-			}
-			if (rows.some(row => [row.ipCount, row.bandwidthUsed, row.ampereUsed].some(metric => Number(metric) < 0))) {
-				window.$message?.error(i18next.t("performance.validation.base.negativeValue"));
+			const collocationValidation = validateCollocationRows(rows, collocationMode);
+			if (!collocationValidation.isValid) {
+				window.$message?.error(i18next.t(collocationValidation.errorKey!));
 				return;
 			}
 			payload.company_type = "COLLOCATION";
-			payload.collocation_rows = buildCollocationRowsPayload(rows, collocationMode);
+			payload.collocation_rows = buildCollocationRowsPayload(rows, collocationMode!);
 		}
 		else if (service === "traffic") {
 			const isCpEdit = typeof selectedCompanyType === "string" && selectedCompanyType.toUpperCase() === "CP";
